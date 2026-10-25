@@ -2,7 +2,7 @@
   "$schema": "gw/schema/gw.schema.json",
   "version": "0.4.0",
   "language": "es",
-  "visibleLanguages": [],
+  "visibleLanguages": ["es", "en"],
   "log": "docs/traspaso.md",
   "logRows": false,
   "protectedBranch": "main",

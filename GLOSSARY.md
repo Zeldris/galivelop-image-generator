@@ -30,21 +30,42 @@ mantiene al día (skill `domain-modeling`). El flujo nunca sobrescribe este arch
 <!-- **Término**: definición, y dónde vive en el código. -->
 
 **Generador**:
-El servicio local, uno por máquina, que convierte encargos en imágenes y los proyectos comparten.
+El servicio local, uno por máquina, que convierte pedidos en imágenes y los proyectos comparten.
 _Evitar_: image-generator (la carpeta de World-Maker-Fantasy), servidor
 
 **Proyecto**:
-Un repositorio que usa el generador: declara su configuración y le manda encargos. El generador no conoce su dominio.
+Un repositorio que usa el generador: declara su configuración y le manda pedidos. El generador no conoce su dominio.
 _Evitar_: cliente, mundo, juego
 
 **Configuración del proyecto**:
 El archivo que un proyecto tiene en su repo para conectarse al generador: sus perfiles, su estilo y su carpeta de
 entrega.
 
-**Encargo**:
-La petición cerrada de una imagen que hace un proyecto: prompt, perfil, referencias y destino. No es el «encargo a
-un subagente» del flujo.
-_Evitar_: trabajo, job, petición
+**Pedido**:
+La petición cerrada de una imagen que hace un proyecto: prompt, perfil, referencias y destino.
+_Evitar_: encargo (en este repo es el «encargo a un subagente» del flujo), trabajo, job, petición
+
+**Intento**:
+Una imagen generada para un pedido con una semilla y unos parámetros concretos; un pedido tiene varios.
+_Evitar_: prueba, variante, render
+
+**Candidata**:
+Un intento que la persona marca como bueno sin elegirlo todavía.
+_Evitar_: favorita
+
+**Descartada**:
+Un intento que la persona aparta; sigue en el historial.
+_Evitar_: borrada, papelera
+
+**Cola**:
+Los pedidos pendientes de generar, en orden de llegada; se generan de uno en uno.
+
+**Manifiesto**:
+El archivo del proyecto que dice, por cada elegida, con qué se generó, para poder reproducirla.
+
+**Perfil de máquina**:
+Los límites con los que el generador trabaja en un equipo concreto (memoria, referencias por pedido, tiempo máximo).
+_Evitar_: preset, modo
 
 **Perfil**:
 Un tipo de imagen con nombre y tamaño fijos que declara un proyecto (p. ej. `banner`, `thumbnail`).
@@ -54,10 +75,10 @@ _Evitar_: tamaño, formato, miniatura
 El texto fijo que el proyecto declara por perfil y el generador añade a cada prompt; no lleva lógica del dominio.
 
 **Referencia**:
-Una imagen existente que acompaña a un encargo para guiar la generación.
+Una imagen existente que acompaña a un pedido para guiar la generación.
 
 **Elegida**:
-La imagen que la persona escoge para un encargo, la única que se entrega al proyecto.
+El intento que la persona escoge para un pedido, como mucho uno por pedido; es el único que se entrega al proyecto.
 
 **Carpeta de entrega**:
 La carpeta del proyecto donde el generador deja las elegidas.

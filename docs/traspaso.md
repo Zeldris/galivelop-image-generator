@@ -10,8 +10,8 @@
 |---|---|
 | **Rama** | `diseno-generador` |
 | **Fase / tarea** | Paso 1 hecho (flujo Galivelop-workflow v0.4.0 aplicado); paso 2 en curso: diseño del generador de imágenes local reutilizable (`grilling` + `domain-modeling`; compactaciones: presupuesto 1, llevadas 0) |
-| **Último punto estable** | Diseño ronda 1: decisiones D1-D7 en `docs/plan.md` y términos en `GLOSSARY.md` |
-| **Siguiente paso** | Ronda 2 de `grilling` (lo de «Pendiente de decidir» en `docs/plan.md`); la ronda 1 (D1-D7) está aprobada |
+| **Último punto estable** | Diseño rondas 1-2: decisiones D1-D17 en `docs/plan.md`, ADR 0001-0002, términos en `GLOSSARY.md` |
+| **Siguiente paso** | Ronda 3 de `grilling` (lo de «Pendiente de decidir» en `docs/plan.md`); después, fases de implementación |
 | **Check** | `bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg`: verde |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
@@ -23,8 +23,9 @@ _(lo que va a `main` a continuación, y a qué espera)_
 
 ## Hecho (5 últimas)
 
-1. 2026-10-25 — Diseño ronda 1 aprobada: servicio local independiente, sin dominio, Python stdlib, WMF piloto (`docs/plan.md`).
-2. 2026-10-25 — Flujo Galivelop-workflow v0.4.0 aplicado (`aplicar.py --init`, `pushToProtected: pr`, `doctor.py` en verde).
+1. 2026-10-25 — Diseño ronda 2 aprobada: pedido/intentos/elegida, cola, perfil de máquina, es+en, ADR 0001-0002.
+2. 2026-10-25 — Diseño ronda 1 aprobada: servicio local independiente, sin dominio, Python stdlib, WMF piloto (`docs/plan.md`).
+3. 2026-10-25 — Flujo Galivelop-workflow v0.4.0 aplicado (`aplicar.py --init`, `pushToProtected: pr`, `doctor.py` en verde).
 
 ## Pendiente
 
