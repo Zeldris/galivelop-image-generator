@@ -9,9 +9,9 @@
 | Campo | Valor |
 |---|---|
 | **Rama** | `diseno-generador` |
-| **Fase / tarea** | Paso 1 hecho (flujo Galivelop-workflow v0.4.0 aplicado); paso 2 en curso: diseño del generador de imágenes local reutilizable |
-| **Último punto estable** | Commit «Flujo Galivelop-workflow v0.4.0»: scripts, skills (con `opt-ai` y `scout-updates`), ganchos, CI y plantillas |
-| **Siguiente paso** | Estudiar `../World-Maker-Fantasy/image-generator` y proponer el diseño del generador (stack, API, cómo se integra en otro proyecto) |
+| **Fase / tarea** | Paso 1 hecho (flujo Galivelop-workflow v0.4.0 aplicado); paso 2 en curso: diseño del generador de imágenes local reutilizable (`grilling` + `domain-modeling`; compactaciones: presupuesto 1, llevadas 0) |
+| **Último punto estable** | Diseño ronda 1: decisiones D1-D7 en `docs/plan.md` y términos en `GLOSSARY.md` |
+| **Siguiente paso** | Ronda 2 de `grilling` (lo de «Pendiente de decidir» en `docs/plan.md`); la ronda 1 (D1-D7) está aprobada |
 | **Check** | `bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg`: verde |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
@@ -23,7 +23,8 @@ _(lo que va a `main` a continuación, y a qué espera)_
 
 ## Hecho (5 últimas)
 
-1. 2026-10-25 — Flujo Galivelop-workflow v0.4.0 aplicado (`aplicar.py --init`, `pushToProtected: pr`, `doctor.py` en verde).
+1. 2026-10-25 — Diseño ronda 1 aprobada: servicio local independiente, sin dominio, Python stdlib, WMF piloto (`docs/plan.md`).
+2. 2026-10-25 — Flujo Galivelop-workflow v0.4.0 aplicado (`aplicar.py --init`, `pushToProtected: pr`, `doctor.py` en verde).
 
 ## Pendiente
 
