@@ -94,6 +94,12 @@ apila la elegida anterior (aunque sea `null`); deshacer la desapila. No se elige
 elegida. `key` con `maxLength` 200 en el esquema y cada segmento ≤ 100 caracteres en el código; `prompt` con
 `maxLength` 4000.
 
+**Prompt y parámetros de un intento** (`orders.attempt_specs`). `prompt` exacto = prompt del pedido (o el retocado,
+D19) + `", "` + `style` del perfil (solo si `style` no está vacío). `params` = ajustes del perfil (`width`, `height`,
+`steps`, `cfg`, `sampler`, `model`, los que defina) pisados por `params` del pedido y estos por los del intento.
+`choose` y `undo` devuelven `{old, new}` para que la entrega se enganche; elegir la ya elegida no apila.
+Los textos de error de pedidos usan `{order}` (no `{key}`, que choca con `i18n.t`).
+
 **Semillas.** Con `seed` en el pedido, el intento i usa `seed + i`; sin ella, aleatoria en `[0, 2^32)`. Un intento
 nuevo (otra semilla, N seguidas, prompt o parámetros retocados, D19-D20) no cambia el pedido.
 

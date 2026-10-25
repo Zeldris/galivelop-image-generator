@@ -35,5 +35,17 @@
   "error.project.forbidden_config": "{field} («{path}») no puede ser galivelop-images.json",
   "error.project.unknown": "no hay ningún proyecto registrado llamado «{name}»",
   "error.project.root_not_dir": "{path} no es una carpeta",
-  "error.project.name_taken": "ya hay un proyecto «{name}» registrado en {root}"
+  "error.project.name_taken": "ya hay un proyecto «{name}» registrado en {root}",
+  "error.order.invalid": "el pedido no es válido:",
+  "error.order.profile_unknown": "el proyecto no tiene el perfil «{profile}»",
+  "error.order.unknown": "no existe el pedido «{order}» con perfil «{profile}» en el proyecto «{project}»",
+  "error.order.corrupt": "el pedido {path} está dañado",
+  "error.order.attempt_unknown": "el pedido «{order}» ({profile}) no tiene el intento {attempt}",
+  "error.order.count_invalid": "el número de intentos debe ser un entero de {min} a {max}",
+  "error.order.spec_invalid": "al intento le faltan campos: {missing}",
+  "error.order.state_invalid": "estado «{state}» no válido; usa uno de: {states}",
+  "error.order.discard_chosen": "el intento {attempt} es el elegido y no se puede descartar",
+  "error.order.choose_discarded": "el intento {attempt} está descartado y no se puede elegir",
+  "error.order.history_empty": "no hay nada que deshacer en el pedido «{order}» ({profile})",
+  "error.order.note_invalid": "la nota debe ser texto"
 }

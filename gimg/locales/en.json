@@ -35,5 +35,17 @@
   "error.project.forbidden_config": "{field} (\"{path}\") cannot be galivelop-images.json",
   "error.project.unknown": "no registered project is named \"{name}\"",
   "error.project.root_not_dir": "{path} is not a folder",
-  "error.project.name_taken": "a project \"{name}\" is already registered at {root}"
+  "error.project.name_taken": "a project \"{name}\" is already registered at {root}",
+  "error.order.invalid": "the order is not valid:",
+  "error.order.profile_unknown": "the project has no profile \"{profile}\"",
+  "error.order.unknown": "there is no order \"{order}\" with profile \"{profile}\" in project \"{project}\"",
+  "error.order.corrupt": "the order {path} is corrupt",
+  "error.order.attempt_unknown": "order \"{order}\" ({profile}) has no attempt {attempt}",
+  "error.order.count_invalid": "the number of attempts must be an integer from {min} to {max}",
+  "error.order.spec_invalid": "the attempt is missing fields: {missing}",
+  "error.order.state_invalid": "invalid state \"{state}\"; use one of: {states}",
+  "error.order.discard_chosen": "attempt {attempt} is the chosen one and cannot be discarded",
+  "error.order.choose_discarded": "attempt {attempt} is discarded and cannot be chosen",
+  "error.order.history_empty": "nothing to undo in order \"{order}\" ({profile})",
+  "error.order.note_invalid": "the note must be text"
 }
