@@ -64,6 +64,92 @@ Cada fase es una rama y un pull request a `main`, con las tres fases de revisió
 | F4 Interfaz | Las tres pantallas de D22, es/en | Recorrido completo en el navegador |
 | F5 Piloto WMF | Configuración de ejemplo para WMF, guía de integración y propuesta de migración para su repo; medida base con `opt-ai` y comparación `sd-server` (D14) | WMF genera y recibe una elegida sin copia a mano |
 
+## F1 en detalle
+
+Contrato de F1 (lo implementan los pasos de abajo; un cambio de este contrato se apunta aquí en el mismo commit).
+Todo en `gimg/`, Python stdlib, identificadores en inglés (D27), mensajes visibles por `i18n.t` en es y en (D16).
+
+**Carpetas** (`gimg/paths.py`). Configuración: `$GIMG_CONFIG_HOME`, si no `$XDG_CONFIG_HOME/gimg`, si no
+`~/.config/gimg`. Datos: `$GIMG_DATA_HOME`, si no `$XDG_DATA_HOME/gimg`, si no `~/.local/share/gimg`. Los tests
+fijan las dos variables `GIMG_*` a carpetas temporales. La guardia de rutas (D25) es `inside(root, rel)`: rechaza
+`rel` absoluta, con `~` inicial, segmentos `..`, `\`, NUL o caracteres de control; resuelve con enlaces y exige que el
+resultado quede dentro de `root` resuelto. Toda ruta que venga de un proyecto pasa por ella.
+
+**Escritura** (`gimg/fsutil.py`). JSON con escritura atómica (temporal en la misma carpeta + `os.replace`), y un
+cerrojo `fcntl.flock` por archivo para cada leer-modificar-escribir.
+
+**Proyectos** (`gimg/projects.py`). Registro en `<config>/projects.json`: `{"projects": {"<name>": {"root":
+"<ruta absoluta>"}}}`. `project add <ruta>` lee `<ruta>/galivelop-images.json`, lo valida con su esquema, comprueba
+`minVersion` contra `gimg.__version__` y que `delivery.dir` y `manifest` no caigan en `.git/` ni sean
+`galivelop-images.json`; mismo nombre con otra ruta es un error. La configuración se relee en cada operación.
+
+**Pedidos e intentos** (`gimg/orders.py`). Un pedido vive en `<datos>/projects/<proyecto>/orders/<key>/@<perfil>/`
+(la `@` evita que la clave `a/banner` choque con la clave `a` y el perfil `banner`): `order.json` y
+`attempts/<id>.png`. `order.json`: `key`, `profile`, `prompt` (el del proyecto), `references`, `params`, `seed`,
+`createdAt`, `updatedAt`, `attempts` (lista de `{id, state, seed, prompt, params, references, image, note,
+createdAt}`, con `prompt` exacto ya con el estilo y `params` completos: `width`, `height`, `steps`, `cfg`,
+`sampler`, `model`), `chosen` (id o `null`) y `chosenHistory` (pila para deshacer). Estados: `new`, `candidate`,
+`discarded`. Reenviar clave + perfil actualiza prompt, referencias y parámetros y conserva los intentos (D18). Elegir
+apila la elegida anterior (aunque sea `null`); deshacer la desapila. No se elige una descartada ni se descarta la
+elegida. `key` con `maxLength` 200 en el esquema y cada segmento ≤ 100 caracteres en el código; `prompt` con
+`maxLength` 4000.
+
+**Semillas.** Con `seed` en el pedido, el intento i usa `seed + i`; sin ella, aleatoria en `[0, 2^32)`. Un intento
+nuevo (otra semilla, N seguidas, prompt o parámetros retocados, D19-D20) no cambia el pedido.
+
+**Límites** (`gimg/limits.py`, D15). Al encolar y al ejecutar: referencias ≤ `maxReferences`, `steps` ≤ `maxSteps`,
+`width × height` ≤ `maxPixels`; si no, `LimitError` con mensaje claro. La memoria la comprueba el motor real (F2). El
+perfil de máquina sale de `GIMG_MACHINE_PROFILE` (nombre de `gimg/machine_profiles/` o ruta a un JSON) o de
+`machineProfile` en `<config>/config.json`; por defecto `steam-deck`.
+
+**Motor** (`gimg/engine.py`). `generate(job, should_cancel) -> EngineResult`. `EngineJob`: prompt, width, height,
+steps, cfg, sampler, model, seed, references (rutas absolutas), output (ruta absoluta), machine (perfil), timeout_s.
+`EngineResult`: `duration_ms`, `load_ms`, `sample_ms`, `decode_ms`, `engine_version`, `min_free_mb` (opcional).
+Errores: `EngineError(message)` y `Cancelled`. `FakeEngine` (`provider` = `fake`) escribe un PNG válido del tamaño
+pedido, de un color que sale de la semilla, y admite fallar o tardar a propósito. `GIMG_ENGINE` elige motor; en F1
+solo existe `fake`.
+
+**Registro** (`gimg/log.py`, D26). `<datos>/projects/<proyecto>/log.jsonl`, una línea por intento (bien o mal) en el
+formato de `opt-ai`, sin campos `null`: `ts`, `gen_ai.operation.name` = `image_generation`, `gen_ai.provider.name`,
+`gen_ai.request.model`, `app.task` = perfil, `app.machine_profile`, `app.duration_ms`, `app.load_ms`, `app.error`, y
+`app.image.*`: `key`, `steps`, `cfg`, `sampler`, `width`, `height`, `seed`, `references` (cuántas), `engine_version`,
+`sample_ms`, `decode_ms`, `min_free_mb`. Estimado: mediana de `app.duration_ms` de las líneas sin error con el mismo
+motor, perfil, pasos y con o sin referencia; sin datos, no hay estimado.
+
+**Cola** (`gimg/queue.py`, D10). Una para todo el generador: `<datos>/queue.json`, `{"nextId": n, "entries": [...]}`;
+cada entrada: `id`, `project`, `key`, `profile`, `seed`, `prompt`, `params`, `references`, `state` (`queued`,
+`running`, `done`, `failed`, `cancelled`), `pid`, `enqueuedAt`, `startedAt`, `finishedAt`, `error`, `attemptId`,
+`cancelRequested`. En orden de llegada; cancelar una `queued` la pasa a `cancelled`, una `running` pide cancelar.
+Una `running` cuyo `pid` ya no existe vuelve a `queued` al leer la cola (sobrevive a un reinicio). Se guardan las 200
+últimas terminadas. El trabajador (`gimg/worker.py`) toma un cerrojo propio (`worker.lock`) para que corra uno solo:
+saca la primera `queued`, comprueba límites, llama al motor, crea el intento, escribe el registro y cierra la entrada.
+
+**Entrega y manifiesto** (`gimg/delivery.py`, D13, D21, D25). Elegir copia la imagen (temporal + `os.replace`) a
+`inside(inside(root, delivery.dir), template con {key} y {profile})` y escribe el manifiesto (`manifest`, por defecto
+`galivelop-images.manifest.json`): `{"version": 1, "images": {"<key>": {"<perfil>": {file, prompt, seed, params,
+references, engine, engineVersion, attemptId, chosenAt}}}}`, con `file` relativo a la raíz del proyecto, claves
+ordenadas, sangría 2 y salto final. Deshacer hasta `null` borra el archivo entregado y su entrada. Las referencias
+pasan por `inside(root, …)` y tienen que existir.
+
+**CLI** (`gimg/cli.py`, `python3 -m gimg`; el lanzador `gimg` llega con `instalar.sh` en F2). Órdenes en inglés:
+`project add|remove|list`; `order submit <proyecto> <archivo|->` (crea o actualiza y encola `count` intentos, dice
+el estimado); `order list <proyecto> [--profile] [--chosen|--unchosen]`; `order show <proyecto> <key> <perfil>`;
+`attempt new <proyecto> <key> <perfil> [--seed] [--count] [--prompt] [--steps] [--cfg] [--sampler]`;
+`attempt mark … <id> new|candidate|discarded`; `attempt note … <id> <texto>`; `choose … <id>`; `undo …`;
+`queue list|cancel <id>`; `work [--once]` (procesa la cola; en F3 lo hará el servicio); `version`. Errores por stderr
+con salida 1.
+
+### Pasos de F1
+
+| Paso | Qué | Hecho cuando |
+|---|---|---|
+| F1.1 | `paths`, `fsutil`, `projects`, `maxLength` de `key` y `prompt` | Tests de la guardia (D25), del registro y de la carga de la configuración |
+| F1.2 | `orders`: pedidos, intentos, estados, notas, elegir y deshacer (sin entrega) | Tests de reenvío, estados y pila de elegidas |
+| F1.3 | `engine` (`FakeEngine`), `limits`, `log` y estimado | Tests del PNG, los límites, el formato del registro y la mediana |
+| F1.4 | `queue` y `worker` | Tests de orden, cancelar, reinicio y un solo trabajador |
+| F1.5 | `delivery` y manifiesto, enganchados a elegir y deshacer | Tests de entrega, guardia de la plantilla y manifiesto |
+| F1.6 | `cli` y prueba del ciclo completo; README es/en con el uso | Test de extremo a extremo: añadir proyecto, pedir, trabajar, elegir, deshacer |
+
 ## Pendiente
 
 - Proponer al flujo (`gw-harvest`) una operación de imagen en `opt-ai/references/log-format.md` (D26).

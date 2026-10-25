@@ -8,10 +8,10 @@
 
 | Campo | Valor |
 |---|---|
-| **Rama** | `f0-esqueleto` |
-| **Fase / tarea** | F0 Esqueleto fusionada en `main`; siguiente tarea: F1 Núcleo |
-| **Último punto estable** | F0 en `main`: paquete `gimg`, esquemas, validador, textos es/en, 69 tests |
-| **Siguiente paso** | `/clear` y F1 (núcleo con motor de pruebas) en una rama nueva desde `main` |
+| **Rama** | `f1-nucleo` |
+| **Fase / tarea** | F1 Núcleo: contrato y pasos F1.1-F1.6 en `docs/plan.md` («F1 en detalle»); compactaciones: presupuesto 1, llevadas 0 |
+| **Último punto estable** | Contrato de F1 escrito; código como en F0 (69 tests) |
+| **Siguiente paso** | F1.1 (`paths`, `fsutil`, `projects`) por subagente `sonnet`, revisión corta y F1.2 |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
