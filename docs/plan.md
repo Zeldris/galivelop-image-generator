@@ -50,7 +50,7 @@ Decisiones difíciles de revertir, con su ADR: [0001](adr/0001-servicio-local-in
 - Deuda que el diseño no debe heredar: dos fuentes de prompt, registro sin cfg ni modelo y con rutas absolutas,
   `sd-server` sin uso, elegir sin deshacer, sin tests, solo Linux.
 
-## Fases (propuesta, pendiente de aprobar)
+## Fases (aprobadas el 2026-10-25)
 
 Cada fase es una rama y un pull request a `main`, con las tres fases de revisión de `AGENTS.md`.
 
