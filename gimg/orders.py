@@ -49,8 +49,7 @@ def _check_fields_of(probe: dict) -> None:
 def _order_dir(project: str, key: str, profile: str) -> Path:
     """Folder of one order. Every public entry point builds it, so key and profile are validated here."""
     _check_id(key, profile)
-    rel = "projects/%s/orders/%s/@%s" % (project, key, profile)
-    return paths.inside(paths.data_dir(), rel)
+    return paths.inside(paths.project_data_dir(project), "orders/%s/@%s" % (key, profile))
 
 
 def _order_file(project: str, key: str, profile: str) -> Path:
@@ -295,7 +294,7 @@ def list_orders(project: str, profile: str | None = None, chosen: bool | None = 
     """Orders of a project sorted by (key, profile). `chosen` True/False keeps only orders with/without
     a chosen attempt; `profile` keeps one profile."""
     projects.get(project)
-    base = paths.inside(paths.data_dir(), "projects/%s/orders" % project)
+    base = paths.project_data_dir(project) / "orders"
     found = []
     for folder, _dirs, files in os.walk(base):
         if _ORDER_FILE not in files or not os.path.basename(folder).startswith("@"):

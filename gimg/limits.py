@@ -54,7 +54,13 @@ def load_machine(ref: str | None = None) -> dict:
     if not isinstance(ref, str):
         raise GimgError("machine.bad_name", name=str(ref))
     if "/" in ref or ref.endswith(".json"):
-        return _load_file(Path(ref).expanduser(), ref)
+        if any(ord(c) < 0x20 or ord(c) == 0x7F for c in ref):
+            raise GimgError("machine.bad_path", path=repr(ref))
+        try:
+            path = Path(ref).expanduser()
+        except (RuntimeError, OSError) as exc:
+            raise GimgError("machine.unreadable", path=ref, reason=str(exc))
+        return _load_file(path, ref)
     return _preset(ref)
 
 

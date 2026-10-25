@@ -53,10 +53,11 @@
   "error.machine.unreadable": "no se puede leer el perfil de máquina \"{path}\": {reason}",
   "error.machine.invalid": "el perfil de máquina \"{path}\" no es válido:",
   "error.machine.bad_name": "nombre de perfil de máquina no válido: \"{name}\" (letras minúsculas, cifras y guiones; para un archivo, usa una ruta con / o acabada en .json)",
+  "error.machine.bad_path": "ruta de perfil de máquina no válida (caracteres de control): {path}",
   "error.limit.references": "el intento lleva {count} referencias y la máquina admite {max}",
   "error.limit.steps": "el intento pide {steps} pasos y la máquina admite {max}",
   "error.limit.pixels": "el intento pide {width}x{height} ({pixels} píxeles) y la máquina admite {max}",
   "error.engine.unknown": "motor desconocido: \"{engine}\" (en esta versión solo existe \"fake\")",
-  "error.engine.bad_delay": "GIMG_FAKE_DELAY no es un número: \"{value}\"",
+  "error.engine.bad_delay": "GIMG_FAKE_DELAY no es un número finito >= 0: \"{value}\"",
   "error.log.bad_project": "nombre de proyecto no válido para el registro: \"{project}\""
 }

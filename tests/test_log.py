@@ -68,6 +68,12 @@ class LogTests(unittest.TestCase):
                 log.append(bad, {})
             self.assertIn(cm.exception.code, ("log.bad_project", "path.dotdot"))
 
+    def test_bad_project_names(self):
+        for bad in (".", "..", "A", "-x", "a\n", "a b"):
+            with self.assertRaises(GimgError) as cm:
+                log.log_path(bad)
+            self.assertEqual(cm.exception.code, "log.bad_project", bad)
+
     def test_estimate_none(self):
         self.assertIsNone(log.estimate("proj", "fake", "banner", 4, False))
 

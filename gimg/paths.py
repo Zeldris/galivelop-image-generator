@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 
 from .errors import GimgError, PathError
@@ -62,6 +63,21 @@ def inside(root, rel) -> Path:
     if target != real_root and real_root not in target.parents:
         raise PathError("path.outside", path=rel)
     return target
+
+
+_PROJECT_NAME = None
+
+
+def project_data_dir(name, code: str = "project.bad_name") -> Path:
+    """``<data>/projects/<name>``; `name` must match the project-name pattern of the project config schema
+    (so ``.``, ``..``, ``a/b`` cannot reach another folder). Raises GimgError `code` otherwise."""
+    global _PROJECT_NAME
+    if _PROJECT_NAME is None:
+        from . import schema
+        _PROJECT_NAME = re.compile(schema.load_schema("project-config")["$defs"]["name"]["pattern"])
+    if not isinstance(name, str) or not _PROJECT_NAME.search(name) or "\n" in name:
+        raise GimgError(code, project=str(name))
+    return inside(data_dir(), "projects/" + name)
 
 
 def check_key(key: str) -> str:

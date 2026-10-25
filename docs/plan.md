@@ -108,14 +108,15 @@ pedido, así que reenviarlo con semilla reproduce la misma imagen; `attempt new`
 `width × height` ≤ `maxPixels` (lo que el perfil no fije, como `steps`, no se comprueba; los valores por
 defecto de cada modelo los pone el motor real en F2); si no, `LimitError` con mensaje claro. La memoria la comprueba el motor real (F2). El
 perfil de máquina sale de `GIMG_MACHINE_PROFILE` (nombre de `gimg/machine_profiles/` o ruta a un JSON) o de
-`machineProfile` en `<config>/config.json`; por defecto `steam-deck`.
+`machineProfile` en `<config>/config.json`; por defecto `steam-deck`. La ruta del perfil de máquina es entrada de confianza de la persona en su propia máquina
+(fuera de D25): puede ser absoluta o relativa y se expande `~`; sin caracteres de control (`machine.bad_path`), y si no se puede leer, `machine.unreadable`.
 
 **Motor** (`gimg/engine.py`). `generate(job, should_cancel) -> EngineResult`. `EngineJob`: prompt, width, height,
 steps, cfg, sampler, model, seed, references (rutas absolutas), output (ruta absoluta), machine (perfil), timeout_s.
 `EngineResult`: `duration_ms`, `load_ms`, `sample_ms`, `decode_ms`, `engine_version`, `min_free_mb` (opcional).
 Errores: `EngineError(message)` y `Cancelled`. `FakeEngine` (`provider` = `fake`) escribe un PNG válido del tamaño
 pedido, de un color que sale de la semilla, y admite fallar o tardar a propósito. `GIMG_ENGINE` elige motor; en F1
-solo existe `fake`. El motor de pruebas lee `GIMG_FAKE_DELAY` (segundos de espera, cancelable) y `GIMG_FAKE_FAIL` (falla con ese mensaje), para los tests de la cola y el trabajador.
+solo existe `fake`. El motor de pruebas lee `GIMG_FAKE_DELAY` (segundos de espera, cancelable) y `GIMG_FAKE_FAIL` (falla con ese mensaje), para los tests de la cola y el trabajador (`GIMG_FAKE_DELAY` debe ser finito y >= 0, si no `engine.bad_delay`). Si `timeout_s` (segundos, admite fracciones) es menor que la espera, el motor de pruebas para en `timeout_s` y lanza `EngineTimeout` (subclase de `EngineError`, mensaje estable `timeout`, `engine.TIMEOUT_MESSAGE`) para que el trabajador lo distinga. Los archivos finales (PNG y JSON) respetan la umask como un `open()` normal.
 
 **Registro** (`gimg/log.py`, D26). `<datos>/projects/<proyecto>/log.jsonl`, una línea por intento (bien o mal) en el
 formato de `opt-ai`, sin campos `null`: `ts`, `gen_ai.operation.name` = `image_generation`, `gen_ai.provider.name`,

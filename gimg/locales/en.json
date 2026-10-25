@@ -53,10 +53,11 @@
   "error.machine.unreadable": "cannot read machine profile \"{path}\": {reason}",
   "error.machine.invalid": "machine profile \"{path}\" is not valid:",
   "error.machine.bad_name": "invalid machine profile name: \"{name}\" (lowercase letters, digits and hyphens; for a file, use a path with / or ending in .json)",
+  "error.machine.bad_path": "invalid machine profile path (control characters): {path}",
   "error.limit.references": "the attempt has {count} references and the machine allows {max}",
   "error.limit.steps": "the attempt asks for {steps} steps and the machine allows {max}",
   "error.limit.pixels": "the attempt asks for {width}x{height} ({pixels} pixels) and the machine allows {max}",
   "error.engine.unknown": "unknown engine: \"{engine}\" (this version only has \"fake\")",
-  "error.engine.bad_delay": "GIMG_FAKE_DELAY is not a number: \"{value}\"",
+  "error.engine.bad_delay": "GIMG_FAKE_DELAY is not a finite number >= 0: \"{value}\"",
   "error.log.bad_project": "invalid project name for the log: \"{project}\""
 }

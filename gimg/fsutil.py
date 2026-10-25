@@ -6,9 +6,19 @@ import fcntl
 import json
 import os
 import tempfile
+import threading
 from pathlib import Path
 
 _MISSING = object()
+_umask_lock = threading.Lock()
+
+
+def honour_umask(fd: int) -> None:
+    """`mkstemp` files are 0600; give the final file the mode a plain open() would (0666 & ~umask)."""
+    with _umask_lock:
+        mask = os.umask(0)
+        os.umask(mask)
+    os.fchmod(fd, 0o666 & ~mask)
 
 
 def write_json(path, data) -> None:
@@ -18,6 +28,7 @@ def write_json(path, data) -> None:
     text = json.dumps(data, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
     fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix="." + path.name + ".", suffix=".tmp")
     try:
+        honour_umask(fd)
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
             fh.write(text)
             fh.flush()

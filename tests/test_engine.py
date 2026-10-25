@@ -82,6 +82,32 @@ class FakeEngineTests(unittest.TestCase):
         with self.assertRaises(engine.EngineError):
             engine.FakeEngine().generate(self.job(w=0), lambda: False)
 
+    def test_timeout(self):
+        job = self.job()
+        job.timeout_s = 0.1
+        t0 = time.monotonic()
+        with self.assertRaises(engine.EngineError) as cm:
+            engine.FakeEngine(delay_s=5).generate(job, lambda: False)
+        self.assertLess(time.monotonic() - t0, 2)
+        self.assertEqual(cm.exception.message, engine.TIMEOUT_MESSAGE)
+        self.assertIsInstance(cm.exception, engine.EngineTimeout)
+        self.assertFalse(Path(job.output).exists())
+
+    def test_no_timeout_when_fast(self):
+        job = self.job()
+        job.timeout_s = 5
+        engine.FakeEngine(delay_s=0.05).generate(job, lambda: False)
+        self.assertTrue(Path(job.output).exists())
+
+    def test_png_mode_honours_umask(self):
+        job = self.job()
+        old = os.umask(0o022)
+        try:
+            engine.FakeEngine().generate(job, lambda: False)
+        finally:
+            os.umask(old)
+        self.assertEqual(os.stat(job.output).st_mode & 0o777, 0o644)
+
 
 class GetEngineTests(unittest.TestCase):
     def env(self, **kw):
@@ -108,6 +134,13 @@ class GetEngineTests(unittest.TestCase):
         self.env(GIMG_FAKE_DELAY="0.5", GIMG_FAKE_FAIL="x")
         e = engine.get_engine()
         self.assertEqual((e.delay_s, e.fail_with), (0.5, "x"))
+
+    def test_bad_delay_values(self):
+        for bad in ("nan", "inf", "-1", "-inf"):
+            self.env(GIMG_FAKE_DELAY=bad)
+            with self.assertRaises(GimgError) as cm:
+                engine.get_engine()
+            self.assertEqual(cm.exception.code, "engine.bad_delay", bad)
 
     def test_bad_delay(self):
         self.env(GIMG_FAKE_DELAY="abc")

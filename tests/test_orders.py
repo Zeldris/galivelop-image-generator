@@ -85,6 +85,11 @@ class OrderTests(unittest.TestCase):
         self.assertEqual(orders.get("proj", "a", "banner")["prompt"], "two")
         self.assertEqual(len(orders.list_orders("proj")), 2)
 
+    def test_bad_project_name_in_paths(self):
+        for bad in (".", "..", "a/b", "A"):
+            self.assertEqual(self.code(orders.attempt_image_path, bad, "a", "banner", 1),
+                             "project.bad_name", bad)
+
     def test_submit_failures(self):
         self.assertEqual(self.code(orders.submit, "proj", self.order(profile="nope")), "order.profile_unknown")
         self.assertEqual(self.code(orders.submit, "proj", self.order(prompt="")), "order.invalid")

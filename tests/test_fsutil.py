@@ -1,5 +1,6 @@
 import json
 import multiprocessing
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -21,6 +22,15 @@ class FsutilTests(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.dir = Path(tmp.name)
+
+    def test_write_mode_honours_umask(self):
+        p = self.dir / "m.json"
+        old = os.umask(0o022)
+        try:
+            fsutil.write_json(p, {})
+        finally:
+            os.umask(old)
+        self.assertEqual(os.stat(p).st_mode & 0o777, 0o644)
 
     def test_write_format(self):
         p = self.dir / "sub" / "a.json"

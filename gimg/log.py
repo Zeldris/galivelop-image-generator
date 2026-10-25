@@ -6,13 +6,10 @@ import statistics
 from datetime import datetime, timezone
 
 from . import fsutil, paths
-from .errors import GimgError
 
 
 def log_path(project: str):
-    if not isinstance(project, str) or not project or "/" in project:
-        raise GimgError("log.bad_project", project=str(project))
-    return paths.inside(paths.data_dir(), "projects/%s/log.jsonl" % project)
+    return paths.project_data_dir(project, "log.bad_project") / "log.jsonl"
 
 
 def _now() -> str:

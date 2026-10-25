@@ -4,6 +4,7 @@ Environment: ``GIMG_ENGINE`` picks the engine (default ``fake``). The fake engin
 ``GIMG_FAKE_DELAY`` (seconds to wait) and ``GIMG_FAKE_FAIL`` (fail with that message)."""
 from __future__ import annotations
 
+import math
 import os
 import struct
 import tempfile
@@ -13,6 +14,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Optional
 
+from . import fsutil
 from .errors import GimgError
 
 FAKE_VERSION = "fake-1"
@@ -32,7 +34,7 @@ class EngineJob:
     model: Optional[str] = None
     references: list = field(default_factory=list)  # absolute paths
     machine: dict = field(default_factory=dict)
-    timeout_s: Optional[int] = None
+    timeout_s: Optional[float] = None
 
 
 @dataclass
@@ -51,6 +53,16 @@ class EngineError(Exception):
     def __init__(self, message: str):
         super().__init__(message)
         self.message = message
+
+
+TIMEOUT_MESSAGE = "timeout"
+
+
+class EngineTimeout(EngineError):
+    """The job ran past `job.timeout_s`; the message is always `TIMEOUT_MESSAGE`."""
+
+    def __init__(self):
+        super().__init__(TIMEOUT_MESSAGE)
 
 
 class Cancelled(Exception):
@@ -94,12 +106,18 @@ class FakeEngine(Engine):
     def generate(self, job: EngineJob, should_cancel: Callable[[], bool]) -> EngineResult:
         start = time.monotonic()
         end = start + self.delay_s
+        limit = None if job.timeout_s is None else start + job.timeout_s
         while True:
             if should_cancel():
                 raise Cancelled()
-            left = end - time.monotonic()
+            now = time.monotonic()
+            if limit is not None and now >= limit and end > limit:
+                raise EngineTimeout()
+            left = end - now
             if left <= 0:
                 break
+            if limit is not None and end > limit:
+                left = min(left, limit - now)
             time.sleep(min(_TICK_S, left))
         if self.fail_with:
             raise EngineError(self.fail_with)
@@ -112,6 +130,7 @@ class FakeEngine(Engine):
         data = png_bytes(job.width, job.height, seed_color(job.seed))
         fd, tmp = tempfile.mkstemp(dir=str(out.parent), prefix="." + out.name + ".", suffix=".tmp")
         try:
+            fsutil.honour_umask(fd)
             with os.fdopen(fd, "wb") as fh:
                 fh.write(data)
                 fh.flush()
@@ -138,4 +157,6 @@ def get_engine() -> Engine:
         delay = float(os.environ.get("GIMG_FAKE_DELAY") or 0)
     except ValueError:
         raise GimgError("engine.bad_delay", value=os.environ["GIMG_FAKE_DELAY"])
-    return FakeEngine(delay_s=max(delay, 0), fail_with=os.environ.get("GIMG_FAKE_FAIL") or None)
+    if not math.isfinite(delay) or delay < 0:
+        raise GimgError("engine.bad_delay", value=os.environ["GIMG_FAKE_DELAY"])
+    return FakeEngine(delay_s=delay, fail_with=os.environ.get("GIMG_FAKE_FAIL") or None)

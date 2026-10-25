@@ -29,6 +29,20 @@ class LoadTests(unittest.TestCase):
             limits.load_machine(*args)
         return cm.exception.code
 
+    def test_tilde_unresolvable(self):
+        with mock.patch.dict(os.environ, {"HOME": ""}), mock.patch(
+                "pathlib.Path.expanduser", side_effect=RuntimeError("no home")):
+            self.assertEqual(self.code("~nobody/x.json"), "machine.unreadable")
+
+    def test_tilde_expanded(self):
+        self.write(self.tmp / "home" / "m.json", MIN)
+        with mock.patch.dict(os.environ, {"HOME": str(self.tmp / "home")}):
+            self.assertEqual(limits.load_machine("~/m.json")["name"], "tiny")
+
+    def test_control_chars_in_path(self):
+        for bad in ("a\x00/b.json", "a\n/b.json", "a/\x1bb.json"):
+            self.assertEqual(self.code(bad), "machine.bad_path")
+
     def write(self, path, data):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(data if isinstance(data, str) else json.dumps(data))
