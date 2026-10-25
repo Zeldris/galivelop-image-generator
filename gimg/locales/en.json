@@ -48,5 +48,15 @@
   "error.order.choose_discarded": "attempt {attempt} is discarded and cannot be chosen",
   "error.order.history_empty": "nothing to undo in order \"{order}\" ({profile})",
   "error.order.undo_discarded": "attempt {attempt} is discarded and undo cannot choose it again; mark it `new` or `candidate` first",
-  "error.order.note_invalid": "the note must be text"
+  "error.order.note_invalid": "the note must be text",
+  "error.machine.missing": "machine profile \"{path}\" does not exist",
+  "error.machine.unreadable": "cannot read machine profile \"{path}\": {reason}",
+  "error.machine.invalid": "machine profile \"{path}\" is not valid:",
+  "error.machine.bad_name": "invalid machine profile name: \"{name}\" (lowercase letters, digits and hyphens; for a file, use a path with / or ending in .json)",
+  "error.limit.references": "the attempt has {count} references and the machine allows {max}",
+  "error.limit.steps": "the attempt asks for {steps} steps and the machine allows {max}",
+  "error.limit.pixels": "the attempt asks for {width}x{height} ({pixels} pixels) and the machine allows {max}",
+  "error.engine.unknown": "unknown engine: \"{engine}\" (this version only has \"fake\")",
+  "error.engine.bad_delay": "GIMG_FAKE_DELAY is not a number: \"{value}\"",
+  "error.log.bad_project": "invalid project name for the log: \"{project}\""
 }

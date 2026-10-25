@@ -10,8 +10,8 @@
 |---|---|
 | **Rama** | `f1-nucleo` |
 | **Fase / tarea** | F1 Núcleo: contrato y pasos F1.1-F1.6 en `docs/plan.md` («F1 en detalle»); compactaciones: presupuesto 1, llevadas 0 |
-| **Último punto estable** | F1.2 hecho y revisado (arreglos aplicados): `orders` valida key y perfil en todas las entradas, undo no restaura descartadas, forma de order.json en list_orders, campos de add_attempt; 129 tests |
-| **Siguiente paso** | F1.3 (engine, limits, log) por subagente: `engine` (`FakeEngine`), `limits`, `log` y estimado |
+| **Último punto estable** | F1.3 hecho: `engine` (`FakeEngine`, `get_engine`), `limits` (`load_machine`, `check`) y `log` (`record_for`, `append`, `estimate`); check en verde (162 tests); sin revisar |
+| **Siguiente paso** | F1.4 (`queue` y `worker`): cola persistente y trabajador que encadena perfil de máquina, límites, motor, `orders.add_attempt` y `log.append` |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
@@ -34,6 +34,8 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 - **Leves de la revisión de F0** (no se revisan más en este PR):
   - F2: `width`/`height` sin `multipleOf` (lo que exija `sd-cli` por modelo); el validador aún no lo soporta.
   - `propertyNames` solo pasa el `pattern` del primer error: si falla por otra cosa, el mensaje sale vacío.
+- **Leves de las revisiones de F1:**
+  - `orders._FULL_PARAMS` repite a mano límites de `width`/`height`/`model` en vez de usar `$defs/profile` del esquema de la configuración del proyecto.
 - **F1, entrega (D25):** la guardia de rutas es una función que resuelve (con enlaces) y comprueba que queda dentro;
   el regex de los esquemas solo ayuda al editor. el esquema no impide que `delivery.template` salga de la carpeta de entrega
   (`../{key}.png`, porque `{key}` lleva `/` a propósito); la entrega tiene que resolver la ruta final, con enlaces,

@@ -115,7 +115,7 @@ steps, cfg, sampler, model, seed, references (rutas absolutas), output (ruta abs
 `EngineResult`: `duration_ms`, `load_ms`, `sample_ms`, `decode_ms`, `engine_version`, `min_free_mb` (opcional).
 Errores: `EngineError(message)` y `Cancelled`. `FakeEngine` (`provider` = `fake`) escribe un PNG válido del tamaño
 pedido, de un color que sale de la semilla, y admite fallar o tardar a propósito. `GIMG_ENGINE` elige motor; en F1
-solo existe `fake`.
+solo existe `fake`. El motor de pruebas lee `GIMG_FAKE_DELAY` (segundos de espera, cancelable) y `GIMG_FAKE_FAIL` (falla con ese mensaje), para los tests de la cola y el trabajador.
 
 **Registro** (`gimg/log.py`, D26). `<datos>/projects/<proyecto>/log.jsonl`, una línea por intento (bien o mal) en el
 formato de `opt-ai`, sin campos `null`: `ts`, `gen_ai.operation.name` = `image_generation`, `gen_ai.provider.name`,
