@@ -101,10 +101,12 @@ D19) + `", "` + `style` del perfil (solo si `style` no está vacío). `params` =
 Los textos de error de pedidos usan `{order}` (no `{key}`, que choca con `i18n.t`).
 
 **Semillas.** Con `seed` en el pedido, el intento i usa `seed + i`; sin ella, aleatoria en `[0, 2^32)`. Un intento
-nuevo (otra semilla, N seguidas, prompt o parámetros retocados, D19-D20) no cambia el pedido.
+nuevo (otra semilla, N seguidas, prompt o parámetros retocados, D19-D20) no cambia el pedido. `order submit` usa la semilla del
+pedido, así que reenviarlo con semilla reproduce la misma imagen; `attempt new` sin `--seed` usa una aleatoria.
 
 **Límites** (`gimg/limits.py`, D15). Al encolar y al ejecutar: referencias ≤ `maxReferences`, `steps` ≤ `maxSteps`,
-`width × height` ≤ `maxPixels`; si no, `LimitError` con mensaje claro. La memoria la comprueba el motor real (F2). El
+`width × height` ≤ `maxPixels` (lo que el perfil no fije, como `steps`, no se comprueba; los valores por
+defecto de cada modelo los pone el motor real en F2); si no, `LimitError` con mensaje claro. La memoria la comprueba el motor real (F2). El
 perfil de máquina sale de `GIMG_MACHINE_PROFILE` (nombre de `gimg/machine_profiles/` o ruta a un JSON) o de
 `machineProfile` en `<config>/config.json`; por defecto `steam-deck`.
 
