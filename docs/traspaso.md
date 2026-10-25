@@ -11,7 +11,7 @@
 | **Rama** | `diseno-generador` |
 | **Fase / tarea** | Paso 1 hecho (flujo Galivelop-workflow v0.4.0 aplicado); paso 2 en curso: diseño del generador de imágenes local reutilizable (`grilling` + `domain-modeling`; compactaciones: presupuesto 1, llevadas 0) |
 | **Último punto estable** | Diseño rondas 1-3: decisiones D1-D26 en `docs/plan.md`, ADR 0001-0002, términos en `GLOSSARY.md` |
-| **Siguiente paso** | Fase 2: `opt-tokens` hecho (notas en `.claude/gw/opt-tokens.md`); falta `retro`, el informe del revisor del delta del flujo, la marca y el PR del diseño; después F0 en rama nueva |
+| **Siguiente paso** | Fase 3: `opt-tokens` y `retro` hechos (`docs/registros/retro-2026-10-25-diseno.md`); falta la marca y el PR del diseño; después F0 en rama nueva |
 | **Check** | `bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg`: verde |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
@@ -34,6 +34,8 @@ PR de `diseno-generador`: flujo v0.4.0 aplicado + diseño aprobado (D1-D26, F0-F
   reales en cuanto se elija stack (`.claude/gw.json` → `check`, y `install` si hace falta). Se cierra en F0.
 - El flujo copiado es la 0.4.0 **sin publicar** (rama `ccr-6dfbc880-ddr41g` del flujo, commit `d227bbf`; su `main` está en
   0.3.0): `/gw-update` cuando la 0.4.0 salga publicada.
+- Proponer al flujo (`gw-harvest`) lo de `docs/registros/retro-2026-10-25-diseno.md` (R1-R4, R7); el hallazgo
+  MEDIO de R7 (claves pegadas a una letra en `pre-commit`) conviene arreglarlo antes de publicar la 0.4.0.
 - Proponer al flujo (`gw-harvest`) una operación de imagen en el `log-format.md` de `opt-ai` (D26).
 
 ## Comprobar el estado

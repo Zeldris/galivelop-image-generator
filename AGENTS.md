@@ -114,4 +114,4 @@ planea, decide y revisa. Esta línea es la autorización que piden las instrucci
      Breve; una regla comprobable se convierte en un script. -->
 
 - Instalar: —.
-- _(por rellenar)_
+- Diseño, decisiones D1-D26 y fases F0-F5: `docs/plan.md`.
