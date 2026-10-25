@@ -24,6 +24,11 @@ class FolderTests(unittest.TestCase):
             self.assertEqual(paths.config_dir(), Path("/x/gimg"))
             self.assertEqual(paths.data_dir(), Path("/y/gimg"))
 
+    def test_relative_xdg_ignored(self):
+        with self.env(HOME="/h", XDG_CONFIG_HOME="rel", XDG_DATA_HOME="./rel"):
+            self.assertEqual(paths.config_dir(), Path("/h/.config/gimg"))
+            self.assertEqual(paths.data_dir(), Path("/h/.local/share/gimg"))
+
     def test_home_fallback(self):
         with self.env(HOME="/h"):
             self.assertEqual(paths.config_dir(), Path("/h/.config/gimg"))

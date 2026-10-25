@@ -15,7 +15,7 @@ def _home_dir(own: str, xdg: str, fallback: tuple) -> Path:
     if explicit:
         return Path(explicit)
     base = os.environ.get(xdg)
-    if base:
+    if base and os.path.isabs(base):  # the XDG spec says to ignore relative values
         return Path(base) / "gimg"
     return Path.home().joinpath(*fallback)
 

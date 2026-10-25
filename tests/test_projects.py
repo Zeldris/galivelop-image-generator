@@ -87,6 +87,7 @@ class ProjectTests(unittest.TestCase):
             ({"delivery": {"dir": "a/.GIT/x"}}, "project.forbidden_git"),
             ({"manifest": ".git/m.json"}, "project.forbidden_git"),
             ({"manifest": "galivelop-images.json"}, "project.forbidden_config"),
+            ({"manifest": "Galivelop-Images.JSON"}, "project.forbidden_config"),
             ({"manifest": "a/../galivelop-images.json"}, "project.config_invalid"),
             ({"delivery": {"dir": "galivelop-images.json"}}, "project.forbidden_config"),
         ]
@@ -149,6 +150,8 @@ class ProjectTests(unittest.TestCase):
 
     def test_corrupt_registry(self):
         fsutil.write_json(projects.registry_path(), {"projects": {"x": 3}})
+        self.assertEqual(self.code(projects.list_projects).code, "project.registry_corrupt")
+        projects.registry_path().write_text('{"projects": {', encoding="utf-8")
         self.assertEqual(self.code(projects.list_projects).code, "project.registry_corrupt")
 
 

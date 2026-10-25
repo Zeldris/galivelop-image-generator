@@ -17,7 +17,10 @@ def registry_path() -> Path:
 
 
 def _read_registry() -> dict:
-    data = fsutil.read_json(registry_path(), default={"projects": {}})
+    try:
+        data = fsutil.read_json(registry_path(), default={"projects": {}})
+    except (OSError, ValueError):
+        raise GimgError("project.registry_corrupt", path=str(registry_path()))
     ok = isinstance(data, dict) and isinstance(data.get("projects"), dict)
     if not ok or not all(
         isinstance(v, dict) and isinstance(v.get("root"), str) for v in data["projects"].values()
@@ -37,7 +40,7 @@ def _forbidden(root: Path, field: str, rel: str) -> None:
     parts = target.relative_to(real_root).parts
     if any(p.casefold() == ".git" for p in parts):
         raise GimgError("project.forbidden_git", field=field, path=rel)
-    if target == real_root / CONFIG_FILE:
+    if len(parts) == 1 and parts[0].casefold() == CONFIG_FILE:
         raise GimgError("project.forbidden_config", field=field, path=rel)
 
 
