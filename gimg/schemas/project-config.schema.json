@@ -4,7 +4,12 @@
   "description": "Per-project configuration file (galivelop-images.json) read by the image generator.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["minVersion", "name", "delivery", "profiles"],
+  "required": [
+    "minVersion",
+    "name",
+    "delivery",
+    "profiles"
+  ],
   "properties": {
     "$schema": {
       "type": "string",
@@ -16,14 +21,15 @@
       "description": "Minimum generator version (semver) this project requires."
     },
     "name": {
-      "type": "string",
-      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "$ref": "#/$defs/name",
       "description": "Project name: lowercase letters, digits and hyphens."
     },
     "delivery": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["dir"],
+      "required": [
+        "dir"
+      ],
       "description": "Where finished images are delivered inside the project repository.",
       "properties": {
         "dir": {
@@ -33,8 +39,8 @@
         "template": {
           "type": "string",
           "default": "{key}-{profile}.png",
-          "pattern": "\\.png$",
-          "description": "File name template for delivered images; must end in .png."
+          "pattern": "^(?![/~])(?!.*(^|/)\\.\\.(/|$))(?=.*\\{key\\})(?=.*\\{profile\\})(?:[A-Za-z0-9._/-]|\\{key\\}|\\{profile\\})+\\.png$",
+          "description": "File name template for delivered images; must contain {key} and {profile}, use only letters, digits, . _ - and /, stay relative without .. segments, and end in .png."
         }
       }
     },
@@ -46,31 +52,88 @@
     "profiles": {
       "type": "object",
       "minProperties": 1,
-      "propertyNames": {"pattern": "^[a-z0-9][a-z0-9-]*$"},
-      "additionalProperties": {"$ref": "#/$defs/profile"},
+      "propertyNames": {
+        "$ref": "#/$defs/profileName"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/profile"
+      },
       "description": "Image profiles by name (size, sampling settings, model, style)."
     }
   },
   "$defs": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "Lowercase letters, digits and hyphens."
+    },
+    "profileName": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*$",
+      "description": "Profile name: lowercase letters and digits, starting with a letter, no hyphens (the profile is what follows the last hyphen in delivered file names)."
+    },
     "relativePath": {
       "type": "string",
       "minLength": 1,
-      "pattern": "^(?![/~])(?!.*(^|/)\\.\\.(/|$))[^\\\\]+$",
-      "description": "Relative path that cannot be absolute, start with ~, contain .. segments or backslashes."
+      "pattern": "^(?![/~])(?!.*(^|/)\\.\\.(/|$))[^\\\\\\u0000-\\u001f\\u007f]+$",
+      "description": "Relative path that cannot be absolute, start with ~, contain .. segments, backslashes or control characters."
+    },
+    "steps": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200,
+      "description": "Sampling steps."
+    },
+    "cfg": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 30,
+      "description": "Classifier-free guidance scale."
+    },
+    "sampler": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Sampler name."
     },
     "profile": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["width", "height"],
+      "required": [
+        "width",
+        "height"
+      ],
       "description": "One image profile.",
       "properties": {
-        "width": {"type": "integer", "minimum": 64, "maximum": 4096, "description": "Image width in pixels."},
-        "height": {"type": "integer", "minimum": 64, "maximum": 4096, "description": "Image height in pixels."},
-        "steps": {"type": "integer", "minimum": 1, "maximum": 200, "description": "Sampling steps."},
-        "cfg": {"type": "number", "minimum": 0, "maximum": 30, "description": "Classifier-free guidance scale."},
-        "sampler": {"type": "string", "minLength": 1, "description": "Sampler name."},
-        "model": {"type": "string", "minLength": 1, "description": "Model identifier."},
-        "style": {"type": "string", "description": "Fixed text appended to every prompt of this profile."}
+        "width": {
+          "type": "integer",
+          "minimum": 64,
+          "maximum": 4096,
+          "description": "Image width in pixels."
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 64,
+          "maximum": 4096,
+          "description": "Image height in pixels."
+        },
+        "steps": {
+          "$ref": "#/$defs/steps"
+        },
+        "cfg": {
+          "$ref": "#/$defs/cfg"
+        },
+        "sampler": {
+          "$ref": "#/$defs/sampler"
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Model identifier."
+        },
+        "style": {
+          "type": "string",
+          "description": "Fixed text appended to every prompt of this profile."
+        }
       }
     }
   }

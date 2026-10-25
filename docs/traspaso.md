@@ -10,8 +10,8 @@
 |---|---|
 | **Rama** | `f0-esqueleto` |
 | **Fase / tarea** | F0 Esqueleto (`docs/plan.md`): paquete `gimg`, esquemas, validador stdlib, textos es/en, README es/en, check con `unittest`. Presupuesto: 1 compactación (llevadas: 1 al empezar) |
-| **Último punto estable** | F0 implementada: `gimg/` (validador, i18n, esquemas, preajuste `steam-deck`), `examples/`, 50 tests, README es/en, CHANGELOG |
-| **Siguiente paso** | Fase 1 antes de `main`: `/code-review --max-findings all` del diff contra `origin/main` |
+| **Último punto estable** | F0 revisada (fase 1): 20 hallazgos, graves y medios arreglados, leves en «Pendiente»; 69 tests |
+| **Siguiente paso** | Fase 2 antes de `main`: `opt-tokens` y `retro`, presentadas a la persona |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
@@ -31,7 +31,13 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 
 ## Pendiente
 
-- **F1, entrega (D25):** el esquema no impide que `delivery.template` salga de la carpeta de entrega
+- **Leves de la revisión de F0** (no se revisan más en este PR):
+  - F2: `width`/`height` sin `multipleOf` (lo que exija `sd-cli` por modelo); el validador aún no lo soporta.
+  - `propertyNames` solo pasa el `pattern` del primer error: si falla por otra cosa, el mensaje sale vacío.
+  - F1: que `manifest` y `delivery.dir` no apunten a `.git/` ni a `galivelop-images.json`; `key` y `prompt` sin
+    `maxLength` (un segmento > 255 bytes daría `ENAMETOOLONG` en la entrega).
+- **F1, entrega (D25):** la guardia de rutas es una función que resuelve (con enlaces) y comprueba que queda dentro;
+  el regex de los esquemas solo ayuda al editor. el esquema no impide que `delivery.template` salga de la carpeta de entrega
   (`../{key}.png`, porque `{key}` lleva `/` a propósito); la entrega tiene que resolver la ruta final, con enlaces,
   y rechazarla si queda fuera de `delivery.dir`. Igual con `references` (enlaces que salgan del proyecto).
 - **Cuando la persona avise:** revisar las actualizaciones de Tarkor (otro repo) sobre su generador de imágenes: lo lee

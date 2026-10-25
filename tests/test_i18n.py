@@ -32,13 +32,11 @@ class LocaleTests(unittest.TestCase):
             for code in S.CODES:
                 self.assertIn("schema." + code, data, (lang, code))
 
-    def test_every_emitted_code_is_listed(self):
-        import inspect
-        src = inspect.getsource(S)
-        for code in set(__import__("re").findall(r'add\("(\w+)"|ValidationError\([^"]*"(\w+)"', src)):
-            for c in code:
-                if c:
-                    self.assertIn(c, S.CODES)
+    def test_codes_have_same_placeholders_in_both_languages(self):
+        es, en = load("es"), load("en")
+        for code in S.CODES:
+            key = "schema." + code
+            self.assertEqual(placeholders(es[key]), placeholders(en[key]), key)
 
     def test_all_messages_render(self):
         params = {"path": "/p", "name": "n", "expected": "e", "allowed": "a",
@@ -81,6 +79,16 @@ class DefaultLangTests(unittest.TestCase):
     def test_lc_all_precedes_lang(self):
         self.check({"LC_ALL": "es_ES.UTF-8", "LANG": "en_US.UTF-8"}, "es")
         self.check({"LC_ALL": "en_US.UTF-8", "LANG": "es_ES.UTF-8"}, "en")
+
+    def test_full_precedence_order(self):
+        env = {"GIMG_LANG": "en", "LC_ALL": "es", "LC_MESSAGES": "es", "LANG": "es"}
+        self.check(env, "en")
+        del env["GIMG_LANG"]
+        self.check(env, "es")
+        self.check({"LC_ALL": "en_US", "LC_MESSAGES": "es_ES", "LANG": "es_ES"}, "en")
+        self.check({"LC_MESSAGES": "es_ES", "LANG": "en_US"}, "es")
+        self.check({"LC_MESSAGES": "en_US", "LANG": "es_ES"}, "en")
+        self.check({"LC_ALL": "", "LC_MESSAGES": "", "LANG": "es_ES"}, "es")
 
     def test_default_en(self):
         self.check({}, "en")

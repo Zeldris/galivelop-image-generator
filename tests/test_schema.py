@@ -21,8 +21,14 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(codes(True, {"type": "integer"}), [("", "type")])
         self.assertEqual(codes(False, {"type": "number"}), [("", "type")])
 
-    def test_whole_float_is_not_integer(self):
-        self.assertEqual(codes(1.0, {"type": "integer"}), [("", "type")])
+    def test_whole_float_is_integer(self):
+        self.assertEqual(codes(1280.0, {"type": "integer"}), [])
+        self.assertEqual(codes(1.5, {"type": "integer"}), [("", "type")])
+
+    def test_non_finite_is_not_a_number(self):
+        for value in (float("nan"), float("inf"), float("-inf")):
+            for name in ("number", "integer"):
+                self.assertEqual(codes(value, {"type": name}), [("", "type")], (value, name))
 
     def test_int_is_number(self):
         self.assertEqual(codes(1, {"type": "number"}), [])
@@ -71,6 +77,36 @@ class KeywordTests(unittest.TestCase):
         sch = {"enum": ["a", "b"]}
         self.assertEqual(codes("a", sch), [])
         self.assertEqual(codes("c", sch), [("", "enum")])
+
+    def test_enum_and_const_do_not_equate_bool_and_number(self):
+        self.assertEqual(codes(True, {"enum": [1]}), [("", "enum")])
+        self.assertEqual(codes(0, {"enum": [False]}), [("", "enum")])
+        self.assertEqual(codes(1, {"enum": [1.0]}), [])
+        self.assertEqual(codes(True, {"const": 1}), [("", "const")])
+        self.assertEqual(codes([True], {"const": [1]}), [("", "const")])
+        self.assertEqual(codes({"a": [1]}, {"const": {"a": [1.0]}}), [])
+        self.assertEqual(codes({"a": False}, {"enum": [{"a": 0}]}), [("", "enum")])
+
+    def test_false_schema(self):
+        self.assertEqual(codes(1, {"properties": {"a": False}, "required": []}), [])
+        self.assertEqual(codes({"a": 1}, {"properties": {"a": False}}), [("/a", "false")])
+        err = S.validate({"a": 1}, {"properties": {"a": False}})[0]
+        self.assertIn("/a", S.format_error(err, "en"))
+
+    def test_unlisted_code_is_an_internal_error(self):
+        with self.assertRaises(AssertionError):
+            S._error("", "bogus", {})
+
+    def test_pattern_dollar_is_ecma_end_of_input(self):
+        sch = {"pattern": "^[a-z]+$"}
+        self.assertEqual(codes("abc", sch), [])
+        self.assertEqual(codes("abc\n", sch), [("", "pattern")])
+        self.assertEqual(codes("a$", {"pattern": "^a[$]$"}), [])
+        self.assertEqual(codes("a$", {"pattern": "^a\\$$"}), [])
+
+    def test_pattern_digit_is_ascii(self):
+        self.assertEqual(codes("\u0661", {"pattern": "^\\d$"}), [("", "pattern")])
+        self.assertEqual(codes("1", {"pattern": "^\\d$"}), [])
 
     def test_const(self):
         self.assertEqual(codes(1, {"const": 1}), [])
@@ -129,6 +165,19 @@ class SchemaCheckTests(unittest.TestCase):
         with self.assertRaises(S.SchemaError) as cm:
             S.validate(1, {"$ref": "#/$defs/missing"})
         self.assertIn("unresolved", str(cm.exception))
+
+    def test_invalid_pattern_rejected(self):
+        with self.assertRaises(S.SchemaError) as cm:
+            S.check_schema({"properties": {"a": {"pattern": "("}}})
+        self.assertIn("pattern", str(cm.exception))
+
+    def test_unresolved_ref_rejected_at_load(self):
+        for sch in ({"$ref": "#/$defs/missing"},
+                    {"$defs": {"a": {"$ref": "#/$defs/missing"}}}):
+            with self.assertRaises(S.SchemaError) as cm:
+                S.check_schema(sch)
+            self.assertIn("unresolved", str(cm.exception))
+        S.check_schema({"$defs": {"a": {"type": "string"}}, "$ref": "#/$defs/a"})
 
     def test_format_error(self):
         err = S.validate({}, {"required": ["a"]})[0]

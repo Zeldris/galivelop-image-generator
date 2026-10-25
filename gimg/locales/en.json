@@ -12,5 +12,6 @@
   "schema.maxItems": "{path}: must have at most {limit} items",
   "schema.minProperties": "{path}: must have at least {limit} properties",
   "schema.additionalProperties": "{path}: unknown property \"{name}\"",
-  "schema.propertyNames": "{path}: name \"{name}\" is not valid ({pattern})"
+  "schema.propertyNames": "{path}: name \"{name}\" is not valid ({pattern})",
+  "schema.false": "{path}: no value is allowed here"
 }

@@ -13,7 +13,7 @@ def default_lang() -> str:
     explicit = os.environ.get("GIMG_LANG")
     if explicit:
         return explicit
-    for var in ("LC_ALL", "LANG"):
+    for var in ("LC_ALL", "LC_MESSAGES", "LANG"):
         value = os.environ.get(var, "")
         if value.startswith("es"):
             return "es"

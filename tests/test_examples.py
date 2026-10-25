@@ -1,5 +1,6 @@
 import copy
 import json
+import re
 import unittest
 from pathlib import Path
 
@@ -41,11 +42,22 @@ class ExampleTests(unittest.TestCase):
             self.assertEqual(self.errs(self.order_with(key=key), self.order_schema),
                              [("/key", "pattern")], key)
 
+    def test_order_key_rejects_trailing_newline(self):
+        self.assertEqual(self.errs(self.order_with(key="fauna/x\n"), self.order_schema),
+                         [("/key", "pattern")])
+
+    def test_order_profile_rejects_hyphen_and_newline(self):
+        for name in ("banner-thumb", "banner\n", "1x", "Banner"):
+            self.assertEqual(self.errs(self.order_with(profile=name), self.order_schema),
+                             [("/profile", "pattern")], name)
+
     def test_order_bad_references(self):
-        for ref in ("/etc/passwd", "../x.png", "a/../../x.png", "~/x", "a\\b.png", ""):
-            got = self.errs(self.order_with(references=[ref]), self.order_schema)
-            self.assertEqual(got[0][0], "/references/0", ref)
-            self.assertIn(got[0][1], ("pattern", "minLength"), ref)
+        for ref in ("/etc/passwd", "../x.png", "a/../../x.png", "~/x", "a\\b.png",
+                    "a\n/../../etc/passwd", "a\x00b", "a\x7f"):
+            self.assertEqual(self.errs(self.order_with(references=[ref]), self.order_schema),
+                             [("/references/0", "pattern")], repr(ref))
+        self.assertEqual(self.errs(self.order_with(references=[""]), self.order_schema),
+                         [("/references/0", "minLength"), ("/references/0", "pattern")])
 
     def test_order_good_reference_with_dots_in_name(self):
         order = self.order_with(references=["refs/a..b.png"])
@@ -76,6 +88,79 @@ class ExampleTests(unittest.TestCase):
         proj["delivery"]["template"] = "{key}-{profile}.jpg"
         self.assertEqual(self.errs(proj, self.project_schema),
                          [("/delivery/template", "pattern")])
+
+    def test_project_template_rules(self):
+        bad = ("/etc/x.png", "../{key}-{profile}.png", "fixed.png", "{key}.png",
+               "{foo}-{key}-{profile}.png", "~/{key}-{profile}.png", "a/../{key}-{profile}.png",
+               "{key}-{profile}.png\n", "{key} {profile}.png", "{key}-{profile}.png/")
+        for tpl in bad:
+            proj = copy.deepcopy(self.project)
+            proj["delivery"]["template"] = tpl
+            self.assertEqual(self.errs(proj, self.project_schema),
+                             [("/delivery/template", "pattern")], repr(tpl))
+        for tpl in ("{key}-{profile}.png", "img/{profile}/{key}.png", "a..b/{key}_{profile}.png"):
+            proj = copy.deepcopy(self.project)
+            proj["delivery"]["template"] = tpl
+            self.assertEqual(S.validate(proj, self.project_schema), [], tpl)
+
+    def test_project_delivery_dir_newline(self):
+        proj = copy.deepcopy(self.project)
+        proj["delivery"]["dir"] = "a\n/../../etc"
+        self.assertEqual(self.errs(proj, self.project_schema), [("/delivery/dir", "pattern")])
+
+    def test_project_hyphenated_profile_name(self):
+        proj = copy.deepcopy(self.project)
+        proj["profiles"]["banner-thumb"] = proj["profiles"]["banner"]
+        proj["profiles"]["banner\n"] = proj["profiles"]["banner"]
+        self.assertEqual(self.errs(proj, self.project_schema),
+                         [("/profiles/banner\n", "propertyNames"),
+                          ("/profiles/banner-thumb", "propertyNames")])
+
+    def test_project_min_version_non_ascii_digits(self):
+        proj = copy.deepcopy(self.project)
+        proj["minVersion"] = "\u0661.\u0660.\u0660"
+        self.assertEqual(self.errs(proj, self.project_schema), [("/minVersion", "pattern")])
+        proj["minVersion"] = "1.0.0\n"
+        self.assertEqual(self.errs(proj, self.project_schema), [("/minVersion", "pattern")])
+
+    def test_order_params_non_finite(self):
+        for value in (float("nan"), float("inf")):
+            order = self.order_with(params={"cfg": value})
+            self.assertEqual(self.errs(order, self.order_schema), [("/params/cfg", "type")])
+
+    def test_whole_float_size_is_valid(self):
+        proj = copy.deepcopy(self.project)
+        proj["profiles"]["banner"]["width"] = 1280.0
+        self.assertEqual(S.validate(proj, self.project_schema), [])
+        proj["profiles"]["banner"]["width"] = 1280.5
+        self.assertEqual(self.errs(proj, self.project_schema), [("/profiles/banner/width", "type")])
+
+    def test_shared_defs_are_identical_across_schemas(self):
+        seen = {}
+        for name in ("project-config", "order", "machine-profile"):
+            for key, definition in S.load_schema(name).get("$defs", {}).items():
+                seen.setdefault(key, []).append((name, definition))
+        for key in ("name", "profileName", "relativePath", "steps", "cfg", "sampler"):
+            self.assertTrue(seen.get(key), key)
+        for key, copies in seen.items():
+            for name, definition in copies[1:]:
+                self.assertEqual(definition, copies[0][1], "%s: %s vs %s" % (key, name, copies[0][0]))
+
+    def test_readme_examples_validate(self):
+        for readme in ("README.md", "README.en.md"):
+            with open(ROOT / readme, encoding="utf-8") as fh:
+                blocks = re.findall(r"```json\n(.*?)```", fh.read(), re.S)
+            projects = orders = 0
+            for block in blocks:
+                data = json.loads(block)
+                if "profiles" in data:
+                    projects += 1
+                    self.assertEqual(S.validate(data, self.project_schema), [], readme)
+                if "key" in data:
+                    orders += 1
+                    self.assertEqual(S.validate(data, self.order_schema), [], readme)
+            self.assertGreaterEqual(projects, 1, readme)
+            self.assertGreaterEqual(orders, 1, readme)
 
     def test_project_unsafe_delivery_dir_and_manifest(self):
         proj = copy.deepcopy(self.project)

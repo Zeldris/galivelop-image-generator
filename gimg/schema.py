@@ -1,7 +1,9 @@
 """Small strict validator for the JSON Schema subset used by gimg."""
 from __future__ import annotations
 
+import functools
 import json
+import math
 import re
 from pathlib import Path
 from typing import NamedTuple
@@ -24,7 +26,7 @@ VALIDATING = frozenset(
 CODES = (
     "required", "type", "enum", "const", "pattern", "minimum", "maximum",
     "minLength", "maxLength", "minItems", "maxItems", "minProperties",
-    "additionalProperties", "propertyNames",
+    "additionalProperties", "propertyNames", "false",
 )
 TYPES = ("object", "array", "string", "integer", "number", "boolean", "null")
 
@@ -39,7 +41,34 @@ class ValidationError(NamedTuple):
     params: dict
 
 
-def _check_schema(schema, where="#"):
+def _ecma_pattern(pattern):
+    """Translate an ECMA-262 pattern to Python: `$` only matches at the very end."""
+    out = []
+    in_class = False
+    i = 0
+    while i < len(pattern):
+        ch = pattern[i]
+        if ch == "\\":
+            out.append(pattern[i:i + 2])
+            i += 2
+            continue
+        if in_class:
+            in_class = ch != "]"
+        elif ch == "[":
+            in_class = True
+        elif ch == "$":
+            ch = r"\Z"
+        out.append(ch)
+        i += 1
+    return "".join(out)
+
+
+@functools.lru_cache(maxsize=None)
+def _compile(pattern):
+    return re.compile(_ecma_pattern(pattern), re.ASCII)
+
+
+def _check_schema(schema, root, where="#"):
     if isinstance(schema, bool):
         return
     if not isinstance(schema, dict):
@@ -51,22 +80,29 @@ def _check_schema(schema, where="#"):
             raise SchemaError("%s: unsupported keyword %r" % (where, key))
         if key in ("properties", "$defs"):
             for name, sub in value.items():
-                _check_schema(sub, "%s/%s/%s" % (where, key, name))
+                _check_schema(sub, root, "%s/%s/%s" % (where, key, name))
         elif key in ("items", "propertyNames") or (
             key == "additionalProperties" and not isinstance(value, bool)
         ):
-            _check_schema(value, "%s/%s" % (where, key))
+            _check_schema(value, root, "%s/%s" % (where, key))
         elif key == "type":
             names = value if isinstance(value, list) else [value]
             for name in names:
                 if name not in TYPES:
                     raise SchemaError("%s: unknown type %r" % (where, name))
-        elif key == "$ref" and not (isinstance(value, str) and value.startswith("#/")):
-            raise SchemaError("%s: only local '#/...' references are supported" % where)
+        elif key == "pattern":
+            try:
+                _compile(value)
+            except (re.error, TypeError) as exc:
+                raise SchemaError("%s: invalid pattern %r: %s" % (where, value, exc))
+        elif key == "$ref":
+            if not (isinstance(value, str) and value.startswith("#/")):
+                raise SchemaError("%s: only local '#/...' references are supported" % where)
+            _resolve(root, value)
 
 
 def check_schema(schema: dict) -> None:
-    _check_schema(schema)
+    _check_schema(schema, schema)
 
 
 def load_schema(name: str) -> dict:
@@ -90,9 +126,30 @@ def _is_type(value, name):
         return value is None
     if isinstance(value, bool):
         return False
-    if name == "integer":
-        return isinstance(value, int)
-    return isinstance(value, (int, float))
+    if isinstance(value, int):
+        return True
+    if not isinstance(value, float) or not math.isfinite(value):
+        return False
+    return name == "number" or value.is_integer()
+
+
+def _same(a, b):
+    """JSON equality: booleans are not numbers, 1 equals 1.0, deep for containers."""
+    if isinstance(a, bool) or isinstance(b, bool):
+        return isinstance(a, bool) and isinstance(b, bool) and a == b
+    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+        return a == b
+    if isinstance(a, list) and isinstance(b, list):
+        return len(a) == len(b) and all(_same(x, y) for x, y in zip(a, b))
+    if isinstance(a, dict) and isinstance(b, dict):
+        return set(a) == set(b) and all(_same(a[k], b[k]) for k in a)
+    return type(a) is type(b) and a == b
+
+
+def _error(path, code, params):
+    if code not in CODES:
+        raise AssertionError("unlisted error code %r" % code)
+    return ValidationError(path, code, params)
 
 
 def _resolve(root, ref):
@@ -113,22 +170,22 @@ def _validate(value, schema, root, path, errors):
     if schema is True:
         return
     if schema is False:
-        errors.append(ValidationError(path, "type", {"expected": "nothing"}))
+        errors.append(_error(path, "false", {}))
         return
     if "$ref" in schema:
         _validate(value, _resolve(root, schema["$ref"]), root, path, errors)
 
     def add(code, **params):
-        errors.append(ValidationError(path, code, params))
+        errors.append(_error(path, code, params))
 
     if "type" in schema:
         names = schema["type"] if isinstance(schema["type"], list) else [schema["type"]]
         if not any(_is_type(value, n) for n in names):
             add("type", expected="/".join(names))
             return
-    if "enum" in schema and value not in schema["enum"]:
+    if "enum" in schema and not any(_same(value, v) for v in schema["enum"]):
         add("enum", allowed=", ".join(json.dumps(v) for v in schema["enum"]))
-    if "const" in schema and value != schema["const"]:
+    if "const" in schema and not _same(value, schema["const"]):
         add("const", expected=json.dumps(schema["const"]))
 
     if isinstance(value, str):
@@ -136,7 +193,7 @@ def _validate(value, schema, root, path, errors):
             add("minLength", limit=schema["minLength"])
         if "maxLength" in schema and len(value) > schema["maxLength"]:
             add("maxLength", limit=schema["maxLength"])
-        if "pattern" in schema and not re.search(schema["pattern"], value):
+        if "pattern" in schema and not _compile(schema["pattern"]).search(value):
             add("pattern", pattern=schema["pattern"])
 
     if isinstance(value, (int, float)) and not isinstance(value, bool):
@@ -168,7 +225,7 @@ def _validate(value, schema, root, path, errors):
                 if sub:
                     pat = sub[0].params.get("pattern", "")
                     errors.append(
-                        ValidationError(
+                        _error(
                             _pointer(path, key), "propertyNames",
                             {"name": key, "pattern": pat},
                         )
@@ -179,7 +236,7 @@ def _validate(value, schema, root, path, errors):
                 _validate(item, props[key], root, _pointer(path, key), errors)
             elif extra is False:
                 errors.append(
-                    ValidationError(_pointer(path, key), "additionalProperties", {"name": key})
+                    _error(_pointer(path, key), "additionalProperties", {"name": key})
                 )
             elif extra is not True:
                 _validate(item, extra, root, _pointer(path, key), errors)

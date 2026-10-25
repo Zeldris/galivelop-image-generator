@@ -84,7 +84,8 @@ _Evitar_: preset, modo
 _En código_: machine profile
 
 **Perfil**:
-Un tipo de imagen con nombre y tamaño fijos que declara un proyecto (p. ej. `banner`, `thumbnail`).
+Un tipo de imagen con nombre y tamaño fijos que declara un proyecto (p. ej. `banner`, `thumbnail`); su nombre no
+lleva guion.
 _Evitar_: tamaño, formato, miniatura
 _En código_: profile
 
