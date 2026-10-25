@@ -4,6 +4,7 @@ import stat
 import unittest
 from unittest import mock
 
+from gimg.errors import GimgError
 from gimg import delivery, engine, orders, worker
 from tests.test_queue import QueueBase
 
@@ -365,6 +366,68 @@ class DeliveryRollbackTests(DeliveryBase):
                 delivery._copy(src, out / "a-banner.png")
         self.assertEqual(list(out.iterdir()), [])
         self.assertEqual(len(os.listdir("/proc/self/fd")), fds)
+
+
+class DeliveryFixesTests(DeliveryBase):
+    def test_no_lock_file_in_project_root(self):
+        one, two = self.attempts()
+        delivery.choose("proj", "a", "banner", one)
+        delivery.choose("proj", "a", "banner", two)
+        delivery.undo("proj", "a", "banner")
+        delivery.undo("proj", "a", "banner")
+        self.assertEqual([p for p in self.projects["proj"].rglob("*.lock")], [])
+
+    def test_target_inside_git_or_config_is_rejected(self):
+        one, _ = self.attempts()
+        for fields, code in (({"dir": ".", "template": ".git/{key}-{profile}.png"}, "project.forbidden_git"),
+                             ({"dir": ".", "template": ".GIT/{key}-{profile}.png"}, "project.forbidden_git")):
+            self.set_delivery(**fields)
+            self.assertEqual(self.code(delivery.choose, "proj", "a", "banner", one), code, fields)
+            self.assertEqual(self.state(), (None, []))
+        self.assertFalse((self.projects["proj"] / ".git").exists())
+
+    def test_two_pairs_same_target_refused(self):
+        cfg = json.loads(self.config().read_text())
+        cfg["profiles"]["banne"] = cfg["profiles"]["banner"]
+        cfg["delivery"]["template"] = "{profile}{key}.png"
+        self.config().write_text(json.dumps(cfg))
+        # ("a", "banner") and ("ra", "banne") both render to bannera.png... via banner+a / banne+ra
+        one, = self.attempts(1, key="a", profile="banner")
+        other, = self.attempts(1, key="ra", profile="banne")
+        delivery.choose("proj", "a", "banner", one)
+        with self.assertRaises(GimgError) as cm:
+            delivery.choose("proj", "ra", "banne", other)
+        self.assertEqual((cm.exception.code, cm.exception.params["otherKey"], cm.exception.params["otherProfile"]),
+                         ("delivery.target_taken", "a", "banner"))
+        self.assertEqual(self.state("ra", "banne"), (None, []))
+        self.assertEqual(self.delivered("uploads/images/bannera.png").read_bytes(),
+                         orders.attempt_image("proj", "a", "banner", orders.get("proj", "a", "banner")["attempts"][0]).read_bytes())
+        delivery.undo("proj", "a", "banner")
+        delivery.choose("proj", "ra", "banne", other)  # free again
+
+    def test_choose_waits_for_the_delivery_lock(self):
+        import threading
+        one, _ = self.attempts()
+        done = threading.Event()
+        with delivery._lock("proj"):
+            thread = threading.Thread(target=lambda: (delivery.choose("proj", "a", "banner", one), done.set()))
+            thread.start()
+            self.assertFalse(done.wait(0.4))
+            self.assertEqual(self.state(), (None, []))
+        thread.join(5)
+        self.assertTrue(done.is_set())
+        self.assertEqual(self.state(), (one, [None]))
+
+    def test_attempt_flipping_from_discarded_is_reverted(self):
+        one, two = self.attempts()
+        orders.mark("proj", "a", "banner", two, "discarded")
+        stale = orders.get("proj", "a", "banner")
+        orders.mark("proj", "a", "banner", two, "candidate")
+        with mock.patch.object(orders, "get", return_value=stale):
+            self.assertEqual(self.code(delivery.choose, "proj", "a", "banner", two), "order.choose_discarded")
+        self.assertEqual(self.state(), (None, []))
+        self.assertFalse((self.projects["proj"] / "galivelop-images.manifest.json").exists())
+        self.assertFalse(self.delivered().exists())
 
 
 class AttemptEngineTests(DeliveryBase):

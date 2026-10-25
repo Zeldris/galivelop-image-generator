@@ -10,7 +10,7 @@
 |---|---|
 | **Rama** | `f1-nucleo` |
 | **Fase / tarea** | F1 Núcleo: contrato y pasos F1.1-F1.6 en `docs/plan.md` («F1 en detalle»); compactaciones: presupuesto 1, llevadas 0 |
-| **Último punto estable** | F1.6 hecho: `gimg/cli.py` + `python3 -m gimg`, `--json` y `--lang`, test de extremo a extremo (`tests/test_cli.py`), README es/en con el uso; check en verde, 267 tests. F1 completa, sin revisar |
+| **Último punto estable** | F1.6 hecho: `gimg/cli.py` + `python3 -m gimg`, `--json` y `--lang`, test de extremo a extremo (`tests/test_cli.py`), README es/en con el uso; check en verde, 267 tests. F1 completa, sin revisar. Revisión de F1, arreglos de entrega: claves `error.delivery.*` y `error.project.bad_name` + test que exige texto a todo código lanzado, cerrojo de entrega en el directorio de datos (choose/undo enteros bajo él), destino sin `.git`/config, colisión `delivery.target_taken`; 273 tests |
 | **Siguiente paso** | Revisión de F1 antes de `main`: fase 1 `/code-review --max-findings all` del diff contra `origin/main` (sesión principal), luego fases 2 y 3 de `AGENTS.md` |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 

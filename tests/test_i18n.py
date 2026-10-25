@@ -19,7 +19,34 @@ def placeholders(text):
     return {f for _, f, _, _ in string.Formatter().parse(text) if f}
 
 
+def raised_codes():
+    """Literal error codes raised in gimg/: first argument of GimgError/PathError/make_error and `code` defaults."""
+    import ast
+    found = set()
+    for path in sorted((LOCALES.parent).glob("*.py")):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if isinstance(node, ast.Call):
+                name = getattr(node.func, "id", getattr(node.func, "attr", ""))
+                if name in ("GimgError", "PathError", "make_error") and node.args \
+                        and isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, str):
+                    found.add(node.args[0].value)
+            elif isinstance(node, ast.FunctionDef):
+                args = node.args.args
+                for arg, default in zip(args[len(args) - len(node.args.defaults):], node.args.defaults):
+                    if arg.arg == "code" and isinstance(default, ast.Constant) and isinstance(default.value, str):
+                        found.add(default.value)
+    return found
+
+
 class LocaleTests(unittest.TestCase):
+    def test_every_raised_error_code_has_text(self):
+        codes = raised_codes()
+        self.assertIn("delivery.reserved", codes)  # the scan itself works
+        self.assertIn("project.bad_name", codes)
+        for lang in ("es", "en"):
+            missing = sorted(c for c in codes if "error." + c not in load(lang))
+            self.assertEqual(missing, [], lang)
+
     def test_same_keys_and_placeholders(self):
         es, en = load("es"), load("en")
         self.assertEqual(set(es), set(en))

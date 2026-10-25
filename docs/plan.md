@@ -178,7 +178,7 @@ y manifiesto legible (`delivery.manifest_corrupt`); 2) se cambia el pedido; 3) s
 (`delivery.write_failed`), se revierte el pedido (`orders.undo` tras un `choose`; `orders.choose` de la anterior tras un `undo`, a mejor
 esfuerzo) y se relanza; si el archivo entregado ya había cambiado (falló la escritura del manifiesto tras la copia o el borrado), la
 reversión también lo restaura (copia de nuevo la imagen de la elegida anterior, o quita el archivo si no había; el manifiesto en disco
-no cambió porque su escritura es atómica) y, si eso también falla, el error que se relanza es el original; si falla el paso 1, el pedido no cambia. Elegir la ya elegida vuelve a entregarla. Un intento
+no cambió porque su escritura es atómica) y, si eso también falla, el error que se relanza es el original; si falla el paso 1, el pedido no cambia. Elegir la ya elegida vuelve a entregarla. **Cerrojo:** `choose`/`undo` enteros (leer el pedido, decidir el plan, cambiar el pedido, entregar y revertir) corren bajo un solo cerrojo por proyecto, `<datos>/projects/<proyecto>/delivery.lock`, nunca dentro del proyecto entregado; el manifiesto se escribe bajo él. Si un intento deja de estar descartado entre leer y cambiar el pedido (un `mark` fuera del cerrojo), se revierte y se da `order.choose_discarded`/`order.undo_discarded`. Un intento
 guarda `engine` y `engineVersion` (los pone el trabajador) y el manifiesto los copia (`null` si falta, en intentos antiguos). Una carpeta
 de entrega que sea un enlace hacia fuera ya la rechaza `projects.get` al cargar la configuración (`path.outside`)
 
