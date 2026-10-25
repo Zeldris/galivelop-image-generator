@@ -70,5 +70,10 @@
   "error.worker.image_move": "no se pudo guardar la imagen del intento: {reason}",
   "error.engine.timeout": "el motor superó el tiempo máximo",
   "error.engine.failed": "el motor falló: {message}",
-  "error.worker.unexpected": "error inesperado del trabajador: {message}"
+  "error.worker.unexpected": "error inesperado del trabajador: {message}",
+  "delivery.reserved": "la plantilla de entrega «{path}» cae sobre el manifiesto, la configuración o la propia carpeta de entrega",
+  "delivery.manifest_corrupt": "el manifiesto {path} está dañado; arréglalo o bórralo",
+  "delivery.source_missing": "falta la imagen del intento {attempt} ({path}); no se entrega nada",
+  "delivery.reference_missing": "la referencia «{path}» no existe o no es un archivo; no se entrega nada",
+  "delivery.write_failed": "no se pudo entregar «{path}»: {reason}"
 }

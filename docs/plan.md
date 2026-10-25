@@ -167,6 +167,18 @@ references, engine, engineVersion, attemptId, chosenAt}}}}`, con `file` relativo
 ordenadas, sangría 2 y salto final. Deshacer hasta `null` borra el archivo entregado y su entrada. Las referencias
 pasan por `inside(root, …)` y tienen que existir.
 
+API: `delivery.choose(project, key, profile, attempt_id)` y `delivery.undo(project, key, profile)` envuelven a `orders.choose`/`undo`
+y devuelven su `{old, new}`; la CLI solo llama a estas. **Orden y fallos:** 1) se prepara sin tocar nada: ruta destino (la
+segunda guardia es relativa a la carpeta de entrega, así `../` o un enlace que salga de ella se rechazan con `path.*`; el
+destino no puede ser el manifiesto, la configuración ni la propia carpeta: `delivery.reserved`), imagen del intento (`delivery.source_missing`),
+referencias (`delivery.reference_missing`) y manifiesto legible (`delivery.manifest_corrupt`); 2) se cambia el pedido; 3) se copia
+(temporal en la carpeta destino + `os.replace`, umask respetada) y se escribe el manifiesto bajo `fsutil.lock`, o, si la nueva elegida es
+`null`, se borra el archivo (si no existe no es error) y su entrada (la clave sin perfiles se quita). Si el paso 3 falla
+(`delivery.write_failed`), se revierte el pedido (`orders.undo` tras un `choose`; `orders.choose` de la anterior tras un `undo`, a mejor
+esfuerzo) y se relanza; si falla el paso 1, el pedido no cambia. Elegir la ya elegida vuelve a entregarla. Un intento
+guarda `engine` y `engineVersion` (los pone el trabajador) y el manifiesto los copia (`null` si falta, en intentos antiguos). Una carpeta
+de entrega que sea un enlace hacia fuera ya la rechaza `projects.get` al cargar la configuración (`path.outside`)
+
 **CLI** (`gimg/cli.py`, `python3 -m gimg`; el lanzador `gimg` llega con `instalar.sh` en F2). Órdenes en inglés:
 `project add|remove|list`; `order submit <proyecto> <archivo|->` (crea o actualiza y encola `count` intentos, dice
 el estimado); `order list <proyecto> [--profile] [--chosen|--unchosen]`; `order show <proyecto> <key> <perfil>`;

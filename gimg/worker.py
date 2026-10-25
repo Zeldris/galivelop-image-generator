@@ -131,7 +131,8 @@ def _generate(entry: dict, eng, machine: dict, state: dict):
     state["final"] = final
     attempt_id = orders.add_attempt(project_name, key, profile, {
         "seed": entry["seed"], "prompt": entry["prompt"], "params": params,
-        "references": entry["references"]}, entry_id=entry_id)
+        "references": entry["references"], "engine": eng.provider,
+        "engineVersion": state["result"].engine_version}, entry_id=entry_id)
     state["final"] = None
     return attempt_id
 

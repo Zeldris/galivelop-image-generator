@@ -10,8 +10,8 @@
 |---|---|
 | **Rama** | `f1-nucleo` |
 | **Fase / tarea** | F1 Núcleo: contrato y pasos F1.1-F1.6 en `docs/plan.md` («F1 en detalle»); compactaciones: presupuesto 1, llevadas 0 |
-| **Último punto estable** | F1.4 hecho y revisado (arreglos aplicados): cola con recuperación por `worker.lock`, error `{code, params}`, imagen `attempts/q<entrada>.png` con `add_attempt` idempotente por entrada; revisión de los arreglos hecha; check en verde, 222 tests |
-| **Siguiente paso** | F1.5 (`delivery` y manifiesto, enganchados a `choose`/`undo`, con la guardia de rutas final y de referencias de «Pendiente»; lee la imagen con `orders.attempt_image`) por subagente |
+| **Último punto estable** | F1.5 hecho (sin revisar): `gimg/delivery.py` (`choose`/`undo` con entrega y manifiesto, guardia de plantilla relativa a la carpeta de entrega, revierte el pedido si falla), `engine`/`engineVersion` en el intento; check en verde, 247 tests |
+| **Siguiente paso** | F1.6: `gimg/cli.py` (`python3 -m gimg`; elegir y deshacer por `delivery.choose`/`undo`, nunca `orders.choose`), README es/en y test de extremo a extremo; luego revisión de F1.5 |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
@@ -41,10 +41,6 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
   - Si `add_attempt` falla después de escribir `order.json`, el `finally` del trabajador borra la imagen y queda un
     intento con `queueEntry` sin imagen: comprobar con `attempt_for_entry` antes de borrar.
   - `queue.is_cancel_requested` lee la cola entera bajo cerrojo cada 20 ms durante la generación; espaciar el sondeo si la cola crece.
-- **F1, entrega (D25):** la guardia de rutas es una función que resuelve (con enlaces) y comprueba que queda dentro;
-  el regex de los esquemas solo ayuda al editor. el esquema no impide que `delivery.template` salga de la carpeta de entrega
-  (`../{key}.png`, porque `{key}` lleva `/` a propósito); la entrega tiene que resolver la ruta final, con enlaces,
-  y rechazarla si queda fuera de `delivery.dir`. Igual con `references` (enlaces que salgan del proyecto).
 - **Cuando la persona avise:** revisar las actualizaciones de Tarkor (otro repo) sobre su generador de imágenes: lo lee
   un subagente `Explore` que devuelve un resumen con rutas (`orchestrate-dealer`); desde aquí no se modifica.
 - El flujo copiado es la 0.4.0 **sin publicar** (rama `ccr-6dfbc880-ddr41g` del flujo, commit `d227bbf`; su `main` está en
