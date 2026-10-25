@@ -1,0 +1,351 @@
+{
+  "$comment": "galivelop-workflow v0.4.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/zeldris/Galivelop-workflow/main/schema/gw.schema.json",
+  "title": "Galivelop-workflow project config (.claude/gw.json)",
+  "description": "Everything that varies between projects using Galivelop-workflow. Read only by scripts/config.py.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "language",
+    "log",
+    "protectedBranch",
+    "pushToProtected",
+    "check",
+    "reviewMark",
+    "content"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?$",
+      "description": "Workflow version the project was applied with."
+    },
+    "language": {
+      "enum": [
+        "es",
+        "en"
+      ],
+      "description": "Templates and reply language."
+    },
+    "visibleLanguages": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 2
+      },
+      "description": "Languages every user-visible text must exist in (REVIEW.md)."
+    },
+    "log": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Hand-off log path, relative to the repo root."
+    },
+    "logRows": {
+      "type": "boolean",
+      "default": false,
+      "description": "One row per branch with a size limit (bitacora.py)."
+    },
+    "protectedBranch": {
+      "type": "string",
+      "minLength": 1
+    },
+    "pushToProtected": {
+      "enum": [
+        "direct",
+        "pr"
+      ],
+      "description": "How code reaches the protected branch. Both modes: pre-push requires the review mark on any direct push that brings code. pr: the PreToolUse hook also guards PR create/merge."
+    },
+    "install": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "default": [],
+      "description": "Commands that install dependencies (run in cloud sessions and CI)."
+    },
+    "ciInstall": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Commands that install dependencies in CI only (the CI template runs them instead of `install`). Absent: CI runs `install`; [] : CI installs nothing."
+    },
+    "setup": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "default": [],
+      "description": "Commands run in cloud sessions after every `install` command, one after another (e.g. a build or a database seed); rerun only when `install` reruns."
+    },
+    "check": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "description": "Commands run in order on the commit being pushed; all must pass."
+    },
+    "checkWrapper": {
+      "type": "string",
+      "default": "",
+      "description": "Prefix put before every `check` and `relatedTests` command (e.g. tools/qa/host.sh); empty for none."
+    },
+    "worktreeLinks": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?!/)(?!(.*/)?\\.\\.(/|$)).+$"
+      },
+      "default": [
+        "node_modules",
+        ".venv"
+      ],
+      "description": "Paths (relative to the repo root, no '..') the pre-push symlinks from the main checkout into the temporary worktree where it runs `check`; a missing source is skipped."
+    },
+    "worktreeDir": {
+      "type": "string",
+      "default": "",
+      "description": "Folder (absolute, or relative to the repo root) under which the pre-push creates its temporary worktrees, for a sandbox that cannot see $TMPDIR; empty for ${TMPDIR:-/tmp}."
+    },
+    "reviewMark": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Committed file holding the reviewed commit sha."
+    },
+    "requireRetro": {
+      "type": "boolean",
+      "default": false,
+      "description": "revisado.sh requires a retro with a decided status on the branch."
+    },
+    "content": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Regexes (on repo-relative paths) of files that are content, not code: they need no code review."
+    },
+    "roadmap": {
+      "type": "boolean",
+      "default": false,
+      "description": "Optional milestones module."
+    },
+    "selector": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "case",
+              "skill"
+            ],
+            "properties": {
+              "case": {
+                "type": "string",
+                "minLength": 1
+              },
+              "skill": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sessionModel": {
+                "type": "string"
+              },
+              "subagentModel": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "logSections": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "default": [],
+      "description": "Headings of the log sections recuperar.py --estado shows after a compaction or /clear (without logRows). Empty: the first section and the one named Pendiente/Pending."
+    },
+    "designReferences": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "default": []
+    },
+    "protectedPaths": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "default": [],
+      "description": "Path prefixes an agent (CLAUDECODE=1) may not commit; pre-commit refuses them."
+    },
+    "staleRefs": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "patterns": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "default": []
+            },
+            "skip": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^(?!/)(?!(.*/)?\\.\\.(/|$)).+$"
+              },
+              "default": []
+            }
+          }
+        }
+      ],
+      "default": [],
+      "description": "Case-insensitive regexes that must not appear in docs (enlaces-md.py): a list, or {\"patterns\": [...], \"skip\": [globs]} where skip lists repo-relative files or folders the check does not read (`*` stays inside a folder, `**` crosses; a trailing / means the whole folder)."
+    },
+    "linkRoots": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?!/)(?!(.*/)?\\.\\.(/|$)).+$"
+      },
+      "default": [],
+      "description": "Folders (relative to the repo root, no '..') whose Markdown files write relative links from the repo root instead of from their own folder (enlaces-md.py)."
+    },
+    "scoutDir": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!(.*/)?\\.\\.(/|$)).+$",
+      "default": ".claude/gw/scout",
+      "description": "Folder (relative to the repo root, no '..') where scout-updates keeps its memory: architecture.md, proposals.md and the reports."
+    },
+    "relatedTests": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fast": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "command"
+                ],
+                "properties": {
+                  "command": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "The command; {files} is replaced by the changed files that apply."
+                  },
+                  "paths": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Regex (Python syntax) searched in each changed repo-relative path; the command runs only if one matches, and {files} holds only those."
+                  },
+                  "cwd": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^(?!/)(?!(.*/)?\\.\\.(/|$)).+$",
+                    "description": "Folder of the repo the command runs in; {files} arrive relative to it (files outside it are left out). No leading / and no '..'."
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "slow": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "command"
+                ],
+                "properties": {
+                  "command": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "The command; {files} is replaced by the changed files that apply."
+                  },
+                  "paths": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Regex (Python syntax) searched in each changed repo-relative path; the command runs only if one matches, and {files} holds only those."
+                  },
+                  "cwd": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^(?!/)(?!(.*/)?\\.\\.(/|$)).+$",
+                    "description": "Folder of the repo the command runs in; {files} arrive relative to it (files outside it are left out). No leading / and no '..'."
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "description": "Commands for tests of what changed; {files} is replaced by the changed files. Each entry is a string or {command, paths?, cwd?}."
+    },
+    "plan": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "default": [],
+      "description": "Plan or roadmap files/folders where tasks are ticked or struck through (bitacora.py)."
+    },
+    "taskId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Regex of the project's task ids (bitacora.py); default [A-Z]{2,5}-\\d+."
+    }
+  }
+}

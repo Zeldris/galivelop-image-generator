@@ -1,0 +1,44 @@
+{
+  "$schema": "gw/schema/gw.schema.json",
+  "version": "0.4.0",
+  "language": "es",
+  "visibleLanguages": [],
+  "log": "docs/traspaso.md",
+  "logRows": false,
+  "protectedBranch": "main",
+  "pushToProtected": "pr",
+  "install": [],
+  "setup": [],
+  "check": [
+    "bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg"
+  ],
+  "checkWrapper": "",
+  "worktreeLinks": [
+    "node_modules",
+    ".venv"
+  ],
+  "worktreeDir": "",
+  "reviewMark": "docs/registros/revisado.txt",
+  "requireRetro": false,
+  "content": [
+    "^docs/",
+    "^(README|GLOSSARY|REVIEW|CLAUDE|AGENTS|CHANGELOG|CREDITS)(\\.[a-z]{2})?\\.md$",
+    "^\\.claude/skills/.*\\.md$"
+  ],
+  "roadmap": false,
+  "selector": {
+    "cases": []
+  },
+  "logSections": [],
+  "designReferences": [],
+  "protectedPaths": [],
+  "staleRefs": [],
+  "linkRoots": [],
+  "scoutDir": ".claude/gw/scout",
+  "relatedTests": {
+    "fast": [],
+    "slow": []
+  },
+  "plan": [],
+  "taskId": "[A-Z]{2,5}-\\d+"
+}
