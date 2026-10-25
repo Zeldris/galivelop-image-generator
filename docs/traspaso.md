@@ -11,7 +11,7 @@
 | **Rama** | `diseno-generador` |
 | **Fase / tarea** | Paso 1 hecho (flujo Galivelop-workflow v0.4.0 aplicado); paso 2 en curso: diseño del generador de imágenes local reutilizable (`grilling` + `domain-modeling`; compactaciones: presupuesto 1, llevadas 0) |
 | **Último punto estable** | Diseño rondas 1-3: decisiones D1-D26 en `docs/plan.md`, ADR 0001-0002, términos en `GLOSSARY.md` |
-| **Siguiente paso** | Fase 3: `opt-tokens` y `retro` hechos (`docs/registros/retro-2026-10-25-diseno.md`); falta la marca y el PR del diseño; después F0 en rama nueva |
+| **Siguiente paso** | Tres fases hechas y marca en `b111e4f`; falta crear el PR del diseño (sin `gh` en esta máquina: la persona lo crea en GitHub con la descripción de la skill `pr`) y fusionarlo con el CI en verde; después `/clear` y F0 en rama nueva |
 | **Check** | `bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg`: verde |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
