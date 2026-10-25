@@ -62,7 +62,10 @@ class OrderTests(unittest.TestCase):
         f = self.tmp / "data" / "projects" / "proj" / "orders" / "a" / "@banner" / "order.json"
         self.assertTrue(f.is_file())
         self.assertEqual(orders.get("proj", "a", "banner"), rec)
-        self.assertEqual(orders.attempt_image_path("proj", "a", "banner", 3), f.parent / "attempts" / "3.png")
+        rec = orders.get("proj", "a", "banner")
+        rec["attempts"].append({"image": "attempts/3.png"})
+        self.assertEqual(orders.attempt_image("proj", "a", "banner", rec["attempts"][0]), f.parent / "attempts" / "3.png")
+        self.assertEqual(orders.pending_image_path("proj", "a", "banner", 4), f.parent / "attempts" / ".pending-4.png")
 
     def test_count_not_stored(self):
         self.assertNotIn("count", orders.submit("proj", self.order(count=3)))
@@ -87,7 +90,7 @@ class OrderTests(unittest.TestCase):
 
     def test_bad_project_name_in_paths(self):
         for bad in (".", "..", "a/b", "A"):
-            self.assertEqual(self.code(orders.attempt_image_path, bad, "a", "banner", 1),
+            self.assertEqual(self.code(orders.pending_image_path, bad, "a", "banner", 1),
                              "project.bad_name", bad)
 
     def test_submit_failures(self):
@@ -252,7 +255,8 @@ class OrderTests(unittest.TestCase):
         self.new_order(attempts=1)
         for key, profile in [("a//b", "banner"), ("a/./b", "banner"), ("a/@b", "banner"),
                              ("a", "p/q"), ("A B", "banner")]:
-            for fn, args in [(orders.get, ()), (orders.choose, (1,)), (orders.attempt_image_path, (1,)),
+            for fn, args in [(orders.get, ()), (orders.choose, (1,)), (orders.pending_image_path, (1,)), (orders.attempt_for_entry, (1,)),
+                             (orders.attempt_image, ({"image": "attempts/1.png"},)),
                              (orders.mark, (1, "new")), (orders.note, (1, "x")), (orders.undo, ()),
                              (orders.add_attempt, (self.spec(),)), (orders.attempt_specs, ())]:
                 self.assertEqual(self.code(fn, "proj", key, profile, *args), "order.invalid", (fn, key, profile))
@@ -270,6 +274,30 @@ class OrderTests(unittest.TestCase):
                     dict(good, attempts="x")):
             file.write_text(json.dumps(bad))
             self.assertEqual(self.code(orders.list_orders, "proj"), "order.corrupt")
+
+    def test_add_attempt_for_entry_is_idempotent(self):
+        self.new_order()
+        first = orders.add_attempt("proj", "a", "banner", self.spec(1), entry_id=7)
+        again = orders.add_attempt("proj", "a", "banner", self.spec(1), entry_id=7)
+        other = orders.add_attempt("proj", "a", "banner", self.spec(2), entry_id=8)
+        plain = orders.add_attempt("proj", "a", "banner", self.spec(3))
+        self.assertEqual((first, again, other, plain), (1, 1, 2, 3))
+        attempts = orders.get("proj", "a", "banner")["attempts"]
+        self.assertEqual([(a["image"], a.get("queueEntry")) for a in attempts],
+                         [("attempts/q7.png", 7), ("attempts/q8.png", 8), ("attempts/3.png", None)])
+        self.assertEqual(orders.attempt_for_entry("proj", "a", "banner", 8)["id"], 2)
+        self.assertIsNone(orders.attempt_for_entry("proj", "a", "banner", 9))
+        folder = orders.pending_image_path("proj", "a", "banner", 7).parent
+        self.assertEqual(orders.attempt_image("proj", "a", "banner", attempts[0]), folder / "q7.png")
+        for bad in (0, -1, True, "7", 1.5):
+            self.assertEqual(self.code(orders.add_attempt, "proj", "a", "banner", self.spec(), entry_id=bad),
+                             "order.spec_invalid", bad)
+
+    def test_attempt_image_stays_inside_order_folder(self):
+        self.new_order()
+        for image in ("../order.json", "/etc/x", "attempts/../../x"):
+            self.assertIn(self.code(orders.attempt_image, "proj", "a", "banner", {"image": image}),
+                          ("path.dotdot", "path.absolute", "path.outside"), image)
 
     def test_add_attempt_validates_fields(self):
         self.new_order()

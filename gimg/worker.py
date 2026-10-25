@@ -1,30 +1,44 @@
 """The queue worker: one process at a time (``<data>/worker.lock``, non-blocking flock).
 
-Per entry: claim -> machine profile and limits again (the profile may have changed since enqueue) -> resolve
-references (`paths.inside`, must be files; D25) -> engine -> `orders.add_attempt` -> log line -> finish.
+Right after taking its lock the worker recovers the queue (`queue.recover_orphans`): holding the lock proves no
+other worker is alive, so every ``running`` entry is dead and goes back to ``queued`` (``cancelled`` if a cancel was
+requested), and the ``.pending-<entry>.png`` files of those entries are deleted (only theirs: cheaper than walking
+every order, and a crash can only leave a pending file for an entry that was running).
 
-Image id: `orders.add_attempt` assigns the id, so the engine writes to a hidden temp file inside the
-order's ``attempts/`` folder (``.pending-<entry>.png``, same filesystem) and the worker `os.replace`s it onto
-``attempts/<id>.png`` right after `add_attempt`. The temp file is removed on every failure or cancel.
-If that move itself fails, the entry fails with ``worker.image_move`` (the attempt row stays, with no image).
+Per entry: claim -> if an attempt with ``queueEntry == entry id`` already exists (crash after `add_attempt`), skip
+the engine and finish ``done`` -> machine profile and limits again (the profile may have changed since enqueue) ->
+resolve references (`paths.inside`, must be files; D25) -> engine -> `orders.add_attempt` -> log line -> finish.
 
-Log: one line for every attempt that fails (limits, references, engine, timeout) or succeeds, with
-``app.error`` for the failures; a cancel writes no line. The queue ``error`` is the `GimgError` code or the
-engine message (``timeout`` for `EngineTimeout`).
+Image: named after the queue entry id, unique across the generator. The engine writes
+``attempts/.pending-<entry>.png``; the worker `os.replace`s it onto ``attempts/q<entry>.png`` and only then calls
+`orders.add_attempt(..., entry_id=entry)`, idempotent per entry (the attempt records ``image`` and ``queueEntry``). A crash
+at any point leaves either no attempt or one with its image, and a retry never duplicates it. The pending file is
+removed on every failure or cancel; if `add_attempt` fails the moved image is removed too.
+
+Once the attempt exists nothing can fail the entry: the success log line and `queue.finish` are best effort (an
+entry whose `finish` failed stays ``running`` and recovery deals with it), and no failure line is written. No
+`finish` error ever stops `run()`.
+
+Errors: the entry ``error`` is ``{"code", "params"}`` (`queue.make_error`; render with `queue.error_text`):
+a `GimgError` keeps its code and params, `EngineTimeout` is ``engine.timeout``, any other `EngineError` is
+``engine.failed`` with ``{"message"}``, anything else ``worker.unexpected`` with ``{"message": "Type: msg"}``.
+Log: one line for every attempt that fails (limits, references, engine, timeout) or succeeds; for failures
+``app.error`` is the English rendering of that error (e.g. "the attempt asks for 99 steps ..."); a cancel writes no line.
 """
 from __future__ import annotations
 
 import contextlib
 import fcntl
 import os
+import sys
 
 from . import engine as engine_mod
-from . import fsutil, limits, log, orders, paths, projects, queue
+from . import fsutil, i18n, limits, log, orders, paths, projects, queue
 from .errors import GimgError
 
 
 def lock_path():
-    return paths.data_dir() / "worker.lock"
+    return queue.worker_lock_path()
 
 
 @contextlib.contextmanager
@@ -57,62 +71,97 @@ def _unlink(path) -> None:
         os.unlink(path)
 
 
-def _log_failure(entry: dict, machine: dict, provider: str, message: str) -> None:
+def _error_for(exc: BaseException) -> dict:
+    if isinstance(exc, GimgError):
+        return queue.make_error(exc.code, **exc.params)
+    if isinstance(exc, engine_mod.EngineTimeout):
+        return queue.make_error("engine.timeout")
+    if isinstance(exc, engine_mod.EngineError):
+        return queue.make_error("engine.failed", message=exc.message)
+    return queue.make_error("worker.unexpected", message="%s: %s" % (type(exc).__name__, exc))
+
+
+def _log_failure(entry: dict, machine: dict, provider: str, error: dict) -> None:
     try:
-        record = log.record_for(entry["key"], entry["profile"], entry, machine, provider, error=message)
+        text = queue.error_text(error, "en") or error["code"]
+        record = log.record_for(entry["key"], entry["profile"], entry, machine, provider, error=text)
         log.append(entry["project"], record)
     except Exception:  # the log must never hide the real failure
         pass
 
 
+def _finish(entry_id, state, **kw) -> None:
+    """`queue.finish` that never raises: the entry stays ``running`` and recovery deals with it."""
+    try:
+        queue.finish(entry_id, state, **kw)
+    except Exception as exc:
+        print("gimg: could not finish queue entry %s: %s" % (entry_id, exc), file=sys.stderr)
+
+
+def _generate(entry: dict, eng, machine: dict, state: dict):
+    """Everything up to and including `add_attempt`; returns the attempt id. `state["tmp"]`/`["final"]` are
+    the files to clean up if it raises."""
+    entry_id = entry["id"]
+    project_name, key, profile = entry["project"], entry["key"], entry["profile"]
+    machine.update(limits.load_machine())
+    orders.get(project_name, key, profile)
+    existing = orders.attempt_for_entry(project_name, key, profile, entry_id)
+    if existing is not None:  # a crash after add_attempt: the attempt and its image are already there
+        return existing["id"]
+    limits.check(entry, machine)
+    project = projects.get(project_name)
+    references = _references(project, entry)
+    tmp = orders.pending_image_path(project_name, key, profile, entry_id)
+    state["tmp"] = tmp
+    params = entry["params"]
+    job = engine_mod.EngineJob(
+        prompt=entry["prompt"], width=params.get("width"), height=params.get("height"),
+        seed=entry["seed"], output=str(tmp), steps=params.get("steps"), cfg=params.get("cfg"),
+        sampler=params.get("sampler"), model=params.get("model"), references=references,
+        machine=machine, timeout_s=machine.get("timeoutS"))
+    state["result"] = eng.generate(job, lambda: queue.is_cancel_requested(entry_id))
+    if queue.is_cancel_requested(entry_id):
+        raise engine_mod.Cancelled()
+    final = tmp.parent / ("q%d.png" % entry_id)
+    try:
+        os.replace(tmp, final)
+    except OSError as exc:
+        raise GimgError("worker.image_move", reason=str(exc))
+    state["tmp"] = None
+    state["final"] = final
+    attempt_id = orders.add_attempt(project_name, key, profile, {
+        "seed": entry["seed"], "prompt": entry["prompt"], "params": params,
+        "references": entry["references"]}, entry_id=entry_id)
+    state["final"] = None
+    return attempt_id
+
+
 def _process(entry: dict, eng) -> None:
     entry_id = entry["id"]
     machine = {}
-    tmp = None
+    state = {"tmp": None, "final": None, "result": None}
     try:
-        machine = limits.load_machine()
-        limits.check(entry, machine)
-        project = projects.get(entry["project"])
-        references = _references(project, entry)
-        orders.get(entry["project"], entry["key"], entry["profile"])
-        final_probe = orders.attempt_image_path(entry["project"], entry["key"], entry["profile"], 0)
-        tmp = final_probe.parent / (".pending-%d.png" % entry_id)
-        params = entry["params"]
-        job = engine_mod.EngineJob(
-            prompt=entry["prompt"], width=params.get("width"), height=params.get("height"),
-            seed=entry["seed"], output=str(tmp), steps=params.get("steps"), cfg=params.get("cfg"),
-            sampler=params.get("sampler"), model=params.get("model"), references=references,
-            machine=machine, timeout_s=machine.get("timeoutS"))
-        result = eng.generate(job, lambda: queue.is_cancel_requested(entry_id))
-        if queue.is_cancel_requested(entry_id):
-            raise engine_mod.Cancelled()
-        attempt_id = orders.add_attempt(entry["project"], entry["key"], entry["profile"], {
-            "seed": entry["seed"], "prompt": entry["prompt"], "params": params,
-            "references": entry["references"]})
-        try:
-            os.replace(tmp, orders.attempt_image_path(
-                entry["project"], entry["key"], entry["profile"], attempt_id))
-        except OSError as exc:
-            raise GimgError("worker.image_move", reason=str(exc))
-        tmp = None
-        log.append(entry["project"], log.record_for(
-            entry["key"], entry["profile"], entry, machine, eng.provider, result=result))
-        queue.finish(entry_id, "done", attempt_id=attempt_id)
+        attempt_id = _generate(entry, eng, machine, state)
     except engine_mod.Cancelled:
-        queue.finish(entry_id, "cancelled")
-    except GimgError as exc:
-        _log_failure(entry, machine, eng.provider, exc.code)
-        queue.finish(entry_id, "failed", error=exc.code)
-    except engine_mod.EngineError as exc:  # includes EngineTimeout
-        _log_failure(entry, machine, eng.provider, exc.message)
-        queue.finish(entry_id, "failed", error=exc.message)
+        _finish(entry_id, "cancelled")
+        return
     except Exception as exc:  # a bug must not leave the entry running or kill the loop
-        message = "%s: %s" % (type(exc).__name__, exc)
-        _log_failure(entry, machine, eng.provider, message)
-        queue.finish(entry_id, "failed", error=message)
+        error = _error_for(exc)
+        _log_failure(entry, machine, eng.provider, error)
+        _finish(entry_id, "failed", error=error)
+        return
     finally:
-        if tmp is not None:
-            _unlink(tmp)
+        for leftover in (state["tmp"], state["final"]):
+            if leftover is not None:
+                _unlink(leftover)
+    # the attempt exists: from here nothing may fail the entry
+    if state["result"] is not None:
+        try:
+            log.append(entry["project"], log.record_for(
+                entry["key"], entry["profile"], entry, machine, eng.provider, result=state["result"]))
+        except Exception as exc:
+            print("gimg: could not write the log line of entry %s: %s" % (entry_id, exc), file=sys.stderr)
+    _finish(entry_id, "done", attempt_id=attempt_id)
 
 
 def run(once: bool = False, engine=None) -> int:
@@ -120,6 +169,7 @@ def run(once: bool = False, engine=None) -> int:
 
     Raises ``GimgError("worker.already_running")`` if another process holds the worker lock."""
     with _single_worker():
+        queue.recover_orphans()
         eng = engine or engine_mod.get_engine()
         handled = 0
         while True:

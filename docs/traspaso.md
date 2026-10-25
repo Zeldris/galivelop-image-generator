@@ -10,8 +10,8 @@
 |---|---|
 | **Rama** | `f1-nucleo` |
 | **Fase / tarea** | F1 Núcleo: contrato y pasos F1.1-F1.6 en `docs/plan.md` («F1 en detalle»); compactaciones: presupuesto 1, llevadas 0 |
-| **Último punto estable** | F1.4 hecho (sin revisar): `queue` (cola persistente con recuperación y poda) y `worker` (un solo trabajador, límites al ejecutar, imagen por temporal + `os.replace`, registro); F1.3 revisado antes; check en verde |
-| **Siguiente paso** | F1.5 (`delivery` y manifiesto, enganchados a `choose`/`undo`, con la guardia de rutas final y de referencias de «Pendiente») por subagente; antes, revisión corta de F1.4 |
+| **Último punto estable** | F1.4 hecho y revisado (arreglos aplicados): cola con recuperación por `worker.lock`, error `{code, params}`, imagen `attempts/q<entrada>.png` con `add_attempt` idempotente por entrada; check en verde, 221 tests |
+| **Siguiente paso** | F1.5 (`delivery` y manifiesto, enganchados a `choose`/`undo`, con la guardia de rutas final y de referencias de «Pendiente»; lee la imagen con `orders.attempt_image`) por subagente |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
@@ -36,6 +36,7 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
   - `propertyNames` solo pasa el `pattern` del primer error: si falla por otra cosa, el mensaje sale vacío.
 - **Leves de las revisiones de F1:**
   - `orders._FULL_PARAMS` repite a mano límites de `width`/`height`/`model` en vez de usar `$defs/profile` del esquema de la configuración del proyecto.
+  - `queue.is_cancel_requested` lee la cola entera bajo cerrojo cada 20 ms durante la generación; espaciar el sondeo si la cola crece.
 - **F1, entrega (D25):** la guardia de rutas es una función que resuelve (con enlaces) y comprueba que queda dentro;
   el regex de los esquemas solo ayuda al editor. el esquema no impide que `delivery.template` salga de la carpeta de entrega
   (`../{key}.png`, porque `{key}` lleva `/` a propósito); la entrega tiene que resolver la ruta final, con enlaces,

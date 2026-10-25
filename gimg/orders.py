@@ -6,7 +6,7 @@ Layout: ``<data>/projects/<project>/orders/<key>/@<profile>/order.json`` and
 This module neither enqueues (queue, F1.4) nor delivers (F1.5): `choose` and `undo` return the old and
 new chosen ids so delivery can hook in. Every read-modify-write holds `fsutil.lock` of ``order.json``.
 
-Public API: `submit`, `attempt_specs`, `add_attempt`, `attempt_image_path`, `mark`, `note`, `choose`,
+Public API: `submit`, `attempt_specs`, `add_attempt`, `attempt_for_entry`, `attempt_image`, `pending_image_path`, `mark`, `note`, `choose`,
 `undo`, `get`, `list_orders`. All raise `GimgError` with codes ``order.*`` on bad input.
 """
 from __future__ import annotations
@@ -56,9 +56,22 @@ def _order_file(project: str, key: str, profile: str) -> Path:
     return _order_dir(project, key, profile) / _ORDER_FILE
 
 
-def attempt_image_path(project: str, key: str, profile: str, attempt_id: int) -> Path:
-    """Where the image of an attempt goes: ``attempts/<id>.png``. Path only; the worker writes it."""
-    return _order_dir(project, key, profile) / "attempts" / ("%d.png" % int(attempt_id))
+def attempt_image(project: str, key: str, profile: str, attempt: dict) -> Path:
+    """Where the image of an attempt record lives: its ``image`` field, relative to the order folder
+    (``attempts/<id>.png``, or ``attempts/q<entry>.png`` for an attempt made by a queue entry).
+    The path is resolved and must stay inside the order folder (D25). Path only; nothing is read."""
+    return paths.inside(_order_dir(project, key, profile), attempt["image"])
+
+
+def pending_image_path(project: str, key: str, profile: str, entry_id: int) -> Path:
+    """Where the engine writes the image of queue entry `entry_id` before it is final:
+    ``attempts/.pending-<entry>.png`` (same filesystem as the final ``attempts/q<entry>.png``)."""
+    return _order_dir(project, key, profile) / "attempts" / (".pending-%d.png" % int(entry_id))
+
+
+def entry_image_name(entry_id: int) -> str:
+    """The ``image`` field of the attempt made by queue entry `entry_id` (unique across the generator)."""
+    return "attempts/q%d.png" % int(entry_id)
 
 
 def _profile(config: dict, profile: str) -> dict:
@@ -184,11 +197,24 @@ def attempt_specs(project: str, key: str, profile: str, count: int = 1, *,
     } for i in range(count)]
 
 
-def add_attempt(project: str, key: str, profile: str, spec: dict) -> int:
+def attempt_for_entry(project: str, key: str, profile: str, entry_id: int):
+    """The attempt made by queue entry `entry_id` (a copy), or ``None``."""
+    for item in get(project, key, profile)["attempts"]:
+        if item.get("queueEntry") == entry_id and type(entry_id) is int:
+            return copy.deepcopy(item)
+    return None
+
+
+def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None) -> int:
     """Append an attempt in state ``new`` (used by the worker after generating); returns its id.
 
     Ids are sequential from 1. `spec` needs ``seed``, ``prompt`` and ``params``; ``references``
-    defaults to the order's. ``image`` is ``attempts/<id>.png``, relative to the order folder."""
+    defaults to the order's. Without `entry_id`, ``image`` is ``attempts/<id>.png``, relative to the order
+    folder. With `entry_id` (the queue entry that made it) ``image`` is ``attempts/q<entry>.png`` and the
+    attempt records ``queueEntry``; the call is idempotent per entry: if an attempt with that
+    ``queueEntry`` exists, its id is returned and nothing is added."""
+    if entry_id is not None and (type(entry_id) is not int or entry_id < 1):
+        raise GimgError("order.spec_invalid", missing="entry_id")
     missing = [k for k in ("seed", "prompt", "params") if k not in spec]
     if missing:
         raise GimgError("order.spec_invalid", missing=", ".join(missing))
@@ -203,18 +229,25 @@ def add_attempt(project: str, key: str, profile: str, spec: dict) -> int:
         _check_fields(spec["prompt"], params, spec["seed"])
 
     def change(order):
+        if entry_id is not None:
+            for item in order["attempts"]:
+                if item.get("queueEntry") == entry_id:
+                    return item["id"]
         new_id = max((a["id"] for a in order["attempts"]), default=0) + 1
-        order["attempts"].append({
+        record = {
             "id": new_id,
             "state": "new",
             "seed": spec["seed"],
             "prompt": spec["prompt"],
             "params": copy.deepcopy(spec["params"]),
             "references": list(spec.get("references", order["references"])),
-            "image": "attempts/%d.png" % new_id,
+            "image": "attempts/%d.png" % new_id if entry_id is None else entry_image_name(entry_id),
             "note": "",
             "createdAt": _now(),
-        })
+        }
+        if entry_id is not None:
+            record["queueEntry"] = entry_id
+        order["attempts"].append(record)
         return new_id
 
     return _modify(project, key, profile, change)

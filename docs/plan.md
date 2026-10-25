@@ -85,9 +85,9 @@ cerrojo `fcntl.flock` por archivo para cada leer-modificar-escribir.
 
 **Pedidos e intentos** (`gimg/orders.py`). Un pedido vive en `<datos>/projects/<proyecto>/orders/<key>/@<perfil>/`
 (la `@` evita que la clave `a/banner` choque con la clave `a` y el perfil `banner`): `order.json` y
-`attempts/<id>.png`. `order.json`: `key`, `profile`, `prompt` (el del proyecto), `references`, `params`, `seed`,
+`attempts/<id>.png` (o `attempts/q<entrada>.png` si lo creó una entrada de la cola). `order.json`: `key`, `profile`, `prompt` (el del proyecto), `references`, `params`, `seed`,
 `createdAt`, `updatedAt`, `attempts` (lista de `{id, state, seed, prompt, params, references, image, note,
-createdAt}`, con `prompt` exacto ya con el estilo y `params` completos: `width`, `height`, `steps`, `cfg`,
+createdAt, queueEntry?}`, con `prompt` exacto ya con el estilo y `params` completos: `width`, `height`, `steps`, `cfg`,
 `sampler`, `model`), `chosen` (id o `null`) y `chosenHistory` (pila para deshacer). Estados: `new`, `candidate`,
 `discarded`. Reenviar clave + perfil actualiza prompt, referencias y parámetros y conserva los intentos (D18). Elegir
 apila la elegida anterior (aunque sea `null`); deshacer la desapila. No se elige una descartada ni se descarta la
@@ -98,6 +98,11 @@ elegida. Deshacer no restaura una descartada (`order.undo_discarded`): se marca 
 D19) + `", "` + `style` del perfil (solo si `style` no está vacío). `params` = ajustes del perfil (`width`, `height`,
 `steps`, `cfg`, `sampler`, `model`, los que defina) pisados por `params` del pedido y estos por los del intento.
 `choose` y `undo` devuelven `{old, new}` para que la entrega se enganche; elegir la ya elegida no apila.
+**Imagen de un intento:** el campo `image` (relativo a la carpeta del pedido) manda; la ruta sale de
+`orders.attempt_image(proyecto, key, perfil, intento)` (resuelta y dentro de la carpeta, D25), y la entrega de F1.5 la lee del
+registro del intento. Un intento creado por la cola lleva `queueEntry: <id de la entrada>` e `image: attempts/q<id>.png`
+(el id de entrada es único en todo el generador); `orders.add_attempt(..., entry_id=)` es idempotente por entrada (si ya hay un
+intento con ese `queueEntry` devuelve su id sin añadir fila) y `orders.attempt_for_entry` lo busca. Sin `entry_id`, `image` es `attempts/<id>.png`.
 Los textos de error de pedidos usan `{order}` (no `{key}`, que choca con `i18n.t`).
 
 **Semillas.** Con `seed` en el pedido, el intento i usa `seed + i`; sin ella, aleatoria en `[0, 2^32)`. Un intento
@@ -129,17 +134,30 @@ motor, perfil, pasos y con o sin referencia; sin datos, no hay estimado.
 cada entrada: `id`, `project`, `key`, `profile`, `seed`, `prompt`, `params`, `references`, `state` (`queued`,
 `running`, `done`, `failed`, `cancelled`), `pid`, `enqueuedAt`, `startedAt`, `finishedAt`, `error`, `attemptId`,
 `cancelRequested`. En orden de llegada; cancelar una `queued` la pasa a `cancelled`, una `running` pide cancelar.
-Una `running` cuyo `pid` ya no existe vuelve a `queued` al leer la cola (sobrevive a un reinicio). Se guardan las 200
+Una `running` cuyo trabajador murió vuelve a `queued` (o a `cancelled` con `cancelRequested`); eso lo decide el cerrojo
+`worker.lock`, no el `pid`: quien consigue tomarlo sin esperar sabe que no hay trabajador vivo, así que toda `running` está
+muerta. El trabajador lo hace justo después de tomar su cerrojo (`queue.recover_orphans`); `list`, `get` y `enqueue` lo
+intentan sin esperar (si lo toman, recuperan y lo sueltan; si no, dejan las `running`); `claim`, `cancel`, `finish`,
+`next_queued` e `is_cancel_requested` nunca recuperan. `pid` queda solo como información. La recuperación borra los
+`.pending-<entrada>.png` de las entradas recuperadas (solo esas: más barato que recorrer todos los pedidos, y un fallo solo
+puede dejarlo de una entrada que estaba `running`). Se guardan las 200
 últimas terminadas. El trabajador (`gimg/worker.py`) toma un cerrojo propio (`worker.lock`) para que corra uno solo:
 saca la primera `queued`, comprueba límites, llama al motor, crea el intento, escribe el registro y cierra la entrada.
 Detalles de F1.4: toda lectura y escritura de `queue.json` va bajo `fsutil.lock`, y la recuperación (reinicio y poda) se hace
 en esa misma transacción; una `running` con `pid` muerto y `cancelRequested` pasa a `cancelled`, no a `queued`. `enqueue` valida
 que el pedido exista y los límites del perfil de máquina de ese momento; si una spec falla, no se encola ninguna. `error` de una
-entrada fallida es el código del `GimgError` o el mensaje del motor (`timeout`). **Id del intento:** lo asigna `add_attempt`, así
-que el motor escribe en `attempts/.pending-<entrada>.png` y el trabajador lo mueve con `os.replace` a `attempts/<id>.png` justo
-después de `add_attempt` (el temporal se borra en cualquier fallo o cancelación; si el movimiento falla, la entrada falla con
-`worker.image_move` y la fila del intento queda sin imagen). **Registro:** una línea por cada intento que llega a ejecutarse y
-termina, bien o mal (límites, referencias, motor y `timeout` llevan `app.error`); cancelar no escribe línea. Los límites se
+entrada fallida es siempre `{"code": ..., "params": {...}}` (JSON): el `GimgError` conserva código y parámetros,
+`EngineTimeout` es `engine.timeout`, otro `EngineError` es `engine.failed` con `{"message"}` y una excepción inesperada
+`worker.unexpected` con `{"message": "Tipo: mensaje"}`; `queue.error_text(error_o_entrada, idioma)` lo traduce con i18n
+(la CLI de F1.6 lo usa). **Id y orden del intento:** la imagen se llama como la entrada: el motor escribe
+`attempts/.pending-<entrada>.png`, el trabajador lo mueve con `os.replace` a `attempts/q<entrada>.png` y solo entonces llama a
+`add_attempt(..., entry_id=)`, luego escribe la línea de registro y cierra la entrada. Antes de generar, si ya hay un intento
+con ese `queueEntry` (cayó tras `add_attempt`), no llama al motor y cierra `done`. Un fallo no deja huérfanos: el temporal
+se borra en cualquier fallo o cancelación y la imagen movida si `add_attempt` falla; si el movimiento falla, la entrada
+falla con `worker.image_move`. Una vez creado el intento nada puede fallar la entrada: la línea de registro y `finish` se
+intentan sin más (si `finish` falla, la entrada queda `running` y la recuperación se ocupa) y nunca se escribe una línea
+de fallo; ningún error de `finish` para el bucle de `run()`. **Registro:** una línea por cada intento que llega a ejecutarse y
+termina, bien o mal (límites, referencias, motor y `timeout` llevan `app.error`, el texto en inglés del error); cancelar no escribe línea. Los límites se
 comprueban otra vez al ejecutar con el perfil de máquina actual. Un segundo trabajador falla con `worker.already_running`.
 
 **Entrega y manifiesto** (`gimg/delivery.py`, D13, D21, D25). Elegir copia la imagen (temporal + `os.replace`) a

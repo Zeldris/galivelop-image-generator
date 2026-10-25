@@ -67,5 +67,8 @@
   "error.queue.not_running": "la entrada {id} no está en marcha (estado: {state})",
   "error.worker.already_running": "ya hay un trabajador en marcha ({path})",
   "error.worker.reference_missing": "la referencia \"{path}\" no existe o no es un archivo",
-  "error.worker.image_move": "no se pudo guardar la imagen del intento: {reason}"
+  "error.worker.image_move": "no se pudo guardar la imagen del intento: {reason}",
+  "error.engine.timeout": "el motor superó el tiempo máximo",
+  "error.engine.failed": "el motor falló: {message}",
+  "error.worker.unexpected": "error inesperado del trabajador: {message}"
 }

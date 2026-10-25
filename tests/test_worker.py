@@ -45,11 +45,13 @@ class WorkerTests(QueueBase):
         order = orders.get("proj", "a", "banner")
         self.assertEqual([a["id"] for a in order["attempts"]], [1, 2])
         self.assertEqual(order["attempts"][1]["seed"], 8)
-        png = orders.attempt_image_path("proj", "a", "banner", 1).read_bytes()
+        attempt = orders.get("proj", "a", "banner")["attempts"][0]
+        self.assertEqual((attempt["image"], attempt["queueEntry"]), ("attempts/q1.png", 1))
+        png = orders.attempt_image("proj", "a", "banner", attempt).read_bytes()
         self.assertEqual(png[:8], b"\x89PNG\r\n\x1a\n")
         self.assertEqual(struct.unpack(">II", png[16:24]), (1280, 512))
-        names = {p.name for p in orders.attempt_image_path("proj", "a", "banner", 1).parent.iterdir()}
-        self.assertEqual(names, {"1.png", "2.png"})  # no temp left
+        names = {p.name for p in orders.pending_image_path("proj", "a", "banner", 1).parent.iterdir()}
+        self.assertEqual(names, {"q1.png", "q2.png"})  # no temp left
         lines = self.lines()
         self.assertEqual(len(lines), 2)
         first = lines[0]
@@ -81,15 +83,16 @@ class WorkerTests(QueueBase):
         with mock.patch.dict(os.environ, {"GIMG_FAKE_FAIL": "out of vram"}):
             worker.run()
         entry = queue.get(1)
-        self.assertEqual((entry["state"], entry["error"]), ("failed", "out of vram"))
+        self.assertEqual((entry["state"], entry["error"]),
+                         ("failed", {"code": "engine.failed", "params": {"message": "out of vram"}}))
 
     def test_engine_failure(self):
         self.push()
         worker.run(engine=engine.FakeEngine(fail_with="boom"))
         entry = queue.get(1)
-        self.assertEqual((entry["state"], entry["error"], entry["attemptId"]), ("failed", "boom", None))
+        self.assertEqual((entry["state"], entry["error"], entry["attemptId"]), ("failed", {"code": "engine.failed", "params": {"message": "boom"}}, None))
         self.assertEqual(orders.get("proj", "a", "banner")["attempts"], [])
-        self.assertEqual(self.lines()[0]["app.error"], "boom")
+        self.assertEqual(self.lines()[0]["app.error"], "the engine failed: boom")
         self.assertNotIn("app.duration_ms", self.lines()[0])
         self.assertEqual(self.leftovers(), [])
 
@@ -97,8 +100,8 @@ class WorkerTests(QueueBase):
         self.push()
         worker.run(engine=StubEngine(engine.EngineTimeout()))
         entry = queue.get(1)
-        self.assertEqual((entry["state"], entry["error"]), ("failed", engine.TIMEOUT_MESSAGE))
-        self.assertEqual(self.lines()[0]["app.error"], "timeout")
+        self.assertEqual((entry["state"], entry["error"]), ("failed", {"code": "engine.timeout", "params": {}}))
+        self.assertEqual(self.lines()[0]["app.error"], queue.error_text(entry["error"], "en"))
 
     def test_timeout_s_comes_from_machine(self):
         seen = []
@@ -116,7 +119,8 @@ class WorkerTests(QueueBase):
         self.push(count=2)
         worker.run(engine=StubEngine(ValueError("bug")))
         self.assertEqual([(e["state"], e["error"]) for e in queue.list_entries()],
-                         [("failed", "ValueError: bug")] * 2)
+                         [("failed", {"code": "worker.unexpected",
+                                      "params": {"message": "ValueError: bug"}})] * 2)
 
     def test_limits_rechecked_at_run(self):
         self.push()
@@ -127,8 +131,9 @@ class WorkerTests(QueueBase):
         with mock.patch.dict(os.environ, {"GIMG_MACHINE_PROFILE": str(profile)}):
             worker.run()
         entry = queue.get(1)
-        self.assertEqual((entry["state"], entry["error"]), ("failed", "limit.steps"))
-        self.assertEqual(self.lines()[0]["app.error"], "limit.steps")
+        self.assertEqual((entry["state"], entry["error"]), ("failed", {"code": "limit.steps", "params": {"steps": 6, "max": 2}}))
+        self.assertEqual(self.lines()[0]["app.error"], queue.error_text(entry["error"], "en"))
+        self.assertIn("6", self.lines()[0]["app.error"])
         self.assertEqual(orders.get("proj", "a", "banner")["attempts"], [])
 
     def test_references_resolved(self):
@@ -156,8 +161,8 @@ class WorkerTests(QueueBase):
             entry = self.push()[0]
             worker.run()
             done = queue.get(entry["id"])
-            self.assertEqual((done["state"], done["error"]), ("failed", "worker.reference_missing"), ref)
-        self.assertEqual(self.lines()[0]["app.error"], "worker.reference_missing")
+            self.assertEqual((done["state"], done["error"]), ("failed", {"code": "worker.reference_missing", "params": {"path": ref}}), ref)
+        self.assertIn("nope.png", self.lines()[0]["app.error"])
 
     def test_reference_outside_project(self):
         outside = self.tmp / "secret.png"
@@ -170,7 +175,7 @@ class WorkerTests(QueueBase):
                                                            "references": [ref]}])[0]
             worker.run()
             done = queue.get(entry["id"])
-            self.assertEqual((done["state"], done["error"]), ("failed", code), ref)
+            self.assertEqual((done["state"], done["error"]["code"]), ("failed", code), ref)
 
     def test_cancel_running(self):
         self.push()
@@ -247,14 +252,99 @@ class WorkerTests(QueueBase):
 
     def test_dead_worker_entry_is_run_again(self):
         self.push()
-        queue.claim()
-        data = json.loads((self.tmp / "data" / "queue.json").read_text())
-        proc = subprocess.Popen([sys.executable, "-c", "pass"])
-        proc.wait()
-        data["entries"][0]["pid"] = proc.pid
-        (self.tmp / "data" / "queue.json").write_text(json.dumps(data))
+        queue.claim()  # its pid is this live process: only the worker lock decides
         self.assertEqual(worker.run(), 1)
         self.assertEqual(queue.get(1)["state"], "done")
+
+    def test_worker_recovers_and_deletes_pending_before_its_loop(self):
+        self.push()
+        queue.claim()
+        pending = orders.pending_image_path("proj", "a", "banner", 1)
+        pending.parent.mkdir(parents=True)
+        pending.write_bytes(b"half")
+        seen = []
+
+        class Spy(engine.FakeEngine):
+            def generate(self, job, should_cancel):
+                seen.append(Path(job.output).exists())
+                return super().generate(job, should_cancel)
+
+        worker.run(engine=Spy())
+        self.assertEqual(seen, [False])
+        self.assertEqual(queue.get(1)["state"], "done")
+        self.assertEqual(self.leftovers(), [orders.attempt_image(
+            "proj", "a", "banner", orders.get("proj", "a", "banner")["attempts"][0])])
+
+    def test_crash_after_add_attempt_does_not_duplicate(self):
+        self.push()
+        real = queue.finish
+        with mock.patch.object(queue, "finish", side_effect=KeyboardInterrupt):  # a hard stop, not an Exception
+            with self.assertRaises(KeyboardInterrupt):
+                worker.run()
+        self.assertEqual(len(orders.get("proj", "a", "banner")["attempts"]), 1)
+        self.assertEqual(queue.get(1)["state"], "queued")  # recovery: the worker is gone
+        worker.run(engine=StubEngine(AssertionError("the engine must not run again")))
+        entry = queue.get(1)
+        self.assertEqual((entry["state"], entry["attemptId"], entry["error"]), ("done", 1, None))
+        attempts = orders.get("proj", "a", "banner")["attempts"]
+        self.assertEqual([(a["id"], a["queueEntry"]) for a in attempts], [(1, 1)])
+        self.assertTrue(orders.attempt_image("proj", "a", "banner", attempts[0]).is_file())
+        self.assertEqual(len(self.lines()), 1)
+        self.assertIs(queue.finish, real)
+
+    def test_failing_finish_done_keeps_loop_and_writes_no_failure_line(self):
+        self.push(count=2)
+        real = queue.finish
+        calls = []
+
+        def flaky(*args, **kwargs):
+            calls.append(args[0])
+            if len(calls) == 1:
+                raise GimgError("queue.corrupt", path="x")
+            return real(*args, **kwargs)
+
+        with mock.patch.object(queue, "finish", side_effect=flaky):
+            self.assertEqual(worker.run(), 2)
+        self.assertEqual(calls, [1, 2])
+        lines = self.lines()
+        self.assertEqual(len(lines), 2)
+        self.assertTrue(all("app.error" not in x for x in lines))
+        self.assertEqual(queue.get(2)["state"], "done")
+        self.assertEqual(queue.get(1)["state"], "queued")  # was left running; the next recovery re-queues it
+        worker.run()
+        self.assertEqual(len(orders.get("proj", "a", "banner")["attempts"]), 2)  # no duplicate for entry 1
+        self.assertEqual(queue.get(1)["state"], "done")
+
+    def test_failing_finish_in_failure_handler_keeps_loop(self):
+        self.push(count=2)
+        real = queue.finish
+        calls = []
+
+        def flaky(*args, **kwargs):
+            calls.append(args[0])
+            if len(calls) == 1:
+                raise GimgError("queue.corrupt", path="x")
+            return real(*args, **kwargs)
+
+        with mock.patch.object(queue, "finish", side_effect=flaky):
+            self.assertEqual(worker.run(engine=engine.FakeEngine(fail_with="boom")), 2)
+        self.assertEqual(calls, [1, 2])
+        self.assertEqual(queue.get(2)["error"]["code"], "engine.failed")
+
+    def test_failing_log_line_does_not_fail_the_entry(self):
+        self.push()
+        with mock.patch.object(log, "append", side_effect=OSError("disk full")):
+            worker.run()
+        entry = queue.get(1)
+        self.assertEqual((entry["state"], entry["attemptId"], entry["error"]), ("done", 1, None))
+
+    def test_add_attempt_failure_leaves_no_image(self):
+        self.push()
+        with mock.patch.object(orders, "add_attempt", side_effect=GimgError("order.corrupt", path="x")):
+            worker.run()
+        entry = queue.get(1)
+        self.assertEqual((entry["state"], entry["error"]["code"]), ("failed", "order.corrupt"))
+        self.assertEqual(self.leftovers(), [])
 
     def test_estimate_after_runs(self):
         entry = self.push(count=3)[0]

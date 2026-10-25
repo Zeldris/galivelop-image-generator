@@ -67,5 +67,8 @@
   "error.queue.not_running": "entry {id} is not running (state: {state})",
   "error.worker.already_running": "a worker is already running ({path})",
   "error.worker.reference_missing": "the reference \"{path}\" does not exist or is not a file",
-  "error.worker.image_move": "could not store the attempt image: {reason}"
+  "error.worker.image_move": "could not store the attempt image: {reason}",
+  "error.engine.timeout": "the engine ran past the time limit",
+  "error.engine.failed": "the engine failed: {message}",
+  "error.worker.unexpected": "unexpected worker error: {message}"
 }

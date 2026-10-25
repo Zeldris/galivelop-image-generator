@@ -1,8 +1,7 @@
 import copy
+import fcntl
 import json
 import os
-import subprocess
-import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,12 +12,6 @@ from gimg.errors import GimgError
 
 ROOT = Path(__file__).resolve().parent.parent
 EXAMPLE = json.loads((ROOT / "examples" / "galivelop-images.json").read_text())
-
-
-def dead_pid():
-    proc = subprocess.Popen([sys.executable, "-c", "pass"])
-    proc.wait()
-    return proc.pid
 
 
 class QueueBase(unittest.TestCase):
@@ -34,6 +27,13 @@ class QueueBase(unittest.TestCase):
         self.projects = {}
         for name in ("proj", "other"):
             self.add_project(name)
+
+    def hold_worker_lock(self):
+        """Pretend a worker is alive: hold ``worker.lock`` in this process (a second open() fails, as in a worker)."""
+        queue.worker_lock_path().parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(str(queue.worker_lock_path()), os.O_RDWR | os.O_CREAT, 0o600)
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        self.addCleanup(os.close, fd)
 
     def add_project(self, name):
         root = self.tmp / name
@@ -112,6 +112,7 @@ class QueueTests(QueueBase):
         self.assertEqual(queue.next_queued()["id"], 2)
 
     def test_list_filter(self):
+        self.hold_worker_lock()
         self.push(count=3)
         queue.claim()
         self.assertEqual([e["id"] for e in queue.list_entries(["queued"])], [2, 3])
@@ -126,6 +127,7 @@ class QueueTests(QueueBase):
         self.assertEqual(queue.claim()["id"], 2)
 
     def test_cancel_running_requests(self):
+        self.hold_worker_lock()
         self.push()
         queue.claim()
         entry = queue.cancel(1)
@@ -147,43 +149,78 @@ class QueueTests(QueueBase):
         self.assertEqual(self.code(queue.finish, 1, "done"), "queue.not_running")  # still queued
         queue.claim()
         self.assertEqual(self.code(queue.finish, 1, "queued"), "queue.bad_state")
-        entry = queue.finish(1, "failed", error="x")
-        self.assertEqual((entry["state"], entry["error"], entry["pid"]), ("failed", "x", None))
+        entry = queue.finish(1, "failed", error=queue.make_error("limit.steps", steps=9, max=2))
+        self.assertEqual((entry["state"], entry["error"], entry["pid"]),
+                         ("failed", {"code": "limit.steps", "params": {"steps": 9, "max": 2}}, None))
         self.assertIsNotNone(entry["finishedAt"])
 
-    def test_recovery_dead_pid(self):
+    def test_recovery_without_worker_lock(self):
         self.push(count=2)
-        queue.claim()
+        queue.claim()  # pid is this live process: the pid is irrelevant, only the worker lock counts
         path = self.tmp / "data" / "queue.json"
-        data = json.loads(path.read_text())
-        data["entries"][0]["pid"] = dead_pid()
-        path.write_text(json.dumps(data))
         entry = queue.get(1)
         self.assertEqual((entry["state"], entry["pid"], entry["startedAt"]), ("queued", None, None))
         self.assertEqual(json.loads(path.read_text())["entries"][0]["state"], "queued")  # persisted
         self.assertEqual(queue.claim()["id"], 1)  # first again, FIFO kept
 
-    def test_recovery_dead_pid_with_cancel_requested(self):
+    def test_recovery_with_cancel_requested(self):
         self.push()
         queue.claim()
         queue.cancel(1)
-        path = self.tmp / "data" / "queue.json"
-        data = json.loads(path.read_text())
-        data["entries"][0]["pid"] = dead_pid()
-        path.write_text(json.dumps(data))
         self.assertEqual(queue.get(1)["state"], "cancelled")
 
-    def test_alive_pid_stays_running(self):
+    def test_live_worker_lock_keeps_running(self):
         self.push()
         queue.claim()
-        self.assertEqual(queue.get(1)["state"], "running")
+        self.hold_worker_lock()
+        for read in (lambda: queue.get(1), lambda: queue.list_entries()[0]):
+            self.assertEqual(read()["state"], "running")
         self.assertEqual(queue.get(1)["pid"], os.getpid())
 
-    def test_permission_error_means_alive(self):
+    def test_enqueue_also_recovers(self):
         self.push()
         queue.claim()
-        with mock.patch("os.kill", side_effect=PermissionError):
-            self.assertEqual(queue.get(1)["state"], "running")
+        self.push(key="b")
+        self.assertEqual(queue.list_entries()[0]["state"], "queued")
+
+    def test_claim_and_finish_do_not_recover(self):
+        self.push(count=2)
+        queue.claim()
+        self.assertEqual(queue.claim()["id"], 2)  # entry 1 is still running, not handed out again
+        queue.finish(1, "done", attempt_id=1)
+
+    def test_recover_orphans_is_for_the_lock_owner(self):
+        self.push()
+        queue.claim()
+        self.hold_worker_lock()  # as the worker does; the others leave it alone
+        self.assertEqual(queue.get(1)["state"], "running")
+        queue.recover_orphans()
+        self.assertEqual(queue.get(1)["state"], "queued")
+
+    def test_recovery_deletes_pending_files(self):
+        self.push()
+        queue.claim()
+        pending = orders.pending_image_path("proj", "a", "banner", 1)
+        pending.parent.mkdir(parents=True)
+        other = pending.parent / ".pending-2.png"
+        for f in (pending, other):
+            f.write_bytes(b"x")
+        queue.list_entries()
+        self.assertFalse(pending.exists())
+        self.assertTrue(other.exists())  # only the recovered entries' files
+
+    def test_error_text(self):
+        error = queue.make_error("limit.steps", steps=9, max=2)
+        self.assertIn("9", queue.error_text(error, "en"))
+        self.assertNotEqual(queue.error_text(error, "es"), queue.error_text(error, "en"))
+        self.push()
+        queue.claim()
+        entry = queue.finish(1, "failed", error=error)
+        self.assertEqual(queue.error_text(entry, "en"), queue.error_text(error, "en"))
+        self.assertEqual(queue.error_text(queue.make_error("nope.code")), "nope.code")  # unknown: the code
+        self.assertEqual(queue.error_text(None), "")
+        self.assertEqual(json.loads(json.dumps(queue.make_error("x", obj=Path("/a")))),
+                         {"code": "x", "params": {"obj": "/a"}})
 
     def test_prune_keeps_last_200_terminal(self):
         total = queue.KEEP_TERMINAL + 15
