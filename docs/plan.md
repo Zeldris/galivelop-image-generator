@@ -189,6 +189,16 @@ el estimado); `order list <proyecto> [--profile] [--chosen|--unchosen]`; `order 
 `attempt mark … <id> new|candidate|discarded`; `attempt note … <id> <texto>`; `choose … <id>`; `undo …`;
 `queue list|cancel <id>`; `work [--once]` (procesa la cola; en F3 lo hará el servicio); `version`. Errores por stderr
 con salida 1.
+Opciones globales (antes o después de la orden): `--lang es|en` (por defecto `i18n.default_lang()`) y `--json`. La CLI
+es una capa fina: llama a los módulos del núcleo y todo texto visible sale de `i18n.t` (claves `cli.*`). `order submit` encola
+`count` intentos con la semilla del pedido; `attempt new` sin `--seed` usa una aleatoria. Errores: un `GimgError` imprime su
+mensaje traducido por stderr con salida 1; un error de uso de `argparse` sale con 2; una excepción inesperada imprime una línea
+(`cli.unexpected`) con salida 1, y el traceback solo con `GIMG_DEBUG=1`. `work` falla con 1 si ya hay un trabajador.
+**Forma de `--json`** (stdout, `ensure_ascii` falso, sangría 2): `project list` → `[{name, root}]`; `project add` → `{name}`;
+`project remove` → `{removed}`; `order list` → lista de pedidos (el registro de `order.json`); `order show` → el pedido;
+`order submit` y `attempt new` → `{entries: [entrada de la cola], estimateMs: n|null}`; `attempt mark|note` → el intento;
+`choose` y `undo` → `{old, new}`; `queue list` → lista de entradas y `queue cancel` → la entrada, cada una con `errorText`
+(traducido, solo si tiene error) además de su `error` `{code, params}`; `work` → `{processed}`.
 
 ### Pasos de F1
 

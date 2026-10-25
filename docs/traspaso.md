@@ -10,8 +10,8 @@
 |---|---|
 | **Rama** | `f1-nucleo` |
 | **Fase / tarea** | F1 Núcleo: contrato y pasos F1.1-F1.6 en `docs/plan.md` («F1 en detalle»); compactaciones: presupuesto 1, llevadas 0 |
-| **Último punto estable** | F1.5 hecho y revisado (arreglos aplicados): `gimg/delivery.py` revierte también el archivo entregado si falla el manifiesto, sin comprobar referencias, borrado solo si la entrada apunta al destino; check en verde, 255 tests |
-| **Siguiente paso** | F1.6: `gimg/cli.py` (`python3 -m gimg`; elegir y deshacer por `delivery.choose`/`undo`, nunca `orders.choose`), README es/en y test de extremo a extremo |
+| **Último punto estable** | F1.6 hecho: `gimg/cli.py` + `python3 -m gimg`, `--json` y `--lang`, test de extremo a extremo (`tests/test_cli.py`), README es/en con el uso; check en verde, 267 tests. F1 completa, sin revisar |
+| **Siguiente paso** | Revisión de F1 antes de `main`: fase 1 `/code-review --max-findings all` del diff contra `origin/main` (sesión principal), luego fases 2 y 3 de `AGENTS.md` |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con

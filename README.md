@@ -8,7 +8,9 @@ la biblioteca estándar (D6).
 
 ## Estado
 
-En desarrollo, fase **F0 (esqueleto)**: **aún no genera imágenes**. Por ahora solo hay los esquemas JSON y sus tests.
+En desarrollo, fase **F1 (núcleo) hecha**: proyectos, pedidos, intentos, elegida y entrega, cola persistente y CLI
+funcionan de extremo a extremo con el **motor de pruebas** (`fake`, imágenes de color liso). **Aún no genera imágenes
+reales**: el motor real (`sd-cli`) llega en F2.
 
 | Fase | Qué trae |
 |---|---|
@@ -21,7 +23,7 @@ En desarrollo, fase **F0 (esqueleto)**: **aún no genera imágenes**. Por ahora 
 
 Detalle, decisiones D1-D27 y criterios de cierre en [`docs/plan.md`](docs/plan.md).
 
-## Cómo se conecta un proyecto (lo previsto)
+## Cómo se conecta un proyecto
 
 Cada proyecto lleva en su repo un archivo `galivelop-images.json` (D12):
 
@@ -64,6 +66,31 @@ Esquemas:
 [perfil de máquina](gimg/schemas/machine-profile.schema.json).
 El preajuste de la Steam Deck está en [`gimg/machine_profiles/steam-deck.json`](gimg/machine_profiles/steam-deck.json)
 (D15).
+
+## Uso (CLI)
+
+Hasta que `instalar.sh` llegue en F2 se lanza con `python3 -m gimg …` desde la carpeta del repo (Python 3.10+, sin
+instalar nada). Con `GIMG_ENGINE=fake` (el único motor de F1) las imágenes son de prueba. `--lang es|en` elige el
+idioma y `--json` da la salida en JSON para integrarlo desde otro programa (la forma está en `docs/plan.md`).
+
+```sh
+python3 -m gimg project add ~/mi-proyecto            # registra la carpeta con galivelop-images.json
+python3 -m gimg order submit mi-proyecto pedido.json  # crea el pedido y encola `count` intentos ("-" lee de stdin)
+python3 -m gimg work                                  # procesa la cola (--once: una sola entrada)
+python3 -m gimg order show mi-proyecto fauna/red-howler banner
+python3 -m gimg attempt mark mi-proyecto fauna/red-howler banner 1 candidate   # new | candidate | discarded
+python3 -m gimg attempt note mi-proyecto fauna/red-howler banner 1 "buenas alas"
+python3 -m gimg choose mi-proyecto fauna/red-howler banner 1   # entrega el PNG y el manifiesto al proyecto
+python3 -m gimg undo mi-proyecto fauna/red-howler banner       # vuelve a la elegida anterior (o a ninguna)
+python3 -m gimg attempt new mi-proyecto fauna/red-howler banner --count 2 --steps 8   # más intentos
+python3 -m gimg order list mi-proyecto --unchosen
+python3 -m gimg queue list                            # estado de la cola, con los errores
+python3 -m gimg queue cancel 3
+python3 -m gimg project list | project remove mi-proyecto | version
+```
+
+Los datos van a `$GIMG_DATA_HOME` (por defecto `~/.local/share/gimg`) y el registro de proyectos a
+`$GIMG_CONFIG_HOME` (`~/.config/gimg`). Los errores salen por stderr con código 1 (`GIMG_DEBUG=1` añade el traceback).
 
 ## Instalación (prevista, **todavía no existe**)
 
