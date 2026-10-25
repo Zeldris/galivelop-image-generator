@@ -9,9 +9,9 @@
 | Campo | Valor |
 |---|---|
 | **Rama** | `f0-esqueleto` |
-| **Fase / tarea** | F0 Esqueleto (`docs/plan.md`): paquete `gimg`, esquemas, validador stdlib, textos es/en, README es/en, check con `unittest`. Presupuesto: 1 compactación (llevadas: 1 al empezar) |
-| **Último punto estable** | F0 con las tres fases hechas: marca de revisión en `17e28eb` (revisa `169de4b`) |
-| **Siguiente paso** | La persona mira el CI de `f0-esqueleto` y crea el PR en la web (sin `gh`); con el CI en verde, fusionar F0 y `/clear` |
+| **Fase / tarea** | F0 Esqueleto fusionada en `main`; siguiente tarea: F1 Núcleo |
+| **Último punto estable** | F0 en `main`: paquete `gimg`, esquemas, validador, textos es/en, 69 tests |
+| **Siguiente paso** | `/clear` y F1 (núcleo con motor de pruebas) en una rama nueva desde `main` |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
@@ -23,11 +23,11 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 
 ## Hecho (5 últimas)
 
-1. 2026-10-25 — `diseno-generador` a `main` por push directo con confirmación de la persona: CI sin cuota, **comprobado solo en local** (check del `pre-push` sobre el mismo commit). Tres fases hechas, marca en `b111e4f`.
-2. 2026-10-25 — Diseño ronda 3 aprobada: clave del pedido, retoque de prompt, entrega PNG, `gimg`, seguridad, registro opt-ai.
-3. 2026-10-25 — Diseño ronda 2 aprobada: pedido/intentos/elegida, cola, perfil de máquina, es+en, ADR 0001-0002.
-4. 2026-10-25 — Diseño ronda 1 aprobada: servicio local independiente, sin dominio, Python stdlib, WMF piloto (`docs/plan.md`).
-5. 2026-10-25 — Flujo Galivelop-workflow v0.4.0 aplicado (`aplicar.py --init`, `pushToProtected: pr`, `doctor.py` en verde).
+1. 2026-10-25 — F0 (`f0-esqueleto`) a `main` por push directo con confirmación de la persona: CI sin cuota (pagos fallidos), **comprobado solo en local** (check del `pre-push` sobre el mismo commit). Tres fases hechas, marca en `17e28eb`.
+2. 2026-10-25 — `diseno-generador` a `main` por push directo con confirmación de la persona: CI sin cuota, **comprobado solo en local** (check del `pre-push` sobre el mismo commit). Tres fases hechas, marca en `b111e4f`.
+3. 2026-10-25 — Diseño ronda 3 aprobada: clave del pedido, retoque de prompt, entrega PNG, `gimg`, seguridad, registro opt-ai.
+4. 2026-10-25 — Diseño ronda 2 aprobada: pedido/intentos/elegida, cola, perfil de máquina, es+en, ADR 0001-0002.
+5. 2026-10-25 — Diseño ronda 1 aprobada: servicio local independiente, sin dominio, Python stdlib, WMF piloto (`docs/plan.md`).
 
 ## Pendiente
 
