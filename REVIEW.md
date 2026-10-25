@@ -43,3 +43,10 @@ pide criterio. La rellena el proyecto; el flujo nunca la sobrescribe una vez cre
 ## Reglas del proyecto
 
 <!-- Las rellena el proyecto: lo que nunca se publica, reglas del dominio, accesibilidad, rendimiento, seguridad. -->
+
+- **Rutas y nombres de archivo (D25).** Todo campo o código que acabe en una ruta o un nombre de archivo tiene tests
+  que rechazan `\n`, `\x00`, rutas absolutas, `~` y segmentos `..`, y la guardia de verdad resuelve la ruta (con
+  enlaces) y comprueba que queda dentro; el regex de un esquema solo ayuda al editor.
+- **Esquemas con semántica estándar.** Los esquemas los leen también otros validadores (ajv, el editor; D17): un
+  `pattern` sigue ECMA-262 y un tipo sigue JSON Schema 2020-12. Que `gimg/schema.py` dé otro resultado que el
+  estándar sobre el mismo dato es un hallazgo.

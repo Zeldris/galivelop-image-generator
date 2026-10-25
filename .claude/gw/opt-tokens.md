@@ -19,6 +19,8 @@ las crea una vez; desde entonces son del proyecto.
   lectura a un subagente.
 - `cat` de `CLAUDE.md` o `AGENTS.md`: ya están en el contexto; releerlos costó 151k arrastrados.
 - `cat docs/traspaso.md` (9 veces, 80k arrastrados): usar `python3 .claude/gw/scripts/recuperar.py --estado`.
+- `cat docs/plan.md` entero al empezar una fase (F0: 3,7k tokens junto con la bitácora, 97k arrastrados): basta
+  `grep -n '^| F0' docs/plan.md` y las decisiones que cite (`grep -n '^| D1[25] ' docs/plan.md`).
 
 ## Ajustes en vigor
 
@@ -31,3 +33,5 @@ las crea una vez; desde entonces son del proyecto.
 <!-- Cifras medidas con las que comparar: fecha, sesión, contexto medio, llamadas, total. -->
 - 2026-10-25, sesión `a0f496d5` (aplicar el flujo y diseño D1-D26): 50 llamadas, contexto medio 113k (suelo 38k,
   techo 166k), 5,6 M de entrada en la principal + 0,9 M en subagentes.
+- 2026-10-25, sesión `1d4848af` (F0 hasta la retro): 30 llamadas, contexto medio 81k (suelo 45k, techo 115k),
+  2,4 M de entrada en la principal + 1,3 M en 4 subagentes (la revisión con Opus, 0,58 M).

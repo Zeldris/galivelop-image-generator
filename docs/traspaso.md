@@ -10,8 +10,8 @@
 |---|---|
 | **Rama** | `f0-esqueleto` |
 | **Fase / tarea** | F0 Esqueleto (`docs/plan.md`): paquete `gimg`, esquemas, validador stdlib, textos es/en, README es/en, check con `unittest`. Presupuesto: 1 compactación (llevadas: 1 al empezar) |
-| **Último punto estable** | F0 revisada (fase 1): 20 hallazgos, graves y medios arreglados, leves en «Pendiente»; 69 tests |
-| **Siguiente paso** | Fase 2 antes de `main`: `opt-tokens` y `retro`, presentadas a la persona |
+| **Último punto estable** | F0 con fase 1 (revisión, arreglos) y fase 2 (opt-tokens + retro aprobadas y aplicadas) |
+| **Siguiente paso** | Fase 3: `revisado.sh`, push y PR de F0 (skill `pr`), con el CI en verde |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
@@ -44,7 +44,8 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
   un subagente `Explore` que devuelve un resumen con rutas (`orchestrate-dealer`); desde aquí no se modifica.
 - El flujo copiado es la 0.4.0 **sin publicar** (rama `ccr-6dfbc880-ddr41g` del flujo, commit `d227bbf`; su `main` está en
   0.3.0): `/gw-update` cuando la 0.4.0 salga publicada.
-- Proponer al flujo (`gw-harvest`) lo de `docs/registros/retro-2026-10-25-diseno.md` (R1-R4, R7); el hallazgo
+- Proponer al flujo (`gw-harvest`) lo de `docs/registros/retro-2026-10-25-diseno.md` (R1-R4, R7) y de
+  `docs/registros/retro-2026-10-25-f0.md` (R1, R3, R4); el hallazgo
   MEDIO de R7 (claves pegadas a una letra en `pre-commit`) conviene arreglarlo antes de publicar la 0.4.0.
 - Proponer al flujo (`gw-harvest`) una operación de imagen en el `log-format.md` de `opt-ai` (D26).
 

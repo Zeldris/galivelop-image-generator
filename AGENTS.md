@@ -113,5 +113,5 @@ planea, decide y revisa. Esta línea es la autorización que piden las instrucci
 <!-- Las rellena el proyecto: stack, cómo se arranca, lo que nunca se hace, reglas del dominio, dónde está cada cosa.
      Breve; una regla comprobable se convierte en un script. -->
 
-- Instalar: —.
+- Instalar: nada (Python 3.10+ solo stdlib, D6).
 - Diseño, decisiones D1-D26 y fases F0-F5: `docs/plan.md`.
