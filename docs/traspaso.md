@@ -32,6 +32,8 @@ PR de `diseno-generador`: flujo v0.4.0 aplicado + diseño aprobado (D1-D26, F0-F
 
 - **Deuda:** el `check` solo hace `bash -n` de los ganchos porque aún no hay código; cambiarlo por el lint + tests
   reales en cuanto se elija stack (`.claude/gw.json` → `check`, y `install` si hace falta). Se cierra en F0.
+- El flujo copiado es la 0.4.0 **sin publicar** (rama `ccr-6dfbc880-ddr41g` del flujo, commit `d227bbf`; su `main` está en
+  0.3.0): `/gw-update` cuando la 0.4.0 salga publicada.
 - Proponer al flujo (`gw-harvest`) una operación de imagen en el `log-format.md` de `opt-ai` (D26).
 
 ## Comprobar el estado
