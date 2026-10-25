@@ -10,8 +10,8 @@
 |---|---|
 | **Rama** | `f1-nucleo` |
 | **Fase / tarea** | F1 Núcleo: contrato y pasos F1.1-F1.6 en `docs/plan.md` («F1 en detalle»); compactaciones: presupuesto 1, llevadas 0 |
-| **Último punto estable** | F1.6 hecho: `gimg/cli.py` + `python3 -m gimg`, `--json` y `--lang`, test de extremo a extremo (`tests/test_cli.py`), README es/en con el uso; check en verde, 267 tests. F1 completa, sin revisar. Revisión de F1, arreglos de entrega: claves `error.delivery.*` y `error.project.bad_name` + test que exige texto a todo código lanzado, cerrojo de entrega en el directorio de datos (choose/undo enteros bajo él), destino sin `.git`/config, colisión `delivery.target_taken`; 273 tests |
-| **Siguiente paso** | Revisión de F1 antes de `main`: fase 1 `/code-review --max-findings all` del diff contra `origin/main` (sesión principal), luego fases 2 y 3 de `AGENTS.md` |
+| **Último punto estable** | F1.6 hecho: `gimg/cli.py` + `python3 -m gimg`, `--json` y `--lang`, test de extremo a extremo (`tests/test_cli.py`), README es/en con el uso; check en verde, 267 tests. F1 completa, sin revisar. Revisión de F1, arreglos de entrega: claves `error.delivery.*` y `error.project.bad_name` + test que exige texto a todo código lanzado, cerrojo de entrega en el directorio de datos (choose/undo enteros bajo él), destino sin `.git`/config, colisión `delivery.target_taken`; 273 tests. Arreglos de la revisión de F1 (cola/CLI/límites): prompt+estilo validado en `attempt_specs` (`order.prompt_too_long`), errores de esquema conservados en el `error` de la entrada, motor validado antes de encolar, `config.json` ilegible traducido, `is_cancel_requested` sin recuperar, mensajes del trabajador en el idioma de la CLI; 282 tests |
+| **Siguiente paso** | Repetir la fase 1 (`/code-review --max-findings all`) solo sobre los commits de arreglos de la revisión de F1, luego fases 2 y 3 de `AGENTS.md` |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
@@ -41,6 +41,15 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
   - Si `add_attempt` falla después de escribir `order.json`, el `finally` del trabajador borra la imagen y queda un
     intento con `queueEntry` sin imagen: comprobar con `attempt_for_entry` antes de borrar.
   - `queue.is_cancel_requested` lee la cola entera bajo cerrojo cada 20 ms durante la generación; espaciar el sondeo si la cola crece.
+  - `cli.main(['--lang','fr'])` lanza SystemExit en vez de devolver 2 (`_prescan_lang` fuera del try) y su uso no habla de las órdenes.
+  - `delivery.undo` prepara la entrega antes de que `orders.undo` rechace un destino descartado: con la imagen borrada sale `delivery.source_missing` en vez de `order.undo_discarded`.
+  - Al cambiar `delivery.template`/`dir` y volver a elegir, el archivo entregado en la ruta antigua queda huérfano.
+  - `undo` hasta `null` no borra las subcarpetas vacías que creó la entrega.
+  - Un dato, un sitio: el rango de `count` (1-50) en `attempt_specs` y `paths.MAX_KEY` repiten el esquema del pedido (junto con `_FULL_PARAMS`).
+  - Reutilización: escritura atómica copiada en `fsutil.write_json`, `delivery._copy` y `FakeEngine.generate`; `_now()` en cuatro módulos; `delivery._find` reimplementa `orders._attempt`; `worker._single_worker` repite `queue._no_worker`; `cli.opt()` es igual a `arg()`.
+  - Eficiencia: `choose`/`undo` releen y validan la configuración, el pedido y el manifiesto varias veces.
+  - `GIMG_CONFIG_HOME`/`GIMG_DATA_HOME` relativas dependen de la carpeta actual (las XDG relativas sí se ignoran).
+  - `orders.mark` no toma el cerrojo de la entrega: un `mark` a mitad de `choose` lo revierte con `order.choose_discarded` (mitigado).
 - **Cuando la persona avise:** revisar las actualizaciones de Tarkor (otro repo) sobre su generador de imágenes: lo lee
   un subagente `Explore` que devuelve un resumen con rutas (`orchestrate-dealer`); desde aquí no se modifica.
 - El flujo copiado es la 0.4.0 **sin publicar** (rama `ccr-6dfbc880-ddr41g` del flujo, commit `d227bbf`; su `main` está en
