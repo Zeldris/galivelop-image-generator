@@ -144,7 +144,7 @@ puede dejarlo de una entrada que estaba `running`). Se guardan las 200
 últimas terminadas. El trabajador (`gimg/worker.py`) toma un cerrojo propio (`worker.lock`) para que corra uno solo:
 saca la primera `queued`, comprueba límites, llama al motor, crea el intento, escribe el registro y cierra la entrada.
 Detalles de F1.4: toda lectura y escritura de `queue.json` va bajo `fsutil.lock`, y la recuperación (reinicio y poda) se hace
-en esa misma transacción; una `running` con `pid` muerto y `cancelRequested` pasa a `cancelled`, no a `queued`. `enqueue` valida
+en esa misma transacción; una `running` recuperada con `cancelRequested` pasa a `cancelled`, no a `queued`. `enqueue` valida
 que el pedido exista y los límites del perfil de máquina de ese momento; si una spec falla, no se encola ninguna. `error` de una
 entrada fallida es siempre `{"code": ..., "params": {...}}` (JSON): el `GimgError` conserva código y parámetros,
 `EngineTimeout` es `engine.timeout`, otro `EngineError` es `engine.failed` con `{"message"}` y una excepción inesperada
