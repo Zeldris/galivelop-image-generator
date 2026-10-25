@@ -59,6 +59,9 @@ class CliBase(unittest.TestCase):
     def js(self, *argv, **kw):
         return json.loads(self.ok("--json", *argv, **kw))
 
+    def project_files(self) -> set:
+        return {p.relative_to(self.root).as_posix() for p in self.root.rglob("*") if not p.is_dir()}
+
     def fails(self, *argv, message, lang="en", **kw):
         code, out, err = self.run_cli("--lang", lang, *argv, **kw)
         self.assertEqual((code, out), (1, ""), argv)
@@ -107,6 +110,10 @@ class FullCycleTests(CliBase):
         self.assertEqual(first[:8], b"\x89PNG\r\n\x1a\n")
         entry = json.loads(manifest.read_text())["images"][key][prof]
         self.assertEqual((entry["attemptId"], entry["seed"]), (1, 42))
+        # the project only gains the delivered image and the manifest: no locks, temporaries or data
+        own = {"galivelop-images.json", "refs/wolf.png"}
+        self.assertEqual(self.project_files(), own | {
+            "uploads/images/fauna/red-howler-banner.png", "galivelop-images.manifest.json"})
 
         self.assertEqual(self.js("attempt", "mark", *base, "2", "new")["state"], "new")
         new = self.js("attempt", "new", *base, "--seed", "999", "--steps", "4", "--cfg", "1.5")
@@ -123,6 +130,7 @@ class FullCycleTests(CliBase):
         self.assertEqual(self.js("undo", *base), {"old": 1, "new": None})
         self.assertFalse(delivered.exists())
         self.assertNotIn(key, json.loads(manifest.read_text())["images"])
+        self.assertEqual(self.project_files(), own | {"galivelop-images.manifest.json"})
         self.fails("undo", *base, message="nothing to undo")
 
         again = self.js("attempt", "new", *base)
