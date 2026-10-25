@@ -132,6 +132,15 @@ cada entrada: `id`, `project`, `key`, `profile`, `seed`, `prompt`, `params`, `re
 Una `running` cuyo `pid` ya no existe vuelve a `queued` al leer la cola (sobrevive a un reinicio). Se guardan las 200
 últimas terminadas. El trabajador (`gimg/worker.py`) toma un cerrojo propio (`worker.lock`) para que corra uno solo:
 saca la primera `queued`, comprueba límites, llama al motor, crea el intento, escribe el registro y cierra la entrada.
+Detalles de F1.4: toda lectura y escritura de `queue.json` va bajo `fsutil.lock`, y la recuperación (reinicio y poda) se hace
+en esa misma transacción; una `running` con `pid` muerto y `cancelRequested` pasa a `cancelled`, no a `queued`. `enqueue` valida
+que el pedido exista y los límites del perfil de máquina de ese momento; si una spec falla, no se encola ninguna. `error` de una
+entrada fallida es el código del `GimgError` o el mensaje del motor (`timeout`). **Id del intento:** lo asigna `add_attempt`, así
+que el motor escribe en `attempts/.pending-<entrada>.png` y el trabajador lo mueve con `os.replace` a `attempts/<id>.png` justo
+después de `add_attempt` (el temporal se borra en cualquier fallo o cancelación; si el movimiento falla, la entrada falla con
+`worker.image_move` y la fila del intento queda sin imagen). **Registro:** una línea por cada intento que llega a ejecutarse y
+termina, bien o mal (límites, referencias, motor y `timeout` llevan `app.error`); cancelar no escribe línea. Los límites se
+comprueban otra vez al ejecutar con el perfil de máquina actual. Un segundo trabajador falla con `worker.already_running`.
 
 **Entrega y manifiesto** (`gimg/delivery.py`, D13, D21, D25). Elegir copia la imagen (temporal + `os.replace`) a
 `inside(inside(root, delivery.dir), template con {key} y {profile})` y escribe el manifiesto (`manifest`, por defecto

@@ -59,5 +59,13 @@
   "error.limit.pixels": "the attempt asks for {width}x{height} ({pixels} pixels) and the machine allows {max}",
   "error.engine.unknown": "unknown engine: \"{engine}\" (this version only has \"fake\")",
   "error.engine.bad_delay": "GIMG_FAKE_DELAY is not a finite number >= 0: \"{value}\"",
-  "error.log.bad_project": "invalid project name for the log: \"{project}\""
+  "error.log.bad_project": "invalid project name for the log: \"{project}\"",
+  "error.queue.corrupt": "the queue {path} is corrupt",
+  "error.queue.unknown": "there is no queue entry {id}",
+  "error.queue.not_cancellable": "entry {id} has already finished ({state}) and cannot be cancelled",
+  "error.queue.bad_state": "invalid final state \"{state}\"; use one of: {states}",
+  "error.queue.not_running": "entry {id} is not running (state: {state})",
+  "error.worker.already_running": "a worker is already running ({path})",
+  "error.worker.reference_missing": "the reference \"{path}\" does not exist or is not a file",
+  "error.worker.image_move": "could not store the attempt image: {reason}"
 }

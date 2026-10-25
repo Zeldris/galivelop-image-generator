@@ -59,5 +59,13 @@
   "error.limit.pixels": "el intento pide {width}x{height} ({pixels} píxeles) y la máquina admite {max}",
   "error.engine.unknown": "motor desconocido: \"{engine}\" (en esta versión solo existe \"fake\")",
   "error.engine.bad_delay": "GIMG_FAKE_DELAY no es un número finito >= 0: \"{value}\"",
-  "error.log.bad_project": "nombre de proyecto no válido para el registro: \"{project}\""
+  "error.log.bad_project": "nombre de proyecto no válido para el registro: \"{project}\"",
+  "error.queue.corrupt": "la cola {path} está corrupta",
+  "error.queue.unknown": "no hay ninguna entrada {id} en la cola",
+  "error.queue.not_cancellable": "la entrada {id} ya terminó ({state}) y no se puede cancelar",
+  "error.queue.bad_state": "estado final no válido \"{state}\"; usa uno de: {states}",
+  "error.queue.not_running": "la entrada {id} no está en marcha (estado: {state})",
+  "error.worker.already_running": "ya hay un trabajador en marcha ({path})",
+  "error.worker.reference_missing": "la referencia \"{path}\" no existe o no es un archivo",
+  "error.worker.image_move": "no se pudo guardar la imagen del intento: {reason}"
 }

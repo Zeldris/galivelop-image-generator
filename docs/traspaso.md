@@ -10,8 +10,8 @@
 |---|---|
 | **Rama** | `f1-nucleo` |
 | **Fase / tarea** | F1 Núcleo: contrato y pasos F1.1-F1.6 en `docs/plan.md` («F1 en detalle»); compactaciones: presupuesto 1, llevadas 0 |
-| **Último punto estable** | F1.3 hecho y revisado (arreglos aplicados): `engine`, `limits`, `log`; ruta del perfil de máquina de confianza, `EngineTimeout`, umask en archivos finales, `paths.project_data_dir`; check en verde, 172 tests |
-| **Siguiente paso** | F1.4 (`queue` y `worker`) por subagente: cola persistente y trabajador que encadena perfil de máquina, límites, motor (`EngineTimeout` = `timeout`), `orders.add_attempt` y `log.append` |
+| **Último punto estable** | F1.4 hecho (sin revisar): `queue` (cola persistente con recuperación y poda) y `worker` (un solo trabajador, límites al ejecutar, imagen por temporal + `os.replace`, registro); F1.3 revisado antes; check en verde |
+| **Siguiente paso** | F1.5 (`delivery` y manifiesto, enganchados a `choose`/`undo`, con la guardia de rutas final y de referencias de «Pendiente») por subagente; antes, revisión corta de F1.4 |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
