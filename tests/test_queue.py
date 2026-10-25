@@ -136,6 +136,26 @@ class QueueTests(QueueBase):
         queue.finish(1, "cancelled")
         self.assertEqual(queue.get(1)["state"], "cancelled")
 
+    def test_is_cancel_requested_never_recovers(self):
+        self.push()
+        queue.claim()  # running, and no worker holds the lock: a recovering read would re-queue it
+        self.assertFalse(queue.is_cancel_requested(1))
+        raw = json.loads((self.tmp / "data" / "queue.json").read_text())
+        self.assertEqual(raw["entries"][0]["state"], "running")
+        self.assertEqual(self.code(queue.is_cancel_requested, 99), "queue.unknown")
+
+    def test_error_text_renders_schema_errors(self):
+        from gimg import schema
+        err = queue.make_error("order.invalid", [schema.ValidationError("/prompt", "maxLength", {"limit": 4000})])
+        self.assertEqual(err["errors"], [{"path": "/prompt", "code": "maxLength", "params": {"limit": 4000}}])
+        text = queue.error_text(err, "en")
+        self.assertEqual(text.splitlines()[0], "the order is not valid:")
+        self.assertIn("/prompt: must be at most 4000 characters", text)
+        self.assertNotIn("errors", queue.make_error("x"))
+        for odd in (None, "x", [1], [{"path": 1}], [{"path": "/a", "code": "nope", "params": 3}]):
+            self.assertEqual(queue.error_text({"code": "order.invalid", "params": {}, "errors": odd}, "en")
+                             .splitlines()[0], "the order is not valid:")
+
     def test_cancel_terminal_and_unknown(self):
         self.push()
         queue.claim()

@@ -1,4 +1,5 @@
 import fcntl
+import io
 import json
 import os
 import struct
@@ -330,6 +331,28 @@ class WorkerTests(QueueBase):
             self.assertEqual(worker.run(engine=engine.FakeEngine(fail_with="boom")), 2)
         self.assertEqual(calls, [1, 2])
         self.assertEqual(queue.get(2)["error"]["code"], "engine.failed")
+
+    def test_schema_errors_survive_in_the_entry_error(self):
+        from gimg import schema
+        self.push()
+        boom = GimgError("order.invalid", errors=[schema.ValidationError("/prompt", "maxLength", {"limit": 4000})])
+        worker.run(engine=StubEngine(boom))
+        entry = queue.get(1)
+        self.assertEqual(entry["error"]["errors"][0]["path"], "/prompt")
+        self.assertIn("/prompt: must be at most 4000 characters", queue.error_text(entry, "en"))
+
+    def finish_message(self, lang):
+        self.push()
+        with mock.patch.object(queue, "finish", side_effect=GimgError("queue.corrupt", path="x")), \
+                mock.patch("sys.stderr", new_callable=io.StringIO) as err:
+            worker.run(lang=lang, once=True)
+        return err.getvalue()
+
+    def test_worker_messages_use_the_given_language(self):
+        self.assertIn("could not finish queue entry 1", self.finish_message("en"))
+
+    def test_worker_messages_in_spanish(self):
+        self.assertIn("no se pudo cerrar la entrada 1", self.finish_message("es"))
 
     def test_failing_log_line_does_not_fail_the_entry(self):
         self.push()

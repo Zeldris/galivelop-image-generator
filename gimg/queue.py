@@ -26,7 +26,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from . import engine as engine_mod
-from . import fsutil, i18n, limits, log, orders, paths
+from . import fsutil, i18n, limits, log, orders, paths, schema
 from .errors import GimgError
 
 KEEP_TERMINAL = 200
@@ -218,9 +218,13 @@ def claim():
     return _txn(change)
 
 
-def make_error(code: str, **params) -> dict:
-    """The ``error`` of an entry: ``{"code", "params"}``, JSON-serialisable (values that are not become text)."""
-    return json.loads(json.dumps({"code": code, "params": params}, default=str))
+def make_error(code: str, errors=(), **params) -> dict:
+    """The ``error`` of an entry: ``{"code", "params"}`` (JSON-serialisable: values that are not become text),
+    plus ``"errors": [{"path", "code", "params"}]`` when there are schema errors (`GimgError.errors`)."""
+    error = {"code": code, "params": params}
+    if errors:
+        error["errors"] = [{"path": e.path, "code": e.code, "params": e.params} for e in errors]
+    return json.loads(json.dumps(error, default=str))
 
 
 def error_text(error, lang: str | None = None) -> str:
@@ -239,7 +243,21 @@ def error_text(error, lang: str | None = None) -> str:
         text = i18n.t("error." + code, lang, **params)
     except (KeyError, IndexError, TypeError, ValueError):  # missing or oddly named placeholder
         return code
-    return code if text == "error." + code else text  # no text for this code: show the code
+    if text == "error." + code:  # no text for this code: show the code
+        text = code
+    return "\n".join([text] + _schema_lines(error.get("errors"), lang))
+
+
+def _schema_lines(errors, lang) -> list:
+    """Texts of the stored schema errors; an old or odd shape (not a list of dicts) is skipped item by item."""
+    lines = []
+    for item in errors if isinstance(errors, list) else ():
+        try:
+            lines.append(schema.format_error(schema.ValidationError(
+                str(item["path"]), str(item["code"]), dict(item["params"])), lang))
+        except (KeyError, IndexError, TypeError, ValueError, AttributeError):
+            continue
+    return lines
 
 
 def finish(entry_id, state: str, error=None, attempt_id=None) -> dict:
@@ -261,7 +279,8 @@ def finish(entry_id, state: str, error=None, attempt_id=None) -> dict:
 
 
 def is_cancel_requested(entry_id) -> bool:
-    return bool(get(entry_id).get("cancelRequested"))
+    """Polled by the worker every few ms: a plain locked read, it never tries the worker lock."""
+    return _txn(lambda data: bool(_find(data, entry_id).get("cancelRequested")))
 
 
 def estimate_for(entry: dict, provider: str | None = None):

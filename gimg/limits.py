@@ -47,7 +47,11 @@ def load_machine(ref: str | None = None) -> dict:
     if not ref:
         ref = os.environ.get("GIMG_MACHINE_PROFILE")
     if not ref:
-        config = fsutil.read_json(paths.config_dir() / "config.json", {})
+        config_file = paths.config_dir() / "config.json"
+        try:
+            config = fsutil.read_json(config_file, {})
+        except (OSError, ValueError) as exc:
+            raise GimgError("machine.config_unreadable", path=str(config_file), reason=str(exc))
         ref = config.get("machineProfile") if isinstance(config, dict) else None
     if not ref:
         ref = DEFAULT_PROFILE

@@ -188,6 +188,9 @@ def attempt_specs(project: str, key: str, profile: str, count: int = 1, *,
     style = profile_cfg.get("style", "")
     if style:
         text = "%s, %s" % (text, style)
+    max_prompt = schema.load_schema("order")["properties"]["prompt"]["maxLength"]
+    if len(text) > max_prompt:
+        raise GimgError("order.prompt_too_long", length=len(text), max=max_prompt)
     base = order["seed"] if seed is None else seed
     return [{
         "seed": _rng.randrange(SEED_LIMIT) if base is None else base + i,

@@ -19,8 +19,9 @@ Once the attempt exists nothing can fail the entry: the success log line and `qu
 entry whose `finish` failed stays ``running`` and recovery deals with it), and no failure line is written. No
 `finish` error ever stops `run()`.
 
-Errors: the entry ``error`` is ``{"code", "params"}`` (`queue.make_error`; render with `queue.error_text`):
-a `GimgError` keeps its code and params, `EngineTimeout` is ``engine.timeout``, any other `EngineError` is
+Errors: the entry ``error`` is ``{"code", "params"}`` plus ``"errors"`` (schema errors as path/code/params)
+when there are any (`queue.make_error`; render with `queue.error_text`):
+a `GimgError` keeps its code, params and schema errors, `EngineTimeout` is ``engine.timeout``, any other `EngineError` is
 ``engine.failed`` with ``{"message"}``, anything else ``worker.unexpected`` with ``{"message": "Type: msg"}``.
 Log: one line for every attempt that fails (limits, references, engine, timeout) or succeeds; for failures
 ``app.error`` is the English rendering of that error (e.g. "the attempt asks for 99 steps ..."); a cancel writes no line.
@@ -73,7 +74,7 @@ def _unlink(path) -> None:
 
 def _error_for(exc: BaseException) -> dict:
     if isinstance(exc, GimgError):
-        return queue.make_error(exc.code, **exc.params)
+        return queue.make_error(exc.code, exc.errors, **exc.params)
     if isinstance(exc, engine_mod.EngineTimeout):
         return queue.make_error("engine.timeout")
     if isinstance(exc, engine_mod.EngineError):
@@ -90,12 +91,12 @@ def _log_failure(entry: dict, machine: dict, provider: str, error: dict) -> None
         pass
 
 
-def _finish(entry_id, state, **kw) -> None:
+def _finish(entry_id, state, lang=None, **kw) -> None:
     """`queue.finish` that never raises: the entry stays ``running`` and recovery deals with it."""
     try:
         queue.finish(entry_id, state, **kw)
     except Exception as exc:
-        print("gimg: could not finish queue entry %s: %s" % (entry_id, exc), file=sys.stderr)
+        print(i18n.t("worker.finish_failed", lang, id=entry_id, reason=exc), file=sys.stderr)
 
 
 def _generate(entry: dict, eng, machine: dict, state: dict):
@@ -137,19 +138,19 @@ def _generate(entry: dict, eng, machine: dict, state: dict):
     return attempt_id
 
 
-def _process(entry: dict, eng) -> None:
+def _process(entry: dict, eng, lang=None) -> None:
     entry_id = entry["id"]
     machine = {}
     state = {"tmp": None, "final": None, "result": None}
     try:
         attempt_id = _generate(entry, eng, machine, state)
     except engine_mod.Cancelled:
-        _finish(entry_id, "cancelled")
+        _finish(entry_id, "cancelled", lang)
         return
     except Exception as exc:  # a bug must not leave the entry running or kill the loop
         error = _error_for(exc)
         _log_failure(entry, machine, eng.provider, error)
-        _finish(entry_id, "failed", error=error)
+        _finish(entry_id, "failed", lang, error=error)
         return
     finally:
         for leftover in (state["tmp"], state["final"]):
@@ -161,13 +162,14 @@ def _process(entry: dict, eng) -> None:
             log.append(entry["project"], log.record_for(
                 entry["key"], entry["profile"], entry, machine, eng.provider, result=state["result"]))
         except Exception as exc:
-            print("gimg: could not write the log line of entry %s: %s" % (entry_id, exc), file=sys.stderr)
-    _finish(entry_id, "done", attempt_id=attempt_id)
+            print(i18n.t("worker.log_failed", lang, id=entry_id, reason=exc), file=sys.stderr)
+    _finish(entry_id, "done", lang, attempt_id=attempt_id)
 
 
-def run(once: bool = False, engine=None) -> int:
+def run(once: bool = False, engine=None, lang=None) -> int:
     """Process queued entries (one with `once`, else until none is left); returns how many were handled.
 
+    `lang` is the language of the messages the worker prints (the CLI passes its ``--lang``).
     Raises ``GimgError("worker.already_running")`` if another process holds the worker lock."""
     with _single_worker():
         queue.recover_orphans()
@@ -177,7 +179,7 @@ def run(once: bool = False, engine=None) -> int:
             entry = queue.claim()
             if entry is None:
                 return handled
-            _process(entry, eng)
+            _process(entry, eng, lang)
             handled += 1
             if once:
                 return handled

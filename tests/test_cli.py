@@ -240,3 +240,17 @@ class LocaleCoverageTests(unittest.TestCase):
             texts = json.loads((ROOT / "gimg" / "locales" / (lang + ".json")).read_text(encoding="utf-8"))
             for key in keys:
                 self.assertTrue(key in texts or "error." + key in texts, (lang, key))
+
+
+class BadEngineTests(CliBase):
+    def test_bad_engine_fails_before_queueing(self):
+        self.ok("project", "add", str(self.root))
+        with mock.patch.dict(os.environ, {"GIMG_ENGINE": "nope"}):
+            self.fails("order", "submit", "example-world", str(self.order_file), message="nope")
+            self.fails("attempt", "new", "example-world", ORDER["key"], ORDER["profile"], message="nope")
+        self.assertEqual(self.js("queue", "list"), [])  # nothing queued, so a retry cannot duplicate
+
+    def test_work_passes_the_language(self):
+        with mock.patch("gimg.worker.run", return_value=0) as run:
+            self.ok("--lang", "es", "work", "--once")
+        self.assertEqual(run.call_args.kwargs["lang"], "es")

@@ -141,6 +141,18 @@ class OrderTests(unittest.TestCase):
         self.write_cfg()
         self.assertEqual(orders.attempt_specs("proj", "a", "banner")[0]["prompt"], "a cat")
 
+    def test_prompt_plus_style_too_long_fails_before_queueing(self):
+        limit = 4000
+        style = self.cfg["profiles"]["banner"]["style"]
+        self.new_order(prompt="x" * (limit - 3))  # fits alone, not with ", " + style
+        with self.assertRaises(GimgError) as cm:
+            orders.attempt_specs("proj", "a", "banner")
+        self.assertEqual(cm.exception.code, "order.prompt_too_long")
+        self.assertEqual(cm.exception.params, {"length": limit - 3 + 2 + len(style), "max": limit})
+        self.cfg["profiles"]["banner"]["style"] = ""
+        self.write_cfg()
+        self.assertEqual(len(orders.attempt_specs("proj", "a", "banner")[0]["prompt"]), limit - 3)
+
     def test_retouch_does_not_change_order(self):
         self.new_order(seed=3)
         before = orders.get("proj", "a", "banner")

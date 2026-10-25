@@ -95,7 +95,7 @@ elegida. Deshacer no restaura una descartada (`order.undo_discarded`): se marca 
 `maxLength` 4000.
 
 **Prompt y parámetros de un intento** (`orders.attempt_specs`). `prompt` exacto = prompt del pedido (o el retocado,
-D19) + `", "` + `style` del perfil (solo si `style` no está vacío). `params` = ajustes del perfil (`width`, `height`,
+D19) + `", "` + `style` del perfil (solo si `style` no está vacío); si el resultado supera el `maxLength` del `prompt` del esquema del pedido, `attempt_specs` falla con `order.prompt_too_long` antes de encolar. `params` = ajustes del perfil (`width`, `height`,
 `steps`, `cfg`, `sampler`, `model`, los que defina) pisados por `params` del pedido y estos por los del intento.
 `choose` y `undo` devuelven `{old, new}` para que la entrega se enganche; elegir la ya elegida no apila.
 **Imagen de un intento:** el campo `image` (relativo a la carpeta del pedido) manda; la ruta sale de
@@ -113,7 +113,7 @@ pedido, así que reenviarlo con semilla reproduce la misma imagen; `attempt new`
 `width × height` ≤ `maxPixels` (lo que el perfil no fije, como `steps`, no se comprueba; los valores por
 defecto de cada modelo los pone el motor real en F2); si no, `LimitError` con mensaje claro. La memoria la comprueba el motor real (F2). El
 perfil de máquina sale de `GIMG_MACHINE_PROFILE` (nombre de `gimg/machine_profiles/` o ruta a un JSON) o de
-`machineProfile` en `<config>/config.json`; por defecto `steam-deck`. La ruta del perfil de máquina es entrada de confianza de la persona en su propia máquina
+`machineProfile` en `<config>/config.json` (si ese archivo no se puede leer, `machine.config_unreadable`); por defecto `steam-deck`. La ruta del perfil de máquina es entrada de confianza de la persona en su propia máquina
 (fuera de D25): puede ser absoluta o relativa y se expande `~`; sin caracteres de control (`machine.bad_path`), y si no se puede leer, `machine.unreadable`.
 
 **Motor** (`gimg/engine.py`). `generate(job, should_cancel) -> EngineResult`. `EngineJob`: prompt, width, height,
@@ -146,7 +146,7 @@ saca la primera `queued`, comprueba límites, llama al motor, crea el intento, e
 Detalles de F1.4: toda lectura y escritura de `queue.json` va bajo `fsutil.lock`, y la recuperación (reinicio y poda) se hace
 en esa misma transacción; una `running` recuperada con `cancelRequested` pasa a `cancelled`, no a `queued`. `enqueue` valida
 que el pedido exista y los límites del perfil de máquina de ese momento; si una spec falla, no se encola ninguna. `error` de una
-entrada fallida es siempre `{"code": ..., "params": {...}}` (JSON): el `GimgError` conserva código y parámetros,
+entrada fallida es siempre `{"code": ..., "params": {...}}` (JSON), más `"errors": [{path, code, params}]` si el `GimgError` traía errores de esquema (`error_text` los pinta debajo, como `GimgError.message`; tolera formas antiguas): el `GimgError` conserva código, parámetros y errores,
 `EngineTimeout` es `engine.timeout`, otro `EngineError` es `engine.failed` con `{"message"}` y una excepción inesperada
 `worker.unexpected` con `{"message": "Tipo: mensaje"}`; `queue.error_text(error_o_entrada, idioma)` lo traduce con i18n
 (la CLI de F1.6 lo usa). **Id y orden del intento:** la imagen se llama como la entrada: el motor escribe
@@ -187,7 +187,7 @@ de entrega que sea un enlace hacia fuera ya la rechaza `projects.get` al cargar 
 el estimado); `order list <proyecto> [--profile] [--chosen|--unchosen]`; `order show <proyecto> <key> <perfil>`;
 `attempt new <proyecto> <key> <perfil> [--seed] [--count] [--prompt] [--steps] [--cfg] [--sampler]`;
 `attempt mark … <id> new|candidate|discarded`; `attempt note … <id> <texto>`; `choose … <id>`; `undo …`;
-`queue list|cancel <id>`; `work [--once]` (procesa la cola; en F3 lo hará el servicio); `version`. Errores por stderr
+`queue list|cancel <id>`; `work [--once]` (procesa la cola, y sus mensajes salen en el `--lang` de la CLI; en F3 lo hará el servicio); `version`. Errores por stderr
 con salida 1.
 Opciones globales (antes o después de la orden): `--lang es|en` (por defecto `i18n.default_lang()`) y `--json`. La CLI
 es una capa fina: llama a los módulos del núcleo y todo texto visible sale de `i18n.t` (claves `cli.*`). `order submit` encola

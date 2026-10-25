@@ -29,6 +29,14 @@ class LoadTests(unittest.TestCase):
             limits.load_machine(*args)
         return cm.exception.code
 
+    def test_corrupt_config_json_is_translated(self):
+        (self.tmp / "cfg").mkdir()
+        (self.tmp / "cfg" / "config.json").write_text("{nope")
+        with self.assertRaises(GimgError) as cm:
+            limits.load_machine()
+        self.assertEqual(cm.exception.code, "machine.config_unreadable")
+        self.assertIn(str(self.tmp / "cfg" / "config.json"), cm.exception.message("en"))
+
     def test_tilde_unresolvable(self):
         with mock.patch.dict(os.environ, {"HOME": ""}), mock.patch(
                 "pathlib.Path.expanduser", side_effect=RuntimeError("no home")):
