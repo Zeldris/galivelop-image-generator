@@ -10,8 +10,8 @@
 |---|---|
 | **Rama** | `f0-esqueleto` |
 | **Fase / tarea** | F0 Esqueleto (`docs/plan.md`): paquete `gimg`, esquemas, validador stdlib, textos es/en, README es/en, check con `unittest`. Presupuesto: 1 compactación (llevadas: 1 al empezar) |
-| **Último punto estable** | F0 con fase 1 (revisión, arreglos) y fase 2 (opt-tokens + retro aprobadas y aplicadas) |
-| **Siguiente paso** | Fase 3: `revisado.sh`, push y PR de F0 (skill `pr`), con el CI en verde |
+| **Último punto estable** | F0 con las tres fases hechas: marca de revisión en `17e28eb` (revisa `169de4b`) |
+| **Siguiente paso** | La persona mira el CI de `f0-esqueleto` y crea el PR en la web (sin `gh`); con el CI en verde, fusionar F0 y `/clear` |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
