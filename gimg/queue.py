@@ -229,7 +229,12 @@ def error_text(error, lang: str | None = None) -> str:
         error = error.get("error")
     if not error:
         return ""
-    code, params = error["code"], error.get("params") or {}
+    if isinstance(error, str):  # older or hand-edited queue.json
+        return error
+    if not isinstance(error, dict) or not isinstance(error.get("code"), str):
+        return str(error)
+    code, params = error["code"], error.get("params")
+    params = params if isinstance(params, dict) else {}
     try:
         text = i18n.t("error." + code, lang, **params)
     except (KeyError, IndexError, TypeError, ValueError):  # missing or oddly named placeholder

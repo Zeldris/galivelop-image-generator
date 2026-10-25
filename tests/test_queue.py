@@ -219,6 +219,11 @@ class QueueTests(QueueBase):
         self.assertEqual(queue.error_text(entry, "en"), queue.error_text(error, "en"))
         self.assertEqual(queue.error_text(queue.make_error("nope.code")), "nope.code")  # unknown: the code
         self.assertEqual(queue.error_text(None), "")
+
+    def test_error_text_odd_shapes(self):
+        self.assertEqual(queue.error_text("timeout boom"), "timeout boom")
+        self.assertEqual(queue.error_text({"params": {}}), "{'params': {}}")
+        self.assertEqual(queue.error_text({"code": "nope.code", "params": [1]}), "nope.code")
         self.assertEqual(json.loads(json.dumps(queue.make_error("x", obj=Path("/a")))),
                          {"code": "x", "params": {"obj": "/a"}})
 
