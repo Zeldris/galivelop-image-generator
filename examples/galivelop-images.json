@@ -1,0 +1,26 @@
+{
+  "$schema": "../gimg/schemas/project-config.schema.json",
+  "minVersion": "0.1.0",
+  "name": "example-world",
+  "delivery": {"dir": "uploads/images", "template": "{key}-{profile}.png"},
+  "profiles": {
+    "banner": {
+      "width": 1280,
+      "height": 512,
+      "steps": 6,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "flux2-klein-4b-q8",
+      "style": "flat illustration, soft colors, no text"
+    },
+    "thumbnail": {
+      "width": 512,
+      "height": 512,
+      "steps": 6,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "flux2-klein-4b-q8",
+      "style": "flat illustration, soft colors, no text"
+    }
+  }
+}

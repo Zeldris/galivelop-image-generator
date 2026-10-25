@@ -1,0 +1,7 @@
+{
+  "key": "fauna/red-howler",
+  "profile": "banner",
+  "prompt": "A red howler monkey on a branch at dawn",
+  "references": ["refs/wolf.png"],
+  "seed": 42
+}

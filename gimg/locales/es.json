@@ -1,0 +1,16 @@
+{
+  "schema.required": "{path}: falta la propiedad obligatoria «{name}»",
+  "schema.type": "{path}: debe ser de tipo {expected}",
+  "schema.enum": "{path}: debe ser uno de {allowed}",
+  "schema.const": "{path}: debe ser exactamente {expected}",
+  "schema.pattern": "{path}: no cumple el formato esperado ({pattern})",
+  "schema.minimum": "{path}: debe ser como mínimo {limit}",
+  "schema.maximum": "{path}: debe ser como máximo {limit}",
+  "schema.minLength": "{path}: debe tener al menos {limit} caracteres",
+  "schema.maxLength": "{path}: debe tener como máximo {limit} caracteres",
+  "schema.minItems": "{path}: debe tener al menos {limit} elementos",
+  "schema.maxItems": "{path}: debe tener como máximo {limit} elementos",
+  "schema.minProperties": "{path}: debe tener al menos {limit} propiedades",
+  "schema.additionalProperties": "{path}: propiedad desconocida «{name}»",
+  "schema.propertyNames": "{path}: el nombre «{name}» no es válido ({pattern})"
+}

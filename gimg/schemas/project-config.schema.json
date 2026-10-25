@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Project configuration",
+  "description": "Per-project configuration file (galivelop-images.json) read by the image generator.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["minVersion", "name", "delivery", "profiles"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Schema reference so editors can validate and complete the file."
+    },
+    "minVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Minimum generator version (semver) this project requires."
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "Project name: lowercase letters, digits and hyphens."
+    },
+    "delivery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dir"],
+      "description": "Where finished images are delivered inside the project repository.",
+      "properties": {
+        "dir": {
+          "$ref": "#/$defs/relativePath",
+          "description": "Delivery directory, relative to the project root."
+        },
+        "template": {
+          "type": "string",
+          "default": "{key}-{profile}.png",
+          "pattern": "\\.png$",
+          "description": "File name template for delivered images; must end in .png."
+        }
+      }
+    },
+    "manifest": {
+      "$ref": "#/$defs/relativePath",
+      "default": "galivelop-images.manifest.json",
+      "description": "Manifest file path, relative to the project root."
+    },
+    "profiles": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {"pattern": "^[a-z0-9][a-z0-9-]*$"},
+      "additionalProperties": {"$ref": "#/$defs/profile"},
+      "description": "Image profiles by name (size, sampling settings, model, style)."
+    }
+  },
+  "$defs": {
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![/~])(?!.*(^|/)\\.\\.(/|$))[^\\\\]+$",
+      "description": "Relative path that cannot be absolute, start with ~, contain .. segments or backslashes."
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height"],
+      "description": "One image profile.",
+      "properties": {
+        "width": {"type": "integer", "minimum": 64, "maximum": 4096, "description": "Image width in pixels."},
+        "height": {"type": "integer", "minimum": 64, "maximum": 4096, "description": "Image height in pixels."},
+        "steps": {"type": "integer", "minimum": 1, "maximum": 200, "description": "Sampling steps."},
+        "cfg": {"type": "number", "minimum": 0, "maximum": 30, "description": "Classifier-free guidance scale."},
+        "sampler": {"type": "string", "minLength": 1, "description": "Sampler name."},
+        "model": {"type": "string", "minLength": 1, "description": "Model identifier."},
+        "style": {"type": "string", "description": "Fixed text appended to every prompt of this profile."}
+      }
+    }
+  }
+}

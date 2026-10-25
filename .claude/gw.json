@@ -10,7 +10,8 @@
   "install": [],
   "setup": [],
   "check": [
-    "bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg"
+    "bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg",
+    "python3 -m unittest discover -s tests -t ."
   ],
   "checkWrapper": "",
   "worktreeLinks": [

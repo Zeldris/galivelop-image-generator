@@ -1,0 +1,11 @@
+{
+  "$schema": "../schemas/machine-profile.schema.json",
+  "name": "steam-deck",
+  "minFreeMemoryMb": 7000,
+  "watchMemoryMb": 1500,
+  "maxReferences": 1,
+  "timeoutS": 900,
+  "maxSteps": 50,
+  "maxPixels": 1048576,
+  "engine": {"maxVram": "vulkan0=2", "paramsBackend": "disk"}
+}

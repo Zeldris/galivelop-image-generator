@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Machine profile",
+  "description": "Resource limits and engine settings for a specific machine.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "minFreeMemoryMb", "maxReferences", "timeoutS"],
+  "properties": {
+    "$schema": {"type": "string", "description": "Schema reference so editors can validate and complete the file."},
+    "name": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$", "description": "Profile name."},
+    "minFreeMemoryMb": {"type": "integer", "minimum": 0, "description": "Minimum free memory in MB required to start."},
+    "watchMemoryMb": {"type": "integer", "minimum": 0, "description": "Abort if MemAvailable drops below this many MB during generation."},
+    "maxReferences": {"type": "integer", "minimum": 0, "description": "Maximum number of reference images."},
+    "timeoutS": {"type": "integer", "minimum": 1, "description": "Generation timeout in seconds."},
+    "maxSteps": {"type": "integer", "minimum": 1, "description": "Maximum sampling steps."},
+    "maxPixels": {"type": "integer", "minimum": 4096, "description": "Maximum pixels (width times height)."},
+    "engine": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Engine settings.",
+      "properties": {
+        "maxVram": {"type": "string", "pattern": "^[a-z0-9]+=[0-9]+(\\.[0-9]+)?$", "description": "VRAM cap as device=gigabytes, for example vulkan0=2."},
+        "paramsBackend": {"type": "string", "enum": ["disk"], "description": "Where model parameters are kept."}
+      }
+    }
+  }
+}

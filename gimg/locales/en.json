@@ -1,0 +1,16 @@
+{
+  "schema.required": "{path}: missing required property \"{name}\"",
+  "schema.type": "{path}: must be of type {expected}",
+  "schema.enum": "{path}: must be one of {allowed}",
+  "schema.const": "{path}: must be exactly {expected}",
+  "schema.pattern": "{path}: does not match the expected format ({pattern})",
+  "schema.minimum": "{path}: must be at least {limit}",
+  "schema.maximum": "{path}: must be at most {limit}",
+  "schema.minLength": "{path}: must be at least {limit} characters long",
+  "schema.maxLength": "{path}: must be at most {limit} characters long",
+  "schema.minItems": "{path}: must have at least {limit} items",
+  "schema.maxItems": "{path}: must have at most {limit} items",
+  "schema.minProperties": "{path}: must have at least {limit} properties",
+  "schema.additionalProperties": "{path}: unknown property \"{name}\"",
+  "schema.propertyNames": "{path}: name \"{name}\" is not valid ({pattern})"
+}

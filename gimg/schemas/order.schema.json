@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Order",
+  "description": "A request to generate one image.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["key", "profile", "prompt"],
+  "properties": {
+    "$schema": {"type": "string", "description": "Schema reference so editors can validate and complete the file."},
+    "key": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*(/[a-z0-9][a-z0-9-]*)*$",
+      "description": "Order key; slash-separated safe segments, no leading slash and no .. segments."
+    },
+    "profile": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "Name of the project profile to use."
+    },
+    "prompt": {"type": "string", "minLength": 1, "description": "Text prompt describing the image."},
+    "references": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/relativePath"},
+      "description": "Reference image paths, relative to the project root."
+    },
+    "seed": {"type": "integer", "minimum": 0, "description": "Random seed."},
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Per-order overrides of the profile sampling settings.",
+      "properties": {
+        "steps": {"type": "integer", "minimum": 1, "maximum": 200, "description": "Sampling steps."},
+        "cfg": {"type": "number", "minimum": 0, "maximum": 30, "description": "Classifier-free guidance scale."},
+        "sampler": {"type": "string", "minLength": 1, "description": "Sampler name."}
+      }
+    },
+    "count": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 50,
+      "default": 1,
+      "description": "Number of consecutive attempts."
+    }
+  },
+  "$defs": {
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![/~])(?!.*(^|/)\\.\\.(/|$))[^\\\\]+$",
+      "description": "Relative path that cannot be absolute, start with ~, contain .. segments or backslashes."
+    }
+  }
+}

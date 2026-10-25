@@ -8,11 +8,11 @@
 
 | Campo | Valor |
 |---|---|
-| **Rama** | `diseno-generador` |
-| **Fase / tarea** | Paso 1 (flujo v0.4.0) y paso 2 (diseño D1-D26, F0-F5) fusionados en `main`; siguiente tarea: F0 |
-| **Último punto estable** | Diseño rondas 1-3: decisiones D1-D26 en `docs/plan.md`, ADR 0001-0002, términos en `GLOSSARY.md` |
-| **Siguiente paso** | `/clear` y F0 (esqueleto) en una rama nueva desde `main` |
-| **Check** | `bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg`: verde |
+| **Rama** | `f0-esqueleto` |
+| **Fase / tarea** | F0 Esqueleto (`docs/plan.md`): paquete `gimg`, esquemas, validador stdlib, textos es/en, README es/en, check con `unittest`. Presupuesto: 1 compactación (llevadas: 1 al empezar) |
+| **Último punto estable** | F0 implementada: `gimg/` (validador, i18n, esquemas, preajuste `steam-deck`), `examples/`, 50 tests, README es/en, CHANGELOG |
+| **Siguiente paso** | Fase 1 antes de `main`: `/code-review --max-findings all` del diff contra `origin/main` |
+| **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.
@@ -31,8 +31,11 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 
 ## Pendiente
 
-- **Deuda:** el `check` solo hace `bash -n` de los ganchos porque aún no hay código; cambiarlo por el lint + tests
-  reales en cuanto se elija stack (`.claude/gw.json` → `check`, y `install` si hace falta). Se cierra en F0.
+- **F1, entrega (D25):** el esquema no impide que `delivery.template` salga de la carpeta de entrega
+  (`../{key}.png`, porque `{key}` lleva `/` a propósito); la entrega tiene que resolver la ruta final, con enlaces,
+  y rechazarla si queda fuera de `delivery.dir`. Igual con `references` (enlaces que salgan del proyecto).
+- **Cuando la persona avise:** revisar las actualizaciones de Tarkor (otro repo) sobre su generador de imágenes: lo lee
+  un subagente `Explore` que devuelve un resumen con rutas (`orchestrate-dealer`); desde aquí no se modifica.
 - El flujo copiado es la 0.4.0 **sin publicar** (rama `ccr-6dfbc880-ddr41g` del flujo, commit `d227bbf`; su `main` está en
   0.3.0): `/gw-update` cuando la 0.4.0 salga publicada.
 - Proponer al flujo (`gw-harvest`) lo de `docs/registros/retro-2026-10-25-diseno.md` (R1-R4, R7); el hallazgo
@@ -42,6 +45,6 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 ## Comprobar el estado
 
 - Últimos commits: `git fetch origin <rama> && git log --oneline -5 origin/<rama>`.
-- El check: `bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg`.
+- El check: `bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg` y `python3 -m unittest discover -s tests -t .`.
 - Flujo bien montado: `python3 .claude/gw/scripts/doctor.py`.
 - Estado de la bitácora tal como lo recibe una sesión nueva: `python3 .claude/gw/scripts/recuperar.py --estado`.

@@ -10,7 +10,7 @@ en `.claude/skills/` y su configuración en `.claude/gw.json` (solo la lee `.cla
 
 1. Lee la bitácora, `docs/traspaso.md`: rama, tarea en curso, qué falta y siguiente paso.
 2. `git fetch origin <rama>` y comprueba que el último commit coincide con lo que dice la bitácora.
-3. Comprueba que el check está en verde antes de tocar nada: `bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg`.
+3. Comprueba que el check está en verde antes de tocar nada: `bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg` y `python3 -m unittest discover -s tests -t .`.
 4. Sigue por el **siguiente paso** de la bitácora, salvo que la persona pida otra cosa.
 5. Al empezar cada tarea, trae la rama protegida: `git fetch origin main` y, si trae commits,
    `git merge origin/main` (merge, nunca rebase: las ramas están subidas). Si el conflicto toca la
@@ -46,7 +46,7 @@ Cada sesión puede correr en un contenedor temporal: **lo que no está subido no
 
 ## Comprobar
 
-- **El check del proyecto:** `bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg`. `.githooks/pre-push` lo corre sobre el commit que se sube, y el CI
+- **El check del proyecto:** `bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg` y `python3 -m unittest discover -s tests -t .`. `.githooks/pre-push` lo corre sobre el commit que se sube, y el CI
   (`.github/workflows/comprobar.yml`) en cada push fuera de `main` y en cada pull request.
 - **Lo comprobable lo hace un script**, no un agente: las skills y guías solo deciden lo que exige criterio. Si una
   regla se sigue rompiendo, se convierte en una comprobación.

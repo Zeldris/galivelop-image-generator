@@ -10,7 +10,7 @@ mantiene al día (skill `domain-modeling`). El flujo nunca sobrescribe este arch
   check.
 - **Relevo**: una sesión que se acaba y otra que sigue desde la bitácora, sin preguntar por dónde iba.
 - **Punto estable**: un estado con el check en verde, con commit y subido.
-- **Check**: las órdenes del proyecto que tienen que pasar en cada commit que se sube: `bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg`.
+- **Check**: las órdenes del proyecto que tienen que pasar en cada commit que se sube: `bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg` y `python3 -m unittest discover -s tests -t .`.
 - **Commit `WIP:`**: un commit subido con algo a medias o en rojo; la bitácora dice qué falla y por qué.
 - **Rama protegida**: `main`, lo publicado; solo recibe trabajo revisado, con confirmación
   de la persona.
@@ -32,64 +32,82 @@ mantiene al día (skill `domain-modeling`). El flujo nunca sobrescribe este arch
 **Generador**:
 El servicio local, uno por máquina, que convierte pedidos en imágenes y los proyectos comparten.
 _Evitar_: image-generator (la carpeta de World-Maker-Fantasy), servidor
+_En código_: generator
 
 **Proyecto**:
 Un repositorio que usa el generador: declara su configuración y le manda pedidos. El generador no conoce su dominio.
 _Evitar_: cliente, mundo, juego
+_En código_: project
 
 **Configuración del proyecto**:
 El archivo que un proyecto tiene en su repo para conectarse al generador: sus perfiles, su estilo y su carpeta de
 entrega.
+_En código_: project config (`galivelop-images.json`)
 
 **Pedido**:
 La petición cerrada de una imagen que hace un proyecto: prompt, perfil, referencias y destino.
 _Evitar_: encargo (en este repo es el «encargo a un subagente» del flujo), trabajo, job, petición
+_En código_: order
 
 **Clave del pedido**:
 El nombre estable que el proyecto da a lo que ilustra (p. ej. `fauna/aullador-rojo`); con el perfil, identifica un
 pedido.
 _Evitar_: slug, id
+_En código_: order key (`key`)
 
 **Intento**:
 Una imagen generada para un pedido con una semilla y unos parámetros concretos; un pedido tiene varios.
 _Evitar_: prueba, variante, render
+_En código_: attempt
 
 **Candidata**:
 Un intento que la persona marca como bueno sin elegirlo todavía.
 _Evitar_: favorita
+_En código_: candidate
 
 **Descartada**:
 Un intento que la persona aparta; sigue en el historial.
 _Evitar_: borrada, papelera
+_En código_: discarded
 
 **Cola**:
 Los pedidos pendientes de generar, en orden de llegada; se generan de uno en uno.
+_En código_: queue
 
 **Manifiesto**:
 El archivo del proyecto que dice, por cada elegida, con qué se generó, para poder reproducirla.
+_En código_: manifest
 
 **Perfil de máquina**:
 Los límites con los que el generador trabaja en un equipo concreto (memoria, referencias por pedido, tiempo máximo).
 _Evitar_: preset, modo
+_En código_: machine profile
 
 **Perfil**:
 Un tipo de imagen con nombre y tamaño fijos que declara un proyecto (p. ej. `banner`, `thumbnail`).
 _Evitar_: tamaño, formato, miniatura
+_En código_: profile
 
 **Estilo del proyecto**:
 El texto fijo que el proyecto declara por perfil y el generador añade a cada prompt; no lleva lógica del dominio.
+_En código_: style
 
 **Referencia**:
 Una imagen existente que acompaña a un pedido para guiar la generación.
+_En código_: reference
 
 **Elegida**:
 El intento que la persona escoge para un pedido, como mucho uno por pedido; es el único que se entrega al proyecto.
+_En código_: chosen
 
 **Carpeta de entrega**:
 La carpeta del proyecto donde el generador deja las elegidas.
+_En código_: delivery dir (`delivery.dir`)
 
 **Motor**:
 El programa externo que genera la imagen a partir del prompt y los modelos (hoy stable-diffusion.cpp).
+_En código_: engine
 
 **Máquina de referencia**:
 El equipo donde se mide y se valida el generador: la Steam Deck con Linux y Vulkan.
+_En código_: reference machine
