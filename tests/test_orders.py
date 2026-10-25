@@ -223,6 +223,59 @@ class OrderTests(unittest.TestCase):
         (paths.data_dir() / "projects/proj/orders/a/@banner/order.json").write_text("{nope")
         self.assertEqual(self.code(orders.get, "proj", "a", "banner"), "order.corrupt")
 
+    def test_undo_rejects_discarded(self):
+        self.new_order(attempts=2)
+        orders.choose("proj", "a", "banner", 1)
+        orders.choose("proj", "a", "banner", 2)
+        orders.mark("proj", "a", "banner", 1, "discarded")
+        before = orders.get("proj", "a", "banner")
+        with self.assertRaises(GimgError) as cm:
+            orders.undo("proj", "a", "banner")
+        self.assertEqual((cm.exception.code, cm.exception.params), ("order.undo_discarded", {"attempt": 1}))
+        self.assertEqual(orders.get("proj", "a", "banner"), before)
+        for lang in ("es", "en"):
+            self.assertNotIn("error.", cm.exception.message(lang))
+        orders.mark("proj", "a", "banner", 1, "candidate")
+        self.assertEqual(orders.undo("proj", "a", "banner"), {"old": 2, "new": 1})
+
+    def test_undo_to_null_allowed_even_if_all_discarded(self):
+        self.new_order(attempts=1)
+        orders.choose("proj", "a", "banner", 1)
+        self.assertEqual(orders.undo("proj", "a", "banner"), {"old": 1, "new": None})
+
+    def test_bad_key_or_profile_everywhere(self):
+        self.new_order(attempts=1)
+        for key, profile in [("a//b", "banner"), ("a/./b", "banner"), ("a/@b", "banner"),
+                             ("a", "p/q"), ("A B", "banner")]:
+            for fn, args in [(orders.get, ()), (orders.choose, (1,)), (orders.attempt_image_path, (1,)),
+                             (orders.mark, (1, "new")), (orders.note, (1, "x")), (orders.undo, ()),
+                             (orders.add_attempt, (self.spec(),)), (orders.attempt_specs, ())]:
+                self.assertEqual(self.code(fn, "proj", key, profile, *args), "order.invalid", (fn, key, profile))
+
+    def test_bool_is_not_attempt_id(self):
+        self.new_order(attempts=1)
+        self.assertEqual(self.code(orders.choose, "proj", "a", "banner", True), "order.attempt_unknown")
+
+    def test_list_orders_corrupt_shape(self):
+        self.new_order()
+        file = paths.data_dir() / "projects/proj/orders/a/@banner/order.json"
+        good = json.loads(file.read_text())
+        for bad in ({k: v for k, v in good.items() if k != "profile"},
+                    {k: v for k, v in good.items() if k != "chosen"},
+                    dict(good, attempts="x")):
+            file.write_text(json.dumps(bad))
+            self.assertEqual(self.code(orders.list_orders, "proj"), "order.corrupt")
+
+    def test_add_attempt_validates_fields(self):
+        self.new_order()
+        for spec in ({"seed": "1", "prompt": "p", "params": {}}, {"seed": -1, "prompt": "p", "params": {}},
+                     {"seed": 1, "prompt": 3, "params": {}}, {"seed": 1, "prompt": "p", "params": []},
+                     {"seed": 1, "prompt": "p", "params": {"steps": 0}},
+                     {"seed": 1, "prompt": "p", "params": {"width": "x"}}):
+            self.assertEqual(self.code(orders.add_attempt, "proj", "a", "banner", spec), "order.invalid", spec)
+        full = {"seed": 1, "prompt": "p", "params": {"width": 8, "height": 8, "steps": 2, "cfg": 1, "sampler": "s", "model": "m"}}
+        self.assertEqual(orders.add_attempt("proj", "a", "banner", full), 1)
+
     def test_messages_in_both_languages(self):
         for lang in ("es", "en"):
             try:

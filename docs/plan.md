@@ -91,7 +91,7 @@ createdAt}`, con `prompt` exacto ya con el estilo y `params` completos: `width`,
 `sampler`, `model`), `chosen` (id o `null`) y `chosenHistory` (pila para deshacer). Estados: `new`, `candidate`,
 `discarded`. Reenviar clave + perfil actualiza prompt, referencias y parámetros y conserva los intentos (D18). Elegir
 apila la elegida anterior (aunque sea `null`); deshacer la desapila. No se elige una descartada ni se descarta la
-elegida. `key` con `maxLength` 200 en el esquema y cada segmento ≤ 100 caracteres en el código; `prompt` con
+elegida. Deshacer no restaura una descartada (`order.undo_discarded`): se marca antes `new` o `candidate`; volver a `null` sí. `key` con `maxLength` 200 en el esquema y cada segmento ≤ 100 caracteres en el código; `prompt` con
 `maxLength` 4000.
 
 **Prompt y parámetros de un intento** (`orders.attempt_specs`). `prompt` exacto = prompt del pedido (o el retocado,

@@ -10,8 +10,8 @@
 |---|---|
 | **Rama** | `f1-nucleo` |
 | **Fase / tarea** | F1 Núcleo: contrato y pasos F1.1-F1.6 en `docs/plan.md` («F1 en detalle»); compactaciones: presupuesto 1, llevadas 0 |
-| **Último punto estable** | F1.2 hecho: `orders` (pedidos, intentos, estados, notas, elegir/deshacer, especificaciones de intento; 123 tests); F1.1 revisado antes |
-| **Siguiente paso** | F1.3: `engine` (`FakeEngine`), `limits`, `log` y estimado |
+| **Último punto estable** | F1.2 hecho y revisado (arreglos aplicados): `orders` valida key y perfil en todas las entradas, undo no restaura descartadas, forma de order.json en list_orders, campos de add_attempt; 129 tests |
+| **Siguiente paso** | F1.3 (engine, limits, log) por subagente: `engine` (`FakeEngine`), `limits`, `log` y estimado |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con

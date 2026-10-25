@@ -47,5 +47,6 @@
   "error.order.discard_chosen": "attempt {attempt} is the chosen one and cannot be discarded",
   "error.order.choose_discarded": "attempt {attempt} is discarded and cannot be chosen",
   "error.order.history_empty": "nothing to undo in order \"{order}\" ({profile})",
+  "error.order.undo_discarded": "attempt {attempt} is discarded and undo cannot choose it again; mark it `new` or `candidate` first",
   "error.order.note_invalid": "the note must be text"
 }

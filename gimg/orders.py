@@ -24,6 +24,9 @@ STATES = ("new", "candidate", "discarded")
 SEED_LIMIT = 2 ** 32
 _PROFILE_PARAMS = ("width", "height", "steps", "cfg", "sampler", "model")
 _ORDER_FILE = "order.json"
+_FULL_PARAMS = {"type": "object", "properties": {
+    "width": {"type": "integer", "minimum": 1}, "height": {"type": "integer", "minimum": 1},
+    "model": {"type": "string", "minLength": 1}}}
 _rng = random.SystemRandom()
 
 
@@ -31,8 +34,21 @@ def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _check_id(key, profile) -> None:
+    """key and profile must satisfy the order schema (``key`` and ``profileName`` patterns) and D25."""
+    _check_fields_of({"key": key, "profile": profile, "prompt": "x"})
+    paths.check_key(key)
+
+
+def _check_fields_of(probe: dict) -> None:
+    errors = schema.validate(probe, schema.load_schema("order"))
+    if errors:
+        raise GimgError("order.invalid", errors=errors)
+
+
 def _order_dir(project: str, key: str, profile: str) -> Path:
-    """Folder of one order, guarded by D25 (key and profile are already schema-validated)."""
+    """Folder of one order. Every public entry point builds it, so key and profile are validated here."""
+    _check_id(key, profile)
     rel = "projects/%s/orders/%s/@%s" % (project, key, profile)
     return paths.inside(paths.data_dir(), rel)
 
@@ -60,9 +76,7 @@ def _check_fields(prompt=None, params=None, seed=None) -> None:
         probe["params"] = params
     if seed is not None:
         probe["seed"] = seed
-    errors = schema.validate(probe, schema.load_schema("order"))
-    if errors:
-        raise GimgError("order.invalid", errors=errors)
+    _check_fields_of(probe)
 
 
 def _read(project: str, key: str, profile: str) -> dict:
@@ -73,7 +87,13 @@ def _read(project: str, key: str, profile: str) -> dict:
         raise GimgError("order.unknown", project=project, order=key, profile=profile)
     except (OSError, ValueError):
         raise GimgError("order.corrupt", path=str(path))
-    if not isinstance(data, dict) or not isinstance(data.get("attempts"), list):
+    return _shape(data, path)
+
+
+def _shape(data, path) -> dict:
+    if (not isinstance(data, dict) or not isinstance(data.get("attempts"), list)
+            or not isinstance(data.get("profile"), str) or not isinstance(data.get("key"), str)
+            or "chosen" not in data or not isinstance(data.get("chosenHistory"), list)):
         raise GimgError("order.corrupt", path=str(path))
     return data
 
@@ -93,7 +113,7 @@ def _modify(project: str, key: str, profile: str, change):
 
 def _attempt(order: dict, attempt_id) -> dict:
     for item in order["attempts"]:
-        if item["id"] == attempt_id:
+        if type(attempt_id) is int and item["id"] == attempt_id:
             return item
     raise GimgError("order.attempt_unknown", attempt=attempt_id, order=order["key"], profile=order["profile"])
 
@@ -173,6 +193,15 @@ def add_attempt(project: str, key: str, profile: str, spec: dict) -> int:
     missing = [k for k in ("seed", "prompt", "params") if k not in spec]
     if missing:
         raise GimgError("order.spec_invalid", missing=", ".join(missing))
+    params = spec["params"]
+    if isinstance(params, dict):
+        extra = {k: v for k, v in params.items() if k not in ("width", "height", "model")}
+        errors = schema.validate(params, _FULL_PARAMS)
+        if errors:
+            raise GimgError("order.invalid", errors=errors)
+        _check_fields(spec["prompt"], extra, spec["seed"])
+    else:
+        _check_fields(spec["prompt"], params, spec["seed"])
 
     def change(order):
         new_id = max((a["id"] for a in order["attempts"]), default=0) + 1
@@ -246,7 +275,11 @@ def undo(project: str, key: str, profile: str) -> dict:
         if not order["chosenHistory"]:
             raise GimgError("order.history_empty", order=order["key"], profile=order["profile"])
         old = order["chosen"]
-        order["chosen"] = order["chosenHistory"].pop()
+        target = order["chosenHistory"][-1]
+        if target is not None and _attempt(order, target)["state"] == "discarded":
+            raise GimgError("order.undo_discarded", attempt=target)
+        order["chosenHistory"].pop()
+        order["chosen"] = target
         return {"old": old, "new": order["chosen"]}
 
     return _modify(project, key, profile, change)
@@ -267,10 +300,11 @@ def list_orders(project: str, profile: str | None = None, chosen: bool | None = 
     for folder, _dirs, files in os.walk(base):
         if _ORDER_FILE not in files or not os.path.basename(folder).startswith("@"):
             continue
+        file = Path(folder) / _ORDER_FILE
         try:
-            record = fsutil.read_json(Path(folder) / _ORDER_FILE)
+            record = _shape(fsutil.read_json(file), file)
         except (OSError, ValueError):
-            raise GimgError("order.corrupt", path=str(Path(folder) / _ORDER_FILE))
+            raise GimgError("order.corrupt", path=str(file))
         if profile is not None and record["profile"] != profile:
             continue
         if chosen is not None and (record["chosen"] is not None) != chosen:
