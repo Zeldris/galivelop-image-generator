@@ -17,7 +17,8 @@
     "key": {
       "type": "string",
       "pattern": "^[a-z0-9][a-z0-9-]*(/[a-z0-9][a-z0-9-]*)*$",
-      "description": "Order key; slash-separated safe segments, no leading slash and no .. segments."
+      "description": "Order key; slash-separated safe segments, no leading slash and no .. segments.",
+      "maxLength": 200
     },
     "profile": {
       "$ref": "#/$defs/profileName",
@@ -26,7 +27,8 @@
     "prompt": {
       "type": "string",
       "minLength": 1,
-      "description": "Text prompt describing the image."
+      "description": "Text prompt describing the image.",
+      "maxLength": 4000
     },
     "references": {
       "type": "array",

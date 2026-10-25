@@ -10,8 +10,8 @@
 |---|---|
 | **Rama** | `f1-nucleo` |
 | **Fase / tarea** | F1 Núcleo: contrato y pasos F1.1-F1.6 en `docs/plan.md` («F1 en detalle»); compactaciones: presupuesto 1, llevadas 0 |
-| **Último punto estable** | Contrato de F1 escrito; código como en F0 (69 tests) |
-| **Siguiente paso** | F1.1 (`paths`, `fsutil`, `projects`) por subagente `sonnet`, revisión corta y F1.2 |
+| **Último punto estable** | F1.1 hecho: `paths`, `fsutil`, `projects`, `errors`, `maxLength` de `key`/`prompt` (102 tests) |
+| **Siguiente paso** | F1.2: `orders` (pedidos, intentos, estados, notas, elegir y deshacer, sin entrega) |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
@@ -34,8 +34,6 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 - **Leves de la revisión de F0** (no se revisan más en este PR):
   - F2: `width`/`height` sin `multipleOf` (lo que exija `sd-cli` por modelo); el validador aún no lo soporta.
   - `propertyNames` solo pasa el `pattern` del primer error: si falla por otra cosa, el mensaje sale vacío.
-  - F1: que `manifest` y `delivery.dir` no apunten a `.git/` ni a `galivelop-images.json`; `key` y `prompt` sin
-    `maxLength` (un segmento > 255 bytes daría `ENAMETOOLONG` en la entrega).
 - **F1, entrega (D25):** la guardia de rutas es una función que resuelve (con enlaces) y comprueba que queda dentro;
   el regex de los esquemas solo ayuda al editor. el esquema no impide que `delivery.template` salga de la carpeta de entrega
   (`../{key}.png`, porque `{key}` lleva `/` a propósito); la entrega tiene que resolver la ruta final, con enlaces,
