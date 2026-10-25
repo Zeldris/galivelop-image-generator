@@ -45,6 +45,11 @@ entrega.
 La petición cerrada de una imagen que hace un proyecto: prompt, perfil, referencias y destino.
 _Evitar_: encargo (en este repo es el «encargo a un subagente» del flujo), trabajo, job, petición
 
+**Clave del pedido**:
+El nombre estable que el proyecto da a lo que ilustra (p. ej. `fauna/aullador-rojo`); con el perfil, identifica un
+pedido.
+_Evitar_: slug, id
+
 **Intento**:
 Una imagen generada para un pedido con una semilla y unos parámetros concretos; un pedido tiene varios.
 _Evitar_: prueba, variante, render

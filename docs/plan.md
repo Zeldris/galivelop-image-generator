@@ -27,6 +27,15 @@ Tomadas con `grilling` el 2026-10-25.
 | D15 | Las protecciones van en un **perfil de máquina** (memoria libre mínima, `--max-vram`, `--params-backend`, referencias por pedido, tope de tiempo), con preajuste `steam-deck`; un pedido que lo supera se rechaza con un mensaje claro | Hoy están fijas en `generar.sh` y solo valen para la Deck |
 | D16 | Interfaz y documentación en **español e inglés** desde el principio (`visibleLanguages` en `.claude/gw.json`), textos en un archivo por idioma | Herramienta para reutilizar y publicar; traducir después sale más caro |
 | D17 | Los proyectos usan la **API HTTP y la CLI documentadas**, con JSON Schema de la configuración del proyecto y del pedido; sin librería cliente hasta que un segundo proyecto la pida | WMF (TypeScript) llama por HTTP; los esquemas validan sin código propio |
+| D18 | Cada pedido lleva una **clave del pedido** que pone el proyecto (p. ej. `fauna/aullador-rojo`); clave + perfil identifican el pedido, y reenviarlo **lo actualiza** conservando sus intentos | Como `<tipo>/<slug>` y `ImagePrompt` en WMF; sin clave, cada reenvío lo duplicaría |
+| D19 | La interfaz deja **retocar el prompt**; cada intento guarda el prompt exacto y el manifiesto el de la elegida; el original del proyecto no se toca | Así se afina en WMF (`prompt \| desdeBase`); el proyecto sigue siendo la fuente (D2) |
+| D20 | La configuración del proyecto declara **por perfil** tamaño, pasos, cfg, sampler y modelo; un pedido o la interfaz los cambian por intento, dentro del perfil de máquina | Hoy pasos y cfg son variables de entorno de `generar.sh`, sin selector |
+| D21 | Entrega en **PNG**, con nombre por plantilla de la configuración del proyecto (por defecto `{clave}-{perfil}.png`); WebP y miniaturas, posproceso opcional más adelante | `sd-cli` da PNG y convertir sin dependencias no es trivial; el nombre coincide con `uploads/images/<tipo>/<slug>-<perfil>.png` de WMF |
+| D22 | Interfaz en **tres pantallas**: proyectos; pedidos de un proyecto (filtros por perfil y estado, cola visible); un pedido (galería con estados, notas por intento, retoque de prompt y parámetros, otra semilla o N seguidas, comparar dos lado a lado) | Todo lo de WMF más estados, cola y comparar |
+| D23 | Repo `galivelop-image-generator`, orden **`gimg`**, configuración del proyecto en `galivelop-images.json` | Corto y sin choques habituales en Linux |
+| D24 | Instalación con `git clone` + `instalar.sh` (pone `gimg` en `~/.local/bin`, descarga motor y modelos, D5); la configuración del proyecto declara la **versión mínima** del generador y `gimg` avisa si la instalada es más antigua; semver y CHANGELOG | Sin pip ni paquetes; un proyecto sabe si su configuración vale con lo instalado |
+| D25 | **Solo escribe** en su carpeta de datos y en la carpeta de entrega de proyectos registrados; **solo lee** referencias dentro del proyecto; rechaza `..` y enlaces que salgan. API solo en localhost, Content-Type JSON y mismo Origin | Las rutas de un pedido vienen del proyecto |
+| D26 | El registro es **JSONL en el formato de `opt-ai`** (`.claude/skills/opt-ai/references/log-format.md`), una línea por intento: `gen_ai.provider.name` = `stable-diffusion.cpp`, `gen_ai.request.model`, `app.task` = perfil, `app.machine_profile`, `app.duration_ms`, `app.load_ms`, `app.error`, y lo propio de la imagen bajo `app.image.*` (pasos, cfg, sampler, tamaño, semilla, referencias, commit del motor, tiempos de muestreo y decodificado, memoria mínima). Se propone al flujo, con `gw-harvest`, una operación de imagen en `log-format.md` | `medir.py` acepta cualquier operación y agrupa por perfil de máquina, tarea y modelo, así que mide imágenes sin cambios; cierra IMG-3 de WMF |
 
 Decisiones difíciles de revertir, con su ADR: [0001](adr/0001-servicio-local-independiente.md) (D1) y
 [0002](adr/0002-generador-sin-dominio.md) (D2).
@@ -41,8 +50,19 @@ Decisiones difíciles de revertir, con su ADR: [0001](adr/0001-servicio-local-in
 - Deuda que el diseño no debe heredar: dos fuentes de prompt, registro sin cfg ni modelo y con rutas absolutas,
   `sd-server` sin uso, elegir sin deshacer, sin tests, solo Linux.
 
-## Pendiente de decidir
+## Fases (propuesta, pendiente de aprobar)
 
-Ronda 3 de `grilling`: identidad de un pedido, editar el prompt desde la interfaz, parámetros por perfil, formato y
-nombre de la entrega, pantallas de la interfaz, nombre de la herramienta, instalación y versiones, límites de
-seguridad, medición con `opt-ai`. Después, las fases de implementación.
+Cada fase es una rama y un pull request a `main`, con las tres fases de revisión de `AGENTS.md`.
+
+| Fase | Qué trae | Hecha cuando |
+|---|---|---|
+| F0 Esqueleto | Estructura del repo; JSON Schema de la configuración del proyecto, el pedido y el perfil de máquina; textos es/en; README es/en; `check` real (`python3 -m unittest`) | El check corre tests y los esquemas validan los ejemplos |
+| F1 Núcleo | Proyectos registrados, pedidos (clave + perfil), intentos y estados, elegida con deshacer, entrega y manifiesto, cola persistente, límites de seguridad, registro JSONL; CLI `gimg` básica; todo con un **motor de pruebas** que no genera de verdad | Tests en verde del ciclo completo con el motor de pruebas |
+| F2 Motor real | Envoltorio de `sd-cli` con el perfil de máquina (memoria, `--max-vram`, tope, cancelar, progreso); `instalar.sh` con versiones fijas y checksum | Un pedido real generado en la Deck (comprobación manual de la persona) |
+| F3 API y arranque | API HTTP (D17, D25) y arranque bajo demanda; unidad `systemd --user` opcional | Tests de la API; `gimg` arranca el servicio solo |
+| F4 Interfaz | Las tres pantallas de D22, es/en | Recorrido completo en el navegador |
+| F5 Piloto WMF | Configuración de ejemplo para WMF, guía de integración y propuesta de migración para su repo; medida base con `opt-ai` y comparación `sd-server` (D14) | WMF genera y recibe una elegida sin copia a mano |
+
+## Pendiente
+
+- Proponer al flujo (`gw-harvest`) una operación de imagen en `opt-ai/references/log-format.md` (D26).
