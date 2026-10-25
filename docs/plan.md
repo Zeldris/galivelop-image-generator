@@ -164,18 +164,21 @@ comprueban otra vez al ejecutar con el perfil de máquina actual. Un segundo tra
 `inside(inside(root, delivery.dir), template con {key} y {profile})` y escribe el manifiesto (`manifest`, por defecto
 `galivelop-images.manifest.json`): `{"version": 1, "images": {"<key>": {"<perfil>": {file, prompt, seed, params,
 references, engine, engineVersion, attemptId, chosenAt}}}}`, con `file` relativo a la raíz del proyecto, claves
-ordenadas, sangría 2 y salto final. Deshacer hasta `null` borra el archivo entregado y su entrada. Las referencias
-pasan por `inside(root, …)` y tienen que existir.
+ordenadas, sangría 2 y salto final. Deshacer hasta `null` borra su entrada y el archivo entregado solo si el `file` de la entrada es
+el destino actual (si la configuración cambió, el archivo no se toca). Elegir sobrescribe lo que haya en el destino: la carpeta de
+entrega es del generador. La entrega no comprueba las referencias (solo importan al generar; las comprueba el trabajador).
 
 API: `delivery.choose(project, key, profile, attempt_id)` y `delivery.undo(project, key, profile)` envuelven a `orders.choose`/`undo`
 y devuelven su `{old, new}`; la CLI solo llama a estas. **Orden y fallos:** 1) se prepara sin tocar nada: ruta destino (la
 segunda guardia es relativa a la carpeta de entrega, así `../` o un enlace que salga de ella se rechazan con `path.*`; el
-destino no puede ser el manifiesto, la configuración ni la propia carpeta: `delivery.reserved`), imagen del intento (`delivery.source_missing`),
-referencias (`delivery.reference_missing`) y manifiesto legible (`delivery.manifest_corrupt`); 2) se cambia el pedido; 3) se copia
+destino no puede ser el manifiesto, la configuración ni la propia carpeta: `delivery.reserved`), imagen del intento (`delivery.source_missing`)
+y manifiesto legible (`delivery.manifest_corrupt`); 2) se cambia el pedido; 3) se copia
 (temporal en la carpeta destino + `os.replace`, umask respetada) y se escribe el manifiesto bajo `fsutil.lock`, o, si la nueva elegida es
 `null`, se borra el archivo (si no existe no es error) y su entrada (la clave sin perfiles se quita). Si el paso 3 falla
 (`delivery.write_failed`), se revierte el pedido (`orders.undo` tras un `choose`; `orders.choose` de la anterior tras un `undo`, a mejor
-esfuerzo) y se relanza; si falla el paso 1, el pedido no cambia. Elegir la ya elegida vuelve a entregarla. Un intento
+esfuerzo) y se relanza; si el archivo entregado ya había cambiado (falló la escritura del manifiesto tras la copia o el borrado), la
+reversión también lo restaura (copia de nuevo la imagen de la elegida anterior, o quita el archivo si no había; el manifiesto en disco
+no cambió porque su escritura es atómica) y, si eso también falla, el error que se relanza es el original; si falla el paso 1, el pedido no cambia. Elegir la ya elegida vuelve a entregarla. Un intento
 guarda `engine` y `engineVersion` (los pone el trabajador) y el manifiesto los copia (`null` si falta, en intentos antiguos). Una carpeta
 de entrega que sea un enlace hacia fuera ya la rechaza `projects.get` al cargar la configuración (`path.outside`)
 

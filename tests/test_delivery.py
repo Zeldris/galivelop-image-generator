@@ -220,7 +220,7 @@ class DeliveryFailureTests(DeliveryBase):
         self.assertEqual(self.code(delivery.undo, "proj", "a", "banner"), "delivery.source_missing")
         self.assertEqual(self.state(), (two, [None, one]))
 
-    def test_missing_reference(self):
+    def test_missing_reference_does_not_block_delivery(self):
         orders.submit("proj", {"key": "r", "profile": "banner", "prompt": "p"})
         orders.add_attempt("proj", "r", "banner", {"seed": 1, "prompt": "p", "params": {},
                                                     "references": ["refs/none.png"]})
@@ -228,8 +228,8 @@ class DeliveryFailureTests(DeliveryBase):
         path = orders.attempt_image("proj", "r", "banner", att)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(engine.png_bytes(2, 2, (1, 2, 3)))
-        self.assertEqual(self.code(delivery.choose, "proj", "r", "banner", 1), "delivery.reference_missing")
-        self.assertEqual(self.state("r"), (None, []))
+        self.assertEqual(delivery.choose("proj", "r", "banner", 1), {"old": None, "new": 1})
+        self.assertEqual(self.manifest()["images"]["r"]["banner"]["references"], ["refs/none.png"])
 
     def test_corrupt_manifest(self):
         one, _ = self.attempts()
@@ -266,6 +266,105 @@ class DeliveryFailureTests(DeliveryBase):
         self.assertEqual(self.state(), (None, []))
         self.assertEqual([p.name for p in (self.projects["proj"] / "uploads" / "images").iterdir()],
                          ["a-banner.png"])
+
+
+class DeliveryRollbackTests(DeliveryBase):
+    def fail_manifest_write(self):
+        real = delivery.fsutil.write_json
+
+        def write(path, data):
+            if str(path).endswith("galivelop-images.manifest.json"):
+                raise OSError("boom")
+            return real(path, data)
+        return mock.patch("gimg.delivery.fsutil.write_json", side_effect=write)
+
+    def image(self, attempt_id):
+        att = [a for a in orders.get("proj", "a", "banner")["attempts"] if a["id"] == attempt_id][0]
+        return orders.attempt_image("proj", "a", "banner", att).read_bytes()
+
+    def test_choose_manifest_failure_restores_previous_file(self):
+        one, two = self.attempts()
+        delivery.choose("proj", "a", "banner", one)
+        before = self.manifest()
+        with self.fail_manifest_write():
+            self.assertEqual(self.code(delivery.choose, "proj", "a", "banner", two), "delivery.write_failed")
+        self.assertEqual(self.state(), (one, [None]))
+        self.assertEqual(self.delivered().read_bytes(), self.image(one))
+        self.assertEqual(self.manifest(), before)
+
+    def test_choose_manifest_failure_from_null_removes_file(self):
+        one, _ = self.attempts()
+        with self.fail_manifest_write():
+            self.assertEqual(self.code(delivery.choose, "proj", "a", "banner", one), "delivery.write_failed")
+        self.assertEqual(self.state(), (None, []))
+        self.assertFalse(self.delivered().exists())
+        self.assertFalse((self.projects["proj"] / "galivelop-images.manifest.json").exists())
+
+    def test_undo_manifest_failure_to_older_restores_file(self):
+        one, two = self.attempts()
+        delivery.choose("proj", "a", "banner", one)
+        delivery.choose("proj", "a", "banner", two)
+        before = self.manifest()
+        with self.fail_manifest_write():
+            self.assertEqual(self.code(delivery.undo, "proj", "a", "banner"), "delivery.write_failed")
+        self.assertEqual(self.state(), (two, [None, one]))
+        self.assertEqual(self.delivered().read_bytes(), self.image(two))
+        self.assertEqual(self.manifest(), before)
+
+    def test_undo_manifest_failure_to_null_restores_file(self):
+        one, _ = self.attempts()
+        delivery.choose("proj", "a", "banner", one)
+        before = self.manifest()
+        with self.fail_manifest_write():
+            self.assertEqual(self.code(delivery.undo, "proj", "a", "banner"), "delivery.write_failed")
+        self.assertEqual(self.state(), (one, [None]))
+        self.assertEqual(self.delivered().read_bytes(), self.image(one))
+        self.assertEqual(self.manifest(), before)
+
+    def test_restore_failure_raises_original_error(self):
+        one, two = self.attempts()
+        delivery.choose("proj", "a", "banner", one)
+        real = delivery._copy
+        calls = []
+
+        def copy(source, target):
+            calls.append(source)
+            if len(calls) > 1:
+                raise delivery.GimgError("delivery.write_failed", path="x", reason="second")
+            return real(source, target)
+        with self.fail_manifest_write(), mock.patch("gimg.delivery._copy", side_effect=copy):
+            self.assertEqual(self.code(delivery.choose, "proj", "a", "banner", two), "delivery.write_failed")
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(self.state(), (one, [None]))
+
+    def test_undo_to_null_keeps_file_not_in_manifest_target(self):
+        one, _ = self.attempts()
+        delivery.choose("proj", "a", "banner", one)
+        self.set_delivery(template="other-{key}-{profile}.png")
+        stray = self.delivered("uploads/images/other-a-banner.png")
+        stray.write_bytes(b"not ours")
+        delivery.undo("proj", "a", "banner")
+        self.assertEqual(stray.read_bytes(), b"not ours")
+        self.assertTrue(self.delivered().is_file())  # the old target is not the new one: left alone
+        self.assertEqual(self.manifest(), {"version": 1, "images": {}})
+
+    def test_choose_overwrites_existing_file(self):
+        one, _ = self.attempts()
+        self.delivered().parent.mkdir(parents=True)
+        self.delivered().write_bytes(b"old")
+        delivery.choose("proj", "a", "banner", one)
+        self.assertEqual(self.delivered().read_bytes(), self.image(one))
+
+    def test_copy_interrupt_leaves_no_temp_file_or_fd(self):
+        one, _ = self.attempts()
+        src = orders.attempt_image("proj", "a", "banner", orders.get("proj", "a", "banner")["attempts"][0])
+        out = self.projects["proj"] / "uploads" / "images"
+        fds = len(os.listdir("/proc/self/fd"))
+        with mock.patch("gimg.delivery.fsutil.honour_umask", side_effect=KeyboardInterrupt):
+            with self.assertRaises(KeyboardInterrupt):
+                delivery._copy(src, out / "a-banner.png")
+        self.assertEqual(list(out.iterdir()), [])
+        self.assertEqual(len(os.listdir("/proc/self/fd")), fds)
 
 
 class AttemptEngineTests(DeliveryBase):

@@ -74,6 +74,5 @@
   "delivery.reserved": "the delivery template \"{path}\" lands on the manifest, the config or the delivery folder itself",
   "delivery.manifest_corrupt": "the manifest {path} is corrupt; fix or delete it",
   "delivery.source_missing": "the image of attempt {attempt} ({path}) is missing; nothing is delivered",
-  "delivery.reference_missing": "the reference \"{path}\" does not exist or is not a file; nothing is delivered",
   "delivery.write_failed": "could not deliver \"{path}\": {reason}"
 }
