@@ -13,6 +13,7 @@
 | **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
+| **Tarea en curso · `f2-motor`** | F2 Motor real con piloto de contenido corporativo (aprobado el 2026-10-26): leer el generador de Tarkor (`WMF-imagenes` HEAD `f81345cb`) y la marca de Portal, ToveriAI (`VeriNews_AI`) y el flujo sobre copias de `origin/main`; Tarkor, marca desde cero. Falta: «F2 en detalle» lo escribe un subagente `fable`, lo reviso y va a la persona. Presupuesto: 2 compactaciones |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.
