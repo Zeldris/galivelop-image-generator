@@ -87,11 +87,11 @@ def pagina_ronda(ronda):
     res = resumen(ronda)
     secciones = []
     for proy in sorted(p for p in ronda.iterdir() if (p / 'intentos').is_dir()):
-        figuras, prompt = [], ''
+        figuras, prompts = [], []
         for img in sorted((proy / 'intentos').glob('*.png')):
             n = img.stem
             pf = proy / 'prompts' / f'{n}.txt'
-            prompt = prompt or (pf.read_text() if pf.exists() else '')
+            prompts.append((n, pf.read_text() if pf.exists() else ''))
             rel = img.relative_to(ronda).as_posix()
             pieza = f'{proy.name} {n.removeprefix("og-")}'
             figuras.append(
@@ -99,8 +99,11 @@ def pagina_ronda(ronda):
                 f'alt="{esc(pieza)}" loading="lazy"></a><figcaption><b>{esc(n)}</b> '
                 f'{esc(tiempos(proy / "logs" / f"{n}.log", res.get((proy.name, n))))} '
                 f'<button class="si">sí</button><button class="no">no</button></figcaption></figure>')
-        secciones.append(f'<section><h2>{esc(proy.name)}</h2><details><summary>Prompt</summary><p>{esc(prompt)}</p>'
-                         f'</details><div class="fila">{"".join(figuras)}</div></section>')
+        # Un prompt para todas (r1: varias semillas) o uno por imagen (r2: variantes del estilo).
+        distintos = {t for _, t in prompts}
+        detalles = ''.join(f'<details><summary>Prompt{"" if len(distintos) == 1 else " " + esc(n)}</summary>'
+                           f'<p>{esc(t)}</p></details>' for n, t in (prompts[:1] if len(distintos) == 1 else prompts))
+        secciones.append(f'<section><h2>{esc(proy.name)}</h2>{detalles}<div class="fila">{"".join(figuras)}</div></section>')
     hoja = '<p><a href="hoja.png" target="_blank">Hoja de contacto</a></p>' if (ronda / 'hoja.png').exists() else ''
     (ronda / 'index.html').write_text(
         f'<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width">'
