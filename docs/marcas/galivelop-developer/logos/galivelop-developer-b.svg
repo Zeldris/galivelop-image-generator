@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="galivelop-developer-b-t">
+  <title id="galivelop-developer-b-t">galivelop-developer: tercer relevo</title>
+  <!-- b. Tercer relevo: tres trazos paralelos; el tercero, más corto y del acento, acaba en el anillo de revisión. -->
+  <g fill="none" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <!-- dos sesiones -->
+    <path d="M19 72 L71 20" stroke="#157D74"/>
+    <path d="M37 90 L89 38" stroke="#157D74"/>
+    <!-- el tercer relevo, acotado -->
+    <path d="M55 108 L83 80" stroke="#2BB3A3"/>
+    <circle cx="100" cy="63" r="13" stroke="#2BB3A3" stroke-width="9"/>
+  </g>
+</svg>

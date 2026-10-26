@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 770 128" role="img" aria-labelledby="galivelop-developer-b-lockup-t">
+  <title id="galivelop-developer-b-lockup-t">galivelop-developer, propuesta b</title>
+  <!-- Lockup de la propuesta b: símbolo a la izquierda y el nombre en Sora 700 a la derecha. -->
+  <svg x="0" y="0" width="128" height="128" viewBox="0 0 128 128">
+    <!-- b. Tercer relevo: tres trazos paralelos; el tercero, más corto y del acento, acaba en el anillo de revisión. -->
+    <g fill="none" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+      <!-- dos sesiones -->
+      <path d="M19 72 L71 20" stroke="#157D74"/>
+      <path d="M37 90 L89 38" stroke="#157D74"/>
+      <!-- el tercer relevo, acotado -->
+      <path d="M55 108 L83 80" stroke="#2BB3A3"/>
+      <circle cx="100" cy="63" r="13" stroke="#2BB3A3" stroke-width="9"/>
+    </g>
+  </svg>
+  <text x="156" y="82" font-family="Sora, sans-serif" font-weight="700" font-size="52" letter-spacing="-1.5" fill="#157D74">galivelop-developer</text>
+</svg>

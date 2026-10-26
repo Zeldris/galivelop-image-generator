@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 770 128" role="img" aria-labelledby="galivelop-developer-a-lockup-t">
+  <title id="galivelop-developer-a-lockup-t">galivelop-developer, propuesta a</title>
+  <!-- Lockup de la propuesta a: símbolo a la izquierda y el nombre en Sora 700 a la derecha. -->
+  <svg x="0" y="0" width="128" height="128" viewBox="0 0 128 128">
+    <!-- a. Rama que vuelve: un tronco con una rama corta que sale y vuelve a él por un anillo de revisión. -->
+    <g fill="none" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+      <!-- el tronco -->
+      <path d="M44 12 V116" stroke="#157D74"/>
+      <!-- la rama local, acotada -->
+      <path d="M44 38 C 68 38, 92 46, 92 64 V70 C 92 86, 72 92, 60 92" stroke="#2BB3A3"/>
+      <!-- el anillo de revisión, donde la rama vuelve al tronco -->
+      <circle cx="44" cy="92" r="13" stroke="#2BB3A3" stroke-width="9"/>
+    </g>
+  </svg>
+  <text x="156" y="82" font-family="Sora, sans-serif" font-weight="700" font-size="52" letter-spacing="-1.5" fill="#157D74">galivelop-developer</text>
+</svg>

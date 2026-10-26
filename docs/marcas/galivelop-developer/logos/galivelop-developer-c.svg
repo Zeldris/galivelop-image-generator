@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="galivelop-developer-c-t">
+  <title id="galivelop-developer-c-t">galivelop-developer: terminal</title>
+  <!-- c. Terminal: el indicador «›_» con el trazo de la familia, en la baldosa con el acento verde azulado. -->
+  <defs>
+    <linearGradient id="galivelop-developer-c-fondo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2BB3A3"/>
+      <stop offset="1" stop-color="#157D74"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="30" fill="url(#galivelop-developer-c-fondo)"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M35 42 L59 64 L35 86"/>
+    <path d="M69 86 H93"/>
+  </g>
+</svg>

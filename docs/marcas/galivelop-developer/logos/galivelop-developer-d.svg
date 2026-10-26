@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="galivelop-developer-d-t">
+  <title id="galivelop-developer-d-t">galivelop-developer: monograma gd</title>
+  <!-- d. Monograma «gd» en la baldosa: la «d» cierra su panza en un anillo de revisión, más grande que la de la «g». -->
+  <defs>
+    <linearGradient id="galivelop-developer-d-fondo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2BB3A3"/>
+      <stop offset="1" stop-color="#157D74"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="30" fill="url(#galivelop-developer-d-fondo)"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <!-- g -->
+    <circle cx="41" cy="68" r="13"/>
+    <path d="M54 55 V84 A13 13 0 0 1 28 84"/>
+    <!-- d: el anillo y el asta -->
+    <circle cx="86" cy="66" r="15"/>
+    <path d="M101 28 V81"/>
+  </g>
+</svg>

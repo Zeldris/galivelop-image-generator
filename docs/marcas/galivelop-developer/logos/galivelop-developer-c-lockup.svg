@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 770 128" role="img" aria-labelledby="galivelop-developer-c-lockup-t">
+  <title id="galivelop-developer-c-lockup-t">galivelop-developer, propuesta c</title>
+  <!-- Lockup de la propuesta c: símbolo a la izquierda y el nombre en Sora 700 a la derecha. -->
+  <defs>
+    <linearGradient id="galivelop-developer-c-lockup-fondo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2BB3A3"/>
+      <stop offset="1" stop-color="#157D74"/>
+    </linearGradient>
+  </defs>
+  <svg x="0" y="0" width="128" height="128" viewBox="0 0 128 128">
+    <!-- c. Terminal: el indicador «›_» con el trazo de la familia, en la baldosa con el acento verde azulado. -->
+    <rect width="128" height="128" rx="30" fill="url(#galivelop-developer-c-lockup-fondo)"/>
+    <g fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M35 42 L59 64 L35 86"/>
+      <path d="M69 86 H93"/>
+    </g>
+  </svg>
+  <text x="156" y="82" font-family="Sora, sans-serif" font-weight="700" font-size="52" letter-spacing="-1.5" fill="#157D74">galivelop-developer</text>
+</svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="galivelop-workflow-c-t">
+  <title id="galivelop-workflow-c-t">Galivelop-workflow: lo que no está subido no existe</title>
+  <!-- c. Tres commits en línea, los dos primeros huecos y el último lleno, del que sale la flecha de subida. -->
+  <g fill="none" stroke="#3D6FD9" stroke-linecap="round" stroke-linejoin="round">
+    <!-- commits sin subir -->
+    <circle cx="23" cy="94" r="10" stroke-width="9"/>
+    <circle cx="59" cy="94" r="10" stroke-width="9"/>
+    <!-- el commit subido -->
+    <circle cx="95" cy="94" r="14.5" fill="#3D6FD9" stroke="none"/>
+    <!-- la subida -->
+    <path d="M95 86 V24 M77 42 L95 24 L113 42" stroke-width="12"/>
+  </g>
+</svg>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 128" role="img" aria-labelledby="galivelop-workflow-c-lockup-t">
+  <title id="galivelop-workflow-c-lockup-t">Galivelop-workflow, propuesta c</title>
+  <!-- Lockup de la propuesta c: símbolo a la izquierda y el nombre en Sora 700 a la derecha. -->
+  <svg x="0" y="0" width="128" height="128" viewBox="0 0 128 128">
+    <!-- c. Tres commits en línea, los dos primeros huecos y el último lleno, del que sale la flecha de subida. -->
+    <g fill="none" stroke="#3D6FD9" stroke-linecap="round" stroke-linejoin="round">
+      <!-- commits sin subir -->
+      <circle cx="23" cy="94" r="10" stroke-width="9"/>
+      <circle cx="59" cy="94" r="10" stroke-width="9"/>
+      <!-- el commit subido -->
+      <circle cx="95" cy="94" r="14.5" fill="#3D6FD9" stroke="none"/>
+      <!-- la subida -->
+      <path d="M95 86 V24 M77 42 L95 24 L113 42" stroke-width="12"/>
+    </g>
+  </svg>
+  <text x="156" y="82" font-family="Sora, sans-serif" font-weight="700" font-size="52" letter-spacing="-1.5" fill="#3D6FD9">Galivelop-workflow</text>
+</svg>

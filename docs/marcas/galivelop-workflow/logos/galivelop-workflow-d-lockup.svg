@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 128" role="img" aria-labelledby="galivelop-workflow-d-lockup-t">
+  <title id="galivelop-workflow-d-lockup-t">Galivelop-workflow, propuesta d</title>
+  <!-- Lockup de la propuesta d: símbolo a la izquierda y el nombre en Sora 700 a la derecha. -->
+  <svg x="0" y="0" width="128" height="128" viewBox="0 0 128 128">
+    <!-- d. Sello de revisión: un anillo de sello con la marca de visto dentro; el brazo largo del visto sale por la abertura del anillo. -->
+    <g fill="none" stroke="#3D6FD9" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+      <!-- el sello, abierto arriba a la derecha -->
+      <path d="M110.4 51.6 A48 48 0 1 1 84.3 20.5"/>
+      <!-- el visto -->
+      <path d="M34 66 L58 88 L108 25"/>
+    </g>
+  </svg>
+  <text x="156" y="82" font-family="Sora, sans-serif" font-weight="700" font-size="52" letter-spacing="-1.5" fill="#3D6FD9">Galivelop-workflow</text>
+</svg>
