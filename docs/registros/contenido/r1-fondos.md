@@ -1,8 +1,9 @@
 # r1 fondos (2026-10-26)
 
 El og de los siete proyectos (`examples/<proyecto>/prompts/og.txt`, versión de `5d0178c`, ya sin comparaciones) con el
-`generar.sh` de Tarkor (`examples/pilot/ronda.sh r1`), semillas 3 y 4. Hoja de contacto: `<datos>/gimg/pilot/r1/hoja.png`
-(una fila por proyecto en orden alfabético, una columna por semilla); fuera de git.
+`generar.sh` de Tarkor (`examples/pilot/ronda.sh r1`), semillas 3 y 4. Para revisar: `piloto/index.html` (en el repo,
+fuera de git: prompt, intentos, tiempos y sí/no por proyecto) y `piloto/r1/hoja.png` (una fila por proyecto en orden
+alfabético, una columna por semilla).
 
 ## Ejecución
 
