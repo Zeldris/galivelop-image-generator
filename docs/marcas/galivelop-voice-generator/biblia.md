@@ -54,6 +54,8 @@ familia (128×128, `rx` 30, trazo blanco 12, degradado `#D9467A → #A62E5A`):
 - **c. Huella de anillos:** un punto y dos anillos partidos en segmentos, a la vez huella y onda que se expande.
 - **d. Una onda en la baldosa:** una sola onda sinusoidal blanca que atraviesa la baldosa.
 
+**Elegido (agente, delegado):** a — la más propia (la huella de la voz); la d es una onda genérica.
+
 Tras elegir **[P]**:
 
 - Variantes: la baldosa es la misma sobre claro y oscuro. El nombre del lockup, `#D9467A` sobre oscuro y `#A62E5A`
@@ -99,6 +101,9 @@ Tras elegir **[P]**:
 | Archivo | Estado |
 |---|---|
 | `examples/galivelop-voice-generator/prompts/og.txt` (este repo) | aprobado en r1 (sí en semillas 3 y 4, `docs/registros/contenido/r1-fondos.md`) |
+| `examples/galivelop-voice-generator/prompts/r2-palabras.txt` | r2, pendiente. Misma escena de og (sin el «shaped like»); paleta en palabras |
+| `examples/galivelop-voice-generator/prompts/r2-hex.txt` | r2, pendiente. Misma escena, colores en hex |
+| `examples/galivelop-voice-generator/prompts/r2-material.txt` | r2, pendiente. Misma escena, paleta en materiales y luz (terciopelo azul, cristal frambuesa, cuarzo rosa) |
 
 Plantilla para uno nuevo: `<formato y fondo> + <motivo de onda en la zona de imagen> + <zona reservada, lisa> + Style: …
 Colours: deep midnight navy, raspberry pink, soft rose and white highlights. Mood: calm, warm, attentive. The image is

@@ -65,6 +65,8 @@ Propuestas en `logos/` (símbolo `galivelop-developer-<letra>.svg` y su `-lockup
 | c | Terminal: el indicador «›_» con el trazo de la familia, en la baldosa `#2BB3A3 → #157D74` | sí |
 | d | Monograma «gd» en la baldosa; la «d» cierra su panza en un anillo mayor que la de la «g» | sí: baldosa con dos letras |
 
+**Elegido (agente, delegado):** d — hace familia con «gw»; la a se lee como una «b».
+
 Reglas tras elegir:
 
 - **Variantes:** en baldosa (avatar, favicon, sobre imagen; a y b pasan a trazo blanco, con la rama o el tercer trazo en
@@ -108,6 +110,9 @@ Reglas tras elegir:
 | Archivo | Estado |
 |---|---|
 | `examples/galivelop-developer/prompts/og.txt` | **r1: sí** (limpio pero casi vacío; palanca para r2: más presencia a la derecha y la línea solo en esa mitad, `r1-fondos.md`) |
+| `examples/galivelop-developer/prompts/r2-palabras.txt` | r2, pendiente. Misma escena de og con la palanca de r1 (línea desde el centro a la derecha, bucle grande que llena la mitad derecha); paleta en palabras |
+| `examples/galivelop-developer/prompts/r2-hex.txt` | r2, pendiente. Misma escena, colores en hex |
+| `examples/galivelop-developer/prompts/r2-material.txt` | r2, pendiente. Misma escena, paleta en materiales y luz (pizarra pulida, luz esmerilada, vidrio de mar) |
 
 Plantilla para uno nuevo:
 

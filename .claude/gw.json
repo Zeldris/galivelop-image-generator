@@ -8,6 +8,7 @@
   "protectedBranch": "main",
   "pushToProtected": "pr",
   "install": [],
+  "ciInstall": ["sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg librsvg2-bin"],
   "setup": [],
   "check": [
     "bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg",

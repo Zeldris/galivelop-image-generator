@@ -76,6 +76,9 @@ Propuestas (`logos/toveriai-<letra>.svg` y `-lockup.svg`), conceptos distintos:
 - **d. Anillo de score:** arco abierto del IMI (trazo 5/128, más grueso que la línea ~1,3 px del kit, que a 16 px no
   existiría) con una V de dos hojas dentro; a 16 px queda la V y el anillo se insinúa.
 
+**Elegido (agente, delegado):** a — fiel al símbolo publicado; b para favicon y ≤ 32 px, donde el abanico de hojas se
+empasta.
+
 Tras elegir **[P]**:
 
 - Variantes: clara (la de la marca) y oscura (sobre `#1A1A1A`, mismos colores de símbolo; si el verde no contrasta, el
@@ -123,6 +126,9 @@ Tras elegir **[P]**:
 | Archivo | Pieza | Estado |
 |---|---|---|
 | `examples/toveriai/prompts/og.txt` | og 1200×630, «Entre dos tintas» | r1 (`5d0178c`): **sí** por la persona. Palanca r2: nombrar el vino con más peso («deep burgundy», «oxblood») y quitar lo que lo acerque al rosa |
+| `examples/toveriai/prompts/r2-palabras.txt` | og, misma escena de «Entre dos tintas»; paleta en palabras («deep burgundy», «oxblood») | r2, pendiente |
+| `examples/toveriai/prompts/r2-hex.txt` | misma escena, colores en hex | r2, pendiente |
+| `examples/toveriai/prompts/r2-material.txt` | misma escena, paleta en materiales y luz (algodón crudo, sangre de buey seca, musgo en sombra, resina) | r2, pendiente |
 
 Los 20 prompts del kit (redes, banners, iconografía, mockups, miniaturas, abstracto; por plataforma) se adaptan quitando el
 texto y describiendo la zona reservada. Plantilla: `<formato> abstract conceptual artwork on warm beige textured paper.

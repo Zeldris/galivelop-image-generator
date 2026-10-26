@@ -62,6 +62,10 @@ Propuestas en `logos/`; conceptos del README. Todas se leen a 16 px (comprobado 
 | c | **La Semilla:** semilla vertical partida en dos mitades que han resbalado, cristal claro y hierro, misma piel de cristal | fidelidad (una piel) y ruptura (el corte); nada morado |
 | d | **Hierro y madera:** escudo de tablones con aro de hierro, cuatro remaches y una T forjada | el aro se funde con el fondo oscuro, a propósito |
 
+**Elegido (agente, delegado):** a — los Pilares Rotos, el emblema aprobado en el plan; retocado para que no se lea
+como una M (torres desiguales, la derecha quebrada a media altura, puente más largo y más bajo que sale del flanco de
+la alta).
+
 Tras elegir **[P]:** variante clara y oscura; margen libre = la altura de la «T» del wordmark; mínimo 16 px el
 símbolo, 20 px de altura el wordmark; el símbolo va con el wordmark o solo en esquina o avatar, nunca estirado,
 rotado ni con sombra o brillo; el texto del lockup se pasa a trazos con Cinzel.
@@ -105,6 +109,9 @@ rotado ni con sombra o brillo; el texto del lockup se pasa a trazos con Cinzel.
 | Archivo | Estado |
 |---|---|
 | `examples/tarkor/prompts/og.txt` | r1 (`5d0178c`): técnico sí, persona **no**; se rehace con la sección 7 |
+| `examples/tarkor/prompts/r2-palabras.txt` | r2, pendiente. Escena nueva por la hipótesis 1 de la sección 7 (el og repetía la portada): agujas de roca de hierro al amanecer, tercio izquierdo de llanura en calima, hilo de humo y estandarte (hipótesis 3 y 4 de propina); estilo del preámbulo del juego (hipótesis 2, lo que pide la plantilla). Paleta en palabras, acento único arcilla |
+| `examples/tarkor/prompts/r2-hex.txt` | r2, pendiente. Misma escena, colores en hex |
+| `examples/tarkor/prompts/r2-material.txt` | r2, pendiente. Misma escena, paleta en materiales y luz (arcilla cocida, hierro forjado, hueso, calima) |
 
 Plantilla para uno nuevo: preámbulo de `mundo.json` (día o atardecer) → encuadre con la zona reservada («the left
 third is a calm, nearly plain stretch of haze») → sujeto y región con su luz (`regiones.*.luz`) → «Style: cinematic

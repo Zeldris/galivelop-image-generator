@@ -1,4 +1,5 @@
 """Pruebas de los scripts de prueba de concepto de examples/pilot/ (componer.py y medir.py)."""
+import os
 import shutil
 import subprocess
 import sys
@@ -14,6 +15,8 @@ import medir  # noqa: E402
 
 TIENE_FFMPEG = shutil.which("ffmpeg") is not None
 TIENE_RSVG = shutil.which("rsvg-convert") is not None
+# En el CI (ciInstall de .claude/gw.json las instala) no se saltan: si faltan, fallan en vez de salir verdes sin probar.
+EN_CI = os.environ.get("CI") == "true"
 
 LOGO = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 40">'
         '<rect width="100" height="40" fill="#2BB3EA"/></svg>')
@@ -33,12 +36,19 @@ class EscapeTests(unittest.TestCase):
             componer.parsear_velo("rojo:0.5")
         self.assertIn("se esperaba un color #rrggbb", str(cm.exception))
 
+    def test_lab_del_rojo(self):
+        for v, esperado in zip(medir.rgb_lab((255, 0, 0)), (53.24, 80.09, 67.20)):
+            self.assertAlmostEqual(v, esperado, places=1)
+
+    def test_luminancia_del_rojo(self):
+        self.assertAlmostEqual(medir.luminancia((255, 0, 0)), 0.2126, places=4)
+
     def test_recorte_cover_centrado(self):
         x, y, w, h = componer.recorte_cover(1280, 640, 1, 1)
         self.assertEqual((x, y, w, h), (320.0, 0.0, 640.0, 640.0))
 
 
-@unittest.skipUnless(TIENE_FFMPEG and TIENE_RSVG, "hacen falta ffmpeg y rsvg-convert")
+@unittest.skipUnless(EN_CI or (TIENE_FFMPEG and TIENE_RSVG), "hacen falta ffmpeg y rsvg-convert")
 class ComponerTests(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp())
@@ -69,7 +79,7 @@ class ComponerTests(unittest.TestCase):
         self.assertIn("no existe el fondo", str(cm.exception))
 
 
-@unittest.skipUnless(TIENE_FFMPEG, "hace falta ffmpeg")
+@unittest.skipUnless(EN_CI or TIENE_FFMPEG, "hace falta ffmpeg")
 class MedirTests(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp())

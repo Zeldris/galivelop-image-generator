@@ -54,6 +54,8 @@ familia (128×128, `rx` 30, trazo blanco 12, degradado `#8B5CF6 → #5B34C9`):
   deshacer, D9).
 - **d. El taller que se enciende:** el borde del marco no se cierra: acaba en un punto de luz (arranque bajo demanda).
 
+**Elegido (agente, delegado):** b — la más limpia a 16 px y la que cuenta «intentos y una elegida».
+
 Tras elegir **[P]**:
 
 - Variantes: la baldosa es la misma sobre claro y oscuro (lleva su fondo). El nombre del lockup, `#8B5CF6` sobre oscuro y
@@ -96,6 +98,9 @@ Tras elegir **[P]**:
 | Archivo | Estado |
 |---|---|
 | `examples/galivelop-image-generator/prompts/og.txt` | aprobado en r1 (sí en semillas 3 y 4, «de las mejores», `docs/registros/contenido/r1-fondos.md`) |
+| `examples/galivelop-image-generator/prompts/r2-palabras.txt` | r2, pendiente. Misma escena de og; paleta en palabras |
+| `examples/galivelop-image-generator/prompts/r2-hex.txt` | r2, pendiente. Misma escena, colores en hex |
+| `examples/galivelop-image-generator/prompts/r2-material.txt` | r2, pendiente. Misma escena, paleta en materiales y luz (agua quieta de noche, cristal, amatista, vidrio esmerilado) |
 
 Plantilla para uno nuevo: `<formato y fondo> + <motivo en la zona de imagen> + <zona reservada, lisa> + Style: … Colours: deep
 midnight navy, violet, soft lavender and white highlights. Mood: calm, focused, quietly creative. The image is completely

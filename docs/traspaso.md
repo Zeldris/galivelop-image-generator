@@ -13,7 +13,7 @@
 | **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | F2.0 pruebas de concepto, delegadas por la persona: biblias y logos hechos y elegidos por el agente (`docs/marcas/README.md`); ahora r2-r5 con los 7 proyectos (ajuste en `docs/plan.md`, plan de pruebas), resultados siempre en `piloto/`. Siguiente: prompts r2 desde las biblias (Fable), `ronda.sh r2` en la Deck, retoque de tarkor-a. Después: diseño de la interfaz (F4). Presupuesto: 4 compactaciones (1 gastada) |
+| **Tarea en curso · `f2-motor`** | F2.0 pruebas de concepto, delegadas por la persona: biblias, logos (elegidos por el agente, `docs/marcas/README.md`), prompts r2 de los 7 proyectos y componer/medir hechos; tarkor-a retocado (a 16-32 px aún recuerda una M). Resultados siempre en `piloto/`. Siguiente: `ronda.sh r2` en la Deck (~65 min), elegir variante por proyecto y `r2-estilo.md`; luego r3-r5 (`docs/plan.md`, ajuste del 2026-10-26) y diseño de la interfaz (F4). Presupuesto: 4 compactaciones (2 gastadas) |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.
@@ -36,6 +36,7 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 - **Leves de la revisión de F0** (no se revisan más en este PR):
   - F2: `width`/`height` sin `multipleOf` (lo que exija `sd-cli` por modelo); el validador aún no lo soporta.
   - `propertyNames` solo pasa el `pattern` del primer error: si falla por otra cosa, el mensaje sale vacío.
+- **Leves de la revisión de `941efa9` (componer/medir, F2.0):** pruebas de Lab/umbral y del recorte cover con píxeles; `fuentes.sh` sin test, `mktemp` fuera del destino y descarga de `main` sin fijar; `HEX` con `$` en vez de `fullmatch`; viewBox `1.2.3` o `0 0 0 0` da traza; `esc` no quita caracteres de control; salida `.svg` machaca el SVG de depuración; sin `timeout` en subprocesos; sin `piloto/fuentes/` cae a otra fuente sin avisar; `ffprobe` sin `which`; signalstats es BT.601 rango limitado (calibrar igual en F2.9).
 - **Leves de las revisiones de F1:**
   - `orders._FULL_PARAMS` repite a mano límites de `width`/`height`/`model` en vez de usar `$defs/profile` del esquema de la configuración del proyecto.
   - Un lector (`list`/`get`/`enqueue`) que toma `worker.lock` un instante hace que un trabajador que arranca falle con
