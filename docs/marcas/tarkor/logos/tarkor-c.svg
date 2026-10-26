@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="tarkor-c-t">
+  <title id="tarkor-c-t">Tarkor: la Semilla</title>
+  <!-- c. La Semilla: una semilla vertical partida en dos mitades que han resbalado una sobre otra, cristal claro y hierro oscuro, con la misma piel de cristal en las dos (fidelidad y ruptura) -->
+  <g stroke="#4aa8d8" stroke-width="3.5" stroke-linejoin="round">
+    <path d="M61 12 C22 40 22 80 61 108 Z" fill="#a8d8f0"/>
+    <path d="M67 20 C106 48 106 88 67 116 Z" fill="#221c16"/>
+  </g>
+</svg>

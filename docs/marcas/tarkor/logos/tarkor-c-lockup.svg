@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 468 128" role="img" aria-labelledby="tarkor-c-lockup-t">
+  <title id="tarkor-c-lockup-t">Tarkor: la Semilla, lockup</title>
+  <!-- c. Lockup: la Semilla partida y «TARKOR» en Cinzel -->
+  <g stroke="#4aa8d8" stroke-width="3.5" stroke-linejoin="round">
+    <path d="M61 12 C22 40 22 80 61 108 Z" fill="#a8d8f0"/>
+    <path d="M67 20 C106 48 106 88 67 116 Z" fill="#221c16"/>
+  </g>
+  <text x="156" y="83" font-family="Cinzel, serif" font-weight="700" font-size="50" letter-spacing="9" fill="#a3814f">TARKOR</text>
+</svg>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 468 128" role="img" aria-labelledby="tarkor-a-lockup-t">
+  <title id="tarkor-a-lockup-t">Tarkor: Los Pilares Rotos, lockup</title>
+  <!-- a. Lockup: la baldosa de los Pilares Rotos y «TARKOR» en Cinzel -->
+  <defs>
+    <linearGradient id="tarkor-a-lockup-fondo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#E0703A"/>
+      <stop offset="1" stop-color="#8a3b1e"/>
+    </linearGradient>
+    <clipPath id="tarkor-a-lockup-recorte"><rect width="128" height="128" rx="30"/></clipPath>
+  </defs>
+  <rect width="128" height="128" rx="30" fill="url(#tarkor-a-lockup-fondo)"/>
+  <g clip-path="url(#tarkor-a-lockup-recorte)" fill="#f1e4d0">
+    <path d="M18 128 L22 34 L31 26 L44 30 L46 128 Z"/>
+    <path d="M82 128 L84 50 L94 42 L106 46 L110 128 Z"/>
+  </g>
+  <path d="M44 36 C54 70 74 74 85 52" fill="none" stroke="#f1e4d0" stroke-width="6" stroke-linecap="round"/>
+  <text x="156" y="83" font-family="Cinzel, serif" font-weight="700" font-size="50" letter-spacing="9" fill="#a3814f">TARKOR</text>
+</svg>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 468 128" role="img" aria-labelledby="tarkor-d-lockup-t">
+  <title id="tarkor-d-lockup-t">Tarkor: hierro y madera, lockup</title>
+  <!-- d. Lockup: el escudo de madera y hierro y «TARKOR» en Cinzel -->
+  <circle cx="64" cy="64" r="56" fill="#5c4126"/>
+  <g stroke="#46311d" stroke-width="2">
+    <line x1="46" y1="20" x2="46" y2="108"/>
+    <line x1="82" y1="20" x2="82" y2="108"/>
+  </g>
+  <circle cx="64" cy="64" r="52" fill="none" stroke="#171310" stroke-width="9"/>
+  <path d="M34 34 H94 V50 H72 V92 L78 98 H50 L56 92 V50 H34 Z" fill="#171310"/>
+  <g fill="#0e0b08" stroke="#52626f" stroke-width="1.2">
+    <circle cx="27.2" cy="27.2" r="5"/>
+    <circle cx="100.8" cy="27.2" r="5"/>
+    <circle cx="27.2" cy="100.8" r="5"/>
+    <circle cx="100.8" cy="100.8" r="5"/>
+  </g>
+  <text x="156" y="83" font-family="Cinzel, serif" font-weight="700" font-size="50" letter-spacing="9" fill="#a3814f">TARKOR</text>
+</svg>

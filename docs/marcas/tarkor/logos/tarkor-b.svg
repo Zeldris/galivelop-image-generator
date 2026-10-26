@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="tarkor-b-t">
+  <title id="tarkor-b-t">Tarkor: la gema</title>
+  <!-- b. La gema de la interfaz: el rombo .gem del título del juego, tallado en cuatro caras de cristal, con sus filetes a los lados -->
+  <defs>
+    <linearGradient id="tarkor-b-filete-i" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7bc4e8" stop-opacity="0"/>
+      <stop offset="1" stop-color="#7bc4e8"/>
+    </linearGradient>
+    <linearGradient id="tarkor-b-filete-d" x1="1" y1="0" x2="0" y2="0">
+      <stop offset="0" stop-color="#7bc4e8" stop-opacity="0"/>
+      <stop offset="1" stop-color="#7bc4e8"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="62.5" width="22" height="3" fill="url(#tarkor-b-filete-i)"/>
+  <rect x="104" y="62.5" width="22" height="3" fill="url(#tarkor-b-filete-d)"/>
+  <polygon points="28,64 64,28 64,64" fill="#a8d8f0"/>
+  <polygon points="64,28 100,64 64,64" fill="#7bc4e8"/>
+  <polygon points="100,64 64,100 64,64" fill="#3488b8"/>
+  <polygon points="64,100 28,64 64,64" fill="#4aa8d8"/>
+  <polygon points="64,28 100,64 64,100 28,64" fill="none" stroke="#3488b8" stroke-width="2" stroke-linejoin="round"/>
+</svg>
