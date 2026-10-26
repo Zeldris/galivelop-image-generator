@@ -13,7 +13,7 @@
 | **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | F2 Motor real con piloto de contenido corporativo (Portal, Tarkor, toVeriAI, workflow). Hecho: lectura (`docs/registros/lectura-2026-10-26-tarkor-y-marcas.md`) y borrador «F2 en detalle» en `docs/plan.md` (Fable, revisado). Falta: que la persona decida los [P] y apruebe; luego F2.0 (rondas r0-r1 con el `generar.sh` de Tarkor). Presupuesto: 2 compactaciones |
+| **Tarea en curso · `f2-motor`** | F2 aprobado (`docs/plan.md`, «F2 en detalle»). F2.0: prompts `og` de los 4 proyectos en `examples/<proyecto>/prompts/` y `examples/pilot/ronda.sh`, listos. Falta: la persona lanza `ronda.sh r0` y luego `r1` en la Deck (sin juego ni Ollama); con el resumen y `hoja.png`, escribir `docs/registros/contenido/r0-humo.md` y `r1-fondos.md` con su sí/no. Después F2.1. Presupuesto: 2 compactaciones |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.
