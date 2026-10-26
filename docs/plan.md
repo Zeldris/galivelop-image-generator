@@ -422,6 +422,21 @@ SVG se dibuja a mano (D29). *Formatos:* `banner`, `og`, `square`, `header` (Disc
 emblema y SVG del símbolo [P]; 2) og:image 1200×630 con los Pilares Rotos + wordmark; 3) banner 1600×640 nuevo para el Portal y
 cabecera 960×540 de Discord; 4) `square` 1080×1080 con el lema; 5) avatar 512×512.
 
+**Herramientas del taller: generador de imágenes, generador de voces y galivelop-developer** (añadidas por la persona el
+2026-10-26; `examples/<repo>/`; lectura en el registro, sección 3). *Común:* no tienen identidad visual ni están en el Portal,
+son CLI locales y sus principios son IA local, nada residente y el humano revisa. Por eso entran **en la familia del Portal**
+**[P]**: fondo `#06121c` con rejilla de puntos, Sora e Inter, y un logo en el mismo cuadrado rx 30 de `gv-logo.svg` con un
+monograma y su acento. Acentos propuestos **[P]**, distintos de los del Portal y de los tres proyectos: imágenes violeta
+`#8B5CF6`, voces frambuesa `#D9467A` y developer verde azulado `#2BB3A3`. *No:* robots, cerebros, rostros, personas reales
+(voces: nada que sugiera clonar a alguien), «magia» de IA. *Formatos:* `social` (GitHub), `og`, `avatar`; el `banner` del
+Portal solo si la persona decide presentarlas allí. *Metáforas* (de sus textos):
+
+- **Imágenes:** marcos de cristal en fila, uno de ellos encendido (la cola y la elegida).
+- **Voces:** una cinta de onda que se enrosca en una huella.
+- **Developer:** un tronco de luz con una rama corta que sale y vuelve por un anillo de revisión.
+
+*Primera ronda:* 1) logo SVG y avatar de cada una; 2) social preview 1280×640 de GitHub; 3) og 1200×630.
+
 ### Plan de pruebas de contenido
 
 Como el banco de Tarkor (`banco.sh` y `resultados.md`): **semilla fija (3), una palanca por ronda, borrador y luego definitivo,

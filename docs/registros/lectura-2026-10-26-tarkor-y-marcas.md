@@ -169,3 +169,42 @@ común.
 
 - **Qué es:** un juego de rol con IA local, de fantasía, con arte propio y acento naranja `#E0703A` en el Portal.
 - **Marca:** no hay marca corporativa; **se crea desde cero**, coherente con el arte del juego.
+
+## 3. Herramientas del taller (añadidas por la persona el 2026-10-26)
+
+Leídas en su árbol de trabajo, que contiene todo `origin/main`: galivelop-image-generator (`f2-motor`),
+galivelop-voice-generator (`claude/voces-f1`, 15 commits sobre `main`) y galivelop-developer (`claude/f1-instalacion`, 3 sobre
+`main`).
+
+**Lo común a las tres:**
+
+- No tienen ningún svg, png, webp, ico ni jpg, ni logo, colores o tipografías propias.
+- Son CLI y servicios locales sin interfaz todavía, y ninguna está en el Portal ni prevé estarlo.
+- Las tres usan Galivelop-workflow y tienen a Tarkor/WMF como primer consumidor.
+- Comparten principios: IA local, solo stdlib, nada residente (arranque bajo demanda en `127.0.0.1`) y la Steam Deck como
+  máquina de referencia.
+
+### galivelop-image-generator
+
+- **Qué es:** «Generador de imágenes con IA local: un servicio por máquina que comparten varios proyectos».
+- **Límites:** no conoce el dominio (D2) y es reproducible (D13, D34).
+- **Metáfora**, sacada de su texto: la cola que genera de uno en uno, los intentos con una elegida y deshacer (D9) y un
+  taller que se enciende solo cuando se le pide (D11).
+
+### galivelop-voice-generator
+
+- **Qué es:** «Generador de voces con IA local para desarrollo», con motor qwentts.cpp. Es gemelo del de imágenes y genera
+  paquetes de voces para el juego.
+- **Límites:** las voces son personas sintéticas definidas por una referencia elegida. No hay texto sobre consentimiento ni
+  clonación, así que en imagen no se sugiere clonar a nadie (nada de rostros ni personas reales).
+- **Metáfora:** la onda, las tomas como intentos y la huella de la voz (`GLOSSARY.md`).
+
+### galivelop-developer
+
+- **Qué es:** «Agente de programación local: Aider sobre un modelo local, como tercer relevo junto a las sesiones de Claude
+  Code».
+- **Límites:**
+  - Trabaja solo en `local/<tarea>` y nunca toca la bitácora, `main` ni `.claude/`.
+  - Sus límites los imponen scripts.
+  - Lo revisa Claude o la persona antes del merge: el humano decide.
+- **Metáfora:** el tercer relevo y una rama local acotada que vuelve al tronco tras la revisión (`docs/adr/0002-tercer-relevo.md`).

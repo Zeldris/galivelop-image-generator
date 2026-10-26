@@ -13,7 +13,7 @@
 | **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | F2 aprobado (`docs/plan.md`, «F2 en detalle»). F2.0: prompts `og` de los 4 proyectos en `examples/<proyecto>/prompts/` y `examples/pilot/ronda.sh`, listos. Falta: la persona lanza `ronda.sh r0` y luego `r1` en la Deck (sin juego ni Ollama); con el resumen y `hoja.png`, escribir `docs/registros/contenido/r0-humo.md` y `r1-fondos.md` con su sí/no. Después F2.1. Presupuesto: 2 compactaciones |
+| **Tarea en curso · `f2-motor`** | F2 aprobado. F2.0: r0 hecha (`docs/registros/contenido/r0-humo.md`, 184 s, OK); 3 herramientas añadidas (imágenes, voces, developer: plan y prompts). En curso: r1, 7 proyectos × 2 semillas, con `ronda.sh r1` (~45 min; sin check mientras corre). Falta: hoja de contacto a la persona, `r1-fondos.md` con su sí/no y luego F2.1. Presupuesto: 2 compactaciones |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.
@@ -32,6 +32,7 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 
 ## Pendiente
 
+- **Carpeta de datos en flatpak:** VS Code en flatpak fija `XDG_DATA_HOME=~/.var/app/com.visualstudio.code/data`, y `gimg` (y `ronda.sh`) lanzados desde su terminal usan otra carpeta de datos que desde una terminal normal (`docs/registros/contenido/r0-humo.md`); decidir en F2.5 (`gimg doctor` lo avisa, o se ignora el XDG de flatpak).
 - **Leves de la revisión de F0** (no se revisan más en este PR):
   - F2: `width`/`height` sin `multipleOf` (lo que exija `sd-cli` por modelo); el validador aún no lo soporta.
   - `propertyNames` solo pasa el `pattern` del primer error: si falla por otra cosa, el mensaje sale vacío.
