@@ -98,9 +98,9 @@ Tras elegir **[P]**:
 | Archivo | Estado |
 |---|---|
 | `examples/galivelop-image-generator/prompts/og.txt` | aprobado en r1 (sí en semillas 3 y 4, «de las mejores», `docs/registros/contenido/r1-fondos.md`) |
-| `examples/galivelop-image-generator/prompts/r2-palabras.txt` | r2, pendiente. Misma escena de og; paleta en palabras |
-| `examples/galivelop-image-generator/prompts/r2-hex.txt` | r2, pendiente. Misma escena, colores en hex |
-| `examples/galivelop-image-generator/prompts/r2-material.txt` | r2, pendiente. Misma escena, paleta en materiales y luz (agua quieta de noche, cristal, amatista, vidrio esmerilado) |
+| `examples/galivelop-image-generator/prompts/r2-palabras.txt` | r2, **elegida** (ahora `estilo.txt`). Misma escena de og; paleta en palabras |
+| `examples/galivelop-image-generator/prompts/r2-hex.txt` | r2, descartada. Misma escena, colores en hex |
+| `examples/galivelop-image-generator/prompts/r2-material.txt` | r2, descartada. Misma escena, paleta en materiales y luz (agua quieta de noche, cristal, amatista, vidrio esmerilado) |
 
 Plantilla para uno nuevo: `<formato y fondo> + <motivo en la zona de imagen> + <zona reservada, lisa> + Style: … Colours: deep
 midnight navy, violet, soft lavender and white highlights. Mood: calm, focused, quietly creative. The image is completely

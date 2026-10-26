@@ -101,9 +101,9 @@ Tras elegir **[P]**:
 | Archivo | Estado |
 |---|---|
 | `examples/galivelop-voice-generator/prompts/og.txt` (este repo) | aprobado en r1 (sí en semillas 3 y 4, `docs/registros/contenido/r1-fondos.md`) |
-| `examples/galivelop-voice-generator/prompts/r2-palabras.txt` | r2, pendiente. Misma escena de og (sin el «shaped like»); paleta en palabras |
-| `examples/galivelop-voice-generator/prompts/r2-hex.txt` | r2, pendiente. Misma escena, colores en hex |
-| `examples/galivelop-voice-generator/prompts/r2-material.txt` | r2, pendiente. Misma escena, paleta en materiales y luz (terciopelo azul, cristal frambuesa, cuarzo rosa) |
+| `examples/galivelop-voice-generator/prompts/r2-palabras.txt` | r2, **elegida** (ahora `estilo.txt`). Misma escena de og (sin el «shaped like»); paleta en palabras |
+| `examples/galivelop-voice-generator/prompts/r2-hex.txt` | r2, descartada. Misma escena, colores en hex |
+| `examples/galivelop-voice-generator/prompts/r2-material.txt` | r2, descartada. Misma escena, paleta en materiales y luz (terciopelo azul, cristal frambuesa, cuarzo rosa) |
 
 Plantilla para uno nuevo: `<formato y fondo> + <motivo de onda en la zona de imagen> + <zona reservada, lisa> + Style: …
 Colours: deep midnight navy, raspberry pink, soft rose and white highlights. Mood: calm, warm, attentive. The image is

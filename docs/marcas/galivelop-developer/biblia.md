@@ -110,9 +110,9 @@ Reglas tras elegir:
 | Archivo | Estado |
 |---|---|
 | `examples/galivelop-developer/prompts/og.txt` | **r1: sí** (limpio pero casi vacío; palanca para r2: más presencia a la derecha y la línea solo en esa mitad, `r1-fondos.md`) |
-| `examples/galivelop-developer/prompts/r2-palabras.txt` | r2, pendiente. Misma escena de og con la palanca de r1 (línea desde el centro a la derecha, bucle grande que llena la mitad derecha); paleta en palabras |
-| `examples/galivelop-developer/prompts/r2-hex.txt` | r2, pendiente. Misma escena, colores en hex |
-| `examples/galivelop-developer/prompts/r2-material.txt` | r2, pendiente. Misma escena, paleta en materiales y luz (pizarra pulida, luz esmerilada, vidrio de mar) |
+| `examples/galivelop-developer/prompts/r2-palabras.txt` | r2, **elegida** (ahora `estilo.txt`). Misma escena de og con la palanca de r1 (línea desde el centro a la derecha, bucle grande que llena la mitad derecha); paleta en palabras |
+| `examples/galivelop-developer/prompts/r2-hex.txt` | r2, descartada. Misma escena, colores en hex |
+| `examples/galivelop-developer/prompts/r2-material.txt` | r2, descartada. Misma escena, paleta en materiales y luz (pizarra pulida, luz esmerilada, vidrio de mar) |
 
 Plantilla para uno nuevo:
 

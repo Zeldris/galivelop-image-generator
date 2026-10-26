@@ -109,9 +109,9 @@ rotado ni con sombra o brillo; el texto del lockup se pasa a trazos con Cinzel.
 | Archivo | Estado |
 |---|---|
 | `examples/tarkor/prompts/og.txt` | r1 (`5d0178c`): técnico sí, persona **no**; se rehace con la sección 7 |
-| `examples/tarkor/prompts/r2-palabras.txt` | r2, pendiente. Escena nueva por la hipótesis 1 de la sección 7 (el og repetía la portada): agujas de roca de hierro al amanecer, tercio izquierdo de llanura en calima, hilo de humo y estandarte (hipótesis 3 y 4 de propina); estilo del preámbulo del juego (hipótesis 2, lo que pide la plantilla). Paleta en palabras, acento único arcilla |
-| `examples/tarkor/prompts/r2-hex.txt` | r2, pendiente. Misma escena, colores en hex |
-| `examples/tarkor/prompts/r2-material.txt` | r2, pendiente. Misma escena, paleta en materiales y luz (arcilla cocida, hierro forjado, hueso, calima) |
+| `examples/tarkor/prompts/r2-palabras.txt` | r2, descartada. Escena nueva por la hipótesis 1 de la sección 7 (el og repetía la portada): agujas de roca de hierro al amanecer, tercio izquierdo de llanura en calima, hilo de humo y estandarte (hipótesis 3 y 4 de propina); estilo del preámbulo del juego (hipótesis 2, lo que pide la plantilla). Paleta en palabras, acento único arcilla |
+| `examples/tarkor/prompts/r2-hex.txt` | r2, **elegida** (ahora `estilo.txt`). Misma escena, colores en hex |
+| `examples/tarkor/prompts/r2-material.txt` | r2, descartada. Misma escena, paleta en materiales y luz (arcilla cocida, hierro forjado, hueso, calima) |
 
 Plantilla para uno nuevo: preámbulo de `mundo.json` (día o atardecer) → encuadre con la zona reservada («the left
 third is a calm, nearly plain stretch of haze») → sujeto y región con su luz (`regiones.*.luz`) → «Style: cinematic

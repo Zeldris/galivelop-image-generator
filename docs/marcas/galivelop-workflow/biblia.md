@@ -114,9 +114,9 @@ Reglas tras elegir (valen para cualquiera):
 | Archivo | Estado |
 |---|---|
 | `examples/galivelop-workflow/prompts/og.txt` | **r1: sí** (veredicto de la persona pese a que las líneas invaden la mitad izquierda y «capsule» salió como píldora; palanca para r2 en `r1-fondos.md`) |
-| `examples/galivelop-workflow/prompts/r2-palabras.txt` | r2, pendiente. Misma escena de og con las palancas de r1 (líneas solo en la mitad derecha, «dash» en vez de «capsule»); paleta en palabras |
-| `examples/galivelop-workflow/prompts/r2-hex.txt` | r2, pendiente. Misma escena, colores en hex |
-| `examples/galivelop-workflow/prompts/r2-material.txt` | r2, pendiente. Misma escena, paleta en materiales y luz (pizarra azul, cristal azul, latón, jade) |
+| `examples/galivelop-workflow/prompts/r2-palabras.txt` | r2, **elegida** (ahora `estilo.txt`). Misma escena de og con las palancas de r1 (líneas solo en la mitad derecha, «dash» en vez de «capsule»); paleta en palabras |
+| `examples/galivelop-workflow/prompts/r2-hex.txt` | r2, descartada. Misma escena, colores en hex |
+| `examples/galivelop-workflow/prompts/r2-material.txt` | r2, descartada. Misma escena, paleta en materiales y luz (pizarra azul, cristal azul, latón, jade) |
 
 Plantilla para uno nuevo:
 

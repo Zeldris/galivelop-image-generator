@@ -119,9 +119,9 @@ Tras elegir **[P]**:
 | Archivo | Pieza | Estado |
 |---|---|---|
 | `examples/portal/prompts/og.txt` | og 1200×630 | r1 (`5d0178c`): **no** por la persona; orbe con tres puntos, genérico. Palanca r2: motivo propio (umbral, puerta, anillo) en vez del orbe |
-| `examples/portal/prompts/r2-palabras.txt` | og, «Umbral»: escena nueva (umbral abierto del que sale luz celeste, tres puntos de color dentro), paleta en palabras | r2, pendiente |
-| `examples/portal/prompts/r2-hex.txt` | misma escena, colores en hex | r2, pendiente |
-| `examples/portal/prompts/r2-material.txt` | misma escena, paleta en materiales y luz (pizarra pulida, cristal grueso, arcilla, esmalte) | r2, pendiente |
+| `examples/portal/prompts/r2-palabras.txt` | og, «Umbral»: escena nueva (umbral abierto del que sale luz celeste, tres puntos de color dentro), paleta en palabras | r2, descartada |
+| `examples/portal/prompts/r2-hex.txt` | misma escena, colores en hex | r2, **elegida** (ahora `estilo.txt`) |
+| `examples/portal/prompts/r2-material.txt` | misma escena, paleta en materiales y luz (pizarra pulida, cristal grueso, arcilla, esmalte) | r2, descartada |
 
 Plantilla para uno nuevo: `Wide abstract <pieza> on a deep midnight navy background. <motivo del Portal en la mitad derecha,
 en positivo>. A faint grid of tiny dots fades into the darkness. The left half is a calm, smooth, dark navy surface, nearly

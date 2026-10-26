@@ -126,9 +126,9 @@ Tras elegir **[P]**:
 | Archivo | Pieza | Estado |
 |---|---|---|
 | `examples/toveriai/prompts/og.txt` | og 1200×630, «Entre dos tintas» | r1 (`5d0178c`): **sí** por la persona. Palanca r2: nombrar el vino con más peso («deep burgundy», «oxblood») y quitar lo que lo acerque al rosa |
-| `examples/toveriai/prompts/r2-palabras.txt` | og, misma escena de «Entre dos tintas»; paleta en palabras («deep burgundy», «oxblood») | r2, pendiente |
-| `examples/toveriai/prompts/r2-hex.txt` | misma escena, colores en hex | r2, pendiente |
-| `examples/toveriai/prompts/r2-material.txt` | misma escena, paleta en materiales y luz (algodón crudo, sangre de buey seca, musgo en sombra, resina) | r2, pendiente |
+| `examples/toveriai/prompts/r2-palabras.txt` | og, misma escena de «Entre dos tintas»; paleta en palabras («deep burgundy», «oxblood») | r2, descartada |
+| `examples/toveriai/prompts/r2-hex.txt` | misma escena, colores en hex | r2, descartada |
+| `examples/toveriai/prompts/r2-material.txt` | misma escena, paleta en materiales y luz (algodón crudo, sangre de buey seca, musgo en sombra, resina) | r2, **elegida** (ahora `estilo.txt`) |
 
 Los 20 prompts del kit (redes, banners, iconografía, mockups, miniaturas, abstracto; por plataforma) se adaptan quitando el
 texto y describiendo la zona reservada. Plantilla: `<formato> abstract conceptual artwork on warm beige textured paper.
