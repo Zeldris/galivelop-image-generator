@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="portal-a-t">
+  <title id="portal-a-t">Galivelop — GV de un trazo</title>
+  <!-- a. GV de un trazo: la G y la V en una sola línea continua (travesaño, bowl, tapa y V) sobre la baldosa actual -->
+  <defs>
+    <linearGradient id="portal-a-fondo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2BB3EA"/>
+      <stop offset="1" stop-color="#0083C1"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="30" fill="url(#portal-a-fondo)"/>
+  <path d="M50 64 H66 A24 24 0 1 1 42 40 H72 L90 88 L108 40"
+        fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,18 @@
+<svg data-fondo="oscuro" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 470 128" role="img" aria-labelledby="portal-c-lockup-t">
+  <title id="portal-c-lockup-t">Galivelop</title>
+  <!-- Lockup de portal-c: el símbolo y el nombre en Sora 700, tracking -0,03 em; «Gali» celeste, «velop» claro (variante sobre fondo oscuro, como la web). Al elegirse, el texto se pasa a trazos. -->
+  <g id="portal-c-lockup-simbolo">
+    <defs>
+      <linearGradient id="portal-c-lockup-fondo" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#2BB3EA"/>
+        <stop offset="1" stop-color="#0083C1"/>
+      </linearGradient>
+    </defs>
+    <rect width="128" height="128" rx="30" fill="url(#portal-c-lockup-fondo)"/>
+    <g fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M59.4 45.6 A24 24 0 1 0 68 64"/>
+      <path d="M54 64 H66 C76 64 78 74 88 74 C98 74 100 58 108 58"/>
+    </g>
+  </g>
+  <text x="152" y="86" font-family="Sora, sans-serif" font-weight="700" font-size="64" letter-spacing="-1.9" fill="#EAF4FA"><tspan fill="#1AA6DF">Gali</tspan>velop</text>
+</svg>

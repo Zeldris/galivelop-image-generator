@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="portal-b-t">
+  <title id="portal-b-t">Galivelop — Umbral</title>
+  <!-- b. Umbral: una G que es un arco de puerta abierta (arco, jamba, suelo y hoja) con un punto de luz celeste dentro -->
+  <defs>
+    <radialGradient id="portal-b-luz">
+      <stop offset="0" stop-color="#5CC8F2" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#5CC8F2" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="128" height="128" rx="30" fill="#06121C"/>
+  <circle cx="62" cy="56" r="26" fill="url(#portal-b-luz)"/>
+  <circle cx="62" cy="56" r="7" fill="#5CC8F2"/>
+  <path d="M85.3 37.1 A26 26 0 0 0 38 52 V102 H90 V72 H68"
+        fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

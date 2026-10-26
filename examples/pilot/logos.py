@@ -43,7 +43,10 @@ def tarjeta(proy, f):
     cajas = ''.join(f'<div class="caja {fondo}"><div class="s128">{s}</div><div class="s32">{s}</div>'
                     f'<div class="s16">{s}</div></div>' for fondo in ('claro', 'oscuro'))
     if lock.exists():
-        cajas += ''.join(f'<div class="caja {fondo} lockup">{svg(lock)}</div>' for fondo in ('claro', 'oscuro'))
+        # Un lockup hecho para un solo fondo lo dice con data-fondo; si no, va sobre los dos.
+        m = re.search(r'<svg[^>]*\sdata-fondo="(claro|oscuro)"', lock.read_text())
+        fondos = (m.group(1),) if m else ('claro', 'oscuro')
+        cajas += ''.join(f'<div class="caja {fondo} lockup">{svg(lock)}</div>' for fondo in fondos)
     return (f'<figure data-pieza="{esc(nombre)}" style="max-width:none"><h3>{esc(nombre)}</h3>'
             f'<figcaption>{esc(concepto(f))}</figcaption><div class="prop">{cajas}</div>'
             f'<figcaption><button class="si">sí</button><button class="no">no</button></figcaption></figure>')

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="toveriai-c-t">
+  <title id="toveriai-c-t">toVeriAI — la verdad no es binaria</title>
+  <!-- c. La verdad no es binaria: una V de tinta plana hecha de tres estratos (granate, ámbar, verde) que se rozan sin mezclarse, con un hilo de papel entre ellos -->
+  <defs>
+    <clipPath id="toveriai-c-v">
+      <path d="M16 30 L64 106 L112 30 H94 L64 78 L34 30 Z"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#toveriai-c-v)">
+    <polygon fill="#9B2335" points="0,0 128,0 128,56 0,52"/>
+    <polygon fill="#B5832A" points="0,54 128,58 128,76 0,82"/>
+    <polygon fill="#2D6A4F" points="0,84 128,78 128,128 0,128"/>
+  </g>
+</svg>

@@ -88,6 +88,8 @@ Cuatro propuestas por proyecto (`a`-`d`), **conceptos distintos, no variantes de
 - **`<proyecto>-<letra>-lockup.svg`:**
   - el símbolo a la izquierda y el nombre a la derecha, en horizontal, con `viewBox` de alto 128;
   - el nombre va como `<text>` con su `font-family` de la biblia y una genérica de reserva (`serif` o `sans-serif`);
+  - si solo funciona sobre un fondo, lo dice en la raíz con `data-fondo="claro"` u `"oscuro"`, y la página de revisión
+    lo muestra solo sobre ese;
   - al elegirse, el texto se pasa a trazos con la fuente de verdad.
 
 Reglas del SVG:

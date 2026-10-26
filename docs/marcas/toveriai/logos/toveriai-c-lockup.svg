@@ -1,0 +1,17 @@
+<svg data-fondo="claro" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 128" role="img" aria-labelledby="toveriai-c-lockup-t">
+  <title id="toveriai-c-lockup-t">toVeriAI</title>
+  <!-- Lockup de toveriai-c: el símbolo y el nombre en Cormorant Garamond 400, tracking 0,08 em; «Veri» en verde (variante sobre fondo claro, la de la marca). Al elegirse, el texto se pasa a trazos. -->
+  <g id="toveriai-c-lockup-simbolo">
+    <defs>
+      <clipPath id="toveriai-c-lockup-v">
+        <path d="M16 30 L64 106 L112 30 H94 L64 78 L34 30 Z"/>
+      </clipPath>
+    </defs>
+    <g clip-path="url(#toveriai-c-lockup-v)">
+      <polygon fill="#9B2335" points="0,0 128,0 128,56 0,52"/>
+      <polygon fill="#B5832A" points="0,54 128,58 128,76 0,82"/>
+      <polygon fill="#2D6A4F" points="0,84 128,78 128,128 0,128"/>
+    </g>
+  </g>
+  <text x="156" y="86" font-family="'Cormorant Garamond', serif" font-weight="400" font-size="76" letter-spacing="6" fill="#1A1A1A">to<tspan fill="#2D6A4F">Veri</tspan>AI</text>
+</svg>
