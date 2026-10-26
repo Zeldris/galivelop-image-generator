@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 128" role="img" aria-labelledby="galivelop-image-generator-c-lockup-t">
+  <title id="galivelop-image-generator-c-lockup-t">galivelop-image-generator: un marco y su vuelta (lockup)</title>
+  <!-- Lockup: el símbolo «un marco y su vuelta» a la izquierda y el nombre en Sora 700 a la derecha, en el acento -->
+  <!-- símbolo -->
+  <defs>
+    <linearGradient id="galivelop-image-generator-c-lockup-fondo" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="128" y2="128">
+      <stop offset="0" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#5B34C9"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="30" fill="url(#galivelop-image-generator-c-lockup-fondo)"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <!-- el marco, abierto en el borde superior -->
+    <path d="M50 30H42Q30 30 30 42V86Q30 98 42 98H86Q98 98 98 86V48"/>
+    <!-- la vuelta: la esquina se curva y apunta al trazo que dejó abierto -->
+    <path d="M98 48A18 18 0 0 0 80 30"/>
+  </g>
+  <!-- la punta de la flecha -->
+  <polygon points="66,30 88,16 88,44" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="6" stroke-linejoin="round"/>
+  <!-- nombre; al elegirse, el texto se pasa a trazos con Sora -->
+  <text x="156" y="86" font-family="Sora, sans-serif" font-weight="700" font-size="56" letter-spacing="-1.5" fill="#8B5CF6">galivelop-image-generator</text>
+</svg>

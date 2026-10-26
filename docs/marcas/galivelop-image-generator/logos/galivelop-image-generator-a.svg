@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="galivelop-image-generator-a-t">
+  <title id="galivelop-image-generator-a-t">galivelop-image-generator: la cola</title>
+  <!-- La cola: tres marcos en fila escalonada hacia el fondo; el de delante, lleno de luz, es la elegida -->
+  <defs>
+    <linearGradient id="galivelop-image-generator-a-fondo" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="128" y2="128">
+      <stop offset="0" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#5B34C9"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="30" fill="url(#galivelop-image-generator-a-fondo)"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linejoin="round">
+    <!-- marcos de atrás, vacíos -->
+    <rect x="62" y="22" width="42" height="42" rx="9"/>
+    <rect x="42" y="42" width="42" height="42" rx="9"/>
+  </g>
+  <!-- hueco que separa la elegida del marco de detrás -->
+  <rect x="15" y="55" width="56" height="56" rx="14" fill="url(#galivelop-image-generator-a-fondo)"/>
+  <!-- la elegida, encendida -->
+  <rect x="22" y="62" width="42" height="42" rx="9" fill="#FFFFFF"/>
+</svg>

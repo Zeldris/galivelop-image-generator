@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="galivelop-image-generator-d-t">
+  <title id="galivelop-image-generator-d-t">galivelop-image-generator: el taller que se enciende</title>
+  <!-- El taller que se enciende: el borde del marco no se cierra, acaba en un punto de luz (arranque bajo demanda, D11) -->
+  <defs>
+    <linearGradient id="galivelop-image-generator-d-fondo" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="128" y2="128">
+      <stop offset="0" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#5B34C9"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="30" fill="url(#galivelop-image-generator-d-fondo)"/>
+  <path d="M88 30Q98 30 98 40V86Q98 98 86 98H42Q30 98 30 86V40Q30 30 40 30" fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- el punto de luz -->
+  <circle cx="64" cy="30" r="11" fill="#FFFFFF"/>
+</svg>

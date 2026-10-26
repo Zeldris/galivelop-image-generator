@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="galivelop-voice-generator-b-t">
+  <title id="galivelop-voice-generator-b-t">galivelop-voice-generator: tomas</title>
+  <!-- Tomas: cinco barras de onda, los intentos de una voz; la más alta y blanca es la toma elegida -->
+  <defs>
+    <linearGradient id="galivelop-voice-generator-b-fondo" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="128" y2="128">
+      <stop offset="0" stop-color="#D9467A"/>
+      <stop offset="1" stop-color="#A62E5A"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="30" fill="url(#galivelop-voice-generator-b-fondo)"/>
+  <g fill="none" stroke-width="12" stroke-linecap="round">
+    <path d="M24 54V74M44 42V86M84 36V92M104 50V78" stroke="#F6B1CA"/>
+    <path d="M64 24V104" stroke="#FFFFFF"/>
+  </g>
+</svg>

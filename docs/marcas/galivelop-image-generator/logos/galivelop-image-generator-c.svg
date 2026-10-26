@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="galivelop-image-generator-c-t">
+  <title id="galivelop-image-generator-c-t">galivelop-image-generator: un marco y su vuelta</title>
+  <!-- Un marco y su vuelta: la esquina del marco se dobla en una flecha que vuelve sobre su propio trazo (elegir y deshacer, D9) -->
+  <defs>
+    <linearGradient id="galivelop-image-generator-c-fondo" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="128" y2="128">
+      <stop offset="0" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#5B34C9"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="30" fill="url(#galivelop-image-generator-c-fondo)"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <!-- el marco, abierto en el borde superior -->
+    <path d="M50 30H42Q30 30 30 42V86Q30 98 42 98H86Q98 98 98 86V48"/>
+    <!-- la vuelta: la esquina se curva y apunta al trazo que dejó abierto -->
+    <path d="M98 48A18 18 0 0 0 80 30"/>
+  </g>
+  <!-- la punta de la flecha -->
+  <polygon points="66,30 88,16 88,44" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="6" stroke-linejoin="round"/>
+</svg>
