@@ -7,6 +7,7 @@ Escribe <piloto>/<ronda>/index.html (proyecto a proyecto: prompt, intentos lado 
 en el chat. Lee lo que dejan ronda.sh y el generar.sh de Tarkor: <proyecto>/{intentos,prompts,logs}/ y resumen.txt.
 """
 import html
+import json
 import re
 import sys
 from pathlib import Path
@@ -83,6 +84,17 @@ def tiempos(log, linea):
     return ' · '.join(partes)
 
 
+def medidas(f):
+    """Las medidas de piezas.py (r4, r5): contraste de la zona de texto y paleta."""
+    if not f.exists():
+        return ''
+    m = json.loads(f.read_text())
+    c, pal = m.get('contraste'), m.get('paleta')
+    partes = ([f'contraste {c["media"]}:1, peor {c["peor"]}:1'] if c else []) + \
+             ([f'paleta {pal["porcentaje"]} %'] if pal else []) + ([f'YAVG {m["YAVG"]}'] if 'YAVG' in m else [])
+    return ' · '.join(partes)
+
+
 def pagina_ronda(ronda):
     res = resumen(ronda)
     secciones = []
@@ -91,13 +103,14 @@ def pagina_ronda(ronda):
         for img in sorted((proy / 'intentos').glob('*.png')):
             n = img.stem
             pf = proy / 'prompts' / f'{n}.txt'
-            prompts.append((n, pf.read_text() if pf.exists() else ''))
+            if pf.exists():
+                prompts.append((n, pf.read_text()))
             rel = img.relative_to(ronda).as_posix()
             pieza = f'{proy.name} {n.removeprefix("og-")}'
             figuras.append(
                 f'<figure data-pieza="{esc(pieza)}"><a href="{esc(rel)}" target="_blank"><img src="{esc(rel)}" '
                 f'alt="{esc(pieza)}" loading="lazy"></a><figcaption><b>{esc(n)}</b> '
-                f'{esc(tiempos(proy / "logs" / f"{n}.log", res.get((proy.name, n))))} '
+                f'{esc(tiempos(proy / "logs" / f"{n}.log", res.get((proy.name, n))))}{esc(medidas(proy / "medidas" / f"{n}.json"))} '
                 f'<button class="si">sí</button><button class="no">no</button></figcaption></figure>')
         # Un prompt para todas (r1: varias semillas) o uno por imagen (r2: variantes del estilo).
         distintos = {t for _, t in prompts}

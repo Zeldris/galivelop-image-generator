@@ -2,7 +2,7 @@
 """Prueba de concepto de `gimg compose` (D28): fondo + velo + logo + texto, en un SVG que rsvg-convert rasteriza.
 
     componer.py fondo.png salida.png --ancho 1200 --alto 630 --logo lockup.svg --titulo "..." [--subtitulo "..."]
-        [--zona izquierda|derecha|abajo] [--color-texto #hex] [--velo #hex:opacidad]
+        [--zona izquierda|derecha|abajo|arriba] [--color-texto #hex] [--velo #hex:opacidad]
         [--fuente Sora] [--fuente-texto Inter]
 
 Decisiones (las porta F2.8):
@@ -95,31 +95,40 @@ def ajustar(texto, tam, ancho_max, factor=0.56):
     return lineas
 
 
+ZONAS = ("izquierda", "derecha", "abajo", "arriba")
+
+
+def caja_zona(w, h, zona):
+    """(x, y, ancho, alto) de la caja de logo y texto de la zona; medir.py mide el contraste en ella."""
+    if zona not in ZONAS:
+        raise ErrorComponer(f"zona desconocida: {zona!r} ({', '.join(ZONAS)})")
+    m = round(0.06 * min(w, h))
+    if zona == "abajo":
+        return m, round(h * 0.52), w - 2 * m, h - m - round(h * 0.52)
+    if zona == "arriba":
+        return m, m, w - 2 * m, round(h * 0.48) - m
+    cw = round(w * 0.55) - m
+    return (m if zona == "izquierda" else w - m - cw), m, cw, h - 2 * m
+
+
 def construir_svg(fondo, w, h, logo, titulo, subtitulo=None, zona=None, color_texto="#eaf4fa",
-                  velo="#06121c:0.85", fuente="Sora", fuente_texto="Inter"):
+                  velo="#06121c:0.85", fuente="Sora", fuente_texto="Inter", texto=True, peso_titulo=700):
+    """El SVG de la pieza; con texto=False, solo fondo y velo (para medir el contraste de la zona sin el propio texto)."""
     _hex(color_texto, "color-texto")
     vcolor, vop = parsear_velo(velo)
     zona = zona or ("izquierda" if w > h * 1.2 else "abajo")
-    if zona not in ("izquierda", "derecha", "abajo"):
-        raise ErrorComponer(f"zona desconocida: {zona!r} (izquierda, derecha o abajo)")
     m = round(0.06 * min(w, h))  # margen
-    # Caja de contenido de la zona
-    if zona == "abajo":
-        cx, cw = m, w - 2 * m
-        cy0, cy1 = round(h * 0.52), h - m
-    else:
-        cw = round(w * 0.55) - m
-        cx = m if zona == "izquierda" else w - m - cw
-        cy0, cy1 = m, h - m
+    cx, cy0, cw, alto_caja = caja_zona(w, h, zona)
+    cy1 = cy0 + alto_caja
     # Logo arriba de la caja
     lw, lh = _viewbox(logo)
     alto_logo = round(min(0.15 * h, 0.2 * cw * lh / lw * 2))
     ancho_logo = alto_logo * lw / lh
     if ancho_logo > cw:
         ancho_logo, alto_logo = cw, cw * lh / lw
-    ly = m if zona != "abajo" else cy0
+    ly = cy0
     # Texto: baja el cuerpo hasta que cabe
-    tam = round((0.075 if zona == "abajo" else 0.09) * h)
+    tam = round((0.075 if zona in ("abajo", "arriba") else 0.09) * h)
     sub_tam = max(round(tam * 0.42), 14)
     top = ly + alto_logo + m * 0.9
     disp = cy1 - top
@@ -131,11 +140,11 @@ def construir_svg(fondo, w, h, logo, titulo, subtitulo=None, zona=None, color_te
             break
         tam = round(tam * 0.93)
         sub_tam = max(round(tam * 0.42), 14)
-    y = top + (disp - total) / 2 if zona != "abajo" else cy1 - total
+    y = {"abajo": cy1 - total, "arriba": top}.get(zona, top + (disp - total) / 2)
     partes = []
     for i, linea in enumerate(lt):
         partes.append(f'<text x="{cx}" y="{y + tam * (0.85 + 1.12 * i):.1f}" font-family="{esc(fuente)}, sans-serif" '
-                      f'font-weight="700" font-size="{tam}" fill="{color_texto}">{esc(linea)}</text>')
+                      f'font-weight="{int(peso_titulo)}" font-size="{tam}" fill="{color_texto}">{esc(linea)}</text>')
     y2 = y + len(lt) * tam * 1.12 + sub_tam * 0.8
     for i, linea in enumerate(ls):
         partes.append(f'<text x="{cx}" y="{y2 + sub_tam * (0.9 + 1.3 * i):.1f}" font-family="{esc(fuente_texto)}, sans-serif" '
@@ -145,16 +154,20 @@ def construir_svg(fondo, w, h, logo, titulo, subtitulo=None, zona=None, color_te
         g = (0, 0, 1, 0); rect = (0, 0, w, h)
     elif zona == "derecha":
         g = (1, 0, 0, 0); rect = (0, 0, w, h)
+    elif zona == "arriba":
+        g = (0, 0, 0, 1); rect = (0, 0, w, h)
     else:
         g = (0, 1, 0, 0); rect = (0, 0, w, h)
-    cola = 0.95 if zona != "abajo" else 0.9
+    cola = 0.95 if zona in ("izquierda", "derecha") else 0.9
     velo_svg = (
         f'<linearGradient id="velo" x1="{g[0]}" y1="{g[1]}" x2="{g[2]}" y2="{g[3]}">'
         f'<stop offset="0" stop-color="{vcolor}" stop-opacity="{vop}"/>'
         f'<stop offset="0.55" stop-color="{vcolor}" stop-opacity="{vop * 0.88:.3f}"/>'
         f'<stop offset="{cola}" stop-color="{vcolor}" stop-opacity="0"/></linearGradient>')
-    if zona == "abajo":  # el degradado empieza en el borde inferior y llega hasta ~45 % de la altura
+    if zona in ("abajo", "arriba"):  # el degradado empieza en su borde y llega hasta ~45 % de la altura
         velo_svg = velo_svg.replace('offset="0.55"', 'offset="0.5"')
+    marca = (f'<image x="{cx}" y="{ly}" width="{ancho_logo:.1f}" height="{alto_logo:.1f}" '
+             f'href="{_data_uri(logo, "image/svg+xml")}"/>\n' + "\n".join(partes) + "\n") if texto else ""
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" '
         f'width="{w}" height="{h}" viewBox="0 0 {w} {h}">\n'
@@ -162,9 +175,7 @@ def construir_svg(fondo, w, h, logo, titulo, subtitulo=None, zona=None, color_te
         f'<image x="0" y="0" width="{w}" height="{h}" preserveAspectRatio="xMidYMid slice" '
         f'href="{_data_uri(fondo, "image/png")}"/>\n'
         f'<rect x="{rect[0]}" y="{rect[1]}" width="{rect[2]}" height="{rect[3]}" fill="url(#velo)"/>\n'
-        f'<image x="{cx}" y="{ly}" width="{ancho_logo:.1f}" height="{alto_logo:.1f}" '
-        f'href="{_data_uri(logo, "image/svg+xml")}"/>\n'
-        + "\n".join(partes) + "\n</svg>\n")
+        + marca + "</svg>\n")
 
 
 def fonts_conf(directorio_fuentes, destino):
@@ -215,7 +226,7 @@ def main(argv=None):
     p.add_argument("--logo", required=True)
     p.add_argument("--titulo", required=True)
     p.add_argument("--subtitulo")
-    p.add_argument("--zona", choices=["izquierda", "derecha", "abajo"])
+    p.add_argument("--zona", choices=ZONAS)
     p.add_argument("--color-texto", default="#eaf4fa")
     p.add_argument("--velo", default="#06121c:0.85")
     p.add_argument("--fuente", default="Sora")

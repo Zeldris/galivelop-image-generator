@@ -1,0 +1,66 @@
+{
+  "fuente": "Sora",
+  "fuente_texto": "Inter",
+  "piezas": [
+    {
+      "id": "og",
+      "ronda": "r4",
+      "ancho": 1200,
+      "alto": 630,
+      "fondo": "estilo",
+      "logo": "docs/marcas/galivelop-image-generator/logos/galivelop-image-generator-b-lockup.svg",
+      "titulo": "Pide, prueba, elige.",
+      "subtitulo": "Imágenes con IA local: un servicio por máquina, para varios proyectos.",
+      "zona": "izquierda",
+      "color_texto": "#eaf4fa",
+      "velo": "#06121c:0"
+    },
+    {
+      "id": "cuadrado",
+      "ronda": "r5",
+      "ancho": 1080,
+      "alto": 1080,
+      "fondo": "r5-cuadrado",
+      "logo": "docs/marcas/galivelop-image-generator/logos/galivelop-image-generator-b-lockup.svg",
+      "titulo": "¿Diez intentos y una elegida?",
+      "subtitulo": "Así trabaja. Tú eliges; él recuerda cómo se hizo.",
+      "zona": "arriba",
+      "color_texto": "#eaf4fa",
+      "velo": "#06121c:0.3"
+    },
+    {
+      "id": "vertical",
+      "ronda": "r5",
+      "ancho": 1080,
+      "alto": 1350,
+      "fondo": "r5-vertical",
+      "logo": "docs/marcas/galivelop-image-generator/logos/galivelop-image-generator-b-lockup.svg",
+      "titulo": "Se enciende cuando se le pide.",
+      "subtitulo": "Nada residente y sin instalar nada: Python 3, solo stdlib.",
+      "zona": "arriba",
+      "color_texto": "#eaf4fa",
+      "velo": "#06121c:0.3"
+    },
+    {
+      "id": "cabecera",
+      "ronda": "r5",
+      "ancho": 1500,
+      "alto": 500,
+      "fondo": "r5-cabecera",
+      "logo": "docs/marcas/galivelop-image-generator/logos/galivelop-image-generator-b-lockup.svg",
+      "titulo": "Cada elegida, con su manifiesto.",
+      "subtitulo": "IA local: nada sale de tu equipo.",
+      "zona": "izquierda",
+      "color_texto": "#eaf4fa",
+      "velo": "#06121c:0.3"
+    },
+    {
+      "id": "avatar",
+      "ronda": "r5",
+      "ancho": 512,
+      "alto": 512,
+      "fondo": null,
+      "logo": "docs/marcas/galivelop-image-generator/logos/galivelop-image-generator-b.svg"
+    }
+  ]
+}

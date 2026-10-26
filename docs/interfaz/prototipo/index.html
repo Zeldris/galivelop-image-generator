@@ -1,0 +1,935 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gimg — prototipo de interfaz</title>
+<meta name="description" content="Prototipo navegable de la interfaz de gimg (F4): proyectos, pedidos, piezas, marca y cola. Datos de ejemplo del piloto; sin backend.">
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#f3f4f7; --panel:#ffffff; --panel2:#eceef3; --border:#d8dce4; --text:#161a22; --muted:#5e6778;
+  --accent:#6d3fd1; --accent-soft:#efe8ff; --accent-ink:#ffffff;
+  --ok:#1e8a4a; --ok-soft:#e3f5ea; --warn:#a86b12; --warn-soft:#fdf1dc; --bad:#c23a2b; --bad-soft:#fde6e2;
+  --shadow:0 1px 2px rgb(16 20 30/.06),0 8px 24px rgb(16 20 30/.06);
+  --r:12px; --r2:8px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1115; --panel:#171a20; --panel2:#1f2329; --border:#2a2f38; --text:#e7e9ee; --muted:#98a1b0;
+    --accent:#a78bfa; --accent-soft:#2a2340; --accent-ink:#15102a;
+    --ok:#4cc27d; --ok-soft:#173224; --warn:#e5ad45; --warn-soft:#3a2d12; --bad:#ef6a58; --bad-soft:#3d1c18;
+    --shadow:0 1px 2px rgb(0 0 0/.5),0 10px 30px rgb(0 0 0/.4);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1115; --panel:#171a20; --panel2:#1f2329; --border:#2a2f38; --text:#e7e9ee; --muted:#98a1b0;
+  --accent:#a78bfa; --accent-soft:#2a2340; --accent-ink:#15102a;
+  --ok:#4cc27d; --ok-soft:#173224; --warn:#e5ad45; --warn-soft:#3a2d12; --bad:#ef6a58; --bad-soft:#3d1c18;
+  --shadow:0 1px 2px rgb(0 0 0/.5),0 10px 30px rgb(0 0 0/.4);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{margin:0;line-height:1.2;letter-spacing:-.01em}
+h1{font-size:24px;font-weight:650}
+h2{font-size:17px;font-weight:650}
+h3{font-size:14px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+p{margin:0}
+.muted{color:var(--muted)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+.sr{position:absolute;left:-9999px}
+
+/* cabecera */
+.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:8px 16px;background:color-mix(in srgb,var(--panel) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.marca{display:flex;align-items:center;gap:8px;font-weight:700;text-decoration:none}
+.marca svg{width:26px;height:26px}
+.migas{display:flex;align-items:center;gap:6px;min-width:0;color:var(--muted);font-size:14px;overflow:hidden;white-space:nowrap}
+.migas a{text-decoration:none;color:var(--muted)}
+.migas a:hover{color:var(--text)}
+.migas b{color:var(--text);font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.sep{flex:1}
+.icono{display:inline-grid;place-items:center;width:34px;height:34px;border:1px solid var(--border);border-radius:9px;background:var(--panel);cursor:pointer;padding:0}
+.icono:hover{background:var(--panel2)}
+.pill{display:flex;align-items:center;gap:8px;height:34px;padding:0 12px;border:1px solid var(--border);border-radius:999px;background:var(--panel);cursor:pointer;font-size:13px;white-space:nowrap}
+.pill:hover{background:var(--panel2)}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.pill .dot.on{background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 25%,transparent);animation:pulso 1.4s infinite}
+@keyframes pulso{50%{box-shadow:0 0 0 6px transparent}}
+.pill .mini{width:60px;height:4px;background:var(--panel2);border-radius:2px;overflow:hidden}
+.pill .mini i{display:block;height:100%;background:var(--ok)}
+
+/* cajón de la cola */
+.cajon{position:fixed;top:52px;right:12px;z-index:30;width:400px;max-width:calc(100vw - 24px);max-height:calc(100vh - 70px);overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);display:none}
+.cajon.abierto{display:block}
+.cajon header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border)}
+.cajon ul{list-style:none;margin:0;padding:6px 0}
+.cajon li{padding:10px 14px;display:grid;grid-template-columns:1fr auto;gap:4px 10px;border-bottom:1px solid var(--border)}
+.cajon li:last-child{border-bottom:0}
+.cajon li .q{font-size:13px}
+.cajon li .q b{font-weight:600}
+.cajon li .acc{display:flex;gap:4px}
+.cajon .vacio{padding:24px 14px;text-align:center;color:var(--muted)}
+.prog{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden;grid-column:1/-1}
+.prog i{display:block;height:100%;background:var(--ok);transition:width .6s linear}
+.prog.err i{background:var(--bad)}
+
+/* contenido */
+.wrap{max-width:1360px;margin:0 auto;padding:20px 16px 80px}
+.cabecera-p{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.cabecera-p .baldosa{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;flex:none}
+.cabecera-p .baldosa img{width:34px;height:34px}
+.acciones{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin:6px 0 18px;overflow-x:auto}
+.tabs a{padding:10px 14px;text-decoration:none;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;font-weight:500}
+.tabs a.on{color:var(--text);border-color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.card.link{text-decoration:none;display:block;transition:transform .12s,border-color .12s}
+.card.link:hover{transform:translateY(-2px);border-color:var(--accent)}
+.card.apagado{opacity:.6}
+.pcard .franja{height:6px}
+.pcard .cuerpo{padding:14px 16px 16px;display:grid;grid-template-columns:52px 1fr;gap:12px}
+.pcard .baldosa{width:52px;height:52px;border-radius:12px;display:grid;place-items:center}
+.pcard .baldosa img{width:36px;height:36px}
+.pcard .n{font-weight:650;font-size:16px}
+.pcard .cifras{display:flex;gap:14px;margin-top:8px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+.pcard .cifras b{color:var(--text);font-weight:600}
+.pcard .ult{grid-column:1/-1;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);padding-top:10px;border-top:1px solid var(--border)}
+.pcard .ult .th{width:44px;height:23px;border-radius:4px;overflow:hidden;background:var(--panel2);flex:none}
+.pcard .ult .th img{width:100%;height:100%;object-fit:cover;display:block}
+.aviso{display:flex;gap:10px;align-items:flex-start;padding:10px 14px;border-radius:var(--r2);font-size:13.5px;border:1px solid}
+.aviso.info{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 35%,transparent)}
+.aviso.warn{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 40%,transparent)}
+.aviso.bad{background:var(--bad-soft);border-color:color-mix(in srgb,var(--bad) 40%,transparent)}
+.aviso.ok{background:var(--ok-soft);border-color:color-mix(in srgb,var(--ok) 40%,transparent)}
+.vacio-grande{padding:48px 20px;text-align:center;border:1px dashed var(--border);border-radius:var(--r);color:var(--muted)}
+.vacio-grande h2{color:var(--text);margin-bottom:6px}
+
+/* botones y chips */
+.btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r2);background:var(--panel);cursor:pointer;font-size:13.5px;font-weight:500;text-decoration:none;white-space:nowrap}
+.btn:hover{background:var(--panel2)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.primario{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.btn.primario:hover{filter:brightness(1.08)}
+.btn.chico{height:26px;padding:0 9px;font-size:12.5px}
+.btn.si.on{background:var(--ok);color:#fff;border-color:transparent}
+.btn.no.on{background:var(--bad);color:#fff;border-color:transparent}
+.btn.peligro{color:var(--bad)}
+.chip{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:999px;font-size:12px;font-weight:500;background:var(--panel2);color:var(--muted);white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)}
+.chip.bad{background:var(--bad-soft);color:var(--bad)}
+.chip.acc{background:var(--accent-soft);color:var(--accent)}
+.chip.filtro{cursor:pointer;border:1px solid transparent;height:28px;padding:0 11px;font-size:13px;color:var(--text);background:var(--panel)}
+.chip.filtro:hover{border-color:var(--border)}
+.chip.filtro.on{background:var(--accent);color:var(--accent-ink)}
+.filtros{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
+.filtros .lbl{font-size:12.5px;color:var(--muted);margin-right:2px}
+
+/* lista de pedidos */
+.lista{display:flex;flex-direction:column;gap:8px}
+.fila-pedido{display:grid;grid-template-columns:72px 1fr auto;gap:14px;align-items:center;padding:10px 14px;text-decoration:none}
+.fila-pedido .th{width:72px;height:38px;border-radius:6px;overflow:hidden;background:var(--panel2);display:grid;place-items:center;color:var(--muted);font-size:11px}
+.fila-pedido .th img{width:100%;height:100%;object-fit:cover;display:block}
+.fila-pedido .k{font-weight:600}
+.fila-pedido .k .mono{color:var(--muted);font-weight:400;margin-left:6px}
+.fila-pedido .d{font-size:13px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;margin-top:2px}
+.fila-pedido .est{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+
+/* tabla piezas */
+.tabla-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--r);background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+th{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td .mini-logo{height:22px;max-width:120px;vertical-align:middle;padding:2px 6px;border-radius:4px}
+
+/* marca */
+.marca-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.bloque{padding:16px;display:flex;flex-direction:column;gap:10px}
+.bloque h3{margin-bottom:2px}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.sw{border-radius:8px;overflow:hidden;border:1px solid var(--border);font-size:12px}
+.sw i{display:block;height:38px}
+.sw div{padding:6px 8px;line-height:1.3}
+.sw .mono{color:var(--muted)}
+.combo{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:8px;font-size:13px}
+.logos-marca{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tile{display:grid;place-items:center;padding:14px;border-radius:8px;min-height:84px;border:1px solid var(--border)}
+.tile img{max-width:100%;max-height:56px}
+.tile small{display:block;margin-top:6px;font-size:11px;opacity:.7;text-align:center}
+.tipo-muestra{padding:10px 12px;border-radius:8px;background:var(--panel2)}
+.tipo-muestra .t{font-size:22px;line-height:1.15}
+.tipo-muestra .s{font-size:13px;margin-top:4px}
+.palabras{display:flex;gap:5px;flex-wrap:wrap}
+dl.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;font-size:13.5px}
+dl.kv dt{color:var(--muted)}
+dl.kv dd{margin:0}
+
+/* pedido */
+.pedido{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:20px;align-items:start}
+.panel{position:sticky;top:64px;display:flex;flex-direction:column;gap:14px}
+.panel .card{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.campo{display:flex;flex-direction:column;gap:4px}
+.campo label{font-size:12.5px;color:var(--muted);font-weight:500}
+.campo input,.campo select,.campo textarea{width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--r2);background:var(--bg)}
+.campo textarea{min-height:110px;resize:vertical;line-height:1.4;font-size:13.5px}
+.campo .ro{padding:7px 9px;border-radius:var(--r2);background:var(--panel2);font-size:12.5px;color:var(--muted);line-height:1.4}
+.fila{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fila3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.check{display:flex;align-items:center;gap:8px;font-size:13.5px}
+.galeria{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.galeria.una{grid-template-columns:1fr}
+.intento{display:flex;flex-direction:column;outline:2px solid transparent;outline-offset:2px}
+.intento:focus-within{outline-color:var(--accent)}
+.intento.elegida{border-color:var(--ok);box-shadow:0 0 0 2px color-mix(in srgb,var(--ok) 35%,transparent)}
+.intento.descartada .img-wrap{opacity:.45;filter:grayscale(.6)}
+.img-wrap{position:relative;aspect-ratio:var(--ar,2/1);background:#0b0d12;container-type:inline-size;overflow:hidden;cursor:zoom-in}
+.img-wrap img.fondo{width:100%;height:100%;object-fit:cover;display:block}
+.hueco{display:grid;place-items:center;width:100%;height:100%;padding:10px;text-align:center;color:var(--muted);font-size:12px;background:repeating-linear-gradient(45deg,var(--panel2) 0 10px,var(--panel) 10px 20px)}
+.hueco span{background:var(--panel);padding:4px 8px;border-radius:6px;border:1px solid var(--border)}
+.compo{position:absolute;inset:0;display:flex;pointer-events:none}
+.compo .zona{display:flex;flex-direction:column;justify-content:center;gap:4cqw;padding:5cqw 6cqw}
+.compo .zona.izquierda{width:50%;height:100%}
+.compo .zona.derecha{width:50%;height:100%;margin-left:auto}
+.compo .zona.arriba{width:100%;height:46%}
+.compo .zona.abajo{width:100%;height:46%;margin-top:auto}
+.compo img{height:9cqw;width:auto;align-self:flex-start;max-width:70%}
+.compo .zona.arriba img,.compo .zona.abajo img{height:7cqw}
+.compo .t1{font-size:4.6cqw;line-height:1.1;font-weight:700;letter-spacing:-.02em}
+.compo .zona.arriba .t1,.compo .zona.abajo .t1{font-size:4.2cqw}
+.compo .t2{font-size:2.3cqw;line-height:1.3;opacity:.9}
+.compo .marco{position:absolute;inset:0;border:1px dashed rgb(255 255 255/.35);pointer-events:none;display:none}
+.intento .est{position:absolute;top:8px;left:8px;display:flex;gap:4px;z-index:2}
+.intento .cmp{position:absolute;top:8px;right:8px;z-index:2;display:flex;align-items:center;gap:4px;background:rgb(0 0 0/.55);color:#fff;padding:3px 8px;border-radius:999px;font-size:12px;cursor:pointer;backdrop-filter:blur(4px)}
+.intento .cmp input{margin:0}
+.intento .pie{padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px}
+.intento .meta{display:flex;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);align-items:center}
+.intento .meta b{color:var(--text);font-weight:600}
+.intento .botones{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.intento .botones .sep{flex:1}
+.intento .nota{font-size:13px;border:0;border-bottom:1px dashed var(--border);background:transparent;padding:4px 0;width:100%}
+.intento .nota:focus{outline:0;border-bottom-color:var(--accent)}
+.intento.cola .img-wrap,.intento.generando .img-wrap,.intento.fallo .img-wrap{display:grid;place-items:center;cursor:default}
+.intento .estado-grande{text-align:center;color:#cfd3dc;padding:16px;font-size:13.5px;width:min(100%,320px)}
+.intento .estado-grande .prog{margin:10px 0 6px;background:rgb(255 255 255/.12)}
+.intento .estado-grande b{display:block;font-size:15px;color:#fff;margin-bottom:2px}
+.intento.fallo .img-wrap{background:color-mix(in srgb,var(--bad) 22%,#0b0d12)}
+.comparar{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px;margin-bottom:16px}
+.comparar .cab{grid-column:1/-1;display:flex;align-items:center;gap:10px}
+.comparar figure{margin:0}
+.comparar figcaption{font-size:12.5px;color:var(--muted);margin-top:6px;display:flex;gap:8px;flex-wrap:wrap}
+.entrega{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 14px}
+.entrega .ruta{font-family:ui-monospace,monospace;font-size:12.5px;background:var(--panel2);padding:3px 7px;border-radius:5px}
+.cab-pedido{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.cab-pedido h1 .mono{color:var(--muted);font-size:18px;font-weight:500}
+.barra-galeria{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+dialog{border:0;border-radius:var(--r);padding:0;background:var(--panel);color:var(--text);max-width:min(96vw,1400px);box-shadow:var(--shadow)}
+dialog::backdrop{background:rgb(0 0 0/.7)}
+dialog img{max-width:96vw;max-height:88vh;display:block}
+dialog .pie{padding:8px 12px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between;gap:10px}
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:9px 14px;border-radius:999px;font-size:13.5px;z-index:50;opacity:0;transition:opacity .2s;pointer-events:none;max-width:92vw}
+.toast.on{opacity:1}
+.guia ol{padding-left:20px;display:flex;flex-direction:column;gap:8px}
+.guia li a{color:var(--accent)}
+.pie-proto{margin-top:28px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--border);padding-top:12px}
+.nuevo{max-width:760px}
+.nuevo .card{padding:18px;display:flex;flex-direction:column;gap:12px}
+
+@media (max-width:960px){
+  .pedido{grid-template-columns:1fr}
+  .panel{position:static}
+}
+@media (max-width:720px){
+  .top{gap:8px;padding:8px 12px}
+  .migas{display:none}
+  .wrap{padding:14px 16px 90px}
+  h1{font-size:20px}
+  .fila-pedido{grid-template-columns:60px 1fr}
+  .fila-pedido .est{grid-column:1/-1;justify-content:flex-start}
+  .comparar{grid-template-columns:1fr}
+  .cajon{top:50px;right:8px;width:calc(100vw - 16px)}
+  .fila3{grid-template-columns:1fr 1fr}
+  .pill .mini,.pill .txt-largo{display:none}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="marca" href="#/" title="gimg">
+    <svg viewBox="0 0 128 128" aria-hidden="true"><rect width="128" height="128" rx="30" fill="#8B5CF6"/><rect x="30" y="34" width="52" height="40" rx="6" fill="none" stroke="#fff" stroke-width="9"/><rect x="48" y="54" width="52" height="40" rx="6" fill="#8B5CF6" stroke="#fff" stroke-width="9"/><circle cx="90" cy="46" r="7" fill="#fff"/></svg>
+    <span>gimg</span>
+  </a>
+  <nav class="migas" id="migas"></nav>
+  <span class="sep"></span>
+  <a class="btn chico" href="#/guia" id="lnk-guia" data-t="guia">Recorrido</a>
+  <button class="pill" id="pill-cola" data-act="cola" aria-haspopup="true"></button>
+  <button class="icono" id="btn-lang" data-act="lang" title="Idioma / Language">ES</button>
+  <button class="icono" id="btn-theme" data-act="theme" title="Tema">◐</button>
+</header>
+<aside class="cajon" id="cajon" aria-label="Cola"></aside>
+<main class="wrap" id="app"></main>
+<dialog id="luz"><img alt=""><div class="pie"><span id="luz-txt"></span><button class="btn chico" data-act="cerrar-luz">✕</button></div></dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+'use strict';
+/* ===================== rutas de datos (relativas a docs/interfaz/prototipo/) ===================== */
+const PIL = '../../../piloto/';
+const MAR = '../../marcas/';
+
+/* ===================== textos de la interfaz (D16): es / en ===================== */
+const T = {
+  es: {
+    guia:'Recorrido', proyectos:'Proyectos', pedidos:'Pedidos', piezas:'Piezas', marca:'Marca', pedido:'Pedido', nuevo:'Nuevo pedido',
+    cola:'Cola', generando:'generando', encola:'en cola', nada_cola:'Nada en cola. El generador se para solo.', cancelar:'Cancelar', subir:'Subir',
+    ult_terminados:'Últimos terminados', previsto:'previsto', transcurrido:'transcurrido', mem:'memoria libre mín.',
+    n_pedidos:'pedidos', n_elegidas:'elegidas', n_cola:'en cola', ultimo:'Último intento', sin_pedidos:'Sin pedidos todavía', sin_pedidos_t:'Pide la primera pieza desde la pestaña Piezas.',
+    anadir:'Para registrar otro proyecto: <code>gimg project add &lt;ruta&gt;</code> (la interfaz no escribe fuera de su carpeta, D25).',
+    no_carpeta:'Carpeta no encontrada', version_vieja:'La configuración pide gimg ≥ {v}; instalado {i}',
+    perfil:'Perfil', estado:'Estado', todos:'Todos', con_elegida:'Con elegida', sin_elegida:'Sin elegida', en_cola:'En cola', con_fallo:'Con fallo', sin_intentos:'Sin intentos',
+    intentos:'intentos', intento:'intento', elegida:'Elegida', candidata:'Candidata', descartada:'Descartada', nueva:'Nueva', fallo:'Fallo', entregada:'entregada',
+    destino:'Destino', genera:'Genera a', zona:'Zona', logo:'Logo', texto_defecto:'Texto por defecto', prompt:'Prompt', pedir:'Pedir', sin_fondo:'sin fondo: solo composición',
+    paleta:'Paleta', combos:'Combinaciones', tipografia:'Tipografía', logos:'Logos elegidos', estilo:'Estilo de imagen', si:'Sí', no:'No', vetadas:'Palabras vetadas',
+    zona_res:'Zona reservada', fuente:'Fuente de verdad', solo_lectura:'Solo lectura: la marca se edita en el repo del proyecto (D2).', simbolo:'símbolo', lockup:'lockup',
+    sobre_claro:'sobre claro', sobre_oscuro:'sobre oscuro', titulos:'Títulos', texto:'Texto', uso:'Uso', tracking:'Tracking',
+    ver_texto:'Ver con texto', ver_fondo:'Ver fondo', comparar:'Comparar', marcadas:'marcadas', intercambiar:'Intercambiar', cerrar:'Cerrar', mas_nueva:'más nueva primero',
+    elegir:'Elegir', deshacer:'Deshacer', nota:'Nota…', reintentar:'Reintentar', ver_log:'Ver registro', semilla:'semilla', pasos:'pasos', borrador:'borrador',
+    entregada_en:'Elegida entregada en', manifiesto:'manifiesto actualizado', sin_elegida_aun:'Sin elegida: marca candidatas con «sí» y elige una.',
+    retoque:'Retoque', prompt_pedido:'Prompt del pedido (editable, D19)', estilo_perfil:'Estilo del perfil (se añade al final)', restaurar:'Restaurar el del proyecto',
+    parametros:'Parámetros', modelo:'Modelo', cfg:'cfg', borrador_primero:'Borrador primero (640×320, ~50 s)', otra_semilla:'Otra semilla', tres:'3 seguidas',
+    composicion:'Texto de la composición (D28)', titulo:'Título', subtitulo:'Subtítulo', color:'Color del texto', velo:'Velo', recomponer:'Recomponer la elegida (sin generar)',
+    recompuesta:'Recompuesta sin generar: {f}', encolado:'{n} intento(s) en cola para {k}', aviso_vetada:'El prompt contiene una palabra vetada por la biblia: «{w}». El modelo pinta lo que se nombra.',
+    rechazo:'Rechazado por el perfil de máquina: {m}', max_tamano:'tamaño {w}×{h} supera {mw}×{mh}', max_pasos:'{s} pasos superan el tope de {ms}',
+    clave:'Clave del pedido', n_intentos:'Intentos', encolar:'Encolar', cancelar_f:'Cancelar', nuevo_t:'Un pedido nace de una pieza: tamaño, zona, logo y texto vienen prellenados.',
+    primer:'Generar el primer intento', sin_intentos_t:'Este pedido aún no tiene intentos. Revisa el prompt y los parámetros y encola el primero.',
+    limites:'Perfil de máquina {m}: ≤ {mw}×{mh}, ≤ {ms} pasos, ≤ {mr} referencias, tope {t} min',
+    terminado:'Intento {id} terminado · {p} {k} @ {pr}', cancelado:'Entrada {id} cancelada', no_descartar:'La elegida no se puede descartar: elige otra o deshaz.',
+    st_new:'Nueva', st_candidate:'Candidata', st_discarded:'Descartada', st_queued:'En cola', st_running:'Generando', st_failed:'Fallo', st_chosen:'Elegida',
+    contraste:'contraste', paleta_pct:'paleta', tiempo:'tiempo', pos:'puesto', sin_imagen:'sin imagen', proto:'Prototipo F4 (sin backend): los datos son del piloto r2-r3; lo que marques se queda en esta pestaña. Los huecos a rayas son imágenes que no existen en este checkout.',
+    guia_t:'Recorrido: de «quiero el og de Portal» a «PNG entregado»',
+    guia_pasos:[
+      ['#/','Proyectos: entra en Portal Galivelop.'],
+      ['#/p/portal/piezas','Piezas: la fila «og» 1200×630 → Pedir.'],
+      ['#/p/portal/nuevo/og','Nuevo pedido: clave, título, prompt y modelo prellenados → Encolar. Si supera el perfil de máquina, se rechaza ahí.'],
+      ['#/p/portal/pedidos','Cola persistente arriba: progreso y tiempo previsto. La interfaz sigue usable.'],
+      ['#/p/portal/pedido/portada@og','Pedido: la galería con estados, sí / no (teclas s y n), comparar dos, medidas.'],
+      ['#/p/portal/pedido/portada@og','Retoque: prompt, semilla, pasos, modelo; título y subtítulo se previsualizan al instante y se recomponen sin generar.'],
+      ['#/p/portal/pedido/portada@og','Elegir: PNG entregado en la carpeta del proyecto, manifiesto al día, deshacer.'],
+      ['#/p/tarkor/pedido/portada@og','Estados: intento generando (Tarkor), fallo (Portal, FLUX.3), sin intentos (toVeriAI cita@square), sin pedidos (workflow).'],
+    ],
+    tema:'Tema: {t}', auto:'automático', claro:'claro', oscuro:'oscuro', idioma:'Idioma: {l}',
+    rapido:'rápido', calidad:'calidad', min:'min', sin_logo:'—',
+  },
+  en: {
+    guia:'Walkthrough', proyectos:'Projects', pedidos:'Orders', piezas:'Pieces', marca:'Brand', pedido:'Order', nuevo:'New order',
+    cola:'Queue', generando:'generating', encola:'queued', nada_cola:'Nothing queued. The generator stops by itself.', cancelar:'Cancel', subir:'Move up',
+    ult_terminados:'Recently finished', previsto:'expected', transcurrido:'elapsed', mem:'min. free memory',
+    n_pedidos:'orders', n_elegidas:'chosen', n_cola:'queued', ultimo:'Last attempt', sin_pedidos:'No orders yet', sin_pedidos_t:'Order the first piece from the Pieces tab.',
+    anadir:'To register another project: <code>gimg project add &lt;path&gt;</code> (the UI never writes outside its folder, D25).',
+    no_carpeta:'Folder not found', version_vieja:'Config requires gimg ≥ {v}; installed {i}',
+    perfil:'Profile', estado:'State', todos:'All', con_elegida:'Chosen', sin_elegida:'No chosen', en_cola:'Queued', con_fallo:'Failed', sin_intentos:'No attempts',
+    intentos:'attempts', intento:'attempt', elegida:'Chosen', candidata:'Candidate', descartada:'Discarded', nueva:'New', fallo:'Failed', entregada:'delivered',
+    destino:'Target', genera:'Generated at', zona:'Zone', logo:'Logo', texto_defecto:'Default text', prompt:'Prompt', pedir:'Order', sin_fondo:'no background: compose only',
+    paleta:'Palette', combos:'Combinations', tipografia:'Typography', logos:'Chosen logos', estilo:'Image style', si:'Yes', no:'No', vetadas:'Banned words',
+    zona_res:'Reserved zone', fuente:'Source of truth', solo_lectura:'Read only: the brand is edited in the project repo (D2).', simbolo:'symbol', lockup:'lockup',
+    sobre_claro:'on light', sobre_oscuro:'on dark', titulos:'Headings', texto:'Body', uso:'Use', tracking:'Tracking',
+    ver_texto:'Show text', ver_fondo:'Show background', comparar:'Compare', marcadas:'selected', intercambiar:'Swap', cerrar:'Close', mas_nueva:'newest first',
+    elegir:'Choose', deshacer:'Undo', nota:'Note…', reintentar:'Retry', ver_log:'View log', semilla:'seed', pasos:'steps', borrador:'draft',
+    entregada_en:'Chosen delivered to', manifiesto:'manifest updated', sin_elegida_aun:'No chosen yet: mark candidates with "yes" and choose one.',
+    retoque:'Tweak', prompt_pedido:'Order prompt (editable, D19)', estilo_perfil:'Profile style (appended)', restaurar:'Restore the project one',
+    parametros:'Parameters', modelo:'Model', cfg:'cfg', borrador_primero:'Draft first (640×320, ~50 s)', otra_semilla:'Another seed', tres:'3 in a row',
+    composicion:'Composition text (D28)', titulo:'Title', subtitulo:'Subtitle', color:'Text colour', velo:'Veil', recomponer:'Recompose the chosen (no generation)',
+    recompuesta:'Recomposed without generating: {f}', encolado:'{n} attempt(s) queued for {k}', aviso_vetada:'The prompt contains a word banned by the brand book: "{w}". The model paints what is named.',
+    rechazo:'Rejected by the machine profile: {m}', max_tamano:'size {w}×{h} exceeds {mw}×{mh}', max_pasos:'{s} steps exceed the cap of {ms}',
+    clave:'Order key', n_intentos:'Attempts', encolar:'Queue', cancelar_f:'Cancel', nuevo_t:'An order starts from a piece: size, zone, logo and text come prefilled.',
+    primer:'Generate the first attempt', sin_intentos_t:'This order has no attempts yet. Review prompt and parameters and queue the first one.',
+    limites:'Machine profile {m}: ≤ {mw}×{mh}, ≤ {ms} steps, ≤ {mr} references, {t} min cap',
+    terminado:'Attempt {id} finished · {p} {k} @ {pr}', cancelado:'Entry {id} cancelled', no_descartar:'The chosen cannot be discarded: choose another or undo.',
+    st_new:'New', st_candidate:'Candidate', st_discarded:'Discarded', st_queued:'Queued', st_running:'Generating', st_failed:'Failed', st_chosen:'Chosen',
+    contraste:'contrast', paleta_pct:'palette', tiempo:'time', pos:'position', sin_imagen:'no image', proto:'F4 prototype (no backend): data comes from pilot rounds r2-r3; what you mark stays in this tab. Striped gaps are images missing from this checkout.',
+    guia_t:'Walkthrough: from "I want the Portal og" to "PNG delivered"',
+    guia_pasos:[
+      ['#/','Projects: open Portal Galivelop.'],
+      ['#/p/portal/piezas','Pieces: the "og" 1200×630 row → Order.'],
+      ['#/p/portal/nuevo/og','New order: key, title, prompt and model prefilled → Queue. If it exceeds the machine profile, it is rejected right there.'],
+      ['#/p/portal/pedidos','Persistent queue on top: progress and expected time. The UI stays usable.'],
+      ['#/p/portal/pedido/portada@og','Order: gallery with states, yes / no (keys s and n), compare two, measures.'],
+      ['#/p/portal/pedido/portada@og','Tweak: prompt, seed, steps, model; title and subtitle preview instantly and recompose without generating.'],
+      ['#/p/portal/pedido/portada@og','Choose: PNG delivered to the project folder, manifest updated, undo.'],
+      ['#/p/tarkor/pedido/portada@og','States: attempt generating (Tarkor), failed (Portal, FLUX.3), no attempts (toVeriAI cita@square), no orders (workflow).'],
+    ],
+    tema:'Theme: {t}', auto:'auto', claro:'light', oscuro:'dark', idioma:'Language: {l}',
+    rapido:'fast', calidad:'quality', min:'min', sin_logo:'—',
+  }
+};
+let LANG = 'es';
+try { LANG = localStorage.getItem('gimg.lang') || ((navigator.language||'es').startsWith('en') ? 'en' : 'es'); } catch (e) {}
+const t = (k, v) => { let s = T[LANG][k]; if (s === undefined) s = T.es[k]; if (s === undefined) return k; if (typeof s !== 'string') return s; return v ? s.replace(/\{(\w+)\}/g, (m, n) => v[n] ?? m) : s; };
+
+/* ===================== catálogo y perfil de máquina (D30, D15) ===================== */
+const MODELS = { 'flux2-klein-4b-q8': { label: 'FLUX.2 klein 4B Q8', kind: 'rapido', steps: 6, cfg: 1, eta: 178, etaDraft: 51 }, 'flux3-klein-q8': { label: 'FLUX.3 klein Q8', kind: 'calidad', steps: 16, cfg: 1, eta: 2940, etaDraft: 480 } };
+const MACHINE = { name: 'steam-deck', maxW: 1536, maxH: 1536, maxSteps: 20, maxRefs: 2, timeoutMin: 15 };
+
+/* ===================== proyectos de ejemplo (de las biblias y piezas.json) ===================== */
+const PROJECTS = {
+  portal: {
+    name: 'Portal Galivelop', tag: 'Taller independiente de software', accent: '#1aa6df', bg: '#06121c', fg: '#eaf4fa', dark: true,
+    fontT: "'Sora', system-ui, sans-serif", fontB: "'Inter', system-ui, sans-serif",
+    logo: 'portal/logos/portal-a.svg', lockup: 'portal/logos/portal-a-lockup.svg', lockupBg: 'oscuro', repo: 'Portal-Galivelop @ aa76b34 · biblia docs/marcas/portal/biblia.md',
+    palette: [['Celeste (marca)', '#1aa6df', '«Gali», acentos, resplandor'], ['Celeste baldosa', '#2BB3EA', 'degradado del logo → #0083c1'], ['Fondo oscuro', '#06121c', 'fondo de la casa'], ['Superficie', '#0c1d2b', 'tarjetas; borde #1b3447'], ['Texto', '#eaf4fa', 'sobre oscuro; secundario #9fb4c4'], ['Fondo claro', '#f6fafd', 'tema claro'], ['Texto claro', '#0a1a28', 'secundario #43586a'], ['Enlace', '#006c9f', 'claro; oscuro #5cc8f2']],
+    accents: [['Tarkor', '#E0703A'], ['toVeriAI', '#2F7A55'], ['workflow', '#3D6FD9']],
+    combos: [['Pieza oscura (la de la casa)', '#06121c', '#eaf4fa'], ['Pieza clara', '#f6fafd', '#0a1a28'], ['Sobre imagen: zona reservada oscura', '#0c1d2b', '#eaf4fa']],
+    typo: [['Títulos', 'Sora 700', '-0,02 em'], ['Wordmark «Galivelop»', 'Sora 700', '-0,03 em'], ['Texto', 'Inter 400', 'normal'], ['Etiquetas (mayúsculas)', 'Inter 400-600', '0,04-0,16 em']],
+    si: 'Fondo #06121c con resplandor radial celeste y rejilla de puntos; vidrio, agua y luz celeste sobre azul profundo; umbral, puerta o anillo de acceso; los tres proyectos como tres puntos de color; Galicia solo como luz y mar.',
+    no: 'Gente en traje, apretones de manos, oficinas, cohetes, robots, gráficas de crecimiento, postal gallega (faro, bandera, gaita), orbes genéricos.',
+    banned: ['lighthouse', 'flag', 'handshake', 'rocket', 'robot', 'suit', 'office', 'chart', 'logo', 'text', 'letters', 'like …'],
+    zone: 'Mitad o tercio izquierdo «calm, smooth, nearly empty, softly out of focus» para wordmark y frase; el motivo a la derecha.',
+    style: 'Style: minimal elegant digital art, soft volumetric light, crisp and clean. Colours: deep midnight navy #06121c, sky blue #1aa6df, cyan and white highlights. Mood: calm, honest, quietly ambitious. The image is completely textless.',
+    promptTpl: 'Wide abstract scene on a deep midnight navy background. An open threshold of light in the right half: a tall doorway from which soft sky-blue light pours out, with three tiny points of colour (clay orange, forest green, cobalt blue) floating inside the opening. A faint grid of tiny dots fades into the darkness. The left half is a calm, smooth, dark navy surface, nearly empty and softly out of focus.',
+    pieces: [
+      { profile: 'og', w: 1200, h: 630, gw: 1280, gh: 640, zone: 'izquierda', logo: 'portal/logos/portal-a-lockup.svg', title: 'Un taller, no un escaparate.', subtitle: 'Hacemos reales los proyectos que parecen imposibles.', color: '#eaf4fa', veil: '#06121c', veilA: 0, prompt: 'estilo.txt', round: 'r2 ✓' },
+      { profile: 'square', w: 1080, h: 1080, gw: 1024, gh: 1024, zone: 'arriba', logo: 'portal/logos/portal-a-lockup.svg', title: 'Esto es lo que hay hoy.', subtitle: 'Proyectos con sus avances y sus pendientes.', color: '#eaf4fa', veil: '#06121c', veilA: .3, prompt: 'r5-cuadrado.txt', round: 'r5 pendiente' },
+      { profile: 'portrait', w: 1080, h: 1350, gw: 896, gh: 1152, zone: 'arriba', logo: 'portal/logos/portal-a-lockup.svg', title: 'Tres proyectos, un mismo taller.', subtitle: 'Tarkor, toVeriAI y Galivelop-workflow, con su estado real.', color: '#eaf4fa', veil: '#06121c', veilA: .3, prompt: 'r5-vertical.txt', round: 'r5 pendiente' },
+      { profile: 'header', w: 1500, h: 500, gw: 1536, gh: 512, zone: 'izquierda', logo: 'portal/logos/portal-a-lockup.svg', title: 'Software hecho en Galicia, en abierto.', subtitle: 'Galivelop. Un taller independiente.', color: '#eaf4fa', veil: '#06121c', veilA: .3, prompt: 'r5-cabecera.txt', round: 'r5 pendiente' },
+      { profile: 'avatar', w: 512, h: 512, gw: 0, gh: 0, zone: null, logo: 'portal/logos/portal-a.svg', title: '', subtitle: '', color: '#eaf4fa', veil: '#06121c', veilA: 0, prompt: null, round: '—' },
+    ],
+    orders: [
+      { key: 'portada', profile: 'og', prompt: null, seed: 3, model: 'flux2-klein-4b-q8', steps: 6, cfg: 1, draft: false,
+        text: { title: 'Un taller, no un escaparate.', subtitle: 'Hacemos reales los proyectos que parecen imposibles.', zone: 'izquierda', color: '#eaf4fa', veil: '#06121c', veilA: 0 },
+        chosen: 'q11', history: [null], delivered: 'Portal-Galivelop/public/marca/og/portada-og.png',
+        attempts: [
+          { id: 'q23', state: 'failed', seed: 3, steps: 16, model: 'flux3-klein-q8', time: 13, error: 'sd-cli terminó con código 1 a los 13 s: el backend Vulkan no arranca FLUX.3 con 2 GB de GPU; el perfil de máquina debe forzar --backend diffusion=cpu (D30).', note: 'r3: FLUX.3 en Portal' },
+          { id: 'q22', state: 'candidate', seed: 3, steps: 8, model: 'flux2-klein-4b-q8', time: 230, w: 1280, h: 640, img: PIL + 'r3/portal/intentos/estilo-1280x640-p8-s3.png', note: 'r3 definitivo', m: { c: 19.6, p: 74 } },
+          { id: 'q21', state: 'new', seed: 3, steps: 4, model: 'flux2-klein-4b-q8', time: 51, w: 640, h: 320, draft: true, img: PIL + 'r3/portal/intentos/estilo-640x320-p4-s3.png', note: 'r3 borrador: ¿anticipa la composición?', m: { c: 18.9, p: 71 } },
+          { id: 'q13', state: 'discarded', seed: 3, steps: 6, model: 'flux2-klein-4b-q8', time: 182, w: 1280, h: 640, img: PIL + 'r2/portal/intentos/r2-material-s3.png', note: 'r2 material: los puntos salen fuera del umbral', m: { c: 18.58, p: 73.3 } },
+          { id: 'q12', state: 'discarded', seed: 3, steps: 6, model: 'flux2-klein-4b-q8', time: 176, w: 1280, h: 640, img: PIL + 'r2/portal/intentos/r2-palabras-s3.png', note: 'r2 palabras: esferas en vez de puntos', m: { c: 20.43, p: 86.4 } },
+          { id: 'q11', state: 'candidate', seed: 3, steps: 6, model: 'flux2-klein-4b-q8', time: 178, w: 1280, h: 640, img: PIL + 'r2/portal/intentos/r2-hex-s3.png', note: 'r2 hex: la única con los tres puntos dentro del umbral', m: { c: 19.75, p: 73.5 } },
+        ] },
+      { key: 'cabecera', profile: 'header', prompt: null, seed: 3, model: 'flux2-klein-4b-q8', steps: 6, cfg: 1, draft: false,
+        text: { title: 'Software hecho en Galicia, en abierto.', subtitle: 'Galivelop. Un taller independiente.', zone: 'izquierda', color: '#eaf4fa', veil: '#06121c', veilA: .3 },
+        chosen: null, history: [], attempts: [] },
+      { key: 'avatar', profile: 'avatar', prompt: null, seed: 0, model: 'flux2-klein-4b-q8', steps: 0, cfg: 1, draft: false,
+        text: { title: '', subtitle: '', zone: null, color: '#eaf4fa', veil: '#06121c', veilA: 0 },
+        chosen: 'c1', history: [null], delivered: 'Portal-Galivelop/public/marca/avatar-avatar.png',
+        attempts: [{ id: 'c1', state: 'candidate', seed: 0, steps: 0, model: '—', time: 1, w: 512, h: 512, img: PIL + 'r5/portal/intentos/avatar.png', note: 'solo composición: baldosa + monograma', compose: true }] },
+    ]
+  },
+  toveriai: {
+    name: 'toVeriAI', tag: 'La verdad no es binaria', accent: '#2D6A4F', bg: '#F7F5F2', fg: '#1A1A1A', dark: false,
+    fontT: "'Cormorant Garamond', Georgia, serif", fontB: "'DM Sans', system-ui, sans-serif", fontWeightT: 300,
+    logo: 'toveriai/logos/toveriai-a.svg', lockup: 'toveriai/logos/toveriai-a-lockup.svg', lockupBg: 'claro', repo: 'VeriNews_AI @ 02ac654 (kit visual v1.1) · biblia docs/marcas/toveriai/biblia.md',
+    palette: [['Papel', '#F7F5F2', 'fondo'], ['Tarjeta', '#FDFCFB', 'superficies; #F0EDE8'], ['Texto', '#1A1A1A', 'gris #999999'], ['Verde de marca', '#2D6A4F', '«Veri», único acento'], ['Verdes de apoyo', '#52B788', '#74C69D, #B7E4C7, #E8F4EE'], ['Ámbar', '#B5832A', 'IMI medio; hojas del símbolo'], ['Granate', '#9B2335', 'IMI bajo'], ['Borde', '#E8E4DF', 'filetes; #D8D4CF']],
+    accents: [['IMI bajo 0-39', '#9B2335'], ['IMI medio 40-69', '#B5832A'], ['IMI alto 70-100', '#2D6A4F']],
+    combos: [['Pieza clara (la de la marca)', '#F7F5F2', '#1A1A1A'], ['Pieza oscura (solo si la pieza lo pide)', '#1A1A1A', '#FFFFFF'], ['Sobre imagen: papel o acuarela', '#F0EDE8', '#1A1A1A']],
+    typo: [['Titulares y cifras', 'Cormorant Garamond 300', 'normal'], ['Wordmark «toVeriAI»', 'Cormorant Garamond 400 (nunca bold)', '0,08 em'], ['Eyebrows (mayúsculas)', 'DM Sans 400-500', '0,28-0,32 em'], ['Cuerpo', 'DM Sans 400-500', 'normal']],
+    si: 'Papel cálido con textura sutil; tintas de acuarela (granate, ámbar, verde) que se rozan sin mezclarse; tiras y estratos de papel; línea fina sin relleno; mucho aire; luz plana y acabado de impresión; solo modo claro.',
+    no: 'Alarmismo, lupas, sellos, tijeras, escudos, flechas rojas, prensa amarilla, pantallas azules, neón, 3D, glassmorphism, negro #000, blanco puro, personas de stock.',
+    banned: ['fake', 'stop', 'magnifying glass', 'stamp', 'scissors', 'shield', 'red arrow', 'newspaper headline', 'text', 'logo', 'letters', 'pink', 'magenta', 'like …'],
+    zone: 'Tercio superior «calm, bare paper» (og, wide) o mitad superior (square) para wordmark y frase.',
+    style: 'Style: flat editorial print, watercolour ink on warm textured paper, thin lines, lots of air, matte finish. Colours: raw cotton paper, dried oxblood, moss in shade, amber resin. Mood: serene, nuanced, unhurried. The image is completely textless.',
+    promptTpl: 'A sheet of warm, raw cotton paper seen flat from above. In the lower two thirds, two bands of watercolour ink meet without mixing: dried oxblood on the left, moss green on the right, with a thin seam of amber resin where they touch. The upper third is calm, bare paper, nearly empty.',
+    pieces: [
+      { profile: 'og', w: 1200, h: 630, gw: 1280, gh: 640, zone: 'arriba', logo: 'toveriai/logos/toveriai-a-lockup.svg', title: 'La verdad no es binaria.', subtitle: 'Entre lo cierto y lo falso hay todo un espectro. Nosotros lo medimos.', color: '#1A1A1A', veil: '#F7F5F2', veilA: .35, prompt: 'estilo.txt', round: 'r1 ✓ · r2 ✓' },
+      { profile: 'square', w: 1080, h: 1080, gw: 1024, gh: 1024, zone: 'arriba', logo: 'toveriai/logos/toveriai-a-lockup.svg', title: 'Menos veredictos. Más matices.', subtitle: 'No te decimos qué creer. Te damos con qué pensar.', color: '#1A1A1A', veil: '#F7F5F2', veilA: .35, prompt: 'r5-cuadrado.txt', round: 'r5 pendiente' },
+      { profile: 'portrait', w: 1080, h: 1350, gw: 896, gh: 1152, zone: 'arriba', logo: 'toveriai/logos/toveriai-a-lockup.svg', title: 'Dudar bien también es informarse.', subtitle: 'Léela dos veces. O pásala por aquí primero.', color: '#1A1A1A', veil: '#F7F5F2', veilA: .35, prompt: 'r5-vertical.txt', round: 'r5 pendiente' },
+      { profile: 'header', w: 1500, h: 500, gw: 1536, gh: 512, zone: 'izquierda', logo: 'toveriai/logos/toveriai-a-lockup.svg', title: 'La credibilidad no se decreta: se mide.', subtitle: 'Analiza. Compara. Decide tú.', color: '#1A1A1A', veil: '#F7F5F2', veilA: .35, prompt: 'r5-cabecera.txt', round: 'r5 pendiente' },
+      { profile: 'avatar', w: 512, h: 512, gw: 0, gh: 0, zone: null, logo: 'toveriai/logos/toveriai-a.svg', title: '', subtitle: '', color: '#1A1A1A', veil: '#F7F5F2', veilA: 0, prompt: null, round: '—' },
+    ],
+    orders: [
+      { key: 'portada', profile: 'og', prompt: null, seed: 3, model: 'flux2-klein-4b-q8', steps: 6, cfg: 1, draft: false,
+        text: { title: 'La verdad no es binaria.', subtitle: 'Entre lo cierto y lo falso hay todo un espectro. Nosotros lo medimos.', zone: 'arriba', color: '#1A1A1A', veil: '#F7F5F2', veilA: .35 },
+        chosen: null, history: [],
+        attempts: [
+          { id: 'q42', state: 'new', seed: 3, steps: 8, model: 'flux2-klein-4b-q8', time: 230, w: 1280, h: 640, img: PIL + 'r3/toveriai/intentos/estilo-1280x640-p8-s3.png', note: 'r3 definitivo', m: { c: 12.1, p: 69 } },
+          { id: 'q41', state: 'new', seed: 3, steps: 4, model: 'flux2-klein-4b-q8', time: 51, w: 640, h: 320, draft: true, img: PIL + 'r3/toveriai/intentos/estilo-640x320-p4-s3.png', note: 'r3 borrador', m: { c: 11.4, p: 66 } },
+          { id: 'q16', state: 'candidate', seed: 3, steps: 6, model: 'flux2-klein-4b-q8', time: 181, w: 1280, h: 640, img: PIL + 'r2/toveriai/intentos/r2-material-s3.png', note: 'r2 material: bandas vino→ocre→verde más ricas, tercio superior libre', m: { c: 12.41, p: 68.7 } },
+          { id: 'q15', state: 'new', seed: 3, steps: 6, model: 'flux2-klein-4b-q8', time: 179, w: 1280, h: 640, img: PIL + 'r2/toveriai/intentos/r2-hex-s3.png', note: 'r2 hex', m: { c: 11.58, p: 67.2 } },
+          { id: 'q14', state: 'discarded', seed: 3, steps: 6, model: 'flux2-klein-4b-q8', time: 174, w: 1280, h: 640, img: PIL + 'r2/toveriai/intentos/r2-palabras-s3.png', note: 'r2 palabras: hueco blanco en medio', m: { c: 9.3, p: 52.4 } },
+        ] },
+      { key: 'cita', profile: 'square', prompt: null, seed: 3, model: 'flux2-klein-4b-q8', steps: 6, cfg: 1, draft: true,
+        text: { title: 'Menos veredictos. Más matices.', subtitle: 'No te decimos qué creer. Te damos con qué pensar.', zone: 'arriba', color: '#1A1A1A', veil: '#F7F5F2', veilA: .35 },
+        chosen: null, history: [], attempts: [] },
+    ]
+  },
+  tarkor: {
+    name: 'Tarkor', tag: 'El mundo sigue aunque tú te detengas', accent: '#E0703A', bg: '#f1e4d0', fg: '#221c16', dark: false,
+    fontT: "'Cinzel', Georgia, serif", fontB: "'Inter', system-ui, sans-serif",
+    logo: 'tarkor/logos/tarkor-a.svg', lockup: 'tarkor/logos/tarkor-a-lockup-claro.svg', lockupBg: 'claro', repo: 'Tarkor · biblia docs/marcas/tarkor/biblia.md',
+    palette: [['Arcilla (acento)', '#E0703A', 'acento de marca'], ['Cristal', '#4aa8d8', 'dentro del juego, secundario'], ['Hueso', '#f1e4d0', 'pieza clara, calima'], ['Tierra', '#221c16', 'texto sobre claro; pieza oscura'], ['Hierro', '#4a4540', 'líneas y agujas'], ['Ámbar', '#c9973a', 'amanecer']],
+    accents: [['Arcilla', '#E0703A'], ['Cristal', '#4aa8d8']],
+    combos: [['Pieza clara (hueso, calima)', '#f1e4d0', '#221c16'], ['Pieza oscura', '#221c16', '#f1e4d0'], ['Sobre imagen: velo hueso 0,55', '#e6d9c4', '#221c16']],
+    typo: [['Títulos', 'Cinzel 600', 'normal'], ['Texto', 'Inter 400', 'normal']],
+    si: 'Agujas de roca e hierro al amanecer en calima; madera, hierro y cristal; un estandarte; paisaje que sigue sin el jugador.',
+    no: 'Dragones de stock, armaduras brillantes, HUD, neón, texto, logos; empalizadas de pinchos (r2 material).',
+    banned: ['dragon', 'armor', 'HUD', 'neon', 'text', 'logo', 'letters', 'like …'],
+    zone: 'Mitad izquierda sobre el cielo; la llanura del pie baja el contraste (1,8-2,9:1), así que pide velo o ir solo en el cielo.',
+    style: 'Style: painterly matte concept art, soft haze, warm dawn light. Colours: bone #f1e4d0, clay #E0703A, iron grey, pale amber. Mood: patient, vast, unhurried. The image is completely textless.',
+    promptTpl: 'A vast plain at dawn in warm haze. In the right half, tall needles of dark rock and iron rise from the ground, one of them holding a single banner of clay-orange cloth. The left half is open sky, calm and nearly empty, softly out of focus.',
+    pieces: [
+      { profile: 'og', w: 1200, h: 630, gw: 1280, gh: 640, zone: 'izquierda', logo: 'tarkor/logos/tarkor-a-lockup-claro.svg', title: 'El mundo sigue aunque tú te detengas.', subtitle: 'RPG narrativo de fantasía con IA local. En desarrollo, a la vista.', color: '#221c16', veil: '#f1e4d0', veilA: .55, prompt: 'estilo.txt', round: 'r2 ✓' },
+      { profile: 'square', w: 1080, h: 1080, gw: 1024, gh: 1024, zone: 'abajo', logo: 'tarkor/logos/tarkor-a-lockup-claro.svg', title: 'Deja la partida. El mundo sigue.', subtitle: 'Juega en local. Nadie mira.', color: '#221c16', veil: '#f1e4d0', veilA: .55, prompt: 'r5-cuadrado.txt', round: 'r5 pendiente' },
+      { profile: 'portrait', w: 1080, h: 1350, gw: 896, gh: 1152, zone: 'abajo', logo: 'tarkor/logos/tarkor-a-lockup-claro.svg', title: 'Lo que no hagas, lo hará otro.', subtitle: 'Un RPG narrativo donde el mundo sigue adelante aunque tú te detengas.', color: '#221c16', veil: '#f1e4d0', veilA: .55, prompt: 'r5-vertical.txt', round: 'r5 pendiente' },
+      { profile: 'header', w: 1500, h: 500, gw: 1536, gh: 512, zone: 'izquierda', logo: 'tarkor/logos/tarkor-a-lockup-claro.svg', title: 'Madera, hierro y cristal.', subtitle: 'Y un mundo que no te espera.', color: '#221c16', veil: '#f1e4d0', veilA: .55, prompt: 'r5-cabecera.txt', round: 'r5 pendiente' },
+      { profile: 'avatar', w: 512, h: 512, gw: 0, gh: 0, zone: null, logo: 'tarkor/logos/tarkor-a.svg', title: '', subtitle: '', color: '#221c16', veil: '#f1e4d0', veilA: 0, prompt: null, round: '—' },
+    ],
+    orders: [
+      { key: 'portada', profile: 'og', prompt: null, seed: 3, model: 'flux2-klein-4b-q8', steps: 6, cfg: 1, draft: false,
+        text: { title: 'El mundo sigue aunque tú te detengas.', subtitle: 'RPG narrativo de fantasía con IA local. En desarrollo, a la vista.', zone: 'izquierda', color: '#221c16', veil: '#f1e4d0', veilA: .55 },
+        chosen: null, history: [],
+        attempts: [
+          { id: 'q31', state: 'running', seed: 4, steps: 6, model: 'flux2-klein-4b-q8', w: 1280, h: 640, note: 'otra semilla' },
+          { id: 'q19', state: 'candidate', seed: 3, steps: 6, model: 'flux2-klein-4b-q8', time: 180, w: 1280, h: 640, img: PIL + 'r2/tarkor/intentos/r2-hex-s3.png', note: 'r2 hex: agujas creíbles y un estandarte', m: { c: 10.36, p: 78.5, worst: 2.41 } },
+          { id: 'q18', state: 'new', seed: 3, steps: 6, model: 'flux2-klein-4b-q8', time: 177, w: 1280, h: 640, img: PIL + 'r2/tarkor/intentos/r2-palabras-s3.png', note: 'r2 palabras', m: { c: 10.5, p: 83.7, worst: 2.92 } },
+          { id: 'q17', state: 'discarded', seed: 3, steps: 6, model: 'flux2-klein-4b-q8', time: 182, w: 1280, h: 640, img: PIL + 'r2/tarkor/intentos/r2-material-s3.png', note: 'r2 material: empalizada de pinchos', m: { c: 8.8, p: 80.2, worst: 1.79 } },
+        ] },
+    ]
+  },
+  'galivelop-workflow': { name: 'Galivelop-workflow', tag: 'Método con IA, por relevos', accent: '#3D6FD9', bg: '#0f1424', fg: '#e8edf8', dark: true, fontT: 'system-ui, sans-serif', fontB: 'system-ui, sans-serif', logo: 'galivelop-workflow/logos/galivelop-workflow-a.svg', lockup: 'galivelop-workflow/logos/galivelop-workflow-a-lockup.svg', lockupBg: 'oscuro', repo: 'Galivelop-workflow · biblia docs/marcas/galivelop-workflow/biblia.md', palette: [['Azul', '#3D6FD9', 'acento']], accents: [], combos: [], typo: [], si: '', no: '', banned: [], zone: '', style: '', promptTpl: '', pieces: [], orders: [] },
+  'galivelop-image-generator': { name: 'galivelop-image-generator', tag: 'Intentos y una elegida', accent: '#8B5CF6', bg: '#12101c', fg: '#ece8f8', dark: true, fontT: 'system-ui, sans-serif', fontB: 'system-ui, sans-serif', logo: 'galivelop-image-generator/logos/galivelop-image-generator-b.svg', lockup: 'galivelop-image-generator/logos/galivelop-image-generator-b-lockup.svg', lockupBg: 'oscuro', repo: 'este repo', palette: [['Violeta', '#8B5CF6', 'acento']], accents: [], combos: [], typo: [], si: '', no: '', banned: [], zone: '', style: '', promptTpl: '', pieces: [], orders: [] },
+  'galivelop-voice-generator': { name: 'galivelop-voice-generator', tag: 'Voces', accent: '#D9467A', bg: '#1c1016', fg: '#f8e8ee', dark: true, fontT: 'system-ui, sans-serif', fontB: 'system-ui, sans-serif', logo: 'galivelop-voice-generator/logos/galivelop-voice-generator-a.svg', lockup: 'galivelop-voice-generator/logos/galivelop-voice-generator-a-lockup.svg', lockupBg: 'oscuro', repo: '—', palette: [['Frambuesa', '#D9467A', 'acento']], accents: [], combos: [], typo: [], si: '', no: '', banned: [], zone: '', style: '', promptTpl: '', pieces: [], orders: [], missing: true },
+  'galivelop-developer': { name: 'galivelop-developer', tag: 'Developer', accent: '#2BB3A3', bg: '#0f1a19', fg: '#e8f6f4', dark: true, fontT: 'system-ui, sans-serif', fontB: 'system-ui, sans-serif', logo: 'galivelop-developer/logos/galivelop-developer-d.svg', lockup: 'galivelop-developer/logos/galivelop-developer-d-lockup-oscuro.svg', lockupBg: 'oscuro', repo: '—', palette: [['Turquesa', '#2BB3A3', 'acento']], accents: [], combos: [], typo: [], si: '', no: '', banned: [], zone: '', style: '', promptTpl: '', pieces: [], orders: [], minVersion: '0.3.0' },
+};
+
+/* cola global (D13): una entrada por intento pendiente o en marcha */
+const QUEUE = [
+  { id: 'q31', p: 'tarkor', key: 'portada', profile: 'og', model: 'flux2-klein-4b-q8', eta: 178, state: 'running', startedAt: Date.now() - 158000, mem: 7284 },
+  { id: 'q43', p: 'toveriai', key: 'portada', profile: 'og', model: 'flux2-klein-4b-q8', eta: 178, state: 'queued' },
+  { id: 'q51', p: 'portal', key: 'cabecera', profile: 'header', model: 'flux2-klein-4b-q8', eta: 205, state: 'queued' },
+];
+const DONE = [{ id: 'q42', p: 'toveriai', key: 'portada', profile: 'og', time: 230 }, { id: 'q23', p: 'portal', key: 'portada', profile: 'og', failed: true }];
+let nextId = 60;
+
+/* ===================== estado de la interfaz ===================== */
+const S = { theme: 'auto', drawer: false, showText: true, compare: {}, filters: {}, lightbox: null };
+try { S.theme = localStorage.getItem('gimg.theme') || 'auto'; } catch (e) {}
+function applyTheme() { const r = document.documentElement; if (S.theme === 'auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', S.theme); document.getElementById('btn-theme').textContent = S.theme === 'auto' ? '◐' : (S.theme === 'dark' ? '☾' : '☼'); }
+
+/* ===================== utilidades ===================== */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const mmss = s => { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const base = p => (p || '').split('/').pop();
+const $ = (sel, el = document) => el.querySelector(sel);
+const stateOf = (o, a) => (o.chosen === a.id ? 'chosen' : a.state);
+const img = (src, cls, alt) => `<img class="${cls || ''}" src="${esc(src)}" alt="${esc(alt || '')}" loading="lazy" onerror="hueco(this)">`;
+window.hueco = function (el) { const d = document.createElement('div'); d.className = 'hueco'; d.innerHTML = `<span>${esc(base(el.getAttribute('src')))}</span>`; d.title = el.getAttribute('src'); el.replaceWith(d); };
+function toast(msg) { const el = $('#toast'); el.textContent = msg; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 2600); }
+const hexa = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgb(${(n >> 16) & 255} ${(n >> 8) & 255} ${n & 255} / ${a})`; };
+function findOrder(pid, ref) { const [key, profile] = ref.split('@'); return PROJECTS[pid].orders.find(o => o.key === key && o.profile === profile); }
+function pieceOf(p, profile) { return p.pieces.find(x => x.profile === profile) || { w: 1280, h: 640, gw: 1280, gh: 640, zone: 'izquierda', logo: p.lockup }; }
+function orderPrompt(p, o) { return o.prompt ?? p.promptTpl; }
+function queueOf(pid) { return QUEUE.filter(q => q.p === pid); }
+function measureChip(m) {
+  if (!m) return '';
+  const c = m.worst ?? m.c; const cls = c >= 4.5 ? 'ok' : (c >= 3 ? 'warn' : 'bad');
+  return `<span class="chip ${cls}" title="${t('contraste')} WCAG · ${t('paleta_pct')} ΔE<15">${m.c.toFixed(1)}:1${m.worst ? ' <small>(' + m.worst.toFixed(1) + ')</small>' : ''} · ${Math.round(m.p)} %</span>`;
+}
+function stateChip(st) { const cls = { chosen: 'ok', candidate: 'acc', discarded: '', new: '', queued: '', running: 'ok', failed: 'bad' }[st] || ''; return `<span class="chip ${cls}">${esc(t('st_' + st))}</span>`; }
+
+/* ===================== cabecera: migas, cola, idioma, tema ===================== */
+function setCrumbs(parts) { $('#migas').innerHTML = parts.map((x, i) => (i ? '<span>›</span>' : '') + (x.href ? `<a href="${x.href}">${esc(x.label)}</a>` : `<b>${esc(x.label)}</b>`)).join(''); }
+function renderPill() {
+  const run = QUEUE.find(q => q.state === 'running'); const n = QUEUE.filter(q => q.state === 'queued').length;
+  let html = `<span class="dot ${run ? 'on' : ''}"></span>`;
+  if (run) { const pct = Math.min(99, Math.round((Date.now() - run.startedAt) / 10 / run.eta)); html += `<span><b>1</b> ${t('generando')}</span><span class="mini"><i style="width:${pct}%"></i></span>`; }
+  html += `<span class="txt-largo">${run ? '· ' : ''}<b>${n}</b> ${t('encola')}</span>`;
+  $('#pill-cola').innerHTML = html;
+}
+function renderDrawer() {
+  const el = $('#cajon'); el.classList.toggle('abierto', S.drawer); if (!S.drawer) return;
+  const items = QUEUE.map((q, i) => {
+    const P = PROJECTS[q.p]; const run = q.state === 'running';
+    const el = run ? Date.now() - q.startedAt : 0; const pct = run ? Math.min(99, el / 10 / q.eta) : 0;
+    return `<li>
+      <div class="q"><b>${esc(P.name)}</b> · <a href="#/p/${q.p}/pedido/${q.key}@${q.profile}" class="mono">${esc(q.key)} @ ${esc(q.profile)}</a><br>
+        <span class="muted">${esc(MODELS[q.model].label)} · ${run ? t('transcurrido') + ' ' + mmss(el / 1000) + ' / ' : t('previsto') + ' ~'}${mmss(q.eta)}${run ? ' · ' + t('mem') + ' ' + q.mem + ' MB' : ' · ' + t('pos') + ' ' + i}</span></div>
+      <div class="acc">${!run && i > 1 ? `<button class="btn chico" data-act="subir" data-id="${q.id}">↑</button>` : ''}<button class="btn chico peligro" data-act="cancelar" data-id="${q.id}">${t('cancelar')}</button></div>
+      ${run ? `<div class="prog" data-prog="${q.id}"><i style="width:${pct}%"></i></div>` : ''}</li>`;
+  }).join('');
+  const done = DONE.map(d => `<li><div class="q"><b>${esc(PROJECTS[d.p].name)}</b> · <a href="#/p/${d.p}/pedido/${d.key}@${d.profile}" class="mono">${esc(d.key)} @ ${esc(d.profile)}</a> <span class="muted">· ${d.id}</span></div><div>${d.failed ? stateChip('failed') : `<span class="chip">${mmss(d.time)}</span>`}</div></li>`).join('');
+  el.innerHTML = `<header><h2>${t('cola')} · ${esc(MACHINE.name)}</h2><button class="icono" data-act="cola" aria-label="${t('cerrar')}">✕</button></header>
+    ${QUEUE.length ? `<ul>${items}</ul>` : `<div class="vacio">${t('nada_cola')}</div>`}
+    <header><h3>${t('ult_terminados')}</h3></header><ul>${done}</ul>`;
+}
+function tick() {
+  renderPill();
+  const run = QUEUE.find(q => q.state === 'running');
+  if (run) {
+    const el = Date.now() - run.startedAt; const pct = Math.min(100, el / 10 / run.eta);
+    document.querySelectorAll(`[data-prog="${run.id}"] i`).forEach(i => { i.style.width = pct + '%'; });
+    document.querySelectorAll(`[data-prog-txt="${run.id}"]`).forEach(x => { x.textContent = mmss(el / 1000) + ' / ~' + mmss(run.eta); });
+    if (pct >= 100) finish(run);
+  }
+  if (S.drawer) renderDrawer();
+}
+function finish(q) {
+  QUEUE.splice(QUEUE.indexOf(q), 1);
+  const P = PROJECTS[q.p]; const o = P.orders.find(x => x.key === q.key && x.profile === q.profile);
+  if (o) {
+    const a = o.attempts.find(x => x.id === q.id);
+    const sample = { portal: 'r2/portal/intentos/r2-palabras-s3.png', toveriai: 'r2/toveriai/intentos/r2-hex-s3.png', tarkor: 'r2/tarkor/intentos/r2-palabras-s3.png' }[q.p] || 'r2/' + q.p + '/intentos/r2-palabras-s3.png';
+    const done = { state: 'new', time: q.eta, img: PIL + sample, m: { c: 15.2, p: 72 }, note: (a && a.note) || '' };
+    if (a) Object.assign(a, done); else o.attempts.unshift(Object.assign({ id: q.id, seed: q.seed || 0, steps: 6, model: q.model, w: 1280, h: 640 }, done));
+  }
+  DONE.unshift({ id: q.id, p: q.p, key: q.key, profile: q.profile, time: q.eta });
+  const nx = QUEUE.find(x => x.state === 'queued'); if (nx) { nx.state = 'running'; nx.startedAt = Date.now(); nx.mem = 7300; const P2 = PROJECTS[nx.p]; const o2 = P2.orders.find(x => x.key === nx.key && x.profile === nx.profile); const a2 = o2 && o2.attempts.find(x => x.id === nx.id); if (a2) a2.state = 'running'; }
+  toast(t('terminado', { id: q.id, p: P.name, k: q.key, pr: q.profile })); render();
+}
+function enqueue(pid, o, n, opts = {}) {
+  for (let i = 0; i < n; i++) {
+    const id = 'q' + (nextId++); const seed = (opts.seed ?? (o.seed || 0)) + i;
+    const m = MODELS[o.model]; const eta = o.draft ? m.etaDraft : m.eta;
+    const running = !QUEUE.some(q => q.state === 'running');
+    QUEUE.push({ id, p: pid, key: o.key, profile: o.profile, model: o.model, eta, seed, state: running ? 'running' : 'queued', startedAt: running ? Date.now() : 0, mem: 7400 });
+    o.attempts.unshift({ id, state: running ? 'running' : 'queued', seed, steps: o.steps, model: o.model, w: 1280, h: 640, draft: o.draft, note: opts.note || '' });
+  }
+  toast(t('encolado', { n, k: o.key + ' @ ' + o.profile }));
+}
+
+/* ===================== pantalla 1: proyectos ===================== */
+function viewProjects() {
+  setCrumbs([{ label: t('proyectos') }]);
+  const cards = Object.entries(PROJECTS).map(([id, P]) => {
+    const n = P.orders.length, ch = P.orders.filter(o => o.chosen).length, q = queueOf(id).length;
+    const last = P.orders.flatMap(o => o.attempts.filter(a => a.img).map(a => ({ a, o }))).sort((x, y) => (y.a.time || 0) - (x.a.time || 0))[0];
+    return `<a class="card link pcard ${P.missing ? 'apagado' : ''}" href="#/p/${id}">
+      <div class="franja" style="background:${P.accent}"></div>
+      <div class="cuerpo">
+        <div class="baldosa" style="background:${P.bg}">${img(MAR + P.logo, '', P.name)}</div>
+        <div><div class="n">${esc(P.name)}</div><div class="muted" style="font-size:13px">${esc(P.tag)}</div>
+          <div class="cifras"><span><b>${n}</b> ${t('n_pedidos')}</span><span><b>${ch}</b> ${t('n_elegidas')}</span>${q ? `<span style="color:var(--ok)"><b>${q}</b> ${t('n_cola')}</span>` : ''}</div></div>
+        ${P.missing ? `<div class="ult" style="color:var(--bad)">⚠ ${t('no_carpeta')} · <span class="mono">~/Desarrollos/voces</span></div>` : ''}
+        ${P.minVersion ? `<div class="ult" style="color:var(--warn)">⚠ ${t('version_vieja', { v: P.minVersion, i: '0.2.0' })}</div>` : ''}
+        ${last ? `<div class="ult"><span class="th">${img(last.a.img, '', '')}</span><span>${t('ultimo')}: <span class="mono">${esc(last.o.key)} @ ${esc(last.o.profile)}</span> · ${last.a.id} · ${mmss(last.a.time)}</span></div>` : ''}
+      </div></a>`;
+  }).join('');
+  return `<div class="cabecera-p"><h1>${t('proyectos')}</h1><span class="chip">${Object.keys(PROJECTS).length}</span><span class="sep"></span><span class="muted" style="font-size:13px">${t('limites', { m: MACHINE.name, mw: MACHINE.maxW, mh: MACHINE.maxH, ms: MACHINE.maxSteps, mr: MACHINE.maxRefs, t: MACHINE.timeoutMin })}</span></div>
+    <div class="grid">${cards}</div>
+    <p class="aviso info" style="margin-top:18px">ⓘ <span>${t('anadir')}</span></p>${protoNote()}`;
+}
+const protoNote = () => `<p class="pie-proto">${t('proto')}</p>`;
+
+/* ===================== pantalla 2: proyecto (pedidos · piezas · marca) ===================== */
+function projectHead(id, P, tab) {
+  return `<div class="cabecera-p">
+      <div class="baldosa" style="background:${P.bg}">${img(MAR + P.logo, '', P.name)}</div>
+      <div><h1>${esc(P.name)}</h1><div class="muted" style="font-size:13px">${esc(P.tag)}</div></div>
+      <span class="sep"></span>
+      <div class="acciones"><a class="btn primario" href="#/p/${id}/nuevo">+ ${t('nuevo')}</a></div>
+    </div>
+    <nav class="tabs">${['pedidos', 'piezas', 'marca'].map(x => `<a href="#/p/${id}/${x}" class="${tab === x ? 'on' : ''}">${t(x)}${x === 'pedidos' ? ` <span class="chip">${P.orders.length}</span>` : ''}</a>`).join('')}</nav>`;
+}
+function viewProject(id, tab) {
+  const P = PROJECTS[id]; if (!P) return viewProjects();
+  setCrumbs([{ label: t('proyectos'), href: '#/' }, { label: P.name }]);
+  let body = '';
+  if (tab === 'piezas') body = tabPieces(id, P); else if (tab === 'marca') body = tabBrand(id, P); else body = tabOrders(id, P);
+  return projectHead(id, P, tab) + body + protoNote();
+}
+function orderSummary(o) {
+  const q = o.attempts.filter(a => a.state === 'queued' || a.state === 'running').length;
+  const f = o.attempts.some(a => a.state === 'failed');
+  const chips = [];
+  if (o.chosen) chips.push(stateChip('chosen'));
+  if (q) chips.push(`<span class="chip ok">${q} ${t('encola')}</span>`);
+  if (f) chips.push(stateChip('failed'));
+  if (!o.attempts.length) chips.push(`<span class="chip warn">${t('sin_intentos')}</span>`);
+  return chips.join('');
+}
+function tabOrders(id, P) {
+  const F = S.filters[id] || (S.filters[id] = { profile: null, state: 'todos' });
+  const profiles = [...new Set(P.orders.map(o => o.profile))];
+  const match = o => (!F.profile || o.profile === F.profile) && ({
+    todos: true, con_elegida: !!o.chosen, sin_elegida: !o.chosen, en_cola: o.attempts.some(a => a.state === 'queued' || a.state === 'running'), con_fallo: o.attempts.some(a => a.state === 'failed'), sin_intentos: !o.attempts.length
+  })[F.state];
+  const q = queueOf(id);
+  const queueBox = q.length ? `<div class="aviso ok" style="margin-bottom:14px">⏳ <div style="flex:1">${q.map(x => {
+    const run = x.state === 'running'; const el = run ? (Date.now() - x.startedAt) / 1000 : 0;
+    return `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><a class="mono" href="#/p/${id}/pedido/${x.key}@${x.profile}">${esc(x.key)} @ ${esc(x.profile)}</a><span class="muted">${run ? t('generando') + ' · ' : t('encola') + ' · ' + t('previsto') + ' ~' + mmss(x.eta)}</span>${run ? `<span class="mono" data-prog-txt="${x.id}">${mmss(el)} / ~${mmss(x.eta)}</span>` : ''}</div>${run ? `<div class="prog" data-prog="${x.id}" style="margin:6px 0 4px"><i style="width:${Math.min(99, el / x.eta * 100)}%"></i></div>` : ''}`;
+  }).join('')}</div></div>` : '';
+  if (!P.orders.length) return `<div class="vacio-grande"><h2>${t('sin_pedidos')}</h2><p>${t('sin_pedidos_t')}</p><p style="margin-top:14px"><a class="btn primario" href="#/p/${id}/piezas">${t('piezas')} →</a></p></div>`;
+  const rows = P.orders.filter(match).map(o => {
+    const ch = o.attempts.find(a => a.id === o.chosen) || o.attempts.find(a => a.img);
+    const pc = pieceOf(P, o.profile);
+    return `<a class="card link fila-pedido" href="#/p/${id}/pedido/${o.key}@${o.profile}">
+      <span class="th">${ch && ch.img ? img(ch.img, '', '') : t('sin_imagen')}</span>
+      <span><span class="k">${esc(o.key)}<span class="mono">@ ${esc(o.profile)}</span></span>
+        <span class="d"><span>${pc.w}×${pc.h}</span><span>${o.attempts.length} ${t('intentos')}</span><span>${esc(MODELS[o.model].label)}</span></span></span>
+      <span class="est">${orderSummary(o)}</span></a>`;
+  }).join('');
+  return `${queueBox}<div class="filtros"><span class="lbl">${t('perfil')}</span>
+      <span class="chip filtro ${!F.profile ? 'on' : ''}" data-act="f-prof" data-p="${id}" data-v="">${t('todos')}</span>${profiles.map(pr => `<span class="chip filtro ${F.profile === pr ? 'on' : ''}" data-act="f-prof" data-p="${id}" data-v="${pr}">${pr}</span>`).join('')}
+      <span class="lbl" style="margin-left:10px">${t('estado')}</span>${['todos', 'con_elegida', 'sin_elegida', 'en_cola', 'con_fallo', 'sin_intentos'].map(s => `<span class="chip filtro ${F.state === s ? 'on' : ''}" data-act="f-est" data-p="${id}" data-v="${s}">${t(s)}</span>`).join('')}</div>
+    <div class="lista">${rows || `<div class="vacio-grande">—</div>`}</div>`;
+}
+function tabPieces(id, P) {
+  if (!P.pieces.length) return `<div class="vacio-grande"><h2>—</h2><p class="muted">(${t('piezas')}: datos de ejemplo no cargados en el prototipo para este proyecto)</p></div>`;
+  const rows = P.pieces.map(pc => `<tr>
+      <td><b class="mono">${pc.profile}</b></td><td>${pc.w}×${pc.h}</td><td class="muted">${pc.gw ? pc.gw + '×' + pc.gh : t('sin_fondo')}</td>
+      <td>${pc.zone ? `<span class="chip">${pc.zone}</span>` : '—'}</td>
+      <td><img class="mini-logo" src="${MAR + pc.logo}" alt="${base(pc.logo)}" style="background:${P.bg}" onerror="hueco(this)"></td>
+      <td style="max-width:280px">${pc.title ? `<div style="font-weight:600">${esc(pc.title)}</div><div class="muted" style="font-size:12.5px">${esc(pc.subtitle)}</div>` : '—'}</td>
+      <td>${pc.prompt ? `<span class="mono">${pc.prompt}</span><br><span class="chip ${pc.round.includes('✓') ? 'ok' : 'warn'}">${pc.round}</span>` : '—'}</td>
+      <td><a class="btn primario chico" href="#/p/${id}/nuevo/${pc.profile}">${t('pedir')}</a></td></tr>`).join('');
+  return `<p class="muted" style="margin-bottom:12px;font-size:13.5px">${t('nuevo_t')} <span class="mono">examples/${id}/piezas.json</span> → <span class="mono">compose</span> del perfil.</p>
+    <div class="tabla-wrap"><table><thead><tr><th>${t('perfil')}</th><th>${t('destino')}</th><th>${t('genera')}</th><th>${t('zona')}</th><th>${t('logo')}</th><th>${t('texto_defecto')}</th><th>${t('prompt')}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function tabBrand(id, P) {
+  const sw = P.palette.map(([r, h, u]) => `<div class="sw"><i style="background:${h}"></i><div><b>${esc(r)}</b><br><span class="mono">${h}</span>${u ? `<br><span class="muted">${esc(u)}</span>` : ''}</div></div>`).join('');
+  const combos = P.combos.map(([n, bg, fg]) => `<div class="combo" style="background:${bg};color:${fg};border:1px solid var(--border)"><span style="font-family:${P.fontT};font-weight:${P.fontWeightT || 700};font-size:17px">Aa</span><span>${esc(n)}</span><span class="sep"></span><span class="mono" style="opacity:.75">${bg} / ${fg}</span></div>`).join('');
+  const typo = P.typo.map(([u, f, tr]) => `<dt>${esc(u)}</dt><dd>${esc(f)} <span class="muted">· ${esc(tr)}</span></dd>`).join('');
+  const dark = P.lockupBg === 'oscuro';
+  return `<div class="marca-grid">
+    <div class="card bloque"><h3>${t('paleta')}</h3><div class="swatches">${sw}</div>
+      ${P.accents.length ? `<div class="palabras">${P.accents.map(([n, h]) => `<span class="chip"><i style="width:10px;height:10px;border-radius:50%;background:${h};display:inline-block"></i>${esc(n)} <span class="mono">${h}</span></span>`).join('')}</div>` : ''}
+      ${combos ? `<h3 style="margin-top:6px">${t('combos')}</h3>${combos}` : ''}</div>
+    <div class="card bloque"><h3>${t('logos')}</h3>
+      <div class="logos-marca">
+        <div class="tile" style="background:#f6f6f4;color:#222">${img(MAR + P.logo, '', '')}<small>${t('simbolo')} · ${t('sobre_claro')}</small></div>
+        <div class="tile" style="background:#0d1016;color:#ddd">${img(MAR + P.logo, '', '')}<small>${t('simbolo')} · ${t('sobre_oscuro')}</small></div>
+        <div class="tile" style="grid-column:1/-1;background:${dark ? P.bg : '#f6f6f4'};color:${dark ? '#ddd' : '#222'}">${img(MAR + P.lockup, '', '')}<small>${t('lockup')} · ${dark ? t('sobre_oscuro') : t('sobre_claro')} · <span class="mono">${base(P.lockup)}</span></small></div>
+      </div>
+      <h3 style="margin-top:6px">${t('tipografia')}</h3>
+      <div class="tipo-muestra"><div class="t" style="font-family:${P.fontT};font-weight:${P.fontWeightT || 700}">${esc(P.pieces[0]?.title || P.name)}</div><div class="s" style="font-family:${P.fontB}">${esc(P.pieces[0]?.subtitle || P.tag)}</div></div>
+      ${typo ? `<dl class="kv">${typo}</dl>` : ''}</div>
+    <div class="card bloque"><h3>${t('estilo')}</h3>
+      ${P.si ? `<p><b style="color:var(--ok)">${t('si')}:</b> ${esc(P.si)}</p><p><b style="color:var(--bad)">${t('no')}:</b> ${esc(P.no)}</p>` : '<p class="muted">—</p>'}
+      ${P.zone ? `<h3 style="margin-top:6px">${t('zona_res')}</h3><p>${esc(P.zone)}</p>` : ''}
+      ${P.banned.length ? `<h3 style="margin-top:6px">${t('vetadas')}</h3><div class="palabras">${P.banned.map(w => `<span class="chip bad">${esc(w)}</span>`).join('')}</div>` : ''}
+      ${P.style ? `<h3 style="margin-top:6px">style</h3><p class="mono muted" style="font-size:12.5px">${esc(P.style)}</p>` : ''}
+      <h3 style="margin-top:6px">${t('fuente')}</h3><p class="muted" style="font-size:13px">${esc(P.repo)}</p><p class="muted" style="font-size:12.5px">${t('solo_lectura')}</p></div>
+  </div>`;
+}
+
+/* ===================== pantalla 3: pedido ===================== */
+function composeOverlay(P, o, a) {
+  const tx = o.text; if (!tx.zone || !S.showText || !a.img) return '';
+  const pc = pieceOf(P, o.profile); const dir = { izquierda: 'to right', derecha: 'to left', arriba: 'to bottom', abajo: 'to top' }[tx.zone];
+  const veil = tx.veilA > 0 ? `background:linear-gradient(${dir}, ${hexa(tx.veil, tx.veilA)} 70%, transparent)` : '';
+  return `<div class="compo"><div class="zona ${tx.zone}" style="color:${tx.color};${veil}">
+      ${pc.logo ? `<img src="${MAR + pc.logo}" alt="" onerror="this.remove()">` : ''}
+      <div class="t1" style="font-family:${P.fontT};font-weight:${P.fontWeightT || 700}">${esc(tx.title)}</div>
+      <div class="t2" style="font-family:${P.fontB}">${esc(tx.subtitle)}</div></div></div>`;
+}
+function attemptCard(pid, P, o, a) {
+  const st = stateOf(o, a); const pc = pieceOf(P, o.profile);
+  const ar = (a.w && a.h) ? `${a.w}/${a.h}` : `${pc.gw || pc.w}/${pc.gh || pc.h}`;
+  const cmp = (S.compare[pid + o.key + o.profile] || []).includes(a.id);
+  let media;
+  if (st === 'queued' || st === 'running' || st === 'failed') {
+    const q = QUEUE.find(x => x.id === a.id); const pos = QUEUE.filter(x => x.state === 'queued').indexOf(q);
+    if (st === 'running') { const el = q ? (Date.now() - q.startedAt) / 1000 : 0; media = `<div class="estado-grande"><b>${t('st_running')}…</b><span data-prog-txt="${a.id}">${mmss(el)} / ~${mmss(q ? q.eta : 180)}</span><div class="prog" data-prog="${a.id}"><i style="width:${q ? Math.min(99, el / q.eta * 100) : 0}%"></i></div><span class="muted">${esc(MODELS[a.model].label)} · ${t('semilla')} ${a.seed} · ${a.steps} ${t('pasos')}</span></div>`; }
+    else if (st === 'queued') media = `<div class="estado-grande"><b>${t('st_queued')}</b>${t('pos')} ${pos + 1} · ${t('previsto')} ~${mmss(q ? q.eta : 180)}<br><span class="muted">${t('semilla')} ${a.seed}</span><div style="margin-top:10px"><button class="btn chico" data-act="cancelar" data-id="${a.id}">${t('cancelar')}</button></div></div>`;
+    else media = `<div class="estado-grande"><b>✕ ${t('st_failed')}</b><span style="font-size:12.5px">${esc(a.error)}</span><div style="margin-top:10px;display:flex;gap:6px;justify-content:center"><button class="btn chico" data-act="reintentar" data-p="${pid}" data-o="${o.key}@${o.profile}" data-a="${a.id}">${t('reintentar')}</button><button class="btn chico" data-act="log">${t('ver_log')}</button></div></div>`;
+  } else {
+    media = `${img(a.img, 'fondo', a.id)}${composeOverlay(P, o, a)}
+      <label class="cmp" data-act="noop" title="${t('comparar')}"><input type="checkbox" data-act="cmp" data-p="${pid}" data-o="${o.key}@${o.profile}" data-a="${a.id}" ${cmp ? 'checked' : ''}> ${t('comparar')}</label>`;
+  }
+  const cls = { chosen: 'elegida', discarded: 'descartada', queued: 'cola', running: 'generando', failed: 'fallo' }[st] || '';
+  const act = (st !== 'queued' && st !== 'running' && st !== 'failed') ? `<div class="botones">
+      <button class="btn chico si ${st === 'candidate' || st === 'chosen' ? 'on' : ''}" data-act="verdict" data-v="candidate" data-p="${pid}" data-o="${o.key}@${o.profile}" data-a="${a.id}">${t('si')}</button>
+      <button class="btn chico no ${st === 'discarded' ? 'on' : ''}" data-act="verdict" data-v="discarded" data-p="${pid}" data-o="${o.key}@${o.profile}" data-a="${a.id}">${t('no')}</button>
+      <span class="sep"></span>
+      ${st === 'chosen' ? `<button class="btn chico" data-act="undo" data-p="${pid}" data-o="${o.key}@${o.profile}">↶ ${t('deshacer')}</button>` : `<button class="btn chico primario" data-act="choose" data-p="${pid}" data-o="${o.key}@${o.profile}" data-a="${a.id}" ${st === 'discarded' ? 'disabled' : ''}>★ ${t('elegir')}</button>`}
+    </div>` : '';
+  return `<article class="card intento ${cls}" tabindex="0" data-card="${a.id}" data-p="${pid}" data-o="${o.key}@${o.profile}">
+    <div class="img-wrap" style="--ar:${ar}" data-act="${a.img ? 'luz' : ''}" data-src="${esc(a.img || '')}" data-txt="${a.id} · ${t('semilla')} ${a.seed} · ${a.steps} ${t('pasos')}">
+      <div class="est">${stateChip(st)}${a.draft ? `<span class="chip">${t('borrador')}</span>` : ''}${a.compose ? `<span class="chip">compose</span>` : ''}</div>${media}</div>
+    <div class="pie">
+      <div class="meta"><b class="mono">${a.id}</b><span>${t('semilla')} <b>${a.seed}</b></span><span>${a.steps} ${t('pasos')}</span><span title="${esc(a.model)}">${a.model === '—' ? '—' : (MODELS[a.model]?.kind ? t(MODELS[a.model].kind) : a.model)}</span>${a.time ? `<span>${mmss(a.time)}</span>` : ''}${a.w ? `<span>${a.w}×${a.h}</span>` : ''}<span class="sep"></span>${measureChip(a.m)}</div>
+      ${act}
+      <input class="nota" placeholder="${t('nota')}" value="${esc(a.note || '')}" data-act="nota" data-p="${pid}" data-o="${o.key}@${o.profile}" data-a="${a.id}">
+    </div></article>`;
+}
+function compareBox(pid, P, o) {
+  const sel = (S.compare[pid + o.key + o.profile] || []).map(id => o.attempts.find(a => a.id === id)).filter(Boolean);
+  if (sel.length < 2) return '';
+  const [A, B] = sel;
+  const fig = a => `<figure><div class="img-wrap" style="--ar:${a.w}/${a.h}" data-act="luz" data-src="${esc(a.img)}" data-txt="${a.id}">${img(a.img, 'fondo', a.id)}${composeOverlay(P, o, a)}</div><figcaption><b class="mono">${a.id}</b>${stateChip(stateOf(o, a))}<span>${t('semilla')} ${a.seed} · ${a.steps} ${t('pasos')} · ${mmss(a.time)}</span>${measureChip(a.m)}</figcaption></figure>`;
+  return `<section class="card comparar"><div class="cab"><h2>${t('comparar')}</h2><span class="chip acc">${A.id} ↔ ${B.id}</span><span class="sep"></span><button class="btn chico" data-act="swap" data-k="${pid + o.key + o.profile}">⇄ ${t('intercambiar')}</button><button class="btn chico" data-act="cmp-clear" data-k="${pid + o.key + o.profile}">${t('cerrar')}</button></div>${fig(A)}${fig(B)}</section>`;
+}
+function viewOrder(pid, ref) {
+  const P = PROJECTS[pid]; const o = P && findOrder(pid, ref); if (!o) return viewProject(pid, 'pedidos');
+  setCrumbs([{ label: t('proyectos'), href: '#/' }, { label: P.name, href: '#/p/' + pid }, { label: o.key + ' @ ' + o.profile }]);
+  const pc = pieceOf(P, o.profile); const ch = o.attempts.find(a => a.id === o.chosen);
+  const file = `${o.key}-${o.profile}.png`;
+  const entrega = ch ? `<div class="card entrega" style="border-color:var(--ok)">★ <span>${t('entregada_en')}</span><span class="ruta">${esc(o.delivered || 'entrega/' + file)}</span><span class="chip ok">${t('manifiesto')}</span><span class="sep"></span><button class="btn chico" data-act="undo" data-p="${pid}" data-o="${ref}">↶ ${t('deshacer')}</button></div>`
+    : (o.attempts.some(a => a.img) ? `<p class="aviso info">★ <span>${t('sin_elegida_aun')}</span></p>` : '');
+  const empty = !o.attempts.length;
+  const gallery = empty ? `<div class="vacio-grande"><h2>${t('sin_intentos')}</h2><p>${t('sin_intentos_t')}</p><p style="margin-top:14px"><button class="btn primario" data-act="otra" data-p="${pid}" data-o="${ref}">▶ ${t('primer')}</button></p></div>`
+    : `<div class="galeria">${o.attempts.map(a => attemptCard(pid, P, o, a)).join('')}</div>`;
+  const nCmp = (S.compare[pid + ref] || []).length;
+  return `<div class="cab-pedido"><h1>${esc(o.key)} <span class="mono">@ ${esc(o.profile)}</span></h1><span class="chip">${pc.w}×${pc.h}</span>${pc.gw ? `<span class="chip" title="${t('genera')}">${pc.gw}×${pc.gh}</span>` : ''}<span class="chip">${o.attempts.length} ${t('intentos')}</span><span class="chip" style="background:${P.accent};color:#fff">${esc(P.name)}</span></div>
+  <div class="pedido">
+    <div>
+      ${entrega ? entrega + '<div style="height:14px"></div>' : ''}
+      ${compareBox(pid, P, o)}
+      <div class="barra-galeria">
+        ${o.text.zone ? `<button class="btn chico" data-act="toggle-text">${S.showText ? '▣ ' + t('ver_fondo') : '▢ ' + t('ver_texto')}</button>` : ''}
+        <span class="muted" style="font-size:12.5px">${t('comparar')}: ${nCmp}/2 ${t('marcadas')}</span>
+        <span class="sep"></span><span class="muted" style="font-size:12.5px">${t('mas_nueva')} · s / n</span></div>
+      ${gallery}
+    </div>
+    <aside class="panel">
+      <div class="card">
+        <h2>${t('retoque')}</h2>
+        <div class="campo"><label>${t('prompt_pedido')}</label><textarea data-bind="prompt" data-p="${pid}" data-o="${ref}">${esc(orderPrompt(P, o))}</textarea><div id="aviso-prompt"></div></div>
+        <div class="campo"><label>${t('estilo_perfil')}</label><div class="ro">${esc(P.style) || '—'}</div></div>
+        <div><button class="btn chico" data-act="restaurar" data-p="${pid}" data-o="${ref}">${t('restaurar')}</button></div>
+      </div>
+      <div class="card">
+        <h2>${t('parametros')}</h2>
+        <div class="campo"><label>${t('modelo')}</label><select data-bind="model" data-p="${pid}" data-o="${ref}">${Object.entries(MODELS).map(([k, m]) => `<option value="${k}" ${o.model === k ? 'selected' : ''}>${m.label} · ${t(m.kind)} · ~${Math.round(m.eta / 60)} ${t('min')}</option>`).join('')}</select></div>
+        <div class="fila3"><div class="campo"><label>${t('pasos')}</label><input type="number" min="1" max="${MACHINE.maxSteps}" value="${o.steps}" data-bind="steps" data-p="${pid}" data-o="${ref}"></div>
+          <div class="campo"><label>${t('cfg')}</label><input type="number" step="0.5" value="${o.cfg}" data-bind="cfg" data-p="${pid}" data-o="${ref}"></div>
+          <div class="campo"><label>${t('semilla')}</label><input type="number" value="${o.seed}" data-bind="seed" data-p="${pid}" data-o="${ref}"></div></div>
+        <label class="check"><input type="checkbox" data-bind="draft" data-p="${pid}" data-o="${ref}" ${o.draft ? 'checked' : ''}> ${t('borrador_primero')}</label>
+        <div class="acciones"><button class="btn primario" data-act="otra" data-p="${pid}" data-o="${ref}">▶ ${t('otra_semilla')}</button><button class="btn" data-act="tres" data-p="${pid}" data-o="${ref}">▶▶ ${t('tres')}</button></div>
+        <p class="muted" style="font-size:12px">${t('limites', { m: MACHINE.name, mw: MACHINE.maxW, mh: MACHINE.maxH, ms: MACHINE.maxSteps, mr: MACHINE.maxRefs, t: MACHINE.timeoutMin })}</p>
+      </div>
+      ${o.text.zone ? `<div class="card">
+        <h2>${t('composicion')}</h2>
+        <div class="campo"><label>${t('titulo')}</label><input value="${esc(o.text.title)}" data-bind="t.title" data-p="${pid}" data-o="${ref}"></div>
+        <div class="campo"><label>${t('subtitulo')}</label><input value="${esc(o.text.subtitle)}" data-bind="t.subtitle" data-p="${pid}" data-o="${ref}"></div>
+        <div class="fila3"><div class="campo"><label>${t('zona')}</label><select data-bind="t.zone" data-p="${pid}" data-o="${ref}">${['izquierda', 'derecha', 'arriba', 'abajo'].map(z => `<option ${o.text.zone === z ? 'selected' : ''}>${z}</option>`).join('')}</select></div>
+          <div class="campo"><label>${t('color')}</label><input type="color" value="${o.text.color}" data-bind="t.color" data-p="${pid}" data-o="${ref}" style="height:36px;padding:2px"></div>
+          <div class="campo"><label>${t('velo')} ${Math.round(o.text.veilA * 100)} %</label><input type="range" min="0" max="0.9" step="0.05" value="${o.text.veilA}" data-bind="t.veilA" data-p="${pid}" data-o="${ref}"></div></div>
+        <div class="campo"><label>${t('logo')}</label><div class="ro mono">${esc(pc.logo)}</div></div>
+        <div><button class="btn" data-act="recomponer" data-p="${pid}" data-o="${ref}" ${ch ? '' : 'disabled'}>⟳ ${t('recomponer')}</button></div>
+      </div>` : ''}
+    </aside>
+  </div>${protoNote()}`;
+}
+
+/* ===================== panel: nuevo pedido ===================== */
+function viewNew(pid, profile) {
+  const P = PROJECTS[pid]; if (!P) return viewProjects();
+  const pc = pieceOf(P, profile || (P.pieces[0] && P.pieces[0].profile) || 'og');
+  setCrumbs([{ label: t('proyectos'), href: '#/' }, { label: P.name, href: '#/p/' + pid }, { label: t('nuevo') }]);
+  return `<div class="nuevo"><div class="cabecera-p"><h1>${t('nuevo')} · ${esc(P.name)}</h1></div>
+    <form class="card" id="form-nuevo" data-p="${pid}">
+      <p class="muted" style="font-size:13.5px">${t('nuevo_t')}</p>
+      <div class="fila"><div class="campo"><label>${t('clave')}</label><input name="key" value="${esc(profile === 'square' ? 'cita' : 'portada')}" required pattern="[a-z0-9/_-]+"></div>
+        <div class="campo"><label>${t('perfil')}</label><select name="profile" data-act="pieza" data-p="${pid}">${P.pieces.map(x => `<option value="${x.profile}" ${x.profile === pc.profile ? 'selected' : ''}>${x.profile} · ${x.w}×${x.h}${x.gw ? ' (' + x.gw + '×' + x.gh + ')' : ''}</option>`).join('')}</select></div></div>
+      ${pc.zone ? `<div class="fila"><div class="campo"><label>${t('titulo')}</label><input name="title" value="${esc(pc.title)}"></div><div class="campo"><label>${t('subtitulo')}</label><input name="subtitle" value="${esc(pc.subtitle)}"></div></div>` : `<p class="aviso info">ⓘ <span>${t('sin_fondo')}: <span class="mono">${esc(pc.logo)}</span></span></p>`}
+      ${pc.gw ? `<div class="campo"><label>${t('prompt')}</label><textarea name="prompt">${esc(P.promptTpl)}</textarea><div id="aviso-prompt"></div></div>
+      <div class="campo"><label>${t('estilo_perfil')}</label><div class="ro">${esc(P.style)}</div></div>
+      <div class="fila3"><div class="campo"><label>${t('modelo')}</label><select name="model">${Object.entries(MODELS).map(([k, m]) => `<option value="${k}">${m.label} · ${t(m.kind)}</option>`).join('')}</select></div>
+        <div class="campo"><label>${t('semilla')}</label><input name="seed" type="number" value="3"></div>
+        <div class="campo"><label>${t('pasos')}</label><input name="steps" type="number" value="6" min="1"></div></div>
+      <div class="fila"><label class="check"><input type="checkbox" name="draft"> ${t('borrador_primero')}</label><div class="campo"><label>${t('n_intentos')}</label><select name="n"><option>1</option><option>2</option><option>3</option></select></div></div>` : ''}
+      <div id="aviso-nuevo"></div>
+      <div class="acciones"><button class="btn primario" type="submit">▶ ${t('encolar')}</button><a class="btn" href="#/p/${pid}/piezas">${t('cancelar_f')}</a><span class="sep"></span><span class="muted" style="font-size:12px">${t('limites', { m: MACHINE.name, mw: MACHINE.maxW, mh: MACHINE.maxH, ms: MACHINE.maxSteps, mr: MACHINE.maxRefs, t: MACHINE.timeoutMin })}</span></div>
+    </form></div>${protoNote()}`;
+}
+function submitNew(form) {
+  const pid = form.dataset.p; const P = PROJECTS[pid]; const d = Object.fromEntries(new FormData(form).entries());
+  const pc = pieceOf(P, d.profile); const box = $('#aviso-nuevo');
+  const w = pc.gw || pc.w, h = pc.gh || pc.h, steps = +d.steps || 0;
+  if (w > MACHINE.maxW || h > MACHINE.maxH) { box.innerHTML = `<p class="aviso bad">✕ ${t('rechazo', { m: t('max_tamano', { w, h, mw: MACHINE.maxW, mh: MACHINE.maxH }) })}</p>`; return; }
+  if (steps > MACHINE.maxSteps) { box.innerHTML = `<p class="aviso bad">✕ ${t('rechazo', { m: t('max_pasos', { s: steps, ms: MACHINE.maxSteps }) })}</p>`; return; }
+  let o = P.orders.find(x => x.key === d.key && x.profile === d.profile);
+  if (!o) { o = { key: d.key, profile: d.profile, prompt: d.prompt ?? null, seed: +d.seed || 0, model: d.model || 'flux2-klein-4b-q8', steps: steps || 6, cfg: 1, draft: !!d.draft, text: { title: d.title || '', subtitle: d.subtitle || '', zone: pc.zone, color: pc.color, veil: pc.veil, veilA: pc.veilA }, chosen: null, history: [], attempts: [] }; P.orders.unshift(o); }
+  else { Object.assign(o, { prompt: d.prompt ?? o.prompt, seed: +d.seed || o.seed, model: d.model || o.model, steps: steps || o.steps, draft: !!d.draft }); o.text.title = d.title ?? o.text.title; o.text.subtitle = d.subtitle ?? o.text.subtitle; }
+  if (pc.gw) enqueue(pid, o, +d.n || 1); else { o.attempts.unshift({ id: 'c' + (nextId++), state: 'new', seed: 0, steps: 0, model: '—', time: 1, w: pc.w, h: pc.h, img: PIL + 'r4/' + pid + '/' + d.key + '-' + pc.w + '.png', compose: true, note: 'solo composición' }); }
+  location.hash = `#/p/${pid}/pedido/${o.key}@${o.profile}`;
+}
+function checkBanned(P, text, box) {
+  if (!box) return; const low = text.toLowerCase();
+  const hit = P.banned.map(w => w.replace(' …', '')).find(w => w.length > 2 && new RegExp('\\b' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i').test(low));
+  box.innerHTML = hit ? `<p class="aviso warn" style="margin-top:6px">⚠ ${t('aviso_vetada', { w: hit })}</p>` : '';
+}
+
+/* ===================== guía ===================== */
+function viewGuide() {
+  setCrumbs([{ label: t('guia') }]);
+  return `<div class="guia nuevo"><h1 style="margin-bottom:14px">${t('guia_t')}</h1><div class="card" style="padding:18px"><ol>${t('guia_pasos').map(([h, s]) => `<li><a href="${h}">${esc(s)}</a></li>`).join('')}</ol></div>
+    <p class="muted" style="margin-top:14px;font-size:13.5px">docs/interfaz/propuesta.md · D22 + ${t('piezas')} + ${t('marca')}</p></div>${protoNote()}`;
+}
+
+/* ===================== enrutado y render ===================== */
+function render() {
+  const h = (location.hash || '#/').slice(2); const parts = h.split('/').filter(Boolean).map(decodeURIComponent);
+  let html;
+  if (!parts.length) html = viewProjects();
+  else if (parts[0] === 'guia') html = viewGuide();
+  else if (parts[0] === 'p' && parts[2] === 'pedido' && parts[3]) html = viewOrder(parts[1], parts[3]);
+  else if (parts[0] === 'p' && parts[2] === 'nuevo') html = viewNew(parts[1], parts[4] ? null : parts[3]);
+  else if (parts[0] === 'p' && parts[1]) html = viewProject(parts[1], parts[2] || 'pedidos');
+  else html = viewProjects();
+  $('#app').innerHTML = html;
+  $('#lnk-guia').textContent = t('guia'); $('#btn-lang').textContent = LANG.toUpperCase();
+  renderPill(); renderDrawer();
+  document.documentElement.lang = LANG;
+}
+window.addEventListener('hashchange', () => { window.scrollTo(0, 0); render(); });
+
+/* ===================== acciones ===================== */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const act = b.dataset.act; const pid = b.dataset.p; const P = pid && PROJECTS[pid]; const o = (P && b.dataset.o) ? findOrder(pid, b.dataset.o) : null; const a = o && b.dataset.a ? o.attempts.find(x => x.id === b.dataset.a) : null;
+  switch (act) {
+    case 'cola': S.drawer = !S.drawer; renderDrawer(); break;
+    case 'lang': LANG = LANG === 'es' ? 'en' : 'es'; try { localStorage.setItem('gimg.lang', LANG); } catch (x) {} render(); toast(t('idioma', { l: LANG.toUpperCase() })); break;
+    case 'theme': S.theme = { auto: 'light', light: 'dark', dark: 'auto' }[S.theme]; try { localStorage.setItem('gimg.theme', S.theme); } catch (x) {} applyTheme(); toast(t('tema', { t: t({ auto: 'auto', light: 'claro', dark: 'oscuro' }[S.theme]) })); break;
+    case 'f-prof': S.filters[pid].profile = b.dataset.v || null; render(); break;
+    case 'f-est': S.filters[pid].state = b.dataset.v; render(); break;
+    case 'toggle-text': S.showText = !S.showText; render(); break;
+    case 'verdict': {
+      if (!a) break; const v = b.dataset.v;
+      if (o.chosen === a.id && v === 'discarded') { toast(t('no_descartar')); break; }
+      a.state = a.state === v ? 'new' : v; render(); break; }
+    case 'choose': if (!a || a.state === 'discarded') break; if (a.state === 'new') a.state = 'candidate'; if (o.chosen !== a.id) { o.history.push(o.chosen); o.chosen = a.id; o.delivered = o.delivered || `entrega/${o.key}-${o.profile}.png`; } render(); break;
+    case 'undo': if (!o || !o.history.length) break; o.chosen = o.history.pop(); render(); break;
+    case 'cmp': { const k = pid + b.dataset.o; const L = S.compare[k] || (S.compare[k] = []); const i = L.indexOf(b.dataset.a); if (i >= 0) L.splice(i, 1); else { L.push(b.dataset.a); if (L.length > 2) L.shift(); } render(); break; }
+    case 'cmp-clear': S.compare[b.dataset.k] = []; render(); break;
+    case 'swap': S.compare[b.dataset.k].reverse(); render(); break;
+    case 'otra': if (!o) break; enqueue(pid, o, 1, { seed: (o.seed || 0) + o.attempts.length + 1 }); render(); break;
+    case 'tres': if (!o) break; enqueue(pid, o, 3, { seed: (o.seed || 0) + o.attempts.length + 1 }); render(); break;
+    case 'reintentar': if (!a) break; o.attempts.splice(o.attempts.indexOf(a), 1); enqueue(pid, o, 1, { seed: a.seed, note: a.note }); render(); break;
+    case 'recomponer': if (!o) break; toast(t('recompuesta', { f: `${o.key}-${o.profile}.png` })); break;
+    case 'restaurar': if (!o) break; o.prompt = null; render(); break;
+    case 'cancelar': { const q = QUEUE.find(x => x.id === b.dataset.id); if (!q) break; QUEUE.splice(QUEUE.indexOf(q), 1); const o2 = PROJECTS[q.p].orders.find(x => x.key === q.key && x.profile === q.profile); if (o2) { const i = o2.attempts.findIndex(x => x.id === q.id); if (i >= 0) o2.attempts.splice(i, 1); } if (q.state === 'running') { const nx = QUEUE.find(x => x.state === 'queued'); if (nx) { nx.state = 'running'; nx.startedAt = Date.now(); nx.mem = 7300; const o3 = PROJECTS[nx.p].orders.find(x => x.key === nx.key && x.profile === nx.profile); const a3 = o3 && o3.attempts.find(x => x.id === nx.id); if (a3) a3.state = 'running'; } } toast(t('cancelado', { id: q.id })); render(); break; }
+    case 'subir': { const i = QUEUE.findIndex(x => x.id === b.dataset.id); if (i > 1) { const [q] = QUEUE.splice(i, 1); QUEUE.splice(i - 1, 0, q); } renderDrawer(); break; }
+    case 'luz': { if (!b.dataset.src) break; const d = $('#luz'); d.querySelector('img').src = b.dataset.src; $('#luz-txt').textContent = b.dataset.txt || ''; d.showModal(); break; }
+    case 'cerrar-luz': $('#luz').close(); break;
+    case 'log': toast('<datos>/projects/portal/log.jsonl · app.error'); break;
+    case 'pieza': break;
+    default: break;
+  }
+});
+document.addEventListener('input', e => {
+  const el = e.target; const bind = el.dataset.bind; if (!bind) { if (el.name === 'prompt') { const f = el.closest('form'); checkBanned(PROJECTS[f.dataset.p], el.value, f.querySelector('#aviso-prompt')); } return; }
+  const P = PROJECTS[el.dataset.p]; const o = findOrder(el.dataset.p, el.dataset.o); if (!o) return;
+  const v = el.type === 'checkbox' ? el.checked : el.value;
+  if (bind.startsWith('t.')) {
+    const k = bind.slice(2); o.text[k] = k === 'veilA' ? +v : v;
+    if (k === 'title' || k === 'subtitle') { document.querySelectorAll('.compo .' + (k === 'title' ? 't1' : 't2')).forEach(x => { x.textContent = v; }); }
+    else render();
+    if (k === 'veilA') { const lbl = el.closest('.campo').querySelector('label'); if (lbl) lbl.textContent = `${t('velo')} ${Math.round(v * 100)} %`; }
+  } else if (bind === 'prompt') { o.prompt = v; checkBanned(P, v, $('#aviso-prompt')); }
+  else if (bind === 'model') { o.model = v; const m = MODELS[v]; o.steps = m.steps; o.cfg = m.cfg; render(); }
+  else if (bind === 'steps' || bind === 'cfg' || bind === 'seed') o[bind] = +v;
+  else if (bind === 'draft') o.draft = v;
+});
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.dataset.act === 'nota') { const o = findOrder(el.dataset.p, el.dataset.o); const a = o && o.attempts.find(x => x.id === el.dataset.a); if (a) a.note = el.value; }
+  if (el.dataset.act === 'pieza') { location.hash = `#/p/${el.dataset.p}/nuevo/${el.value}`; }
+});
+document.addEventListener('submit', e => { if (e.target.id === 'form-nuevo') { e.preventDefault(); submitNew(e.target); } });
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input,textarea,select')) return;
+  const card = document.activeElement && document.activeElement.closest && document.activeElement.closest('.intento');
+  if (!card) return;
+  if (e.key === 's' || e.key === 'n') { const btn = card.querySelector(e.key === 's' ? '.btn.si' : '.btn.no'); if (btn) { btn.click(); const again = document.querySelector(`[data-card="${card.dataset.card}"]`); if (again) again.focus(); } }
+});
+document.addEventListener('click', e => { if (e.target.closest('.cajon') || e.target.closest('#pill-cola')) return; if (S.drawer) { S.drawer = false; renderDrawer(); } });
+
+applyTheme(); render(); setInterval(tick, 1000);
+</script>
+</body>
+</html>

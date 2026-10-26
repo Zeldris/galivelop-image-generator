@@ -47,6 +47,9 @@ def tarjeta(proy, f):
         m = re.search(r'<svg[^>]*\sdata-fondo="(claro|oscuro)"', lock.read_text())
         fondos = (m.group(1),) if m else ('claro', 'oscuro')
         cajas += ''.join(f'<div class="caja {fondo} lockup">{svg(lock)}</div>' for fondo in fondos)
+    for var in sorted(f.parent.glob(f'{nombre}-lockup-*.svg')):
+        fondo = 'claro' if var.stem.endswith('-claro') else 'oscuro'
+        cajas += f'<div class="caja {fondo} lockup">{svg(var)}</div>'
     return (f'<figure data-pieza="{esc(nombre)}" style="max-width:none"><h3>{esc(nombre)}</h3>'
             f'<figcaption>{esc(concepto(f))}</figcaption><div class="prop">{cajas}</div>'
             f'<figcaption><button class="si">sí</button><button class="no">no</button></figcaption></figure>')
@@ -56,7 +59,8 @@ def main(argv):
     out = Path(argv[1]) if len(argv) > 1 else R / 'piloto' / 'logos'
     secciones = []
     for d in sorted(p for p in MARCAS.iterdir() if (p / 'logos').is_dir()):
-        props = sorted(f for f in (d / 'logos').glob('*.svg') if not f.stem.endswith('-lockup'))
+        # Los lockups, también sus variantes de fondo (-lockup-claro, -lockup-oscuro), van con su símbolo.
+        props = sorted(f for f in (d / 'logos').glob('*.svg') if '-lockup' not in f.stem)
         if props:
             secciones.append(f'<section><h2>{esc(d.name)}</h2>{"".join(tarjeta(d.name, f) for f in props)}</section>')
     out.mkdir(parents=True, exist_ok=True)

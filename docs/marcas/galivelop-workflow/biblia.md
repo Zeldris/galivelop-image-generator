@@ -117,6 +117,9 @@ Reglas tras elegir (valen para cualquiera):
 | `examples/galivelop-workflow/prompts/r2-palabras.txt` | r2, **elegida** (ahora `estilo.txt`). Misma escena de og con las palancas de r1 (líneas solo en la mitad derecha, «dash» en vez de «capsule»); paleta en palabras |
 | `examples/galivelop-workflow/prompts/r2-hex.txt` | r2, descartada. Misma escena, colores en hex |
 | `examples/galivelop-workflow/prompts/r2-material.txt` | r2, descartada. Misma escena, paleta en materiales y luz (pizarra azul, cristal azul, latón, jade) |
+| `examples/galivelop-workflow/prompts/r5-cuadrado.txt` | r5, pendiente. Misma escena en cuadrado 1080×1080 (se genera a 1024×1024): líneas en la mitad inferior, mitad superior libre |
+| `examples/galivelop-workflow/prompts/r5-vertical.txt` | r5, pendiente. Misma escena en vertical 1080×1350 (896×1152): líneas en la mitad inferior, mitad superior libre |
+| `examples/galivelop-workflow/prompts/r5-cabecera.txt` | r5, pendiente. Misma escena en cabecera 1500×500 (1536×512): líneas en la mitad derecha, mitad izquierda libre |
 
 Plantilla para uno nuevo:
 

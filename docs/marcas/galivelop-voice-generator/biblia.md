@@ -104,6 +104,9 @@ Tras elegir **[P]**:
 | `examples/galivelop-voice-generator/prompts/r2-palabras.txt` | r2, **elegida** (ahora `estilo.txt`). Misma escena de og (sin el «shaped like»); paleta en palabras |
 | `examples/galivelop-voice-generator/prompts/r2-hex.txt` | r2, descartada. Misma escena, colores en hex |
 | `examples/galivelop-voice-generator/prompts/r2-material.txt` | r2, descartada. Misma escena, paleta en materiales y luz (terciopelo azul, cristal frambuesa, cuarzo rosa) |
+| `examples/galivelop-voice-generator/prompts/r5-cuadrado.txt` | r5, pendiente. Misma escena en cuadrado 1080×1080 (se genera a 1024×1024): onda y anillos en la mitad inferior, mitad superior libre |
+| `examples/galivelop-voice-generator/prompts/r5-vertical.txt` | r5, pendiente. Misma escena en vertical 1080×1350 (896×1152): onda y anillos en la mitad inferior, mitad superior libre |
+| `examples/galivelop-voice-generator/prompts/r5-cabecera.txt` | r5, pendiente. Misma escena en cabecera 1500×500 (1536×512): onda en la mitad derecha, mitad izquierda libre |
 
 Plantilla para uno nuevo: `<formato y fondo> + <motivo de onda en la zona de imagen> + <zona reservada, lisa> + Style: …
 Colours: deep midnight navy, raspberry pink, soft rose and white highlights. Mood: calm, warm, attentive. The image is

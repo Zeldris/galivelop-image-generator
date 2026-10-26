@@ -1,0 +1,67 @@
+{
+  "fuente": "Cormorant Garamond",
+  "fuente_texto": "DM Sans",
+  "peso_titulo": 300,
+  "piezas": [
+    {
+      "id": "og",
+      "ronda": "r4",
+      "ancho": 1200,
+      "alto": 630,
+      "fondo": "estilo",
+      "logo": "docs/marcas/toveriai/logos/toveriai-a-lockup.svg",
+      "titulo": "La verdad no es binaria.",
+      "subtitulo": "Entre lo cierto y lo falso hay todo un espectro. Nosotros lo medimos.",
+      "zona": "arriba",
+      "color_texto": "#1A1A1A",
+      "velo": "#F7F5F2:0.35"
+    },
+    {
+      "id": "cuadrado",
+      "ronda": "r5",
+      "ancho": 1080,
+      "alto": 1080,
+      "fondo": "r5-cuadrado",
+      "logo": "docs/marcas/toveriai/logos/toveriai-a-lockup.svg",
+      "titulo": "Menos veredictos. Más matices.",
+      "subtitulo": "No te decimos qué creer. Te damos con qué pensar.",
+      "zona": "arriba",
+      "color_texto": "#1A1A1A",
+      "velo": "#F7F5F2:0.35"
+    },
+    {
+      "id": "vertical",
+      "ronda": "r5",
+      "ancho": 1080,
+      "alto": 1350,
+      "fondo": "r5-vertical",
+      "logo": "docs/marcas/toveriai/logos/toveriai-a-lockup.svg",
+      "titulo": "Dudar bien también es informarse.",
+      "subtitulo": "Léela dos veces. O pásala por aquí primero.",
+      "zona": "arriba",
+      "color_texto": "#1A1A1A",
+      "velo": "#F7F5F2:0.35"
+    },
+    {
+      "id": "cabecera",
+      "ronda": "r5",
+      "ancho": 1500,
+      "alto": 500,
+      "fondo": "r5-cabecera",
+      "logo": "docs/marcas/toveriai/logos/toveriai-a-lockup.svg",
+      "titulo": "La credibilidad no se decreta: se mide.",
+      "subtitulo": "Analiza. Compara. Decide tú.",
+      "zona": "izquierda",
+      "color_texto": "#1A1A1A",
+      "velo": "#F7F5F2:0.35"
+    },
+    {
+      "id": "avatar",
+      "ronda": "r5",
+      "ancho": 512,
+      "alto": 512,
+      "fondo": null,
+      "logo": "docs/marcas/toveriai/logos/toveriai-a.svg"
+    }
+  ]
+}

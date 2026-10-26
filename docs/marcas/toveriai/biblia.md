@@ -129,6 +129,9 @@ Tras elegir **[P]**:
 | `examples/toveriai/prompts/r2-palabras.txt` | og, misma escena de «Entre dos tintas»; paleta en palabras («deep burgundy», «oxblood») | r2, descartada |
 | `examples/toveriai/prompts/r2-hex.txt` | misma escena, colores en hex | r2, descartada |
 | `examples/toveriai/prompts/r2-material.txt` | misma escena, paleta en materiales y luz (algodón crudo, sangre de buey seca, musgo en sombra, resina) | r2, **elegida** (ahora `estilo.txt`) |
+| `examples/toveriai/prompts/r5-cuadrado.txt` | square 1080×1080 (1024×1024): las dos tintas se encuentran en la mitad inferior, mitad superior de papel libre | r5, pendiente |
+| `examples/toveriai/prompts/r5-vertical.txt` | portrait 1080×1350 (896×1152): misma escena, tintas en la mitad inferior, mitad superior libre | r5, pendiente |
+| `examples/toveriai/prompts/r5-cabecera.txt` | header 1500×500 (1536×512): las tintas se encuentran en el tercio derecho (desde abajo y desde la derecha), dos tercios izquierdos de papel libres | r5, pendiente |
 
 Los 20 prompts del kit (redes, banners, iconografía, mockups, miniaturas, abstracto; por plataforma) se adaptan quitando el
 texto y describiendo la zona reservada. Plantilla: `<formato> abstract conceptual artwork on warm beige textured paper.

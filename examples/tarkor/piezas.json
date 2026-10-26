@@ -1,0 +1,79 @@
+{
+  "fuente": "Cinzel",
+  "fuente_texto": "Inter",
+  "piezas": [
+    {
+      "id": "og",
+      "ronda": "r4",
+      "ancho": 1200,
+      "alto": 630,
+      "fondo": "estilo",
+      "logo": "docs/marcas/tarkor/logos/tarkor-a-lockup-claro.svg",
+      "titulo": "El mundo sigue aunque tú te detengas.",
+      "subtitulo": "RPG narrativo de fantasía con IA local. En desarrollo, a la vista.",
+      "zona": "izquierda",
+      "color_texto": "#221c16",
+      "velo": "#f1e4d0:0.55"
+    },
+    {
+      "id": "og-bajo",
+      "ronda": "r5",
+      "ancho": 1200,
+      "alto": 630,
+      "fondo": "r5-og-bajo",
+      "logo": "docs/marcas/tarkor/logos/tarkor-a-lockup.svg",
+      "titulo": "El mundo sigue aunque tú te detengas.",
+      "subtitulo": "RPG narrativo de fantasía con IA local. En desarrollo, a la vista.",
+      "zona": "izquierda",
+      "color_texto": "#f1e4d0",
+      "velo": "#221c16:0.45"
+    },
+    {
+      "id": "cuadrado",
+      "ronda": "r5",
+      "ancho": 1080,
+      "alto": 1080,
+      "fondo": "r5-cuadrado",
+      "logo": "docs/marcas/tarkor/logos/tarkor-a-lockup-claro.svg",
+      "titulo": "Deja la partida. El mundo sigue.",
+      "subtitulo": "Juega en local. Nadie mira.",
+      "zona": "abajo",
+      "color_texto": "#221c16",
+      "velo": "#f1e4d0:0.55"
+    },
+    {
+      "id": "vertical",
+      "ronda": "r5",
+      "ancho": 1080,
+      "alto": 1350,
+      "fondo": "r5-vertical",
+      "logo": "docs/marcas/tarkor/logos/tarkor-a-lockup-claro.svg",
+      "titulo": "Lo que no hagas, lo hará otro.",
+      "subtitulo": "Un RPG narrativo donde el mundo sigue adelante aunque tú te detengas.",
+      "zona": "abajo",
+      "color_texto": "#221c16",
+      "velo": "#f1e4d0:0.55"
+    },
+    {
+      "id": "cabecera",
+      "ronda": "r5",
+      "ancho": 1500,
+      "alto": 500,
+      "fondo": "r5-cabecera",
+      "logo": "docs/marcas/tarkor/logos/tarkor-a-lockup-claro.svg",
+      "titulo": "Madera, hierro y cristal.",
+      "subtitulo": "Y un mundo que no te espera.",
+      "zona": "izquierda",
+      "color_texto": "#221c16",
+      "velo": "#f1e4d0:0.55"
+    },
+    {
+      "id": "avatar",
+      "ronda": "r5",
+      "ancho": 512,
+      "alto": 512,
+      "fondo": null,
+      "logo": "docs/marcas/tarkor/logos/tarkor-a.svg"
+    }
+  ]
+}

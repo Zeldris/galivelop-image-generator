@@ -1,0 +1,66 @@
+{
+  "fuente": "Inter",
+  "fuente_texto": "Inter",
+  "piezas": [
+    {
+      "id": "og",
+      "ronda": "r4",
+      "ancho": 1200,
+      "alto": 630,
+      "fondo": "estilo",
+      "logo": "docs/marcas/galivelop-workflow/logos/galivelop-workflow-a-lockup.svg",
+      "titulo": "Lo que no está subido no existe.",
+      "subtitulo": "Flujo de trabajo por relevos para agentes de IA, en abierto (MIT).",
+      "zona": "izquierda",
+      "color_texto": "#eef6fb",
+      "velo": "#0d1b2a:0"
+    },
+    {
+      "id": "cuadrado",
+      "ronda": "r5",
+      "ancho": 1080,
+      "alto": 1080,
+      "fondo": "r5-cuadrado",
+      "logo": "docs/marcas/galivelop-workflow/logos/galivelop-workflow-a-lockup.svg",
+      "titulo": "Cada sesión es un relevo.",
+      "subtitulo": "Commit, push, bitácora. Siguiente.",
+      "zona": "arriba",
+      "color_texto": "#eef6fb",
+      "velo": "#0d1b2a:0.3"
+    },
+    {
+      "id": "vertical",
+      "ronda": "r5",
+      "ancho": 1080,
+      "alto": 1350,
+      "fondo": "r5-vertical",
+      "logo": "docs/marcas/galivelop-workflow/logos/galivelop-workflow-a-lockup.svg",
+      "titulo": "Nada llega a main sin revisión.",
+      "subtitulo": "El humano decide y revisa; la IA ejecuta y propone.",
+      "zona": "arriba",
+      "color_texto": "#eef6fb",
+      "velo": "#0d1b2a:0.3"
+    },
+    {
+      "id": "cabecera",
+      "ronda": "r5",
+      "ancho": 1500,
+      "alto": 500,
+      "fondo": "r5-cabecera",
+      "logo": "docs/marcas/galivelop-workflow/logos/galivelop-workflow-a-lockup.svg",
+      "titulo": "¿Y si la sesión se corta ahora mismo?",
+      "subtitulo": "El estado vive en los archivos, no en la conversación.",
+      "zona": "izquierda",
+      "color_texto": "#eef6fb",
+      "velo": "#0d1b2a:0.3"
+    },
+    {
+      "id": "avatar",
+      "ronda": "r5",
+      "ancho": 512,
+      "alto": 512,
+      "fondo": null,
+      "logo": "docs/marcas/galivelop-workflow/logos/galivelop-workflow-a.svg"
+    }
+  ]
+}

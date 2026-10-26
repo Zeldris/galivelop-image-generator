@@ -122,6 +122,9 @@ Tras elegir **[P]**:
 | `examples/portal/prompts/r2-palabras.txt` | og, «Umbral»: escena nueva (umbral abierto del que sale luz celeste, tres puntos de color dentro), paleta en palabras | r2, descartada |
 | `examples/portal/prompts/r2-hex.txt` | misma escena, colores en hex | r2, **elegida** (ahora `estilo.txt`) |
 | `examples/portal/prompts/r2-material.txt` | misma escena, paleta en materiales y luz (pizarra pulida, cristal grueso, arcilla, esmalte) | r2, descartada |
+| `examples/portal/prompts/r5-cuadrado.txt` | square 1080×1080 (se genera a 1024×1024): el umbral y su luz en la mitad inferior, mitad superior libre | r5, pendiente |
+| `examples/portal/prompts/r5-vertical.txt` | portrait 1080×1350 (896×1152): misma escena, umbral en la mitad inferior, mitad superior libre | r5, pendiente |
+| `examples/portal/prompts/r5-cabecera.txt` | header 1500×500 (1536×512): umbral en el tercio derecho, dos tercios izquierdos libres | r5, pendiente |
 
 Plantilla para uno nuevo: `Wide abstract <pieza> on a deep midnight navy background. <motivo del Portal en la mitad derecha,
 en positivo>. A faint grid of tiny dots fades into the darkness. The left half is a calm, smooth, dark navy surface, nearly

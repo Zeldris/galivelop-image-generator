@@ -112,6 +112,10 @@ rotado ni con sombra o brillo; el texto del lockup se pasa a trazos con Cinzel.
 | `examples/tarkor/prompts/r2-palabras.txt` | r2, descartada. Escena nueva por la hipótesis 1 de la sección 7 (el og repetía la portada): agujas de roca de hierro al amanecer, tercio izquierdo de llanura en calima, hilo de humo y estandarte (hipótesis 3 y 4 de propina); estilo del preámbulo del juego (hipótesis 2, lo que pide la plantilla). Paleta en palabras, acento único arcilla |
 | `examples/tarkor/prompts/r2-hex.txt` | r2, **elegida** (ahora `estilo.txt`). Misma escena, colores en hex |
 | `examples/tarkor/prompts/r2-material.txt` | r2, descartada. Misma escena, paleta en materiales y luz (arcilla cocida, hierro forjado, hueso, calima) |
+| `examples/tarkor/prompts/r5-cuadrado.txt` | r5, pendiente. Misma escena en cuadrado 1080×1080 (se genera a 1024×1024): agujas y cielo en los dos tercios superiores, tercio inferior de llanura en calima libre |
+| `examples/tarkor/prompts/r5-vertical.txt` | r5, pendiente. Misma escena en vertical 1080×1350 (896×1152): agujas arriba, tercio inferior de llanura libre |
+| `examples/tarkor/prompts/r5-cabecera.txt` | r5, pendiente. Misma escena en cabecera 1500×500 (1536×512): llanura en la mitad izquierda, agujas en la derecha |
+| `examples/tarkor/prompts/r5-og-bajo.txt` | r5, pendiente. Misma escena del og (1280×640) con la luz más baja y más color (cielo #52626f, banda cálida en el horizonte, acento #E0703A fuerte), buscando YAVG 70-95 y SATAVG 15-30 (r2 dio ~155 y ~7) |
 
 Plantilla para uno nuevo: preámbulo de `mundo.json` (día o atardecer) → encuadre con la zona reservada («the left
 third is a calm, nearly plain stretch of haze») → sujeto y región con su luz (`regiones.*.luz`) → «Style: cinematic
