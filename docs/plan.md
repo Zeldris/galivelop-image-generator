@@ -464,6 +464,24 @@ Deck es comprobación manual de la persona, nunca un test**; lo que se apunta es
 La LUT (D31) solo se hornea si r2 muestra que la paleta no se respeta con palabras. Entre rondas no se cambia más de una
 cosa; una ronda que no cabe en una sesión se parte y lo hecho se apunta en el mismo registro.
 
+**Ajuste del 2026-10-26** (la persona delega en el agente y pide las pruebas de concepto de todo antes de la interfaz):
+
+- Las rondas van con los **siete proyectos** y como pruebas de concepto con `examples/pilot/`, no con `gimg`:
+  - el motor real llega en F2.1-F2.5;
+  - `compose` y `measure` se prueban con scripts del piloto que luego portan F2.8 y F2.9.
+- **r2:** tres variantes del estilo por proyecto, sacadas de su biblia (`docs/marcas/<p>/biblia.md`, sección 7). Las de
+  Portal y Tarkor corrigen el «no» de r1.
+- **r3:**
+  - borrador y definitivo con el modelo rápido en los siete;
+  - FLUX.3 solo en un proyecto, para contestar si el borrador anticipa la composición.
+
+  Las piezas publicables salen del modelo rápido mientras la licencia de FLUX.3 no esté confirmada.
+- **r4 y r5:**
+  - el logo elegido (`docs/marcas/README.md`), el texto y la medida, sobre los definitivos;
+  - r5 con 3-4 piezas por proyecto.
+- **Revisión:** todo resultado queda en `piloto/<ronda>/` con su página, y su registro va en
+  `docs/registros/contenido/`. La persona revisa allí y, sin veredicto suyo, decide el agente y lo apunta.
+
 ### Pasos de F2
 
 Pasos pequeños, cada uno con su commit y la bitácora al día; el orden lleva la primera ronda de contenido (F2.0) lo antes

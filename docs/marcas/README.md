@@ -7,16 +7,36 @@ biblia», y lo primero, varias propuestas de logo por app para elegir.
 
 | Proyecto | Biblia | Logos | Estado |
 |---|---|---|---|
-| Portal Galivelop (paraguas) | [portal/biblia.md](portal/biblia.md) | `portal/logos/` | propuestas |
-| toVeriAI | [toveriai/biblia.md](toveriai/biblia.md) | `toveriai/logos/` | propuestas |
-| Galivelop-workflow | [galivelop-workflow/biblia.md](galivelop-workflow/biblia.md) | `galivelop-workflow/logos/` | propuestas |
-| Tarkor | [tarkor/biblia.md](tarkor/biblia.md) | `tarkor/logos/` | propuestas |
-| galivelop-image-generator | [galivelop-image-generator/biblia.md](galivelop-image-generator/biblia.md) | `galivelop-image-generator/logos/` | propuestas |
-| galivelop-voice-generator | [galivelop-voice-generator/biblia.md](galivelop-voice-generator/biblia.md) | `galivelop-voice-generator/logos/` | propuestas |
-| galivelop-developer | [galivelop-developer/biblia.md](galivelop-developer/biblia.md) | `galivelop-developer/logos/` | propuestas |
+| Portal Galivelop (paraguas) | [portal/biblia.md](portal/biblia.md) | `portal/logos/` | elegido **a** (alt. b) |
+| toVeriAI | [toveriai/biblia.md](toveriai/biblia.md) | `toveriai/logos/` | elegido **a** (b ≤ 32 px) |
+| Galivelop-workflow | [galivelop-workflow/biblia.md](galivelop-workflow/biblia.md) | `galivelop-workflow/logos/` | elegido **a** |
+| Tarkor | [tarkor/biblia.md](tarkor/biblia.md) | `tarkor/logos/` | elegido **a**, a retocar |
+| galivelop-image-generator | [galivelop-image-generator/biblia.md](galivelop-image-generator/biblia.md) | `galivelop-image-generator/logos/` | elegido **b** |
+| galivelop-voice-generator | [galivelop-voice-generator/biblia.md](galivelop-voice-generator/biblia.md) | `galivelop-voice-generator/logos/` | elegido **a** |
+| galivelop-developer | [galivelop-developer/biblia.md](galivelop-developer/biblia.md) | `galivelop-developer/logos/` | elegido **d** |
 
 La página de revisión con todas las propuestas la genera `python3 examples/pilot/logos.py`, en `piloto/logos/index.html`
 (fuera de git).
+
+## Elegido por el agente (delegado, 2026-10-26)
+
+La persona dejó estas decisiones en manos del agente («lo dejo en tus manos»); valen hasta que ella diga otra cosa y se
+proponen a cada repo al cerrar F2 (`docs/propuestas/`).
+
+- **Logos** (tabla de arriba), con el porqué:
+  - Portal **a**: el logo de hoy simplificado, sin ruptura con lo publicado.
+  - toVeriAI **a**, fiel, y **b** para favicon y ≤ 32 px, donde el abanico de hojas se empasta.
+  - Galivelop-workflow **a**: el monograma «gw» que la persona ya eligió en el plan.
+  - Tarkor **a**, los Pilares Rotos, el emblema aprobado en el plan; se retoca para que no se lea como una M.
+  - Imágenes **b**: la más limpia a 16 px y la que cuenta «intentos y una elegida».
+  - Voces **a**: la más propia; la **d** es una onda genérica.
+  - Developer **d**: hace familia con «gw»; la **a** se lee como una «b».
+- **Tarkor:** acento de marca arcilla `#E0703A`; el cristal `#4aa8d8` queda dentro del juego y como secundario.
+- **Acentos de las herramientas:** imágenes `#8B5CF6`, voces `#D9467A` y developer `#2BB3A3`, como se propusieron.
+- **toVeriAI:**
+  - wordmark «toVeriAI», el del código del kit;
+  - rangos IMI del kit (0-39 / 40-69 / 70-100) en las piezas;
+  - la incoherencia con `marketing.html` y los PNG «VeriNews» se propone arreglar en su repo.
 
 ## Reglas de verdad
 

@@ -13,7 +13,7 @@
 | **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | F2.0: r1 hecha (sí a 5, no a portal y tarkor). Por pedido de la persona, biblia de estilo y 4 propuestas de logo SVG por proyecto, dibujadas con Fable: los 7 hechos en `docs/marcas/` (molde en su README); revisión en `piloto/logos/index.html` (`examples/pilot/logos.py`). Falta: la persona elige logos y decide paleta de Tarkor, acentos [P] y wordmark/IMI de toVeriAI; luego r2 (portal y tarkor desde su biblia) y F2.1. Presupuesto: 2 compactaciones (1 gastada) |
+| **Tarea en curso · `f2-motor`** | F2.0 pruebas de concepto, delegadas por la persona: biblias y logos hechos y elegidos por el agente (`docs/marcas/README.md`); ahora r2-r5 con los 7 proyectos (ajuste en `docs/plan.md`, plan de pruebas), resultados siempre en `piloto/`. Siguiente: prompts r2 desde las biblias (Fable), `ronda.sh r2` en la Deck, retoque de tarkor-a. Después: diseño de la interfaz (F4). Presupuesto: 4 compactaciones (1 gastada) |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.
