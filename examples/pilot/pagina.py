@@ -121,6 +121,8 @@ def main(argv):
         pagina_ronda(r)
     enlaces = ''.join(f'<li><a href="{esc(r.name)}/index.html">{esc(r.name)}</a> · '
                       f'{len(list(r.glob("*/intentos/*.png")))} imágenes</li>' for r in rondas)
+    if (piloto / 'logos' / 'index.html').exists():
+        enlaces += '<li><a href="logos/index.html">Propuestas de logo</a> (examples/pilot/logos.py)</li>'
     (piloto / 'index.html').write_text(
         f'<!doctype html><html lang="es"><meta charset="utf-8"><title>Piloto de contenido</title><style>{CSS}</style>'
         f'<body><h1>Piloto de contenido</h1><ul>{enlaces}</ul></body></html>')

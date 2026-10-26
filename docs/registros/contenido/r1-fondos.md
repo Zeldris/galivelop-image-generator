@@ -23,15 +23,16 @@ Ninguna pieza se acercó al umbral del vigilante (1500 MB) ni al de arranque (70
 
 | Proyecto | s3 | s4 | Lo que se ve |
 |---|---|---|---|
-| galivelop-developer | ? | ? | Una línea fina con un anillo verde: limpio pero casi vacío; la línea cruza la mitad izquierda. |
-| galivelop-image-generator | ? | ? | Marcos de cristal violeta en fila, a la derecha; mitad izquierda limpia. De las mejores. |
-| galivelop-voice-generator | ? | ? | Onda rosa y anillos concéntricos, a la derecha; en s4 una estela entra hacia el centro. Bien. |
-| galivelop-workflow | ? | ? | Las líneas invaden la mitad izquierda y «capsule» salió como una píldora. No vale tal cual. |
-| portal | ? | ? | Orbe celeste con puntos de colores: limpio pero genérico, no dice «portal». |
-| tarkor | ? | ? | Pilares de piedra con puentes de cuerda al atardecer, polvo; cielo libre a la izquierda. s4 más épica. |
-| toveriai | ? | ? | Bandas de acuarela vino→ocre→verde sobre papel, tercio superior libre. El vino tira a magenta. |
+| galivelop-developer | sí | sí | Una línea fina con un anillo verde: limpio pero casi vacío; la línea cruza la mitad izquierda. |
+| galivelop-image-generator | sí | sí | Marcos de cristal violeta en fila, a la derecha; mitad izquierda limpia. De las mejores. |
+| galivelop-voice-generator | sí | sí | Onda rosa y anillos concéntricos, a la derecha; en s4 una estela entra hacia el centro. Bien. |
+| galivelop-workflow | sí | sí | Las líneas invaden la mitad izquierda y «capsule» salió como una píldora. No vale tal cual. |
+| portal | no | no | Orbe celeste con puntos de colores: limpio pero genérico, no dice «portal». |
+| tarkor | no | no | Pilares de piedra con puentes de cuerda al atardecer, polvo; cielo libre a la izquierda. s4 más épica. |
+| toveriai | sí | sí | Bandas de acuarela vino→ocre→verde sobre papel, tercio superior libre. El vino tira a magenta. |
 
-`?` = pendiente del sí/no de la persona.
+Veredicto de la persona (2026-10-26), por proyecto y no por semilla: sí a todos menos portal y tarkor. Workflow pasa
+pese a la nota de arriba.
 
 ## Palancas para r2 (una por proyecto, misma semilla)
 
@@ -44,4 +45,7 @@ Ninguna pieza se acercó al umbral del vigilante (1500 MB) ni al de arranque (70
 
 ## Veredicto
 
-Técnico: sí, 14/14 con tiempos estables. Estético: pendiente de la persona.
+Técnico: sí, 14/14 con tiempos estables. Estético: sí a cinco proyectos; no a portal y tarkor.
+
+Antes de r2, la persona pide una biblia de estilo por proyecto (con el kit visual de toVeriAI como molde) y propuestas
+de logo: los fondos de portal y tarkor se rehacen desde su biblia.

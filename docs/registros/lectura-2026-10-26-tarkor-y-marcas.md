@@ -208,3 +208,130 @@ galivelop-voice-generator (`claude/voces-f1`, 15 commits sobre `main`) y galivel
   - Sus límites los imponen scripts.
   - Lo revisa Claude o la persona antes del merge: el humano decide.
 - **Metáfora:** el tercer relevo y una rama local acotada que vuelve al tronco tras la revisión (`docs/adr/0002-tercer-relevo.md`).
+
+## 4. Ampliación para la biblia de estilo y los logos (2026-10-26, tarde)
+
+Dos subagentes `Explore` más, sobre `origin/main` recién traído: VeriNews_AI `02ac654`, Portal-Galivelop `aa76b34`,
+Galivelop-workflow `56212e8`, World-Maker-Fantasy `73965f62`. Lo que ya está arriba no se repite.
+
+### El molde: `VeriNews_AI/Documentacion/v1.1/kit-visual-ia.html`
+
+17 secciones en 4 grupos, todas con valores literales sacados del código (hex, px, radios) y el porqué de cada regla:
+
+- **Identidad de marca:**
+  1. Paleta: base, acento con tonos, neutros, combinaciones por contexto, sombras, reglas y qué evitar.
+  2. Tipografía: pareja, pesos, escala por token y tracking.
+  3. Logotipo: wordmark claro y oscuro, margen libre, tamaño mínimo, símbolo y cómo conviven los dos.
+  4. Iconografía y forma: grosor de línea, radios y lenguaje de forma.
+- **Voz y sistema:**
+  5. Tono: qué evitar y el campo semántico.
+  6. Color semántico (el IMI).
+  7. Frases reutilizables: lema, variaciones, ganchos y cierres.
+- **Prompts de generación (12):**
+  8. Redes.
+  9. Banners.
+  10. Iconografía conceptual.
+  11. Mockups.
+  12. Miniaturas.
+  13. Abstracto.
+
+  Cada prompt lleva formato en px, fondo en hex, tipografía, posición de cada cosa, posición del logo, mood y lista negativa.
+- **Prompts por plataforma:**
+  14. Instagram.
+  15. LinkedIn.
+  16. X.
+- **Uso:**
+  17. Copiar y pegar, qué reforzar si falla el tono, adjuntar capturas reales y «el código manda» (si cambia la marca,
+    primero el código y luego el kit).
+
+Formatos del kit:
+
+| Red | Formato y medida |
+|---|---|
+| Instagram | Feed 1080×1080 o 1080×1350; Reel 1080×1920 con el tercio inferior libre |
+| LinkedIn | 1200×1200 o 1200×628; vídeo 1280×720 |
+| X | 1200×675 |
+| Otros | Banners 1920×640 y 1600×600 |
+
+### toVeriAI: lo que añade el kit
+
+- **Paleta:**
+  - Fondo y tinta: borde `#E8E4DF`, línea `#D8D4CF`, gris `#999999`, borde oscuro `#2A2A2A`.
+  - Verdes: pálido `#E8F4EE`.
+  - Reglas: pieza oscura `#1A1A1A` con texto blanco; en piezas genéricas el único acento es `#2D6A4F`.
+  - Rangos IMI del kit: 0-39, 40-69 y 70-100. `marketing.html` dice 0-49, 50-74 y 75-100: **incoherencia del repo**.
+- **Tipografía:**
+  - Cormorant Garamond 300 en titulares y cifras, 400 en el wordmark; DM Sans 400 y 500. Nunca bold.
+  - Eyebrows con tracking 0,28-0,32 em.
+- **Logo:**
+  - Margen libre: la altura de la «V». Altura mínima del wordmark: ~18 px; por debajo, el símbolo.
+  - El símbolo va con el wordmark (lockup) o solo en una esquina, nunca suelto en el centro.
+  - Relleno plano, sin degradados ni 3D. Motivo de apoyo: el anillo de score.
+- **El símbolo real** (`frontend/src/assets/logo.png` 2190×1980, `logo-vertical.png` 2230×750 —en realidad horizontal—,
+  `frontend/public/favicon.png` 512×512), simétrico:
+  - Dos barras anchas y planas de «V» en verde salvia (~`#5F7C6B`), con las puntas de arriba cortadas en diagonal, que se
+    unen abajo en una punta.
+  - Dentro, 4 hojas curvas afiladas en dorado (~`#B08D57`), dos por lado; la exterior es más larga. Nacen juntas abajo y se
+    abren en abanico por encima de las barras.
+  - Encima, 12 puntos: 3 dorados grandes en triángulo, 1 dorado mediano en el centro y 8 verdes pequeños en filas de 2, 2,
+    2 y 1.
+- **Discrepancias del repo:**
+  - El wordmark de los PNG es «VeriNews» («Veri» gris `#4A4A4A`, «News» verde); el del kit, «to·Veri·AI» con «Veri» en
+    verde.
+  - Los colores del PNG no son exactamente los hex del kit.
+  - `favicon.svg` (morado) es un archivo huérfano.
+- **Prohibido en imagen**, además de lo de arriba: stock photos, sellos FAKE, tijeras, escudos con tick, flechas rojas,
+  emojis, clickbait, glassmorphism y estética tech azul.
+
+### Galivelop-workflow: `skills/gw-media-content/`
+
+- Propone hasta 10 posts por proyecto, de 16 tipos, y no publica nunca.
+- `reglas.json` fija los límites por red (X 280 caracteres, URL 23...) y `nota.md` admite una `Palette` por proyecto.
+- Renderiza HTML con Playwright a WebP.
+- No dice nada de logos ni de cómo hacer una biblia; sirve para formatos y medidas.
+
+### Tarkor (WMF): identidad de partida
+
+- **Marca:** no hay logo ni emblema. `frontend/public/favicon.svg` es el rayo violeta de Vite.
+  - El título sale como texto pequeño en mayúsculas con tracking amplio, filetes `accent-hairline` y un rombo `.gem` encima
+    (`frontend/src/pages/Home.tsx:28`). Es lo más parecido a un lockup que tiene.
+- **Mundo:**
+  - El mundo se llama Helek Sirik («Origen Azul») y se juega en el continente Berig.
+  - «Tarkor» es también la última y más sabia de las 13 Semillas de Madre, que se fue y volvió «frío y oscuro», y de ella
+    nace la magia salvaje (`docs/rpgtarkor/lore-mundo/genesis.md`).
+  - **Reservado, no se muestra ni se resuelve:** qué sabe Tarkor, la Entidad, la luz morada, el Reino Nabierus, la Ciudad
+    Hundida, el Archivo Cegado y el muro de obsidiana.
+  - El símbolo puede insinuar la ambigüedad (fidelidad y ruptura), sin presentar a Tarkor como villano ni como héroe.
+- **Tono:**
+  - Épico y trágico, con letalidad media.
+  - Fantasía con causa física visible; mundo a medio vaciar, artesanal (madera de Telda, piel, hueso, piedra, hierro
+    negro).
+  - Sin humanos ni pólvora. **Sin luna**: el cielo tiene un cinturón de polvo de cristal perlado.
+  - Ética: privado por diseño (sin cuentas ni telemetría), «el motor decide, la IA narra» y la Steam Deck como objetivo.
+  - Voz de difusión: cercana, concreta y honesta, sin vender (`docs/difusion/guia-canales.md`).
+- **Motivos con potencial de símbolo:** cristal azul y cinturón perlado, rombo-gema con filetes, Pilares Rotos con puentes
+  (la portada del Portal), Agujas Imán, crestas de arena imán, tótems orcos, empalizada de troncos, obelisco goirnte,
+  remaches y hierro negro.
+- **Vetos:** luna, humanos, pólvora, Vaelira, todo lo reservado, texto, y las palabras moon, crystal dust, heavens, scar,
+  wound y gash.
+- **Interfaz** (`frontend/src/index.css`): identidad «madera + hierro» con el cristal como acento (`docs/producto/02-decisiones.md`
+  nº 6).
+  - Madera: 950 `#1b130c`, 900 `#241a10`, 800 `#332415`, 700 `#46311d`, 600 `#5c4126`, 500 `#7a5934`, 400 `#a3814f`,
+    300 `#c9a877`, 200 `#e3cba8`, 100 `#f1e4d0`.
+  - Hierro: `#0e0b08`, `#171310`, `#221c16`.
+  - Cristal: 300 `#a8d8f0`, 400 `#7bc4e8`, 500 `#4aa8d8`, 600 `#3488b8`.
+  - Acero: `#b0bec8`, `#8a9aa8`, `#6b7d8c`, `#52626f`. Musgo: `#8fae6a`.
+  - Tipografías: Cinzel en títulos (OFL, empaquetada en `frontend/src/assets/fonts/`), Inter en texto y Cascadia Code en
+    datos.
+  - **El acento del juego (cristal `#4aa8d8`) no coincide con el del Portal (`#E0703A`).**
+- **Lema público:** «Un RPG narrativo donde el mundo sigue adelante aunque tú te detengas.» Creador: Álvaro García Graña.
+
+### Portal: lo que añade
+
+- `public/marca/gv-logo.svg` (128×128):
+  - Fondo `rect rx=30` con `linearGradient` diagonal de `#2BB3EA` a `#0083C1`.
+  - Trazo blanco de 12, con remates y uniones redondeados.
+  - G: `M55.4 45.6 A24 24 0 1 0 64 64` y `M50 64 H80`. V: `M71 40 L89.5 88 L108 40`.
+  - `Logo.tsx`: icono + «Gali**velop**» en Sora 700, tracking -0,03 em, «Gali» en celeste.
+- Tema oscuro: alterno `#081826` y texto-3 `#6f8799`. Claro: superficie `#fff`, borde `#d6e4ee` y texto-2 `#43586a`.
+- Títulos con tracking -0,02 em. Gali(cia) + Develop; gl obligatorio en cada texto.
