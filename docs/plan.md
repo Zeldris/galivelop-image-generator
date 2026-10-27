@@ -384,7 +384,7 @@ repite: el script la lee de `engine_sdcpp.RELEASE` y un test casa el hash corto 
 (2) *Catálogo:* `installDefault: true` (esquema, opcional) marca lo que `instalar.sh` baja sin `--with` y lo que `doctor` exige (hoy `flux2-klein-4b-q8`; así el
 conjunto rápido vive solo en `gimg/models.json`). `GIMG_CATALOG` apunta `load_catalog()` a otro archivo (hueco de test: el script y el doctor lo leen en procesos
 propios). (3) *`instalar.sh`:* las carpetas salen de `gimg.paths` por `python3 -c` (sin reimplementar el XDG); cada archivo va a `<archivo>.part` con `curl -fL -C -`,
-se comprueba con `sha256sum -c` y solo entonces se renombra; uno que ya cuadra no se toca, uno que no cuadra se sustituye (y se dice); con `--models-from` se busca
+se comprueba con `sha256sum -c` (o `shasum -a 256 -c`) y solo entonces se renombra (una descarga con suma errónea se borra); uno que ya cuadra no se toca, uno que no cuadra se sustituye al final, nunca antes de tener el nuevo (y se dice); el motor viejo se aparta a `.old.<pid>` hasta mover el nuevo; con `--models-from` se busca
 `<carpeta>/<nombre>` y `<carpeta>/<tipo>/<nombre>`, se enlaza solo si la suma cuadra y si no se descarga; `--dry-run` no hashea (solo mira si el destino existe) ni
 llama a `curl`. Mensajes es/en según `GIMG_LANG`/`LANG`. No hay `--skip-engine`: los tests usan un motor ya instalado (marca) y un `curl` falso. (4) *`gimg doctor`:*
 `doctor.run(verify, ollama_url)` devuelve `Check(id, status, …)` con la orden que arregla cada cosa; lo del motor real (binario, `libggml*`, modelo por defecto, Ollama

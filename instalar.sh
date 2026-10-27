@@ -10,7 +10,7 @@
 #   --models-from <dir>    enlaza los archivos ya presentes, tras comprobar su sha256 / links files already there
 #   --dry-run              imprime lo que haría, sin descargar ni escribir nada / prints what it would do
 #
-# Solo herramientas comunes: curl, sha256sum, unzip y python3 (3.10+). Las carpetas salen de `gimg.paths`
+# Solo herramientas comunes: curl, sha256sum (o shasum), unzip y python3 (3.10+). Las carpetas salen de `gimg.paths`
 # (GIMG_DATA_HOME, GIMG_CONFIG_HOME, GIMG_MODELS_HOME, XDG_*): este script no las reimplementa.
 set -euo pipefail
 
@@ -78,13 +78,20 @@ if [ -n "$MODELS_FROM" ]; then
 fi
 
 WORK=""
+OLD_ENGINE=""
 cleanup() {
   if [ -n "$WORK" ]; then rm -rf "$WORK"; fi
+  if [ -n "$OLD_ENGINE" ]; then rm -rf "$OLD_ENGINE"; fi
 }
 trap cleanup EXIT
 
+SHA_TOOL=""
 sha_ok() { # sha_ok <archivo> <sha256>
-  printf '%s  %s\n' "$2" "$1" | sha256sum -c --status - 2>/dev/null
+  if [ "$SHA_TOOL" = sha256sum ]; then
+    printf '%s  %s\n' "$2" "$1" | sha256sum -c --status - 2>/dev/null
+  else
+    printf '%s  %s\n' "$2" "$1" | shasum -a 256 -c --status 2>/dev/null
+  fi
 }
 
 # ---- 1. Python >= 3.10 -------------------------------------------------------------------------------------
@@ -94,6 +101,15 @@ if ! command -v python3 >/dev/null 2>&1 || ! python3 -c 'import sys; sys.exit(0 
 fi
 say "[1/6] Python $(python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])'): bien" \
   "[1/6] Python $(python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])'): ok"
+
+if command -v sha256sum >/dev/null 2>&1; then
+  SHA_TOOL=sha256sum
+elif command -v shasum >/dev/null 2>&1; then
+  SHA_TOOL=shasum
+else
+  die "falta sha256sum (o shasum); instala coreutils (o perl) con el gestor de tu sistema" \
+    "sha256sum (or shasum) is missing; install coreutils (or perl) with your system package manager"
+fi
 
 DATA=$(py -c 'from gimg import paths; print(paths.data_dir())')
 CONFIG=$(py -c 'from gimg import paths; print(paths.config_dir())')
@@ -155,8 +171,19 @@ else
   chmod 755 "$WORK/x/sd-cli"
   if [ -f "$WORK/x/sd-server" ]; then chmod 755 "$WORK/x/sd-server"; fi
   printf '%s\n' "$SD_SHA" >"$WORK/x/.zip-sha256"
-  rm -rf "$ENGINE_DIR"
-  mv "$WORK/x" "$ENGINE_DIR"
+  if [ -e "$ENGINE_DIR" ] || [ -L "$ENGINE_DIR" ]; then
+    OLD_ENGINE="$ENGINE_DIR.old.$$"
+    mv "$ENGINE_DIR" "$OLD_ENGINE"
+    if ! mv "$WORK/x" "$ENGINE_DIR"; then
+      mv "$OLD_ENGINE" "$ENGINE_DIR" && OLD_ENGINE=""
+      die "no se pudo mover el motor nuevo a $ENGINE_DIR; se ha dejado el anterior" \
+        "could not move the new engine to $ENGINE_DIR; the previous one was kept"
+    fi
+    rm -rf "$OLD_ENGINE"
+    OLD_ENGINE=""
+  else
+    mv "$WORK/x" "$ENGINE_DIR"
+  fi
   say "      Motor instalado en $ENGINE_DIR" "      Engine installed in $ENGINE_DIR"
 fi
 
@@ -211,7 +238,6 @@ install_file() { # install_file <id> <tipo> <nombre> <url> <sha256> <mb>
   if [ -e "$dest" ] || [ -L "$dest" ]; then
     say "      $id/$kind: $name no cuadra con el catálogo; se sustituye" \
       "      $id/$kind: $name does not match the catalog; replacing it"
-    rm -f "$dest"
   fi
   mkdir -p "$MODELS/$kind"
   if [ -n "$MODELS_FROM" ]; then
@@ -219,7 +245,8 @@ install_file() { # install_file <id> <tipo> <nombre> <url> <sha256> <mb>
   fi
   if [ -n "$src" ]; then
     if sha_ok "$src" "$sha"; then
-      ln -s "$src" "$dest"
+      ln -sf "$src" "$dest.part"
+      mv -f "$dest.part" "$dest"
       say "      $id/$kind: enlazado $src" "      $id/$kind: linked $src"
       return 0
     fi
@@ -228,11 +255,15 @@ install_file() { # install_file <id> <tipo> <nombre> <url> <sha256> <mb>
   fi
   command -v curl >/dev/null 2>&1 || die "falta curl" "curl is missing"
   say "      $id/$kind: descargando $name (${mb} MB)..." "      $id/$kind: downloading $name (${mb} MB)..."
-  curl -fL -C - --retry 3 -o "$dest.part" "$url"
-  sha_ok "$dest.part" "$sha" || die \
-    "el sha256 de $name no cuadra; borra $dest.part y repite (o revisa la URL del catálogo)" \
-    "the sha256 of $name does not match; delete $dest.part and retry (or check the catalog URL)"
-  mv "$dest.part" "$dest"
+  curl -fL -C - --retry 3 -o "$dest.part" "$url" || die \
+    "falló la descarga de $name; lo que había en $dest no se ha tocado, repite para reanudarla" \
+    "the download of $name failed; whatever was at $dest is untouched, retry to resume it"
+  if ! sha_ok "$dest.part" "$sha"; then
+    rm -f "$dest.part"
+    die "el sha256 de $name no cuadra; se ha borrado la descarga, repite (o revisa la URL del catálogo)" \
+      "the sha256 of $name does not match; the download was deleted, retry (or check the catalog URL)"
+  fi
+  mv -f "$dest.part" "$dest"
 }
 
 say "[4/6] Modelos en $MODELS" "[4/6] Models in $MODELS"
