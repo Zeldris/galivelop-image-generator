@@ -159,7 +159,8 @@ def compaction_budget(root, branch):
         text = (root / config.load(root)["log"]).read_text(encoding="utf-8", errors="replace")
     except (config.ConfigError, OSError, KeyError):
         return None
-    match = re.search(r"(\d+)\s+compact", row_for_branch(text, branch) or "", re.IGNORECASE)
+    match = re.search(r"(?:presupuesto|budget)\s*:?\s*(\d+)\s+compact", row_for_branch(text, branch) or "",
+                      re.IGNORECASE)
     return int(match.group(1)) if match else None
 
 

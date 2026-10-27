@@ -13,7 +13,7 @@
 | **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | F2.0 pruebas de concepto e interfaz F4 en propuesta (13 decisiones confirmadas). Antes de `main`: fase 1 hecha (`739f9c2`); fase 2 hecha (opt-tokens y retro `docs/registros/retro-2026-10-27-f2-0.md`, aprobadas y aplicadas). Siguiente: fase 3, revisión solo de los commits de la fase 2 y `revisado.sh`; CI con `gh` (la persona hace `gh auth login`). Presupuesto: 4 compactaciones (5 gastadas) |
+| **Tarea en curso · `f2-motor`** | F2.0 pruebas de concepto e interfaz F4 en propuesta (13 decisiones confirmadas). Antes de `main`: fases 1, 2 y 3 hechas (arreglos de la revisión de la fase 2 y marca con `revisado.sh`). Falta: CI en verde (la persona hace `! ~/.local/bin/gh auth login`; luego `~/.local/bin/gh run list --branch f2-motor`) y su confirmación para ir a `main`. Presupuesto: 4 compactaciones (5 gastadas) |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.
@@ -48,6 +48,7 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
   `pagina.medidas` ni `ronda.sh r5`; la prueba del lockup no cubre la rama en que manda el ancho de la columna.
 - **Aviso de presupuesto de compactaciones (cambio local del flujo):** `.claude/gw/scripts/recuperar.py` gana
   `compaction_budget`; proponerlo al repo de Galivelop-workflow para que una actualización del flujo no lo pise.
+- **Leves de la revisión de la fase 2 (`cf1191f`, `0ebd00c`; no se revisan más en este PR):** el presupuesto se compara con las compactaciones de la sesión, que vuelven a 0 tras un `/clear` (no con las «gastadas» de la fila); `compaction_budget` vuelve a cargar la configuración y la bitácora, y solo lee la fila con `logRows`; el lint de shell da falso positivo con un comentario al final de una línea que nombre lo prohibido; `leer-entero` no cubre `cat docs/plan.md` por Bash.
 - **Leves de la revisión de `bb7719a` (piloto, fase 1 antes de `main`; no se revisan más en este PR):** `piezas.pieza`
   mide el fondo limpio con `medir.medir` y tira su `signalstats` (basta `contraste_zona`); el velo repite `rect` en las
   cuatro zonas y parchea `offset="0.55"` con `replace`; `recorte_cover` es código muerto; sin tests de `logos.py`,
