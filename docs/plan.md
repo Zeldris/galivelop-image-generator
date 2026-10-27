@@ -442,6 +442,70 @@ sin generar. Las fuentes las resuelve fontconfig en la máquina (Sora, Inter, Co
 `~/.local/share/fonts`, lo dice `gimg doctor`); si `rsvg-convert` acepta `@font-face` con `url()` local *(suposición, comprobar)* la
 plantilla puede llevar las suyas.
 
+### F2.8 en detalle (composición, D28)
+
+Tres encargos en serie (E1 núcleo, E2 integración, E3 frente); cada uno deja el check en verde y sus locales es/en.
+
+**Decisiones de F2.8** (tomadas por el agente con la autorización de la bitácora; la persona puede revertirlas):
+1. `piezas.json` de developer, image-generator y voice-generator (`cuadrado`, `vertical`, `cabecera`): se decide en F2.10, cuando los ejemplos ganen `compose`; en F2.8 los ejemplos no cambian.
+2. `avatar`/`icon` (solo composición, sin modelo) quedan fuera de F2.8 (F2.10/F2.12): hoy `width`/`height` son obligatorios y todo pasa por la cola.
+3. `examples/<proyecto>/` no gana `compose`, plantillas ni logos en F2.8; en F2.8 solo la plantilla mínima de los tests. Ojo para F2.10: `piezas.json` apunta a `docs/marcas/...` fuera de la raíz de cada ejemplo (D25 lo rechaza); los logos tendrían que copiarse dentro.
+4. Sin partir líneas: sustitución literal, una línea por campo (una plantilla puede usar `title1`/`title2`). Un `compose.wrap` declarado se decide en F2.10 con r4.
+5. `gimg compose --text k=v` se guarda en el pedido (`orders.set_text`): los intentos siguientes y la galería usan el texto nuevo.
+6. Fallo de composición (sin ffmpeg, plantilla rota…): el intento queda `done` con la cruda como `image`, `composeError={code, params}` y no elegible (`order.choose_uncomposed`); nunca se pierde la generación. `gimg compose` lo arregla después.
+7. `gimg doctor`: fuentes que faltan son `warn`, no `fail`.
+8. `lut` no entra en el esquema (es de F2.11; sin aplicarse sería un dato ignorado en silencio).
+9. Los borradores también se componen (baratos, sirven de vista previa); siguen sin poder elegirse.
+10. `{{logo}}` se sustituye por un data URI `data:image/svg+xml;base64,…` (como `componer.py`): rsvg no resuelve rutas fuera de la carpeta del SVG y el SVG sustituido se escribe en una carpeta temporal vacía, así rsvg no lee nada más del disco (D25 gratis; sin `--unlimited`).
+
+**1. Flujo**
+- Worker (`gimg/worker.py::_generate`): el motor escribe `.pending-<e>.png` y el chunk `gimg` se añade como hoy. Luego `plan = compose.plan_for(profile_cfg, *png.size(tmp))` con el perfil leído en ese momento (como los límites).
+  - `plan is None` (sin `compose` y sin destino, o destino igual al tamaño de la cruda): todo sigue igual (`q<e>.png`, sin cruda aparte, sin ffmpeg). r1 y los tests actuales no cambian.
+  - Con plan: (a) `os.replace(tmp, q<e>.raw.png)` (la cruda a salvo antes que nada); (b) `compose.render(...)` → `q<e>.png`; (c) `add_attempt` con `raw="attempts/q<e>.raw.png"` y `compose={template, logo, fit, targetWidth, targetHeight, text}`.
+  - Si `render` lanza `GimgError` `compose.*`: intento con `image=attempts/q<e>.raw.png` y `composeError`, entrada `done`, línea `worker.compose_failed` por stderr.
+  - `state["final"]` limpia también la cruda si falla `add_attempt`.
+- Sin `compose` pero con destino distinto: la cruda se escala con ffmpeg (fit `cover`). Sin ffmpeg, mismo camino de `composeError` (`compose.tool_missing`).
+- Registro: quitar `EngineResult.compose` (no es cosa del motor; ajustar `tests/test_progress.py`). `log.record_for(..., compose=None, compose_error=None)` escribe `app.image.compose` (ruta de la plantilla) y `app.image.compose_error` (código).
+- Intento (`orders.add_attempt`): guarda `raw`, `compose` y `composeError` solo si tienen el tipo correcto. Nuevas: `orders.raw_image_name(entry_id)`; `orders.raw_image(project, key, profile, attempt) -> Path` (`attempt["raw"]` o `image`); `orders.set_composed(project, key, profile, attempt_id, compose)` con cerrojo: pone `image` en la compuesta, guarda `raw` y `compose`, quita `composeError`.
+- Delivery: entrega `image` (ya la compuesta), sin cambio; el manifiesto copia `compose` si existe.
+- `queue._clean_pending` borra también `.pending-<e>.compose.png`.
+- Carpeta temporal: `tempfile.TemporaryDirectory(dir=<attempts>, prefix=".compose-")` (mismo sistema de archivos para `os.replace`).
+- Chunk: `render` lee el `gimg` de la cruda (`png.read_text_chunks`), añade `"compose": {...}` y lo escribe en la compuesta con `png.add_text_chunk`; si no puede, línea por stderr y sigue. ffmpeg con `-map_metadata -1`.
+
+**2. Esquemas** (el validador propio admite `additionalProperties` como esquema, `propertyNames`, `maxLength`, `maxItems`, `enum`, `pattern` con lookahead, `dependentRequired`, `$ref` con otras claves; no `multipleOf`, `uniqueItems`, `not`, `maxProperties`, `anyOf`).
+- `project-config.schema.json`, `$defs/profile`: `targetWidth`/`targetHeight` enteros 16-4096 con `dependentRequired` en ambos sentidos; `compose` con `additionalProperties:false`, `required:[template]`: `template` y `logo` → `$defs/svgPath` (relativePath + `\.svg$`); `fields`: array de `fieldName` (`^(?!logo$)[a-z][a-zA-Z0-9]*$`, maxLength 40), maxItems 10; `fonts`: array de cadenas 1-100 sin controles, maxItems 10; `fit`: enum `cover|contain`, por defecto `cover`.
+- `order.schema.json`: `text` objeto con `propertyNames` = `fieldName` y `additionalProperties: {type:string, maxLength:200, pattern:"^[^\\u0000-\\u001f\\u007f]*$"}`.
+- Cruce en `orders.submit`: las claves de `text` tienen que estar en `compose.fields` del perfil; si no, `order.text_unknown_field` {field, profile, fields}. `submit` guarda `text` (`{}` si falta); `attempt_specs`, `queue.enqueue` y la entrada lo copian (`.get` en entradas antiguas). Un campo que falta se sustituye por `""`.
+
+**3. `gimg/compose.py`** (stdlib; errores `GimgError("compose.*")`)
+- `TIMEOUT_S = 120`, `MAX_SVG_BYTES = 5_000_000`.
+- `target_size(profile_cfg) -> (w, h)`; `plan_for(profile_cfg, raw_w, raw_h) -> dict | None`.
+- `fit_geometry(src_w, src_h, dst_w, dst_h, fit) -> (scale_w, scale_h, x, y)`, enteros. cover: escala por el lado que manda con redondeo hacia arriba y recorte centrado `(sw-W)//2`; og 1280×640→1200×630 da `(1260,630,30,0)`; wide 1280×768→1200×675 da `(1200,720,0,22)`; square 1024→1080 da `(1080,1080,0,0)`. contain: escala hacia abajo y `pad` centrado.
+- `xml_escape(s)`: `& < > " '`. `substitute(svg_text, values) -> str`: una sola pasada con `re.sub(r"\{\{([A-Za-z][A-Za-z0-9]*)\}\}")` (un valor que contenga `{{logo}}` no se vuelve a expandir); hueco desconocido → `compose.field_unknown` {field}.
+- `resolve_assets(project_root, compose_cfg) -> (template_path, logo_path|None)`: `paths.inside` + `is_file` (`compose.template_missing`/`compose.logo_missing` {path}; los `path.*` de `PathError` ya existen) + tope (`compose.svg_too_big`). Plantilla con `{{logo}}` sin `compose.logo` → `compose.no_logo`.
+- `rsvg_argv(svg, out, w, h)` = `["rsvg-convert","-w",W,"-h",H,"-o",out,svg]`.
+- `ffmpeg_argv(raw, layer|None, out, geom, fit)` = `["ffmpeg","-nostdin","-hide_banner","-loglevel","error","-y","-i",raw,("-i",layer),"-filter_complex",F,"-map","[out]","-frames:v","1","-update","1","-map_metadata","-1",out]`. F cover: `[0:v]scale=SW:SH:flags=lanczos,crop=W:H:X:Y[b];[b][1:v]overlay=0:0:format=auto,format=rgb24[out]`; contain: `pad=W:H:X:Y:color=black@0` y `format=rgba` (la plantilla pinta las bandas); sin capa, lo mismo sin overlay.
+- `_run(argv, tool)`: `subprocess.run(capture_output, stdin=DEVNULL, timeout=TIMEOUT_S)`; sin herramienta → `compose.tool_missing` {tool}; por tiempo → `compose.timeout` {tool, seconds}; salida ≠ 0 → `compose.tool_failed` {tool, reason: última línea de stderr ≤ 300}.
+- `render(project, profile_cfg, raw_path, out_path, text) -> dict` (la info `compose` del intento): `resolve_assets`, `substitute`, rsvg a la capa, ffmpeg, chunk, `os.replace`.
+- `recompose(project, key, profile, attempt_id=None, text=None) -> dict` (E3): intento por defecto el elegido, si no el último (id más alto); sin `raw` (anterior a F2.8) copia `image` a `<stem>.raw.png`; con `text`, `orders.set_text` lo fusiona en el pedido; `render`, `orders.set_composed`, y si es el elegido `delivery.choose(...)` del mismo id (vuelve a entregar y actualiza el manifiesto). Perfil sin nada que hacer → `compose.nothing_to_do` {profile}.
+- `png.size(path) -> (w, h)` nuevo en `gimg/png.py`: lee IHDR o lanza `png.invalid`.
+
+**4. CLI** (`gimg/cli.py`, E3): `leaf(top, "compose", "cli.cmd.compose", project, okey, oprofile, arg("attempt", ..., nargs="?", type=int), opt("--text", "cli.arg.text_kv", action="append", default=[]))`. `k=v` se parte por el primer `=`; mal formado → `cli.text_invalid` {value}. `--json` devuelve el intento. Claves: `cli.cmd.compose`, `cli.arg.attempt_optional`, `cli.arg.text_kv`, `cli.out.composed` {id, image}, `cli.out.composed_delivered` {id, path}, `cli.out.compose_error_mark` (en `order show`), `error.cli.text_invalid`, `error.order.text_unknown_field`, `error.order.choose_uncomposed`, `error.compose.*`, `worker.compose_failed`.
+
+**5. `gimg doctor`** (E3): ffmpeg y rsvg-convert ya los comprueba `_tools()`. Añadir `_fonts()` tras `_tools` en `doctor.run`: recorre `projects.list_projects()`, `load_config` de cada uno (si falla, `warn doctor.fonts.project_error` {project, message}); junta los `compose.fonts`; una sola llamada `fc-list --format '%{family}\n'`, familias separadas por coma, comparación sin mayúsculas. Falta una → `warn doctor.fonts.missing` {font, projects} con `doctor.fix.fonts` (copiar a `~/.local/share/fonts` y `fc-cache -f`). Sin `fc-list` → `warn doctor.fonts.no_fc_list`; sin fuentes declaradas → `ok doctor.fonts.none`.
+
+**6. Tests** (cada uno por `rojo-sin-arreglo.sh`; patrón `EN_CI` + `skipUnless` de `tests/test_pilot_scripts.py`, con `color_png`):
+- `tests/test_compose.py` sin herramientas: `fit_geometry` (og, wide, square, contain, tamaños ≤ 0); `substitute` (escape de `<&"'`, una sola pasada, hueco desconocido con motivo, `{{logo}}` data URI); guardia de rutas de plantilla y logo (`../`, absoluta, `~`, `\n`, `\x00`, enlace que sale, no es archivo) con su código; `rsvg_argv`/`ffmpeg_argv` exactos (cover, contain, sin capa); `plan_for` (None cuando no hay nada que hacer); `tool_missing` con `PATH` vacío.
+- `tests/test_compose.py` con herramientas: plantilla mínima con un rect y `{{title}}` con `&<` → salida 1200×630; píxeles con `ffmpeg -f rawvideo -pix_fmt rgb24 -` (cover: fondo de dos colores, la franja recortada no aparece; logo de color conocido en su sitio); el chunk `gimg` sigue en la compuesta con `compose`; `tool_failed` con SVG roto, comprobando el motivo.
+- `tests/test_schema.py`, `tests/test_orders.py`: `targetWidth` sin `targetHeight`, `fit` fuera del enum, campo `logo` reservado, `text` > 200 o con control, clave fuera de `fields`, `choose_uncomposed`.
+- `tests/test_compose_worker.py` (base `QueueBase` + motor `fake`): sin compose igual que hoy (sin `.raw.png`); con compose y `PATH` vacío: `done`, cruda guardada, `composeError`, no elegible; con herramientas: `q<e>.raw.png` + `q<e>.png`, `app.image.compose` en el log, borrador compuesto.
+- `tests/test_delivery.py`: manifiesto con `compose`. `tests/test_cli.py`: `gimg compose` sobre el elegido vuelve a entregar; `--text` mal formado; `--text` se guarda. `tests/test_doctor.py`: `fc-list` falso (con y sin «Sora»), proyecto roto. `tests/test_png.py`: `png.size`.
+
+**7. Reparto**
+- **E1 núcleo:** los dos esquemas, `png.size`, `gimg/compose.py` sin `recompose`, locales `error.compose.*`, tests de `test_compose.py`, `test_schema`, `test_png`. Hecho cuando `render` compone una cruda sintética a 1200×630 con chunk y lo que no necesita herramientas pasa sin ellas.
+- **E2 integración:** `orders` (`text` en `submit`/`specs`, `set_text`, `raw_image_name`, `raw_image`, `add_attempt`, `set_composed`, `check_choosable`), `queue.enqueue`/`_clean_pending`, el camino del worker, `log.record_for` + quitar `EngineResult.compose` (y `test_progress`), manifiesto de `delivery`. Hecho cuando `test_compose_worker`, `test_orders`, `test_delivery` en verde; un perfil sin compose deja el disco igual que antes (test); el fallo de composición conserva la cruda.
+- **E3 frente:** `compose.recompose`, `gimg compose`, marca en `order show`, `doctor._fonts`, locales, `test_cli`/`test_doctor`, y en `docs/plan.md` «Hecho en F2.8». Hecho cuando un cambio de título recompone el elegido y vuelve a entregar sin generar, y `gimg doctor` lista las fuentes.
+
 **Formatos del piloto** (perfiles compartidos por los cuatro proyectos; tamaños habituales de cada red en 2026, a comprobar al
 publicar; generación ≤ 1 Mpx y múltiplo de 64, lo que cabe en la Deck según `maxPixels`):
 
