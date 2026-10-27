@@ -103,6 +103,14 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
   mira `should_cancel`; el patrón de `ollamaUrl` del esquema acepta control y espacios (`re.ASCII`) y `test_models` no
   prueba el campo; `min_free_mb` no llega a `orders.add_attempt` y se pierde en un intento fallido; `read_text`/`write_text`
   sin `encoding` en los tests nuevos; `dead_ollama_url` reserva y suelta un puerto (ventana de colisión inocua).
+- **Leves de la revisión de `29dc2b1` (F2.4; no se revisan más en este PR):** el chunk `gimg` del PNG sale sin modelo ni
+  archivos si el perfil no define `model` (añadir `modelFiles` o el id resuelto) y sin `provider` (el docstring de
+  `worker.py` lo promete); el chunk va antes de `IEND` (lectores en streaming y Pillow sin `load()` solo ven los anteriores a
+  `IDAT`: insertarlo tras `IHDR`); un prompt con sustituto suelto (`\ud800`) hace que `add_text_chunk` lance
+  `UnicodeEncodeError` fuera del `except` del worker; el fallo del chunk solo va a stderr, no al intento (F4 no sabrá que
+  falta); `set_preview` y el campo `log` del intento aceptan cualquier cadena (validar con D25 antes de que F4 los sirva)
+  y `_eta_text(inf)` desborda; sin marcador «sampling completed» la barra del VAE se leería como progreso si `steps` no
+  coincide (solo con `FAKE_SD_NO_TIMES`); `app.image.steps/cfg` del registro son los del intento y el PNG lleva los efectivos.
 - **Flujo:** `rojo-sin-arreglo.sh` falla con «cannot stash» si antes se hizo `git add -N` de archivos nuevos (funciona
   sin añadirlos); proponerlo al flujo con el resto (`gw-harvest`).
 - **Cuando la persona avise:** revisar las actualizaciones de Tarkor (otro repo) sobre su generador de imágenes: lo lee
