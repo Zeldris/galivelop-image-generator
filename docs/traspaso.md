@@ -13,7 +13,7 @@
 | **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | F2.0 pruebas de concepto, delegadas por la persona. Hechas r2-r5 (`piloto/r4-r5`, registros en `docs/registros/contenido/`). Interfaz F4: 8 decisiones confirmadas (D22 al día); Fable dejó `docs/interfaz/referentes.md`, 20 ideas y 5 decisiones nuevas en la propuesta y el prototipo con lo adoptado (JS sin probar: abrirlo en el navegador). Siguiente: las 5 decisiones nuevas con la persona y las tres fases antes de `main`. Presupuesto: 4 compactaciones (5 gastadas) |
+| **Tarea en curso · `f2-motor`** | F2.0 pruebas de concepto, delegadas por la persona. Hechas r2-r5 (`piloto/r4-r5`, registros en `docs/registros/contenido/`). Interfaz F4 cerrada en propuesta: 8 + 5 decisiones confirmadas, referentes en `docs/interfaz/referentes.md`, prototipo con lo adoptado (JS sin probar: abrirlo en el navegador). Siguiente: las tres fases antes de `main` (revisión `/code-review --max-findings all`, opt-tokens y retro, revisado.sh). Presupuesto: 4 compactaciones (5 gastadas) |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.
@@ -37,6 +37,9 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
   - F2: `width`/`height` sin `multipleOf` (lo que exija `sd-cli` por modelo); el validador aún no lo soporta.
   - `propertyNames` solo pasa el `pattern` del primer error: si falla por otra cosa, el mensaje sale vacío.
 - **Leves de la revisión de `941efa9` (componer/medir, F2.0):** pruebas de Lab/umbral y del recorte cover con píxeles; `fuentes.sh` sin test, `mktemp` fuera del destino y descarga de `main` sin fijar; `HEX` con `$` en vez de `fullmatch`; viewBox `1.2.3` o `0 0 0 0` da traza; `esc` no quita caracteres de control; salida `.svg` machaca el SVG de depuración; sin `timeout` en subprocesos; sin `piloto/fuentes/` cae a otra fuente sin avisar; `ffprobe` sin `which`; signalstats es BT.601 rango limitado (calibrar igual en F2.9).
+- **Referencias de estilo (antes de F5):** ronda del piloto con `sd-cli` y 1-2 imágenes de referencia sobre Tarkor,
+  medida con D31; si mejora el % de paleta sin estropear el contraste, entra en F5 (fila «Referencias» de la pestaña
+  Marca). Confirmado por la persona el 2026-10-27 (`docs/interfaz/propuesta.md`, decisión nueva 1).
 - **Marca de Tarkor:** el estilo sale desaturado en todos los formatos (SATAVG 5-7 frente al 15-30 del juego;
   `r5-og-bajo` arregla la luz, YAVG 66, pero no el color): otra vuelta del prompt con la persona
   (`docs/registros/contenido/r5-piezas.md`).
