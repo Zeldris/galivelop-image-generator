@@ -10,7 +10,8 @@ Behaviour, from environment variables:
 - ``FAKE_SD_CHILD_PID``: path where the pid of a child ``sleep 60`` (in the same group) is written.
 - ``FAKE_SD_FAIL``: print that text and exit with code 3 (no image).
 - ``FAKE_SD_NO_IMAGE``: exit 0 without writing the image.
-- ``FAKE_SD_NO_TIMES``: leave the timing lines out of the log."""
+- ``FAKE_SD_NO_TIMES``: leave the timing lines out of the log.
+- ``FAKE_SD_REPORT_ZERO``: print the driver's "reported free 0.00 MB" line before the sleep."""
 import json
 import os
 import subprocess
@@ -48,6 +49,8 @@ def main(argv):
     if env("FAKE_SD_FAIL"):
         say(env("FAKE_SD_FAIL"))
         return 3
+    if env("FAKE_SD_REPORT_ZERO"):
+        say("[E] ggml_vulkan: Device memory allocation failed: Vulkan0 reported free 0.00 MB --- ggml-vulkan.cpp:1")
     time.sleep(float(env("FAKE_SD_SLEEP") or 0))
     say("[I] sampling using Euler method --- request.cpp:414")
     for n in range(1, steps + 1):

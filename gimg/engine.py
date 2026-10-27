@@ -50,11 +50,14 @@ class EngineResult:
 
 
 class EngineError(Exception):
-    """The engine failed; `message` is for the log and the queue entry."""
+    """The engine failed; `message` is for the log and the queue entry. With a `code` (and its `params`) the worker
+    stores that code, so the front end shows the translated ``error.<code>`` text instead of ``engine.failed``."""
 
-    def __init__(self, message: str):
+    def __init__(self, message: str, code: Optional[str] = None, **params):
         super().__init__(message)
         self.message = message
+        self.code = code
+        self.params = params
 
 
 TIMEOUT_MESSAGE = "timeout"

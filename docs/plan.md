@@ -325,8 +325,24 @@ registro (`log.record_for`) aún no lo escribe (F2.4). (7) Binario ausente o sin
 los `args` del catálogo y la máquina, para que estos puedan fijar los suyos. (9) `get_engine()` lee `GIMG_ENGINE`, luego `"engine"` de `<config>/config.json`
 (`sdcpp`/`fake`), por defecto `fake`.
 **Para F2.3/F2.4:** el bucle llama a `SdCppEngine._on_tick(proc, log_path, job)` en cada pulso (0,5 s, `poll_s`): ahí van el vigilante de `MemAvailable`, el
-aborto por «reported free 0.00 MB» y el progreso en la cola; la memoria previa y Ollama van en `generate` antes del `Popen`. Sin hacer en F2.2:
-memoria previa, vigilante, Ollama, progreso, `app.image.*` nuevos en el registro, `draft`, `initImage`, `strength`.
+aborto por «reported free 0.00 MB» y el progreso en la cola; la memoria previa y Ollama van en `generate` antes del `Popen`. Sin hacer tras F2.2
+(F2.3 hizo lo de las protecciones): progreso en la cola, `app.image.*` nuevos en el registro, `draft`, `initImage`, `strength`.
+
+*Hecho en F2.3* (`gimg/engine_sdcpp.py`, `tests/test_engine_protections.py`): las protecciones del contrato (puntos 2 y 5) y `min_free_mb`.
+**Decisiones:** (1) *Orden:* tras armar el argv y antes de crear el log: un rechazo no deja proceso, log ni imagen. (2) *Memoria previa:* `MemAvailable` ≥ `minFreeMemoryMb`
+resuelto (el del modelo, aunque sea 0, si no el general); `engine.low_memory` con `free_mb` y `needed_mb`. El lector es `read_meminfo` (argumento del
+constructor; por defecto `read_meminfo_mb`, que lee `GIMG_MEMINFO` o `/proc/meminfo`); sin `/proc`, o con un formato que no se entiende (`parse_meminfo` es
+estricto: `MemAvailable: <n> kB`), da `None`: la comprobación y el vigilante se saltan y una línea `[gimg] …` al principio del log del intento lo dice. `GIMG_MEMINFO`
+existe para que los tests (también los de un `gimg work` en subproceso) no dependan de la memoria de la máquina. (3) *Ollama:* `engine.ollama` (`abort` por defecto, también si el valor
+no se reconoce, `unload`, `ignore`); URL de `GIMG_OLLAMA_URL`, si no `engine.ollamaUrl` (campo nuevo del esquema), si no `http://localhost:11434`; solo `http`/`https` (`engine.ollama_url`),
+sin proxy. `GET /api/ps` con 2 s; servicio apagado, lento, error HTTP, JSON inválido, sin `models` o con entradas raras = nada cargado; solo cuentan los `size` numéricos > 0 (un
+booleano o una cadena no). `unload` hace `POST /api/generate` y `/api/embed` con `keep_alive: 0` por modelo (10 s) y vuelve a mirar hasta 15 s cada 1 s (la descarga
+es asíncrona, como en `generar.sh`); si siguen cargados, `engine.ollama_loaded` con `models` y `hint` (`ollama stop <m>; …`). (4) *Vigilante* (`_on_tick`): `MemAvailable` <
+`watchMemoryMb` (estricto, sin umbral no vigila) o «reported free 0.00 MB» en lo nuevo del log (se lee desde la última posición, con el final de la lectura anterior por si la
+frase queda cortada) → mata el grupo y lanza `EngineError`. (5) `EngineError` gana `code` y `params` opcionales: el worker guarda ese código (`engine.watch_memory`,
+`engine.driver_no_memory`) en vez de `engine.failed`, para que el motivo salga traducido; `message` sigue siendo el texto en inglés. (6) `min_free_mb` es el mínimo de
+todas las lecturas del intento, la previa incluida; el registro lo escribe solo si el intento acaba bien: **pendiente leve**, un intento que falla no lo guarda (el `EngineError` no lo lleva).
+(7) Los tests del motor y del worker con `sdcpp` fijan `GIMG_MEMINFO` y una URL de Ollama sin servicio (`protections_off_env`); los de Ollama usan un `http.server` propio.
 
 **`instalar.sh`** (raíz del repo, bash, `set -euo pipefail`). Sin argumentos instala el motor y el conjunto rápido (~7 GB, D5);
 `--with flux3-klein-q8` añade el de calidad; `--only-cli` solo el lanzador. Pasos: 1) Python ≥ 3.10; 2) `gimg` en `~/.local/bin`

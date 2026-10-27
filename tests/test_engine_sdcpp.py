@@ -1,6 +1,7 @@
 import json
 import os
 import signal
+import socket
 import stat
 import tempfile
 import time
@@ -25,6 +26,23 @@ REAL_LOG = (
     "[V] computing vae decode graph completed, taking 38.73s --- vae.hpp:384\n"
     "[I] decode_first_stage completed, taking 38.74s --- image.cpp:632\n"
     "[I] generate_image completed in 225.60s --- image.cpp:1058\n")
+
+
+MEMINFO_TEXT = "MemTotal:       32768000 kB\nMemFree:         1024000 kB\nMemAvailable:   20480000 kB\n"  # 20000 MB
+
+
+def dead_ollama_url():
+    """A local URL where nothing listens (so a test never reaches an Ollama that may be running on 11434)."""
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        return "http://127.0.0.1:%d" % sock.getsockname()[1]
+
+
+def protections_off_env(folder):
+    """Environment that makes the guards of the real engine pass anywhere: plenty of memory, no Ollama."""
+    meminfo = Path(folder) / "meminfo"
+    meminfo.write_text(MEMINFO_TEXT)
+    return {"GIMG_MEMINFO": str(meminfo), "GIMG_OLLAMA_URL": dead_ollama_url()}
 
 
 def alive(pid):
@@ -64,11 +82,11 @@ class Base(unittest.TestCase):
         env = mock.patch.dict(os.environ, {
             "GIMG_CONFIG_HOME": str(self.tmp / "cfg"), "GIMG_DATA_HOME": str(self.tmp / "data"),
             "GIMG_MODELS_HOME": str(self.models_home), "GIMG_SD_CLI": str(FAKE),
-            "LD_LIBRARY_PATH": "/somewhere/else"})
+            "LD_LIBRARY_PATH": "/somewhere/else", **protections_off_env(self.tmp)})
         env.start()
         self.addCleanup(env.stop)
         for var in ("GIMG_ENGINE", "GIMG_MACHINE_PROFILE", "FAKE_SD_ARGV", "FAKE_SD_SLEEP", "FAKE_SD_CHILD_PID",
-                    "FAKE_SD_FAIL", "FAKE_SD_NO_IMAGE", "FAKE_SD_NO_TIMES"):
+                    "FAKE_SD_FAIL", "FAKE_SD_NO_IMAGE", "FAKE_SD_NO_TIMES", "FAKE_SD_PID", "FAKE_SD_REPORT_ZERO"):
             os.environ.pop(var, None)
         self.install(MODEL)
         self.argv_file = self.tmp / "argv.json"
@@ -257,7 +275,7 @@ class RunTests(Base):
         _, job, res = self.run_job()
         self.assertEqual((res.engine_version, res.load_ms, res.sample_ms, res.decode_ms),
                          ("master-1000-95ff762", 1750, 4800, 750))
-        self.assertEqual(res.min_free_mb, None)
+        self.assertEqual(res.min_free_mb, 20000)  # the MemAvailable of the fixture, read before the start
         self.assertGreaterEqual(res.duration_ms, 0)
         self.assertEqual(Path(res.log_path), Path(job.output).with_suffix(".log"))
         self.assertIn("sampling completed", Path(res.log_path).read_text())
@@ -434,7 +452,8 @@ class WorkerTests(QueueBase):
     def setUp(self):
         super().setUp()
         env = mock.patch.dict(os.environ, {
-            "GIMG_MODELS_HOME": str(self.tmp / "models"), "GIMG_SD_CLI": str(FAKE), "GIMG_ENGINE": "sdcpp"})
+            "GIMG_MODELS_HOME": str(self.tmp / "models"), "GIMG_SD_CLI": str(FAKE), "GIMG_ENGINE": "sdcpp",
+            **protections_off_env(self.tmp)})
         env.start()
         self.addCleanup(env.stop)
         for kind, entry in models.load_catalog()["models"][MODEL]["files"].items():

@@ -21,7 +21,7 @@ entry whose `finish` failed stays ``running`` and recovery deals with it), and n
 
 Errors: the entry ``error`` is ``{"code", "params"}`` plus ``"errors"`` (schema errors as path/code/params)
 when there are any (`queue.make_error`; render with `queue.error_text`):
-a `GimgError` keeps its code, params and schema errors, `EngineTimeout` is ``engine.timeout``, any other `EngineError` is
+a `GimgError` keeps its code, params and schema errors, `EngineTimeout` is ``engine.timeout``, an `EngineError` with a `code` keeps it, any other is
 ``engine.failed`` with ``{"message"}``, anything else ``worker.unexpected`` with ``{"message": "Type: msg"}``.
 Log: one line for every attempt that fails (limits, references, engine, timeout) or succeeds; for failures
 ``app.error`` is the English rendering of that error (e.g. "the attempt asks for 99 steps ..."); a cancel writes no line.
@@ -79,6 +79,8 @@ def _error_for(exc: BaseException) -> dict:
         return queue.make_error(exc.code, exc.errors, **exc.params)
     if isinstance(exc, engine_mod.EngineTimeout):
         return queue.make_error("engine.timeout")
+    if isinstance(exc, engine_mod.EngineError) and exc.code:
+        return queue.make_error(exc.code, **exc.params)
     if isinstance(exc, engine_mod.EngineError):
         return queue.make_error("engine.failed", message=exc.message)
     return queue.make_error("worker.unexpected", message="%s: %s" % (type(exc).__name__, exc))

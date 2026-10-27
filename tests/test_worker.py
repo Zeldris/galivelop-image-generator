@@ -14,7 +14,7 @@ from unittest import mock
 
 from gimg import engine, log, models, orders, queue, worker
 from gimg.errors import GimgError
-from tests.test_engine_sdcpp import FAKE, MODEL, alive, wait_for_file
+from tests.test_engine_sdcpp import FAKE, MODEL, alive, protections_off_env, wait_for_file
 from tests.test_queue import QueueBase
 
 
@@ -399,7 +399,7 @@ class WorkerSignalTests(QueueBase):
         pids = {name: self.tmp / (name + ".pid") for name in ("sd", "child")}
         env = dict(os.environ, GIMG_MODELS_HOME=str(self.tmp / "models"), GIMG_SD_CLI=str(FAKE),
                    GIMG_ENGINE="sdcpp", FAKE_SD_SLEEP="60", FAKE_SD_PID=str(pids["sd"]),
-                   FAKE_SD_CHILD_PID=str(pids["child"]))
+                   FAKE_SD_CHILD_PID=str(pids["child"]), **protections_off_env(self.tmp))
         proc = subprocess.Popen([sys.executable, "-m", "gimg", "work"], env=env, stdout=subprocess.DEVNULL,
                                 stderr=subprocess.DEVNULL, cwd=str(Path(__file__).resolve().parent.parent))
         found = []

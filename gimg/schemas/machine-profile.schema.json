@@ -80,6 +80,11 @@
           ],
           "description": "What to do when Ollama has models loaded: abort the generation, unload them or ignore them."
         },
+        "ollamaUrl": {
+          "type": "string",
+          "pattern": "^https?://[^\\s]+$",
+          "description": "Base URL of Ollama, to see what it has loaded (GIMG_OLLAMA_URL wins); by default http://localhost:11434."
+        },
         "threads": {
           "type": "integer",
           "minimum": 1,

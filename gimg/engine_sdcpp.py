@@ -21,8 +21,18 @@ Decisions:
 - **Kill:** POSIX: ``os.killpg`` (SIGTERM, then SIGKILL after `kill_grace_s`) to the process group created by
   ``start_new_session``. Where ``os.killpg`` does not exist (Windows) the fallback is ``terminate()`` then ``kill()`` of the
   process only, which leaves its children alive; the project runs on Linux, so that path is untested.
-- **Tick hook:** `_on_tick(proc, log_path, job)` runs once per poll; F2.3 (memory watch, "reported free 0.00 MB") and F2.4
-  (progress in the queue) hook in there. Not implemented here: memory guards, Ollama, ``draft``, ``initImage``, ``strength``.
+- **Tick hook:** `_on_tick(proc, log_path, job)` runs once per poll: the memory watch and the "reported free 0.00 MB"
+  abort (F2.3) are there; F2.4 (progress in the queue) hooks in too. Not implemented: ``draft``, ``initImage``, ``strength``.
+- **Guards before the process (F2.3, D33):** after the argv is built and before the log exists, so a refusal leaves
+  nothing behind. (1) ``MemAvailable`` >= ``minFreeMemoryMb`` (the model's, else the profile's; `models.resolve`), else
+  ``engine.low_memory``. The reader is ``read_meminfo`` (constructor argument; default `read_meminfo_mb`, which reads
+  ``GIMG_MEMINFO`` or ``/proc/meminfo`` and returns ``None`` where there is none or it is unparseable: the check is then
+  skipped and a line in the attempt's log says so). (2) Ollama, by ``engine.ollama`` (``abort`` by default, ``unload``,
+  ``ignore``): ``GET <url>/api/ps``; a service that is off, slow, unreachable or answers nonsense counts as "nothing
+  loaded". The URL is ``GIMG_OLLAMA_URL``, else ``engine.ollamaUrl``, else ``http://localhost:11434`` (http/https only).
+- **Watch:** every tick reads ``MemAvailable``: below ``watchMemoryMb`` the group is killed (``engine.watch_memory``), and
+  so it is when the new part of the log (read from the last position, not the whole file) has "reported free 0.00 MB"
+  (``engine.driver_no_memory``). The lowest value seen, from the first read before the start, is ``min_free_mb``.
 
 Timings come from the log: ``load_ms`` is the sum of the ``loading tensors completed, taking Xs`` lines, ``sample_ms`` is
 the last ``sampling completed, taking Xs`` and ``decode_ms`` the last ``decode_first_stage completed, taking Xs``; a line
@@ -31,11 +41,15 @@ that is not there leaves its field ``None``.
 from __future__ import annotations
 
 import contextlib
+import http.client
+import json
 import os
 import re
 import signal
 import subprocess
 import time
+import urllib.request
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -54,6 +68,16 @@ _LOAD = re.compile(r"loading tensors completed, taking ([0-9.]+)s")
 _SAMPLE = re.compile(r"sampling completed, taking ([0-9.]+)s")
 _DECODE = re.compile(r"decode_first_stage completed, taking ([0-9.]+)s")
 _POSIX = hasattr(os, "killpg")
+MEMINFO = "/proc/meminfo"
+ZERO_FREE = "reported free 0.00 MB"
+OLLAMA_URL = "http://localhost:11434"
+OLLAMA_PS_TIMEOUT_S = 2.0
+OLLAMA_UNLOAD_TIMEOUT_S = 10.0
+OLLAMA_WAIT_S = 15.0  # Ollama unloads asynchronously: generar.sh waits up to 15 s
+OLLAMA_WAIT_POLL_S = 1.0
+_MEM_AVAILABLE = re.compile(r"^MemAvailable:[ \t]+([0-9]+)[ \t]*kB[ \t]*$", re.MULTILINE)
+_URL = re.compile(r"https?://[^\s\x00-\x1f\x7f]+")
+_NO_PROXY = urllib.request.build_opener(urllib.request.ProxyHandler({}))  # a local service never goes through a proxy
 
 
 def binary_path(machine: dict) -> Path:
@@ -93,15 +117,90 @@ def _read_log(path) -> str:
         return ""
 
 
+def parse_meminfo(text: str) -> Optional[int]:
+    """``MemAvailable`` of a ``/proc/meminfo`` text in MB (integer), or ``None`` if the line is missing or odd."""
+    found = _MEM_AVAILABLE.search(text)
+    return int(found.group(1)) // 1024 if found else None
+
+
+def read_meminfo_mb() -> Optional[int]:
+    """Free memory in MB: ``MemAvailable`` of ``GIMG_MEMINFO`` (tests) or ``/proc/meminfo``; ``None`` where it cannot
+    be read (no ``/proc``) or parsed."""
+    try:
+        with open(os.environ.get("GIMG_MEMINFO") or MEMINFO, encoding="utf-8", errors="replace") as fh:
+            return parse_meminfo(fh.read())
+    except OSError:
+        return None
+
+
+def ollama_url(machine: dict) -> str:
+    """``GIMG_OLLAMA_URL``, else ``engine.ollamaUrl``, else `OLLAMA_URL`, without a trailing ``/``; http or https only."""
+    url = (os.environ.get("GIMG_OLLAMA_URL") or (machine.get("engine") or {}).get("ollamaUrl") or OLLAMA_URL)
+    if not isinstance(url, str) or not _URL.fullmatch(url):
+        raise GimgError("engine.ollama_url", url=str(url))
+    return url.rstrip("/")
+
+
+def ollama_loaded(url: str, timeout: float = OLLAMA_PS_TIMEOUT_S) -> list:
+    """Names of the models Ollama has in memory (``size`` > 0 in ``/api/ps``). A service that is off, does not
+    answer in `timeout` seconds or answers something that is not the expected JSON has none loaded."""
+    try:
+        with _NO_PROXY.open(url + "/api/ps", timeout=timeout) as resp:
+            data = json.loads(resp.read(1 << 20).decode("utf-8"))
+    except (OSError, ValueError, http.client.HTTPException):
+        return []
+    items = data.get("models") if isinstance(data, dict) else None
+    names = []
+    for item in items if isinstance(items, list) else []:
+        size = item.get("size") if isinstance(item, dict) else None
+        if isinstance(size, (int, float)) and not isinstance(size, bool) and size > 0:
+            name = item.get("name") or item.get("model")
+            names.append(name if isinstance(name, str) and name else "(unnamed)")
+    return names
+
+
+def ollama_unload(url: str, name: str, timeout: float = OLLAMA_UNLOAD_TIMEOUT_S) -> None:
+    """Ask Ollama to drop `name` (``keep_alive: 0``; embedding models only accept ``/api/embed``). Errors are ignored:
+    the caller looks again to see whether it worked."""
+    for path, body in (("/api/generate", {"model": name, "keep_alive": 0}),
+                       ("/api/embed", {"model": name, "input": "", "keep_alive": 0})):
+        req = urllib.request.Request(url + path, data=json.dumps(body).encode("utf-8"), method="POST",
+                                     headers={"Content-Type": "application/json"})
+        try:
+            with _NO_PROXY.open(req, timeout=timeout) as resp:
+                resp.read(1 << 16)
+        except (OSError, ValueError, http.client.HTTPException):
+            pass
+
+
+@dataclass
+class _Run:
+    """What the watch keeps for one attempt."""
+    watch_mb: Optional[int] = None
+    min_free_mb: Optional[int] = None
+    log_pos: int = 0
+    carry: str = ""
+
+    def seen(self, free: int) -> None:
+        self.min_free_mb = free if self.min_free_mb is None else min(self.min_free_mb, free)
+
+
 class SdCppEngine(Engine):
     provider = PROVIDER
 
     def __init__(self, machine: Optional[dict] = None, catalog: Optional[dict] = None,
-                 poll_s: float = POLL_S, kill_grace_s: float = KILL_GRACE_S):
+                 poll_s: float = POLL_S, kill_grace_s: float = KILL_GRACE_S,
+                 read_meminfo: Optional[Callable[[], Optional[int]]] = None):
         self.machine = machine or {}
         self.catalog = catalog
         self.poll_s = poll_s
         self.kill_grace_s = kill_grace_s
+        self.read_meminfo = read_meminfo  # free MB or None; None here means `read_meminfo_mb`
+        self.ollama_ps_timeout_s = OLLAMA_PS_TIMEOUT_S
+        self.ollama_unload_timeout_s = OLLAMA_UNLOAD_TIMEOUT_S
+        self.ollama_wait_s = OLLAMA_WAIT_S
+        self.ollama_wait_poll_s = OLLAMA_WAIT_POLL_S
+        self._run = _Run()
 
     # -- pieces -------------------------------------------------------------------------------------------------
 
@@ -172,8 +271,75 @@ class SdCppEngine(Engine):
                 return float(value)
         return None
 
+    # -- guards (D33) -------------------------------------------------------------------------------------------
+
+    def _free_mb(self) -> Optional[int]:
+        free = (self.read_meminfo or read_meminfo_mb)()
+        return free if isinstance(free, int) and not isinstance(free, bool) and free >= 0 else None
+
+    def _check_memory(self, resolved: dict, notes: list) -> None:
+        free = self._free_mb()
+        if free is None:
+            notes.append("memory check skipped: MemAvailable is not available here")
+            return
+        self._run.seen(free)
+        needed = resolved["minFreeMemoryMb"]
+        if needed and free < needed:
+            raise GimgError("engine.low_memory", free_mb=free, needed_mb=needed)
+
+    def _check_ollama(self, machine: dict, notes: list) -> None:
+        mode = (machine.get("engine") or {}).get("ollama", "abort")
+        if mode == "ignore":
+            notes.append("ollama check skipped (engine.ollama: ignore)")
+            return
+        url = ollama_url(machine)
+        loaded = ollama_loaded(url, self.ollama_ps_timeout_s)
+        if loaded and mode == "unload":
+            for name in loaded:
+                ollama_unload(url, name, self.ollama_unload_timeout_s)
+            deadline = time.monotonic() + self.ollama_wait_s
+            while True:
+                still = ollama_loaded(url, self.ollama_ps_timeout_s)
+                if not still or time.monotonic() >= deadline:
+                    break
+                time.sleep(self.ollama_wait_poll_s)
+            if not still:
+                notes.append("ollama: unloaded " + ", ".join(loaded))
+            loaded = still
+        if loaded:
+            raise GimgError("engine.ollama_loaded", models=", ".join(loaded),
+                            hint="; ".join("ollama stop " + name for name in loaded))
+
+    @staticmethod
+    def _new_log_text(log_path, run: _Run) -> str:
+        """The part of the log written since the last call, with the end of the previous one in front (a phrase may
+        be cut by the read boundary)."""
+        try:
+            with open(log_path, "rb") as fh:
+                fh.seek(run.log_pos)
+                data = fh.read()
+        except OSError:
+            return run.carry
+        run.log_pos += len(data)
+        text = run.carry + data.decode("utf-8", errors="replace")
+        run.carry = text[-(len(ZERO_FREE) - 1):]
+        return text
+
     def _on_tick(self, proc, log_path, job: EngineJob) -> None:
-        """Called once per poll while `sd-cli` runs. F2.3 (memory watch) and F2.4 (progress) hook in here."""
+        """Called once per poll while `sd-cli` runs: the memory watch and the "reported free 0.00 MB" abort (F2.3).
+        F2.4 (progress) hooks in here too. A refusal kills the group first and then raises."""
+        run = self._run
+        free = self._free_mb()
+        if free is not None:
+            run.seen(free)
+            if run.watch_mb and free < run.watch_mb:
+                self._kill(proc)
+                raise EngineError("memory watch: %d MB free, below the %d MB threshold; sd-cli was killed"
+                                  % (free, run.watch_mb), code="engine.watch_memory",
+                                  free_mb=free, watch_mb=run.watch_mb)
+        if ZERO_FREE in self._new_log_text(log_path, run):
+            self._kill(proc)
+            raise EngineError("the GPU driver reported 0.00 MB free; sd-cli was killed", code="engine.driver_no_memory")
 
     def _kill(self, proc: subprocess.Popen) -> None:
         """Stop `proc` and its group and wait for it to die (see the module docstring for the Windows fallback)."""
@@ -210,6 +376,10 @@ class SdCppEngine(Engine):
         if not os.access(binary, os.X_OK):
             raise GimgError("engine.binary_not_executable", path=str(binary))
         argv = self.build_argv(job, resolved, machine, binary)
+        self._run = _Run(watch_mb=machine.get("watchMemoryMb"))
+        notes = []
+        self._check_memory(resolved, notes)  # a refusal leaves no log, no image and no process
+        self._check_ollama(machine, notes)
         out = Path(job.output)
         log_path = self.log_path(out)
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -222,6 +392,10 @@ class SdCppEngine(Engine):
         limit_s = self._timeout(resolved, job)
         start = time.monotonic()
         with open(log_path, "wb") as log_fh:
+            header = "".join("[gimg] %s\n" % note for note in notes).encode("utf-8")
+            log_fh.write(header)
+            log_fh.flush()
+            self._run.log_pos = len(header)
             try:
                 proc = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=log_fh, stderr=subprocess.STDOUT,
                                         env=env, **popen_kw)
@@ -255,7 +429,7 @@ class SdCppEngine(Engine):
         with contextlib.suppress(OSError):
             self.preview_path(out).unlink()
         return EngineResult(duration_ms=total, engine_version=RELEASE, command=self._command(argv),
-                            log_path=str(log_path), **parse_timings(text))
+                            log_path=str(log_path), min_free_mb=self._run.min_free_mb, **parse_timings(text))
 
     @staticmethod
     def _is_png(path: Path) -> bool:
