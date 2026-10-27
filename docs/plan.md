@@ -376,6 +376,27 @@ máquina); 5) escribe `"engine": "sdcpp"` en
 rsvg-convert, fuentes que nombran las plantillas de los proyectos registrados (`fc-list`), memoria libre ahora y perfil de
 máquina activo.
 
+*Hecho en F2.5* (`instalar.sh`, `gimg/doctor.py`, `tests/test_doctor.py`, `tests/test_instalar.py`): **Decisiones:** (1) *Motor fijo:* el asset es
+`sd-master-95ff762-bin-Linux-Ubuntu-24.04-x86_64-vulkan.zip` (37 MB, el mismo `sd-cli` de la Deck) y su sha256 `5af606a8…dad1` coincide con el
+`digest` que publica GitHub y con el zip descargado a un scratchpad. Asset y suma viven en **una** variable del script, `SD_ZIP="<asset> <sha256>"`; la release no se
+repite: el script la lee de `engine_sdcpp.RELEASE` y un test casa el hash corto del asset con ella. "Motor ya instalado" = `sd-cli` ejecutable y
+`<datos>/engine/<release>/.zip-sha256` igual a la suma fijada (se extrae en una carpeta temporal y se mueve, así una descarga rota no deja un motor a medias).
+(2) *Catálogo:* `installDefault: true` (esquema, opcional) marca lo que `instalar.sh` baja sin `--with` y lo que `doctor` exige (hoy `flux2-klein-4b-q8`; así el
+conjunto rápido vive solo en `gimg/models.json`). `GIMG_CATALOG` apunta `load_catalog()` a otro archivo (hueco de test: el script y el doctor lo leen en procesos
+propios). (3) *`instalar.sh`:* las carpetas salen de `gimg.paths` por `python3 -c` (sin reimplementar el XDG); cada archivo va a `<archivo>.part` con `curl -fL -C -`,
+se comprueba con `sha256sum -c` y solo entonces se renombra; uno que ya cuadra no se toca, uno que no cuadra se sustituye (y se dice); con `--models-from` se busca
+`<carpeta>/<nombre>` y `<carpeta>/<tipo>/<nombre>`, se enlaza solo si la suma cuadra y si no se descarga; `--dry-run` no hashea (solo mira si el destino existe) ni
+llama a `curl`. Mensajes es/en según `GIMG_LANG`/`LANG`. No hay `--skip-engine`: los tests usan un motor ya instalado (marca) y un `curl` falso. (4) *`gimg doctor`:*
+`doctor.run(verify, ollama_url)` devuelve `Check(id, status, …)` con la orden que arregla cada cosa; lo del motor real (binario, `libggml*`, modelo por defecto, Ollama
+cargado) es `fail` con `engine: sdcpp` y solo `warn` con `fake` (D36: un clon sin instalar no está roto); un modelo a medias o con tamaño distinto es `fail` siempre. El
+tamaño se compara con `sizeMb` (±1 MB); `--verify` suma el sha256. `ffmpeg` y `rsvg-convert` faltantes son `fail` con los paquetes de apt y pacman (D28: se
+comprueban, no se instalan). Código de salida 1 con algún `fail`; `--json` da `{"ok", "checks": [{id, status, message, fix}]}`. (5) *Flatpak (decisión de la nota de
+«Pendiente»):* **no se ignora el XDG**, `XDG_DATA_HOME` manda aunque apunte a `~/.var/app/…`; `doctor` avisa (`warn`) si `XDG_DATA_HOME` o `XDG_CONFIG_HOME` contienen
+`/.var/app/` y la variable `GIMG_*_HOME` correspondiente no está fijada, y dice la línea `export GIMG_DATA_HOME="$HOME/.local/share/gimg"` (o `GIMG_CONFIG_HOME`) para que
+todas las terminales vean las mismas carpetas y modelos. **Queda:** las fuentes de las plantillas con `fc-list` (F2.8, cuando existan las plantillas); el `--dry-run`
+de la descarga real del zip y la instalación de verdad, **manual en la Deck** (la persona corre `./instalar.sh` y `gimg doctor`; hasta entonces el zip solo está
+comprobado por suma).
+
 **Configuración del proyecto** (cambios en `project-config.schema.json`). El perfil añade: `targetWidth`/`targetHeight`
 (tamaño de destino; si faltan, los de generación), `draft` (`{"model"?, "steps"?, "scale"?}`, D32) y `compose`
 (`{"template": <ruta relativa .svg>, "fields": ["title", "subtitle"], "logo"?: <ruta relativa .svg>, "fonts"?: ["Sora", "Inter"],

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from . import paths, schema
@@ -12,11 +13,12 @@ KINDS = ("diffusion", "text", "vae")  # also the subfolders of `paths.models_dir
 
 
 def load_catalog(path=None) -> dict:
-    """Read and validate the catalog (`gimg/models.json` unless `path` is given).
+    """Read and validate the catalog: `path`, else ``$GIMG_CATALOG`` (a test seam: `instalar.sh` and `gimg doctor` read
+    the catalog in their own processes), else `gimg/models.json`.
 
     Returns the parsed JSON. Raises ``model.catalog_invalid`` when it cannot be read, is not JSON
     or does not pass `models.schema.json`."""
-    path = Path(path) if path is not None else CATALOG
+    path = Path(path) if path is not None else Path(os.environ.get("GIMG_CATALOG") or CATALOG)
     try:
         with open(path, encoding="utf-8") as fh:
             data = json.load(fh)

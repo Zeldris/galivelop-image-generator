@@ -327,5 +327,27 @@ class ProjectModelTests(unittest.TestCase):
                 self.assertIn(profile["model"], known)
 
 
+class InstallDefaultTests(unittest.TestCase):
+    def test_install_default_must_be_a_boolean(self):
+        cat = small_catalog()
+        cat["models"]["m-one"]["installDefault"] = True
+        self.assertEqual(errs(cat), [])
+        cat["models"]["m-one"]["installDefault"] = "yes"
+        self.assertEqual(errs(cat), [("/models/m-one/installDefault", "type")])
+
+    def test_only_the_fast_model_installs_by_default(self):
+        catalog = models.load_catalog()
+        self.assertEqual([i for i in models.ids(catalog) if catalog["models"][i].get("installDefault")],
+                         ["flux2-klein-4b-q8"])
+
+    def test_gimg_catalog_points_the_loader_to_another_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            other = Path(tmp) / "c.json"
+            other.write_text(json.dumps(small_catalog()), encoding="utf-8")
+            with mock.patch.dict(os.environ, {"GIMG_CATALOG": str(other)}):
+                self.assertEqual(models.ids(), ["m-one"])
+                self.assertEqual(models.ids(models.load_catalog(models.CATALOG)), ["flux2-klein-4b-q8", "flux3-klein-q8"])
+
+
 if __name__ == "__main__":
     unittest.main()

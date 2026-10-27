@@ -3,6 +3,7 @@
   "models": {
     "flux2-klein-4b-q8": {
       "license": "Apache-2.0",
+      "installDefault": true,
       "files": {
         "diffusion": {
           "name": "flux-2-klein-4b-Q8_0.gguf",

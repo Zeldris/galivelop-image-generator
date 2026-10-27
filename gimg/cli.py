@@ -7,7 +7,7 @@ import os
 import sys
 import traceback
 
-from . import __version__, delivery, engine, i18n, orders, projects, queue, worker
+from . import __version__, delivery, doctor, engine, i18n, orders, projects, queue, worker
 from .errors import GimgError
 
 LANGS = ("es", "en")
@@ -86,6 +86,7 @@ def _build(lang: str) -> argparse.ArgumentParser:
     leaf(g, "cancel", "cli.cmd.queue_cancel", arg("entry", "cli.arg.entry", type=int))
 
     leaf(top, "work", "cli.cmd.work", opt("--once", "cli.arg.once", action="store_true"))
+    leaf(top, "doctor", "cli.cmd.doctor", opt("--verify", "cli.arg.verify", action="store_true"))
     leaf(top, "version", "cli.cmd.version")
     return parser
 
@@ -139,10 +140,26 @@ def _read_order(source: str) -> dict:
         raise GimgError("cli.order_unreadable", path=source, reason=str(exc))
 
 
+def _doctor(args, out: _Out) -> int:
+    checks = doctor.run(verify=args.verify)
+    bad = doctor.failed(checks)
+    if out.as_json:
+        out.data({"ok": not bad, "checks": [c.as_dict(out.lang) for c in checks]})
+        return 1 if bad else 0
+    for c in checks:
+        out.line("doctor.line", label=c.label(out.lang), message=c.message(out.lang))
+        if c.fix_key:
+            out.line("doctor.fix_line", fix=c.fix(out.lang))
+    out.line("doctor.summary_fail" if bad else "doctor.summary_ok")
+    return 1 if bad else 0
+
+
 def _run(args, out: _Out) -> int:
     cmd, sub = args.cmd, getattr(args, "sub", None)
     if cmd == "version":
         print(__version__)
+    elif cmd == "doctor":
+        return _doctor(args, out)
     elif cmd == "project":
         if sub == "add":
             name = projects.add(args.path)

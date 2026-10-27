@@ -90,6 +90,10 @@
             }
           }
         },
+        "installDefault": {
+          "type": "boolean",
+          "description": "True for the models `instalar.sh` downloads without `--with` and `gimg doctor` requires; absent or false means optional."
+        },
         "args": {
           "type": "array",
           "items": {
