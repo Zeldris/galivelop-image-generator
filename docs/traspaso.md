@@ -13,7 +13,7 @@
 | **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | F2.0 cerrada: pruebas de concepto e interfaz F4 en propuesta (13 decisiones confirmadas); tres fases antes de `main` hechas, marca `26bbd58` sobre `6977865`. El CI de GitHub no arranca (sin cuota): **comprobado solo en local** (347 tests), confirmado por la persona el 2026-10-27, que también confirmó ir a `main` por push directo. Siguiente: F2.1 en `f2-motor` (`docs/plan.md`, fila F2.1); presupuesto de compactaciones nuevo |
+| **Tarea en curso · `f2-motor`** | F2.1 hecha: catálogo `gimg/models.json` (sha256 y URLs comprobados), `gimg/models.py` (resolución modelo + máquina, `model.unknown` también en `load_config`), `engine.*` nuevo en el perfil de máquina y `steam-deck.json` con FLUX.3. Presupuesto de compactaciones de F2.1: 1. Sin tocar `main`. Siguiente: F2.2 (`docs/plan.md`, fila F2.2) |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.

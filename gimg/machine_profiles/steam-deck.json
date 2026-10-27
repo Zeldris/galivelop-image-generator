@@ -7,5 +7,12 @@
   "timeoutS": 900,
   "maxSteps": 50,
   "maxPixels": 1048576,
-  "engine": {"maxVram": "vulkan0=2", "paramsBackend": "disk"}
+  "engine": {
+    "maxVram": "vulkan0=2",
+    "paramsBackend": "disk",
+    "ollama": "abort",
+    "models": {
+      "flux3-klein-q8": {"args": ["--backend", "diffusion=cpu", "-t", "8"], "timeoutS": 10800, "minFreeMemoryMb": 5000}
+    }
+  }
 }

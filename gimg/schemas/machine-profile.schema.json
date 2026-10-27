@@ -65,6 +65,35 @@
             "disk"
           ],
           "description": "Where model parameters are kept."
+        },
+        "sdCli": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path of the sd-cli binary; by default the one of the installed engine."
+        },
+        "ollama": {
+          "type": "string",
+          "enum": [
+            "abort",
+            "unload",
+            "ignore"
+          ],
+          "description": "What to do when Ollama has models loaded: abort the generation, unload them or ignore them."
+        },
+        "threads": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "CPU threads for the engine."
+        },
+        "models": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/modelOverride"
+          },
+          "description": "Per-model settings of this machine, by catalog model id; they replace the general ones for that model. An id that is not in the catalog is ignored."
         }
       }
     }
@@ -74,6 +103,31 @@
       "type": "string",
       "pattern": "^[a-z0-9][a-z0-9-]*$",
       "description": "Lowercase letters, digits and hyphens."
+    },
+    "modelOverride": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Settings of this machine for one model.",
+      "properties": {
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Engine arguments, after the ones of the catalog."
+        },
+        "timeoutS": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Generation timeout in seconds for this model."
+        },
+        "minFreeMemoryMb": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Minimum free memory in MB to start this model."
+        }
+      }
     }
   }
 }

@@ -152,5 +152,7 @@
   "cli.out.cancel_requested": "Entrada {id}: cancelación solicitada.",
   "cli.out.processed": "Procesadas {count} entradas.",
   "cli.unexpected": "error inesperado: {message}",
-  "error.cli.order_unreadable": "no se pudo leer el pedido «{path}»: {reason}"
+  "error.cli.order_unreadable": "no se pudo leer el pedido «{path}»: {reason}",
+  "error.model.unknown": "el modelo «{model}» no está en el catálogo (modelos conocidos: {known})",
+  "error.model.catalog_invalid": "el catálogo de modelos «{path}» no es válido:"
 }

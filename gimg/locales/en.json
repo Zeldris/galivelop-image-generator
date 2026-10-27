@@ -152,5 +152,7 @@
   "cli.out.cancel_requested": "Entry {id}: cancellation requested.",
   "cli.out.processed": "Processed {count} entries.",
   "cli.unexpected": "unexpected error: {message}",
-  "error.cli.order_unreadable": "could not read the order \"{path}\": {reason}"
+  "error.cli.order_unreadable": "could not read the order \"{path}\": {reason}",
+  "error.model.unknown": "model \"{model}\" is not in the catalog (known models: {known})",
+  "error.model.catalog_invalid": "the model catalog \"{path}\" is not valid:"
 }

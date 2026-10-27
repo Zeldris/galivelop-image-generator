@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Model catalog",
+  "description": "Model sets gimg can run: license, files to download, default sampling settings and engine arguments.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "models"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Schema reference so editors can validate and complete the file."
+    },
+    "models": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "pattern": "^[a-z0-9][a-z0-9-]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/model"
+      },
+      "description": "Model sets by id (lowercase letters, digits and hyphens)."
+    }
+  },
+  "$defs": {
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "license",
+        "files",
+        "defaults",
+        "args"
+      ],
+      "description": "One model set: a diffusion model, a text encoder and a VAE.",
+      "properties": {
+        "license": {
+          "type": "string",
+          "minLength": 1,
+          "description": "SPDX identifier of the license, or \"unconfirmed\" while it is not verified."
+        },
+        "files": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "diffusion",
+            "text",
+            "vae"
+          ],
+          "properties": {
+            "diffusion": {
+              "$ref": "#/$defs/file",
+              "description": "Diffusion model, stored in <models>/diffusion/."
+            },
+            "text": {
+              "$ref": "#/$defs/file",
+              "description": "Text encoder, stored in <models>/text/."
+            },
+            "vae": {
+              "$ref": "#/$defs/file",
+              "description": "VAE, stored in <models>/vae/."
+            }
+          }
+        },
+        "defaults": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "steps",
+            "cfg",
+            "sampler"
+          ],
+          "description": "Sampling settings used when the project profile does not set them.",
+          "properties": {
+            "steps": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            },
+            "cfg": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 30
+            },
+            "sampler": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Extra engine arguments for this model, before the ones of the machine profile."
+        }
+      }
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "url",
+        "sha256",
+        "sizeMb"
+      ],
+      "description": "A downloadable model file.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+          "description": "File name inside its folder (no path separators)."
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^https://[^\\s]+$",
+          "description": "Download address."
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of the file, lowercase hex."
+        },
+        "sizeMb": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Size in megabytes (10^6 bytes), rounded."
+        }
+      }
+    }
+  }
+}

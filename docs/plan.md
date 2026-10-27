@@ -282,6 +282,16 @@ pisan los del perfil para ese modelo). `steam-deck.json` queda: `minFreeMemoryMb
 "models": {"flux3-klein-q8": {"args": ["--backend", "diffusion=cpu", "-t", "8"], "timeoutS": 10800, "minFreeMemoryMb": 5000}}}` (el
 5000 es el valor al que Tarkor bajó en pruebas; FLUX.3 corrió con 4,4-6 GB libres de mínimo).
 
+*Hecho en F2.1* (`gimg/models.py`): `load_catalog()` (`model.catalog_invalid`), `check_known(id)` y `resolve(id, machine)`, que
+devuelve `defaults`, `args` (catálogo y luego `engine.models.<id>.args`), `timeoutS`, `minFreeMemoryMb` (los del modelo si el perfil
+los fija, aunque sean 0, si no los generales) y `files[kind]` con su `path` bajo `paths.models_dir()`; `missing_files()` dice qué
+archivos faltan en disco (el error `model.not_installed` es de F2.5). Los ids son exactos (minúsculas, sin normalizar) y un id
+fuera del catálogo da `model.unknown`, también en `load_config` de un perfil del proyecto. **Decisión:** un `engine.models.<id>` del
+perfil de máquina que nombra un modelo ausente del catálogo se ignora (un perfil puede sobrevivir a un cambio del catálogo); pedir
+ese id sigue siendo `model.unknown`. `sizeMb` son 10^6 bytes redondeados. Los `sha256` y las URLs están comprobados contra la
+cabecera `x-linked-etag` de Hugging Face y contra `sha256sum` de los archivos de la Deck; el codificador de FLUX.3 se guarda como
+`Qwen3VL-4B-Instruct-Q4_K_M.gguf` (el nombre del repositorio de Qwen), no `Qwen3-VL-…`.
+
 **Motor** (`gimg/engine_sdcpp.py`, `provider` = `stable-diffusion.cpp`, D26). `SdCppEngine(machine, catalog).generate(job,
 should_cancel)` con el `EngineJob` de F1 más `draft: bool`, `init_image: str | None` y `strength: float | None` (img2img; con
 FLUX.3 añade `--extra-sample-args strength_as_noise_level=true`, sin él cualquier fuerza es casi ruido). Orden: 1) resolver el

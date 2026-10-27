@@ -137,7 +137,7 @@ class ExampleTests(unittest.TestCase):
 
     def test_shared_defs_are_identical_across_schemas(self):
         seen = {}
-        for name in ("project-config", "order", "machine-profile"):
+        for name in ("project-config", "order", "machine-profile", "models"):
             for key, definition in S.load_schema(name).get("$defs", {}).items():
                 seen.setdefault(key, []).append((name, definition))
         for key in ("name", "profileName", "relativePath", "steps", "cfg", "sampler"):
