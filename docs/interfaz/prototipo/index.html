@@ -126,6 +126,17 @@ p{margin:0}
 .chip.filtro{cursor:pointer;border:1px solid transparent;height:28px;padding:0 11px;font-size:13px;color:var(--text);background:var(--panel)}
 .chip.filtro:hover{border-color:var(--border)}
 .chip.filtro.on{background:var(--accent);color:var(--accent-ink)}
+/* «nuevo»: ideas de los referentes (propuesta.md, «Ideas de los referentes») */
+.chip.nuevo{height:18px;padding:0 6px;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;background:var(--accent-soft);color:var(--accent);border:1px dashed var(--accent)}
+.con-dado{display:flex;gap:4px;align-items:center}
+.con-dado input{flex:1;min-width:0}
+.con-dado .btn{height:36px;padding:0 9px;font-size:16px;flex:none}
+.sw-mini{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.sw-mini button{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);padding:0;cursor:pointer}
+.sw-mini button.on{border-color:var(--text);box-shadow:0 0 0 2px var(--panel),0 0 0 3px var(--text)}
+.btn .eta{font-weight:400;opacity:.8}
+.toast a{color:inherit;text-decoration:underline;margin-left:8px;font-weight:600}
+.toast.link{pointer-events:auto}
 .filtros{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
 .filtros .lbl{font-size:12.5px;color:var(--muted);margin-right:2px}
 
@@ -329,9 +340,18 @@ const T = {
       ['#/p/portal/pedido/portada@og','Retoque: prompt, semilla, pasos, modelo; título y subtítulo se previsualizan al instante y se recomponen sin generar.'],
       ['#/p/portal/pedido/portada@og','Elegir: PNG entregado en la carpeta del proyecto, manifiesto al día, deshacer.'],
       ['#/p/tarkor/pedido/portada@og','Estados: intento generando (Tarkor), fallo (Portal, FLUX.3), sin intentos (toVeriAI cita@square), sin pedidos (workflow).'],
+      ['#/p/portal/pedido/portada@og','Nuevo (ideas de los referentes, etiqueta «nuevo»): Recrear / Variar desde este / Copiar parámetros en cada tarjeta, tiempo previsto en los botones, dado de semilla, color del texto desde la paleta, «Copiar error» en el fallo; en la cola, filtros de terminados, «Al frente» y «Vaciar pendientes»; aviso de terminado con enlace.'],
     ],
     tema:'Tema: {t}', auto:'automático', claro:'claro', oscuro:'oscuro', idioma:'Idioma: {l}',
     rapido:'rápido', calidad:'calidad', min:'min', sin_logo:'—',
+    /* nuevo: ideas de los referentes */
+    nuevo_lbl:'nuevo', nuevo_t2:'Idea tomada de los referentes (propuesta.md, «Ideas de los referentes»)',
+    recrear:'Recrear', recrear_t:'Carga en el retoque la semilla, pasos, modelo y borrador de este intento, sin generar', recreado:'Retoque cargado con los parámetros de {id}',
+    variar:'Variar desde este', variar_t:'Otra semilla con los parámetros de este intento', copiar_params:'Copiar parámetros', copiado:'Parámetros de {id} copiados',
+    copiar_error:'Copiar error', error_copiado:'Error de {id} copiado', sin_portapapeles:'Sin portapapeles; cópialo de aquí: {x}',
+    ir_intento:'Ir al intento', frente:'Al frente', vaciar:'Vaciar pendientes', vaciados:'{n} pendiente(s) cancelado(s)',
+    f_todos:'Todos', f_term:'Terminados', f_fallidos:'Fallidos', sin_terminados:'Nada que enseñar con este filtro.',
+    dado:'Semilla aleatoria', seg:'s', hora:'h',
   },
   en: {
     guia:'Walkthrough', proyectos:'Projects', pedidos:'Orders', piezas:'Pieces', marca:'Brand', pedido:'Order', nuevo:'New order',
@@ -370,9 +390,18 @@ const T = {
       ['#/p/portal/pedido/portada@og','Tweak: prompt, seed, steps, model; title and subtitle preview instantly and recompose without generating.'],
       ['#/p/portal/pedido/portada@og','Choose: PNG delivered to the project folder, manifest updated, undo.'],
       ['#/p/tarkor/pedido/portada@og','States: attempt generating (Tarkor), failed (Portal, FLUX.3), no attempts (toVeriAI cita@square), no orders (workflow).'],
+      ['#/p/portal/pedido/portada@og','New (ideas from the reference products, "new" label): Recreate / Vary from this / Copy parameters on each card, expected time on the buttons, seed dice, text colour from the palette, "Copy error" on a failure; in the queue, filters for finished items, "To front" and "Clear pending"; finished notice with a link.'],
     ],
     tema:'Theme: {t}', auto:'auto', claro:'light', oscuro:'dark', idioma:'Language: {l}',
     rapido:'fast', calidad:'quality', min:'min', sin_logo:'—',
+    /* new: ideas from the reference products */
+    nuevo_lbl:'new', nuevo_t2:'Idea taken from the reference products (propuesta.md, "Ideas de los referentes")',
+    recrear:'Recreate', recrear_t:'Loads this attempt\'s seed, steps, model and draft flag into the tweak panel, without generating', recreado:'Tweak panel loaded with the parameters of {id}',
+    variar:'Vary from this', variar_t:'Another seed with this attempt\'s parameters', copiar_params:'Copy parameters', copiado:'Parameters of {id} copied',
+    copiar_error:'Copy error', error_copiado:'Error of {id} copied', sin_portapapeles:'No clipboard; copy it from here: {x}',
+    ir_intento:'Go to attempt', frente:'To front', vaciar:'Clear pending', vaciados:'{n} pending cancelled',
+    f_todos:'All', f_term:'Completed', f_fallidos:'Failed', sin_terminados:'Nothing to show with this filter.',
+    dado:'Random seed', seg:'s', hora:'h',
   }
 };
 let LANG = 'es';
@@ -513,7 +542,7 @@ const DONE = [{ id: 'q42', p: 'toveriai', key: 'portada', profile: 'og', time: 2
 let nextId = 60;
 
 /* ===================== estado de la interfaz ===================== */
-const S = { theme: 'auto', drawer: false, showText: true, compare: {}, filters: {}, lightbox: null };
+const S = { theme: 'auto', drawer: false, showText: true, compare: {}, filters: {}, lightbox: null, doneFilter: 'all' };
 try { S.theme = localStorage.getItem('gimg.theme') || 'auto'; } catch (e) {}
 function applyTheme() { const r = document.documentElement; if (S.theme === 'auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', S.theme); document.getElementById('btn-theme').textContent = S.theme === 'auto' ? '◐' : (S.theme === 'dark' ? '☾' : '☼'); }
 
@@ -525,7 +554,23 @@ const $ = (sel, el = document) => el.querySelector(sel);
 const stateOf = (o, a) => (o.chosen === a.id ? 'chosen' : a.state);
 const img = (src, cls, alt) => `<img class="${cls || ''}" src="${esc(src)}" alt="${esc(alt || '')}" loading="lazy" onerror="hueco(this)">`;
 window.hueco = function (el) { const d = document.createElement('div'); d.className = 'hueco'; d.innerHTML = `<span>${esc(base(el.getAttribute('src')))}</span>`; d.title = el.getAttribute('src'); el.replaceWith(d); };
-function toast(msg) { const el = $('#toast'); el.textContent = msg; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 2600); }
+function toast(msg, href) {
+  const el = $('#toast'); clearTimeout(toast.t);
+  if (href) { el.innerHTML = `${esc(msg)}<a href="${href}" data-act="toast-ir">${t('ir_intento')} →</a>`; el.classList.add('link'); }
+  else { el.textContent = msg; el.classList.remove('link'); }
+  el.classList.add('on'); toast.t = setTimeout(() => { el.classList.remove('on'); el.classList.remove('link'); }, href ? 6000 : 2600);
+}
+/* nuevo: ayudas de las ideas de los referentes */
+const NUEVO = () => `<span class="chip nuevo" title="${t('nuevo_t2')}">${t('nuevo_lbl')}</span>`;
+const rndSeed = () => Math.floor(Math.random() * 1e6);
+function etaTxt(s) { if (s < 90) return `~${Math.round(s)} ${t('seg')}`; const m = Math.round(s / 60); return m >= 60 ? `~${Math.floor(m / 60)} ${t('hora')} ${m % 60} ${t('min')}` : `~${m} ${t('min')}`; }
+function etaOf(model, draft, n) { const m = MODELS[model] || MODELS['flux2-klein-4b-q8']; return (draft ? m.etaDraft : m.eta) * (n || 1); }
+function copyText(txt, okMsg) {
+  const fallback = () => toast(t('sin_portapapeles', { x: txt.length > 120 ? txt.slice(0, 120) + '…' : txt }));
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(() => toast(okMsg), fallback); else fallback();
+}
+function attemptParams(P, o, a) { return { id: a.id, project: P.name, key: o.key, profile: o.profile, seed: a.seed, steps: a.steps, cfg: o.cfg, model: a.model, draft: !!a.draft, width: a.w, height: a.h, prompt: orderPrompt(P, o), style: P.style, verdict: stateOf(o, a), note: a.note || '' }; }
+function removeQueued(q) { QUEUE.splice(QUEUE.indexOf(q), 1); const o = PROJECTS[q.p].orders.find(x => x.key === q.key && x.profile === q.profile); if (o) { const i = o.attempts.findIndex(x => x.id === q.id); if (i >= 0) o.attempts.splice(i, 1); } }
 const hexa = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgb(${(n >> 16) & 255} ${(n >> 8) & 255} ${n & 255} / ${a})`; };
 function findOrder(pid, ref) { const [key, profile] = ref.split('@'); return PROJECTS[pid].orders.find(o => o.key === key && o.profile === profile); }
 function pieceOf(p, profile) { return p.pieces.find(x => x.profile === profile) || { w: 1280, h: 640, gw: 1280, gh: 640, zone: 'izquierda', logo: p.lockup }; }
@@ -555,13 +600,18 @@ function renderDrawer() {
     return `<li>
       <div class="q"><b>${esc(P.name)}</b> · <a href="#/p/${q.p}/pedido/${q.key}@${q.profile}" class="mono">${esc(q.key)} @ ${esc(q.profile)}</a><br>
         <span class="muted">${esc(MODELS[q.model].label)} · ${run ? t('transcurrido') + ' ' + mmss(el / 1000) + ' / ' : t('previsto') + ' ~'}${mmss(q.eta)}${run ? ' · ' + t('mem') + ' ' + q.mem + ' MB' : ' · ' + t('pos') + ' ' + i}</span></div>
-      <div class="acc">${!run && i > 1 ? `<button class="btn chico" data-act="subir" data-id="${q.id}">↑</button>` : ''}<button class="btn chico peligro" data-act="cancelar" data-id="${q.id}">${t('cancelar')}</button></div>
+      <div class="acc">${!run && i > 1 ? `<button class="btn chico" data-act="subir" data-id="${q.id}" title="${t('subir')}">↑</button><button class="btn chico" data-act="frente" data-id="${q.id}" title="${t('frente')} · ${t('nuevo_lbl')}">⇈</button>` : ''}<button class="btn chico peligro" data-act="cancelar" data-id="${q.id}">${t('cancelar')}</button></div>
       ${run ? `<div class="prog" data-prog="${q.id}"><i style="width:${pct}%"></i></div>` : ''}</li>`;
   }).join('');
-  const done = DONE.map(d => `<li><div class="q"><b>${esc(PROJECTS[d.p].name)}</b> · <a href="#/p/${d.p}/pedido/${d.key}@${d.profile}" class="mono">${esc(d.key)} @ ${esc(d.profile)}</a> <span class="muted">· ${d.id}</span></div><div>${d.failed ? stateChip('failed') : `<span class="chip">${mmss(d.time)}</span>`}</div></li>`).join('');
-  el.innerHTML = `<header><h2>${t('cola')} · ${esc(MACHINE.name)}</h2><button class="icono" data-act="cola" aria-label="${t('cerrar')}">✕</button></header>
+  const nPend = QUEUE.filter(q => q.state === 'queued').length;
+  const f = S.doneFilter; const shown = DONE.filter(d => f === 'all' || (f === 'failed' ? d.failed : !d.failed));
+  const done = shown.map(d => `<li><div class="q"><b>${esc(PROJECTS[d.p].name)}</b> · <a href="#/p/${d.p}/pedido/${d.key}@${d.profile}" class="mono">${esc(d.key)} @ ${esc(d.profile)}</a> <span class="muted">· ${d.id}</span></div><div>${d.failed ? stateChip('failed') : `<span class="chip">${mmss(d.time)}</span>`}</div></li>`).join('');
+  const chips = [['all', 'f_todos'], ['done', 'f_term'], ['failed', 'f_fallidos']].map(([v, k]) => `<button class="chip filtro ${f === v ? 'on' : ''}" data-act="f-done" data-v="${v}">${t(k)}</button>`).join('');
+  el.innerHTML = `<header><h2>${t('cola')} · ${esc(MACHINE.name)}</h2><span class="sep" style="flex:1"></span>${nPend ? `<button class="btn chico peligro" data-act="vaciar" title="${t('nuevo_lbl')}">${t('vaciar')} (${nPend})</button>` : ''}<button class="icono" data-act="cola" aria-label="${t('cerrar')}">✕</button></header>
     ${QUEUE.length ? `<ul>${items}</ul>` : `<div class="vacio">${t('nada_cola')}</div>`}
-    <header><h3>${t('ult_terminados')}</h3></header><ul>${done}</ul>`;
+    <header><h3>${t('ult_terminados')}</h3>${NUEVO()}</header>
+    <div class="filtros" style="padding:8px 14px 0;margin:0">${chips}</div>
+    ${shown.length ? `<ul>${done}</ul>` : `<div class="vacio">${t('sin_terminados')}</div>`}`;
 }
 function tick() {
   renderPill();
@@ -585,7 +635,7 @@ function finish(q) {
   }
   DONE.unshift({ id: q.id, p: q.p, key: q.key, profile: q.profile, time: q.eta });
   const nx = QUEUE.find(x => x.state === 'queued'); if (nx) { nx.state = 'running'; nx.startedAt = Date.now(); nx.mem = 7300; const P2 = PROJECTS[nx.p]; const o2 = P2.orders.find(x => x.key === nx.key && x.profile === nx.profile); const a2 = o2 && o2.attempts.find(x => x.id === nx.id); if (a2) a2.state = 'running'; }
-  toast(t('terminado', { id: q.id, p: P.name, k: q.key, pr: q.profile })); render();
+  toast(t('terminado', { id: q.id, p: P.name, k: q.key, pr: q.profile }), `#/p/${q.p}/pedido/${q.key}@${q.profile}`); render();
 }
 function enqueue(pid, o, n, opts = {}) {
   for (let i = 0; i < n; i++) {
@@ -732,7 +782,7 @@ function attemptCard(pid, P, o, a) {
     const q = QUEUE.find(x => x.id === a.id); const pos = QUEUE.filter(x => x.state === 'queued').indexOf(q);
     if (st === 'running') { const el = q ? (Date.now() - q.startedAt) / 1000 : 0; media = `<div class="estado-grande"><b>${t('st_running')}…</b><span data-prog-txt="${a.id}">${mmss(el)} / ~${mmss(q ? q.eta : 180)}</span><div class="prog" data-prog="${a.id}"><i style="width:${q ? Math.min(99, el / q.eta * 100) : 0}%"></i></div><span class="muted">${esc(MODELS[a.model].label)} · ${t('semilla')} ${a.seed} · ${a.steps} ${t('pasos')}</span></div>`; }
     else if (st === 'queued') media = `<div class="estado-grande"><b>${t('st_queued')}</b>${t('pos')} ${pos + 1} · ${t('previsto')} ~${mmss(q ? q.eta : 180)}<br><span class="muted">${t('semilla')} ${a.seed}</span><div style="margin-top:10px"><button class="btn chico" data-act="cancelar" data-id="${a.id}">${t('cancelar')}</button></div></div>`;
-    else media = `<div class="estado-grande"><b>✕ ${t('st_failed')}</b><span style="font-size:12.5px">${esc(a.error)}</span><div style="margin-top:10px;display:flex;gap:6px;justify-content:center"><button class="btn chico" data-act="reintentar" data-p="${pid}" data-o="${o.key}@${o.profile}" data-a="${a.id}">${t('reintentar')}</button><button class="btn chico" data-act="log">${t('ver_log')}</button></div></div>`;
+    else media = `<div class="estado-grande"><b>✕ ${t('st_failed')}</b><span style="font-size:12.5px">${esc(a.error)}</span><div style="margin-top:10px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap"><button class="btn chico" data-act="reintentar" data-p="${pid}" data-o="${o.key}@${o.profile}" data-a="${a.id}">${t('reintentar')}</button><button class="btn chico" data-act="log">${t('ver_log')}</button><button class="btn chico" data-act="copiar-error" data-p="${pid}" data-o="${o.key}@${o.profile}" data-a="${a.id}" title="${t('nuevo_lbl')}">⎘ ${t('copiar_error')}</button></div></div>`;
   } else {
     media = `${img(a.img, 'fondo', a.id)}${composeOverlay(P, o, a)}
       <label class="cmp" data-act="noop" title="${t('comparar')}"><input type="checkbox" data-act="cmp" data-p="${pid}" data-o="${o.key}@${o.profile}" data-a="${a.id}" ${cmp ? 'checked' : ''}> ${t('comparar')}</label>`;
@@ -744,12 +794,17 @@ function attemptCard(pid, P, o, a) {
       <span class="sep"></span>
       ${st === 'chosen' ? `<button class="btn chico" data-act="undo" data-p="${pid}" data-o="${o.key}@${o.profile}">↶ ${t('deshacer')}</button>` : `<button class="btn chico primario" data-act="choose" data-p="${pid}" data-o="${o.key}@${o.profile}" data-a="${a.id}" ${st === 'discarded' ? 'disabled' : ''}>★ ${t('elegir')}</button>`}
     </div>` : '';
+  const mas = (act && !a.compose) ? `<div class="botones">${NUEVO()}
+      <button class="btn chico" data-act="recrear" data-p="${pid}" data-o="${o.key}@${o.profile}" data-a="${a.id}" title="${t('recrear_t')}">↩ ${t('recrear')}</button>
+      <button class="btn chico" data-act="variar" data-p="${pid}" data-o="${o.key}@${o.profile}" data-a="${a.id}" title="${t('variar_t')}">▶ ${t('variar')} <span class="eta">${etaTxt(etaOf(a.model, a.draft, 1))}</span></button>
+      <button class="btn chico" data-act="copiar" data-p="${pid}" data-o="${o.key}@${o.profile}" data-a="${a.id}">⎘ ${t('copiar_params')}</button>
+    </div>` : '';
   return `<article class="card intento ${cls}" tabindex="0" data-card="${a.id}" data-p="${pid}" data-o="${o.key}@${o.profile}">
     <div class="img-wrap" style="--ar:${ar}" data-act="${a.img ? 'luz' : ''}" data-src="${esc(a.img || '')}" data-txt="${a.id} · ${t('semilla')} ${a.seed} · ${a.steps} ${t('pasos')}">
       <div class="est">${stateChip(st)}${a.draft ? `<span class="chip">${t('borrador')}</span>` : ''}${a.compose ? `<span class="chip">compose</span>` : ''}</div>${media}</div>
     <div class="pie">
       <div class="meta"><b class="mono">${a.id}</b><span>${t('semilla')} <b>${a.seed}</b></span><span>${a.steps} ${t('pasos')}</span><span title="${esc(a.model)}">${a.model === '—' ? '—' : (MODELS[a.model]?.kind ? t(MODELS[a.model].kind) : a.model)}</span>${a.time ? `<span>${mmss(a.time)}</span>` : ''}${a.w ? `<span>${a.w}×${a.h}</span>` : ''}<span class="sep"></span>${measureChip(a.m)}</div>
-      ${act}
+      ${act}${mas}
       <input class="nota" placeholder="${t('nota')}" value="${esc(a.note || '')}" data-act="nota" data-p="${pid}" data-o="${o.key}@${o.profile}" data-a="${a.id}">
     </div></article>`;
 }
@@ -794,9 +849,9 @@ function viewOrder(pid, ref) {
         <div class="campo"><label>${t('modelo')}</label><select data-bind="model" data-p="${pid}" data-o="${ref}">${Object.entries(MODELS).map(([k, m]) => `<option value="${k}" ${o.model === k ? 'selected' : ''}>${m.label} · ${t(m.kind)} · ~${Math.round(m.eta / 60)} ${t('min')}</option>`).join('')}</select></div>
         <div class="fila3"><div class="campo"><label>${t('pasos')}</label><input type="number" min="1" max="${MACHINE.maxSteps}" value="${o.steps}" data-bind="steps" data-p="${pid}" data-o="${ref}"></div>
           <div class="campo"><label>${t('cfg')}</label><input type="number" step="0.5" value="${o.cfg}" data-bind="cfg" data-p="${pid}" data-o="${ref}"></div>
-          <div class="campo"><label>${t('semilla')}</label><input type="number" value="${o.seed}" data-bind="seed" data-p="${pid}" data-o="${ref}"></div></div>
+          <div class="campo"><label>${t('semilla')} ${NUEVO()}</label><div class="con-dado"><input type="number" value="${o.seed}" data-bind="seed" data-p="${pid}" data-o="${ref}"><button type="button" class="btn" data-act="dado" data-p="${pid}" data-o="${ref}" title="${t('dado')}" aria-label="${t('dado')}">⚄</button></div></div></div>
         <label class="check"><input type="checkbox" data-bind="draft" data-p="${pid}" data-o="${ref}" ${o.draft ? 'checked' : ''}> ${t('borrador_primero')}</label>
-        <div class="acciones"><button class="btn primario" data-act="otra" data-p="${pid}" data-o="${ref}">▶ ${t('otra_semilla')}</button><button class="btn" data-act="tres" data-p="${pid}" data-o="${ref}">▶▶ ${t('tres')}</button></div>
+        <div class="acciones"><button class="btn primario" data-act="otra" data-p="${pid}" data-o="${ref}">▶ ${t('otra_semilla')} <span class="eta">· ${etaTxt(etaOf(o.model, o.draft, 1))}</span></button><button class="btn" data-act="tres" data-p="${pid}" data-o="${ref}">▶▶ ${t('tres')} <span class="eta">· ${etaTxt(etaOf(o.model, o.draft, 3))}</span></button>${NUEVO()}</div>
         <p class="muted" style="font-size:12px">${t('limites', { m: MACHINE.name, mw: MACHINE.maxW, mh: MACHINE.maxH, ms: MACHINE.maxSteps, mr: MACHINE.maxRefs, t: MACHINE.timeoutMin })}</p>
       </div>
       ${o.text.zone ? `<div class="card">
@@ -804,7 +859,8 @@ function viewOrder(pid, ref) {
         <div class="campo"><label>${t('titulo')}</label><input value="${esc(o.text.title)}" data-bind="t.title" data-p="${pid}" data-o="${ref}"></div>
         <div class="campo"><label>${t('subtitulo')}</label><input value="${esc(o.text.subtitle)}" data-bind="t.subtitle" data-p="${pid}" data-o="${ref}"></div>
         <div class="fila3"><div class="campo"><label>${t('zona')}</label><select data-bind="t.zone" data-p="${pid}" data-o="${ref}">${['izquierda', 'derecha', 'arriba', 'abajo'].map(z => `<option ${o.text.zone === z ? 'selected' : ''}>${z}</option>`).join('')}</select></div>
-          <div class="campo"><label>${t('color')}</label><input type="color" value="${o.text.color}" data-bind="t.color" data-p="${pid}" data-o="${ref}" style="height:36px;padding:2px"></div>
+          <div class="campo"><label>${t('color')} ${NUEVO()}</label><input type="color" value="${o.text.color}" data-bind="t.color" data-p="${pid}" data-o="${ref}" style="height:36px;padding:2px">
+            <div class="sw-mini">${P.palette.map(([n, hex]) => `<button type="button" class="${(o.text.color || '').toLowerCase() === hex.toLowerCase() ? 'on' : ''}" style="background:${hex}" title="${esc(n)} · ${hex}" aria-label="${esc(n)}" data-act="swatch" data-v="${hex}" data-p="${pid}" data-o="${ref}"></button>`).join('')}</div></div>
           <div class="campo"><label>${t('velo')} ${Math.round(o.text.veilA * 100)} %</label><input type="range" min="0" max="0.9" step="0.05" value="${o.text.veilA}" data-bind="t.veilA" data-p="${pid}" data-o="${ref}"></div></div>
         <div class="campo"><label>${t('logo')}</label><div class="ro mono">${esc(pc.logo)}</div></div>
         <div><button class="btn" data-act="recomponer" data-p="${pid}" data-o="${ref}" ${ch ? '' : 'disabled'}>⟳ ${t('recomponer')}</button></div>
@@ -827,11 +883,11 @@ function viewNew(pid, profile) {
       ${pc.gw ? `<div class="campo"><label>${t('prompt')}</label><textarea name="prompt">${esc(P.promptTpl)}</textarea><div id="aviso-prompt"></div></div>
       <div class="campo"><label>${t('estilo_perfil')}</label><div class="ro">${esc(P.style)}</div></div>
       <div class="fila3"><div class="campo"><label>${t('modelo')}</label><select name="model">${Object.entries(MODELS).map(([k, m]) => `<option value="${k}">${m.label} · ${t(m.kind)}</option>`).join('')}</select></div>
-        <div class="campo"><label>${t('semilla')}</label><input name="seed" type="number" value="3"></div>
+        <div class="campo"><label>${t('semilla')} ${NUEVO()}</label><div class="con-dado"><input name="seed" type="number" value="3"><button type="button" class="btn" data-act="dado-nuevo" title="${t('dado')}" aria-label="${t('dado')}">⚄</button></div></div>
         <div class="campo"><label>${t('pasos')}</label><input name="steps" type="number" value="6" min="1"></div></div>
       <div class="fila"><label class="check"><input type="checkbox" name="draft"> ${t('borrador_primero')}</label><div class="campo"><label>${t('n_intentos')}</label><select name="n"><option>1</option><option>2</option><option>3</option></select></div></div>` : ''}
       <div id="aviso-nuevo"></div>
-      <div class="acciones"><button class="btn primario" type="submit">▶ ${t('encolar')}</button><a class="btn" href="#/p/${pid}/piezas">${t('cancelar_f')}</a><span class="sep"></span><span class="muted" style="font-size:12px">${t('limites', { m: MACHINE.name, mw: MACHINE.maxW, mh: MACHINE.maxH, ms: MACHINE.maxSteps, mr: MACHINE.maxRefs, t: MACHINE.timeoutMin })}</span></div>
+      <div class="acciones"><button class="btn primario" type="submit">▶ ${t('encolar')}${pc.gw ? ` <span class="eta" id="eta-nuevo">· ${etaTxt(etaOf(Object.keys(MODELS)[0], false, 1))}</span>` : ''}</button>${pc.gw ? NUEVO() : ''}<a class="btn" href="#/p/${pid}/piezas">${t('cancelar_f')}</a><span class="sep"></span><span class="muted" style="font-size:12px">${t('limites', { m: MACHINE.name, mw: MACHINE.maxW, mh: MACHINE.maxH, ms: MACHINE.maxSteps, mr: MACHINE.maxRefs, t: MACHINE.timeoutMin })}</span></div>
     </form></div>${protoNote()}`;
 }
 function submitNew(form) {
@@ -903,6 +959,18 @@ document.addEventListener('click', e => {
     case 'restaurar': if (!o) break; o.prompt = null; render(); break;
     case 'cancelar': { const q = QUEUE.find(x => x.id === b.dataset.id); if (!q) break; QUEUE.splice(QUEUE.indexOf(q), 1); const o2 = PROJECTS[q.p].orders.find(x => x.key === q.key && x.profile === q.profile); if (o2) { const i = o2.attempts.findIndex(x => x.id === q.id); if (i >= 0) o2.attempts.splice(i, 1); } if (q.state === 'running') { const nx = QUEUE.find(x => x.state === 'queued'); if (nx) { nx.state = 'running'; nx.startedAt = Date.now(); nx.mem = 7300; const o3 = PROJECTS[nx.p].orders.find(x => x.key === nx.key && x.profile === nx.profile); const a3 = o3 && o3.attempts.find(x => x.id === nx.id); if (a3) a3.state = 'running'; } } toast(t('cancelado', { id: q.id })); render(); break; }
     case 'subir': { const i = QUEUE.findIndex(x => x.id === b.dataset.id); if (i > 1) { const [q] = QUEUE.splice(i, 1); QUEUE.splice(i - 1, 0, q); } renderDrawer(); break; }
+    /* nuevo: ideas de los referentes */
+    case 'frente': { const i = QUEUE.findIndex(x => x.id === b.dataset.id); const first = QUEUE.findIndex(x => x.state === 'queued'); if (i > first && first >= 0) { const [q] = QUEUE.splice(i, 1); QUEUE.splice(first, 0, q); } renderDrawer(); break; }
+    case 'vaciar': { const pend = QUEUE.filter(x => x.state === 'queued'); pend.forEach(removeQueued); toast(t('vaciados', { n: pend.length })); render(); break; }
+    case 'f-done': S.doneFilter = b.dataset.v; renderDrawer(); break;
+    case 'recrear': if (!a) break; o.seed = a.seed; o.steps = a.steps; o.draft = !!a.draft; if (MODELS[a.model]) { o.model = a.model; o.cfg = MODELS[a.model].cfg; } render(); toast(t('recreado', { id: a.id })); break;
+    case 'variar': if (!a) break; o.steps = a.steps; o.draft = !!a.draft; if (MODELS[a.model]) { o.model = a.model; o.cfg = MODELS[a.model].cfg; } enqueue(pid, o, 1, { seed: rndSeed(), note: a.note ? `← ${a.id}: ${a.note}` : `← ${a.id}` }); render(); break;
+    case 'copiar': if (!a) break; copyText(JSON.stringify(attemptParams(P, o, a), null, 2), t('copiado', { id: a.id })); break;
+    case 'copiar-error': if (!a) break; copyText(`${a.id} · ${o.key}@${o.profile} · ${a.model} · ${t('semilla')} ${a.seed}\n${a.error || ''}`, t('error_copiado', { id: a.id })); break;
+    case 'dado': if (!o) break; o.seed = rndSeed(); { const inp = b.closest('.con-dado').querySelector('input'); if (inp) inp.value = o.seed; } break;
+    case 'dado-nuevo': { const inp = b.closest('.con-dado').querySelector('input'); if (inp) inp.value = rndSeed(); break; }
+    case 'swatch': if (!o) break; o.text.color = b.dataset.v; render(); break;
+    case 'toast-ir': $('#toast').classList.remove('on', 'link'); break;
     case 'luz': { if (!b.dataset.src) break; const d = $('#luz'); d.querySelector('img').src = b.dataset.src; $('#luz-txt').textContent = b.dataset.txt || ''; d.showModal(); break; }
     case 'cerrar-luz': $('#luz').close(); break;
     case 'log': toast('<datos>/projects/portal/log.jsonl · app.error'); break;
@@ -911,7 +979,13 @@ document.addEventListener('click', e => {
   }
 });
 document.addEventListener('input', e => {
-  const el = e.target; const bind = el.dataset.bind; if (!bind) { if (el.name === 'prompt') { const f = el.closest('form'); checkBanned(PROJECTS[f.dataset.p], el.value, f.querySelector('#aviso-prompt')); } return; }
+  const el = e.target; const bind = el.dataset.bind;
+  if (!bind) {
+    const f = el.closest('#form-nuevo'); if (!f) return;
+    if (el.name === 'prompt') checkBanned(PROJECTS[f.dataset.p], el.value, f.querySelector('#aviso-prompt'));
+    if (el.name === 'model' || el.name === 'draft' || el.name === 'n') { const eta = f.querySelector('#eta-nuevo'); if (eta) eta.textContent = '· ' + etaTxt(etaOf(f.model.value, f.draft.checked, +f.n.value || 1)); } /* nuevo */
+    return;
+  }
   const P = PROJECTS[el.dataset.p]; const o = findOrder(el.dataset.p, el.dataset.o); if (!o) return;
   const v = el.type === 'checkbox' ? el.checked : el.value;
   if (bind.startsWith('t.')) {
