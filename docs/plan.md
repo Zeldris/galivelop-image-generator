@@ -310,6 +310,24 @@ conserva junto a la imagen (`attempts/q<id>.log`). Tests con `GIMG_SD_CLI` apunt
 imprime líneas de progreso y tarda lo que le digan: argv, progreso, cancelar, tope, memoria (el lector de `/proc/meminfo` se
 inyecta), código de salida, campos del registro.
 
+*Hecho en F2.2* (`gimg/engine_sdcpp.py`, `tests/fake_sd_cli.py`): solo la parte de proceso (pasos 3-7 del contrato, sin los puntos 2 ni `draft`/`initImage`/`strength`).
+**Decisiones:** (1) *Tope:* manda el `timeoutS` resuelto por modelo (`engine.models.<id>.timeoutS`, si no el del perfil); `job.timeout_s` solo vale si el
+perfil no trae ninguno, porque el worker ya le pasa el general y daría igual el del modelo; `None`, `0` o negativo = sin tope en esa fuente. (2) *Perfil:* manda
+`job.machine` si no está vacío (el worker lo recarga en cada entrada), si no el del constructor. (3) *Log:* el motor escribe `<salida>.log` (con la salida
+`.pending-<entrada>.png` del worker, `.pending-<entrada>.log`; la vista previa, `.pending-<entrada>.preview.png`) y devuelve la ruta en
+`EngineResult.log_path`; el worker lo renombra a `attempts/q<id>.log` tras mover la imagen (si falla, no pasa nada) y lo borra, con la vista previa,
+si el intento falla o se cancela; `queue.recover_orphans` también los limpia. (4) *Matar:* `killpg` con SIGTERM, 3 s de gracia y SIGKILL al grupo;
+sin `os.killpg` (Windows), `terminate()` y luego `kill()` del proceso solo (deja a sus hijos; sin probar, el proyecto corre en Linux). Una excepción
+en el bucle (o Ctrl-C) mata el grupo antes de salir. (5) `load_ms` es la suma de las líneas `loading tensors completed`; `sample_ms` y `decode_ms`, la
+última de su tipo; si la línea no está, `None`. (6) `command` lleva `sd-cli` sin carpeta y las rutas de modelos relativas a `paths.models_dir()`; el
+registro (`log.record_for`) aún no lo escribe (F2.4). (7) Binario ausente o sin permiso: `engine.binary_missing`/`engine.binary_not_executable`; sin
+`job.model`, `model.required`; sin archivos, `model.not_installed` con `instalar.sh --with <id>` (el script es de F2.5). (8) `-t <threads>` va antes de
+los `args` del catálogo y la máquina, para que estos puedan fijar los suyos. (9) `get_engine()` lee `GIMG_ENGINE`, luego `"engine"` de `<config>/config.json`
+(`sdcpp`/`fake`), por defecto `fake`.
+**Para F2.3/F2.4:** el bucle llama a `SdCppEngine._on_tick(proc, log_path, job)` en cada pulso (0,5 s, `poll_s`): ahí van el vigilante de `MemAvailable`, el
+aborto por «reported free 0.00 MB» y el progreso en la cola; la memoria previa y Ollama van en `generate` antes del `Popen`. Sin hacer en F2.2:
+memoria previa, vigilante, Ollama, progreso, `app.image.*` nuevos en el registro, `draft`, `initImage`, `strength`.
+
 **`instalar.sh`** (raíz del repo, bash, `set -euo pipefail`). Sin argumentos instala el motor y el conjunto rápido (~7 GB, D5);
 `--with flux3-klein-q8` añade el de calidad; `--only-cli` solo el lanzador. Pasos: 1) Python ≥ 3.10; 2) `gimg` en `~/.local/bin`
 (script que hace `exec python3 -m gimg` desde el repo; avisa si `~/.local/bin` no está en `PATH`); 3) release fija de

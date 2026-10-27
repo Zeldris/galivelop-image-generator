@@ -61,7 +61,9 @@
   "error.limit.references": "the attempt has {count} references and the machine allows {max}",
   "error.limit.steps": "the attempt asks for {steps} steps and the machine allows {max}",
   "error.limit.pixels": "the attempt asks for {width}x{height} ({pixels} pixels) and the machine allows {max}",
-  "error.engine.unknown": "unknown engine: \"{engine}\" (this version only has \"fake\")",
+  "error.engine.unknown": "unknown engine: \"{engine}\" (the engines are \"fake\" and \"sdcpp\")",
+  "error.engine.binary_missing": "the sd-cli binary does not exist: {path} (install it with instalar.sh, or set GIMG_SD_CLI or engine.sdCli in the machine profile)",
+  "error.engine.binary_not_executable": "sd-cli cannot be run: {path}",
   "error.engine.bad_delay": "GIMG_FAKE_DELAY is not a finite number >= 0: \"{value}\"",
   "error.log.bad_project": "invalid project name for the log: \"{project}\"",
   "error.queue.corrupt": "the queue {path} is corrupt",
@@ -154,5 +156,7 @@
   "cli.unexpected": "unexpected error: {message}",
   "error.cli.order_unreadable": "could not read the order \"{path}\": {reason}",
   "error.model.unknown": "model \"{model}\" is not in the catalog (known models: {known})",
+  "error.model.required": "the attempt does not say which model to use (known models: {known})",
+  "error.model.not_installed": "model \"{model}\" is not installed; missing: {files}. Install it with: {command}",
   "error.model.catalog_invalid": "the model catalog \"{path}\" is not valid:"
 }

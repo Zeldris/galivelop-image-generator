@@ -12,8 +12,8 @@ resolve references (`paths.inside`, must be files; D25) -> engine -> `orders.add
 Image: named after the queue entry id, unique across the generator. The engine writes
 ``attempts/.pending-<entry>.png``; the worker `os.replace`s it onto ``attempts/q<entry>.png`` and only then calls
 `orders.add_attempt(..., entry_id=entry)`, idempotent per entry (the attempt records ``image`` and ``queueEntry``). A crash
-at any point leaves either no attempt or one with its image, and a retry never duplicates it. The pending file is
-removed on every failure or cancel; if `add_attempt` fails the moved image is removed too.
+at any point leaves either no attempt or one with its image, and a retry never duplicates it. The engine's ``.pending-<entry>.log`` is renamed to ``attempts/q<entry>.log`` right after the image. The pending file (with its
+``.log`` and ``.preview.png``) is removed on every failure or cancel; if `add_attempt` fails the moved image is removed too.
 
 Once the attempt exists nothing can fail the entry: the success log line and `queue.finish` are best effort (an
 entry whose `finish` failed stays ``running`` and recovery deals with it), and no failure line is written. No
@@ -128,6 +128,12 @@ def _generate(entry: dict, eng, machine: dict, state: dict):
         os.replace(tmp, final)
     except OSError as exc:
         raise GimgError("worker.image_move", reason=str(exc))
+    engine_log = getattr(state["result"], "log_path", None)
+    if engine_log:  # best effort: the log is a nicety, the attempt does not depend on it
+        try:
+            os.replace(engine_log, tmp.parent / ("q%d.log" % entry_id))
+        except OSError:
+            pass
     state["tmp"] = None
     state["final"] = final
     attempt_id = orders.add_attempt(project_name, key, profile, {
@@ -156,6 +162,9 @@ def _process(entry: dict, eng, lang=None) -> None:
         for leftover in (state["tmp"], state["final"]):
             if leftover is not None:
                 _unlink(leftover)
+        if state["tmp"] is not None:  # the engine's log and preview of a failed or cancelled run
+            for suffix in (".log", ".preview.png"):
+                _unlink(state["tmp"].with_suffix(suffix))
     # the attempt exists: from here nothing may fail the entry
     if state["result"] is not None:
         try:

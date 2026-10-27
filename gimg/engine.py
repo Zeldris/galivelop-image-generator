@@ -1,7 +1,7 @@
-"""Image engines. F1 has only the fake one; the real `sd-cli` wrapper arrives in F2.
+"""Image engines: the fake one here, the real `sd-cli` wrapper in `engine_sdcpp`.
 
-Environment: ``GIMG_ENGINE`` picks the engine (default ``fake``). The fake engine reads
-``GIMG_FAKE_DELAY`` (seconds to wait) and ``GIMG_FAKE_FAIL`` (fail with that message)."""
+Engine choice (D36): ``GIMG_ENGINE``, else ``"engine"`` of ``<config>/config.json``, else ``fake``; the values are ``fake`` and
+``sdcpp``. The fake engine reads ``GIMG_FAKE_DELAY`` (seconds to wait) and ``GIMG_FAKE_FAIL`` (fail with that message)."""
 from __future__ import annotations
 
 import math
@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Optional
 
-from . import fsutil
+from . import fsutil, paths
 from .errors import GimgError
 
 FAKE_VERSION = "fake-1"
@@ -45,6 +45,8 @@ class EngineResult:
     sample_ms: Optional[int] = None
     decode_ms: Optional[int] = None
     min_free_mb: Optional[int] = None
+    command: Optional[list] = None  # argv of the engine for the log (D34); model files relative to the models folder
+    log_path: Optional[str] = None  # the engine's log of this run; the worker keeps it as ``attempts/q<entry>.log``
 
 
 class EngineError(Exception):
@@ -148,9 +150,26 @@ class FakeEngine(Engine):
                             load_ms=0, sample_ms=max(total - decode_ms, 0), decode_ms=decode_ms)
 
 
+def _configured_engine() -> str:
+    """``GIMG_ENGINE``, else ``"engine"`` of ``<config>/config.json``, else ``fake``."""
+    name = os.environ.get("GIMG_ENGINE")
+    if name:
+        return name
+    config_file = paths.config_dir() / "config.json"
+    try:
+        config = fsutil.read_json(config_file, {})
+    except (OSError, ValueError) as exc:
+        raise GimgError("machine.config_unreadable", path=str(config_file), reason=str(exc))
+    value = config.get("engine") if isinstance(config, dict) else None
+    return value if isinstance(value, str) and value else "fake"
+
+
 def get_engine() -> Engine:
-    """The engine named by ``GIMG_ENGINE`` (default ``fake``)."""
-    name = os.environ.get("GIMG_ENGINE") or "fake"
+    """The engine named by ``GIMG_ENGINE`` or the config file (default ``fake``); see the module docstring."""
+    name = _configured_engine()
+    if name == "sdcpp":
+        from . import engine_sdcpp, limits, models  # engine_sdcpp imports this module
+        return engine_sdcpp.SdCppEngine(limits.load_machine(), models.load_catalog())
     if name != "fake":
         raise GimgError("engine.unknown", engine=name)
     try:

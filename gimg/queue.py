@@ -9,7 +9,7 @@
 Every read goes through one locked transaction (`fsutil.lock` of ``queue.json``), which also recovers
 the file. Recovery is decided by the worker lock (``<data>/worker.lock``), not by pids: a process that can take
 it without waiting knows no worker is alive, so every ``running`` entry is dead and goes back to ``queued``
-(or to ``cancelled`` if a cancel was already requested), and the ``.pending-<entry>.png`` files it left are
+(or to ``cancelled`` if a cancel was already requested), and the ``.pending-<entry>.png`` files (and their ``.log`` and ``.preview.png``) it left are
 deleted. If the lock is taken, running entries are left alone. `list_entries`, `get` and `enqueue` try this;
 the worker does it right after taking its own lock (`recover_orphans`); `claim`, `cancel`, `finish`,
 `next_queued` and `is_cancel_requested` never do. ``pid`` stays in the entry as information only.
@@ -86,7 +86,10 @@ def _clean_pending(entry: dict) -> None:
     try:
         folder = orders.pending_image_path(entry["project"], entry["key"], entry["profile"], entry["id"]).parent
         names = ".pending-%d.png" % entry["id"]
-        for found in list(folder.glob(names)) + list(folder.glob("." + names + ".*.tmp")):
+        stem = ".pending-%d" % entry["id"]  # the engine's log and preview sit next to the image
+        found_all = (list(folder.glob(names)) + list(folder.glob("." + names + ".*.tmp"))
+                     + [folder / (stem + ".log"), folder / (stem + ".preview.png")])
+        for found in found_all:
             with contextlib.suppress(OSError):
                 found.unlink()
     except Exception:  # a bad entry must not stop the recovery
