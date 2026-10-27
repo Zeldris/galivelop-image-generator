@@ -152,6 +152,17 @@ def row_for_branch(text, branch):
     return None
 
 
+def compaction_budget(root, branch):
+    """The compaction budget in this branch's log row ('Budget: 4 compactions', 'Presupuesto: 4 compactaciones'),
+    or None when the row has none."""
+    try:
+        text = (root / config.load(root)["log"]).read_text(encoding="utf-8", errors="replace")
+    except (config.ConfigError, OSError, KeyError):
+        return None
+    match = re.search(r"(\d+)\s+compact", row_for_branch(text, branch) or "", re.IGNORECASE)
+    return int(match.group(1)) if match else None
+
+
 def named_section(text, heading):
     """The '#'-heading section whose title is heading (case and trailing colon ignored), up to the next heading of the
     same or a higher level; None when the log has none."""
@@ -258,6 +269,10 @@ def state(root, transcript):
     if path:
         n = count_compactions(path)
         print(f"- Compactions in this session: {n} (compare with the task's compaction budget in the log)")
+        budget = compaction_budget(root, branch)
+        if budget is not None and n > budget:
+            print(f"- Over the compaction budget ({n} of {budget}): close the current step, update the log, push and "
+                  "ask the user for a /clear before going on")
     else:
         print("- Compactions in this session: unknown (no session transcript found)")
     session = f" --sesion {path}" if path else ""

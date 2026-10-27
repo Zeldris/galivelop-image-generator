@@ -13,7 +13,7 @@
 | **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | F2.0 pruebas de concepto, delegadas por la persona. Hechas r2-r5 (`piloto/r4-r5`, registros en `docs/registros/contenido/`). Interfaz F4 cerrada en propuesta: 8 + 5 decisiones confirmadas, referentes en `docs/interfaz/referentes.md`, prototipo con lo adoptado (JS sin probar: abrirlo en el navegador). Siguiente: las tres fases antes de `main` (revisión `/code-review --max-findings all`, opt-tokens y retro, revisado.sh). Presupuesto: 4 compactaciones (5 gastadas) |
+| **Tarea en curso · `f2-motor`** | F2.0 pruebas de concepto, delegadas por la persona. Hechas r2-r5 e interfaz F4 en propuesta (8 + 5 decisiones confirmadas; prototipo con JS sin probar: abrirlo en el navegador). Antes de `main`: fase 1 hecha (`739f9c2`); fase 2, opt-tokens aplicado (aviso de presupuesto, gancho de `plan.md`); falta la retro con la persona. Luego fase 3 (`revisado.sh`) y CI, que no se ve desde aquí (sin `gh`): lo mira la persona. Presupuesto: 4 compactaciones (5 gastadas) |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.
@@ -46,6 +46,8 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 - **Leves de la revisión de `3dc054d` (piezas/componer, F2.0):** avatar rasterizado con `-w` y `-h` deforma un logo no
   cuadrado; `'640x320' in name` frágil (un `2640x320`); sin tests de `main()` con piezas, `paleta_de`, avatar,
   `pagina.medidas` ni `ronda.sh r5`; la prueba del lockup no cubre la rama en que manda el ancho de la columna.
+- **Aviso de presupuesto de compactaciones (cambio local del flujo):** `.claude/gw/scripts/recuperar.py` gana
+  `compaction_budget`; proponerlo al repo de Galivelop-workflow para que una actualización del flujo no lo pise.
 - **Leves de la revisión de `bb7719a` (piloto, fase 1 antes de `main`; no se revisan más en este PR):** `piezas.pieza`
   mide el fondo limpio con `medir.medir` y tira su `signalstats` (basta `contraste_zona`); el velo repite `rect` en las
   cuatro zonas y parchea `offset="0.55"` con `replace`; `recorte_cover` es código muerto; sin tests de `logos.py`,
