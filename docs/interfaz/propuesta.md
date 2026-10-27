@@ -1,6 +1,7 @@
 # Interfaz de `gimg` — propuesta de diseño (F4, primera versión)
 
-Estado: **[P]** propuesta del agente, 2026-10-27, pendiente de la persona. Prototipo navegable en
+Estado: propuesta del agente, 2026-10-27; **las 8 decisiones las confirmó la persona el 2026-10-27** (todas como se
+recomendaban, ver el final). Prototipo navegable en
 [`prototipo/index.html`](prototipo/index.html) (un archivo, sin dependencias; ábrelo desde el repo para que carguen las
 imágenes del piloto). Vocabulario del `GLOSSARY.md`: proyecto, perfil, pedido, clave, intento, candidata, descartada,
 elegida, cola, manifiesto, carpeta de entrega, perfil de máquina.
@@ -118,7 +119,9 @@ terminados recientes enlazan a su pedido.
 - Lo que la página del piloto ya hace bien y se conserva: sí / no por tarjeta, comparar al mismo tamaño, pincha para ver
   a tamaño real, «Copiar veredicto» (útil para pegarlo en el chat del agente mientras el agente no lea la API).
 
-## Decisiones para la persona
+## Decisiones (confirmadas por la persona, 2026-10-27)
+
+Las ocho, tal como se recomendaban. Pregunta y razón:
 
 1. **¿Pestañas «Piezas» y «Marca» dentro de la pantalla del proyecto (D22 pasa de tres pantallas a tres pantallas + dos
    pestañas)?** Recomiendo **sí**: sin plantillas, cada pedido se escribe a mano; sin la marca a la vista, no se puede
