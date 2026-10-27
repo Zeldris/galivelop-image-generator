@@ -147,7 +147,8 @@ class EngineProgressTests(Base):
     def test_result_has_the_d34_fields(self):
         _, job, res = self.run_job()
         names = {k: Path(self.md(k)).name for k in ("diffusion", "text", "vae")}
-        self.assertEqual((res.model_files, res.backend, res.compose), (names, "vulkan", None))
+        self.assertEqual((res.model_files, res.backend), (names, "vulkan"))
+        self.assertFalse(hasattr(res, "compose"))  # composing is the worker's, not the engine's (F2.8)
         self.assertEqual(res.params, {"steps": 6, "cfg": 1, "sampler": "euler"})
         self.assertEqual(res.command[0], "sd-cli")
 

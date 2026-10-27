@@ -6,8 +6,8 @@ Layout: ``<data>/projects/<project>/orders/<key>/@<profile>/order.json`` and
 This module neither enqueues (queue, F1.4) nor delivers (F1.5): `choose` and `undo` return the old and
 new chosen ids so delivery can hook in. Every read-modify-write holds `fsutil.lock` of ``order.json``.
 
-Public API: `submit`, `attempt_specs`, `add_attempt`, `attempt_for_entry`, `attempt_image`, `pending_image_path`, `mark`, `note`, `choose`,
-`undo`, `get`, `list_orders`. All raise `GimgError` with codes ``order.*`` on bad input.
+Public API: `submit`, `set_text`, `attempt_specs`, `add_attempt`, `set_composed`, `attempt_for_entry`, `attempt_image`,
+`raw_image`, `pending_image_path`, `mark`, `note`, `choose`, `undo`, `get`, `list_orders`. All raise `GimgError` with codes ``order.*`` on bad input.
 """
 from __future__ import annotations
 
@@ -64,6 +64,18 @@ def attempt_image(project: str, key: str, profile: str, attempt: dict) -> Path:
     (``attempts/<id>.png``, or ``attempts/q<entry>.png`` for an attempt made by a queue entry).
     The path is resolved and must stay inside the order folder (D25). Path only; nothing is read."""
     return paths.inside(_order_dir(project, key, profile), attempt["image"])
+
+
+def raw_image_name(entry_id: int) -> str:
+    """The ``raw`` field of the attempt made by queue entry `entry_id`: what the model gave, before composing (F2.8)."""
+    return "attempts/q%d.raw.png" % int(entry_id)
+
+
+def raw_image(project: str, key: str, profile: str, attempt: dict) -> Path:
+    """Where the raw image of an attempt lives: its ``raw`` field, else its ``image`` (an attempt made before F2.8, or
+    one that was never composed, has no ``raw``). Same guard as `attempt_image`; path only, nothing is read."""
+    rel = attempt.get("raw")
+    return paths.inside(_order_dir(project, key, profile), rel if isinstance(rel, str) else attempt["image"])
 
 
 def pending_image_path(project: str, key: str, profile: str, entry_id: int) -> Path:
@@ -162,14 +174,17 @@ def submit(project: str, order: dict) -> dict:
 
     `order` follows the ``order`` schema (``count`` is accepted but not stored: it is for the caller to
     pass to `attempt_specs`). Resubmitting the same key + profile replaces prompt, references, params
-    seed (a missing ``seed`` clears it), initImage and strength (missing ones clear them) and draft (a missing one is false) and keeps attempts, chosen and history. Does not enqueue."""
+    seed (a missing ``seed`` clears it), initImage and strength (missing ones clear them), draft (a missing one is false) and
+    text (a missing one is ``{}``; its keys must be in the profile's ``compose.fields``, else ``order.text_unknown_field``)
+    and keeps attempts, chosen and history. Does not enqueue."""
     errors = schema.validate(order, schema.load_schema("order"))
     if errors:
         raise GimgError("order.invalid", errors=errors)
     paths.check_key(order["key"])
     config = projects.get(project)["config"]
-    _profile(config, order["profile"])
+    profile_cfg = _profile(config, order["profile"])
     key, profile = order["key"], order["profile"]
+    _check_text(profile_cfg, profile, order.get("text", {}))
     fields = {
         "prompt": order["prompt"],
         "references": list(order.get("references", [])),
@@ -178,6 +193,7 @@ def submit(project: str, order: dict) -> dict:
         "draft": bool(order.get("draft", False)),
         "initImage": order.get("initImage"),
         "strength": order.get("strength"),
+        "text": dict(order.get("text", {})),
     }
     path = _order_file(project, key, profile)
     with fsutil.lock(path):
@@ -195,11 +211,37 @@ def submit(project: str, order: dict) -> dict:
     return copy.deepcopy(record)
 
 
+def _check_text(profile_cfg: dict, profile: str, text: dict) -> None:
+    """The keys of `text` must be fields the profile composes (``compose.fields``)."""
+    allowed = list((profile_cfg.get("compose") or {}).get("fields", []))
+    for field in text:
+        if field not in allowed:
+            raise GimgError("order.text_unknown_field", field=field, profile=profile, fields=", ".join(allowed) or "-")
+
+
+def set_text(project: str, key: str, profile: str, text: dict) -> dict:
+    """Merge `text` into the order's ``text`` (the fields it names are replaced, the others stay); returns the order's
+    whole ``text``. Same checks as `submit` (schema, then ``compose.fields`` of the profile)."""
+    if not isinstance(text, dict):
+        raise GimgError("order.invalid", errors=[{"path": "/text", "code": "type", "params": {"expected": "object"}}])
+    _check_fields_of({"key": key, "profile": profile, "prompt": "x", "text": text})
+    profile_cfg = _profile(projects.get(project)["config"], profile)
+    _check_text(profile_cfg, profile, text)
+
+    def change(order):
+        merged = dict(order.get("text") or {})
+        merged.update(text)
+        order["text"] = merged
+        return dict(merged)
+
+    return _modify(project, key, profile, change)
+
+
 def attempt_specs(project: str, key: str, profile: str, count: int = 1, *,
                   seed=None, prompt=None, params=None, draft=None) -> list:
     """Specs of `count` attempts to enqueue; never changes the stored order (D19-D20).
 
-    Each spec is ``{"seed", "prompt", "params", "references", "draft", "initImage", "strength"}`` (the last two are the order's, ``None`` if absent):
+    Each spec is ``{"seed", "prompt", "params", "references", "draft", "initImage", "strength", "text"}`` (the last three are the order's, ``None`` or ``{}`` if absent):
     - seed: `seed` if given, else the order's seed, then ``seed + i`` for attempt i (0-based);
       with neither, a random integer in ``[0, 2**32)`` per attempt (`random.SystemRandom`).
     - params: profile settings (width, height, steps, cfg, sampler, model; only those the profile
@@ -237,6 +279,7 @@ def attempt_specs(project: str, key: str, profile: str, count: int = 1, *,
         "draft": is_draft,
         "initImage": order.get("initImage"),
         "strength": order.get("strength"),
+        "text": dict(order.get("text") or {}),
     } for i in range(count)]
 
 
@@ -252,7 +295,9 @@ def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None)
     """Append an attempt in state ``new`` (used by the worker after generating); returns its id.
 
     Ids are sequential from 1. `spec` needs ``seed``, ``prompt`` and ``params``; ``references``
-    defaults to the order's; ``engine`` / ``engineVersion`` / ``log`` (strings, optional), ``command`` (list of strings) and ``modelFiles`` (name by kind) are stored as given when they have that type (D34). Without `entry_id`, ``image`` is ``attempts/<id>.png``, relative to the order
+    defaults to the order's; ``engine`` / ``engineVersion`` / ``log`` (strings, optional), ``command`` (list of strings) and ``modelFiles`` (name by kind) are stored as given when they have that type (D34). F2.8: ``raw`` (a string, the raw image),
+    ``compose`` (an object, what was composed) and ``composeError`` (``{"code": str, "params": object}``, the composition failed) are
+    stored as given when they have that type. Without `entry_id`, ``image`` is ``attempts/<id>.png``, relative to the order
     folder. With `entry_id` (the queue entry that made it) ``image`` is ``attempts/q<entry>.png`` and the
     attempt records ``queueEntry``; the call is idempotent per entry: if an attempt with that
     ``queueEntry`` exists, its id is returned and nothing is added."""
@@ -302,8 +347,44 @@ def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None)
             record["command"] = list(command)
         if isinstance(files, dict) and all(isinstance(k, str) and isinstance(v, str) for k, v in files.items()):
             record["modelFiles"] = dict(files)
+        if isinstance(spec.get("raw"), str):
+            record["raw"] = spec["raw"]
+        if isinstance(spec.get("compose"), dict):
+            record["compose"] = copy.deepcopy(spec["compose"])
+        error = spec.get("composeError")
+        if isinstance(error, dict) and isinstance(error.get("code"), str) and isinstance(error.get("params"), dict):
+            record["composeError"] = {"code": error["code"], "params": copy.deepcopy(error["params"])}
+            if "raw" in record:  # not composed: the raw image is the one to show until it is
+                record["image"] = record["raw"]
         order["attempts"].append(record)
         return new_id
+
+    return _modify(project, key, profile, change)
+
+
+def set_composed(project: str, key: str, profile: str, attempt_id: int, compose: dict) -> dict:
+    """Record that attempt `attempt_id` was (re)composed: ``image`` becomes the composed file, ``raw`` the raw one,
+    ``compose`` what was done, and ``composeError`` goes away. Returns the attempt (a copy).
+
+    The raw image is the attempt's ``raw``, else its ``image`` as ``<stem>.raw.png`` (an attempt made before F2.8); the
+    composed file is the raw one without ``.raw`` (``attempts/q3.raw.png`` -> ``attempts/q3.png``). Both stay inside the
+    order folder (D25). Nothing is read or written on disk: that is the caller's job."""
+    if not isinstance(compose, dict):
+        raise GimgError("order.spec_invalid", missing="compose")
+
+    def change(order):
+        item = _attempt(order, attempt_id)
+        raw = item.get("raw")
+        if not isinstance(raw, str):
+            raw = item["image"][:-4] + ".raw.png" if item["image"].endswith(".png") else item["image"] + ".raw.png"
+        if raw.endswith(".raw.png"):
+            item["image"] = raw[:-len(".raw.png")] + ".png"
+        item["raw"] = raw
+        item["compose"] = copy.deepcopy(compose)
+        item.pop("composeError", None)
+        paths.inside(_order_dir(project, key, profile), item["image"])
+        paths.inside(_order_dir(project, key, profile), raw)
+        return copy.deepcopy(item)
 
     return _modify(project, key, profile, change)
 
@@ -337,11 +418,14 @@ def note(project: str, key: str, profile: str, attempt_id: int, text: str) -> di
 
 
 def check_choosable(attempt: dict) -> None:
-    """The one eligibility rule: a discarded attempt and a draft cannot be chosen (raises, else returns)."""
+    """The one eligibility rule: a discarded attempt, a draft and one whose composition failed (its ``image`` is the raw
+    one; `gimg compose` fixes it) cannot be chosen (raises, else returns)."""
     if attempt["state"] == "discarded":
         raise GimgError("order.choose_discarded", attempt=attempt["id"])
     if attempt.get("draft") is True:
         raise GimgError("order.choose_draft", attempt=attempt["id"])
+    if "composeError" in attempt:
+        raise GimgError("order.choose_uncomposed", attempt=attempt["id"])
 
 
 def choose(project: str, key: str, profile: str, attempt_id: int) -> dict:

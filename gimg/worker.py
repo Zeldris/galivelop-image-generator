@@ -26,6 +26,14 @@ Image: named after the queue entry id, unique across the generator. The engine w
 at any point leaves either no attempt or one with its image, and a retry never duplicates it. The engine's ``.pending-<entry>.log`` is renamed to ``attempts/q<entry>.log`` right after the image. The pending file (with its
 ``.log`` and ``.preview.png``) is removed on every failure or cancel; if `add_attempt` fails the moved image is removed too.
 
+Composition (F2.8, D28): after the chunk, `compose.plan_for` says whether there is anything to do (a ``compose`` in the
+profile, or a ``targetWidth``/``targetHeight`` other than the raw size). With none, everything above is as before. With
+one, the pending file goes to ``attempts/q<entry>.raw.png`` first (the generation is safe), `compose.render` writes
+``attempts/q<entry>.png`` and the attempt records ``raw`` and ``compose``. If `render` raises a `GimgError` the attempt is
+still made, with the raw image as its ``image`` and ``composeError`` ``{code, params}``: the entry is ``done``, a
+``worker.compose_failed`` line goes to stderr and `gimg compose` can fix it later (it cannot be chosen meanwhile).
+Drafts are composed too.
+
 Once the attempt exists nothing can fail the entry: the success log line and `queue.finish` are best effort (an
 entry whose `finish` failed stays ``running`` and recovery deals with it), and no failure line is written. No
 `finish` error ever stops `run()`.
@@ -46,8 +54,10 @@ import os
 import signal
 import sys
 import threading
+from pathlib import Path
 
 from . import engine as engine_mod
+from . import compose as compose_mod
 from . import fsutil, i18n, limits, log, orders, paths, png, projects, queue
 from .errors import GimgError
 
@@ -157,6 +167,18 @@ def metadata_for(entry: dict, result) -> dict:
     return meta
 
 
+def _compose_plan(project: dict, profile: str, image):
+    """`compose.plan_for` of the profile now configured and the size of the PNG at `image`; ``None`` (nothing to
+    compose) also when the profile is gone or the engine left something that is not a PNG: then the image is kept as it is."""
+    profile_cfg = project["config"]["profiles"].get(profile)
+    if profile_cfg is None:
+        return None
+    try:
+        return compose_mod.plan_for(profile_cfg, *png.size(image))
+    except (GimgError, OSError):
+        return None
+
+
 def _generate(entry: dict, eng, machine: dict, state: dict, lang=None):
     """Everything up to and including `add_attempt`; returns the attempt id. `state["tmp"]`/`["final"]` are
     the files to clean up if it raises."""
@@ -191,8 +213,14 @@ def _generate(entry: dict, eng, machine: dict, state: dict, lang=None):
         reason = exc.params.get("reason", exc.code) if isinstance(exc, GimgError) else str(exc)
         print(i18n.t("worker.metadata_failed", lang, id=entry_id, reason=reason), file=sys.stderr)
     final = tmp.parent / ("q%d.png" % entry_id)
+    try:  # the profile as it is now: the engine may have run for minutes
+        project = projects.get(project_name)
+    except GimgError:
+        pass
+    plan = _compose_plan(project, profile, tmp)
+    raw = tmp.parent / Path(orders.raw_image_name(entry_id)).name if plan is not None else None
     try:
-        os.replace(tmp, final)
+        os.replace(tmp, final if raw is None else raw)  # the raw image is safe before anything else is done
     except OSError as exc:
         raise GimgError("worker.image_move", reason=str(exc))
     engine_log = getattr(state["result"], "log_path", None)
@@ -204,15 +232,26 @@ def _generate(entry: dict, eng, machine: dict, state: dict, lang=None):
         except OSError:
             pass
     state["tmp"] = None
-    state["final"] = final
+    state["final"] = [final] if raw is None else [raw, final]
     result = state["result"]
+    extra = {}
+    if raw is not None:
+        extra["raw"] = orders.raw_image_name(entry_id)
+        try:
+            extra["compose"] = state["compose"] = compose_mod.render(
+                project["root"], project["config"]["profiles"][profile], raw, final, entry.get("text") or {}, profile)
+        except GimgError as exc:  # keep the generation: the raw image stands in until `gimg compose` fixes it
+            error = queue.make_error(exc.code, **exc.params)
+            extra["composeError"] = state["compose_error"] = error
+            print(i18n.t("worker.compose_failed", lang, id=entry_id, reason=queue.error_text(error, lang)),
+                  file=sys.stderr)
     attempt_id = orders.add_attempt(project_name, key, profile, {
         "seed": entry["seed"], "prompt": entry["prompt"], "params": params,
         "references": entry["references"], "engine": eng.provider,
         "engineVersion": result.engine_version, "command": getattr(result, "command", None),
         "modelFiles": getattr(result, "model_files", None), "log": kept_log,
         "draft": entry.get("draft") is True,
-        "initImage": entry.get("initImage"), "strength": entry.get("strength")}, entry_id=entry_id)
+        "initImage": entry.get("initImage"), "strength": entry.get("strength"), **extra}, entry_id=entry_id)
     state["final"] = None
     return attempt_id
 
@@ -220,7 +259,7 @@ def _generate(entry: dict, eng, machine: dict, state: dict, lang=None):
 def _process(entry: dict, eng, lang=None) -> None:
     entry_id = entry["id"]
     machine = {}
-    state = {"tmp": None, "final": None, "result": None}
+    state = {"tmp": None, "final": None, "result": None, "compose": None, "compose_error": None}
     try:
         attempt_id = _generate(entry, eng, machine, state, lang)
     except engine_mod.Cancelled:
@@ -232,7 +271,7 @@ def _process(entry: dict, eng, lang=None) -> None:
         _finish(entry_id, "failed", lang, error=error)
         return
     finally:
-        for leftover in (state["tmp"], state["final"]):
+        for leftover in [state["tmp"]] + list(state["final"] or []):
             if leftover is not None:
                 _unlink(leftover)
         if state["tmp"] is not None:  # the engine's log and preview of a failed or cancelled run
@@ -242,7 +281,9 @@ def _process(entry: dict, eng, lang=None) -> None:
     if state["result"] is not None:
         try:
             log.append(entry["project"], log.record_for(
-                entry["key"], entry["profile"], entry, machine, eng.provider, result=state["result"]))
+                entry["key"], entry["profile"], entry, machine, eng.provider, result=state["result"],
+                compose=(state["compose"] or {}).get("template"),
+                compose_error=(state["compose_error"] or {}).get("code")))
         except Exception as exc:
             print(i18n.t("worker.log_failed", lang, id=entry_id, reason=exc), file=sys.stderr)
     _finish(entry_id, "done", lang, attempt_id=attempt_id)

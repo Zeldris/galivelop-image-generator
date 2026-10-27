@@ -17,9 +17,11 @@ def _now() -> str:
 
 
 def record_for(key: str, profile: str, spec: dict, machine: dict, provider: str,
-               result=None, error: str | None = None, ts: str | None = None) -> dict:
+               result=None, error: str | None = None, ts: str | None = None,
+               compose: str | None = None, compose_error: str | None = None) -> dict:
     """The log line of one attempt: from an `EngineResult` (`result`) or an error message.
-    Absent values are omitted, never ``null``."""
+    `compose` is the template the image was composed with and `compose_error` the code of a composition that failed
+    (F2.8). Absent values are omitted, never ``null``."""
     params = spec.get("params") or {}
     line = {
         "ts": ts or _now(),
@@ -50,7 +52,8 @@ def record_for(key: str, profile: str, spec: dict, machine: dict, provider: str,
         "app.image.draft": bool(spec.get("draft")),
         "app.image.initImage": (str(spec["initImage"]).rsplit("/", 1)[-1] if spec.get("initImage") is not None else None),
         "app.image.strength": spec.get("strength") if spec.get("initImage") is not None else None,
-        "app.image.compose": getattr(result, "compose", None),
+        "app.image.compose": compose,
+        "app.image.compose_error": compose_error,
         "app.image.command": getattr(result, "command", None),
     }
     return {k: v for k, v in line.items() if v is not None}

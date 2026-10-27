@@ -437,5 +437,49 @@ class AttemptEngineTests(DeliveryBase):
         self.assertEqual((att["engine"], att["engineVersion"]), ("fake", engine.FAKE_VERSION))
 
 
+class DeliveryComposeTests(DeliveryBase):
+    """F2.8: the delivered image is the composed one and the manifest says how it was composed."""
+    INFO = {"fit": "cover", "targetWidth": 1200, "targetHeight": 630, "template": "t.svg", "text": {"title": "Hi"}}
+
+    def composed_attempt(self):
+        (one,) = self.attempts(1)
+        folder = orders._order_dir("proj", "a", "banner") / "attempts"
+        (folder / "q1.raw.png").write_bytes(b"the raw image")
+        orders.set_composed("proj", "a", "banner", one, self.INFO)
+        return one, folder
+
+    def test_the_manifest_copies_compose_and_the_composed_image_is_delivered(self):
+        one, folder = self.composed_attempt()
+        delivery.choose("proj", "a", "banner", one)
+        self.assertEqual(self.manifest()["images"]["a"]["banner"]["compose"], self.INFO)
+        self.assertEqual(self.delivered().read_bytes(), (folder / "q1.png").read_bytes())
+        self.assertNotEqual(self.delivered().read_bytes(), b"the raw image")
+
+    def test_an_attempt_without_compose_leaves_the_manifest_entry_as_before(self):
+        (one,) = self.attempts(1)
+        delivery.choose("proj", "a", "banner", one)
+        self.assertNotIn("compose", self.manifest()["images"]["a"]["banner"])
+
+    def test_a_malformed_compose_is_not_copied(self):
+        (one,) = self.attempts(1)
+        path = orders._order_file("proj", "a", "banner")
+        data = json.loads(path.read_text())
+        data["attempts"][0]["compose"] = "not an object"
+        path.write_text(json.dumps(data))
+        delivery.choose("proj", "a", "banner", one)
+        self.assertNotIn("compose", self.manifest()["images"]["a"]["banner"])
+
+    def test_an_attempt_that_failed_to_compose_is_not_delivered(self):
+        (one,) = self.attempts(1)
+        path = orders._order_file("proj", "a", "banner")
+        data = json.loads(path.read_text())
+        data["attempts"][0]["composeError"] = {"code": "compose.tool_missing", "params": {"tool": "ffmpeg"}}
+        path.write_text(json.dumps(data))
+        self.assertEqual(self.code(delivery.choose, "proj", "a", "banner", one), "order.choose_uncomposed")
+        self.assertFalse(self.delivered().exists())
+        self.assertFalse((self.projects["proj"] / "galivelop-images.manifest.json").exists())
+        self.assertEqual(self.state(), (None, []))
+
+
 if __name__ == "__main__":
     unittest.main()

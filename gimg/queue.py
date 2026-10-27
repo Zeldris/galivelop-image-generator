@@ -2,7 +2,8 @@
 
 ``{"nextId": n, "entries": [...]}``; entry: ``id``, ``project``, ``key``, ``profile``, ``seed``, ``prompt``,
 ``params``, ``references``, ``state`` (queued|running|done|failed|cancelled), ``pid``, ``enqueuedAt``,
-``startedAt``, ``finishedAt``, ``error``, ``attemptId``, ``cancelRequested``, ``draft`` (bool; an older entry without it is not a draft), ``initImage`` (relative path or ``None``) and ``strength`` (number or ``None``; an older entry without the keys has neither). Entries stay in arrival order.
+``startedAt``, ``finishedAt``, ``error``, ``attemptId``, ``cancelRequested``, ``draft`` (bool; an older entry without it is not a draft), ``initImage`` (relative path or ``None``) and ``strength`` (number or ``None``; an older entry without the keys has neither) and ``text`` (object, the values of the
+profile's ``compose.fields``; an older entry without it has none: read it with ``.get``). Entries stay in arrival order.
 A running entry may also have ``progress`` (``{"step", "steps", "etaS"}``, `set_progress`) and ``preview`` (the path of
 the engine's preview image, `set_preview`); both are removed when the entry finishes or goes back to ``queued``.
 
@@ -24,6 +25,7 @@ import copy
 import fcntl
 import json
 import os
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -94,6 +96,8 @@ def _clean_pending(entry: dict) -> None:
         for found in found_all:
             with contextlib.suppress(OSError):
                 found.unlink()
+        for leftover in folder.glob(".compose-*"):  # a composition killed half way (only a dead worker can leave one)
+            shutil.rmtree(leftover, ignore_errors=True)
     except Exception:  # a bad entry must not stop the recovery
         pass
 
@@ -172,6 +176,7 @@ def enqueue(project: str, key: str, profile: str, specs: list) -> list:
                      "references": list(spec.get("references") or []),
                      "draft": spec.get("draft") is True,
                      "initImage": spec.get("initImage"), "strength": spec.get("strength"),
+                     "text": copy.deepcopy(spec.get("text") or {}),
                      "state": "queued", "pid": None, "enqueuedAt": now, "startedAt": None,
                      "finishedAt": None, "error": None, "attemptId": None, "cancelRequested": False}
             data["nextId"] += 1

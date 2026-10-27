@@ -309,7 +309,7 @@ class OrderTests(unittest.TestCase):
         self.new_order()
         for image in ("../order.json", "/etc/x", "attempts/../../x"):
             self.assertIn(self.code(orders.attempt_image, "proj", "a", "banner", {"image": image}),
-                          ("path.dotdot", "path.absolute", "path.outside"), image)
+                          ("path.dotdot", "path.absolute", "path.dotdot"), image)
 
     def test_add_attempt_validates_fields(self):
         self.new_order()
@@ -327,6 +327,154 @@ class OrderTests(unittest.TestCase):
                 orders.undo("proj", "zz", "banner")
             except GimgError as exc:
                 self.assertNotIn("error.", exc.message(lang))
+
+
+class ComposeOrderTests(unittest.TestCase):
+    """F2.8: `text` in the order, and the raw / composed images of an attempt."""
+    write_cfg, order, code, spec = OrderTests.write_cfg, OrderTests.order, OrderTests.code, OrderTests.spec
+
+    def setUp(self):
+        OrderTests.setUp(self)
+        self.cfg["profiles"]["og"] = dict(self.cfg["profiles"]["banner"], width=1280, height=640,
+                                          targetWidth=1200, targetHeight=630,
+                                          compose={"template": "t.svg", "fields": ["title", "subtitle"]})
+        self.write_cfg()
+
+    def og(self, **changes):
+        return self.order(profile="og", **changes)
+
+    def reason(self, fn, *args):
+        with self.assertRaises(GimgError) as cm:
+            fn(*args)
+        return cm.exception
+
+    def test_submit_stores_text_and_defaults_to_empty(self):
+        self.assertEqual(orders.submit("proj", self.og(text={"title": "Hi"}))["text"], {"title": "Hi"})
+        self.assertEqual(orders.submit("proj", self.og())["text"], {})  # resubmitting replaces it, like the other fields
+        self.assertEqual(orders.submit("proj", self.order())["text"], {})  # a profile without compose: always {}
+
+    def test_text_outside_compose_fields_names_the_field_the_profile_and_the_valid_ones(self):
+        exc = self.reason(orders.submit, "proj", self.og(text={"title": "x", "headline": "y"}))
+        self.assertEqual((exc.code, exc.params), ("order.text_unknown_field", {
+            "field": "headline", "profile": "og", "fields": "title, subtitle"}))
+        exc = self.reason(orders.submit, "proj", self.order(text={"title": "x"}))  # banner has no compose at all
+        self.assertEqual((exc.code, exc.params["fields"]), ("order.text_unknown_field", "-"))
+        with self.assertRaises(GimgError):
+            orders.get("proj", "a", "og")  # nothing was stored
+
+    def test_attempt_specs_copy_the_text_and_never_share_it(self):
+        orders.submit("proj", self.og(text={"title": "Hi"}))
+        specs = orders.attempt_specs("proj", "a", "og", 2)
+        self.assertEqual([s["text"] for s in specs], [{"title": "Hi"}] * 2)
+        specs[0]["text"]["title"] = "changed"
+        self.assertEqual(orders.get("proj", "a", "og")["text"], {"title": "Hi"})
+        self.assertEqual(specs[1]["text"], {"title": "Hi"})
+
+    def test_an_order_stored_before_f2_8_has_no_text_and_still_gives_specs(self):
+        orders.submit("proj", self.og())
+        path = orders._order_file("proj", "a", "og")
+        data = json.loads(path.read_text())
+        del data["text"]
+        path.write_text(json.dumps(data))
+        self.assertEqual(orders.attempt_specs("proj", "a", "og")[0]["text"], {})
+        self.assertEqual(orders.set_text("proj", "a", "og", {"title": "T"}), {"title": "T"})
+
+    def test_set_text_merges_into_the_order(self):
+        orders.submit("proj", self.og(text={"title": "Hi", "subtitle": "there"}))
+        self.assertEqual(orders.set_text("proj", "a", "og", {"title": "Bye"}), {"title": "Bye", "subtitle": "there"})
+        self.assertEqual(orders.get("proj", "a", "og")["text"], {"title": "Bye", "subtitle": "there"})
+        self.assertEqual(orders.set_text("proj", "a", "og", {"subtitle": ""})["subtitle"], "")
+        self.assertEqual(orders.attempt_specs("proj", "a", "og")[0]["text"], {"title": "Bye", "subtitle": ""})
+
+    def test_set_text_rejects_what_submit_rejects_and_changes_nothing(self):
+        orders.submit("proj", self.og(text={"title": "Hi"}))
+        before = orders.get("proj", "a", "og")
+        exc = self.reason(orders.set_text, "proj", "a", "og", {"nope": "x"})
+        self.assertEqual((exc.code, exc.params["field"]), ("order.text_unknown_field", "nope"))
+        self.assertEqual(self.code(orders.set_text, "proj", "a", "og", {"title": "x" * 201}), "order.invalid")
+        self.assertEqual(self.code(orders.set_text, "proj", "a", "og", {"title": "a\nb"}), "order.invalid")
+        self.assertEqual(self.code(orders.set_text, "proj", "a", "og", {"title": 5}), "order.invalid")
+        self.assertEqual(self.code(orders.set_text, "proj", "a", "og", "x"), "order.invalid")
+        self.assertEqual(self.code(orders.set_text, "proj", "zz", "og", {"title": "x"}), "order.unknown")
+        self.assertEqual(orders.get("proj", "a", "og"), before)
+
+    def test_add_attempt_keeps_raw_compose_and_compose_error_only_with_the_right_type(self):
+        orders.submit("proj", self.og())
+        info = {"fit": "cover", "targetWidth": 1200, "targetHeight": 630, "text": {}}
+        orders.add_attempt("proj", "a", "og", dict(self.spec(1), raw="attempts/q1.raw.png", compose=info), entry_id=1)
+        orders.add_attempt("proj", "a", "og", dict(self.spec(2), raw=5, compose="x", composeError="x"), entry_id=2)
+        orders.add_attempt("proj", "a", "og", dict(self.spec(3), composeError={"code": 3, "params": {}}), entry_id=3)
+        orders.add_attempt("proj", "a", "og", dict(self.spec(4), composeError={"code": "c", "params": []}), entry_id=4)
+        first, wrong, bad_code, bad_params = orders.get("proj", "a", "og")["attempts"]
+        self.assertEqual((first["raw"], first["compose"], first["image"]), ("attempts/q1.raw.png", info, "attempts/q1.png"))
+        for att in (wrong, bad_code, bad_params):
+            self.assertTrue({"raw", "compose", "composeError"}.isdisjoint(att), att)
+
+    def test_add_attempt_with_a_compose_error_shows_the_raw_image(self):
+        orders.submit("proj", self.og())
+        error = {"code": "compose.tool_missing", "params": {"tool": "ffmpeg"}}
+        orders.add_attempt("proj", "a", "og", dict(self.spec(1), raw="attempts/q1.raw.png", composeError=error), entry_id=1)
+        att = orders.get("proj", "a", "og")["attempts"][0]
+        self.assertEqual((att["image"], att["raw"], att["composeError"]), ("attempts/q1.raw.png", "attempts/q1.raw.png", error))
+        # a compose error without a raw image changes nothing about where the image is
+        orders.add_attempt("proj", "a", "og", dict(self.spec(2), composeError=error), entry_id=2)
+        self.assertEqual(orders.get("proj", "a", "og")["attempts"][1]["image"], "attempts/q2.png")
+
+    def test_raw_image_name_and_path(self):
+        orders.submit("proj", self.og())
+        self.assertEqual(orders.raw_image_name(7), "attempts/q7.raw.png")
+        orders.add_attempt("proj", "a", "og", dict(self.spec(1), raw="attempts/q1.raw.png"), entry_id=1)
+        orders.add_attempt("proj", "a", "og", self.spec(2), entry_id=2)  # made before F2.8: no raw
+        one, two = orders.get("proj", "a", "og")["attempts"]
+        folder = orders._order_dir("proj", "a", "og")
+        self.assertEqual(orders.raw_image("proj", "a", "og", one), folder / "attempts" / "q1.raw.png")
+        self.assertEqual(orders.raw_image("proj", "a", "og", two), folder / "attempts" / "q2.png")
+        self.assertEqual(self.code(orders.raw_image, "proj", "a", "og", dict(one, raw="../../x.png")), "path.dotdot")
+
+    def test_set_composed(self):
+        orders.submit("proj", self.og())
+        error = {"code": "compose.tool_missing", "params": {"tool": "ffmpeg"}}
+        orders.add_attempt("proj", "a", "og", dict(self.spec(1), raw="attempts/q1.raw.png", composeError=error), entry_id=1)
+        orders.add_attempt("proj", "a", "og", self.spec(2), entry_id=2)  # no raw: made before F2.8
+        orders.add_attempt("proj", "a", "og", self.spec(3))  # no entry: attempts/3.png
+        info = {"fit": "cover", "targetWidth": 1200, "targetHeight": 630, "text": {"title": "T"}}
+        out = orders.set_composed("proj", "a", "og", 1, info)
+        self.assertEqual((out["image"], out["raw"], out["compose"]), ("attempts/q1.png", "attempts/q1.raw.png", info))
+        self.assertNotIn("composeError", out)
+        out = orders.set_composed("proj", "a", "og", 2, info)
+        self.assertEqual((out["image"], out["raw"]), ("attempts/q2.png", "attempts/q2.raw.png"))
+        out = orders.set_composed("proj", "a", "og", 3, info)
+        self.assertEqual((out["image"], out["raw"]), ("attempts/3.png", "attempts/3.raw.png"))
+        stored = orders.get("proj", "a", "og")["attempts"][0]
+        self.assertEqual((stored["image"], "composeError" in stored, stored["compose"]), ("attempts/q1.png", False, info))
+        info["text"]["title"] = "changed after"
+        self.assertEqual(orders.get("proj", "a", "og")["attempts"][0]["compose"]["text"], {"title": "T"})  # a copy
+        self.assertEqual(self.code(orders.set_composed, "proj", "a", "og", 9, info), "order.attempt_unknown")
+        self.assertEqual(self.code(orders.set_composed, "proj", "a", "og", 1, "x"), "order.spec_invalid")
+
+    def test_an_attempt_that_failed_to_compose_cannot_be_chosen_until_it_is_composed(self):
+        orders.submit("proj", self.og())
+        error = {"code": "compose.tool_missing", "params": {"tool": "ffmpeg"}}
+        orders.add_attempt("proj", "a", "og", dict(self.spec(1), raw="attempts/q1.raw.png", composeError=error), entry_id=1)
+        self.assertEqual(self.code(orders.choose, "proj", "a", "og", 1), "order.choose_uncomposed")
+        self.assertIsNone(orders.get("proj", "a", "og")["chosen"])
+        orders.set_composed("proj", "a", "og", 1, {"fit": "cover", "targetWidth": 1, "targetHeight": 1, "text": {}})
+        self.assertEqual(orders.choose("proj", "a", "og", 1), {"old": None, "new": 1})
+
+    def test_the_other_choose_rules_still_come_first(self):
+        orders.submit("proj", self.og())
+        error = {"code": "compose.tool_missing", "params": {}}
+        orders.add_attempt("proj", "a", "og", dict(self.spec(1), raw="attempts/q1.raw.png", composeError=error, draft=True), entry_id=1)
+        self.assertEqual(self.code(orders.choose, "proj", "a", "og", 1), "order.choose_draft")
+        orders.mark("proj", "a", "og", 1, "discarded")
+        self.assertEqual(self.code(orders.choose, "proj", "a", "og", 1), "order.choose_discarded")
+
+    def test_the_new_messages_exist_in_both_languages_and_use_their_params(self):
+        for lang in ("es", "en"):
+            exc = GimgError("order.text_unknown_field", field="headline", profile="og", fields="title")
+            self.assertTrue(all(w in exc.message(lang) for w in ("headline", "og", "title")), lang)
+            self.assertIn("7", GimgError("order.choose_uncomposed", attempt=7).message(lang))
+            self.assertNotIn("error.", GimgError("order.choose_uncomposed", attempt=7).message(lang))
 
 
 if __name__ == "__main__":

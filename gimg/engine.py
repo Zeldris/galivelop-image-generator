@@ -53,7 +53,6 @@ class EngineResult:
     model_files: Optional[dict] = None  # file names (no folder) by kind: ``{"diffusion", "text", "vae"}`` (D34)
     backend: Optional[str] = None  # ``cpu`` or ``vulkan`` (D34)
     threads: Optional[int] = None  # the ``-t`` of the command, if there is one
-    compose: Optional[str] = None  # the composition template, F2.8
     params: Optional[dict] = None  # steps, cfg and sampler actually used (the job's, else the model's defaults)
 
 
