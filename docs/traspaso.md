@@ -13,7 +13,7 @@
 | **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | F2.6 cerrada y revisada (código `2d224b4`, r1 `c231eaa`, arreglos de la revisión: `social` en Tarkor, `test_examples` con `limits.check`; leves en «Pendiente»): siete `examples/<p>/` y r1 con `gimg` en la Deck **14/14 píxel a píxel iguales** a `generar.sh` (`r1-fondos.md`). **Siguiente:** F2.7 (`draft` del perfil, `--draft`, `draft: true` en el intento y no elegible, D32; `initImage`/`strength`), plan cerrado a `sonnet` por `orchestrate-dealer`. Presupuesto de compactaciones: 1 (gastada 1) |
+| **Tarea en curso · `f2-motor`** | F2.7 (a) hecha (borradores, D32: `draft` del perfil y del pedido, `--draft`, `draft_params`, no elegible; commit de este cambio, `tests/test_draft.py`). Queda (b) `initImage`/`strength`. **Siguiente:** (b), luego revisión de F2.7 y CI. Presupuesto de compactaciones: 1 (gastada 1) |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.

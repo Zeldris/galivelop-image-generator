@@ -64,9 +64,10 @@ def load_config(root) -> dict:
         )
     catalog = None
     for profile in data["profiles"].values():
-        if "model" in profile:
-            catalog = catalog or models.load_catalog()
-            models.check_known(profile["model"], catalog)
+        for name in (profile.get("model"), profile.get("draft", {}).get("model")):
+            if name is not None:
+                catalog = catalog or models.load_catalog()
+                models.check_known(name, catalog)
     config = copy.deepcopy(data)
     config["delivery"].setdefault("template", DEFAULT_TEMPLATE)
     config.setdefault("manifest", DEFAULT_MANIFEST)

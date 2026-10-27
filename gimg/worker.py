@@ -138,6 +138,8 @@ def metadata_for(entry: dict, result) -> dict:
             "seed": entry["seed"], "prompt": entry["prompt"],
             "references": [str(ref).rsplit("/", 1)[-1] for ref in entry["references"]],
             "engineVersion": getattr(result, "engine_version", None)}
+    if entry.get("draft") is True:
+        meta["draft"] = True
     for name in ("model", "width", "height", "steps", "cfg", "sampler"):
         if params.get(name) is not None:
             meta[name] = params[name]
@@ -164,6 +166,7 @@ def _generate(entry: dict, eng, machine: dict, state: dict, lang=None):
         prompt=entry["prompt"], width=params.get("width"), height=params.get("height"),
         seed=entry["seed"], output=str(tmp), steps=params.get("steps"), cfg=params.get("cfg"),
         sampler=params.get("sampler"), model=params.get("model"), references=references,
+        draft=entry.get("draft") is True,
         machine=machine, timeout_s=machine.get("timeoutS"), on_progress=_progress_to_queue(entry_id))
     _expose_preview(entry_id, eng, tmp)
     state["result"] = eng.generate(job, lambda: queue.is_cancel_requested(entry_id))
@@ -195,7 +198,8 @@ def _generate(entry: dict, eng, machine: dict, state: dict, lang=None):
         "seed": entry["seed"], "prompt": entry["prompt"], "params": params,
         "references": entry["references"], "engine": eng.provider,
         "engineVersion": result.engine_version, "command": getattr(result, "command", None),
-        "modelFiles": getattr(result, "model_files", None), "log": kept_log}, entry_id=entry_id)
+        "modelFiles": getattr(result, "model_files", None), "log": kept_log,
+        "draft": entry.get("draft") is True}, entry_id=entry_id)
     state["final"] = None
     return attempt_id
 

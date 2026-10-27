@@ -27,6 +27,9 @@ _ORDER_FILE = "order.json"
 _FULL_PARAMS = {"type": "object", "properties": {
     "width": {"type": "integer", "minimum": 1}, "height": {"type": "integer", "minimum": 1},
     "model": {"type": "string", "minLength": 1}}}
+DRAFT_STEPS = 8
+DRAFT_SCALE = 0.5
+SIDE_STEP = 64
 _rng = random.SystemRandom()
 
 
@@ -72,6 +75,28 @@ def pending_image_path(project: str, key: str, profile: str, entry_id: int) -> P
 def entry_image_name(entry_id: int) -> str:
     """The ``image`` field of the attempt made by queue entry `entry_id` (unique across the generator)."""
     return "attempts/q%d.png" % int(entry_id)
+
+
+def draft_params(profile_cfg: dict, params: dict) -> dict:
+    """The params of a draft (D32), from the profile and the params the attempt would have (a copy).
+
+    Without ``draft`` in the profile: sides x 0.5, 8 steps, same model. With it: ``scale`` (else 1), ``steps`` and
+    ``model`` (else the ones `params` already has). Each side becomes ``max(64, round(side * scale / 64) * 64)``;
+    cfg and sampler do not change."""
+    out = copy.deepcopy(params)
+    declared = profile_cfg.get("draft")
+    if declared is None:
+        scale, out["steps"] = DRAFT_SCALE, DRAFT_STEPS
+    else:
+        scale = declared.get("scale", 1)
+        if "steps" in declared:
+            out["steps"] = declared["steps"]
+        if "model" in declared:
+            out["model"] = declared["model"]
+    for side in ("width", "height"):
+        if side in out:
+            out[side] = max(SIDE_STEP, round(out[side] * scale / SIDE_STEP) * SIDE_STEP)
+    return out
 
 
 def _profile(config: dict, profile: str) -> dict:
@@ -135,7 +160,7 @@ def submit(project: str, order: dict) -> dict:
 
     `order` follows the ``order`` schema (``count`` is accepted but not stored: it is for the caller to
     pass to `attempt_specs`). Resubmitting the same key + profile replaces prompt, references, params
-    and seed (a missing ``seed`` clears it) and keeps attempts, chosen and history. Does not enqueue."""
+    seed (a missing ``seed`` clears it) and draft (a missing one is false) and keeps attempts, chosen and history. Does not enqueue."""
     errors = schema.validate(order, schema.load_schema("order"))
     if errors:
         raise GimgError("order.invalid", errors=errors)
@@ -148,6 +173,7 @@ def submit(project: str, order: dict) -> dict:
         "references": list(order.get("references", [])),
         "params": copy.deepcopy(order.get("params", {})),
         "seed": order.get("seed"),
+        "draft": bool(order.get("draft", False)),
     }
     path = _order_file(project, key, profile)
     with fsutil.lock(path):
@@ -166,14 +192,16 @@ def submit(project: str, order: dict) -> dict:
 
 
 def attempt_specs(project: str, key: str, profile: str, count: int = 1, *,
-                  seed=None, prompt=None, params=None) -> list:
+                  seed=None, prompt=None, params=None, draft=None) -> list:
     """Specs of `count` attempts to enqueue; never changes the stored order (D19-D20).
 
-    Each spec is ``{"seed", "prompt", "params", "references"}``:
+    Each spec is ``{"seed", "prompt", "params", "references", "draft"}``:
     - seed: `seed` if given, else the order's seed, then ``seed + i`` for attempt i (0-based);
       with neither, a random integer in ``[0, 2**32)`` per attempt (`random.SystemRandom`).
     - params: profile settings (width, height, steps, cfg, sampler, model; only those the profile
-      defines) overridden by the order's params, then by `params` (steps, cfg, sampler).
+      defines) overridden by the order's params, then by `params` (steps, cfg, sampler), then, for a draft,
+      by `draft_params`; a ``steps`` in `params` wins over the draft's steps.
+    - draft: `draft` if given (True/False), else the order's ``draft``.
     - prompt: `prompt` (a retouched one) or the order's, plus the profile ``style`` appended as
       ``prompt + ", " + style`` when the style is non-empty (otherwise the prompt alone)."""
     if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= 50:
@@ -184,6 +212,11 @@ def attempt_specs(project: str, key: str, profile: str, count: int = 1, *,
     full = {k: profile_cfg[k] for k in _PROFILE_PARAMS if k in profile_cfg}
     full.update(order["params"])
     full.update(params or {})
+    is_draft = bool(order.get("draft", False)) if draft is None else bool(draft)
+    if is_draft:
+        full = draft_params(profile_cfg, full)
+        if "steps" in (params or {}):
+            full["steps"] = params["steps"]
     text = order["prompt"] if prompt is None else prompt
     style = profile_cfg.get("style", "")
     if style:
@@ -197,6 +230,7 @@ def attempt_specs(project: str, key: str, profile: str, count: int = 1, *,
         "prompt": text,
         "params": copy.deepcopy(full),
         "references": list(order["references"]),
+        "draft": is_draft,
     } for i in range(count)]
 
 
@@ -250,6 +284,8 @@ def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None)
         }
         if entry_id is not None:
             record["queueEntry"] = entry_id
+        if spec.get("draft") is True:  # only drafts carry the key, so stored orders keep their shape
+            record["draft"] = True
         for extra in ("engine", "engineVersion", "log"):  # which engine made it (the manifest repeats the first two)
             if isinstance(spec.get(extra), str):
                 record[extra] = spec[extra]
@@ -295,12 +331,14 @@ def note(project: str, key: str, profile: str, attempt_id: int, text: str) -> di
 def choose(project: str, key: str, profile: str, attempt_id: int) -> dict:
     """Choose an attempt; returns ``{"old": id|None, "new": id}`` for delivery to act on.
 
-    The previous chosen (even ``None``) is pushed to ``chosenHistory``. A discarded attempt cannot be
-    chosen. Choosing the already chosen attempt changes nothing (``old == new``, no push)."""
+    The previous chosen (even ``None``) is pushed to ``chosenHistory``. A discarded attempt and a draft
+    cannot be chosen. Choosing the already chosen attempt changes nothing (``old == new``, no push)."""
     def change(order):
         item = _attempt(order, attempt_id)
         if item["state"] == "discarded":
             raise GimgError("order.choose_discarded", attempt=attempt_id)
+        if item.get("draft") is True:
+            raise GimgError("order.choose_draft", attempt=attempt_id)
         old = order["chosen"]
         if old != attempt_id:
             order["chosenHistory"].append(old)

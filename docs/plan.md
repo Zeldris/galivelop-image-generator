@@ -415,6 +415,16 @@ examples/<p>` y `gimg order submit <p> examples/<p>/orders/r1-og.json` para los 
 `steam-deck.json` no fija hilos. La imagen no cambia, que es justo lo que medía la comparación; los tiempos salen 0-7 s más lentos en cuatro proyectos por
 la caché de disco tras descargar Ollama, no por el motor.
 
+*Hecho en F2.7 (a)* (`gimg/orders.py`, `queue.py`, `worker.py`, `engine.py`, `engine_sdcpp.py`, `delivery.py`, `projects.py`, `cli.py`, esquemas `project-config` y `order`, `locales/`, `tests/test_draft.py`): borradores (D32). **Decisiones:**
+(1) *Perfil:* `draft` `{model?, steps?, scale?}` (`scale` 0.1-1); `load_config` comprueba `draft.model` contra el catálogo. (2) *Pedido:* `draft` booleano (por defecto false), guardado en `orders.submit`.
+(3) *`orders.draft_params`:* sin `draft` en el perfil, lados × 0,5, 8 pasos y mismo modelo; con él, `scale` (o 1), `steps` y `model` (o los que ya había); cada lado =
+`max(64, round(lado × scale / 64) × 64)`; cfg y sampler no cambian. (4) *`attempt_specs(..., draft=None)`:* `None` usa el del pedido; cada spec lleva `draft`; el orden es perfil, pedido,
+`params` de la llamada, borrador, y un `steps` explícito de la llamada gana al del borrador; los límites corren después, en `queue.enqueue`. (5) *Cola y trabajador:* la entrada guarda `draft`
+(las antiguas, sin la clave, no lo son); `EngineJob.draft` y `EngineResult.draft` (el registro ya lo lee en `app.image.draft`); el chunk `gimg` del PNG y el intento llevan `draft: true`
+solo si lo es. (6) *No elegible:* `orders.choose` lanza `order.choose_draft` y `delivery.choose` no prepara la entrega; marcar y deshacer no cambian. (7) *CLI:* `--draft` en
+`order submit` y `attempt new`; `queue list` y `order show` marcan los borradores.
+**Queda:** (b) `initImage`/`strength`.
+
 **Configuración del proyecto** (cambios en `project-config.schema.json`). El perfil añade: `targetWidth`/`targetHeight`
 (tamaño de destino; si faltan, los de generación), `draft` (`{"model"?, "steps"?, "scale"?}`, D32) y `compose`
 (`{"template": <ruta relativa .svg>, "fields": ["title", "subtitle"], "logo"?: <ruta relativa .svg>, "fonts"?: ["Sora", "Inter"],

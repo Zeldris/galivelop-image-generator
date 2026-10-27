@@ -199,8 +199,9 @@ def choose(project: str, key: str, profile: str, attempt_id) -> dict:
     with _lock(project):  # read, decide, change the order, deliver and revert: one unit
         order = orders.get(project, key, profile)
         attempt = _find(order, attempt_id)
-        # an unknown attempt (or a discarded one) is reported by orders.choose itself
-        plan = _prepare(proj, order, attempt) if attempt is not None and attempt["state"] != "discarded" else None
+        # an unknown attempt (a discarded one, a draft) is reported by orders.choose itself
+        ok = attempt is not None and attempt["state"] != "discarded" and attempt.get("draft") is not True
+        plan = _prepare(proj, order, attempt) if ok else None
         restore = _restore_source(proj, order) if plan is not None else False
         result = orders.choose(project, key, profile, attempt_id)
         try:

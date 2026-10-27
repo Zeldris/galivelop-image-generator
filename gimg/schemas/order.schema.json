@@ -58,6 +58,11 @@
         }
       }
     },
+    "draft": {
+      "type": "boolean",
+      "default": false,
+      "description": "Generate drafts (D32): the profile draft settings, or half size and 8 steps."
+    },
     "count": {
       "type": "integer",
       "minimum": 1,

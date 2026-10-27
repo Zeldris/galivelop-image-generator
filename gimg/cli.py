@@ -60,7 +60,8 @@ def _build(lang: str) -> argparse.ArgumentParser:
     leaf(g, "list", "cli.cmd.project_list")
 
     g = group(top, "order", "cli.cmd.order")
-    leaf(g, "submit", "cli.cmd.order_submit", project, arg("file", "cli.arg.file"))
+    leaf(g, "submit", "cli.cmd.order_submit", project, arg("file", "cli.arg.file"),
+         opt("--draft", "cli.arg.draft", action="store_true"))
     lst = leaf(g, "list", "cli.cmd.order_list", project,
                opt("--profile", "cli.arg.profile_filter"))
     mutex = lst.add_mutually_exclusive_group()
@@ -72,7 +73,8 @@ def _build(lang: str) -> argparse.ArgumentParser:
     leaf(g, "new", "cli.cmd.attempt_new", project, okey, oprofile,
          opt("--seed", "cli.arg.seed", type=int), opt("--count", "cli.arg.count", type=int, default=1),
          opt("--prompt", "cli.arg.prompt"), opt("--steps", "cli.arg.steps", type=int),
-         opt("--cfg", "cli.arg.cfg", type=float), opt("--sampler", "cli.arg.sampler"))
+         opt("--cfg", "cli.arg.cfg", type=float), opt("--sampler", "cli.arg.sampler"),
+         opt("--draft", "cli.arg.draft", action="store_true"))
     leaf(g, "mark", "cli.cmd.attempt_mark", project, okey, oprofile, attempt,
          arg("state", "cli.arg.state", choices=orders.STATES))
     leaf(g, "note", "cli.cmd.attempt_note", project, okey, oprofile, attempt,
@@ -205,7 +207,8 @@ def _order(args, sub, out: _Out) -> None:
         provider = engine.get_engine().provider  # a bad engine setting fails before anything is queued
         record = orders.submit(args.project, order)
         count = order.get("count", 1)
-        specs = orders.attempt_specs(args.project, record["key"], record["profile"], count)
+        specs = orders.attempt_specs(args.project, record["key"], record["profile"], count,
+                                     draft=True if args.draft else None)
         entries = queue.enqueue(args.project, record["key"], record["profile"], specs)
         _queued(out, entries, provider)
     elif sub == "list":
@@ -232,7 +235,8 @@ def _order(args, sub, out: _Out) -> None:
         if not o["attempts"]:
             out.line("cli.out.attempts_none")
         for a in o["attempts"]:
-            out.line("cli.out.attempt_line", id=a["id"], state=a["state"], seed=a["seed"], image=a["image"])
+            out.line("cli.out.attempt_line", id=a["id"], state=a["state"], seed=a["seed"], image=a["image"],
+                     draft=out.t("cli.out.draft_mark") if a.get("draft") else "")
             if a.get("note"):
                 out.line("cli.out.attempt_note", note=a["note"])
 
@@ -243,7 +247,8 @@ def _attempt(args, sub, out: _Out) -> None:
         overrides = {k: v for k, v in (("steps", args.steps), ("cfg", args.cfg),
                                        ("sampler", args.sampler)) if v is not None}
         specs = orders.attempt_specs(args.project, args.key, args.profile, args.count,
-                                     seed=args.seed, prompt=args.prompt, params=overrides)
+                                     seed=args.seed, prompt=args.prompt, params=overrides,
+                                     draft=True if args.draft else None)
         _queued(out, queue.enqueue(args.project, args.key, args.profile, specs), provider)
     elif sub == "mark":
         item = orders.mark(args.project, args.key, args.profile, args.attempt, args.state)
@@ -283,7 +288,8 @@ def _queue(args, sub, out: _Out) -> None:
             out.line("cli.out.queue_none")
         for e in entries if not out.as_json else ():
             out.line("cli.out.queue_line", id=e["id"], state=e["state"], project=e["project"],
-                     order=e["key"], profile=e["profile"], seed=e["seed"])
+                     order=e["key"], profile=e["profile"], seed=e["seed"],
+                     draft=out.t("cli.out.draft_mark") if e.get("draft") else "")
             if e["state"] == "running":
                 _queue_running_lines(out, e)
             text = queue.error_text(e, out.lang)

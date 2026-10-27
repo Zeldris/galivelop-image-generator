@@ -35,6 +35,7 @@ class EngineJob:
     references: list = field(default_factory=list)  # absolute paths
     machine: dict = field(default_factory=dict)
     timeout_s: Optional[float] = None
+    draft: bool = False
     on_progress: Optional[Callable[[dict], None]] = None  # called with ``{"step", "steps", "etaS"}`` when the step changes (F2.4)
 
 
@@ -51,7 +52,7 @@ class EngineResult:
     model_files: Optional[dict] = None  # file names (no folder) by kind: ``{"diffusion", "text", "vae"}`` (D34)
     backend: Optional[str] = None  # ``cpu`` or ``vulkan`` (D34)
     threads: Optional[int] = None  # the ``-t`` of the command, if there is one
-    draft: bool = False  # F2.7 sets it for a draft run
+    draft: bool = False  # the attempt is a draft (F2.7); the result repeats it for the log
     compose: Optional[str] = None  # the composition template, F2.8
     params: Optional[dict] = None  # steps, cfg and sampler actually used (the job's, else the model's defaults)
 
@@ -148,7 +149,7 @@ class FakeEngine(Engine):
         decode_ms = int((time.monotonic() - t0) * 1000)
         total = int((time.monotonic() - start) * 1000)
         return EngineResult(duration_ms=total, engine_version=FAKE_VERSION,
-                            load_ms=0, sample_ms=max(total - decode_ms, 0), decode_ms=decode_ms)
+                            load_ms=0, sample_ms=max(total - decode_ms, 0), decode_ms=decode_ms, draft=job.draft)
 
 
 def _configured_engine() -> str:

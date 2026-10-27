@@ -133,6 +133,27 @@
         "style": {
           "type": "string",
           "description": "Fixed text appended to every prompt of this profile."
+        },
+        "draft": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "How a draft of this profile differs (D32). Without it a draft is half the sides, 8 steps, same model.",
+          "properties": {
+            "model": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Model identifier for drafts."
+            },
+            "steps": {
+              "$ref": "#/$defs/steps"
+            },
+            "scale": {
+              "type": "number",
+              "minimum": 0.1,
+              "maximum": 1,
+              "description": "Factor on width and height; each side is rounded to a multiple of 64 (minimum 64)."
+            }
+          }
         }
       }
     }
