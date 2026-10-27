@@ -153,7 +153,10 @@ modelo, motor o F5. Las marcadas «adoptar» están ya en el prototipo con la et
 
 ### Decisiones nuevas para la persona
 
-Ninguna bloquea F3-F4; la opción recomendada va primero.
+**Confirmadas por la persona el 2026-10-27, las cinco como se recomendaban:** referencias de estilo más adelante y
+medidas antes (ronda del piloto sobre Tarkor), metadatos `tEXt` en el PNG de cada intento (F2.4), semilla aleatoria por
+defecto con dado (el núcleo ya sortea la semilla si el pedido no trae; es solo de la interfaz), paleta solo medida (D31) y
+mejora del prompt con LLM descartada. Ninguna bloquea F3-F4; la opción recomendada va primero.
 
 1. **¿Referencias de estilo por proyecto (las imágenes de marca como conjunto que guía al modelo), en F5?**
    Recomiendo **más adelante, y medir antes**: una ronda del piloto con `sd-cli` y 1-2 referencias sobre Tarkor (el caso
