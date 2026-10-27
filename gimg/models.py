@@ -48,6 +48,7 @@ def resolve(model_id, machine, catalog=None) -> dict:
 
     - ``defaults``: ``steps``, ``cfg``, ``sampler`` of the catalog.
     - ``args``: the catalog ``args`` followed by ``engine.models.<id>.args`` of the machine.
+    - ``initImageArgs``: the catalog ones (default ``[]``), added by the engine only for img2img.
     - ``timeoutS``, ``minFreeMemoryMb``: ``engine.models.<id>`` if the profile sets them for this
       model, else the profile's general ones.
     - ``files``: ``{kind: {"name", "url", "sha256", "sizeMb", "path"}}`` with the expected
@@ -71,6 +72,7 @@ def resolve(model_id, machine, catalog=None) -> dict:
         "license": model["license"],
         "defaults": dict(model["defaults"]),
         "args": list(model["args"]) + list(own.get("args", [])),
+        "initImageArgs": list(model.get("initImageArgs", [])),
         "timeoutS": own.get("timeoutS", machine.get("timeoutS")),
         "minFreeMemoryMb": own.get("minFreeMemoryMb", machine.get("minFreeMemoryMb")),
         "files": files,

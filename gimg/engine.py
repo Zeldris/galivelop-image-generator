@@ -33,6 +33,8 @@ class EngineJob:
     sampler: Optional[str] = None
     model: Optional[str] = None
     references: list = field(default_factory=list)  # absolute paths
+    init_image: Optional[str] = None  # absolute path (img2img)
+    strength: Optional[float] = None
     machine: dict = field(default_factory=dict)
     timeout_s: Optional[float] = None
     on_progress: Optional[Callable[[dict], None]] = None  # called with ``{"step", "steps", "etaS"}`` when the step changes (F2.4)

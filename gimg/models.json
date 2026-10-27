@@ -50,7 +50,8 @@
         }
       },
       "defaults": {"steps": 16, "cfg": 1, "sampler": "euler"},
-      "args": ["--flash-attn", "off,diffusion=on", "--vae-tiling"]
+      "args": ["--flash-attn", "off,diffusion=on", "--vae-tiling"],
+      "initImageArgs": ["--extra-sample-args", "strength_as_noise_level=true"]
     }
   }
 }

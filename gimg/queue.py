@@ -2,7 +2,7 @@
 
 ``{"nextId": n, "entries": [...]}``; entry: ``id``, ``project``, ``key``, ``profile``, ``seed``, ``prompt``,
 ``params``, ``references``, ``state`` (queued|running|done|failed|cancelled), ``pid``, ``enqueuedAt``,
-``startedAt``, ``finishedAt``, ``error``, ``attemptId``, ``cancelRequested``, ``draft`` (bool; an older entry without it is not a draft). Entries stay in arrival order.
+``startedAt``, ``finishedAt``, ``error``, ``attemptId``, ``cancelRequested``, ``draft`` (bool; an older entry without it is not a draft), ``initImage`` (relative path or ``None``) and ``strength`` (number or ``None``; an older entry without the keys has neither). Entries stay in arrival order.
 A running entry may also have ``progress`` (``{"step", "steps", "etaS"}``, `set_progress`) and ``preview`` (the path of
 the engine's preview image, `set_preview`); both are removed when the entry finishes or goes back to ``queued``.
 
@@ -171,6 +171,7 @@ def enqueue(project: str, key: str, profile: str, specs: list) -> list:
                      "params": copy.deepcopy(spec["params"]),
                      "references": list(spec.get("references") or []),
                      "draft": spec.get("draft") is True,
+                     "initImage": spec.get("initImage"), "strength": spec.get("strength"),
                      "state": "queued", "pid": None, "enqueuedAt": now, "startedAt": None,
                      "finishedAt": None, "error": None, "attemptId": None, "cancelRequested": False}
             data["nextId"] += 1

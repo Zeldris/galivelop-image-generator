@@ -298,6 +298,11 @@ class SdCppEngine(Engine):
         argv += resolved["args"]
         for ref in job.references or []:
             argv += ["-r", str(ref)]
+        if job.init_image:
+            argv += ["-i", str(job.init_image)]
+            if job.strength is not None:
+                argv += ["--strength", _num(job.strength)]
+            argv += resolved.get("initImageArgs", [])
         argv += ["--preview", "proj", "--preview-interval", "1", "--preview-path", str(self.preview_path(out)),
                  "-o", str(out), "-v"]
         return argv

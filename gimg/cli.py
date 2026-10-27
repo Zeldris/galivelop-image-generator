@@ -232,6 +232,9 @@ def _order(args, sub, out: _Out) -> None:
         out.line("cli.out.order_prompt", prompt=o["prompt"])
         out.line("cli.out.order_seed", seed=out.none(o["seed"]))
         out.line("cli.out.order_refs", references=", ".join(o["references"]) or out.t("cli.out.none"))
+        if o.get("initImage") is not None:
+            out.line("cli.out.order_init" if o.get("strength") is not None else "cli.out.order_init_nostrength",
+                     path=o["initImage"], strength=o.get("strength"))
         out.line("cli.out.order_chosen", chosen=out.none(o["chosen"]))
         if not o["attempts"]:
             out.line("cli.out.attempts_none")

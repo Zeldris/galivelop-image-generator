@@ -162,10 +162,12 @@ def submit(project: str, order: dict) -> dict:
 
     `order` follows the ``order`` schema (``count`` is accepted but not stored: it is for the caller to
     pass to `attempt_specs`). Resubmitting the same key + profile replaces prompt, references, params
-    seed (a missing ``seed`` clears it) and draft (a missing one is false) and keeps attempts, chosen and history. Does not enqueue."""
+    seed (a missing ``seed`` clears it), initImage and strength (missing ones clear them) and draft (a missing one is false) and keeps attempts, chosen and history. Does not enqueue."""
     errors = schema.validate(order, schema.load_schema("order"))
     if errors:
         raise GimgError("order.invalid", errors=errors)
+    if "strength" in order and "initImage" not in order:  # the validator has no dependentRequired
+        raise GimgError("order.strength_without_init")
     paths.check_key(order["key"])
     config = projects.get(project)["config"]
     _profile(config, order["profile"])
@@ -176,6 +178,8 @@ def submit(project: str, order: dict) -> dict:
         "params": copy.deepcopy(order.get("params", {})),
         "seed": order.get("seed"),
         "draft": bool(order.get("draft", False)),
+        "initImage": order.get("initImage"),
+        "strength": order.get("strength"),
     }
     path = _order_file(project, key, profile)
     with fsutil.lock(path):
@@ -197,7 +201,7 @@ def attempt_specs(project: str, key: str, profile: str, count: int = 1, *,
                   seed=None, prompt=None, params=None, draft=None) -> list:
     """Specs of `count` attempts to enqueue; never changes the stored order (D19-D20).
 
-    Each spec is ``{"seed", "prompt", "params", "references", "draft"}``:
+    Each spec is ``{"seed", "prompt", "params", "references", "draft", "initImage", "strength"}`` (the last two are the order's, ``None`` if absent):
     - seed: `seed` if given, else the order's seed, then ``seed + i`` for attempt i (0-based);
       with neither, a random integer in ``[0, 2**32)`` per attempt (`random.SystemRandom`).
     - params: profile settings (width, height, steps, cfg, sampler, model; only those the profile
@@ -233,6 +237,8 @@ def attempt_specs(project: str, key: str, profile: str, count: int = 1, *,
         "params": copy.deepcopy(full),
         "references": list(order["references"]),
         "draft": is_draft,
+        "initImage": order.get("initImage"),
+        "strength": order.get("strength"),
     } for i in range(count)]
 
 
@@ -288,6 +294,9 @@ def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None)
             record["queueEntry"] = entry_id
         if spec.get("draft") is True:  # only drafts carry the key, so stored orders keep their shape
             record["draft"] = True
+        if spec.get("initImage") is not None:  # only img2img attempts carry the keys, so stored orders keep their shape
+            record["initImage"] = spec["initImage"]
+            record["strength"] = spec.get("strength")
         for extra in ("engine", "engineVersion", "log"):  # which engine made it (the manifest repeats the first two)
             if isinstance(spec.get(extra), str):
                 record[extra] = spec[extra]

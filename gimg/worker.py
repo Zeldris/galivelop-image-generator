@@ -81,6 +81,16 @@ def _references(project: dict, entry: dict) -> list:
     return found
 
 
+def _init_image(project: dict, entry: dict):
+    rel = entry.get("initImage")
+    if rel is None:
+        return None
+    target = paths.inside(project["root"], rel)
+    if not target.is_file():
+        raise GimgError("worker.init_image_missing", path=rel)
+    return str(target)
+
+
 def _unlink(path) -> None:
     with contextlib.suppress(OSError):
         os.unlink(path)
@@ -140,6 +150,10 @@ def metadata_for(entry: dict, result) -> dict:
             "engineVersion": getattr(result, "engine_version", None)}
     if entry.get("draft") is True:
         meta["draft"] = True
+    if entry.get("initImage") is not None:
+        meta["initImage"] = str(entry["initImage"]).rsplit("/", 1)[-1]
+        if entry.get("strength") is not None:
+            meta["strength"] = entry["strength"]
     for name in ("model", "width", "height", "steps", "cfg", "sampler"):
         if params.get(name) is not None:
             meta[name] = params[name]
@@ -159,6 +173,7 @@ def _generate(entry: dict, eng, machine: dict, state: dict, lang=None):
     limits.check(entry, machine)
     project = projects.get(project_name)
     references = _references(project, entry)
+    init_image = _init_image(project, entry)
     tmp = orders.pending_image_path(project_name, key, profile, entry_id)
     state["tmp"] = tmp
     params = entry["params"]
@@ -166,6 +181,7 @@ def _generate(entry: dict, eng, machine: dict, state: dict, lang=None):
         prompt=entry["prompt"], width=params.get("width"), height=params.get("height"),
         seed=entry["seed"], output=str(tmp), steps=params.get("steps"), cfg=params.get("cfg"),
         sampler=params.get("sampler"), model=params.get("model"), references=references,
+        init_image=init_image, strength=entry.get("strength") if init_image else None,
         machine=machine, timeout_s=machine.get("timeoutS"), on_progress=_progress_to_queue(entry_id))
     _expose_preview(entry_id, eng, tmp)
     state["result"] = eng.generate(job, lambda: queue.is_cancel_requested(entry_id))
@@ -198,7 +214,8 @@ def _generate(entry: dict, eng, machine: dict, state: dict, lang=None):
         "references": entry["references"], "engine": eng.provider,
         "engineVersion": result.engine_version, "command": getattr(result, "command", None),
         "modelFiles": getattr(result, "model_files", None), "log": kept_log,
-        "draft": entry.get("draft") is True}, entry_id=entry_id)
+        "draft": entry.get("draft") is True,
+        "initImage": entry.get("initImage"), "strength": entry.get("strength")}, entry_id=entry_id)
     state["final"] = None
     return attempt_id
 

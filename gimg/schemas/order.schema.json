@@ -37,6 +37,16 @@
       },
       "description": "Reference image paths, relative to the project root."
     },
+    "initImage": {
+      "$ref": "#/$defs/relativePath",
+      "description": "Initial image for img2img, relative to the project root."
+    },
+    "strength": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "How far img2img departs from initImage (0 to 1); needs initImage."
+    },
     "seed": {
       "type": "integer",
       "minimum": 0,
