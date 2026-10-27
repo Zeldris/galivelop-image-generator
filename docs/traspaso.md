@@ -75,6 +75,19 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
   - `delivery.target_taken` también bloquea un `undo` hasta `null` si otra entrada del manifiesto comparte `file`
     (tras cambiar la plantilla), y compara sin `casefold` (no ve colisiones en discos sin mayúsculas).
   - `order submit` guarda el pedido antes de que `attempt_specs` rechace un prompt+estilo largo: queda sin encolar.
+- **Generador de Tarkor ocupado con pruebas (aviso de la persona, 2026-10-27):** no generar imágenes ni lanzar `sd-cli` o
+  `generar.sh` desde este repo hasta que la persona lo levante; lo que lo necesite (rondas, r2 de referencias, `instalar.sh` en
+  la Deck) espera.
+- **URLs del catálogo a verificar [P]** (`gimg/models.json`): deducidas, no copiadas (WMF-imagenes no las apunta); las seis dan 200
+  y su `x-linked-etag` coincide con el sha256 de la Deck. Confirmar el repositorio del VAE de FLUX.3
+  (`Comfy-Org/flux2-dev`, `split_files/vae/flux2-vae.safetensors`) y el nombre `Qwen3VL-4B-Instruct-Q4_K_M.gguf` (el del
+  repo de Qwen; `Qwen3-VL-…` da 404).
+- **Leves de la revisión de `0523f8b` (F2.1; no se revisan más en este PR):** `model.catalog_invalid` no muestra `reason`
+  en el texto; `resolve` compone `path` sin `paths.inside`; `test_bad_file_fields` no prueba `\n`, `\x00`, `/abs`, `~x` ni
+  `x/..`; el patrón de `url` acepta `https://a b` (`\s` ASCII en `_compile`); `model.unknown` de `load_config` no dice el
+  perfil ni el archivo, y relee el catálogo en cada `load_config`; el patrón de id repetido en vez de `$ref` a `$defs/name`;
+  `read_text`/`write_text` sin `encoding` en `tests/test_models.py`. **Para F2.5:** `defaults.steps` del catálogo no se
+  contrasta con `maxSteps`; `worker._generate` usa el `timeoutS` general y no `resolve()`.
 - **Cuando la persona avise:** revisar las actualizaciones de Tarkor (otro repo) sobre su generador de imágenes: lo lee
   un subagente `Explore` que devuelve un resumen con rutas (`orchestrate-dealer`); desde aquí no se modifica.
 - El flujo copiado es la 0.4.0 **sin publicar** (rama `ccr-6dfbc880-ddr41g` del flujo, commit `d227bbf`; su `main` está en
