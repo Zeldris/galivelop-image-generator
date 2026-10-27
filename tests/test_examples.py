@@ -1,8 +1,11 @@
 import copy
 import json
+import os
 import re
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from gimg import schema as S
 
@@ -207,10 +210,11 @@ class PilotExampleTests(unittest.TestCase):
     """F2.6: `examples/<proyecto>/` of the seven pilot projects, with the r1 orders that must reproduce
     `ronda.sh r1` (same prompt as `prompts/og.txt`, seeds 3 and 4, 1280x640, 6 steps, the fast model)."""
 
+    @classmethod
+    def setUpClass(cls):
+        cls.order_schema = S.load_schema("order")
+
     def setUp(self):
-        import os
-        import tempfile
-        from unittest import mock
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         env = mock.patch.dict(os.environ, {"GIMG_CONFIG_HOME": tmp.name + "/cfg",
@@ -222,8 +226,9 @@ class PilotExampleTests(unittest.TestCase):
         found = sorted(p.parent.name for p in (ROOT / "examples").glob("*/galivelop-images.json"))
         self.assertEqual(found, sorted(PILOT_PROJECTS))
 
-    def test_pilot_configs_load_and_deliver_to_entrega(self):
-        from gimg import projects
+    def test_pilot_configs_load_and_fit_the_deck(self):
+        from gimg import limits, projects
+        deck = limits.load_machine("steam-deck")
         for name in PILOT_PROJECTS:
             root = ROOT / "examples" / name
             config = projects.load_config(root)
@@ -232,7 +237,10 @@ class PilotExampleTests(unittest.TestCase):
             self.assertIn("og", config["profiles"], name)
             for profile, cfg in config["profiles"].items():
                 self.assertEqual((cfg["width"] % 64, cfg["height"] % 64), (0, 0), (name, profile))
-                self.assertLessEqual(cfg["width"] * cfg["height"], 1048576, (name, profile))
+                try:
+                    limits.check({"params": cfg, "references": []}, deck)
+                except limits.LimitError as exc:
+                    self.fail("%s/%s: %s" % (name, profile, exc))
                 self.assertEqual(cfg["model"], "flux2-klein-4b-q8", (name, profile))
 
     def test_r1_orders_reproduce_ronda_r1(self):
@@ -240,7 +248,7 @@ class PilotExampleTests(unittest.TestCase):
         for name in PILOT_PROJECTS:
             root = ROOT / "examples" / name
             order = read("examples/%s/orders/r1-og.json" % name)
-            self.assertEqual(S.validate(order, S.load_schema("order")), [], name)
+            self.assertEqual(S.validate(order, self.order_schema), [], name)
             prompt = (root / "prompts" / "og.txt").read_text(encoding="utf-8").strip()
             self.assertEqual(order["prompt"], prompt, name)
             projects.add(root)

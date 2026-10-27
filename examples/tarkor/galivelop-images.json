@@ -15,6 +15,14 @@
       "sampler": "euler",
       "model": "flux2-klein-4b-q8"
     },
+    "social": {
+      "width": 1280,
+      "height": 640,
+      "steps": 6,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "flux2-klein-4b-q8"
+    },
     "banner": {
       "width": 1280,
       "height": 512,
