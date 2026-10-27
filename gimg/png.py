@@ -9,6 +9,8 @@ for every ``tEXt``, ``zTXt`` and ``iTXt`` chunk (a repeated key keeps the last o
 other (a prompt with an emoji or a CJK character) as an uncompressed ``iTXt`` in UTF-8, with the same key. A key is
 1-79 Latin-1 characters without NUL, newline or leading/trailing space (PNG spec).
 
+`size(path)` reads just the width and height of the IHDR chunk.
+
 A file that is not a PNG, is cut, or has a chunk with a bad CRC raises ``GimgError("png.invalid", path, reason)``; the
 file is never touched in that case.
 """
@@ -125,6 +127,30 @@ def read_text_chunks(path) -> dict:
             key, text = _decode(kind, body, path)
             found[key] = text
     return found
+
+
+def size(path) -> tuple:
+    """``(width, height)`` from the ``IHDR`` of the PNG at `path`; only the first 33 bytes are read.
+
+    Raises ``png.invalid`` for a file that is not a PNG, is cut, has a bad ``IHDR`` CRC or a zero side."""
+    try:
+        with open(path, "rb") as fh:
+            head = fh.read(33)
+    except OSError as exc:
+        raise _invalid(path, "cannot read the file: %s" % exc.strerror)
+    if head[:8] != SIGNATURE:
+        raise _invalid(path, "not a PNG (bad signature)")
+    if len(head) < 33:
+        raise _invalid(path, "truncated chunk header")
+    length, kind = struct.unpack(">I4s", head[8:16])
+    if kind != b"IHDR" or length != 13:
+        raise _invalid(path, "the first chunk is not IHDR")
+    if struct.unpack(">I", head[29:33])[0] != zlib.crc32(head[12:29]) & 0xFFFFFFFF:
+        raise _invalid(path, "bad CRC in chunk IHDR")
+    width, height = struct.unpack(">II", head[16:24])
+    if width == 0 or height == 0:
+        raise _invalid(path, "the image has a zero side")
+    return width, height
 
 
 def _check_key(key: str) -> bytes:

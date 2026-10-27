@@ -154,8 +154,85 @@
               "description": "Factor on width and height; each side is rounded to a multiple of 64 (minimum 64)."
             }
           }
+        },
+        "targetWidth": {
+          "type": "integer",
+          "minimum": 16,
+          "maximum": 4096,
+          "description": "Delivered width in pixels (needs targetHeight); without it the delivered size is the generation size."
+        },
+        "targetHeight": {
+          "type": "integer",
+          "minimum": 16,
+          "maximum": 4096,
+          "description": "Delivered height in pixels (needs targetWidth)."
+        },
+        "compose": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "template"
+          ],
+          "description": "Composition (D28): an SVG template with {{field}} holes and an optional logo is laid over the raw image, scaled to the target size.",
+          "properties": {
+            "template": {
+              "$ref": "#/$defs/svgPath",
+              "description": "SVG template, relative to the project root."
+            },
+            "logo": {
+              "$ref": "#/$defs/svgPath",
+              "description": "Logo SVG, relative to the project root; the template uses it as {{logo}}."
+            },
+            "fields": {
+              "type": "array",
+              "maxItems": 10,
+              "items": {
+                "$ref": "#/$defs/fieldName"
+              },
+              "description": "Text fields the template takes; an order gives them in `text`."
+            },
+            "fonts": {
+              "type": "array",
+              "maxItems": 10,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100,
+                "pattern": "^[^\\u0000-\\u001f\\u007f]*$"
+              },
+              "description": "Font families the template uses; `gimg doctor` checks they are installed."
+            },
+            "fit": {
+              "type": "string",
+              "enum": [
+                "cover",
+                "contain"
+              ],
+              "default": "cover",
+              "description": "cover crops the raw image to the target; contain scales it down and the template paints the bands."
+            }
+          }
         }
+      },
+      "dependentRequired": {
+        "targetWidth": [
+          "targetHeight"
+        ],
+        "targetHeight": [
+          "targetWidth"
+        ]
       }
+    },
+    "svgPath": {
+      "$ref": "#/$defs/relativePath",
+      "pattern": "\\.svg$",
+      "description": "Relative path to an .svg file, with the same limits as any relative path."
+    },
+    "fieldName": {
+      "type": "string",
+      "pattern": "^(?!logo$)[a-z][a-zA-Z0-9]*$",
+      "maxLength": 40,
+      "description": "Name of a text field of the composition template ({{name}}): starts with a lowercase letter, letters and digits only; \"logo\" is reserved."
     }
   }
 }

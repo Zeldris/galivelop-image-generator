@@ -140,5 +140,64 @@ class PngTextTests(unittest.TestCase):
         self.assertEqual(length, len(b"k\x00v"))
 
 
+class PngSizeTests(unittest.TestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.dir = Path(tmp.name)
+        self.path = self.dir / "a.png"
+
+    def reason(self):
+        with self.assertRaises(GimgError) as cm:
+            png.size(self.path)
+        self.assertEqual(cm.exception.code, "png.invalid")
+        return cm.exception.params["reason"]
+
+    def test_width_and_height_in_that_order(self):
+        self.path.write_bytes(png.png_bytes(7, 3, (1, 2, 3)))
+        self.assertEqual(png.size(self.path), (7, 3))
+
+    def test_size_ignores_what_comes_after_the_header(self):
+        self.path.write_bytes(png.png_bytes(7, 3, (1, 2, 3))[:33])  # nothing but signature and IHDR
+        self.assertEqual(png.size(self.path), (7, 3))
+
+    def test_size_of_a_file_with_text_chunks(self):
+        self.path.write_bytes(png.png_bytes(5, 9, (1, 2, 3)))
+        png.add_text_chunk(self.path, "gimg", "{}")
+        self.assertEqual(png.size(self.path), (5, 9))
+
+    def test_not_a_png(self):
+        self.path.write_bytes(b"GIF89a" + b"\x00" * 40)
+        self.assertEqual(self.reason(), "not a PNG (bad signature)")
+
+    def test_cut_inside_the_header(self):
+        data = png.png_bytes(7, 3, (1, 2, 3))
+        for size in (0, 7, 8, 12, 20, 32):
+            self.path.write_bytes(data[:size])
+            self.assertTrue(self.reason(), size)
+        self.path.write_bytes(data[:20])
+        self.assertEqual(self.reason(), "truncated chunk header")
+
+    def test_first_chunk_is_not_ihdr(self):
+        self.path.write_bytes(png.SIGNATURE + png.chunk(b"IDAT", b"x" * 13) + b"\x00" * 20)
+        self.assertEqual(self.reason(), "the first chunk is not IHDR")
+
+    def test_bad_ihdr_crc_is_refused(self):
+        data = bytearray(png.png_bytes(7, 3, (1, 2, 3)))
+        data[32] ^= 0xFF  # the CRC of IHDR
+        self.path.write_bytes(bytes(data))
+        self.assertEqual(self.reason(), "bad CRC in chunk IHDR")
+
+    def test_a_zero_side_is_refused(self):
+        ihdr = png.chunk(b"IHDR", struct.pack(">IIBBBBB", 0, 3, 8, 2, 0, 0, 0))
+        self.path.write_bytes(png.SIGNATURE + ihdr + png.chunk(b"IEND", b""))
+        self.assertEqual(self.reason(), "the image has a zero side")
+
+    def test_missing_file_and_directory_are_png_invalid(self):
+        self.assertIn("cannot read the file", self.reason())
+        self.path.mkdir()
+        self.assertIn("cannot read the file", self.reason())
+
+
 if __name__ == "__main__":
     unittest.main()
