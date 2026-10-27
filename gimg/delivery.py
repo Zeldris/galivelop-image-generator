@@ -199,8 +199,13 @@ def choose(project: str, key: str, profile: str, attempt_id) -> dict:
     with _lock(project):  # read, decide, change the order, deliver and revert: one unit
         order = orders.get(project, key, profile)
         attempt = _find(order, attempt_id)
-        # an unknown attempt (a discarded one, a draft) is reported by orders.choose itself
-        ok = attempt is not None and attempt["state"] != "discarded" and attempt.get("draft") is not True
+        # an unknown or not choosable attempt (discarded, draft) is reported by orders.choose itself
+        ok = attempt is not None
+        if ok:
+            try:
+                orders.check_choosable(attempt)
+            except GimgError:
+                ok = False
         plan = _prepare(proj, order, attempt) if ok else None
         restore = _restore_source(proj, order) if plan is not None else False
         result = orders.choose(project, key, profile, attempt_id)

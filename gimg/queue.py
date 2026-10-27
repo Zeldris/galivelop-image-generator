@@ -334,4 +334,5 @@ def estimate_for(entry: dict, provider: str | None = None):
     if provider is None:
         provider = engine_mod.get_engine().provider
     steps = (entry.get("params") or {}).get("steps")
-    return log.estimate(entry["project"], provider, entry["profile"], steps, bool(entry.get("references")))
+    return log.estimate(entry["project"], provider, entry["profile"], steps, bool(entry.get("references")),
+                        entry.get("draft") is True)

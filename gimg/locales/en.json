@@ -128,7 +128,7 @@
   "cli.arg.chosen": "only orders with a chosen attempt",
   "cli.arg.unchosen": "only orders without a chosen attempt",
   "cli.arg.count": "how many attempts",
-  "cli.arg.draft": "generate drafts (smaller and fewer steps, D32)",
+  "cli.arg.draft": "generate drafts (smaller and fewer steps, D32); --no-draft forces final images",
   "cli.out.draft_mark": " [draft]",
   "cli.arg.seed": "seed (random if missing)",
   "cli.arg.prompt": "retouched prompt for these attempts",

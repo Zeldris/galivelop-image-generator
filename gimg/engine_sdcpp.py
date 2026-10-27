@@ -513,7 +513,7 @@ class SdCppEngine(Engine):
         return EngineResult(duration_ms=total, engine_version=RELEASE, command=self._command(argv),
                             log_path=str(log_path), min_free_mb=self._run.min_free_mb,
                             model_files={k: Path(resolved["files"][k]["path"]).name for k in ("diffusion", "text", "vae")},
-                            backend=_backend(argv), threads=_threads(argv), params=self.effective(job, resolved), draft=job.draft,
+                            backend=_backend(argv), threads=_threads(argv), params=self.effective(job, resolved),
                             **parse_timings(text))
 
     @staticmethod

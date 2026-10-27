@@ -147,7 +147,7 @@ class EngineProgressTests(Base):
     def test_result_has_the_d34_fields(self):
         _, job, res = self.run_job()
         names = {k: Path(self.md(k)).name for k in ("diffusion", "text", "vae")}
-        self.assertEqual((res.model_files, res.backend, res.draft, res.compose), (names, "vulkan", False, None))
+        self.assertEqual((res.model_files, res.backend, res.compose), (names, "vulkan", None))
         self.assertEqual(res.params, {"steps": 6, "cfg": 1, "sampler": "euler"})
         self.assertEqual(res.command[0], "sd-cli")
 
@@ -359,7 +359,7 @@ class RecordTests(unittest.TestCase):
 
     def test_error_record_has_none_of_them(self):
         rec = log.record_for("k", "banner", {"seed": 1, "prompt": "p", "params": {}}, {}, "fake", error="x")
-        self.assertFalse([k for k in rec if k.split(".")[2:3] in (["draft"], ["command"], ["backend"])])
+        self.assertFalse([k for k in rec if k.split(".")[2:3] in (["command"], ["backend"])])
 
 
 if __name__ == "__main__":

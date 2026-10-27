@@ -413,7 +413,7 @@ examples/<p>` y `gimg order submit <p> examples/<p>/orders/r1-og.json` para los 
 `piloto/r1/`: **14/14 píxel a píxel iguales** (`ffmpeg -f md5`; los bytes difieren solo por el `tEXt` que añade `gimg`). Las dos columnas están en
 `r1-fondos.md`. Diferencia conocida frente a `generar.sh`: `gimg` añade `--preview proj --preview-interval 1 --preview-path …`; `-t` no aparece porque
 `steam-deck.json` no fija hilos. La imagen no cambia, que es justo lo que medía la comparación; los tiempos salen 0-7 s más lentos en cuatro proyectos por
-la caché de disco tras descargar Ollama, no por el motor.
+la caché de disco tras descargar Ollama, no por el motor. CI de GitHub sin cuota el 2026-10-27: los pasos del CI (`comprobar.yml`: check y `pre-commit` de `main` sobre el rango) reproducidos en local sobre `370cf91`, en verde; comprobado solo en local a petición de la persona.
 
 *Hecho en F2.7 (a)* (`gimg/orders.py`, `queue.py`, `worker.py`, `engine.py`, `engine_sdcpp.py`, `delivery.py`, `projects.py`, `cli.py`, esquemas `project-config` y `order`, `locales/`, `tests/test_draft.py`): borradores (D32). **Decisiones:**
 (1) *Perfil:* `draft` `{model?, steps?, scale?}` (`scale` 0.1-1); `load_config` comprueba `draft.model` contra el catálogo. (2) *Pedido:* `draft` booleano (por defecto false), guardado en `orders.submit`.
@@ -423,7 +423,7 @@ la caché de disco tras descargar Ollama, no por el motor.
 (las antiguas, sin la clave, no lo son); `EngineJob.draft` y `EngineResult.draft` (el registro ya lo lee en `app.image.draft`); el chunk `gimg` del PNG y el intento llevan `draft: true`
 solo si lo es. (6) *No elegible:* `orders.choose` lanza `order.choose_draft` y `delivery.choose` no prepara la entrega; marcar y deshacer no cambian. (7) *CLI:* `--draft` en
 `order submit` y `attempt new`; `queue list` y `order show` marcan los borradores.
-**Queda:** (b) `initImage`/`strength`.
+**Queda:** (b) `initImage`/`strength`. **Arreglos de la revisión de `a814e5b`:** la estimación del tiempo filtra por borrador (`app.image.draft`; una línea sin la clave no lo es); `attempt new` acepta `--draft`/`--no-draft` (sin opción manda el `draft` del pedido); `order submit --draft` escribe `draft: true` en el pedido, así que persiste; `app.image.draft` del registro sale de la entrada y no del motor (un borrador fallido también queda marcado; `draft` desaparece de `EngineJob` y `EngineResult`); `draft_params` redondea medio hacia arriba y con `scale` ausente o 1 no toca los lados; una sola regla de elegibilidad, `orders.check_choosable`, usada por `orders.choose` y `delivery.choose`.
 
 **Configuración del proyecto** (cambios en `project-config.schema.json`). El perfil añade: `targetWidth`/`targetHeight`
 (tamaño de destino; si faltan, los de generación), `draft` (`{"model"?, "steps"?, "scale"?}`, D32) y `compose`

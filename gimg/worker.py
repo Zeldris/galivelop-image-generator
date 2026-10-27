@@ -166,7 +166,6 @@ def _generate(entry: dict, eng, machine: dict, state: dict, lang=None):
         prompt=entry["prompt"], width=params.get("width"), height=params.get("height"),
         seed=entry["seed"], output=str(tmp), steps=params.get("steps"), cfg=params.get("cfg"),
         sampler=params.get("sampler"), model=params.get("model"), references=references,
-        draft=entry.get("draft") is True,
         machine=machine, timeout_s=machine.get("timeoutS"), on_progress=_progress_to_queue(entry_id))
     _expose_preview(entry_id, eng, tmp)
     state["result"] = eng.generate(job, lambda: queue.is_cancel_requested(entry_id))

@@ -128,7 +128,7 @@
   "cli.arg.chosen": "solo pedidos con elegida",
   "cli.arg.unchosen": "solo pedidos sin elegida",
   "cli.arg.count": "cuántos intentos",
-  "cli.arg.draft": "generar borradores (menos tamaño y pasos, D32)",
+  "cli.arg.draft": "generar borradores (menos tamaño y pasos, D32); --no-draft los fuerza a definitivos",
   "cli.out.draft_mark": " [borrador]",
   "cli.arg.seed": "semilla (si falta, aleatoria)",
   "cli.arg.prompt": "prompt retocado para estos intentos",

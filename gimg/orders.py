@@ -81,7 +81,8 @@ def draft_params(profile_cfg: dict, params: dict) -> dict:
     """The params of a draft (D32), from the profile and the params the attempt would have (a copy).
 
     Without ``draft`` in the profile: sides x 0.5, 8 steps, same model. With it: ``scale`` (else 1), ``steps`` and
-    ``model`` (else the ones `params` already has). Each side becomes ``max(64, round(side * scale / 64) * 64)``;
+    ``model`` (else the ones `params` already has). With a `scale` other than 1 each side becomes
+    ``max(64, int(side * scale / 64 + 0.5) * 64)`` (half rounds up); with none, or 1, the sides are not touched.
     cfg and sampler do not change."""
     out = copy.deepcopy(params)
     declared = profile_cfg.get("draft")
@@ -93,9 +94,10 @@ def draft_params(profile_cfg: dict, params: dict) -> dict:
             out["steps"] = declared["steps"]
         if "model" in declared:
             out["model"] = declared["model"]
-    for side in ("width", "height"):
-        if side in out:
-            out[side] = max(SIDE_STEP, round(out[side] * scale / SIDE_STEP) * SIDE_STEP)
+    if scale != 1:
+        for side in ("width", "height"):
+            if side in out:
+                out[side] = max(SIDE_STEP, int(out[side] * scale / SIDE_STEP + 0.5) * SIDE_STEP)
     return out
 
 
@@ -328,6 +330,14 @@ def note(project: str, key: str, profile: str, attempt_id: int, text: str) -> di
     return _modify(project, key, profile, change)
 
 
+def check_choosable(attempt: dict) -> None:
+    """The one eligibility rule: a discarded attempt and a draft cannot be chosen (raises, else returns)."""
+    if attempt["state"] == "discarded":
+        raise GimgError("order.choose_discarded", attempt=attempt["id"])
+    if attempt.get("draft") is True:
+        raise GimgError("order.choose_draft", attempt=attempt["id"])
+
+
 def choose(project: str, key: str, profile: str, attempt_id: int) -> dict:
     """Choose an attempt; returns ``{"old": id|None, "new": id}`` for delivery to act on.
 
@@ -335,10 +345,7 @@ def choose(project: str, key: str, profile: str, attempt_id: int) -> dict:
     cannot be chosen. Choosing the already chosen attempt changes nothing (``old == new``, no push)."""
     def change(order):
         item = _attempt(order, attempt_id)
-        if item["state"] == "discarded":
-            raise GimgError("order.choose_discarded", attempt=attempt_id)
-        if item.get("draft") is True:
-            raise GimgError("order.choose_draft", attempt=attempt_id)
+        check_choosable(item)
         old = order["chosen"]
         if old != attempt_id:
             order["chosenHistory"].append(old)
