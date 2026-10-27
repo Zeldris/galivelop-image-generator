@@ -491,10 +491,27 @@ class FontsTests(DoctorBase):
         self.assertIn("fontconfig", found["fonts"].fix("en"))
         self.assertFalse(doctor.failed(doctor.run()))
 
-    def test_an_fc_list_that_fails_counts_as_missing(self):
+    def test_an_fc_list_that_fails_warns_with_its_reason_and_is_not_reported_as_missing(self):
         script(self.bin / "fc-list", "exit 3")
         self.project("p", {"og": ["Sora"]})
-        self.assertEqual(self.fonts()["fonts"].key, "doctor.fonts.no_fc_list")
+        check = self.fonts()["fonts"]
+        self.assertEqual((check.status, check.key, check.params), (doctor.WARN, "doctor.fonts.fc_list_failed",
+                                                                    {"reason": "exit code 3"}))
+        self.assertIn("exit code 3", check.message("en"))
+        self.assertNotIn("PATH", check.message("en"))
+        self.assertFalse(doctor.failed(doctor.run()))
+
+    def test_an_fc_list_that_fails_says_the_last_line_of_its_stderr(self):
+        script(self.bin / "fc-list", 'echo "Fontconfig error: cannot load config" >&2\nexit 1')
+        self.project("p", {"og": ["Sora"]})
+        self.assertEqual(self.fonts()["fonts"].params, {"reason": "Fontconfig error: cannot load config"})
+
+    def test_an_fc_list_that_takes_too_long_warns_with_the_time_limit(self):
+        script(self.bin / "fc-list", "exit 0")
+        self.project("p", {"og": ["Sora"]})
+        with mock.patch.object(doctor.subprocess, "run", side_effect=doctor.subprocess.TimeoutExpired("fc-list", 10)):
+            check = {c.id: c for c in doctor._fonts()}["fonts"]
+        self.assertEqual((check.key, check.params), ("doctor.fonts.fc_list_failed", {"reason": "timeout after 10s"}))
 
     def test_a_broken_project_warns_with_its_name_and_the_others_are_still_checked(self):
         self.fc_list(["Inter"])
@@ -513,9 +530,9 @@ class FontsTests(DoctorBase):
 
     def test_the_texts_exist_in_both_languages(self):
         for key in ("doctor.fonts.none", "doctor.fonts.ok", "doctor.fonts.missing", "doctor.fonts.no_fc_list",
-                    "doctor.fonts.project_error", "doctor.fix.fonts"):
-            self.assertNotEqual(i18n.t(key, "es", font="f", projects="p", project="p", message="m"),
-                                i18n.t(key, "en", font="f", projects="p", project="p", message="m"), key)
+                    "doctor.fonts.project_error", "doctor.fonts.fc_list_failed", "doctor.fix.fonts"):
+            self.assertNotEqual(i18n.t(key, "es", font="f", projects="p", project="p", message="m", reason="r"),
+                                i18n.t(key, "en", font="f", projects="p", project="p", message="m", reason="r"), key)
 
 
 class LocaleTests(unittest.TestCase):

@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from gimg import compose, delivery, engine, log, orders, png, queue
+from gimg import compose, delivery, engine, fsutil, i18n, log, orders, png, queue
 from gimg.errors import GimgError
 from tests.test_compose_worker import CON_HERRAMIENTAS, ComposeWorkerBase
 
@@ -99,6 +99,24 @@ class ChoiceOfAttemptTests(RecomposeBase):
         self.assertEqual(self.delivered().read_bytes(), before)
         self.assertEqual(self.manifest()["attemptId"], 1)
 
+    def test_a_choose_of_another_attempt_while_composing_is_not_undone_by_the_redelivery(self):
+        self.made(count=2, choose=1, text={"title": "Old"})
+        render = FakeRender()
+
+        def render_then_choose(*args, **kw):
+            result = render(*args, **kw)
+            delivery.choose("proj", "a", "og", 2)  # `gimg choose 2` lands between the render and the redelivery
+            return result
+
+        with mock.patch.object(compose, "render", render_then_choose):
+            att = compose.recompose("proj", "a", "og", None, {"title": "New"})
+        self.assertNotIn("delivered", att)
+        order = orders.get("proj", "a", "og")
+        self.assertEqual((order["chosen"], order["chosenHistory"]), (2, [None, 1]))  # no second push of the history
+        self.assertEqual((self.manifest()["attemptId"], self.delivered().read_bytes()),
+                         (2, (self.folder("og") / "q2.png").read_bytes()))
+        self.assertEqual(orders.get("proj", "a", "og")["attempts"][0]["compose"]["text"], {"title": "New"})  # 1 was composed
+
     def test_an_unknown_attempt_and_an_order_without_attempts_say_so(self):
         self.made(choose=None)
         with mock.patch.object(compose, "render", FakeRender()):
@@ -125,6 +143,95 @@ class ChoiceOfAttemptTests(RecomposeBase):
         self.assertNotIn("composeError", att)
         delivery.choose("proj", "a", "og", 1)
         self.assertTrue(self.delivered().exists())
+
+
+class BusyTests(RecomposeBase):
+    def lock(self, attempt_id=1):
+        return fsutil.lock(orders.compose_lock_path("proj", "a", "og", attempt_id))
+
+    def test_an_attempt_that_is_being_composed_is_busy_and_nothing_changes(self):
+        self.made(count=2, choose=1, text={"title": "Old"})
+        before = (self.delivered().read_bytes(), orders.get("proj", "a", "og"), self.names("og"))
+        render = FakeRender()
+        with self.lock(1), mock.patch.object(compose, "render", render):
+            with self.assertRaises(GimgError) as cm:
+                compose.recompose("proj", "a", "og", 1, {"title": "New"})
+            self.assertEqual((cm.exception.code, cm.exception.params), ("compose.busy", {"attempt": 1}))
+            self.assertEqual(cm.exception.message("en"), i18n.t("error.compose.busy", "en", attempt=1))
+            for lang in ("es", "en"):
+                self.assertIn("1", cm.exception.message(lang))
+                self.assertNotIn("error.", cm.exception.message(lang))
+            self.assertEqual(self.code(compose.recompose, "proj", "a", "og"), "compose.busy")  # the chosen one is 1
+        self.assertEqual(render.calls, [])  # a busy attempt never reaches the render
+        after = orders.get("proj", "a", "og")
+        self.assertEqual((self.delivered().read_bytes(), after, self.names("og")), before)  # the new text was not saved either
+        self.assertNotIn("composeError", after["attempts"][0])
+        with self.lock(1):
+            att, _ = self.recompose(2, text={"title": "Two"})  # the lock is per attempt: another one is free
+        self.assertEqual(att["id"], 2)
+
+    def test_the_lock_is_released_after_a_success_and_after_a_failure(self):
+        self.made(choose=None)
+        self.recompose()
+        self.failing_once()
+        self.recompose()  # not busy
+
+    def failing_once(self):
+        with mock.patch.object(compose, "render", FakeRender(fail=ValueError("x"))), self.assertRaises(ValueError):
+            compose.recompose("proj", "a", "og")
+
+    def test_what_a_killed_compose_left_for_this_attempt_is_removed_and_nothing_else(self):
+        self.made(count=2, choose=None)
+        folder = self.folder("og")
+        stale_dir = folder / ".compose-c2-abc"
+        stale_dir.mkdir()
+        (stale_dir / "layer.png").write_bytes(b"x")
+        stale_tmp = folder / ".q2.raw.png.k3j.tmp"
+        stale_tmp.write_bytes(b"x")
+        keep = [folder / ".compose-c1-abc", folder / ".compose-c20-abc", folder / ".compose-q2-abc"]
+        for path in keep:
+            path.mkdir()
+        keep_tmp = folder / ".q1.raw.png.k3j.tmp"
+        keep_tmp.write_bytes(b"x")
+        self.recompose(2)
+        self.assertEqual((stale_dir.exists(), stale_tmp.exists()), (False, False))
+        self.assertTrue(all(p.exists() for p in keep + [keep_tmp]))
+
+    def test_a_busy_attempt_keeps_the_leftovers_of_the_one_who_holds_it(self):
+        self.made(choose=None)
+        working = self.folder("og") / ".compose-c1-abc"
+        working.mkdir()
+        with self.lock(1), self.assertRaises(GimgError):
+            compose.recompose("proj", "a", "og")
+        self.assertTrue(working.exists())
+
+
+class SameFileTests(RecomposeBase):
+    def raw_is(self, name):
+        path = orders._order_file("proj", "a", "og")
+        data = json.loads(path.read_text())
+        data["attempts"][0]["raw"] = name
+        path.write_text(json.dumps(data))
+
+    def refused(self):
+        before = (orders.get("proj", "a", "og"), self.names("og"), (self.folder("og") / "q1.png").read_bytes())
+        render = FakeRender()
+        with mock.patch.object(compose, "render", render), self.assertRaises(GimgError) as cm:
+            compose.recompose("proj", "a", "og", 1, {"title": "x"})
+        self.assertEqual((cm.exception.code, cm.exception.params["reason"], render.calls),
+                         ("compose.write_failed", "it is the raw image", []))
+        self.assertEqual((orders.get("proj", "a", "og"), self.names("og"), (self.folder("og") / "q1.png").read_bytes()), before)
+
+    def test_a_raw_that_does_not_end_in_raw_png_is_refused_before_anything_changes(self):
+        self.made(choose=None)
+        self.raw_is("attempts/q1.png")
+        self.refused()
+
+    def test_a_raw_that_is_a_link_to_the_composed_file_is_refused_before_anything_changes(self):
+        self.made(choose=None)
+        (self.folder("og") / "q1.raw.png").unlink()
+        (self.folder("og") / "q1.raw.png").symlink_to(self.folder("og") / "q1.png")
+        self.refused()
 
 
 class TextTests(RecomposeBase):
@@ -246,6 +353,19 @@ class FailureTests(RecomposeBase):
         error = self.attempt("og")["composeError"]
         self.assertEqual((error["code"], error["params"]["reason"]), ("compose.unexpected", ("ValueError: " + "x" * 400)[:300]))
 
+    def test_a_failed_recomposition_of_the_chosen_one_cannot_be_undone_into(self):
+        self.made(count=2, choose=1)
+        delivery.choose("proj", "a", "og", 2)
+        before = (self.delivered().read_bytes(), self.manifest())
+        compose_failed = FakeRender(fail=GimgError("compose.tool_failed", tool="ffmpeg", reason="boom"))
+        with mock.patch.object(compose, "render", compose_failed), self.assertRaises(GimgError):
+            compose.recompose("proj", "a", "og", 1)
+        with self.assertRaises(GimgError) as cm:
+            delivery.undo("proj", "a", "og")
+        self.assertEqual((cm.exception.code, cm.exception.params), ("order.undo_uncomposed", {"attempt": 1}))
+        self.assertEqual((self.delivered().read_bytes(), self.manifest()), before)  # the raw image was not delivered
+        self.assertEqual(orders.get("proj", "a", "og")["chosen"], 2)
+
     def test_the_delivered_file_is_not_touched_when_the_render_fails(self):
         self.made(choose=1)
         before = (self.delivered().read_bytes(), self.manifest())
@@ -270,6 +390,17 @@ class LogTests(RecomposeBase):
         for name in ("app.image.compose_error", "app.duration_ms", "app.error"):
             self.assertNotIn(name, second)
         self.assertEqual((second["app.image.width"], second["app.image.seed"]), (1280, self.attempt("og")["seed"]))
+
+    def test_a_recomposition_is_not_logged_as_a_generation(self):
+        self.made(choose=None)
+        self.recompose(text={"title": "x"})
+        first, second = self.log_lines()
+        self.assertEqual((first["gen_ai.operation.name"], first["gen_ai.provider.name"]), ("image_generation", "fake"))
+        self.assertIn("gen_ai.request.model", first)
+        self.assertEqual(second["gen_ai.operation.name"], "image_composition")
+        for name in ("gen_ai.provider.name", "gen_ai.request.model", "app.duration_ms"):
+            self.assertNotIn(name, second)
+        self.assertEqual(log.estimate("proj", "fake", "og", 6, False), first["app.duration_ms"])  # the generation only
 
     def test_a_failed_recomposition_writes_the_error_code_and_no_template(self):
         self.made(choose=None)

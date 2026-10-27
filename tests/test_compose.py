@@ -82,7 +82,7 @@ class LocaleTests(unittest.TestCase):
         "bad_text": {"field": "title"}, "nothing_to_do": {"profile": "og"}, "tool_missing": {"tool": "ffmpeg"},
         "timeout": {"tool": "ffmpeg", "seconds": 120}, "tool_failed": {"tool": "ffmpeg", "reason": "Invalid data"},
         "write_failed": {"path": "out/q1.png", "reason": "No such file or directory"},
-        "no_attempts": {"order": "hero", "profile": "og"}, "unexpected": {"reason": "KeyError: 'x'"},
+        "no_attempts": {"order": "hero", "profile": "og"}, "busy": {"attempt": 3}, "unexpected": {"reason": "KeyError: 'x'"},
     }
 
     def test_every_code_of_compose_py_has_a_text_in_both_languages_that_uses_its_parameters(self):
@@ -379,6 +379,18 @@ class FailuresBeforeToolsTests(ProjectBase):
     def no_leftovers(self):
         self.assertFalse(self.out.exists())
         self.assertEqual(sorted(p.name for p in self.work.iterdir()), ["raw.png"])
+
+    def test_a_result_that_is_the_raw_image_is_refused_before_composing_and_the_raw_image_is_untouched(self):
+        before = self.raw.read_bytes()
+        link = self.work / "link.png"
+        link.symlink_to(self.raw)  # a link to the raw image is the same file too
+        for out in (self.raw, link):
+            with mock.patch.object(compose, "_run", side_effect=AssertionError("a tool was called")):
+                with self.assertRaises(GimgError) as cm:
+                    compose.render(self.root, {"width": 1280, "height": 640, "targetWidth": 1200, "targetHeight": 630},
+                                   self.raw, out, {})
+            self.assertEqual((cm.exception.code, cm.exception.params["reason"]), ("compose.write_failed", "it is the raw image"))
+            self.assertEqual(self.raw.read_bytes(), before)
 
     def test_the_template_uses_logo_but_the_profile_has_none(self):
         self.write("t.svg", '<svg xmlns="http://www.w3.org/2000/svg"><image href="{{logo}}"/></svg>')

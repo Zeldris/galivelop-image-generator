@@ -18,6 +18,7 @@ The raw image is never modified. The ``gimg`` text chunk of the raw image is car
 from __future__ import annotations
 
 import base64
+import glob
 import json
 import os
 import re
@@ -27,7 +28,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from . import delivery, i18n, limits, log, orders, paths, png, projects
+from . import delivery, fsutil, i18n, limits, log, orders, paths, png, projects
 from .errors import GimgError
 
 TIMEOUT_S = 120
@@ -229,6 +230,17 @@ def _carry_chunk(raw_path, out_path, info) -> None:
         print(i18n.t("compose.chunk_failed", path=str(out_path), reason=reason), file=sys.stderr)
 
 
+def check_distinct(raw_path, out_path) -> None:
+    """``compose.write_failed`` if the raw image and the result are the same file (a ``raw`` that does not end in
+    ``.raw.png``, or a link): composing would overwrite the raw image, which is never modified."""
+    try:
+        same = Path(raw_path).resolve() == Path(out_path).resolve()
+    except (OSError, RuntimeError):
+        same = False
+    if same:
+        raise GimgError("compose.write_failed", path=str(out_path), reason="it is the raw image")
+
+
 def render(project_root, profile_cfg, raw_path, out_path, text, profile=None, prefix=COMPOSE_TMP_PREFIX) -> dict:
     """Compose the raw image `raw_path` into `out_path` for `profile_cfg` and return what was done.
 
@@ -240,6 +252,7 @@ def render(project_root, profile_cfg, raw_path, out_path, text, profile=None, pr
     The temporary folder sits next to `out_path` and starts with `prefix`: each caller uses its own, so recovering one
     composition (`queue._clean_pending` removes ``.compose-q<entry>-*``) never touches another's."""
     raw_path, out_path = Path(raw_path), Path(out_path)
+    check_distinct(raw_path, out_path)
     raw_w, raw_h = png.size(raw_path)
     plan = plan_for(profile_cfg, raw_w, raw_h)
     if plan is None:
@@ -320,10 +333,13 @@ def _keep_raw(source: Path, raw_path: Path) -> None:
 
 
 def _log_recompose(project, key, profile, attempt, info=None, error=None) -> None:
-    """One line in the project log, like the worker's (D26): ``app.image.compose`` or ``app.image.compose_error``; the
-    extra ``app.image.recompose`` tells it from a generation (no engine ran: no duration). Never fails the caller."""
+    """One line in the project log, like the worker's (D26): ``app.image.compose`` or ``app.image.compose_error``. It is
+    not a generation (nothing ran an engine): the operation is ``image_composition`` and there is no provider, model or
+    duration, so `log.estimate` and the pilot's measures never count it; ``app.image.recompose`` also says so.
+    Never fails the caller."""
     try:
-        record = log.record_for(key, profile, attempt, limits.load_machine(), attempt.get("engine") or "unknown",
+        spec = dict(attempt, params={k: v for k, v in (attempt.get("params") or {}).items() if k != "model"})
+        record = log.record_for(key, profile, spec, limits.load_machine(), None, operation=log.OP_COMPOSITION,
                                 compose=(info or {}).get("template"), compose_error=(error or {}).get("code"))
         record["app.image.recompose"] = True
         log.append(project, record)
@@ -339,18 +355,47 @@ def recompose(project, key, profile, attempt_id=None, text=None) -> dict:
     gets composed. An attempt made before F2.8 has no raw image: its ``image`` is copied to ``<stem>.raw.png`` before
     anything else (`orders.set_composed` expects it). The temporary folder is ``.compose-c<id>-*``.
 
+    One process composes an attempt at a time: from `orders.set_text` to the delivery the attempt's lock
+    (`orders.compose_lock_path`, also the worker's) is held, and if it is not free this raises ``compose.busy``. With
+    the lock taken, what an earlier ``gimg compose`` that was killed left (``.compose-c<id>-*``, ``.<raw>.*.tmp``) is removed.
+
     A profile with nothing to compose raises ``compose.nothing_to_do`` before anything changes. If the render fails, the
     attempt gets the error as ``composeError`` (`orders.set_compose_error`) and it is raised again; a project log line
-    records either result. The chosen attempt is delivered again (manifest included) and the result then has
-    ``delivered``: the file, relative to the project."""
+    records either result. The chosen attempt is delivered again (manifest included; `delivery.redeliver` checks it still
+    is the chosen one under the delivery lock) and the result then has ``delivered``: the file, relative to the project."""
     proj = projects.get(project)
     profile_cfg = proj["config"]["profiles"].get(profile)
     order = orders.get(project, key, profile)
     if profile_cfg is None:
         raise GimgError("order.profile_unknown", profile=profile)
+    attempt_id = _pick_attempt(order, attempt_id)["id"]
+    with fsutil.try_lock(orders.compose_lock_path(project, key, profile, attempt_id)) as taken:
+        if not taken:  # the worker or another `gimg compose` is composing this attempt
+            raise GimgError("compose.busy", attempt=attempt_id)
+        return _recompose_locked(proj, project, key, profile, profile_cfg, attempt_id, text)
+
+
+def _clean_leftovers(raw_path: Path, folder: Path, attempt_id: int) -> None:
+    """Remove what a ``gimg compose`` that was killed left for this attempt (the lock says nobody is composing it)."""
+    leftovers = list(folder.glob((RECOMPOSE_TMP_PREFIX % attempt_id) + "*"))
+    leftovers += raw_path.parent.glob("." + glob.escape(raw_path.name) + ".*.tmp")
+    for item in leftovers:
+        if item.is_dir() and not item.is_symlink():
+            shutil.rmtree(item, ignore_errors=True)
+        else:
+            try:
+                item.unlink()
+            except OSError:
+                pass
+
+
+def _recompose_locked(proj, project, key, profile, profile_cfg, attempt_id, text) -> dict:
+    """`recompose` with the lock of the attempt held, from reading the attempt to delivering it."""
+    order = orders.get(project, key, profile)  # again: it may have changed while the lock was not ours
     attempt = _pick_attempt(order, attempt_id)
-    attempt_id = attempt["id"]
     raw_path, out_path = orders.compose_paths(project, key, profile, attempt)
+    check_distinct(raw_path, out_path)
+    _clean_leftovers(raw_path, out_path.parent, attempt_id)
     # an attempt without ``raw`` is made before F2.8; if its copy is already there, the image may be a composed one
     keep = not isinstance(attempt.get("raw"), str) and not raw_path.is_file()
     source = orders.attempt_image(project, key, profile, attempt) if keep else raw_path
@@ -374,8 +419,7 @@ def recompose(project, key, profile, attempt_id=None, text=None) -> dict:
         _log_recompose(project, key, profile, failed, error=error)
         raise
     _log_recompose(project, key, profile, done, info=info)
-    if orders.get(project, key, profile)["chosen"] == attempt_id:
-        delivery.choose(project, key, profile, attempt_id)
+    if delivery.redeliver(project, key, profile, attempt_id):  # only if it still is the chosen one
         done["delivered"] = delivery.delivered_file(project, key, profile)
     return done
 

@@ -437,6 +437,62 @@ class AttemptEngineTests(DeliveryBase):
         self.assertEqual((att["engine"], att["engineVersion"]), ("fake", engine.FAKE_VERSION))
 
 
+class RedeliverTests(DeliveryBase):
+    def test_the_chosen_attempt_is_delivered_again_without_touching_the_order(self):
+        one, two = self.attempts()
+        delivery.choose("proj", "a", "banner", one)
+        delivery.choose("proj", "a", "banner", two)
+        orders.attempt_image("proj", "a", "banner", orders.get("proj", "a", "banner")["attempts"][1]).write_bytes(b"new image")
+        before = orders.get("proj", "a", "banner")
+        self.assertIs(delivery.redeliver("proj", "a", "banner", two), True)
+        self.assertEqual(self.delivered().read_bytes(), b"new image")
+        self.assertEqual(self.manifest()["images"]["a"]["banner"]["attemptId"], two)
+        self.assertEqual(orders.get("proj", "a", "banner"), before)  # no choose, no history
+
+    def test_an_attempt_that_is_not_the_chosen_one_is_not_delivered(self):
+        one, two = self.attempts()
+        delivery.choose("proj", "a", "banner", one)
+        delivered = self.delivered().read_bytes()
+        orders.attempt_image("proj", "a", "banner", orders.get("proj", "a", "banner")["attempts"][1]).write_bytes(b"other")
+        for attempt_id in (two, 99, None):
+            self.assertIs(delivery.redeliver("proj", "a", "banner", attempt_id), False, attempt_id)
+        self.assertEqual((self.delivered().read_bytes(), self.state()), (delivered, (one, [None])))
+
+    def test_nothing_is_delivered_for_an_order_without_a_choice(self):
+        (one, _two) = self.attempts()
+        self.assertIs(delivery.redeliver("proj", "a", "banner", one), False)
+        self.assertFalse(self.delivered().exists())
+
+    def test_a_failed_delivery_raises_and_keeps_the_file(self):
+        (one, _two) = self.attempts()
+        delivery.choose("proj", "a", "banner", one)
+        before = self.delivered().read_bytes()
+        orders.attempt_image("proj", "a", "banner", orders.get("proj", "a", "banner")["attempts"][0]).unlink()
+        self.assertEqual(self.code(delivery.redeliver, "proj", "a", "banner", one), "delivery.source_missing")
+        self.assertEqual(self.delivered().read_bytes(), before)
+
+    def test_it_runs_under_the_delivery_lock(self):
+        (one, _two) = self.attempts()
+        delivery.choose("proj", "a", "banner", one)
+        with mock.patch.object(delivery, "_lock", wraps=delivery._lock) as lock:
+            delivery.redeliver("proj", "a", "banner", one)
+        lock.assert_called_once_with("proj")
+
+
+class DeliveryUndoComposeTests(DeliveryBase):
+    def test_undo_does_not_deliver_an_attempt_whose_composition_failed(self):
+        one, two = self.attempts()
+        delivery.choose("proj", "a", "banner", one)
+        delivery.choose("proj", "a", "banner", two)
+        before = (self.delivered().read_bytes(), self.manifest(), orders.get("proj", "a", "banner"))
+        orders.set_compose_error("proj", "a", "banner", one, {"code": "compose.tool_failed", "params": {"tool": "ffmpeg"}})
+        before = before[:2] + (orders.get("proj", "a", "banner"),)
+        with self.assertRaises(GimgError) as cm:
+            delivery.undo("proj", "a", "banner")
+        self.assertEqual((cm.exception.code, cm.exception.params), ("order.undo_uncomposed", {"attempt": one}))
+        self.assertEqual((self.delivered().read_bytes(), self.manifest(), orders.get("proj", "a", "banner")), before)
+
+
 class DeliveryComposeTests(DeliveryBase):
     """F2.8: the delivered image is the composed one and the manifest says how it was composed."""
     INFO = {"fit": "cover", "targetWidth": 1200, "targetHeight": 630, "template": "t.svg", "text": {"title": "Hi"}}

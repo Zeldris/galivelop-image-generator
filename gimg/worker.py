@@ -193,27 +193,55 @@ def _unexpected_compose_error(exc: BaseException) -> dict:
     return queue.make_error("compose.unexpected", reason=("%s: %s" % (type(exc).__name__, exc))[:300])
 
 
-def _compose_attempt(entry: dict, project: dict, attempt_id: int, raw: Path, final: Path, state: dict, lang=None):
-    """Compose the raw image of an attempt that is already registered: `orders.set_composed` on success, else the
-    real ``composeError`` on the attempt (best effort; if even that fails the attempt stays ``compose.pending``).
-    Never raises an `Exception`: a generation is never lost to a composition failure."""
+def _compose_locked(entry: dict, project: dict, attempt_id: int, raw: Path, final: Path, state: dict):
+    """The composition itself, with the lock of the attempt held; returns the error dict, or None on success (or when
+    another process composed the attempt while this one waited for the lock: nothing left to do)."""
     entry_id = entry["id"]
     project_name, key, profile = entry["project"], entry["key"], entry["profile"]
     try:
+        current = next((a for a in orders.get(project_name, key, profile)["attempts"] if a["id"] == attempt_id), None)
+        error = (current or {}).get("composeError")
+        if not (isinstance(error, dict) and error.get("code") == COMPOSE_PENDING["code"]):
+            return None  # `gimg compose` got there first (and then it says how it went)
         info = compose_mod.render(
             project["root"], project["config"]["profiles"][profile], raw, final, entry.get("text") or {}, profile,
             prefix=".compose-q%d-" % entry_id)
         orders.set_composed(project_name, key, profile, attempt_id, info)
         state["compose"] = info
-        return
+        return None
     except GimgError as exc:  # keep the generation: the raw image stands in until `gimg compose` fixes it
         error = queue.make_error(exc.code, **exc.params)
     except Exception as exc:
         error = _unexpected_compose_error(exc)
-    state["compose_error"] = error
+    _record_compose_error(project_name, key, profile, attempt_id, error)
+    return error
+
+
+def _record_compose_error(project_name, key, profile, attempt_id, error) -> None:
     with contextlib.suppress(Exception):
         orders.set_compose_error(project_name, key, profile, attempt_id,
                                  {"code": error["code"], "params": error["params"]})
+
+
+def _compose_attempt(entry: dict, project: dict, attempt_id: int, raw: Path, final: Path, state: dict, lang=None):
+    """Compose the raw image of an attempt that is already registered: `orders.set_composed` on success, else the
+    real ``composeError`` on the attempt (best effort; if even that fails the attempt stays ``compose.pending``).
+    Never raises an `Exception`: a generation is never lost to a composition failure.
+
+    It holds the attempt's compose lock (`orders.compose_lock_path`, the one `compose.recompose` tries) for the whole
+    composition, error mark included: if a ``gimg compose`` of the same attempt is running, the worker waits for it and
+    then composes only if the attempt is still ``compose.pending``."""
+    entry_id = entry["id"]
+    error = None
+    try:
+        with fsutil.lock(orders.compose_lock_path(entry["project"], entry["key"], entry["profile"], attempt_id)):
+            error = _compose_locked(entry, project, attempt_id, raw, final, state)
+    except Exception as exc:  # the lock file itself
+        error = _unexpected_compose_error(exc)
+        _record_compose_error(entry["project"], entry["key"], entry["profile"], attempt_id, error)
+    if error is None:
+        return
+    state["compose_error"] = error
     with contextlib.suppress(Exception):  # a closed stderr must not fail an entry whose attempt exists
         print(i18n.t("worker.compose_failed", lang, id=entry_id, reason=queue.error_text(error, lang)),
               file=sys.stderr)

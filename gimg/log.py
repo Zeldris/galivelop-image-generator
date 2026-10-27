@@ -8,6 +8,10 @@ from datetime import datetime, timezone
 from . import fsutil, paths
 
 
+OP_GENERATION = "image_generation"
+OP_COMPOSITION = "image_composition"  # a recomposition: no engine ran (F2.8)
+
+
 def log_path(project: str):
     return paths.project_data_dir(project, "log.bad_project") / "log.jsonl"
 
@@ -16,16 +20,17 @@ def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def record_for(key: str, profile: str, spec: dict, machine: dict, provider: str,
+def record_for(key: str, profile: str, spec: dict, machine: dict, provider: str | None,
                result=None, error: str | None = None, ts: str | None = None,
-               compose: str | None = None, compose_error: str | None = None) -> dict:
+               compose: str | None = None, compose_error: str | None = None, operation: str = OP_GENERATION) -> dict:
     """The log line of one attempt: from an `EngineResult` (`result`) or an error message.
     `compose` is the template the image was composed with and `compose_error` the code of a composition that failed
-    (F2.8). Absent values are omitted, never ``null``."""
+    (F2.8). `operation` is ``gen_ai.operation.name``; a line that is not a generation has no `provider`. Absent values
+    are omitted, never ``null``."""
     params = spec.get("params") or {}
     line = {
         "ts": ts or _now(),
-        "gen_ai.operation.name": "image_generation",
+        "gen_ai.operation.name": operation,
         "gen_ai.provider.name": provider,
         "gen_ai.request.model": params.get("model"),
         "app.task": profile,

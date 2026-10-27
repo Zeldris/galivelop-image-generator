@@ -63,3 +63,20 @@ def lock(path):
         yield
     finally:
         os.close(fd)  # closing releases the lock
+
+
+@contextlib.contextmanager
+def try_lock(path):
+    """Like `lock` but without waiting: yields ``True`` with the lock taken, ``False`` if another process holds it."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(str(path.with_name(path.name + ".lock")), os.O_RDWR | os.O_CREAT, 0o600)
+    try:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            taken = True
+        except BlockingIOError:
+            taken = False
+        yield taken
+    finally:
+        os.close(fd)

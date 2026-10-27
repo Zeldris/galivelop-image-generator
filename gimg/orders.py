@@ -7,7 +7,7 @@ This module neither enqueues (queue, F1.4) nor delivers (F1.5): `choose` and `un
 new chosen ids so delivery can hook in. Every read-modify-write holds `fsutil.lock` of ``order.json``.
 
 Public API: `submit`, `set_text`, `attempt_specs`, `add_attempt`, `set_composed`, `attempt_for_entry`, `attempt_image`,
-`raw_image`, `compose_names`, `compose_paths`, `pending_image_path`, `mark`, `note`, `choose`, `undo`, `get`, `list_orders`. All raise `GimgError` with codes ``order.*`` on bad input.
+`raw_image`, `compose_names`, `compose_paths`, `compose_lock_path`, `pending_image_path`, `mark`, `note`, `choose`, `undo`, `get`, `list_orders`. All raise `GimgError` with codes ``order.*`` on bad input.
 """
 from __future__ import annotations
 
@@ -96,6 +96,12 @@ def compose_paths(project: str, key: str, profile: str, attempt: dict) -> tuple:
     raw, image = compose_names(attempt)
     folder = _order_dir(project, key, profile)
     return paths.inside(folder, raw), paths.inside(folder, image)
+
+
+def compose_lock_path(project: str, key: str, profile: str, attempt_id: int) -> Path:
+    """What `fsutil.lock` / `fsutil.try_lock` take to compose attempt `attempt_id` (``<order folder>/compose-<id>.lock``):
+    the worker and `compose.recompose` never compose the same attempt at once. Path only; nothing is created."""
+    return _order_dir(project, key, profile) / ("compose-%d" % int(attempt_id))
 
 
 def pending_image_path(project: str, key: str, profile: str, entry_id: int) -> Path:
@@ -484,14 +490,19 @@ def choose(project: str, key: str, profile: str, attempt_id: int) -> dict:
 def undo(project: str, key: str, profile: str) -> dict:
     """Pop the last chosen from the history (may be ``None``); returns ``{"old", "new"}``.
 
-    Errors with ``order.history_empty`` if there is nothing to undo."""
+    Errors with ``order.history_empty`` if there is nothing to undo, ``order.undo_discarded`` if the previous chosen is
+    discarded and ``order.undo_uncomposed`` if its composition failed (`check_choosable` refuses it for the same reason)."""
     def change(order):
         if not order["chosenHistory"]:
             raise GimgError("order.history_empty", order=order["key"], profile=order["profile"])
         old = order["chosen"]
         target = order["chosenHistory"][-1]
-        if target is not None and _attempt(order, target)["state"] == "discarded":
-            raise GimgError("order.undo_discarded", attempt=target)
+        if target is not None:
+            destination = _attempt(order, target)
+            if destination["state"] == "discarded":
+                raise GimgError("order.undo_discarded", attempt=target)
+            if "composeError" in destination:  # its image is the raw one: it would be delivered as if composed
+                raise GimgError("order.undo_uncomposed", attempt=target)
         order["chosenHistory"].pop()
         order["chosen"] = target
         return {"old": old, "new": order["chosen"]}

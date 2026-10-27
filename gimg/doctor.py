@@ -241,18 +241,22 @@ def _tools() -> list:
 
 
 def _installed_families():
-    """Lower-case family names ``fc-list`` knows, or ``None`` if it is missing or cannot run."""
+    """``(families, reason)``: the lower-case family names ``fc-list`` knows and ``None``; or ``None`` and why it cannot
+    tell (``reason`` is ``None`` when ``fc-list`` is not in PATH, else what failed: the error, the time limit, the exit code)."""
     exe = shutil.which("fc-list")
     if exe is None:
-        return None
+        return None, None
     try:
         done = subprocess.run([exe, "--format", "%{family}\\n"], capture_output=True, text=True, errors="replace",
                               timeout=TOOL_TIMEOUT_S, stdin=subprocess.DEVNULL)
-    except (OSError, subprocess.SubprocessError):
-        return None
+    except subprocess.TimeoutExpired:
+        return None, "timeout after %ds" % TOOL_TIMEOUT_S
+    except (OSError, subprocess.SubprocessError) as exc:
+        return None, str(getattr(exc, "strerror", None) or exc)[:300]
     if done.returncode != 0:
-        return None
-    return {name.strip().lower() for line in done.stdout.splitlines() for name in line.split(",") if name.strip()}
+        lines = [ln.strip() for ln in (done.stderr or "").splitlines() if ln.strip()]
+        return None, (lines[-1][:300] if lines else "exit code %d" % done.returncode)
+    return {name.strip().lower() for line in done.stdout.splitlines() for name in line.split(",") if name.strip()}, None
 
 
 def _fonts() -> list:
@@ -275,7 +279,9 @@ def _fonts() -> list:
                     wanted[font].append(name)
     if not wanted:
         return out + [Check("fonts", OK, "doctor.fonts.none")]
-    installed = _installed_families()
+    installed, reason = _installed_families()
+    if installed is None and reason is not None:  # it is there but does not work: installing it again would not help
+        return out + [Check("fonts", WARN, "doctor.fonts.fc_list_failed", {"reason": reason})]
     if installed is None:
         return out + [Check("fonts", WARN, "doctor.fonts.no_fc_list", {}, "doctor.fix.tool",
                             {"tool": "fc-list", "apt": "fontconfig", "pacman": "fontconfig"})]

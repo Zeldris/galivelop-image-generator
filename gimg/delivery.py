@@ -1,7 +1,8 @@
 """Delivery of the chosen attempt into the project and the manifest (D13, D21, D25).
 
 Public API: `choose(project, key, profile, attempt_id)` and `undo(project, key, profile)`. They wrap
-`orders.choose` / `orders.undo` (the CLI never calls those directly) and return their ``{"old", "new"}``.
+`orders.choose` / `orders.undo` (the CLI never calls those directly) and return their ``{"old", "new"}``. `redeliver` delivers
+the chosen attempt again after its image changed (a recomposition) without touching the order.
 
 Everything of a choose/undo runs under one lock per project (``<data>/projects/<name>/delivery.lock``, never inside
 the delivered project). The target must not be inside ``.git``, the config, the manifest, nor the ``file`` of another
@@ -230,6 +231,23 @@ def choose(project: str, key: str, profile: str, attempt_id) -> dict:
                     orders.undo(project, key, profile)
             raise
         return result
+
+
+def redeliver(project: str, key: str, profile: str, attempt_id) -> bool:
+    """Deliver `attempt_id` again (its image changed: `compose.recompose`) if it still is the chosen one, else do nothing.
+
+    The check and the delivery run under the project lock, so a ``gimg choose`` of another attempt in between is never
+    undone. Returns whether it was delivered. The order is not changed (no `orders.choose`, no history); a failure raises
+    and leaves the delivered file as it was."""
+    proj = projects.get(project)
+    with _lock(project):
+        order = orders.get(project, key, profile)
+        attempt = _find(order, attempt_id)
+        if attempt is None or order["chosen"] != attempt_id:
+            return False
+        plan = _prepare(proj, order, attempt)
+        _apply(plan, _restore_source(proj, order))
+        return True
 
 
 def undo(project: str, key: str, profile: str) -> dict:

@@ -7,11 +7,13 @@ import io
 import json
 import os
 import shutil
+import threading
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
 
-from gimg import compose, delivery, engine, i18n, log, orders, png, queue, worker
+from gimg import compose, delivery, engine, fsutil, i18n, log, orders, png, queue, worker
 from gimg.errors import GimgError
 from tests.test_queue import QueueBase
 
@@ -367,6 +369,99 @@ class AbortTests(ComposeWorkerBase):
         with mock.patch.object(compose, "render", fake_render), mock.patch.object(engine.FakeEngine, "generate", slow):
             self.run_worker()
         self.assertEqual(seen, [800])
+
+
+class AttemptLockTests(ComposeWorkerBase):
+    """The worker and `gimg compose` never compose the same attempt at once: the worker waits for the lock (it never marks
+    ``compose.busy`` on the attempt, which a late mark could leave on an image that `gimg compose` composed) and then
+    composes only if the attempt still is ``compose.pending``."""
+
+    def run_in_thread(self):
+        outcome = []
+
+        def target():
+            try:
+                outcome.append(self.run_worker())
+            except BaseException as exc:  # reported by the test
+                outcome.append(exc)
+
+        thread = threading.Thread(target=target)
+        thread.start()
+        return thread, outcome
+
+    def wait_for(self, condition, what):
+        end = time.monotonic() + 20
+        while time.monotonic() < end:
+            if condition():
+                return
+            time.sleep(0.02)
+        self.fail("timeout waiting for " + what)
+
+    def registered(self):
+        try:
+            return bool(orders.get("proj", "a", "og")["attempts"])
+        except GimgError:
+            return False
+
+    def test_the_worker_waits_while_the_lock_is_taken_and_leaves_an_attempt_composed_meanwhile(self):
+        self.submit("og")
+        self.enqueue("og")
+        render = mock.Mock(side_effect=AssertionError("render was called"))
+        info = {"fit": "cover", "targetWidth": 1200, "targetHeight": 630, "template": "t.svg", "text": {"title": "T"}}
+        with mock.patch.object(compose, "render", render):
+            with fsutil.lock(orders.compose_lock_path("proj", "a", "og", 1)):
+                thread, outcome = self.run_in_thread()
+                self.wait_for(self.registered, "the attempt")
+                time.sleep(0.3)  # the worker is waiting for the lock: no render, the attempt is still pending
+                self.assertTrue(thread.is_alive())
+                self.assertEqual(self.attempt("og")["composeError"]["code"], "compose.pending")
+                self.assertEqual(render.call_count, 0)
+                orders.set_composed("proj", "a", "og", 1, info)  # what a `gimg compose` that held the lock did
+            thread.join(20)
+        self.assertFalse(thread.is_alive())
+        self.assertEqual(len(outcome), 1)
+        self.assertNotIsInstance(outcome[0], BaseException)
+        self.assertEqual(render.call_count, 0)
+        att = self.attempt("og")
+        self.assertEqual((att["compose"], "composeError" in att), (info, False))  # the worker marked no error on it
+        self.assertEqual(queue.get(1)["state"], "done")
+
+    def test_the_worker_composes_when_the_lock_is_released_and_the_attempt_is_still_pending(self):
+        self.submit("og")
+        self.enqueue("og")
+        calls = []
+
+        def render(root, cfg, raw, out, text, profile=None, prefix=None):
+            calls.append(Path(raw).name)
+            Path(out).write_bytes(Path(raw).read_bytes())
+            return {"fit": "cover", "targetWidth": 1200, "targetHeight": 630, "template": "t.svg", "text": {}}
+
+        with mock.patch.object(compose, "render", render):
+            with fsutil.lock(orders.compose_lock_path("proj", "a", "og", 1)):
+                thread, outcome = self.run_in_thread()
+                self.wait_for(self.registered, "the attempt")
+                time.sleep(0.2)
+                self.assertEqual(calls, [])
+            thread.join(20)
+        self.assertEqual(calls, ["q1.raw.png"])
+        self.assertNotIn("composeError", self.attempt("og"))
+
+    def test_the_worker_holds_the_lock_of_the_attempt_while_it_composes(self):
+        self.submit("og")
+        self.enqueue("og")
+        seen = []
+
+        def render(root, cfg, raw, out, text, profile=None, prefix=None):
+            with fsutil.try_lock(orders.compose_lock_path("proj", "a", "og", 1)) as taken:
+                seen.append(taken)
+            raise GimgError("compose.tool_failed", tool="ffmpeg", reason="boom")
+
+        with mock.patch.object(compose, "render", render):
+            self.run_worker()
+        self.assertEqual(seen, [False])
+        self.assertEqual(self.attempt("og")["composeError"]["code"], "compose.tool_failed")
+        with fsutil.try_lock(orders.compose_lock_path("proj", "a", "og", 1)) as taken:  # released afterwards
+            self.assertTrue(taken)
 
 
 class TextTests(ComposeWorkerBase):

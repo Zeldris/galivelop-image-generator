@@ -515,12 +515,82 @@ class ComposeOrderTests(unittest.TestCase):
         orders.mark("proj", "a", "og", 1, "discarded")
         self.assertEqual(self.code(orders.choose, "proj", "a", "og", 1), "order.choose_discarded")
 
+    def composed_pair(self):
+        """Order `a`@`og` with two attempts, both composed, the second one chosen after the first."""
+        orders.submit("proj", self.og())
+        info = {"fit": "cover", "targetWidth": 1, "targetHeight": 1, "text": {}}
+        for n in (1, 2):
+            orders.add_attempt("proj", "a", "og", dict(self.spec(n), raw="attempts/q%d.raw.png" % n), entry_id=n)
+            orders.set_composed("proj", "a", "og", n, info)
+        orders.choose("proj", "a", "og", 1)
+        orders.choose("proj", "a", "og", 2)
+
+    def test_undo_refuses_a_destination_whose_composition_failed_and_changes_nothing(self):
+        self.composed_pair()
+        orders.set_compose_error("proj", "a", "og", 1, {"code": "compose.tool_failed", "params": {"tool": "ffmpeg"}})
+        before = orders.get("proj", "a", "og")
+        exc = self.reason(orders.undo, "proj", "a", "og")
+        self.assertEqual((exc.code, exc.params), ("order.undo_uncomposed", {"attempt": 1}))
+        self.assertEqual(orders.get("proj", "a", "og"), before)
+        orders.set_composed("proj", "a", "og", 1, {"fit": "cover", "targetWidth": 1, "targetHeight": 1, "text": {}})
+        self.assertEqual(orders.undo("proj", "a", "og"), {"old": 2, "new": 1})
+
+    def test_undo_still_says_discarded_before_uncomposed_and_may_go_back_to_nothing(self):
+        self.composed_pair()
+        orders.set_compose_error("proj", "a", "og", 1, {"code": "compose.tool_failed", "params": {}})
+        orders.mark("proj", "a", "og", 1, "discarded")
+        self.assertEqual(self.code(orders.undo, "proj", "a", "og"), "order.undo_discarded")
+        orders.mark("proj", "a", "og", 1, "new")
+        self.assertEqual(self.code(orders.undo, "proj", "a", "og"), "order.undo_uncomposed")
+
+    def test_compose_lock_path_is_per_attempt_inside_the_order_folder(self):
+        one, two = (orders.compose_lock_path("proj", "a", "og", n) for n in (1, 2))
+        folder = orders._order_dir("proj", "a", "og")
+        self.assertEqual((one.parent, one.name, two.name), (folder, "compose-1", "compose-2"))
+        self.assertEqual(self.code(orders.compose_lock_path, "proj", "../x", "og", 1), "order.invalid")
+
+    # D25: the paths of `compose_paths` come from the order file, which anyone can edit
+    BAD_PATHS = (("a\nb", "path.control"), ("a\x00b", "path.nul"), ("/etc/x", "path.absolute"), ("~/x", "path.tilde"),
+                 ("../x", "path.dotdot"), ("attempts/../../x", "path.dotdot"), ("a\\b", "path.backslash"))
+
+    def test_compose_paths_rejects_a_bad_raw_with_the_code_of_the_guard(self):
+        orders.submit("proj", self.og())
+        for bad, code in self.BAD_PATHS:
+            attempt = {"image": "attempts/q1.png", "raw": bad + ".raw.png"}
+            self.assertEqual(self.code(orders.compose_paths, "proj", "a", "og", attempt), code, repr(bad))
+
+    def test_compose_paths_rejects_a_bad_image_with_the_code_of_the_guard(self):
+        orders.submit("proj", self.og())
+        for bad, code in self.BAD_PATHS:  # a raw that does not end in .raw.png leaves the image as it is
+            attempt = {"image": bad + ".png", "raw": "attempts/q1.png"}
+            self.assertEqual(self.code(orders.compose_paths, "proj", "a", "og", attempt), code, repr(bad))
+            old = {"image": bad + ".png"}  # an attempt without raw: the raw one is derived from the image
+            self.assertEqual(self.code(orders.compose_paths, "proj", "a", "og", old), code, repr(bad))
+
+    def test_compose_paths_rejects_a_link_that_leaves_the_order_folder(self):
+        orders.submit("proj", self.og())
+        attempts = orders._order_dir("proj", "a", "og") / "attempts"
+        attempts.mkdir(parents=True)
+        outside = self.tmp / "outside.png"
+        outside.write_bytes(b"x")
+        (attempts / "q1.raw.png").symlink_to(outside)
+        exc = self.reason(orders.compose_paths, "proj", "a", "og", {"image": "attempts/q1.png", "raw": "attempts/q1.raw.png"})
+        self.assertEqual((exc.code, exc.params), ("path.outside", {"path": "attempts/q1.raw.png"}))
+        (attempts / "q1.raw.png").unlink()
+        (attempts / "q2.png").symlink_to(outside)  # the composed file as a link that leaves
+        exc = self.reason(orders.compose_paths, "proj", "a", "og", {"image": "attempts/q2.png", "raw": "attempts/q2.raw.png"})
+        self.assertEqual((exc.code, exc.params), ("path.outside", {"path": "attempts/q2.png"}))
+        good = orders.compose_paths("proj", "a", "og", {"image": "attempts/q3.png", "raw": "attempts/q3.raw.png"})
+        self.assertEqual([p.name for p in good], ["q3.raw.png", "q3.png"])
+
     def test_the_new_messages_exist_in_both_languages_and_use_their_params(self):
         for lang in ("es", "en"):
             exc = GimgError("order.text_unknown_field", field="headline", profile="og", fields="title")
             self.assertTrue(all(w in exc.message(lang) for w in ("headline", "og", "title")), lang)
             self.assertIn("7", GimgError("order.choose_uncomposed", attempt=7).message(lang))
             self.assertNotIn("error.", GimgError("order.choose_uncomposed", attempt=7).message(lang))
+            self.assertIn("7", GimgError("order.undo_uncomposed", attempt=7).message(lang))
+            self.assertNotIn("error.", GimgError("order.undo_uncomposed", attempt=7).message(lang))
 
 
 if __name__ == "__main__":
