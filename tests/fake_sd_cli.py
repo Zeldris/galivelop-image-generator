@@ -11,6 +11,9 @@ Behaviour, from environment variables:
 - ``FAKE_SD_FAIL``: print that text and exit with code 3 (no image).
 - ``FAKE_SD_NO_IMAGE``: exit 0 without writing the image.
 - ``FAKE_SD_NO_TIMES``: leave the timing lines out of the log.
+- ``FAKE_SD_GATE_AFTER``: with ``FAKE_SD_GATE`` (a path), print that many step bars, then wait until the file exists (up
+  to 30 s) before printing the rest: a test decides when the run goes on, with no timing. Bars end like the real ones
+  (``\\r  |==| 3/6 -  1.20s/it - ETA 00:03\\x1b[K``) and, after "sampling completed", a VAE tile bar of 36 follows.
 - ``FAKE_SD_REPORT_ZERO``: print the driver's "reported free 0.00 MB" line before the sleep."""
 import json
 import os
@@ -53,12 +56,23 @@ def main(argv):
         say("[E] ggml_vulkan: Device memory allocation failed: Vulkan0 reported free 0.00 MB --- ggml-vulkan.cpp:1")
     time.sleep(float(env("FAKE_SD_SLEEP") or 0))
     say("[I] sampling using Euler method --- request.cpp:414")
+    gate_after = int(env("FAKE_SD_GATE_AFTER") or 0)
     for n in range(1, steps + 1):
-        sys.stdout.write("  |%s| %d/%d -   1.20s/it - ETA 00:%02d\r" % ("=" * n, n, steps, steps - n))
+        if env("FAKE_SD_GATE") and gate_after and n == gate_after + 1:
+            deadline = time.monotonic() + 30
+            while not os.path.exists(env("FAKE_SD_GATE")) and time.monotonic() < deadline:
+                time.sleep(0.02)
+        eta = " - ETA 00:%02d" % (steps - n) if n < steps else ""
+        sys.stdout.write("\r  |%s| %d/%d -   1.20s/it%s\x1b[K" % ("=" * n, n, steps, eta))
         sys.stdout.flush()
     sys.stdout.write("\n")
     if times:
         say("[I] sampling completed, taking 4.80s --- image.cpp:907")
+    for n in range(1, 37):  # the VAE decodes by tiles and draws its own bar after the steps
+        sys.stdout.write("\r  |=>  | %2d/36 -   1.27it/s - ETA 00:%02d\x1b[K" % (n, 36 - n))
+    sys.stdout.write("\n")
+    sys.stdout.flush()
+    if times:
         say("[I] decode_first_stage completed, taking 0.75s --- image.cpp:632")
     if env("FAKE_SD_NO_IMAGE"):
         return 0

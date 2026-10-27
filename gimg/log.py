@@ -43,6 +43,13 @@ def record_for(key: str, profile: str, spec: dict, machine: dict, provider: str,
         "app.image.sample_ms": getattr(result, "sample_ms", None),
         "app.image.decode_ms": getattr(result, "decode_ms", None),
         "app.image.min_free_mb": getattr(result, "min_free_mb", None),
+        # D34: the whole order. ``app.load_ms`` above already is the load time (the opt-ai name).
+        "app.image.model_files": getattr(result, "model_files", None),
+        "app.image.backend": getattr(result, "backend", None),
+        "app.image.threads": getattr(result, "threads", None),
+        "app.image.draft": getattr(result, "draft", None),
+        "app.image.compose": getattr(result, "compose", None),
+        "app.image.command": getattr(result, "command", None),
     }
     return {k: v for k, v in line.items() if v is not None}
 

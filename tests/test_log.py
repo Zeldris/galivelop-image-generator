@@ -44,7 +44,7 @@ class LogTests(unittest.TestCase):
             "app.image.key": "a/b", "app.image.steps": 4, "app.image.cfg": 1.5,
             "app.image.sampler": "euler", "app.image.width": 64, "app.image.height": 32,
             "app.image.seed": 5, "app.image.references": 1, "app.image.engine_version": "fake-1",
-            "app.image.sample_ms": 100, "app.image.decode_ms": 20})
+            "app.image.sample_ms": 100, "app.image.decode_ms": 20, "app.image.draft": False})
 
     def test_record_error_and_no_nulls(self):
         spec = {"seed": 0, "prompt": "p", "params": {}}

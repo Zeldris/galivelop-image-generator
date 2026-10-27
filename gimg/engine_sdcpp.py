@@ -22,7 +22,15 @@ Decisions:
   ``start_new_session``. Where ``os.killpg`` does not exist (Windows) the fallback is ``terminate()`` then ``kill()`` of the
   process only, which leaves its children alive; the project runs on Linux, so that path is untested.
 - **Tick hook:** `_on_tick(proc, log_path, job)` runs once per poll: the memory watch and the "reported free 0.00 MB"
-  abort (F2.3) are there; F2.4 (progress in the queue) hooks in too. Not implemented: ``draft``, ``initImage``, ``strength``.
+  abort (F2.3) and the progress (F2.4) are there. Not implemented: ``draft``, ``initImage``, ``strength``.
+- **Progress (F2.4):** the new part of the log goes through `parse_progress`: the step bar of `sd-cli` is
+  ``|====>   | 3/6 -  24.65s/it - ETA 01:16`` (``\r`` between bars, ``\x1b[K`` after each; ``it/s`` when it is fast). A bar
+  counts only when a terminator (``\x1b``, ``\r`` or ``\n``) follows it, so a bar cut by the read boundary is kept in
+  ``_Run.bar_carry`` and read whole on the next tick (a cut ``ETA 02:1`` would otherwise read as 2 min 1 s). Only bars
+  before "sampling completed" count (the VAE tile bar ``1/36`` comes after); among them the ones whose total is the job's
+  steps, else the ones with the total of the first bar; the last wins. The job's ``on_progress`` gets
+  ``{"step", "steps", "etaS"}`` (``etaS`` from ``mm:ss`` or ``hh:mm:ss``; ``None`` without ETA, as in the last bar) only when
+  ``(step, steps)`` changes, and an exception in it is ignored: progress never fails a generation.
 - **Guards before the process (F2.3, D33):** after the argv is built and before the log exists, so a refusal leaves
   nothing behind. (1) ``MemAvailable`` >= ``minFreeMemoryMb`` (the model's, else the profile's; `models.resolve`), else
   ``engine.low_memory``. The reader is ``read_meminfo`` (constructor argument; default `read_meminfo_mb`, which reads
@@ -64,6 +72,9 @@ KILL_GRACE_S = 3.0
 TAIL_LINES = 5
 _PNG = b"\x89PNG\r\n\x1a\n"
 _ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+SAMPLED = "sampling completed"
+_BAR = re.compile(r"\|\s*(\d+)/(\d+)\s+-\s+[0-9.]+\s*(?:s/it|it/s)(?:\s+-\s+ETA\s+(\d+(?::\d+){1,2}))?(?=[\x1b\r\n])")
+BAR_CARRY_MAX = 512
 _LOAD = re.compile(r"loading tensors completed, taking ([0-9.]+)s")
 _SAMPLE = re.compile(r"sampling completed, taking ([0-9.]+)s")
 _DECODE = re.compile(r"decode_first_stage completed, taking ([0-9.]+)s")
@@ -107,6 +118,48 @@ def parse_timings(text: str) -> dict:
     return {"load_ms": ms(sum(float(x) for x in loads)) if loads else None,
             "sample_ms": ms(sample[-1]) if sample else None,
             "decode_ms": ms(decode[-1]) if decode else None}
+
+
+def parse_progress(text: str, steps=None, sampled: bool = False):
+    """``(progress, sampled)`` of a piece of log: the last complete step bar as ``{"step", "steps", "etaS"}`` (or ``None``)
+    and whether "sampling completed" has been seen (`sampled` says it already was: nothing counts then). See the
+    module docstring."""
+    before, marker, _ = text.partition(SAMPLED)
+    if sampled:
+        return None, True
+    bars = []
+    for step, total, eta in _BAR.findall(before):
+        step, total = int(step), int(total)
+        if total >= 1 and step <= total:
+            seconds = None
+            if eta:
+                seconds = 0
+                for part in eta.split(":"):
+                    seconds = seconds * 60 + int(part)
+            bars.append((step, total, seconds))
+    chosen = [b for b in bars if b[1] == steps] if steps else []
+    if not chosen and bars:
+        chosen = [b for b in bars if b[1] == bars[0][1]]
+    progress = {"step": chosen[-1][0], "steps": chosen[-1][1], "etaS": chosen[-1][2]} if chosen else None
+    return progress, bool(marker)
+
+
+def _backend(argv: list) -> str:
+    """``cpu`` if the args put the diffusion model on the CPU (``--backend diffusion=cpu`` or ``cpu``), else ``vulkan``
+    (the only GPU backend of the release this project installs; ``--max-vram`` is in the command)."""
+    for flag, value in zip(argv, argv[1:]):
+        if flag == "--backend" and any(t.strip() in ("cpu", "diffusion=cpu") for t in value.split(",")):
+            return "cpu"
+    return "vulkan"
+
+
+def _threads(argv: list) -> Optional[int]:
+    """The last ``-t`` / ``--threads`` of the argv that is a positive integer, else ``None``."""
+    found = None
+    for flag, value in zip(argv, argv[1:]):
+        if flag in ("-t", "--threads") and value.isdigit() and int(value) > 0:
+            found = int(value)
+    return found
 
 
 def _read_log(path) -> str:
@@ -180,6 +233,11 @@ class _Run:
     min_free_mb: Optional[int] = None
     log_pos: int = 0
     carry: str = ""
+    steps: Optional[int] = None  # the job's steps: the total of the bar to follow
+    new: str = ""  # what the last `_new_log_text` read, without the carry
+    bar_carry: str = ""  # the end of the log after its last terminator: a bar that may be cut
+    sampled: bool = False
+    last: Optional[tuple] = None  # (step, steps) last reported
 
     def seen(self, free: int) -> None:
         self.min_free_mb = free if self.min_free_mb is None else min(self.min_free_mb, free)
@@ -219,10 +277,9 @@ class SdCppEngine(Engine):
         """The exact argv of the contract (absolute model paths; `_command` makes them relative for the log)."""
         if not (isinstance(job.width, int) and isinstance(job.height, int) and job.width > 0 and job.height > 0):
             raise EngineError("invalid size %sx%s" % (job.width, job.height))
-        defaults, files = resolved["defaults"], resolved["files"]
-        steps = job.steps if job.steps is not None else defaults["steps"]
-        cfg = job.cfg if job.cfg is not None else defaults["cfg"]
-        sampler = job.sampler if job.sampler is not None else defaults["sampler"]
+        files = resolved["files"]
+        used = self.effective(job, resolved)
+        steps, cfg, sampler = used["steps"], used["cfg"], used["sampler"]
         eng = machine.get("engine") or {}
         out = Path(job.output)
         argv = [str(binary),
@@ -244,6 +301,12 @@ class SdCppEngine(Engine):
         argv += ["--preview", "proj", "--preview-interval", "1", "--preview-path", str(self.preview_path(out)),
                  "-o", str(out), "-v"]
         return argv
+
+    @staticmethod
+    def effective(job: EngineJob, resolved: dict) -> dict:
+        """``steps``, ``cfg`` and ``sampler`` the run uses: the job's, else the model's defaults."""
+        defaults = resolved["defaults"]
+        return {k: getattr(job, k) if getattr(job, k) is not None else defaults[k] for k in ("steps", "cfg", "sampler")}
 
     @staticmethod
     def preview_path(output: Path) -> Path:
@@ -319,15 +382,17 @@ class SdCppEngine(Engine):
                 fh.seek(run.log_pos)
                 data = fh.read()
         except OSError:
+            run.new = ""
             return run.carry
         run.log_pos += len(data)
-        text = run.carry + data.decode("utf-8", errors="replace")
+        run.new = data.decode("utf-8", errors="replace")
+        text = run.carry + run.new
         run.carry = text[-(len(ZERO_FREE) - 1):]
         return text
 
     def _on_tick(self, proc, log_path, job: EngineJob) -> None:
-        """Called once per poll while `sd-cli` runs: the memory watch and the "reported free 0.00 MB" abort (F2.3).
-        F2.4 (progress) hooks in here too. A refusal kills the group first and then raises."""
+        """Called once per poll while `sd-cli` runs: the memory watch and the "reported free 0.00 MB" abort (F2.3), and the
+        progress for the queue (F2.4). A refusal kills the group first and then raises."""
         run = self._run
         free = self._free_mb()
         if free is not None:
@@ -337,9 +402,26 @@ class SdCppEngine(Engine):
                 raise EngineError("memory watch: %d MB free, below the %d MB threshold; sd-cli was killed"
                                   % (free, run.watch_mb), code="engine.watch_memory",
                                   free_mb=free, watch_mb=run.watch_mb)
-        if ZERO_FREE in self._new_log_text(log_path, run):
+        text = self._new_log_text(log_path, run)
+        self._report_progress(run, job)
+        if ZERO_FREE in text:
             self._kill(proc)
             raise EngineError("the GPU driver reported 0.00 MB free; sd-cli was killed", code="engine.driver_no_memory")
+
+    @staticmethod
+    def _report_progress(run: _Run, job: EngineJob) -> None:
+        """Parse what the last read brought (after the unfinished end of the one before) and tell `job.on_progress`."""
+        text = run.bar_carry + run.new
+        cut = max(text.rfind(c) for c in "\x1b\r\n")
+        run.bar_carry = text[cut + 1:][-BAR_CARRY_MAX:]
+        progress, run.sampled = parse_progress(text, run.steps, run.sampled)
+        if progress is None or job.on_progress is None:
+            return
+        key = (progress["step"], progress["steps"])
+        if key != run.last:
+            run.last = key
+            with contextlib.suppress(Exception):  # progress is a courtesy: it never fails the generation
+                job.on_progress(progress)
 
     def _kill(self, proc: subprocess.Popen) -> None:
         """Stop `proc` and its group and wait for it to die (see the module docstring for the Windows fallback)."""
@@ -376,7 +458,7 @@ class SdCppEngine(Engine):
         if not os.access(binary, os.X_OK):
             raise GimgError("engine.binary_not_executable", path=str(binary))
         argv = self.build_argv(job, resolved, machine, binary)
-        self._run = _Run(watch_mb=machine.get("watchMemoryMb"))
+        self._run = _Run(watch_mb=machine.get("watchMemoryMb"), steps=self.effective(job, resolved)["steps"])
         notes = []
         self._check_memory(resolved, notes)  # a refusal leaves no log, no image and no process
         self._check_ollama(machine, notes)
@@ -429,7 +511,10 @@ class SdCppEngine(Engine):
         with contextlib.suppress(OSError):
             self.preview_path(out).unlink()
         return EngineResult(duration_ms=total, engine_version=RELEASE, command=self._command(argv),
-                            log_path=str(log_path), min_free_mb=self._run.min_free_mb, **parse_timings(text))
+                            log_path=str(log_path), min_free_mb=self._run.min_free_mb,
+                            model_files={k: Path(resolved["files"][k]["path"]).name for k in ("diffusion", "text", "vae")},
+                            backend=_backend(argv), threads=_threads(argv), params=self.effective(job, resolved),
+                            **parse_timings(text))
 
     @staticmethod
     def _is_png(path: Path) -> bool:

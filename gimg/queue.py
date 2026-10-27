@@ -3,6 +3,8 @@
 ``{"nextId": n, "entries": [...]}``; entry: ``id``, ``project``, ``key``, ``profile``, ``seed``, ``prompt``,
 ``params``, ``references``, ``state`` (queued|running|done|failed|cancelled), ``pid``, ``enqueuedAt``,
 ``startedAt``, ``finishedAt``, ``error``, ``attemptId``, ``cancelRequested``. Entries stay in arrival order.
+A running entry may also have ``progress`` (``{"step", "steps", "etaS"}``, `set_progress`) and ``preview`` (the path of
+the engine's preview image, `set_preview`); both are removed when the entry finishes or goes back to ``queued``.
 
 ``error`` of a failed entry is ``{"code": ..., "params": {...}}`` (JSON); `error_text` renders it.
 
@@ -105,6 +107,8 @@ def _recover(data: dict, running_dead: bool) -> list:
         if running_dead and entry["state"] == "running":
             entry["pid"] = None
             entry["startedAt"] = None
+            entry.pop("progress", None)
+            entry.pop("preview", None)
             if entry.get("cancelRequested"):
                 entry["state"] = "cancelled"
                 entry["finishedAt"] = now
@@ -276,9 +280,47 @@ def finish(entry_id, state: str, error=None, attempt_id=None) -> dict:
         if entry["state"] != "running":
             raise GimgError("queue.not_running", id=entry["id"], state=entry["state"])
         entry.update(state=state, error=error, attemptId=attempt_id, finishedAt=_now(), pid=None)
+        entry.pop("progress", None)
+        entry.pop("preview", None)
         return entry
 
     return _txn(change)
+
+
+def _number(value) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and value >= 0
+
+
+def _set_running(entry_id, field: str, value) -> dict:
+    def change(data):
+        entry = _find(data, entry_id)
+        if entry["state"] != "running":
+            raise GimgError("queue.not_running", id=entry["id"], state=entry["state"])
+        if entry.get(field) != value:  # a pulse with nothing new does not rewrite the file
+            entry[field] = value
+        return entry
+
+    return _txn(change)
+
+
+def set_progress(entry_id, progress: dict) -> dict:
+    """Store ``{"step": n, "steps": N, "etaS": seconds | None}`` in a running entry (the engine's progress bar).
+    Only the three keys are kept; ``0 <= step <= steps``, ``steps >= 1``; ``etaS`` is ``None`` or a number >= 0.
+    Anything else is ``queue.bad_progress``; a finished or queued entry is ``queue.not_running``."""
+    ok = (isinstance(progress, dict) and set(progress) == {"step", "steps", "etaS"}
+          and all(type(progress[k]) is int for k in ("step", "steps"))
+          and 0 <= progress["step"] <= progress["steps"] and progress["steps"] >= 1
+          and (progress["etaS"] is None or _number(progress["etaS"])))
+    if not ok:
+        raise GimgError("queue.bad_progress", progress=json.dumps(progress, default=str))
+    return _set_running(entry_id, "progress", dict(progress))
+
+
+def set_preview(entry_id, path) -> dict:
+    """Store the path of the engine's preview image in a running entry (the file may not exist yet)."""
+    if not isinstance(path, str) or not path or "\x00" in path or "\n" in path:
+        raise GimgError("queue.bad_progress", progress=repr(path))
+    return _set_running(entry_id, "preview", path)
 
 
 def is_cancel_requested(entry_id) -> bool:

@@ -236,6 +236,27 @@ def _attempt(args, sub, out: _Out) -> None:
         out.data(item) if out.as_json else out.line("cli.out.noted", id=item["id"])
 
 
+def _eta_text(seconds) -> str:
+    """``1:16`` or, from an hour, ``1:02:03``."""
+    seconds = int(seconds)
+    hours, rest = divmod(seconds, 3600)
+    return ("%d:%02d:%02d" % (hours, rest // 60, rest % 60)) if hours else "%d:%02d" % (rest // 60, rest % 60)
+
+
+def _queue_running_lines(out: _Out, entry: dict) -> None:
+    """The progress of a running entry and, if the engine has written it, where its preview image is."""
+    progress = entry.get("progress")
+    if isinstance(progress, dict) and isinstance(progress.get("step"), int) and isinstance(progress.get("steps"), int):
+        eta = progress.get("etaS")
+        if isinstance(eta, (int, float)) and not isinstance(eta, bool) and eta >= 0:
+            out.line("cli.out.queue_progress_eta", step=progress["step"], steps=progress["steps"], eta=_eta_text(eta))
+        else:
+            out.line("cli.out.queue_progress", step=progress["step"], steps=progress["steps"])
+    preview = entry.get("preview")
+    if isinstance(preview, str) and os.path.isfile(preview):
+        out.line("cli.out.queue_preview", path=preview)
+
+
 def _queue(args, sub, out: _Out) -> None:
     if sub == "list":
         entries = queue.list_entries(None if args.state is None else [args.state])
@@ -246,6 +267,8 @@ def _queue(args, sub, out: _Out) -> None:
         for e in entries if not out.as_json else ():
             out.line("cli.out.queue_line", id=e["id"], state=e["state"], project=e["project"],
                      order=e["key"], profile=e["profile"], seed=e["seed"])
+            if e["state"] == "running":
+                _queue_running_lines(out, e)
             text = queue.error_text(e, out.lang)
             if text:
                 out.line("cli.out.queue_error", error=text)

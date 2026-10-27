@@ -212,7 +212,7 @@ def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None)
     """Append an attempt in state ``new`` (used by the worker after generating); returns its id.
 
     Ids are sequential from 1. `spec` needs ``seed``, ``prompt`` and ``params``; ``references``
-    defaults to the order's; ``engine`` / ``engineVersion`` (strings, optional) are stored as given. Without `entry_id`, ``image`` is ``attempts/<id>.png``, relative to the order
+    defaults to the order's; ``engine`` / ``engineVersion`` / ``log`` (strings, optional), ``command`` (list of strings) and ``modelFiles`` (name by kind) are stored as given when they have that type (D34). Without `entry_id`, ``image`` is ``attempts/<id>.png``, relative to the order
     folder. With `entry_id` (the queue entry that made it) ``image`` is ``attempts/q<entry>.png`` and the
     attempt records ``queueEntry``; the call is idempotent per entry: if an attempt with that
     ``queueEntry`` exists, its id is returned and nothing is added."""
@@ -250,9 +250,14 @@ def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None)
         }
         if entry_id is not None:
             record["queueEntry"] = entry_id
-        for extra in ("engine", "engineVersion"):  # which engine made it (the manifest repeats them)
+        for extra in ("engine", "engineVersion", "log"):  # which engine made it (the manifest repeats the first two)
             if isinstance(spec.get(extra), str):
                 record[extra] = spec[extra]
+        command, files = spec.get("command"), spec.get("modelFiles")  # D34: how to repeat it
+        if isinstance(command, list) and all(isinstance(a, str) for a in command):
+            record["command"] = list(command)
+        if isinstance(files, dict) and all(isinstance(k, str) and isinstance(v, str) for k, v in files.items()):
+            record["modelFiles"] = dict(files)
         order["attempts"].append(record)
         return new_id
 

@@ -302,7 +302,7 @@ con los MB libres y los que pide), Ollama (`engine.ollama_loaded`, con los model
 --preview-interval 1 --preview-path <pending>.preview.png -o <output> -v`; 4) `subprocess.Popen(start_new_session=True)`, stdout y
 stderr a `attempts/.pending-<entrada>.log`; 5) bucle cada 0,5 s: `should_cancel()` → `killpg` + `Cancelled`; tope → `killpg` +
 `EngineTimeout`; `MemAvailable` < `watchMemoryMb` o «reported free 0.00 MB» en el log → `killpg` + `EngineError` con el motivo;
-progreso: la línea de pasos de `sd-cli` (`<n>/<N>` con s/it *(suposición: formato por confirmar en el log real)*) se escribe en la
+progreso: la barra de pasos de `sd-cli` (`| 3/6 -  24.65s/it - ETA 01:16`, confirmada en el log real) se escribe en la
 entrada de la cola (`progress: {"step": n, "steps": N, "etaS": …}`; `queue list` lo pinta); 6) código de salida ≠ 0 → `EngineError`
 con las últimas 5 líneas del log; 7) `EngineResult` con `load_ms`, `sample_ms` («sampling completed, taking Xs») y `decode_ms`
 («decode_first_stage completed»), `min_free_mb` del vigilante, `engine_version` = release y `command` (D34). El log del intento se
@@ -320,13 +320,13 @@ si el intento falla o se cancela; `queue.recover_orphans` también los limpia. (
 sin `os.killpg` (Windows), `terminate()` y luego `kill()` del proceso solo (deja a sus hijos; sin probar, el proyecto corre en Linux). Una excepción
 en el bucle (o Ctrl-C) mata el grupo antes de salir. (5) `load_ms` es la suma de las líneas `loading tensors completed`; `sample_ms` y `decode_ms`, la
 última de su tipo; si la línea no está, `None`. (6) `command` lleva `sd-cli` sin carpeta y las rutas de modelos relativas a `paths.models_dir()`; el
-registro (`log.record_for`) aún no lo escribe (F2.4). (7) Binario ausente o sin permiso: `engine.binary_missing`/`engine.binary_not_executable`; sin
+registro (`log.record_for`) lo escribe desde F2.4. (7) Binario ausente o sin permiso: `engine.binary_missing`/`engine.binary_not_executable`; sin
 `job.model`, `model.required`; sin archivos, `model.not_installed` con `instalar.sh --with <id>` (el script es de F2.5). (8) `-t <threads>` va antes de
 los `args` del catálogo y la máquina, para que estos puedan fijar los suyos. (9) `get_engine()` lee `GIMG_ENGINE`, luego `"engine"` de `<config>/config.json`
 (`sdcpp`/`fake`), por defecto `fake`.
 **Para F2.3/F2.4:** el bucle llama a `SdCppEngine._on_tick(proc, log_path, job)` en cada pulso (0,5 s, `poll_s`): ahí van el vigilante de `MemAvailable`, el
 aborto por «reported free 0.00 MB» y el progreso en la cola; la memoria previa y Ollama van en `generate` antes del `Popen`. Sin hacer tras F2.2
-(F2.3 hizo lo de las protecciones): progreso en la cola, `app.image.*` nuevos en el registro, `draft`, `initImage`, `strength`.
+(F2.3 hizo lo de las protecciones y F2.4 el progreso y el registro): `draft`, `initImage`, `strength`.
 
 *Hecho en F2.3* (`gimg/engine_sdcpp.py`, `tests/test_engine_protections.py`): las protecciones del contrato (puntos 2 y 5) y `min_free_mb`.
 **Decisiones:** (1) *Orden:* tras armar el argv y antes de crear el log: un rechazo no deja proceso, log ni imagen. (2) *Memoria previa:* `MemAvailable` ≥ `minFreeMemoryMb`
@@ -343,6 +343,26 @@ frase queda cortada) → mata el grupo y lanza `EngineError`. (5) `EngineError` 
 `engine.driver_no_memory`) en vez de `engine.failed`, para que el motivo salga traducido; `message` sigue siendo el texto en inglés. (6) `min_free_mb` es el mínimo de
 todas las lecturas del intento, la previa incluida; el registro lo escribe solo si el intento acaba bien: **pendiente leve**, un intento que falla no lo guarda (el `EngineError` no lo lleva).
 (7) Los tests del motor y del worker con `sdcpp` fijan `GIMG_MEMINFO` y una URL de Ollama sin servicio (`protections_off_env`); los de Ollama usan un `http.server` propio.
+
+*Hecho en F2.4* (`gimg/engine_sdcpp.py`, `gimg/png.py`, `gimg/queue.py`, `gimg/worker.py`, `gimg/log.py`, `tests/test_progress.py`, `tests/test_png.py`): progreso, vista previa, registro D34 y chunk del PNG.
+**Decisiones:** (1) *Progreso:* `parse_progress` lee la barra de pasos del log real (`\r` entre barras, `\x1b[K` detrás de cada una; `s/it` o `it/s`). Una barra solo cuenta con un
+terminador detrás (`\x1b`, `\r` o `\n`): una cortada por la lectura (`ETA 02:1`) se guarda en `_Run.bar_carry` y se lee entera en el pulso siguiente. Solo valen las
+barras anteriores a «sampling completed» (la del VAE por teselas, `1/36`, viene después); entre ellas las de total = pasos del job, y si ninguna, las del total de la primera;
+gana la última. `etaS` sale de `mm:ss` o `hh:mm:ss`, `None` en la última barra (no lleva ETA). (2) *Enganche:* `EngineJob.on_progress` (callback; el motor falso no lo llama); el worker
+lo apunta a `queue.set_progress(id, progress)`, que valida la forma (`queue.bad_progress`), exige entrada `running` (`queue.not_running`) y no reescribe el archivo si no cambia; el motor
+solo llama cuando cambia `(step, steps)` e ignora cualquier excepción del callback. `queue.finish` y la recuperación a `queued` quitan `progress` y `preview`. (3) *Vista previa:* el worker
+guarda en la entrada `preview` (ruta absoluta de `Engine.preview_path(salida)`; `None` en el motor falso) antes de generar con `queue.set_preview`; el archivo aparece cuando `sd-cli` lo escribe
+y se borra con el intento (F2.2). `queue list` pinta `progress` y `preview` solo de una entrada `running` (`3/6 · ETA 1:16`; `vista previa: <ruta>` solo si el archivo existe). No hay `queue show`; servirla es de F4.
+(4) *Registro (D34):* `app.image.model_files` (`{"diffusion","text","vae"}` con el nombre del archivo), `app.image.backend` (`cpu` si los args traen `--backend` con `cpu` o `diffusion=cpu`, si no `vulkan`: la única GPU de
+la release; `--max-vram` va en el `command`), `app.image.threads` (el último `-t`), `app.image.draft` (`False`; F2.7 lo pone), `app.image.compose` (se omite mientras sea `None`; F2.8),
+`app.image.command`. **`app.image.load_ms` no se añade:** el tiempo de carga ya es `app.load_ms` (nombre de opt-ai); duplicarlo rompería «un dato, un sitio». El motor falso solo escribe `draft`. El intento
+(`orders.add_attempt`) gana `command`, `modelFiles` y `log` (`attempts/q<id>.log`, solo si se conservó); el esquema de pedidos no describe los intentos, no hubo que tocarlo. `EngineResult` gana
+`model_files`, `backend`, `threads`, `draft`, `compose` y `params` (pasos, cfg y sampler efectivos: los del job o los del modelo). (5) *Chunk del PNG:* `gimg/png.py` (`png_bytes` se movió ahí y `engine`
+lo reexporta; `read_text_chunks` lee `tEXt`, `zTXt` e `iTXt`, `add_text_chunk` escribe `tEXt` si el texto cabe en Latin-1 sin NUL y si no `iTXt` en UTF-8, sustituye la misma clave, verifica
+firma, longitudes y CRC y escribe con archivo temporal + `os.replace`). Lo escribe el **worker**, clave `gimg`, sobre el PNG pendiente antes de moverlo (así vale para todos los motores y se escribe
+una vez): JSON con `project`, `key`, `profile`, `seed`, `prompt`, `model`, `width`, `height`, `steps`, `cfg`, `sampler` (efectivos), `references` (solo nombres de archivo) y `engineVersion`. Si no se puede, el
+intento sigue sin él y sale una línea por stderr. **Pendiente en F2.8:** `gimg compose` debe conservar el chunk (`read_text_chunks` ya está). **Pendiente leve:** `app.image.steps`/`cfg` del registro siguen siendo los del
+intento (pueden faltar si los pone el modelo), mientras el PNG lleva los efectivos.
 
 **`instalar.sh`** (raíz del repo, bash, `set -euo pipefail`). Sin argumentos instala el motor y el conjunto rápido (~7 GB, D5);
 `--with flux3-klein-q8` añade el de calidad; `--only-cli` solo el lanzador. Pasos: 1) Python ≥ 3.10; 2) `gimg` en `~/.local/bin`

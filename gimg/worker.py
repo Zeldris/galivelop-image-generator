@@ -7,7 +7,18 @@ every order, and a crash can only leave a pending file for an entry that was run
 
 Per entry: claim -> if an attempt with ``queueEntry == entry id`` already exists (crash after `add_attempt`), skip
 the engine and finish ``done`` -> machine profile and limits again (the profile may have changed since enqueue) ->
-resolve references (`paths.inside`, must be files; D25) -> engine -> `orders.add_attempt` -> log line -> finish.
+resolve references (`paths.inside`, must be files; D25) -> engine -> metadata chunk in the PNG -> `orders.add_attempt` -> log line -> finish.
+
+While the engine runs the entry shows its ``progress`` (the job's ``on_progress``, `queue.set_progress`) and ``preview`` (the
+path the engine writes its preview to, `queue.set_preview`; the file appears when the engine makes it and is deleted with
+the run). Both are best effort: a queue error there never fails the generation.
+
+Metadata (F2.4): before the image is moved into place the worker writes a ``gimg`` text chunk into the pending PNG
+(`png.add_text_chunk`; JSON with seed, steps, cfg, sampler, model, width, height, prompt, references as file names, engine and
+engine version, and ``project``/``key``/``profile``). It lives here, not in the engines, so every engine gets it and it is
+written once, atomically, on the file that is about to become the attempt's image. If it cannot be written (a PNG the engine
+damaged) the attempt goes on without it and a line goes to stderr. The attempt also records ``command``, ``modelFiles`` and
+``log`` (``attempts/q<entry>.log``, only if the log was kept) when the engine reports them.
 
 Image: named after the queue entry id, unique across the generator. The engine writes
 ``attempts/.pending-<entry>.png``; the worker `os.replace`s it onto ``attempts/q<entry>.png`` and only then calls
@@ -30,13 +41,14 @@ from __future__ import annotations
 
 import contextlib
 import fcntl
+import json
 import os
 import signal
 import sys
 import threading
 
 from . import engine as engine_mod
-from . import fsutil, i18n, limits, log, orders, paths, projects, queue
+from . import fsutil, i18n, limits, log, orders, paths, png, projects, queue
 from .errors import GimgError
 
 
@@ -103,7 +115,36 @@ def _finish(entry_id, state, lang=None, **kw) -> None:
         print(i18n.t("worker.finish_failed", lang, id=entry_id, reason=exc), file=sys.stderr)
 
 
-def _generate(entry: dict, eng, machine: dict, state: dict):
+def _progress_to_queue(entry_id):
+    def report(progress):
+        with contextlib.suppress(Exception):
+            queue.set_progress(entry_id, progress)
+    return report
+
+
+def _expose_preview(entry_id, eng, tmp) -> None:
+    preview = eng.preview_path(tmp) if hasattr(eng, "preview_path") else None
+    if preview is not None:
+        with contextlib.suppress(Exception):
+            queue.set_preview(entry_id, str(preview))
+
+
+def metadata_for(entry: dict, result) -> dict:
+    """What the ``gimg`` chunk of the PNG says: the attempt's parameters (the engine's effective steps, cfg and sampler
+    over the entry's), the reference file names and the engine."""
+    params = dict(entry["params"])
+    params.update({k: v for k, v in (getattr(result, "params", None) or {}).items() if v is not None})
+    meta = {"project": entry["project"], "key": entry["key"], "profile": entry["profile"],
+            "seed": entry["seed"], "prompt": entry["prompt"],
+            "references": [str(ref).rsplit("/", 1)[-1] for ref in entry["references"]],
+            "engineVersion": getattr(result, "engine_version", None)}
+    for name in ("model", "width", "height", "steps", "cfg", "sampler"):
+        if params.get(name) is not None:
+            meta[name] = params[name]
+    return meta
+
+
+def _generate(entry: dict, eng, machine: dict, state: dict, lang=None):
     """Everything up to and including `add_attempt`; returns the attempt id. `state["tmp"]`/`["final"]` are
     the files to clean up if it raises."""
     entry_id = entry["id"]
@@ -123,27 +164,38 @@ def _generate(entry: dict, eng, machine: dict, state: dict):
         prompt=entry["prompt"], width=params.get("width"), height=params.get("height"),
         seed=entry["seed"], output=str(tmp), steps=params.get("steps"), cfg=params.get("cfg"),
         sampler=params.get("sampler"), model=params.get("model"), references=references,
-        machine=machine, timeout_s=machine.get("timeoutS"))
+        machine=machine, timeout_s=machine.get("timeoutS"), on_progress=_progress_to_queue(entry_id))
+    _expose_preview(entry_id, eng, tmp)
     state["result"] = eng.generate(job, lambda: queue.is_cancel_requested(entry_id))
     if queue.is_cancel_requested(entry_id):
         raise engine_mod.Cancelled()
+    try:
+        png.add_text_chunk(tmp, "gimg", json.dumps(metadata_for(entry, state["result"]), ensure_ascii=False,
+                                                   sort_keys=True))
+    except (GimgError, OSError) as exc:
+        reason = exc.params.get("reason", exc.code) if isinstance(exc, GimgError) else str(exc)
+        print(i18n.t("worker.metadata_failed", lang, id=entry_id, reason=reason), file=sys.stderr)
     final = tmp.parent / ("q%d.png" % entry_id)
     try:
         os.replace(tmp, final)
     except OSError as exc:
         raise GimgError("worker.image_move", reason=str(exc))
     engine_log = getattr(state["result"], "log_path", None)
+    kept_log = None
     if engine_log:  # best effort: the log is a nicety, the attempt does not depend on it
         try:
             os.replace(engine_log, tmp.parent / ("q%d.log" % entry_id))
+            kept_log = "attempts/q%d.log" % entry_id
         except OSError:
             pass
     state["tmp"] = None
     state["final"] = final
+    result = state["result"]
     attempt_id = orders.add_attempt(project_name, key, profile, {
         "seed": entry["seed"], "prompt": entry["prompt"], "params": params,
         "references": entry["references"], "engine": eng.provider,
-        "engineVersion": state["result"].engine_version}, entry_id=entry_id)
+        "engineVersion": result.engine_version, "command": getattr(result, "command", None),
+        "modelFiles": getattr(result, "model_files", None), "log": kept_log}, entry_id=entry_id)
     state["final"] = None
     return attempt_id
 
@@ -153,7 +205,7 @@ def _process(entry: dict, eng, lang=None) -> None:
     machine = {}
     state = {"tmp": None, "final": None, "result": None}
     try:
-        attempt_id = _generate(entry, eng, machine, state)
+        attempt_id = _generate(entry, eng, machine, state, lang)
     except engine_mod.Cancelled:
         _finish(entry_id, "cancelled", lang)
         return

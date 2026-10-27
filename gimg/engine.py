@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import math
 import os
-import struct
 import tempfile
 import time
 import zlib
@@ -15,6 +14,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from . import fsutil, paths
+from .png import png_bytes  # noqa: F401  (re-exported: the fake engine and the tests use it from here)
 from .errors import GimgError
 
 FAKE_VERSION = "fake-1"
@@ -35,6 +35,7 @@ class EngineJob:
     references: list = field(default_factory=list)  # absolute paths
     machine: dict = field(default_factory=dict)
     timeout_s: Optional[float] = None
+    on_progress: Optional[Callable[[dict], None]] = None  # called with ``{"step", "steps", "etaS"}`` when the step changes (F2.4)
 
 
 @dataclass
@@ -47,6 +48,12 @@ class EngineResult:
     min_free_mb: Optional[int] = None
     command: Optional[list] = None  # argv of the engine for the log (D34); model files relative to the models folder
     log_path: Optional[str] = None  # the engine's log of this run; the worker keeps it as ``attempts/q<entry>.log``
+    model_files: Optional[dict] = None  # file names (no folder) by kind: ``{"diffusion", "text", "vae"}`` (D34)
+    backend: Optional[str] = None  # ``cpu`` or ``vulkan`` (D34)
+    threads: Optional[int] = None  # the ``-t`` of the command, if there is one
+    draft: bool = False  # F2.7 sets it for a draft run
+    compose: Optional[str] = None  # the composition template, F2.8
+    params: Optional[dict] = None  # steps, cfg and sampler actually used (the job's, else the model's defaults)
 
 
 class EngineError(Exception):
@@ -77,22 +84,13 @@ class Cancelled(Exception):
 class Engine:
     provider = ""
 
+    @staticmethod
+    def preview_path(output: Path) -> Optional[Path]:
+        """Where this engine writes the preview of the image that will be `output`; ``None`` if it makes none."""
+        return None
+
     def generate(self, job: EngineJob, should_cancel: Callable[[], bool]) -> EngineResult:
         raise NotImplementedError
-
-
-def _chunk(kind: bytes, data: bytes) -> bytes:
-    body = kind + data
-    return struct.pack(">I", len(data)) + body + struct.pack(">I", zlib.crc32(body) & 0xFFFFFFFF)
-
-
-def png_bytes(width: int, height: int, color: tuple) -> bytes:
-    """A valid 8-bit RGB PNG of one solid color."""
-    row = b"\x00" + bytes(color) * width
-    return (b"\x89PNG\r\n\x1a\n"
-            + _chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
-            + _chunk(b"IDAT", zlib.compress(row * height))
-            + _chunk(b"IEND", b""))
 
 
 def seed_color(seed: int) -> tuple:
