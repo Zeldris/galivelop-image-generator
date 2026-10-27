@@ -48,7 +48,7 @@ for p in $PIEZAS; do
     VAE=flux2-vae.safetensors TOPE=${R3_TOPE:-7200}); EXTRA=(--backend diffusion=cpu -t 8); }
   [ -s "$OUT/$proy/intentos/$nombre.png" ] && { echo "ya está: $proy/$nombre"; continue; }
   echo "== $proy $nombre ($W×$H, $PASOS pasos${MOD:+, $MOD})"
-  env "${ENTORNO[@]}" "$GEN" "$OUT/$proy" "$nombre" "$pf" $W $H "$semilla" $PASOS "${EXTRA[@]}" | sed -u "s|^|$proy |" | tee -a "$OUT/resumen.txt"
+  env ${ENTORNO[@]+"${ENTORNO[@]}"} "$GEN" "$OUT/$proy" "$nombre" "$pf" $W $H "$semilla" $PASOS ${EXTRA[@]+"${EXTRA[@]}"} | sed -u "s|^|$proy |" | tee -a "$OUT/resumen.txt"
   rc=${PIPESTATUS[0]}
   [ "$rc" = 3 ] && { echo "Ronda parada: generar.sh abortó antes de arrancar (arriba, el motivo)"; exit 3; }
 done

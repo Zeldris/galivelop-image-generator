@@ -280,6 +280,15 @@ dialog .pie{padding:8px 12px;font-size:13px;color:var(--muted);display:flex;just
 /* ===================== rutas de datos (relativas a docs/interfaz/prototipo/) ===================== */
 const PIL = '../../../piloto/';
 const MAR = '../../marcas/';
+/* Abierto como archivo desde un flatpak, el portal da solo este HTML y no las imágenes: avisa una vez. */
+addEventListener('error', e => {
+  if (e.target.tagName !== 'IMG' || location.protocol !== 'file:' || document.getElementById('aviso-file')) return;
+  const p = document.createElement('p'); p.id = 'aviso-file';
+  p.style.cssText = 'margin:0;padding:8px 12px;background:#5a3a10;color:#fff;font:14px system-ui';
+  p.textContent = 'Las imágenes no cargan abiertas como archivo (VS Code o el navegador en flatpak). '
+    + 'Ábrelo con: python3 examples/pilot/ver.py';
+  document.body.prepend(p);
+}, true);
 
 /* ===================== textos de la interfaz (D16): es / en ===================== */
 const T = {

@@ -11,9 +11,9 @@
       "logo": "docs/marcas/galivelop-developer/logos/galivelop-developer-d-lockup-oscuro.svg",
       "titulo": "El tercer relevo.",
       "subtitulo": "Aider sobre un modelo local, junto a las sesiones de Claude Code.",
-      "zona": "izquierda",
+      "zona": "abajo",
       "color_texto": "#eaf4fa",
-      "velo": "#06121c:0"
+      "velo": "#06121c:0.55"
     },
     {
       "id": "cuadrado",
@@ -50,7 +50,7 @@
       "logo": "docs/marcas/galivelop-developer/logos/galivelop-developer-d-lockup-oscuro.svg",
       "titulo": "Una rama acotada que vuelve revisada.",
       "subtitulo": "Vuelve al tronco cuando alguien lo ha leído.",
-      "zona": "izquierda",
+      "zona": "abajo",
       "color_texto": "#eaf4fa",
       "velo": "#06121c:0.3"
     },

@@ -13,7 +13,7 @@
 | **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | F2.0 pruebas de concepto, delegadas por la persona. Hechos: biblias, logos, componer/medir, r2 (estilo por proyecto) y r3 klein (borrador 51 s, definitivo 229 s); r4 compuesta (`piezas.py r4`, og de los 7 en `piloto/r4/`); propuesta de interfaz F4 en `docs/interfaz/` (8 decisiones para la persona). En curso: `ronda.sh r5` (fondos) y FLUX.3 de portal en la CPU (falló en GPU por memoria). Siguiente: registros r3/r4/r5, `piezas.py r5`. Presupuesto: 4 compactaciones (3 gastadas) |
+| **Tarea en curso · `f2-motor`** | F2.0 pruebas de concepto, delegadas por la persona. Hechas r2-r5: estilo por proyecto, borrador (22 % del definitivo), FLUX.3 en CPU (59 min, ~15× klein, no compensa), og y 4 formatos compuestos y medidos de los 7 (`piloto/r4`, `piloto/r5`; registros en `docs/registros/contenido/`). Ver páginas: `examples/pilot/ver.py`. Siguiente: presentar a la persona las 8 decisiones de `docs/interfaz/propuesta.md` y luego las tres fases antes de `main`. Presupuesto: 4 compactaciones (4 gastadas) |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.
@@ -37,6 +37,9 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
   - F2: `width`/`height` sin `multipleOf` (lo que exija `sd-cli` por modelo); el validador aún no lo soporta.
   - `propertyNames` solo pasa el `pattern` del primer error: si falla por otra cosa, el mensaje sale vacío.
 - **Leves de la revisión de `941efa9` (componer/medir, F2.0):** pruebas de Lab/umbral y del recorte cover con píxeles; `fuentes.sh` sin test, `mktemp` fuera del destino y descarga de `main` sin fijar; `HEX` con `$` en vez de `fullmatch`; viewBox `1.2.3` o `0 0 0 0` da traza; `esc` no quita caracteres de control; salida `.svg` machaca el SVG de depuración; sin `timeout` en subprocesos; sin `piloto/fuentes/` cae a otra fuente sin avisar; `ffprobe` sin `which`; signalstats es BT.601 rango limitado (calibrar igual en F2.9).
+- **Leves de la revisión de `3dc054d` (piezas/componer, F2.0):** avatar rasterizado con `-w` y `-h` deforma un logo no
+  cuadrado; `'640x320' in name` frágil (un `2640x320`); sin tests de `main()` con piezas, `paleta_de`, avatar,
+  `pagina.medidas` ni `ronda.sh r5`; la prueba del lockup no cubre la rama en que manda el ancho de la columna.
 - **Leves de las revisiones de F1:**
   - `orders._FULL_PARAMS` repite a mano límites de `width`/`height`/`model` en vez de usar `$defs/profile` del esquema de la configuración del proyecto.
   - Un lector (`list`/`get`/`enqueue`) que toma `worker.lock` un instante hace que un trabajador que arranca falle con

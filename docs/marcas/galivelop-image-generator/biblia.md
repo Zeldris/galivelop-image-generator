@@ -101,9 +101,10 @@ Tras elegir **[P]**:
 | `examples/galivelop-image-generator/prompts/r2-palabras.txt` | r2, **elegida** (ahora `estilo.txt`). Misma escena de og; paleta en palabras |
 | `examples/galivelop-image-generator/prompts/r2-hex.txt` | r2, descartada. Misma escena, colores en hex |
 | `examples/galivelop-image-generator/prompts/r2-material.txt` | r2, descartada. Misma escena, paleta en materiales y luz (agua quieta de noche, cristal, amatista, vidrio esmerilado) |
-| `examples/galivelop-image-generator/prompts/r5-cuadrado.txt` | r5, pendiente. Misma escena en cuadrado 1080×1080 (se genera a 1024×1024): marcos en la mitad inferior, mitad superior libre |
-| `examples/galivelop-image-generator/prompts/r5-vertical.txt` | r5, pendiente. Misma escena en vertical 1080×1350 (896×1152): marcos en la mitad inferior, mitad superior libre |
-| `examples/galivelop-image-generator/prompts/r5-cabecera.txt` | r5, pendiente. Misma escena en cabecera 1500×500 (1536×512): marcos en la mitad derecha, mitad izquierda libre |
+| `examples/galivelop-image-generator/prompts/estilo.txt` | og: el estilo elegido en r2 | r3: el borrador (640×320, 4 pasos, 51 s) anticipa estilo y hueco, no el detalle; r4: og compuesto, contraste peor 16.49:1, paleta 72 % |
+| `examples/galivelop-image-generator/prompts/r5-cuadrado.txt` | r5: generado y compuesto (`piloto/r5/galivelop-image-generator/intentos/cuadrado.png`), contraste 16.48:1, peor 15.42:1, paleta 74.87 %. Misma escena en cuadrado 1080×1080 (se genera a 1024×1024): marcos en la mitad inferior, mitad superior libre |
+| `examples/galivelop-image-generator/prompts/r5-vertical.txt` | r5: generado y compuesto (`piloto/r5/galivelop-image-generator/intentos/vertical.png`), contraste 16.44:1, peor 16.28:1, paleta 79.11 %. Misma escena en vertical 1080×1350 (896×1152): marcos en la mitad inferior, mitad superior libre |
+| `examples/galivelop-image-generator/prompts/r5-cabecera.txt` | r5: generado y compuesto (`piloto/r5/galivelop-image-generator/intentos/cabecera.png`), contraste 15.49:1, peor 15.33:1, paleta 75.16 %. Misma escena en cabecera 1500×500 (1536×512): marcos en la mitad derecha, mitad izquierda libre |
 
 Plantilla para uno nuevo: `<formato y fondo> + <motivo en la zona de imagen> + <zona reservada, lisa> + Style: … Colours: deep
 midnight navy, violet, soft lavender and white highlights. Mood: calm, focused, quietly creative. The image is completely

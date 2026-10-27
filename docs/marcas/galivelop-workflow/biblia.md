@@ -117,9 +117,10 @@ Reglas tras elegir (valen para cualquiera):
 | `examples/galivelop-workflow/prompts/r2-palabras.txt` | r2, **elegida** (ahora `estilo.txt`). Misma escena de og con las palancas de r1 (líneas solo en la mitad derecha, «dash» en vez de «capsule»); paleta en palabras |
 | `examples/galivelop-workflow/prompts/r2-hex.txt` | r2, descartada. Misma escena, colores en hex |
 | `examples/galivelop-workflow/prompts/r2-material.txt` | r2, descartada. Misma escena, paleta en materiales y luz (pizarra azul, cristal azul, latón, jade) |
-| `examples/galivelop-workflow/prompts/r5-cuadrado.txt` | r5, pendiente. Misma escena en cuadrado 1080×1080 (se genera a 1024×1024): líneas en la mitad inferior, mitad superior libre |
-| `examples/galivelop-workflow/prompts/r5-vertical.txt` | r5, pendiente. Misma escena en vertical 1080×1350 (896×1152): líneas en la mitad inferior, mitad superior libre |
-| `examples/galivelop-workflow/prompts/r5-cabecera.txt` | r5, pendiente. Misma escena en cabecera 1500×500 (1536×512): líneas en la mitad derecha, mitad izquierda libre |
+| `examples/galivelop-workflow/prompts/estilo.txt` | og: el estilo elegido en r2 | r3: el borrador (640×320, 4 pasos, 51 s) anticipa estilo y hueco, no el detalle; r4: og compuesto, contraste peor 15.86:1, paleta 93 % |
+| `examples/galivelop-workflow/prompts/r5-cuadrado.txt` | r5: generado y compuesto (`piloto/r5/galivelop-workflow/intentos/cuadrado.png`), contraste 15.75:1, peor 15.54:1, paleta 93.84 %. Misma escena en cuadrado 1080×1080 (se genera a 1024×1024): líneas en la mitad inferior, mitad superior libre |
+| `examples/galivelop-workflow/prompts/r5-vertical.txt` | r5: generado y compuesto (`piloto/r5/galivelop-workflow/intentos/vertical.png`), contraste 15.89:1, peor 15.64:1, paleta 93.99 %. Misma escena en vertical 1080×1350 (896×1152): líneas en la mitad inferior, mitad superior libre |
+| `examples/galivelop-workflow/prompts/r5-cabecera.txt` | r5: generado y compuesto (`piloto/r5/galivelop-workflow/intentos/cabecera.png`), contraste 15.14:1, peor 14.82:1, paleta 92.92 %. Misma escena en cabecera 1500×500 (1536×512): líneas en la mitad derecha, mitad izquierda libre |
 
 Plantilla para uno nuevo:
 

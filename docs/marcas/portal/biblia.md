@@ -122,9 +122,10 @@ Tras elegir **[P]**:
 | `examples/portal/prompts/r2-palabras.txt` | og, «Umbral»: escena nueva (umbral abierto del que sale luz celeste, tres puntos de color dentro), paleta en palabras | r2, descartada |
 | `examples/portal/prompts/r2-hex.txt` | misma escena, colores en hex | r2, **elegida** (ahora `estilo.txt`) |
 | `examples/portal/prompts/r2-material.txt` | misma escena, paleta en materiales y luz (pizarra pulida, cristal grueso, arcilla, esmalte) | r2, descartada |
-| `examples/portal/prompts/r5-cuadrado.txt` | square 1080×1080 (se genera a 1024×1024): el umbral y su luz en la mitad inferior, mitad superior libre | r5, pendiente |
-| `examples/portal/prompts/r5-vertical.txt` | portrait 1080×1350 (896×1152): misma escena, umbral en la mitad inferior, mitad superior libre | r5, pendiente |
-| `examples/portal/prompts/r5-cabecera.txt` | header 1500×500 (1536×512): umbral en el tercio derecho, dos tercios izquierdos libres | r5, pendiente |
+| `examples/portal/prompts/estilo.txt` | og: el estilo elegido en r2 | r3: el borrador (640×320, 4 pasos, 51 s) anticipa estilo y hueco, no el detalle; r4: og compuesto, contraste peor 15.78:1, paleta 67 % |
+| `examples/portal/prompts/r5-cuadrado.txt` | square 1080×1080 (se genera a 1024×1024): el umbral y su luz en la mitad inferior, mitad superior libre | r5: generado y compuesto (`piloto/r5/portal/intentos/cuadrado.png`), contraste 15.07:1, peor 14.17:1, paleta 82.02 % |
+| `examples/portal/prompts/r5-vertical.txt` | portrait 1080×1350 (896×1152): misma escena, umbral en la mitad inferior, mitad superior libre | r5: generado y compuesto (`piloto/r5/portal/intentos/vertical.png`), contraste 14.54:1, peor 10.98:1, paleta 76.43 % |
+| `examples/portal/prompts/r5-cabecera.txt` | header 1500×500 (1536×512): umbral en el tercio derecho, dos tercios izquierdos libres | r5: generado y compuesto (`piloto/r5/portal/intentos/cabecera.png`), contraste 15.69:1, peor 15.29:1, paleta 70.26 % |
 
 Plantilla para uno nuevo: `Wide abstract <pieza> on a deep midnight navy background. <motivo del Portal en la mitad derecha,
 en positivo>. A faint grid of tiny dots fades into the darkness. The left half is a calm, smooth, dark navy surface, nearly

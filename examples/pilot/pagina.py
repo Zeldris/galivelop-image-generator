@@ -24,6 +24,7 @@ figcaption { color:var(--tenue); font-size:13px; margin-top:4px; display:flex; g
 details { color:var(--tenue); font-size:13px; margin-bottom:8px; } details p { white-space:pre-wrap; color:var(--texto); }
 button { background:#2a2f3a; color:var(--texto); border:1px solid #3a404c; border-radius:6px; padding:2px 10px; cursor:pointer; }
 button.si.on { background:var(--si); } button.no.on { background:var(--no); }
+#aviso { background:#5a3a10; padding:8px 12px; border-radius:6px; }
 textarea { width:100%; height:9em; background:var(--panel); color:var(--texto); border:1px solid #3a404c; border-radius:6px; }
 """
 
@@ -50,6 +51,14 @@ document.getElementById('copiar').onclick = () => {
   const t = document.getElementById('veredicto'); t.select(); navigator.clipboard?.writeText(t.value);
 };
 pinta();
+// Abierta como archivo desde un flatpak, el portal da solo el HTML y no las imágenes: avisa una vez.
+addEventListener('error', e => {
+  if (e.target.tagName !== 'IMG' || location.protocol !== 'file:' || document.getElementById('aviso')) return;
+  const p = document.createElement('p'); p.id = 'aviso';
+  p.textContent = 'Las imágenes no cargan abiertas como archivo (pasa con VS Code o el navegador en flatpak). '
+    + 'Ábrelas con: python3 examples/pilot/ver.py';
+  document.body.prepend(p);
+}, true);
 """
 
 
@@ -90,8 +99,8 @@ def medidas(f):
         return ''
     m = json.loads(f.read_text())
     c, pal = m.get('contraste'), m.get('paleta')
-    partes = ([f'contraste {c["media"]}:1, peor {c["peor"]}:1'] if c else []) + \
-             ([f'paleta {pal["porcentaje"]} %'] if pal else []) + ([f'YAVG {m["YAVG"]}'] if 'YAVG' in m else [])
+    partes = ([f'contraste {c.get("media")}:1, peor {c.get("peor")}:1'] if c else []) + \
+             ([f'paleta {pal.get("porcentaje")} %'] if pal else []) + ([f'YAVG {m["YAVG"]}'] if 'YAVG' in m else [])
     return ' · '.join(partes)
 
 
@@ -107,10 +116,11 @@ def pagina_ronda(ronda):
                 prompts.append((n, pf.read_text()))
             rel = img.relative_to(ronda).as_posix()
             pieza = f'{proy.name} {n.removeprefix("og-")}'
+            info = ' · '.join(filter(None, (tiempos(proy / 'logs' / f'{n}.log', res.get((proy.name, n))),
+                                            medidas(proy / 'medidas' / f'{n}.json'))))
             figuras.append(
                 f'<figure data-pieza="{esc(pieza)}"><a href="{esc(rel)}" target="_blank"><img src="{esc(rel)}" '
-                f'alt="{esc(pieza)}" loading="lazy"></a><figcaption><b>{esc(n)}</b> '
-                f'{esc(tiempos(proy / "logs" / f"{n}.log", res.get((proy.name, n))))}{esc(medidas(proy / "medidas" / f"{n}.json"))} '
+                f'alt="{esc(pieza)}" loading="lazy"></a><figcaption><b>{esc(n)}</b> {esc(info)} '
                 f'<button class="si">sí</button><button class="no">no</button></figcaption></figure>')
         # Un prompt para todas (r1: varias semillas) o uno por imagen (r2: variantes del estilo).
         distintos = {t for _, t in prompts}
@@ -141,7 +151,8 @@ def main(argv):
         enlaces += '<li><a href="logos/index.html">Propuestas de logo</a> (examples/pilot/logos.py)</li>'
     (piloto / 'index.html').write_text(
         f'<!doctype html><html lang="es"><meta charset="utf-8"><title>Piloto de contenido</title><style>{CSS}</style>'
-        f'<body><h1>Piloto de contenido</h1><ul>{enlaces}</ul></body></html>')
+        f'<body><h1>Piloto de contenido</h1><p>Si no se ven las imágenes, ábrelo con <code>python3 examples/pilot/ver.py'
+        f'</code> (desde VS Code en flatpak, el archivo llega sin sus imágenes).</p><ul>{enlaces}</ul></body></html>')
     print(f'Página: {piloto / "index.html"}')
     return 0
 

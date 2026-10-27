@@ -1,10 +1,12 @@
 """Pruebas de los scripts de prueba de concepto de examples/pilot/ (componer.py y medir.py)."""
 import os
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 PILOTO = Path(__file__).resolve().parent.parent / "examples" / "pilot"
@@ -149,6 +151,19 @@ class SinTextoTests(unittest.TestCase):
         self.assertEqual(svg.count("<image"), 1)
         self.assertIn('y2="1"', svg)  # el velo de «arriba» baja desde el borde de arriba
 
+    def test_lockup_ancho_sale_a_la_altura_comun(self):
+        ancho = self.tmp / "ancho.svg"
+        ancho.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 128"/>', encoding="utf-8")
+        svg = componer.construir_svg(self.tmp / "fondo.png", 1200, 630, ancho, "Hola", zona="izquierda")
+        alto = float(re.findall(r'<image [^>]*height="([\d.]+)"', svg)[1])
+        self.assertAlmostEqual(alto, round(0.09 * 630), delta=1)  # con el tope del 40 % del ancho salía a ~24 px
+
+    def test_texto_que_no_cabe_dice_el_motivo(self):
+        with self.assertRaises(componer.ErrorComponer) as cm:
+            componer.construir_svg(self.tmp / "fondo.png", 200, 100, self.tmp / "logo.svg", "palabra " * 40,
+                                   zona="arriba")
+        self.assertIn("el texto no cabe en la zona arriba", str(cm.exception))
+
     def test_con_texto_lleva_el_titulo(self):
         svg = componer.construir_svg(self.tmp / "fondo.png", 200, 100, self.tmp / "logo.svg", "Hola", zona="arriba")
         self.assertIn(">Hola</text>", svg)
@@ -173,7 +188,7 @@ class PiezasTests(unittest.TestCase):
     def test_elige_el_definitivo_y_no_el_borrador_ni_flux3(self):
         d = self.tmp / "r3" / "portal" / "intentos"
         d.mkdir(parents=True)
-        color_png(d / "estilo-640x320-p4-s3.png", "red", "64x32")
+        color_png(d / "estilo-640x320-p4-s3.png", "red", "512x256")  # más grande: si no se filtrara, ganaría
         color_png(d / "estilo-1280x640-p16-flux3-s3.png", "red", "256x128")
         color_png(d / "estilo-1280x640-p8-s3.png", "red", "128x64")
         self.assertEqual(self.piezas.fondo_de("portal", "estilo").name, "estilo-1280x640-p8-s3.png")
@@ -186,9 +201,74 @@ class PiezasTests(unittest.TestCase):
         logo.write_text(LOGO, encoding="utf-8")
         p = {"id": "og", "ancho": 120, "alto": 63, "fondo": "estilo", "logo": str(logo), "titulo": "Hola",
              "zona": "izquierda", "color_texto": "#ffffff", "velo": "#000000:0.5"}
-        m = self.piezas.pieza("demo", {}, p, self.tmp / "r4" / "demo")
+        with mock.patch.object(self.piezas, "R", self.tmp):  # el logo tiene que estar dentro del «repo»
+            m = self.piezas.pieza("demo", {}, p, self.tmp / "r4" / "demo")
         self.assertTrue((self.tmp / "r4" / "demo" / "intentos" / "og.png").is_file())
         self.assertGreater(m["contraste"]["peor"], 15)  # fondo negro, texto blanco: el texto no entra en la medida
+
+
+
+class ValidarPiezaTests(unittest.TestCase):
+    def setUp(self):
+        import piezas
+        self.piezas = piezas
+        self.base = {"id": "og", "ancho": 10, "alto": 10, "logo": "docs/x.svg", "fondo": None}
+
+    def motivo(self, **cambios):
+        p = {**self.base, **cambios}
+        with self.assertRaises(componer.ErrorComponer) as cm:
+            self.piezas.validar({k: v for k, v in p.items() if v is not ...})
+        return str(cm.exception)
+
+    def test_id_que_sale_de_la_carpeta(self):
+        for malo in ("../x", "a/b", "/abs", "~x", "a\nb", "og\n", "a\x00b", ""):
+            self.assertIn("solo minúsculas", self.motivo(id=malo))
+
+    def test_logo_fuera_del_repo(self):
+        for malo in ("/etc/passwd", "../../x.svg"):
+            self.assertIn("dentro del repo", self.motivo(logo=malo))
+
+    def test_sin_fondo_no_es_un_avatar(self):
+        self.assertIn("«fondo»", self.motivo(fondo=...))
+
+    def test_con_fondo_dice_que_campo_falta(self):
+        self.assertIn("«titulo», «zona», «color_texto», «velo»", self.motivo(fondo="estilo"))
+
+    def test_ronda_sin_piezas_devuelve_2(self):
+        with mock.patch("builtins.print") as imp:
+            self.assertEqual(self.piezas.main(["piezas.py", "r9", "portal"]), 2)
+        self.assertIn("ninguna pieza de la ronda 'r9'", imp.call_args[0][0])
+
+    def test_proyecto_sin_piezas_json_devuelve_2(self):
+        with mock.patch("builtins.print") as imp:
+            self.assertEqual(self.piezas.main(["piezas.py", "r4", "no-existe"]), 2)
+        self.assertIn("no se puede leer la lista «piezas»", imp.call_args[0][0])
+
+
+
+class VerTests(unittest.TestCase):
+    def test_puerto_no_numerico_da_el_uso(self):
+        import ver
+        with mock.patch("builtins.print") as imp:
+            self.assertEqual(ver.main(["ver.py", "x"]), 2)
+        self.assertIn("Uso: examples/pilot/ver.py", imp.call_args[0][0])
+
+    def test_puerto_ocupado_dice_el_motivo(self):
+        import socket
+        import ver
+        with socket.socket() as s:
+            s.bind(("127.0.0.1", 0))
+            s.listen()
+            with mock.patch("builtins.print") as imp:
+                self.assertEqual(ver.main(["ver.py", str(s.getsockname()[1])]), 1)
+        self.assertIn("no se puede escuchar en 127.0.0.1", imp.call_args[0][0])
+
+
+class PaginaAvisoTests(unittest.TestCase):
+    def test_las_paginas_avisan_si_las_imagenes_no_cargan_como_archivo(self):
+        import pagina
+        self.assertIn("location.protocol !== 'file:'", pagina.JS)
+        self.assertIn("examples/pilot/ver.py", pagina.JS)
 
 
 if __name__ == "__main__":

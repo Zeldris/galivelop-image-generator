@@ -129,9 +129,10 @@ Tras elegir **[P]**:
 | `examples/toveriai/prompts/r2-palabras.txt` | og, misma escena de «Entre dos tintas»; paleta en palabras («deep burgundy», «oxblood») | r2, descartada |
 | `examples/toveriai/prompts/r2-hex.txt` | misma escena, colores en hex | r2, descartada |
 | `examples/toveriai/prompts/r2-material.txt` | misma escena, paleta en materiales y luz (algodón crudo, sangre de buey seca, musgo en sombra, resina) | r2, **elegida** (ahora `estilo.txt`) |
-| `examples/toveriai/prompts/r5-cuadrado.txt` | square 1080×1080 (1024×1024): las dos tintas se encuentran en la mitad inferior, mitad superior de papel libre | r5, pendiente |
-| `examples/toveriai/prompts/r5-vertical.txt` | portrait 1080×1350 (896×1152): misma escena, tintas en la mitad inferior, mitad superior libre | r5, pendiente |
-| `examples/toveriai/prompts/r5-cabecera.txt` | header 1500×500 (1536×512): las tintas se encuentran en el tercio derecho (desde abajo y desde la derecha), dos tercios izquierdos de papel libres | r5, pendiente |
+| `examples/toveriai/prompts/estilo.txt` | og: el estilo elegido en r2 | r3: el borrador (640×320, 4 pasos, 51 s) anticipa estilo y hueco, no el detalle; r4: og compuesto, contraste peor 15.0:1, paleta 67 % |
+| `examples/toveriai/prompts/r5-cuadrado.txt` | square 1080×1080 (1024×1024): las dos tintas se encuentran en la mitad inferior, mitad superior de papel libre | r5: generado y compuesto (`piloto/r5/toveriai/intentos/cuadrado.png`), contraste 15.92:1, peor 15.6:1, paleta 67.13 % |
+| `examples/toveriai/prompts/r5-vertical.txt` | portrait 1080×1350 (896×1152): misma escena, tintas en la mitad inferior, mitad superior libre | r5: generado y compuesto (`piloto/r5/toveriai/intentos/vertical.png`), contraste 15.19:1, peor 14.69:1, paleta 75.23 % |
+| `examples/toveriai/prompts/r5-cabecera.txt` | header 1500×500 (1536×512): las tintas se encuentran en el tercio derecho (desde abajo y desde la derecha), dos tercios izquierdos de papel libres | r5: generado y compuesto (`piloto/r5/toveriai/intentos/cabecera.png`), contraste 15.05:1, peor 14.83:1, paleta 76.82 % |
 
 Los 20 prompts del kit (redes, banners, iconografía, mockups, miniaturas, abstracto; por plataforma) se adaptan quitando el
 texto y describiendo la zona reservada. Plantilla: `<formato> abstract conceptual artwork on warm beige textured paper.

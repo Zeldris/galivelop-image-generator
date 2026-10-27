@@ -12,7 +12,7 @@ Decisiones (las porta F2.8):
 - El lockup va como <image> con data URI base64 de SVG: rsvg lo renderiza con sus fuentes y sus ids no chocan con
   los del SVG exterior (en línea habría que renombrar ids y degradados).
 - Fuentes: rsvg corre con un FONTCONFIG_FILE temporal que suma `piloto/fuentes/` (ver fuentes.sh) a las del sistema.
-- Se guarda el SVG junto a la salida (`<salida>.svg`) para depurar.
+- Se guarda el SVG junto a la salida (`<salida>.svg`) para depurar (piezas.py lo mueve luego a `svg/`).
 """
 import argparse
 import base64
@@ -122,10 +122,10 @@ def construir_svg(fondo, w, h, logo, titulo, subtitulo=None, zona=None, color_te
     cy1 = cy0 + alto_caja
     # Logo arriba de la caja
     lw, lh = _viewbox(logo)
-    alto_logo = round(min(0.15 * h, 0.2 * cw * lh / lw * 2))
+    # Misma altura en todas las marcas (9 % del alto), salvo que el lockup no quepa a lo ancho de la columna: con el
+    # tope anterior al 40 % del ancho, un lockup de 1100×128 salía a 24 px y su nombre no se leía.
+    alto_logo = round(min(0.09 * h, cw * lh / lw))
     ancho_logo = alto_logo * lw / lh
-    if ancho_logo > cw:
-        ancho_logo, alto_logo = cw, cw * lh / lw
     ly = cy0
     # Texto: baja el cuerpo hasta que cabe
     tam = round((0.075 if zona in ("abajo", "arriba") else 0.09) * h)
@@ -136,8 +136,11 @@ def construir_svg(fondo, w, h, logo, titulo, subtitulo=None, zona=None, color_te
         lt = ajustar(titulo, tam, cw)
         ls = ajustar(subtitulo, sub_tam, cw, 0.5) if subtitulo else []
         total = len(lt) * tam * 1.12 + (sub_tam * 0.8 + len(ls) * sub_tam * 1.3 if ls else 0)
-        if (total <= disp and len(lt) <= 3) or tam <= 16:
+        if total <= disp and len(lt) <= 3:
             break
+        if tam <= 16:
+            raise ErrorComponer(f"el texto no cabe en la zona {zona} de {w}×{h} ni a 16 px: acorta el título o el "
+                                "subtítulo, o usa otra zona")
         tam = round(tam * 0.93)
         sub_tam = max(round(tam * 0.42), 14)
     y = {"abajo": cy1 - total, "arriba": top}.get(zona, top + (disp - total) / 2)
@@ -164,7 +167,7 @@ def construir_svg(fondo, w, h, logo, titulo, subtitulo=None, zona=None, color_te
         f'<stop offset="0" stop-color="{vcolor}" stop-opacity="{vop}"/>'
         f'<stop offset="0.55" stop-color="{vcolor}" stop-opacity="{vop * 0.88:.3f}"/>'
         f'<stop offset="{cola}" stop-color="{vcolor}" stop-opacity="0"/></linearGradient>')
-    if zona in ("abajo", "arriba"):  # el degradado empieza en su borde y llega hasta ~45 % de la altura
+    if zona in ("abajo", "arriba"):  # desde su borde: casi opaco hasta la mitad y transparente al 90 % del alto
         velo_svg = velo_svg.replace('offset="0.55"', 'offset="0.5"')
     marca = (f'<image x="{cx}" y="{ly}" width="{ancho_logo:.1f}" height="{alto_logo:.1f}" '
              f'href="{_data_uri(logo, "image/svg+xml")}"/>\n' + "\n".join(partes) + "\n") if texto else ""

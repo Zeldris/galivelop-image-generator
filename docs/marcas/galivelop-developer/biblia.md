@@ -113,9 +113,10 @@ Reglas tras elegir:
 | `examples/galivelop-developer/prompts/r2-palabras.txt` | r2, **elegida** (ahora `estilo.txt`). Misma escena de og con la palanca de r1 (línea desde el centro a la derecha, bucle grande que llena la mitad derecha); paleta en palabras |
 | `examples/galivelop-developer/prompts/r2-hex.txt` | r2, descartada. Misma escena, colores en hex |
 | `examples/galivelop-developer/prompts/r2-material.txt` | r2, descartada. Misma escena, paleta en materiales y luz (pizarra pulida, luz esmerilada, vidrio de mar) |
-| `examples/galivelop-developer/prompts/r5-cuadrado.txt` | r5, pendiente. Misma escena en cuadrado 1080×1080 (se genera a 1024×1024): línea y bucle en la mitad inferior, mitad superior libre |
-| `examples/galivelop-developer/prompts/r5-vertical.txt` | r5, pendiente. Misma escena en vertical 1080×1350 (896×1152): línea y bucle en la mitad inferior, mitad superior libre |
-| `examples/galivelop-developer/prompts/r5-cabecera.txt` | r5, pendiente. Misma escena en cabecera 1500×500 (1536×512): línea y bucle en la mitad derecha, mitad izquierda libre |
+| `examples/galivelop-developer/prompts/estilo.txt` | og: el estilo elegido en r2 | r3: el borrador (640×320, 4 pasos, 51 s) anticipa estilo y hueco, no el detalle; r4: og compuesto, contraste peor 11.82:1, paleta 86 %; zona «abajo»: en la izquierda la línea de luz cruzaba el título |
+| `examples/galivelop-developer/prompts/r5-cuadrado.txt` | r5: generado y compuesto (`piloto/r5/galivelop-developer/intentos/cuadrado.png`), contraste 17.01:1, peor 16.87:1, paleta 91.27 %. Misma escena en cuadrado 1080×1080 (se genera a 1024×1024): línea y bucle en la mitad inferior, mitad superior libre |
+| `examples/galivelop-developer/prompts/r5-vertical.txt` | r5: generado y compuesto (`piloto/r5/galivelop-developer/intentos/vertical.png`), contraste 16.5:1, peor 16.33:1, paleta 88.28 %. Misma escena en vertical 1080×1350 (896×1152): línea y bucle en la mitad inferior, mitad superior libre |
+| `examples/galivelop-developer/prompts/r5-cabecera.txt` | r5: generado y compuesto (`piloto/r5/galivelop-developer/intentos/cabecera.png`), contraste 13.22:1, peor 9.87:1, paleta 83.05 %; zona abajo: con la izquierda la línea tocaba el final del título. Misma escena en cabecera 1500×500 (1536×512): línea y bucle en la mitad derecha, mitad izquierda libre |
 
 Plantilla para uno nuevo:
 

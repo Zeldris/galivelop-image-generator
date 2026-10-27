@@ -129,8 +129,10 @@ terminados recientes enlazan a su pedido.
    estados + elegir**, que es lo que D13 ya modela; una nota libre por intento para lo demás.
 4. **¿El texto compuesto (título, subtítulo) se edita por pedido o por intento?** Recomiendo **por pedido** (todos los
    intentos lo heredan y se previsualiza al instante); un intento solo guarda lo que tenía al componerse, por el manifiesto.
-5. **¿«Borrador primero» (640×320, ~50 s) activado por defecto en los pedidos grandes?** Recomiendo **esperar a r3**: si el
-   borrador anticipa la composición, por defecto activado; si no, solo como opción.
+5. **¿«Borrador primero» (640×320, ~50 s) activado por defecto en los pedidos grandes?** Con r3 hecha
+   (`docs/registros/contenido/r3-borrador.md`): el borrador cuesta el 22 % del definitivo y anticipa estilo, paleta y
+   hueco en 6 de 7 proyectos, pero no el detalle (el definitivo recoloca). Recomiendo **activado por defecto desde
+   1280×640**, con la nota «el definitivo puede recolocar», y el veredicto de composición solo sobre el definitivo.
 6. **¿Medidas de D31 en la tarjeta de cada intento, o solo al abrirlo?** Recomiendo **chip corto en la tarjeta** (contraste
    de la zona y % de paleta, en verde/ámbar/rojo con los umbrales calibrados) y el detalle al abrirlo.
 7. **¿Idioma por el navegador con selector en la cabecera, o fijo en la configuración del usuario?** Recomiendo
