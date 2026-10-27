@@ -13,7 +13,7 @@
 | **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | F2.0 pruebas de concepto, delegadas por la persona. Hechas r2-r5 e interfaz F4 en propuesta (8 + 5 decisiones confirmadas; prototipo con JS sin probar: abrirlo en el navegador). Antes de `main`: fase 1 hecha (`739f9c2`); fase 2, opt-tokens aplicado (aviso de presupuesto, gancho de `plan.md`); falta la retro con la persona. Luego fase 3 (`revisado.sh`) y CI, que no se ve desde aquí (sin `gh`): lo mira la persona. Presupuesto: 4 compactaciones (5 gastadas) |
+| **Tarea en curso · `f2-motor`** | F2.0 pruebas de concepto e interfaz F4 en propuesta (13 decisiones confirmadas). Antes de `main`: fase 1 hecha (`739f9c2`); fase 2 hecha (opt-tokens y retro `docs/registros/retro-2026-10-27-f2-0.md`, aprobadas y aplicadas). Siguiente: fase 3, revisión solo de los commits de la fase 2 y `revisado.sh`; CI con `gh` (la persona hace `gh auth login`). Presupuesto: 4 compactaciones (5 gastadas) |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.
