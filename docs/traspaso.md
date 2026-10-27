@@ -88,6 +88,15 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
   perfil ni el archivo, y relee el catálogo en cada `load_config`; el patrón de id repetido en vez de `$ref` a `$defs/name`;
   `read_text`/`write_text` sin `encoding` en `tests/test_models.py`. **Para F2.5:** `defaults.steps` del catálogo no se
   contrasta con `maxSteps`; `worker._generate` usa el `timeoutS` general y no `resolve()`.
+- **Leves de la revisión de `081977d` (F2.2; no se revisan más en este PR):** `load_ms` suma las 149 líneas «loading
+  tensors completed» del log real, que caen dentro del muestreo (`--params-backend disk`): se solapa con `sample_ms` y
+  `decode_ms` (documentarlo o contar solo las cargas anteriores a «sampling using» antes de que F2.4 lo registre); un
+  `GIMG_SD_CLI` relativo sin barra pasa `is_file` pero `Popen` lo busca en `PATH` (`resolve()` en `binary_path`) y
+  cualquier `OSError` de `Popen` sale como `engine.binary_not_executable`; si `orders.add_attempt` falla tras mover el
+  log, `attempts/q<id>.log` queda huérfano; `open`/`mkdir` del log sin envolver en `GimgError`; el párrafo «Motor» del
+  plan no lista `-t` (el código lo pone antes de los `args`); `sd-cli` muerto por señal sale como «exited with code -9».
+- **Flujo:** `rojo-sin-arreglo.sh` falla con «cannot stash» si antes se hizo `git add -N` de archivos nuevos (funciona
+  sin añadirlos); proponerlo al flujo con el resto (`gw-harvest`).
 - **Cuando la persona avise:** revisar las actualizaciones de Tarkor (otro repo) sobre su generador de imágenes: lo lee
   un subagente `Explore` que devuelve un resumen con rutas (`orchestrate-dealer`); desde aquí no se modifica.
 - El flujo copiado es la 0.4.0 **sin publicar** (rama `ccr-6dfbc880-ddr41g` del flujo, commit `d227bbf`; su `main` está en
