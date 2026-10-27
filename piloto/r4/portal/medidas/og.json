@@ -1,0 +1,33 @@
+{
+ "imagen": "piloto/r4/portal/intentos/og.png",
+ "YAVG": 64.85,
+ "SATAVG": 14.4,
+ "contraste": {
+  "zona": [
+   38,
+   38,
+   622,
+   554
+  ],
+  "texto": "#eaf4fa",
+  "media": 17.04,
+  "p10_oscuro": 17.68,
+  "p90_claro": 15.78,
+  "peor": 15.78
+ },
+ "paleta": {
+  "colores": [
+   "#06121c",
+   "#1aa6df",
+   "#2f7a55",
+   "#3d6fd9",
+   "#5cc8f2",
+   "#e0703a",
+   "#ffffff"
+  ],
+  "umbral_deltaE": 15.0,
+  "porcentaje": 66.95
+ },
+ "pieza": "og",
+ "fondo": "piloto/r3/portal/intentos/estilo-1280x640-p8-s3.png"
+}

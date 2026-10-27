@@ -1,0 +1,31 @@
+{
+ "imagen": "piloto/r5/tarkor/intentos/og-bajo.png",
+ "YAVG": 66.08,
+ "SATAVG": 5.18,
+ "contraste": {
+  "zona": [
+   38,
+   38,
+   622,
+   554
+  ],
+  "texto": "#f1e4d0",
+  "media": 9.5,
+  "p10_oscuro": 12.36,
+  "p90_claro": 7.36,
+  "peor": 7.36
+ },
+ "paleta": {
+  "colores": [
+   "#221c16",
+   "#332415",
+   "#8a9aa8",
+   "#e0703a",
+   "#f1e4d0"
+  ],
+  "umbral_deltaE": 15.0,
+  "porcentaje": 50.52
+ },
+ "pieza": "og-bajo",
+ "fondo": "piloto/r5-fondos/tarkor/intentos/r5-og-bajo-1280x640-p6-s3.png"
+}

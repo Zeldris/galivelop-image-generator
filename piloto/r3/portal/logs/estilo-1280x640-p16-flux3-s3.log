@@ -1,0 +1,220 @@
+[V] version: stable-diffusion.cpp version unknown, commit 95ff762 --- main.cpp:696
+ggml_vulkan: Found 1 Vulkan devices:
+ggml_vulkan: 0 = AMD Custom GPU 0405 (RADV VANGOGH) (radv) | uma: 1 | fp16: dot2 | bf16: 0 | fp4: 0 | warp size: 32 | shared memory: 65536 | int dot: 0 | matrix cores: none
+load_backend: loaded Vulkan backend from /home/deck/Desktop/Desarrollos/World-Maker-Fantasy/image-generator/bin/libggml-vulkan.so
+load_backend: loaded CPU backend from /home/deck/Desktop/Desarrollos/World-Maker-Fantasy/image-generator/bin/libggml-cpu-haswell.so
+[V] System Info: 
+   SSE3 = 1 |    SSSE3 = 1 |    AVX = 1 |    AVX2 = 1 |    F16C = 1 |    FMA = 1 |    BMI2 = 1 |    OPENMP = 1 |    REPACK = 1 |  --- main.cpp:697
+[V] using 8 threads for model loading --- model_loader.cpp:190
+[I] loading diffusion model from '/home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/diffusion/flux3-image-klein-Q8_0.gguf' --- diffusion_engine.cpp:676
+[I] load /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/diffusion/flux3-image-klein-Q8_0.gguf using gguf format --- model_loader.cpp:216
+[V] init from '/home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/diffusion/flux3-image-klein-Q8_0.gguf' --- model_loader.cpp:262
+[V] GGUF v3, tensor_count=359, metadata_kv_count=0 --- gguf_reader_ext.h:219
+[I] loading llm from '/home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf' --- diffusion_engine.cpp:733
+[I] load /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf using gguf format --- model_loader.cpp:216
+[V] init from '/home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf' --- model_loader.cpp:262
+[V] GGUF v3, tensor_count=398, metadata_kv_count=32 --- gguf_reader_ext.h:219
+[I] loading vae from '/home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/vae/flux2-vae.safetensors' --- diffusion_engine.cpp:747
+[I] load /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/vae/flux2-vae.safetensors using safetensors format --- model_loader.cpp:222
+[V] init from '/home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/vae/flux2-vae.safetensors', prefix = 'vae.' --- model_loader.cpp:290
+[I] Version: Flux.3 Image Klein  --- diffusion_engine.cpp:954
+[V] Initializing backend: CPU --- ggml_extend_backend.cpp:420
+[V] using 8 threads for model loading --- model_loader.cpp:190
+[I] Weight type stat:                      f32: 395  |    q8_0: 258  |    q4_K: 216  |    q6_K: 37   |     i32: 1    |    bf16: 101   --- diffusion_engine.cpp:1506
+[I] Conditioner weight type stat:          f32: 145  |    q4_K: 216  |    q6_K: 37    --- diffusion_engine.cpp:1507
+[I] Diffusion model weight type stat:     q8_0: 258  |    bf16: 101   --- diffusion_engine.cpp:1508
+[I] VAE weight type stat:                  f32: 250  |     i32: 1     --- diffusion_engine.cpp:1509
+[V] Found 2 backend devices: --- ggml_extend_backend.cpp:714
+[V] #0: Vulkan0 --- ggml_extend_backend.cpp:717
+[V] #1: CPU --- ggml_extend_backend.cpp:717
+[V] Initializing backend: Vulkan0 --- ggml_extend_backend.cpp:420
+[V] llm: num_layers = 36, vocab_size = 151936, hidden_size = 2560, intermediate_size = 9728 --- llm.hpp:442
+[V] flux3: hidden_size = 3072, context_dim = 20480, depth = 5, single_depth = 28, flow_map = true --- flux3.hpp:51
+[I] using VAE for encoding / decoding --- model_builders.cpp:210
+[I] vae decoder: ch = 128 --- auto_encoder_kl.hpp:529
+[I] conv2d direct auto: CPU -> off (no implicit GEMM path) --- conv_direct.cpp:90
+[I] conv3d direct auto: CPU -> off (no implicit GEMM path) --- conv_direct.cpp:90
+[I] conv2d direct auto: Vulkan0 -> off (probe: im2col 0.478 ms, direct 0.508 ms) --- conv_direct.cpp:82
+[I] conv3d direct auto: Vulkan0 -> on (probe: im2col 1.620 ms, direct 1.434 ms) --- conv_direct.cpp:82
+[V] validating model metadata --- diffusion_engine.cpp:1265
+[V] model metadata validated; weights will be prepared lazily --- diffusion_engine.cpp:1335
+[I] total params memory size = 8407.07MB (VRAM 2540.34MB, RAM 5866.73MB): text_encoders 2375.91MB(VRAM), diffusion_model 5866.73MB(RAM), vae 164.43MB(VRAM), controlnet 0.00MB(N/A), extensions 0.00MB(N/A) --- diffusion_engine.cpp:1381
+[I] running in Flux.3 FLOW mode --- diffusion_engine.cpp:1446
+[I] generate_image 1280x640 --- image.cpp:822
+[V] using 8 threads for model loading --- model_loader.cpp:190
+[I] Using 'flux2' preset for reference images --- diffusion_engine.cpp:3045
+[I] sampling using Euler method --- request.cpp:414
+[V] parse '<|im_start|>user\nWide abstract banner on a background in the colour #06121c. In the right half, a tall open threshold with softly rounded corners stands in the dark, and clear light in the colour #1aa6df pours out through it, spreading across a smooth floor in the colour #06121c in gentle soft ripples and rising into a soft radial glow of #5cc8f2. Three small soft points of light hover just inside the threshold: one in #E0703A, one in #2F7A55 and one in #3D6FD9. A faint grid of tiny evenly spaced dots covers the whole background and fades softly into the darkness. The left half of the frame is a calm, smooth surface in #06121c, nearly empty and softly out of focus. Style: minimal elegant digital art, smooth gradients, soft volumetric light, crisp and clean. Colours: #06121c, #1aa6df, #5cc8f2 and #ffffff highlights. Mood: calm, honest, quietly ambitious. The image is completely textless.<|im_end|>\n<|im_start|>assistant\n' to [['<|im_start|>user\n', 1], ['Wide abstract banner on a background in the colour #06121c. In the right half, a tall open threshold with softly rounded corners stands in the dark, and clear light in the colour #1aa6df pours out through it, spreading across a smooth floor in the colour #06121c in gentle soft ripples and rising into a soft radial glow of #5cc8f2. Three small soft points of light hover just inside the threshold: one in #E0703A, one in #2F7A55 and one in #3D6FD9. A faint grid of tiny evenly spaced dots covers the whole background and fades softly into the darkness. The left half of the frame is a calm, smooth surface in #06121c, nearly empty and softly out of focus. Style: minimal elegant digital art, smooth gradients, soft volumetric light, crisp and clean. Colours: #06121c, #1aa6df, #5cc8f2 and #ffffff highlights. Mood: calm, honest, quietly ambitious. The image is completely textless.', 1], ['<|im_end|>\n<|im_start|>assistant\n', 1], ] --- conditioner.hpp:2184
+[V] split prompt "<|im_start|>user\n" to 3 tokens ["<|im_start|>", "user", "Ċ", ] --- bpe_tokenizer.cpp:245
+[V] split prompt "Wide abstract banner on a background in the colour #06121c. In the right half, a tall open threshold with softly rounded corners stands in the dark, and clear light in the colour #1aa6df pours out through it, spreading across a smooth floor in the colour #06121c in gentle soft ripples and rising into a soft radial glow of #5cc8f2. Three small soft points of light hover just inside the threshold: one in #E0703A, one in #2F7A55 and one in #3D6FD9. A faint grid of tiny evenly spaced dots covers the whole background and fades softly into the darkness. The left half of the frame is a calm, smooth surface in #06121c, nearly empty and softly out of focus. Style: minimal elegant digital art, smooth gradients, soft volumetric light, crisp and clean. Colours: #06121c, #1aa6df, #5cc8f2 and #ffffff highlights. Mood: calm, honest, quietly ambitious. The image is completely textless." to 238 tokens ["Wide", "Ġabstract", "Ġbanner", "Ġon", "Ġa", "Ġbackground", "Ġin", "Ġthe", "Ġcolour", "Ġ#", "0", "6", "1", "2", "1", "c", ".", "ĠIn", "Ġthe", "Ġright", "Ġhalf", ",", "Ġa", "Ġtall", "Ġopen", "Ġthreshold", "Ġwith", "Ġsoftly", "Ġrounded", "Ġcorners", "Ġstands", "Ġin", "Ġthe", "Ġdark", ",", "Ġand", "Ġclear", "Ġlight", "Ġin", "Ġthe", "Ġcolour", "Ġ#", "1", "aa", "6", "df", "Ġpours", "Ġout", "Ġthrough", "Ġit", ",", "Ġspreading", "Ġacross", "Ġa", "Ġsmooth", "Ġfloor", "Ġin", "Ġthe", "Ġcolour", "Ġ#", "0", "6", "1", "2", "1", "c", "Ġin", "Ġgentle", "Ġsoft", "Ġr", "ipples", "Ġand", "Ġrising", "Ġinto", "Ġa", "Ġsoft", "Ġradial", "Ġglow", "Ġof", "Ġ#", "5", "cc", "8", "f", "2", ".", "ĠThree", "Ġsmall", "Ġsoft", "Ġpoints", "Ġof", "Ġlight", "Ġhover", "Ġjust", "Ġinside", "Ġthe", "Ġthreshold", ":", "Ġone", "Ġin", "Ġ#", "E", "0", "7", "0", "3", "A", ",", "Ġone", "Ġin", "Ġ#", "2", "F", "7", "A", "5", "5", "Ġand", "Ġone", "Ġin", "Ġ#", "3", "D", "6", "FD", "9", ".", "ĠA", "Ġfaint", "Ġgrid", "Ġof", "Ġtiny", "Ġevenly", "Ġspaced", "Ġdots", "Ġcovers", "Ġthe", "Ġwhole", "Ġbackground", "Ġand", "Ġfades", "Ġsoftly", "Ġinto", "Ġthe", "Ġdarkness", ".", "ĠThe", "Ġleft", "Ġhalf", "Ġof", "Ġthe", "Ġframe", "Ġis", "Ġa", "Ġcalm", ",", "Ġsmooth", "Ġsurface", "Ġin", "Ġ#", "0", "6", "1", "2", "1", "c", ",", "Ġnearly", "Ġempty", "Ġand", "Ġsoftly", "Ġout", "Ġof", "Ġfocus", ".", "ĠStyle", ":", "Ġminimal", "Ġelegant", "Ġdigital", "Ġart", ",", "Ġsmooth", "Ġgradients", ",", "Ġsoft", "Ġvolum", "etric", "Ġlight", ",", "Ġcrisp", "Ġand", "Ġclean", ".", "ĠCol", "ours", ":", "Ġ#", "0", "6", "1", "2", "1", "c", ",", "Ġ#", "1", "aa", "6", "df", ",", "Ġ#", "5", "cc", "8", "f", "2", "Ġand", "Ġ#", "ffffff", "Ġhighlights", ".", "ĠMood", ":", "Ġcalm", ",", "Ġhonest", ",", "Ġquietly", "Ġambitious", ".", "ĠThe", "Ġimage", "Ġis", "Ġcompletely", "Ġtext", "less", ".", ] --- bpe_tokenizer.cpp:245
+[V] split prompt "<|im_end|>\n<|im_start|>assistant\n" to 5 tokens ["<|im_end|>", "Ċ", "<|im_start|>", "assistant", "Ċ", ] --- bpe_tokenizer.cpp:245
+[I] qwen3vl build cached graph cut plan done (taking 2 ms) --- ggml_graph_cut.cpp:1032
+[V] qwen3vl using 34 segments --- ggml_runner.cpp:878
+[V] loading 1/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |##################################################| 1/1 - 671.71MB/s[K
+[I] loading tensors completed, taking 0.45s (read: 0.34s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.08s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers (304.28 MB, 1 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |#######################                           |  5/11 -   0.00MB/s[K  |##################################################| 11/11 - 304.64MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.02s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 60.93 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |############################                      |  6/11 -   0.00MB/s[K  |##################################################| 11/11 - 303.13MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.02s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 60.93 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |#####################################             |  8/11 -   9.77MB/s[K  |##################################################| 11/11 - 301.63MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 60.93 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |############################                      |  6/11 -   0.00MB/s[K  |##################################################| 11/11 - 301.63MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 60.93 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |############################                      |  6/11 -   0.00MB/s[K  |##################################################| 11/11 - 269.46MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.02s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 54.16 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |############################                      |  6/11 -   0.00MB/s[K  |##################################################| 11/11 - 269.46MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 54.16 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |################################                  |  7/11 -   0.00MB/s[K  |##################################################| 11/11 - 303.13MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 60.93 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |################################                  |  7/11 -   0.00MB/s[K  |##################################################| 11/11 - 269.46MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 54.16 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |################################                  |  7/11 -   0.00MB/s[K  |##################################################| 11/11 - 269.46MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 54.16 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |############################                      |  6/11 -   0.00MB/s[K  |##################################################| 11/11 - 303.13MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 60.93 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |############################                      |  6/11 -   0.00MB/s[K  |##################################################| 11/11 - 269.46MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 54.16 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |############################                      |  6/11 -   0.00MB/s[K  |##################################################| 11/11 - 269.46MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.02s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 54.16 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |################################                  |  7/11 -   0.00MB/s[K  |##################################################| 11/11 - 301.63MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 60.93 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |################################                  |  7/11 -   0.00MB/s[K  |##################################################| 11/11 - 269.46MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 54.16 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |################################                  |  7/11 -   0.00MB/s[K  |##################################################| 11/11 - 269.46MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 54.16 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |################################                  |  7/11 -   0.00MB/s[K  |##################################################| 11/11 - 301.63MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 60.93 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |################################                  |  7/11 -   0.00MB/s[K  |##################################################| 11/11 - 269.46MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 54.16 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |################################                  |  7/11 -   0.00MB/s[K  |##################################################| 11/11 - 269.46MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 54.16 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |############################                      |  6/11 -   0.00MB/s[K  |##################################################| 11/11 - 303.13MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 60.93 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |################################                  |  7/11 -   0.00MB/s[K  |##################################################| 11/11 - 269.46MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 54.16 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |################################                  |  7/11 -   0.00MB/s[K  |##################################################| 11/11 - 269.46MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 54.16 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |################################                  |  7/11 -   0.00MB/s[K  |##################################################| 11/11 - 303.13MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 60.93 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |################################                  |  7/11 -   0.00MB/s[K  |##################################################| 11/11 - 269.46MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 54.16 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |############################                      |  6/11 -   0.00MB/s[K  |##################################################| 11/11 - 269.46MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 54.16 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |############################                      |  6/11 -   0.00MB/s[K  |##################################################| 11/11 - 303.13MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 60.93 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |############################                      |  6/11 -   0.00MB/s[K  |##################################################| 11/11 - 269.46MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 54.16 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |############################                      |  6/11 -   0.00MB/s[K  |##################################################| 11/11 - 269.46MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 54.16 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |################################                  |  7/11 -   0.00MB/s[K  |##################################################| 11/11 - 303.13MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 60.93 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |################################                  |  7/11 -   0.00MB/s[K  |##################################################| 11/11 - 269.46MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 54.16 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] model manager released params backend buffers ( 54.16 MB, 11 tensors, 1 blocks, VRAM) from Vulkan0 --- model_manager.cpp:1295
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |################################                  |  7/11 -   0.00MB/s[K  |##################################################| 11/11 - 269.46MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 54.16 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] model manager released params backend buffers ( 54.16 MB, 11 tensors, 1 blocks, VRAM) from Vulkan0 --- model_manager.cpp:1295
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |############################                      |  6/11 -   0.00MB/s[K  |##################################################| 11/11 - 303.13MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 60.93 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] model manager released params backend buffers ( 60.93 MB, 11 tensors, 1 blocks, VRAM) from Vulkan0 --- model_manager.cpp:1295
+[V] loading 11/398 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/text/Qwen3VL-4B-Instruct-Q4_K_M.gguf --- model_loader.cpp:1130
+  |################################                  |  7/11 -   0.00MB/s[K  |##################################################| 11/11 - 303.13MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 60.93 MB, 11 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] qwen3vl compute buffer size: 56.25 MB(VRAM) on Vulkan0 (peak across 34 segments) --- ggml_runner.cpp:1019
+[V] computing condition graph completed, taking 9624 ms --- conditioner.hpp:3290
+[I] get_learned_condition completed, taking 9.62s --- image.cpp:537
+[V] model manager released params backend buffers (1962.94 MB, 320 tensors, 30 blocks, VRAM) from Vulkan0 --- model_manager.cpp:1295
+[I] generating image: 1/1 - seed 3 --- image.cpp:874
+[I] flux3 build cached graph cut plan done (taking 1 ms) --- ggml_graph_cut.cpp:1032
+[V] loading 316/359 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/diffusion/flux3-image-klein-Q8_0.gguf --- model_loader.cpp:1130
+  |##                                                |   7/316 -   0.00MB/s[K  |####                                              |  25/316 - 618.48MB/s[K  |######                                            |  36/316 - 739.25MB/s[K  |########                                          |  49/316 - 848.28MB/s[K  |##########                                        |  62/316 - 906.84MB/s[K  |#############                                     |  79/316 - 1023.58MB/s[K  |###############                                   |  91/316 - 1004.42MB/s[K  |#################                                 | 106/316 -   1.01GB/s[K  |####################                              | 121/316 -   1.02GB/s[K  |######################                            | 136/316 -   1.03GB/s[K  |########################                          | 150/316 -   1.02GB/s[K  |###########################                       | 166/316 -   1.04GB/s[K  |#############################                     | 178/316 -   1.04GB/s[K  |###############################                   | 193/316 -   1.04GB/s[K  |#################################                 | 208/316 -   1.05GB/s[K  |####################################              | 224/316 -   1.06GB/s[K  |######################################            | 238/316 -   1.05GB/s[K  |#########################################         | 254/316 -   1.06GB/s[K  |###########################################       | 267/316 -   1.07GB/s[K  |############################################      | 278/316 -   1.07GB/s[K  |###############################################   | 291/316 -   1.07GB/s[K  |################################################  | 302/316 -   1.05GB/s[K  |##################################################| 316/316 -   1.08GB/s[K
+[I] loading tensors completed, taking 4.63s (read: 4.51s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers (5136.41 MB, 316 tensors, 1 blocks, RAM) on CPU --- model_manager.cpp:490
+[V] flux3 compute buffer size: 686.25 MB(RAM) on CPU (peak across 1 segment) --- ggml_runner.cpp:1019
+  |===>                                              |  1/16 - 220.17s/it - ETA 55:02[K  |======>                                           |  2/16 - 214.28s/it - ETA 50:41[K  |=========>                                        |  3/16 - 214.62s/it - ETA 46:52[K  |============>                                     |  4/16 - 214.30s/it - ETA 43:10[K  |===============>                                  |  5/16 - 221.05s/it - ETA 39:45[K  |==================>                               |  6/16 - 215.37s/it - ETA 36:06[K  |=====================>                            |  7/16 - 214.48s/it - ETA 32:26[K  |=========================>                        |  8/16 - 214.45s/it - ETA 28:48[K  |============================>                     |  9/16 - 214.32s/it - ETA 25:11[K  |===============================>                  | 10/16 - 215.31s/it - ETA 21:35[K  |==================================>               | 11/16 - 214.24s/it - ETA 17:58[K  |=====================================>            | 12/16 - 214.42s/it - ETA 14:22[K  |========================================>         | 13/16 - 215.21s/it - ETA 10:46[K  |===========================================>      | 14/16 - 226.50s/it - ETA 07:12[K  |==============================================>   | 15/16 - 215.92s/it - ETA 03:36[K  |==================================================| 16/16 - 216.37s/it[K
+[V] model manager released params backend buffers (5136.41 MB, 316 tensors, 1 blocks, RAM) from CPU --- model_manager.cpp:1295
+[I] sampling completed, taking 3461.54s --- image.cpp:907
+[I] generating 1 latent images completed, taking 3461.54s --- image.cpp:919
+[I] decoding 1 latents --- image.cpp:562
+[V] VAE decode tile size: 256x256 pixels (16x16 latent) --- vae.hpp:347
+[V] num tiles : 9, 4  --- tiling.cpp:178
+[V] processing 36 tiles --- tiling.cpp:179
+[I] vae build cached graph cut plan done (taking 0 ms) --- ggml_graph_cut.cpp:1032
+[V] loading 140/251 tensors from /home/deck/Desktop/Desarrollos/WMF-imagenes/image-generator/modelos/vae/flux2-vae.safetensors --- model_loader.cpp:1130
+  |##                                                |   4/140 -   0.00MB/s[K  |##################################################| 140/140 - 937.06MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.14s, memcpy: 0.00s, convert: 0.02s, copy_to_backend: 0.01s) --- model_loader.cpp:1400
+[V] model manager prepared params backend buffers ( 96.72 MB, 140 tensors, 1 blocks, VRAM) on Vulkan0 --- model_manager.cpp:490
+[V] vae compute buffer size: 416.13 MB(VRAM) on Vulkan0 (peak across 1 segment) --- ggml_runner.cpp:1019
+  |=>                                                |  1/36 -   2.00s/it - ETA 01:09[K  |==>                                               |  2/36 -   1.45s/it - ETA 00:58[K  |====>                                             |  3/36 -   1.45s/it - ETA 00:53[K  |=====>                                            |  4/36 -   1.44s/it - ETA 00:50[K  |======>                                           |  5/36 -   1.45s/it - ETA 00:48[K  |========>                                         |  6/36 -   1.45s/it - ETA 00:46[K  |=========>                                        |  7/36 -   1.44s/it - ETA 00:44[K  |===========>                                      |  8/36 -   1.45s/it - ETA 00:42[K  |============>                                     |  9/36 -   1.44s/it - ETA 00:40[K  |=============>                                    | 10/36 -   1.45s/it - ETA 00:39[K  |===============>                                  | 11/36 -   1.43s/it - ETA 00:37[K  |================>                                 | 12/36 -   1.44s/it - ETA 00:35[K  |==================>                               | 13/36 -   1.44s/it - ETA 00:34[K  |===================>                              | 14/36 -   1.44s/it - ETA 00:32[K  |====================>                             | 15/36 -   1.45s/it - ETA 00:31[K  |======================>                           | 16/36 -   1.44s/it - ETA 00:29[K  |=======================>                          | 17/36 -   1.44s/it - ETA 00:28[K  |=========================>                        | 18/36 -   1.44s/it - ETA 00:26[K  |==========================>                       | 19/36 -   1.44s/it - ETA 00:25[K  |===========================>                      | 20/36 -   1.44s/it - ETA 00:23[K  |=============================>                    | 21/36 -   1.43s/it - ETA 00:22[K  |==============================>                   | 22/36 -   1.44s/it - ETA 00:20[K  |===============================>                  | 23/36 -   1.44s/it - ETA 00:19[K  |=================================>                | 24/36 -   1.44s/it - ETA 00:17[K  |==================================>               | 25/36 -   1.44s/it - ETA 00:16[K  |====================================>             | 26/36 -   1.46s/it - ETA 00:14[K  |=====================================>            | 27/36 -   1.45s/it - ETA 00:13[K  |======================================>           | 28/36 -   1.44s/it - ETA 00:11[K  |========================================>         | 29/36 -   1.44s/it - ETA 00:10[K  |=========================================>        | 30/36 -   1.44s/it - ETA 00:08[K  |===========================================>      | 31/36 -   1.45s/it - ETA 00:07[K  |============================================>     | 32/36 -   1.45s/it - ETA 00:05[K  |=============================================>    | 33/36 -   1.46s/it - ETA 00:04[K  |===============================================>  | 34/36 -   1.44s/it - ETA 00:02[K  |================================================> | 35/36 -   1.44s/it - ETA 00:01[K  |==================================================| 36/36 -   1.45s/it[K
+[V] model manager released params backend buffers ( 96.72 MB, 140 tensors, 1 blocks, VRAM) from Vulkan0 --- model_manager.cpp:1295
+[V] computing vae decode graph completed, taking 52.54s --- vae.hpp:384
+[I] latent 1 decoded, taking 52.54s --- image.cpp:628
+[I] decode_first_stage completed, taking 52.54s --- image.cpp:632
+[I] generate_image completed in 3523.74s --- image.cpp:1058
+[I] save result image 0 to '/home/deck/Desktop/Desarrollos/galivelop-image-generator/piloto/r3/portal/intentos/estilo-1280x640-p16-flux3-s3.png' (success) --- main.cpp:496
+[I] 1/1 images saved --- main.cpp:572

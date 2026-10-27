@@ -1,0 +1,14 @@
+portal og-s3 salida=0 total=182s min_libre=7935MB sampling completed, taking 146.36s decode_first_stage completed, taking 28.54s
+portal og-s4 salida=0 total=180s min_libre=7965MB sampling completed, taking 146.01s decode_first_stage completed, taking 28.53s
+toveriai og-s3 salida=0 total=181s min_libre=8157MB sampling completed, taking 146.41s decode_first_stage completed, taking 28.56s
+toveriai og-s4 salida=0 total=180s min_libre=8062MB sampling completed, taking 146.04s decode_first_stage completed, taking 28.55s
+galivelop-workflow og-s3 salida=0 total=181s min_libre=8011MB sampling completed, taking 146.07s decode_first_stage completed, taking 28.54s
+galivelop-workflow og-s4 salida=0 total=181s min_libre=8112MB sampling completed, taking 146.60s decode_first_stage completed, taking 29.15s
+tarkor og-s3 salida=0 total=180s min_libre=7305MB sampling completed, taking 146.23s decode_first_stage completed, taking 28.56s
+tarkor og-s4 salida=0 total=182s min_libre=7956MB sampling completed, taking 146.18s decode_first_stage completed, taking 28.85s
+galivelop-image-generator og-s3 salida=0 total=181s min_libre=8133MB sampling completed, taking 146.95s decode_first_stage completed, taking 28.54s
+galivelop-image-generator og-s4 salida=0 total=181s min_libre=8008MB sampling completed, taking 146.08s decode_first_stage completed, taking 28.54s
+galivelop-voice-generator og-s3 salida=0 total=180s min_libre=8001MB sampling completed, taking 146.08s decode_first_stage completed, taking 28.54s
+galivelop-voice-generator og-s4 salida=0 total=182s min_libre=8095MB sampling completed, taking 146.75s decode_first_stage completed, taking 28.59s
+galivelop-developer og-s3 salida=0 total=180s min_libre=8015MB sampling completed, taking 146.15s decode_first_stage completed, taking 28.55s
+galivelop-developer og-s4 salida=0 total=180s min_libre=8206MB sampling completed, taking 146.57s decode_first_stage completed, taking 28.55s

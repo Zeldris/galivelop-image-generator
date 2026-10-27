@@ -1,0 +1,30 @@
+{
+ "imagen": "piloto/r4/toveriai/intentos/og.png",
+ "YAVG": 186.52,
+ "SATAVG": 10.18,
+ "contraste": {
+  "zona": [
+   38,
+   38,
+   1124,
+   264
+  ],
+  "texto": "#1a1a1a",
+  "media": 15.5,
+  "p10_oscuro": 15.0,
+  "p90_claro": 16.01,
+  "peor": 15.0
+ },
+ "paleta": {
+  "colores": [
+   "#2d6a4f",
+   "#9b2335",
+   "#b5832a",
+   "#f7f5f2"
+  ],
+  "umbral_deltaE": 15.0,
+  "porcentaje": 66.95
+ },
+ "pieza": "og",
+ "fondo": "piloto/r3/toveriai/intentos/estilo-1280x640-p8-s3.png"
+}

@@ -1,0 +1,30 @@
+{
+ "imagen": "piloto/r5/galivelop-image-generator/intentos/cabecera.png",
+ "YAVG": 46.33,
+ "SATAVG": 11.78,
+ "contraste": {
+  "zona": [
+   30,
+   30,
+   795,
+   440
+  ],
+  "texto": "#eaf4fa",
+  "media": 15.49,
+  "p10_oscuro": 15.67,
+  "p90_claro": 15.33,
+  "peor": 15.33
+ },
+ "paleta": {
+  "colores": [
+   "#06121c",
+   "#8b5cf6",
+   "#a78bfa",
+   "#ffffff"
+  ],
+  "umbral_deltaE": 15.0,
+  "porcentaje": 75.16
+ },
+ "pieza": "cabecera",
+ "fondo": "piloto/r5-fondos/galivelop-image-generator/intentos/r5-cabecera-1536x512-p6-s3.png"
+}

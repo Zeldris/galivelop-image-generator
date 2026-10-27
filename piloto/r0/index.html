@@ -1,0 +1,47 @@
+<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Piloto r0</title><style>
+:root { color-scheme: dark; --bg:#111318; --panel:#1b1e25; --texto:#e6e6e6; --tenue:#9aa0aa; --si:#2e9e5b; --no:#c0392b; }
+body { margin:0; padding:16px; background:var(--bg); color:var(--texto); font:15px/1.5 system-ui, sans-serif; }
+h1 { margin:0 0 4px; } a { color:#7cc4ff; }
+section { background:var(--panel); border-radius:10px; padding:14px; margin:18px 0; }
+.fila { display:flex; flex-wrap:wrap; gap:12px; }
+figure { margin:0; flex:1 1 420px; max-width:640px; }
+figure img { width:100%; border-radius:6px; display:block; cursor:zoom-in; }
+figcaption { color:var(--tenue); font-size:13px; margin-top:4px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+details { color:var(--tenue); font-size:13px; margin-bottom:8px; } details p { white-space:pre-wrap; color:var(--texto); }
+button { background:#2a2f3a; color:var(--texto); border:1px solid #3a404c; border-radius:6px; padding:2px 10px; cursor:pointer; }
+button.si.on { background:var(--si); } button.no.on { background:var(--no); }
+#aviso { background:#5a3a10; padding:8px 12px; border-radius:6px; }
+textarea { width:100%; height:9em; background:var(--panel); color:var(--texto); border:1px solid #3a404c; border-radius:6px; }
+</style><body data-ronda="r0"><p><a href="../index.html">← rondas</a></p><h1>Ronda r0</h1><p>Pincha una imagen para verla a tamaño real. Marca sí/no y pega el veredicto en el chat.</p><section><h2>portal</h2><details><summary>Prompt</summary><p>Wide abstract banner on a deep midnight navy background. On the right half, a soft radial glow of clear sky-blue light blooms upward, like daylight seen through calm sea water and polished glass, with gentle rippling caustic patterns. A faint grid of tiny evenly spaced dots covers the whole background and fades softly into the darkness. The left half of the frame is a calm, smooth, dark navy surface, nearly empty and softly out of focus. Inside the sky-blue glow float three small soft points of light, one warm orange, one deep forest green and one royal blue, like distant lanterns. Style: minimal elegant digital art, smooth gradients, soft volumetric light, crisp and clean. Colours: deep midnight navy, sky blue, cyan and white highlights. Mood: calm, honest, quietly ambitious. The image is completely textless.
+</p></details><div class="fila"><figure data-pieza="portal s3"><a href="portal/intentos/og-s3.png" target="_blank"><img src="portal/intentos/og-s3.png" alt="portal s3" loading="lazy"></a><figcaption><b>og-s3</b> muestreo 150 s · decodificar 29 s · total 184s · mín. libre 8141MB · salida 0 <button class="si">sí</button><button class="no">no</button></figcaption></figure></div></section><section><h2>Veredicto</h2><textarea id="veredicto" readonly></textarea><p><button id="copiar">Copiar veredicto</button></p></section><script>
+const R = document.body.dataset.ronda;
+const clave = id => 'piloto:' + R + ':' + id;
+function lee(id) { try { return localStorage.getItem(clave(id)) || ''; } catch (e) { return ''; } }
+function pinta() {
+  const lineas = [];
+  document.querySelectorAll('[data-pieza]').forEach(f => {
+    const v = lee(f.dataset.pieza);
+    f.querySelector('.si').classList.toggle('on', v === 'sí');
+    f.querySelector('.no').classList.toggle('on', v === 'no');
+    if (v) lineas.push(f.dataset.pieza + ' ' + v);
+  });
+  document.getElementById('veredicto').value = R + ': ' + (lineas.join(', ') || '(sin marcar)');
+}
+document.querySelectorAll('[data-pieza]').forEach(f => f.querySelectorAll('button').forEach(b => b.onclick = () => {
+  const v = b.classList.contains('si') ? 'sí' : 'no';
+  try { localStorage.setItem(clave(f.dataset.pieza), lee(f.dataset.pieza) === v ? '' : v); } catch (e) {}
+  pinta();
+}));
+document.getElementById('copiar').onclick = () => {
+  const t = document.getElementById('veredicto'); t.select(); navigator.clipboard?.writeText(t.value);
+};
+pinta();
+// Abierta como archivo desde un flatpak, el portal da solo el HTML y no las imágenes: avisa una vez.
+addEventListener('error', e => {
+  if (e.target.tagName !== 'IMG' || location.protocol !== 'file:' || document.getElementById('aviso')) return;
+  const p = document.createElement('p'); p.id = 'aviso';
+  p.textContent = 'Las imágenes no cargan abiertas como archivo (pasa con VS Code o el navegador en flatpak). '
+    + 'Ábrelas con: python3 examples/pilot/ver.py';
+  document.body.prepend(p);
+}, true);
+</script></body></html>

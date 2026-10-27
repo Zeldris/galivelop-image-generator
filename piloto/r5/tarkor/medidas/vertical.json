@@ -1,0 +1,31 @@
+{
+ "imagen": "piloto/r5/tarkor/intentos/vertical.png",
+ "YAVG": 173.99,
+ "SATAVG": 6.54,
+ "contraste": {
+  "zona": [
+   65,
+   702,
+   950,
+   583
+  ],
+  "texto": "#221c16",
+  "media": 7.22,
+  "p10_oscuro": 4.98,
+  "p90_claro": 9.56,
+  "peor": 4.98
+ },
+ "paleta": {
+  "colores": [
+   "#221c16",
+   "#332415",
+   "#8a9aa8",
+   "#e0703a",
+   "#f1e4d0"
+  ],
+  "umbral_deltaE": 15.0,
+  "porcentaje": 69.21
+ },
+ "pieza": "vertical",
+ "fondo": "piloto/r5-fondos/tarkor/intentos/r5-vertical-896x1152-p6-s3.png"
+}

@@ -1,0 +1,30 @@
+{
+ "imagen": "piloto/r5/toveriai/intentos/cabecera.png",
+ "YAVG": 196.4,
+ "SATAVG": 7.21,
+ "contraste": {
+  "zona": [
+   30,
+   30,
+   795,
+   440
+  ],
+  "texto": "#1a1a1a",
+  "media": 15.05,
+  "p10_oscuro": 14.83,
+  "p90_claro": 15.23,
+  "peor": 14.83
+ },
+ "paleta": {
+  "colores": [
+   "#2d6a4f",
+   "#9b2335",
+   "#b5832a",
+   "#f7f5f2"
+  ],
+  "umbral_deltaE": 15.0,
+  "porcentaje": 76.82
+ },
+ "pieza": "cabecera",
+ "fondo": "piloto/r5-fondos/toveriai/intentos/r5-cabecera-1536x512-p6-s3.png"
+}

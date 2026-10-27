@@ -1,0 +1,30 @@
+{
+ "imagen": "piloto/r5/toveriai/intentos/cuadrado.png",
+ "YAVG": 188.0,
+ "SATAVG": 8.21,
+ "contraste": {
+  "zona": [
+   65,
+   65,
+   950,
+   453
+  ],
+  "texto": "#1a1a1a",
+  "media": 15.92,
+  "p10_oscuro": 15.6,
+  "p90_claro": 16.23,
+  "peor": 15.6
+ },
+ "paleta": {
+  "colores": [
+   "#2d6a4f",
+   "#9b2335",
+   "#b5832a",
+   "#f7f5f2"
+  ],
+  "umbral_deltaE": 15.0,
+  "porcentaje": 67.13
+ },
+ "pieza": "cuadrado",
+ "fondo": "piloto/r5-fondos/toveriai/intentos/r5-cuadrado-1024x1024-p6-s3.png"
+}

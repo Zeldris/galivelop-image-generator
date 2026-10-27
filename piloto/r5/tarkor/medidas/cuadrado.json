@@ -1,0 +1,31 @@
+{
+ "imagen": "piloto/r5/tarkor/intentos/cuadrado.png",
+ "YAVG": 177.0,
+ "SATAVG": 5.31,
+ "contraste": {
+  "zona": [
+   65,
+   562,
+   950,
+   453
+  ],
+  "texto": "#221c16",
+  "media": 6.28,
+  "p10_oscuro": 5.18,
+  "p90_claro": 7.6,
+  "peor": 5.18
+ },
+ "paleta": {
+  "colores": [
+   "#221c16",
+   "#332415",
+   "#8a9aa8",
+   "#e0703a",
+   "#f1e4d0"
+  ],
+  "umbral_deltaE": 15.0,
+  "porcentaje": 84.35
+ },
+ "pieza": "cuadrado",
+ "fondo": "piloto/r5-fondos/tarkor/intentos/r5-cuadrado-1024x1024-p6-s3.png"
+}

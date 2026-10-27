@@ -1,0 +1,30 @@
+{
+ "imagen": "piloto/r5/galivelop-image-generator/intentos/vertical.png",
+ "YAVG": 50.25,
+ "SATAVG": 13.62,
+ "contraste": {
+  "zona": [
+   65,
+   65,
+   950,
+   583
+  ],
+  "texto": "#eaf4fa",
+  "media": 16.44,
+  "p10_oscuro": 16.65,
+  "p90_claro": 16.28,
+  "peor": 16.28
+ },
+ "paleta": {
+  "colores": [
+   "#06121c",
+   "#8b5cf6",
+   "#a78bfa",
+   "#ffffff"
+  ],
+  "umbral_deltaE": 15.0,
+  "porcentaje": 79.11
+ },
+ "pieza": "vertical",
+ "fondo": "piloto/r5-fondos/galivelop-image-generator/intentos/r5-vertical-896x1152-p6-s3.png"
+}

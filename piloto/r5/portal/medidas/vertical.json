@@ -1,0 +1,33 @@
+{
+ "imagen": "piloto/r5/portal/intentos/vertical.png",
+ "YAVG": 62.06,
+ "SATAVG": 16.44,
+ "contraste": {
+  "zona": [
+   65,
+   65,
+   950,
+   583
+  ],
+  "texto": "#eaf4fa",
+  "media": 14.54,
+  "p10_oscuro": 16.37,
+  "p90_claro": 10.98,
+  "peor": 10.98
+ },
+ "paleta": {
+  "colores": [
+   "#06121c",
+   "#1aa6df",
+   "#2f7a55",
+   "#3d6fd9",
+   "#5cc8f2",
+   "#e0703a",
+   "#ffffff"
+  ],
+  "umbral_deltaE": 15.0,
+  "porcentaje": 76.43
+ },
+ "pieza": "vertical",
+ "fondo": "piloto/r5-fondos/portal/intentos/r5-vertical-896x1152-p6-s3.png"
+}

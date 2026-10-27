@@ -1,0 +1,33 @@
+{
+ "imagen": "piloto/r5/portal/intentos/cuadrado.png",
+ "YAVG": 53.36,
+ "SATAVG": 14.95,
+ "contraste": {
+  "zona": [
+   65,
+   65,
+   950,
+   453
+  ],
+  "texto": "#eaf4fa",
+  "media": 15.07,
+  "p10_oscuro": 17.32,
+  "p90_claro": 14.17,
+  "peor": 14.17
+ },
+ "paleta": {
+  "colores": [
+   "#06121c",
+   "#1aa6df",
+   "#2f7a55",
+   "#3d6fd9",
+   "#5cc8f2",
+   "#e0703a",
+   "#ffffff"
+  ],
+  "umbral_deltaE": 15.0,
+  "porcentaje": 82.02
+ },
+ "pieza": "cuadrado",
+ "fondo": "piloto/r5-fondos/portal/intentos/r5-cuadrado-1024x1024-p6-s3.png"
+}

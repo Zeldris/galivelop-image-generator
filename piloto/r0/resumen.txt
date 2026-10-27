@@ -1,0 +1,1 @@
+portal og-s3 salida=0 total=184s min_libre=8141MB sampling completed, taking 149.61s decode_first_stage completed, taking 28.69s

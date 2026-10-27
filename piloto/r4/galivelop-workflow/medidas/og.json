@@ -1,0 +1,31 @@
+{
+ "imagen": "piloto/r4/galivelop-workflow/intentos/og.png",
+ "YAVG": 43.02,
+ "SATAVG": 9.27,
+ "contraste": {
+  "zona": [
+   38,
+   38,
+   622,
+   554
+  ],
+  "texto": "#eef6fb",
+  "media": 16.64,
+  "p10_oscuro": 17.34,
+  "p90_claro": 15.86,
+  "peor": 15.86
+ },
+ "paleta": {
+  "colores": [
+   "#0d1b2a",
+   "#38b6e8",
+   "#4cc38a",
+   "#eef6fb",
+   "#f2b34a"
+  ],
+  "umbral_deltaE": 15.0,
+  "porcentaje": 93.38
+ },
+ "pieza": "og",
+ "fondo": "piloto/r3/galivelop-workflow/intentos/estilo-1280x640-p8-s3.png"
+}

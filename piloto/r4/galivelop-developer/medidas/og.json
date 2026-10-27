@@ -1,0 +1,30 @@
+{
+ "imagen": "piloto/r4/galivelop-developer/intentos/og.png",
+ "YAVG": 36.94,
+ "SATAVG": 10.43,
+ "contraste": {
+  "zona": [
+   38,
+   328,
+   1124,
+   264
+  ],
+  "texto": "#eaf4fa",
+  "media": 14.56,
+  "p10_oscuro": 17.45,
+  "p90_claro": 11.82,
+  "peor": 11.82
+ },
+ "paleta": {
+  "colores": [
+   "#06121c",
+   "#2bb3a3",
+   "#9fe3da",
+   "#eaf4fa"
+  ],
+  "umbral_deltaE": 15.0,
+  "porcentaje": 85.7
+ },
+ "pieza": "og",
+ "fondo": "piloto/r3/galivelop-developer/intentos/estilo-1280x640-p8-s3.png"
+}

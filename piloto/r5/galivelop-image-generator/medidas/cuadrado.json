@@ -1,0 +1,30 @@
+{
+ "imagen": "piloto/r5/galivelop-image-generator/intentos/cuadrado.png",
+ "YAVG": 49.87,
+ "SATAVG": 13.74,
+ "contraste": {
+  "zona": [
+   65,
+   65,
+   950,
+   453
+  ],
+  "texto": "#eaf4fa",
+  "media": 16.48,
+  "p10_oscuro": 17.24,
+  "p90_claro": 15.42,
+  "peor": 15.42
+ },
+ "paleta": {
+  "colores": [
+   "#06121c",
+   "#8b5cf6",
+   "#a78bfa",
+   "#ffffff"
+  ],
+  "umbral_deltaE": 15.0,
+  "porcentaje": 74.87
+ },
+ "pieza": "cuadrado",
+ "fondo": "piloto/r5-fondos/galivelop-image-generator/intentos/r5-cuadrado-1024x1024-p6-s3.png"
+}

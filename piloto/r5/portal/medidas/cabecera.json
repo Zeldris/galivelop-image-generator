@@ -1,0 +1,33 @@
+{
+ "imagen": "piloto/r5/portal/intentos/cabecera.png",
+ "YAVG": 57.08,
+ "SATAVG": 13.98,
+ "contraste": {
+  "zona": [
+   30,
+   30,
+   795,
+   440
+  ],
+  "texto": "#eaf4fa",
+  "media": 15.69,
+  "p10_oscuro": 16.04,
+  "p90_claro": 15.29,
+  "peor": 15.29
+ },
+ "paleta": {
+  "colores": [
+   "#06121c",
+   "#1aa6df",
+   "#2f7a55",
+   "#3d6fd9",
+   "#5cc8f2",
+   "#e0703a",
+   "#ffffff"
+  ],
+  "umbral_deltaE": 15.0,
+  "porcentaje": 70.26
+ },
+ "pieza": "cabecera",
+ "fondo": "piloto/r5-fondos/portal/intentos/r5-cabecera-1536x512-p6-s3.png"
+}

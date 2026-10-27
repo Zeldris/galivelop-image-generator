@@ -1,0 +1,31 @@
+{
+ "imagen": "piloto/r4/tarkor/intentos/og.png",
+ "YAVG": 168.91,
+ "SATAVG": 7.79,
+ "contraste": {
+  "zona": [
+   38,
+   38,
+   622,
+   554
+  ],
+  "texto": "#221c16",
+  "media": 11.26,
+  "p10_oscuro": 6.97,
+  "p90_claro": 13.51,
+  "peor": 6.97
+ },
+ "paleta": {
+  "colores": [
+   "#221c16",
+   "#332415",
+   "#8a9aa8",
+   "#e0703a",
+   "#f1e4d0"
+  ],
+  "umbral_deltaE": 15.0,
+  "porcentaje": 72.32
+ },
+ "pieza": "og",
+ "fondo": "piloto/r3/tarkor/intentos/estilo-1280x640-p8-s3.png"
+}

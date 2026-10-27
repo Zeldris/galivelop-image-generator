@@ -1,0 +1,18 @@
+portal estilo-640x320-p4-s3 salida=0 total=51s min_libre=7430MB sampling completed, taking 39.55s decode_first_stage completed, taking 6.61s
+portal estilo-1280x640-p8-s3 salida=0 total=230s min_libre=7094MB sampling completed, taking 195.50s decode_first_stage completed, taking 28.58s
+portal estilo-640x320-p8-flux3-s3 salida=1 total=12s min_libre=7557MB  
+portal estilo-1280x640-p16-flux3-s3 salida=1 total=13s min_libre=7563MB  
+toveriai estilo-640x320-p4-s3 salida=0 total=51s min_libre=7299MB sampling completed, taking 39.61s decode_first_stage completed, taking 6.57s
+toveriai estilo-1280x640-p8-s3 salida=0 total=230s min_libre=7284MB sampling completed, taking 195.59s decode_first_stage completed, taking 28.60s
+galivelop-workflow estilo-640x320-p4-s3 salida=0 total=52s min_libre=7413MB sampling completed, taking 39.38s decode_first_stage completed, taking 6.56s
+galivelop-workflow estilo-1280x640-p8-s3 salida=0 total=228s min_libre=7538MB sampling completed, taking 194.32s decode_first_stage completed, taking 28.53s
+tarkor estilo-640x320-p4-s3 salida=0 total=51s min_libre=7571MB sampling completed, taking 39.43s decode_first_stage completed, taking 6.56s
+tarkor estilo-1280x640-p8-s3 salida=0 total=229s min_libre=7655MB sampling completed, taking 194.42s decode_first_stage completed, taking 28.70s
+galivelop-image-generator estilo-640x320-p4-s3 salida=0 total=51s min_libre=7494MB sampling completed, taking 39.32s decode_first_stage completed, taking 6.56s
+galivelop-image-generator estilo-1280x640-p8-s3 salida=0 total=228s min_libre=7580MB sampling completed, taking 194.35s decode_first_stage completed, taking 28.53s
+galivelop-voice-generator estilo-640x320-p4-s3 salida=0 total=51s min_libre=7528MB sampling completed, taking 39.46s decode_first_stage completed, taking 6.56s
+galivelop-voice-generator estilo-1280x640-p8-s3 salida=0 total=229s min_libre=7562MB sampling completed, taking 194.70s decode_first_stage completed, taking 28.54s
+galivelop-developer estilo-640x320-p4-s3 salida=0 total=51s min_libre=7435MB sampling completed, taking 39.34s decode_first_stage completed, taking 6.55s
+galivelop-developer estilo-1280x640-p8-s3 salida=0 total=228s min_libre=7585MB sampling completed, taking 194.30s decode_first_stage completed, taking 28.52s
+portal estilo-640x320-p8-flux3-s3 salida=0 total=544s min_libre=5115MB sampling completed, taking 520.01s decode_first_stage completed, taking 12.16s
+portal estilo-1280x640-p16-flux3-s3 salida=0 total=21875s min_libre=3133MB sampling completed, taking 3461.54s decode_first_stage completed, taking 52.54s
