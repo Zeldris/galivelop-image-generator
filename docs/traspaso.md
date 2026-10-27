@@ -37,6 +37,9 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
   - F2: `width`/`height` sin `multipleOf` (lo que exija `sd-cli` por modelo); el validador aún no lo soporta.
   - `propertyNames` solo pasa el `pattern` del primer error: si falla por otra cosa, el mensaje sale vacío.
 - **Leves de la revisión de `941efa9` (componer/medir, F2.0):** pruebas de Lab/umbral y del recorte cover con píxeles; `fuentes.sh` sin test, `mktemp` fuera del destino y descarga de `main` sin fijar; `HEX` con `$` en vez de `fullmatch`; viewBox `1.2.3` o `0 0 0 0` da traza; `esc` no quita caracteres de control; salida `.svg` machaca el SVG de depuración; sin `timeout` en subprocesos; sin `piloto/fuentes/` cae a otra fuente sin avisar; `ffprobe` sin `which`; signalstats es BT.601 rango limitado (calibrar igual en F2.9).
+- **Marca de Tarkor:** el estilo sale desaturado en todos los formatos (SATAVG 5-7 frente al 15-30 del juego;
+  `r5-og-bajo` arregla la luz, YAVG 66, pero no el color): otra vuelta del prompt con la persona
+  (`docs/registros/contenido/r5-piezas.md`).
 - **Leves de la revisión de `3dc054d` (piezas/componer, F2.0):** avatar rasterizado con `-w` y `-h` deforma un logo no
   cuadrado; `'640x320' in name` frágil (un `2640x320`); sin tests de `main()` con piezas, `paleta_de`, avatar,
   `pagina.medidas` ni `ronda.sh r5`; la prueba del lockup no cubre la rama en que manda el ancho de la columna.
