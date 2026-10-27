@@ -96,7 +96,9 @@ def _clean_pending(entry: dict) -> None:
         for found in found_all:
             with contextlib.suppress(OSError):
                 found.unlink()
-        for leftover in folder.glob(".compose-*"):  # a composition killed half way (only a dead worker can leave one)
+        # a composition of this entry killed half way (only a dead worker can leave one); the folder of another
+        # entry or of a `gimg compose` in progress has another prefix and stays
+        for leftover in folder.glob(".compose-q%d-*" % entry["id"]):
             shutil.rmtree(leftover, ignore_errors=True)
     except Exception:  # a bad entry must not stop the recovery
         pass

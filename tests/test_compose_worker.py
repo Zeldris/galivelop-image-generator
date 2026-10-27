@@ -98,14 +98,27 @@ class NothingToComposeTests(ComposeWorkerBase):
             self.assertTrue({"app.image.compose", "app.image.compose_error"}.isdisjoint(line))
         self.assertEqual([e["state"] for e in queue.list_entries()], ["done", "done"])
 
-    def test_what_the_engine_left_that_is_not_a_png_is_kept_as_before_not_composed(self):
-        self.submit("og")
-        self.enqueue("og")
+    def test_what_the_engine_left_that_is_not_a_png_is_kept_as_before_when_there_is_nothing_to_compose(self):
+        self.submit("plain")
+        self.enqueue("plain")
         with mock.patch.object(compose, "render", side_effect=AssertionError("render was called")):
             self.assertEqual(self.run_worker(engine=GarbageEngine())[0], 1)
-        self.assertEqual(self.names("og"), ["q1.png"])
-        self.assertTrue({"raw", "compose", "composeError"}.isdisjoint(self.attempt("og")))
+        self.assertEqual(self.names("plain"), ["q1.png"])
+        self.assertTrue({"raw", "compose", "composeError"}.isdisjoint(self.attempt("plain")))
         self.assertEqual(queue.get(1)["state"], "done")
+
+    def test_what_the_engine_left_that_is_not_a_png_is_still_composed_and_fails_as_png_invalid(self):
+        for profile in ("og", "scaled"):  # a compose, and only a target
+            self.submit(profile)
+            self.enqueue(profile)
+        _, err = self.run_worker(engine=GarbageEngine())
+        for index, profile in enumerate(("og", "scaled")):
+            att = self.attempt(profile)
+            self.assertEqual(att["composeError"]["code"], "png.invalid", att)
+            self.assertEqual((att["image"], att["raw"]), ("attempts/q%d.raw.png" % (index + 1),) * 2)
+            self.assertEqual(self.code(orders.choose, "proj", "a", profile, 1), "order.choose_uncomposed")
+            self.assertEqual(queue.get(index + 1)["state"], "done")
+        self.assertNotIn("worker.compose_failed", err)
 
 
 class ComposeFailureTests(ComposeWorkerBase):
@@ -185,59 +198,161 @@ class ComposeFailureTests(ComposeWorkerBase):
 
 
 class AbortTests(ComposeWorkerBase):
-    def test_add_attempt_failing_after_render_removes_both_images(self):
+    def test_add_attempt_failing_removes_the_raw_image_and_nothing_is_composed(self):
         self.submit("og")
         self.enqueue("og")
-
-        seen = []
-
-        def fake_render(root, cfg, raw, out, text, profile=None):
-            Path(out).write_bytes(Path(raw).read_bytes())
-            seen.append((Path(raw).name, Path(out).name))
-            return {"fit": "cover", "targetWidth": 1200, "targetHeight": 630, "text": {}}
-
-        with mock.patch.object(compose, "render", fake_render), \
+        with mock.patch.object(compose, "render", side_effect=AssertionError("render was called")), \
                 mock.patch.object(orders, "add_attempt", side_effect=GimgError("order.corrupt", path="p")):
             self.run_worker()
-        self.assertEqual(seen, [("q1.raw.png", "q1.png")])  # both images existed when add_attempt failed
         entry = queue.get(1)
         self.assertEqual((entry["state"], entry["error"]["code"]), ("failed", "order.corrupt"))
         self.assertEqual(self.names("og"), [])
         self.assertEqual(orders.get("proj", "a", "og")["attempts"], [])
 
-    def test_a_sigterm_half_way_through_composing_leaves_no_images_and_the_entry_to_be_retried(self):
+    def test_a_sigterm_half_way_through_composing_keeps_the_raw_image_and_the_attempt(self):
         self.submit("og")
         self.enqueue("og")
 
-        def killed(root, cfg, raw, out, text, profile=None):
-            Path(out).write_bytes(b"half")
+        def killed(root, cfg, raw, out, text, profile=None, prefix=None):
             raise SystemExit(143)  # what `_terminate` raises
 
         with mock.patch.object(compose, "render", killed):
             with self.assertRaises(SystemExit):
                 self.run_worker()
         self.assertEqual(queue.get(1)["state"], "queued")  # it was running; the next look at the queue recovers it
-        self.assertEqual(self.names("og"), [])
-        self.assertEqual(orders.get("proj", "a", "og")["attempts"], [])
+        self.assertEqual(self.names("og"), ["q1.raw.png"])
+        att = self.attempt("og")
+        self.assertEqual((att["raw"], att["image"], att["queueEntry"]), ("attempts/q1.raw.png",) * 2 + (1,))
+        self.assertEqual(att["composeError"], {"code": "compose.pending", "params": {}})
+        self.assertEqual(self.code(orders.choose, "proj", "a", "og", 1), "order.choose_uncomposed")
 
-    def test_recovery_removes_a_composition_folder_a_killed_worker_left(self):
+    def test_the_next_worker_composes_the_raw_image_of_a_killed_composition_without_generating_again(self):
+        self.submit("og", text={"title": "Hi"})
+        self.enqueue("og")
+
+        def killed(root, cfg, raw, out, text, profile=None, prefix=None):
+            raise SystemExit(143)
+
+        with mock.patch.object(compose, "render", killed):
+            with self.assertRaises(SystemExit):
+                self.run_worker()
+        raw_bytes = (self.folder("og") / "q1.raw.png").read_bytes()
+        seen = []
+        info = {"fit": "cover", "targetWidth": 1200, "targetHeight": 630, "text": {"title": "Hi"}}
+
+        def render(root, cfg, raw, out, text, profile=None, prefix=None):
+            seen.append((Path(raw).name, Path(out).name, text, prefix))
+            Path(out).write_bytes(Path(raw).read_bytes())
+            return info
+
+        with mock.patch.object(compose, "render", render), \
+                mock.patch.object(engine.FakeEngine, "generate", side_effect=AssertionError("generated again")):
+            self.assertEqual(self.run_worker()[0], 1)
+        self.assertEqual(seen, [("q1.raw.png", "q1.png", {"title": "Hi"}, ".compose-q1-")])
+        att = self.attempt("og")
+        self.assertEqual((att["image"], att["compose"]), ("attempts/q1.png", info))
+        self.assertNotIn("composeError", att)
+        self.assertEqual(len(orders.get("proj", "a", "og")["attempts"]), 1)
+        self.assertEqual((self.folder("og") / "q1.raw.png").read_bytes(), raw_bytes)
+        self.assertEqual(queue.get(1)["state"], "done")
+        self.assertEqual(queue.get(1)["attemptId"], 1)
+
+    def test_a_pending_attempt_that_fails_again_records_the_real_error(self):
         self.submit("og")
+        self.enqueue("og")
+        with mock.patch.object(compose, "render", side_effect=SystemExit(143)):
+            with self.assertRaises(SystemExit):
+                self.run_worker()
+        with mock.patch.dict(os.environ, {"PATH": ""}):
+            self.run_worker()
+        self.assertEqual(self.attempt("og")["composeError"],
+                         {"code": "compose.tool_missing", "params": {"tool": "rsvg-convert"}})
+
+    def test_an_unexpected_exception_in_the_render_keeps_the_generation_and_marks_the_entry_done(self):
+        self.submit("og")
+        self.enqueue("og")
+        with mock.patch.object(compose, "render", side_effect=ValueError("x" * 400)):
+            handled, err = self.run_worker()
+        self.assertEqual(handled, 1)
+        entry = queue.get(1)
+        self.assertEqual((entry["state"], entry["error"], entry["attemptId"]), ("done", None, 1))
+        att = self.attempt("og")
+        error = att["composeError"]
+        self.assertEqual(error["code"], "compose.unexpected")
+        self.assertEqual(error["params"]["reason"], ("ValueError: " + "x" * 400)[:300])
+        self.assertEqual((att["image"], att["raw"]), ("attempts/q1.raw.png",) * 2)
+        self.assertEqual(self.names("og"), ["q1.raw.png"])
+        self.assertIn("ValueError", err)
+        (line,) = self.lines()
+        self.assertEqual(line["app.image.compose_error"], "compose.unexpected")
+        for lang in ("es", "en"):
+            for code in ("compose.unexpected", "compose.pending"):
+                self.assertNotIn("error.", GimgError(code, reason="r").message(lang))
+
+    def test_a_closed_stderr_does_not_fail_the_entry_of_a_failed_composition(self):
+        self.submit("og")
+        self.enqueue("og")
+        with mock.patch.object(compose, "render", side_effect=GimgError("compose.tool_failed", tool="x", reason="y")), \
+                mock.patch.object(worker.i18n, "t", side_effect=OSError("closed")):
+            self.run_worker()
+        entry = queue.get(1)
+        self.assertEqual((entry["state"], entry["error"]), ("done", None))
+        self.assertEqual(self.attempt("og")["composeError"]["code"], "compose.tool_failed")
+
+    def test_recovery_removes_only_the_composition_folder_of_its_own_entry(self):
+        self.submit("og")
+        self.enqueue("og")
         self.enqueue("og")
         queue.claim()
         folder = self.folder("og")
         folder.mkdir(parents=True)
-        stale = folder / ".compose-abc123"
-        stale.mkdir()
-        (stale / "layer.png").write_bytes(b"x")
+        mine, other, manual = (folder / name for name in (".compose-q1-abc123", ".compose-q12-abc", ".compose-abc123"))
+        for stale in (mine, other, manual):  # the last two: another entry, and `gimg compose` (E3) in progress
+            stale.mkdir()
+            (stale / "layer.png").write_bytes(b"x")
         queue.recover_orphans()
-        self.assertFalse(stale.exists())
+        self.assertEqual((mine.exists(), other.exists(), manual.exists()), (False, True, True))
+
+    def test_the_worker_asks_render_for_a_temporary_folder_of_its_own_entry(self):
+        self.submit("og")
+        self.enqueue("og")
+        prefixes = []
+
+        def render(root, cfg, raw, out, text, profile=None, prefix=None):
+            prefixes.append(prefix)
+            raise GimgError("compose.tool_failed", tool="ffmpeg", reason="x")
+
+        with mock.patch.object(compose, "render", render):
+            self.run_worker()
+        self.assertEqual(prefixes, [".compose-q1-"])
+
+    def test_render_makes_its_temporary_folder_with_the_prefix_it_is_given(self):
+        raw, out = self.folder("og") / "r.raw.png", self.folder("og") / "r.png"
+        raw.parent.mkdir(parents=True)
+        raw.write_bytes(b"x")
+        seen = []
+        real = compose.tempfile.TemporaryDirectory
+
+        def spy(*args, **kw):
+            seen.append(kw.get("prefix"))
+            return real(*args, **kw)
+
+        cfg = dict(BASE, targetWidth=1200, targetHeight=630)
+        with mock.patch.object(compose.png, "size", return_value=(1280, 640)), \
+                mock.patch.object(compose.tempfile, "TemporaryDirectory", spy), \
+                mock.patch.dict(os.environ, {"PATH": ""}):
+            for prefix in (".compose-q7-", None):
+                kw = {} if prefix is None else {"prefix": prefix}
+                with self.assertRaises(GimgError):
+                    compose.render(self.root, cfg, raw, out, {}, "og", **kw)
+        self.assertEqual(seen, [".compose-q7-", ".compose-"])
 
     def test_the_worker_composes_the_profile_as_it_is_now_not_as_it_was_when_queued(self):
         self.submit("og")
         self.enqueue("og")
         seen = []
 
-        def fake_render(root, cfg, raw, out, text, profile=None):
+        def fake_render(root, cfg, raw, out, text, profile=None, prefix=None):
             seen.append(cfg["targetWidth"])
             raise GimgError("compose.tool_failed", tool="ffmpeg", reason="x")
 
@@ -258,7 +373,7 @@ class TextTests(ComposeWorkerBase):
     def capture(self):
         seen = []
 
-        def fake_render(root, cfg, raw, out, text, profile=None):
+        def fake_render(root, cfg, raw, out, text, profile=None, prefix=None):
             seen.append((Path(root), text, profile))
             raise GimgError("compose.tool_failed", tool="ffmpeg", reason="stop")
 

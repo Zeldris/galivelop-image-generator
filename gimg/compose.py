@@ -33,6 +33,7 @@ from .errors import GimgError
 TIMEOUT_S = 120
 MAX_SVG_BYTES = 5_000_000
 FITS = ("cover", "contain")
+COMPOSE_TMP_PREFIX = ".compose-"
 
 _HOLE = re.compile(r"\{\{([A-Za-z][A-Za-z0-9]*)\}\}")
 # What XML 1.0 cannot carry at all (C0 controls but tab, LF and CR; the two non-characters) plus lone surrogates
@@ -227,13 +228,16 @@ def _carry_chunk(raw_path, out_path, info) -> None:
         print(i18n.t("compose.chunk_failed", path=str(out_path), reason=reason), file=sys.stderr)
 
 
-def render(project_root, profile_cfg, raw_path, out_path, text, profile=None) -> dict:
+def render(project_root, profile_cfg, raw_path, out_path, text, profile=None, prefix=COMPOSE_TMP_PREFIX) -> dict:
     """Compose the raw image `raw_path` into `out_path` for `profile_cfg` and return what was done.
 
     `project_root` is the folder of the project (the template and the logo are resolved inside it); `text` maps the
     ``compose.fields`` to their texts (a missing field is the empty string). The result is written atomically: nothing
     is left at `out_path` if a step fails. Returns ``{"fit", "targetWidth", "targetHeight", "text"}`` plus
-    ``template`` and ``logo`` when the profile has them: what the attempt records as ``compose``."""
+    ``template`` and ``logo`` when the profile has them: what the attempt records as ``compose``.
+
+    The temporary folder sits next to `out_path` and starts with `prefix`: each caller uses its own, so recovering one
+    composition (`queue._clean_pending` removes ``.compose-q<entry>-*``) never touches another's."""
     raw_path, out_path = Path(raw_path), Path(out_path)
     raw_w, raw_h = png.size(raw_path)
     plan = plan_for(profile_cfg, raw_w, raw_h)
@@ -261,7 +265,7 @@ def render(project_root, profile_cfg, raw_path, out_path, text, profile=None) ->
         layer_svg = substitute(source, values)
     info = dict(plan, text=used)
     try:
-        with tempfile.TemporaryDirectory(dir=str(out_path.parent), prefix=".compose-") as tmp:
+        with tempfile.TemporaryDirectory(dir=str(out_path.parent), prefix=prefix) as tmp:
             tmp = Path(tmp)
             layer = None
             if layer_svg is not None:

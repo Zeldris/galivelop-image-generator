@@ -97,6 +97,8 @@
   "error.compose.timeout": "{tool} took longer than {seconds} s while composing",
   "error.compose.tool_failed": "{tool} failed while composing: {reason}",
   "error.compose.write_failed": "cannot write the composed image \"{path}\": {reason}",
+  "error.compose.pending": "the composition was interrupted before it finished; the raw image is kept (run \"gimg compose\" to finish it)",
+  "error.compose.unexpected": "composing failed unexpectedly ({reason}); the raw image is kept (run \"gimg compose\" to try again)",
   "compose.chunk_failed": "gimg: could not copy the metadata into the composed image {path}: {reason}",
   "error.queue.bad_progress": "invalid progress for the queue: {progress}",
   "error.queue.not_running": "entry {id} is not running (state: {state})",

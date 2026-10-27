@@ -348,6 +348,7 @@ def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None)
         if isinstance(files, dict) and all(isinstance(k, str) and isinstance(v, str) for k, v in files.items()):
             record["modelFiles"] = dict(files)
         if isinstance(spec.get("raw"), str):
+            paths.inside(_order_dir(project, key, profile), spec["raw"])  # D25: the guard of `set_composed`
             record["raw"] = spec["raw"]
         if isinstance(spec.get("compose"), dict):
             record["compose"] = copy.deepcopy(spec["compose"])
@@ -384,6 +385,25 @@ def set_composed(project: str, key: str, profile: str, attempt_id: int, compose:
         item.pop("composeError", None)
         paths.inside(_order_dir(project, key, profile), item["image"])
         paths.inside(_order_dir(project, key, profile), raw)
+        return copy.deepcopy(item)
+
+    return _modify(project, key, profile, change)
+
+
+def set_compose_error(project: str, key: str, profile: str, attempt_id: int, error: dict) -> dict:
+    """Record that the composition of attempt `attempt_id` failed (or, with ``compose.pending``, has not finished):
+    ``composeError`` becomes ``{"code", "params"}`` and ``compose`` goes away; ``image`` becomes the raw image, which
+    stands in until `set_composed`. Returns the attempt (a copy). Nothing is read or written on disk."""
+    if not (isinstance(error, dict) and isinstance(error.get("code"), str) and isinstance(error.get("params"), dict)):
+        raise GimgError("order.spec_invalid", missing="composeError")
+
+    def change(order):
+        item = _attempt(order, attempt_id)
+        item["composeError"] = {"code": error["code"], "params": copy.deepcopy(error["params"])}
+        item.pop("compose", None)
+        if isinstance(item.get("raw"), str):
+            paths.inside(_order_dir(project, key, profile), item["raw"])
+            item["image"] = item["raw"]
         return copy.deepcopy(item)
 
     return _modify(project, key, profile, change)

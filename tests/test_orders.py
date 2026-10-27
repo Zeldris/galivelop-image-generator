@@ -308,8 +308,14 @@ class OrderTests(unittest.TestCase):
     def test_attempt_image_stays_inside_order_folder(self):
         self.new_order()
         for image in ("../order.json", "/etc/x", "attempts/../../x"):
-            self.assertIn(self.code(orders.attempt_image, "proj", "a", "banner", {"image": image}),
-                          ("path.dotdot", "path.absolute", "path.dotdot"), image)
+            self.assertEqual(self.code(orders.attempt_image, "proj", "a", "banner", {"image": image}),
+                             {"../order.json": "path.dotdot", "/etc/x": "path.absolute",
+                              "attempts/../../x": "path.dotdot"}[image], image)
+        folder = orders._order_dir("proj", "a", "banner")
+        (folder / "attempts").mkdir(parents=True)
+        (folder / "attempts" / "link.png").symlink_to(self.tmp)  # a link that leaves the order folder
+        self.assertEqual(self.code(orders.attempt_image, "proj", "a", "banner", {"image": "attempts/link.png"}),
+                         "path.outside")
 
     def test_add_attempt_validates_fields(self):
         self.new_order()
@@ -359,8 +365,7 @@ class ComposeOrderTests(unittest.TestCase):
             "field": "headline", "profile": "og", "fields": "title, subtitle"}))
         exc = self.reason(orders.submit, "proj", self.order(text={"title": "x"}))  # banner has no compose at all
         self.assertEqual((exc.code, exc.params["fields"]), ("order.text_unknown_field", "-"))
-        with self.assertRaises(GimgError):
-            orders.get("proj", "a", "og")  # nothing was stored
+        self.assertEqual(self.code(orders.get, "proj", "a", "og"), "order.unknown")  # nothing was stored
 
     def test_attempt_specs_copy_the_text_and_never_share_it(self):
         orders.submit("proj", self.og(text={"title": "Hi"}))
@@ -398,6 +403,15 @@ class ComposeOrderTests(unittest.TestCase):
         self.assertEqual(self.code(orders.set_text, "proj", "zz", "og", {"title": "x"}), "order.unknown")
         self.assertEqual(orders.get("proj", "a", "og"), before)
 
+    def test_a_lone_surrogate_in_the_text_is_refused_by_the_validator_not_by_the_encoder(self):
+        for text in ({"title": "a\udc80b"}, {"title": "\ud800"}):
+            exc = self.reason(orders.submit, "proj", self.og(text=text))
+            self.assertEqual((exc.code, [(e.path, e.code) for e in exc.errors]), ("order.invalid", [("/text/title", "pattern")]))
+        orders.submit("proj", self.og(text={"title": "ok"}))
+        exc = self.reason(orders.set_text, "proj", "a", "og", {"title": "\udc80"})
+        self.assertEqual((exc.code, [(e.path, e.code) for e in exc.errors]), ("order.invalid", [("/text/title", "pattern")]))
+        self.assertEqual(orders.get("proj", "a", "og")["text"], {"title": "ok"})
+
     def test_add_attempt_keeps_raw_compose_and_compose_error_only_with_the_right_type(self):
         orders.submit("proj", self.og())
         info = {"fit": "cover", "targetWidth": 1200, "targetHeight": 630, "text": {}}
@@ -419,6 +433,38 @@ class ComposeOrderTests(unittest.TestCase):
         # a compose error without a raw image changes nothing about where the image is
         orders.add_attempt("proj", "a", "og", dict(self.spec(2), composeError=error), entry_id=2)
         self.assertEqual(orders.get("proj", "a", "og")["attempts"][1]["image"], "attempts/q2.png")
+
+    def test_add_attempt_refuses_a_raw_outside_the_order_folder_with_the_path_code(self):
+        orders.submit("proj", self.og())
+        error = {"code": "compose.pending", "params": {}}
+        for raw, code in (("attempts/a\nb.raw.png", "path.control"), ("attempts/a\x00b.raw.png", "path.nul"),
+                          ("/etc/x.raw.png", "path.absolute"), ("~/x.raw.png", "path.tilde"),
+                          ("attempts/../../x.raw.png", "path.dotdot")):
+            for extra in ({}, {"composeError": error}):  # with an error, `raw` also becomes the `image`
+                self.assertEqual(self.code(orders.add_attempt, "proj", "a", "og", dict(self.spec(1), raw=raw, **extra),
+                                           entry_id=1), code, (raw, extra))
+        folder = orders._order_dir("proj", "a", "og")
+        (folder / "attempts").mkdir(parents=True)
+        (folder / "attempts" / "link.raw.png").symlink_to(self.tmp)
+        self.assertEqual(self.code(orders.add_attempt, "proj", "a", "og", dict(self.spec(1), raw="attempts/link.raw.png"),
+                                   entry_id=1), "path.outside")
+        self.assertEqual(orders.get("proj", "a", "og")["attempts"], [])  # nothing was stored
+
+    def test_set_compose_error_replaces_the_state_of_the_composition_and_shows_the_raw_image(self):
+        orders.submit("proj", self.og())
+        pending = {"code": "compose.pending", "params": {}}
+        orders.add_attempt("proj", "a", "og", dict(self.spec(1), raw="attempts/q1.raw.png", composeError=pending), entry_id=1)
+        error = {"code": "compose.tool_missing", "params": {"tool": "ffmpeg"}}
+        out = orders.set_compose_error("proj", "a", "og", 1, error)
+        self.assertEqual((out["composeError"], out["image"]), (error, "attempts/q1.raw.png"))
+        error["params"]["tool"] = "changed after"
+        self.assertEqual(orders.get("proj", "a", "og")["attempts"][0]["composeError"]["params"], {"tool": "ffmpeg"})
+        orders.set_composed("proj", "a", "og", 1, {"fit": "cover", "targetWidth": 1, "targetHeight": 1, "text": {}})
+        out = orders.set_compose_error("proj", "a", "og", 1, pending)  # composed before: back to uncomposed
+        self.assertEqual((out["image"], "compose" in out, out["composeError"]), ("attempts/q1.raw.png", False, pending))
+        self.assertEqual(self.code(orders.set_compose_error, "proj", "a", "og", 9, pending), "order.attempt_unknown")
+        for bad in ("x", {"code": 3, "params": {}}, {"code": "c", "params": []}, {"code": "c"}):
+            self.assertEqual(self.code(orders.set_compose_error, "proj", "a", "og", 1, bad), "order.spec_invalid")
 
     def test_raw_image_name_and_path(self):
         orders.submit("proj", self.og())

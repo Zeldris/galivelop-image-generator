@@ -27,12 +27,16 @@ at any point leaves either no attempt or one with its image, and a retry never d
 ``.log`` and ``.preview.png``) is removed on every failure or cancel; if `add_attempt` fails the moved image is removed too.
 
 Composition (F2.8, D28): after the chunk, `compose.plan_for` says whether there is anything to do (a ``compose`` in the
-profile, or a ``targetWidth``/``targetHeight`` other than the raw size). With none, everything above is as before. With
-one, the pending file goes to ``attempts/q<entry>.raw.png`` first (the generation is safe), `compose.render` writes
-``attempts/q<entry>.png`` and the attempt records ``raw`` and ``compose``. If `render` raises a `GimgError` the attempt is
-still made, with the raw image as its ``image`` and ``composeError`` ``{code, params}``: the entry is ``done``, a
-``worker.compose_failed`` line goes to stderr and `gimg compose` can fix it later (it cannot be chosen meanwhile).
-Drafts are composed too.
+profile, or a ``targetWidth``/``targetHeight`` other than the raw size; a PNG whose size cannot be read counts as
+something to do, so `render` says ``png.invalid``). With none, everything above is as before. With
+one, the pending file goes to ``attempts/q<entry>.raw.png`` first (the generation is safe) and the attempt is registered
+*before* composing, with ``raw`` and ``composeError`` ``compose.pending``: a SIGTERM or Ctrl-C half way through `render`
+leaves the raw image and that attempt, and the next worker that takes the entry (`orders.attempt_for_entry`) composes
+from the raw image instead of generating again. Then `compose.render` writes ``attempts/q<entry>.png`` (its temporary
+folder is ``.compose-q<entry>-*``) and `orders.set_composed` records ``compose``. If `render` raises a `GimgError`, or any
+other exception (``compose.unexpected``), the attempt keeps the raw image as its ``image`` and the real ``composeError``
+``{code, params}``: the entry is ``done``, a ``worker.compose_failed`` line goes to stderr and `gimg compose` can fix it
+later (it cannot be chosen meanwhile). A generation is never lost to a composition failure. Drafts are composed too.
 
 Once the attempt exists nothing can fail the entry: the success log line and `queue.finish` are best effort (an
 entry whose `finish` failed stays ``running`` and recovery deals with it), and no failure line is written. No
@@ -60,6 +64,9 @@ from . import engine as engine_mod
 from . import compose as compose_mod
 from . import fsutil, i18n, limits, log, orders, paths, png, projects, queue
 from .errors import GimgError
+
+
+COMPOSE_PENDING = {"code": "compose.pending", "params": {}}  # the attempt is registered, its composition not finished
 
 
 def lock_path():
@@ -169,14 +176,47 @@ def metadata_for(entry: dict, result) -> dict:
 
 def _compose_plan(project: dict, profile: str, image):
     """`compose.plan_for` of the profile now configured and the size of the PNG at `image`; ``None`` (nothing to
-    compose) also when the profile is gone or the engine left something that is not a PNG: then the image is kept as it is."""
+    compose) when the profile is gone. If the size cannot be read (the engine left something that is not a PNG) the
+    plan is that of a size that matches nothing: a profile with something to compose composes anyway and `render`
+    says ``png.invalid`` (the attempt keeps the image and the error); one with nothing keeps the image as it is."""
     profile_cfg = project["config"]["profiles"].get(profile)
     if profile_cfg is None:
         return None
     try:
-        return compose_mod.plan_for(profile_cfg, *png.size(image))
+        size = png.size(image)
     except (GimgError, OSError):
-        return None
+        size = (0, 0)
+    return compose_mod.plan_for(profile_cfg, *size)
+
+
+def _unexpected_compose_error(exc: BaseException) -> dict:
+    return queue.make_error("compose.unexpected", reason=("%s: %s" % (type(exc).__name__, exc))[:300])
+
+
+def _compose_attempt(entry: dict, project: dict, attempt_id: int, raw: Path, final: Path, state: dict, lang=None):
+    """Compose the raw image of an attempt that is already registered: `orders.set_composed` on success, else the
+    real ``composeError`` on the attempt (best effort; if even that fails the attempt stays ``compose.pending``).
+    Never raises an `Exception`: a generation is never lost to a composition failure."""
+    entry_id = entry["id"]
+    project_name, key, profile = entry["project"], entry["key"], entry["profile"]
+    try:
+        info = compose_mod.render(
+            project["root"], project["config"]["profiles"][profile], raw, final, entry.get("text") or {}, profile,
+            prefix=".compose-q%d-" % entry_id)
+        orders.set_composed(project_name, key, profile, attempt_id, info)
+        state["compose"] = info
+        return
+    except GimgError as exc:  # keep the generation: the raw image stands in until `gimg compose` fixes it
+        error = queue.make_error(exc.code, **exc.params)
+    except Exception as exc:
+        error = _unexpected_compose_error(exc)
+    state["compose_error"] = error
+    with contextlib.suppress(Exception):
+        orders.set_compose_error(project_name, key, profile, attempt_id,
+                                 {"code": error["code"], "params": error["params"]})
+    with contextlib.suppress(Exception):  # a closed stderr must not fail an entry whose attempt exists
+        print(i18n.t("worker.compose_failed", lang, id=entry_id, reason=queue.error_text(error, lang)),
+              file=sys.stderr)
 
 
 def _generate(entry: dict, eng, machine: dict, state: dict, lang=None):
@@ -188,6 +228,12 @@ def _generate(entry: dict, eng, machine: dict, state: dict, lang=None):
     orders.get(project_name, key, profile)
     existing = orders.attempt_for_entry(project_name, key, profile, entry_id)
     if existing is not None:  # a crash after add_attempt: the attempt and its image are already there
+        error = existing.get("composeError")
+        if isinstance(error, dict) and error.get("code") == COMPOSE_PENDING["code"] and isinstance(existing.get("raw"), str):
+            # killed while composing: the raw image is there, compose it instead of generating again
+            raw = orders.raw_image(project_name, key, profile, existing)
+            _compose_attempt(entry, projects.get(project_name), existing["id"], raw,
+                             raw.parent / ("q%d.png" % entry_id), state, lang)
         return existing["id"]
     limits.check(entry, machine)
     project = projects.get(project_name)
@@ -232,19 +278,12 @@ def _generate(entry: dict, eng, machine: dict, state: dict, lang=None):
         except OSError:
             pass
     state["tmp"] = None
-    state["final"] = [final] if raw is None else [raw, final]
+    state["final"] = [final if raw is None else raw]  # if add_attempt fails nothing refers to the image
     result = state["result"]
     extra = {}
-    if raw is not None:
+    if raw is not None:  # registered before composing: a kill in `render` keeps the raw image and this attempt
         extra["raw"] = orders.raw_image_name(entry_id)
-        try:
-            extra["compose"] = state["compose"] = compose_mod.render(
-                project["root"], project["config"]["profiles"][profile], raw, final, entry.get("text") or {}, profile)
-        except GimgError as exc:  # keep the generation: the raw image stands in until `gimg compose` fixes it
-            error = queue.make_error(exc.code, **exc.params)
-            extra["composeError"] = state["compose_error"] = error
-            print(i18n.t("worker.compose_failed", lang, id=entry_id, reason=queue.error_text(error, lang)),
-                  file=sys.stderr)
+        extra["composeError"] = dict(COMPOSE_PENDING)
     attempt_id = orders.add_attempt(project_name, key, profile, {
         "seed": entry["seed"], "prompt": entry["prompt"], "params": params,
         "references": entry["references"], "engine": eng.provider,
@@ -253,6 +292,8 @@ def _generate(entry: dict, eng, machine: dict, state: dict, lang=None):
         "draft": entry.get("draft") is True,
         "initImage": entry.get("initImage"), "strength": entry.get("strength"), **extra}, entry_id=entry_id)
     state["final"] = None
+    if raw is not None:
+        _compose_attempt(entry, project, attempt_id, raw, final, state, lang)
     return attempt_id
 
 
