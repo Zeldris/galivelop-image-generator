@@ -6,6 +6,7 @@ Behaviour, from environment variables:
 
 - ``FAKE_SD_ARGV``: path of a JSON file that gets ``{"argv", "ld_library_path"}``.
 - ``FAKE_SD_SLEEP``: seconds to take between the loading and the sampling lines (default 0).
+- ``FAKE_SD_PID``: path where its own pid is written.
 - ``FAKE_SD_CHILD_PID``: path where the pid of a child ``sleep 60`` (in the same group) is written.
 - ``FAKE_SD_FAIL``: print that text and exit with code 3 (no image).
 - ``FAKE_SD_NO_IMAGE``: exit 0 without writing the image.
@@ -30,6 +31,9 @@ def main(argv):
     if env("FAKE_SD_ARGV"):
         with open(env("FAKE_SD_ARGV"), "w", encoding="utf-8") as fh:
             json.dump({"argv": sys.argv, "ld_library_path": env("LD_LIBRARY_PATH")}, fh)
+    if env("FAKE_SD_PID"):
+        with open(env("FAKE_SD_PID"), "w", encoding="utf-8") as fh:
+            fh.write(str(os.getpid()))
     if env("FAKE_SD_CHILD_PID"):
         child = subprocess.Popen(["sleep", "60"])
         with open(env("FAKE_SD_CHILD_PID"), "w", encoding="utf-8") as fh:

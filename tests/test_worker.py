@@ -2,6 +2,7 @@ import fcntl
 import io
 import json
 import os
+import signal
 import struct
 import subprocess
 import sys
@@ -11,8 +12,9 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from gimg import engine, log, orders, queue, worker
+from gimg import engine, log, models, orders, queue, worker
 from gimg.errors import GimgError
+from tests.test_engine_sdcpp import FAKE, MODEL, alive, wait_for_file
 from tests.test_queue import QueueBase
 
 
@@ -379,3 +381,77 @@ class WorkerTests(QueueBase):
         self.assertEqual(estimate, durations[1])
         worker.run(engine=engine.FakeEngine(fail_with="x"))  # errors do not count
         self.assertEqual(queue.estimate_for(entry), estimate)
+
+
+@unittest.skipUnless(hasattr(os, "killpg"), "needs process groups")
+class WorkerSignalTests(QueueBase):
+    """A worker killed by SIGTERM or SIGHUP must not leave `sd-cli` (own session) running."""
+
+    def setUp(self):
+        super().setUp()
+        for kind, entry in models.load_catalog()["models"][MODEL]["files"].items():
+            path = self.tmp / "models" / kind / entry["name"]
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.touch()
+
+    def stop_worker_with(self, signum):
+        self.push()
+        pids = {name: self.tmp / (name + ".pid") for name in ("sd", "child")}
+        env = dict(os.environ, GIMG_MODELS_HOME=str(self.tmp / "models"), GIMG_SD_CLI=str(FAKE),
+                   GIMG_ENGINE="sdcpp", FAKE_SD_SLEEP="60", FAKE_SD_PID=str(pids["sd"]),
+                   FAKE_SD_CHILD_PID=str(pids["child"]))
+        proc = subprocess.Popen([sys.executable, "-m", "gimg", "work"], env=env, stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL, cwd=str(Path(__file__).resolve().parent.parent))
+        found = []
+        try:
+            for path in pids.values():
+                self.assertTrue(wait_for_file(path), "the fake sd-cli did not start")
+            time.sleep(0.2)  # let both pid files be complete
+            found = [int(path.read_text()) for path in pids.values()]
+            proc.send_signal(signum)
+            proc.wait(15)
+            for pid in found:
+                for _ in range(100):
+                    if not alive(pid):
+                        break
+                    time.sleep(0.1)
+                self.assertFalse(alive(pid), "pid %d survived the worker" % pid)
+        finally:
+            if proc.poll() is None:
+                proc.kill()
+                proc.wait()
+            for pid in found:
+                if alive(pid):
+                    os.kill(pid, signal.SIGKILL)
+        return proc.returncode
+
+    def check_after(self, code, signum):
+        self.assertEqual(code, 128 + signum)
+        folder = orders.pending_image_path("proj", "a", "banner", 1).parent  # before any queue read recovers it
+        left = [p.name for p in folder.iterdir()] if folder.exists() else []
+        self.assertEqual([n for n in left if n.startswith(".pending")], [])
+        # as after Ctrl-C the entry was left running; with no worker alive any read requeues it
+        self.assertEqual(queue.get(1)["state"], "queued")
+
+    def test_sigterm_kills_sd_cli_and_its_children(self):
+        self.check_after(self.stop_worker_with(signal.SIGTERM), signal.SIGTERM)
+
+    @unittest.skipUnless(hasattr(signal, "SIGHUP"), "needs SIGHUP")
+    def test_sighup_kills_sd_cli_and_its_children(self):
+        self.check_after(self.stop_worker_with(signal.SIGHUP), signal.SIGHUP)
+
+    def test_handlers_are_restored_after_run(self):
+        names = [n for n in ("SIGTERM", "SIGHUP") if hasattr(signal, n)]
+        before = {n: signal.getsignal(getattr(signal, n)) for n in names}
+        seen = {}
+
+        class Spy(engine.FakeEngine):
+            def generate(self, job, should_cancel):
+                seen.update({n: signal.getsignal(getattr(signal, n)) for n in names})
+                return super().generate(job, should_cancel)
+
+        self.push()
+        worker.run(engine=Spy())
+        for n in names:
+            self.assertIs(seen[n], worker._terminate)
+            self.assertEqual(signal.getsignal(getattr(signal, n)), before[n])

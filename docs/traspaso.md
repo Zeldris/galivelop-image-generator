@@ -13,7 +13,7 @@
 | **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | F2.2 hecha: `gimg/engine_sdcpp.py` (proceso en su grupo, argv del contrato, tope, cancelar, tiempos y `command`), `get_engine()` con `sdcpp` y `config.json`, `tests/fake_sd_cli.py`, el worker conserva `attempts/q<id>.log`. Presupuesto de compactaciones de F2.2: 1. Sin tocar `main`. Siguiente: F2.3 (`docs/plan.md`, fila F2.3) |
+| **Tarea en curso · `f2-motor`** | F2.2 hecha y revisada: `gimg/engine_sdcpp.py` (proceso en su grupo, argv del contrato, tope, cancelar, tiempos y `command`), `get_engine()` con `sdcpp`, `tests/fake_sd_cli.py`; el worker mata el grupo de `sd-cli` ante SIGTERM/SIGHUP y conserva `attempts/q<id>.log`. Presupuesto de compactaciones de F2.2: 1. Sin tocar `main`. Siguiente: F2.3 (`docs/plan.md`, fila F2.3) |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.

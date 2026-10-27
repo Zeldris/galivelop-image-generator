@@ -31,7 +31,9 @@ from __future__ import annotations
 import contextlib
 import fcntl
 import os
+import signal
 import sys
+import threading
 
 from . import engine as engine_mod
 from . import fsutil, i18n, limits, log, orders, paths, projects, queue
@@ -175,12 +177,37 @@ def _process(entry: dict, eng, lang=None) -> None:
     _finish(entry_id, "done", lang, attempt_id=attempt_id)
 
 
+def _terminate(signum, frame):
+    raise SystemExit(128 + signum)
+
+
+@contextlib.contextmanager
+def _exit_on_signals():
+    """SIGTERM and SIGHUP end the worker through `SystemExit`, like Ctrl-C does through `KeyboardInterrupt`: the
+    ``finally`` blocks run, so the engine kills the process group of `sd-cli` (``start_new_session``) instead of
+    leaving it alive with its memory. The entry in progress stays ``running`` (as after Ctrl-C) and
+    `queue.recover_orphans` requeues it on the next run. Only in the main thread; the old handlers come back on exit."""
+    if threading.current_thread() is not threading.main_thread():
+        yield
+        return
+    previous = {}
+    try:
+        for name in ("SIGTERM", "SIGHUP"):
+            if hasattr(signal, name):
+                num = getattr(signal, name)
+                previous[num] = signal.signal(num, _terminate)
+        yield
+    finally:
+        for num, handler in previous.items():
+            signal.signal(num, handler)
+
+
 def run(once: bool = False, engine=None, lang=None) -> int:
     """Process queued entries (one with `once`, else until none is left); returns how many were handled.
 
     `lang` is the language of the messages the worker prints (the CLI passes its ``--lang``).
     Raises ``GimgError("worker.already_running")`` if another process holds the worker lock."""
-    with _single_worker():
+    with _single_worker(), _exit_on_signals():
         queue.recover_orphans()
         eng = engine or engine_mod.get_engine()
         handled = 0

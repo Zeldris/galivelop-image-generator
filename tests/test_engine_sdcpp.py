@@ -28,15 +28,31 @@ REAL_LOG = (
 
 
 def alive(pid):
+    """Is `pid` running? ``os.kill(pid, 0)`` works everywhere; an unreaped zombie counts as dead where ``/proc`` says
+    so (Linux). Without ``/proc`` (macOS) a zombie that is not our child would look alive: the pids tested here are
+    children of ``init`` once their parent is gone, so init reaps them."""
     try:
         os.kill(pid, 0)
     except ProcessLookupError:
         return False
-    try:  # a zombie nobody reaped is dead too
+    except PermissionError:
+        return True
+    try:
+        os.waitpid(pid, os.WNOHANG)  # our own child: reap it
+    except ChildProcessError:
+        pass
+    try:
         with open("/proc/%d/stat" % pid) as fh:
             return fh.read().rsplit(")", 1)[1].split()[0] != "Z"
     except OSError:
         return True
+
+
+def wait_for_file(path, seconds=10):
+    deadline = time.monotonic() + seconds
+    while not path.exists() and time.monotonic() < deadline:
+        time.sleep(0.02)
+    return path.exists()
 
 
 class Base(unittest.TestCase):
@@ -322,7 +338,8 @@ class RunTests(Base):
         pid_file = self.tmp / "child.pid"
         self.env(FAKE_SD_SLEEP="30", FAKE_SD_CHILD_PID=str(pid_file))
         with self.assertRaises(engine.EngineTimeout):
-            self.make({"timeoutS": 0.6}).generate(self.job(), lambda: False)
+            self.make({"timeoutS": 2}).generate(self.job(), lambda: False)
+        self.assertTrue(wait_for_file(pid_file), "the fake sd-cli never wrote its child pid")
         child = int(pid_file.read_text())
         for _ in range(50):
             if not alive(child):
@@ -344,12 +361,13 @@ class RunTests(Base):
         class Hooked(SdCppEngine):
             def _on_tick(self, proc, log_path, job):
                 ticks.append(proc.pid)
-                if len(ticks) == 3 and pid_file.exists():
+                if len(ticks) >= 3 and pid_file.exists():
                     raise RuntimeError("hook failed")
 
         with self.assertRaises(RuntimeError):
             Hooked(self.machine, poll_s=0.05, kill_grace_s=2).generate(self.job(), lambda: False)
         self.assertGreaterEqual(len(ticks), 3)
+        self.assertTrue(pid_file.exists())
         child = int(pid_file.read_text())
         for _ in range(50):
             if not alive(child):
