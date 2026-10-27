@@ -70,7 +70,7 @@ def resumen(ronda):
     """{(proyecto, nombre): línea} de resumen.txt; las líneas sin proyecto delante (r0 y r1) no se reparten."""
     datos = {}
     f = ronda / 'resumen.txt'
-    for linea in f.read_text().splitlines() if f.exists() else []:
+    for linea in f.read_text(encoding='utf-8').splitlines() if f.exists() else []:
         m = re.match(r'(\S+) (\S+) salida=', linea)
         if m:
             datos[m.groups()] = linea
@@ -78,7 +78,7 @@ def resumen(ronda):
 
 
 def tiempos(log, linea):
-    t = log.read_text(errors='replace') if log.exists() else ''
+    t = log.read_text(encoding='utf-8', errors='replace') if log.exists() else ''
     partes = []
     for etiqueta, patron in (('muestreo', r'sampling completed, taking ([0-9.]+)s'),
                              ('decodificar', r'decode_first_stage completed, taking ([0-9.]+)s')):
@@ -97,7 +97,7 @@ def medidas(f):
     """Las medidas de piezas.py (r4, r5): contraste de la zona de texto y paleta."""
     if not f.exists():
         return ''
-    m = json.loads(f.read_text())
+    m = json.loads(f.read_text(encoding='utf-8'))
     c, pal = m.get('contraste'), m.get('paleta')
     partes = ([f'contraste {c.get("media")}:1, peor {c.get("peor")}:1'] if c else []) + \
              ([f'paleta {pal.get("porcentaje")} %'] if pal else []) + ([f'YAVG {m["YAVG"]}'] if 'YAVG' in m else [])
@@ -113,7 +113,7 @@ def pagina_ronda(ronda):
             n = img.stem
             pf = proy / 'prompts' / f'{n}.txt'
             if pf.exists():
-                prompts.append((n, pf.read_text()))
+                prompts.append((n, pf.read_text(encoding='utf-8')))
             rel = img.relative_to(ronda).as_posix()
             pieza = f'{proy.name} {n.removeprefix("og-")}'
             info = ' · '.join(filter(None, (tiempos(proy / 'logs' / f'{n}.log', res.get((proy.name, n))),
@@ -134,7 +134,7 @@ def pagina_ronda(ronda):
         f'<p><a href="../index.html">← rondas</a></p><h1>Ronda {esc(ronda.name)}</h1>{hoja}'
         f'<p>Pincha una imagen para verla a tamaño real. Marca sí/no y pega el veredicto en el chat.</p>'
         f'{"".join(secciones)}<section><h2>Veredicto</h2><textarea id="veredicto" readonly></textarea>'
-        f'<p><button id="copiar">Copiar veredicto</button></p></section><script>{JS}</script></body></html>')
+        f'<p><button id="copiar">Copiar veredicto</button></p></section><script>{JS}</script></body></html>', encoding='utf-8')
 
 
 def main(argv):
@@ -152,7 +152,7 @@ def main(argv):
     (piloto / 'index.html').write_text(
         f'<!doctype html><html lang="es"><meta charset="utf-8"><title>Piloto de contenido</title><style>{CSS}</style>'
         f'<body><h1>Piloto de contenido</h1><p>Si no se ven las imágenes, ábrelo con <code>python3 examples/pilot/ver.py'
-        f'</code> (desde VS Code en flatpak, el archivo llega sin sus imágenes).</p><ul>{enlaces}</ul></body></html>')
+        f'</code> (desde VS Code en flatpak, el archivo llega sin sus imágenes).</p><ul>{enlaces}</ul></body></html>', encoding='utf-8')
     print(f'Página: {piloto / "index.html"}')
     return 0
 

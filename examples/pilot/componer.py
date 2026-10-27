@@ -80,7 +80,11 @@ def _viewbox(ruta):
     return float(m.group(1)), float(m.group(2))
 
 
-def ajustar(texto, tam, ancho_max, factor=0.56):
+FACTOR_TITULO = 0.56  # ancho estimado de un carácter, en tamaños de fuente
+FACTOR_SUB = 0.5
+
+
+def ajustar(texto, tam, ancho_max, factor=FACTOR_TITULO):
     """Parte `texto` en líneas de ancho estimado (factor·tam por carácter) <= ancho_max."""
     lineas, actual = [], ""
     for palabra in texto.split():
@@ -134,13 +138,15 @@ def construir_svg(fondo, w, h, logo, titulo, subtitulo=None, zona=None, color_te
     disp = cy1 - top
     while True:
         lt = ajustar(titulo, tam, cw)
-        ls = ajustar(subtitulo, sub_tam, cw, 0.5) if subtitulo else []
+        ls = ajustar(subtitulo, sub_tam, cw, FACTOR_SUB) if subtitulo else []
         total = len(lt) * tam * 1.12 + (sub_tam * 0.8 + len(ls) * sub_tam * 1.3 if ls else 0)
-        if total <= disp and len(lt) <= 3:
+        ancho_max = max([len(l) * tam * FACTOR_TITULO for l in lt] + [len(l) * sub_tam * FACTOR_SUB for l in ls])
+        if total <= disp and len(lt) <= 3 and ancho_max <= cw:
             break
         if tam <= 16:
-            raise ErrorComponer(f"el texto no cabe en la zona {zona} de {w}×{h} ni a 16 px: acorta el título o el "
-                                "subtítulo, o usa otra zona")
+            motivo = "una línea más ancha que la columna" if ancho_max > cw else "no entra en la altura"
+            raise ErrorComponer(f"el texto no cabe en la zona {zona} de {w}×{h} ni a 16 px ({motivo}): acorta el "
+                                "título o el subtítulo, o usa otra zona")
         tam = round(tam * 0.93)
         sub_tam = max(round(tam * 0.42), 14)
     y = {"abajo": cy1 - total, "arriba": top}.get(zona, top + (disp - total) / 2)

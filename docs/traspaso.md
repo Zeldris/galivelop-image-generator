@@ -46,6 +46,13 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 - **Leves de la revisión de `3dc054d` (piezas/componer, F2.0):** avatar rasterizado con `-w` y `-h` deforma un logo no
   cuadrado; `'640x320' in name` frágil (un `2640x320`); sin tests de `main()` con piezas, `paleta_de`, avatar,
   `pagina.medidas` ni `ronda.sh r5`; la prueba del lockup no cubre la rama en que manda el ancho de la columna.
+- **Leves de la revisión de `bb7719a` (piloto, fase 1 antes de `main`; no se revisan más en este PR):** `piezas.pieza`
+  mide el fondo limpio con `medir.medir` y tira su `signalstats` (basta `contraste_zona`); el velo repite `rect` en las
+  cuatro zonas y parchea `offset="0.55"` con `replace`; `recorte_cover` es código muerto; sin tests de `logos.py`,
+  `fuentes.sh` ni `pagina.pagina_ronda/resumen/tiempos`; las páginas del piloto solo en español (`visibleLanguages`
+  es/en: traducir o declararlas internas); `ver.py` no resuelve enlaces simbólicos dentro de `piloto/`; algún
+  `read_text` de `componer.py` sin `encoding`. **Para F2.8:** el piloto mete el fondo en base64 dentro del SVG y lo
+  rasteriza entero con rsvg; D28 pide que rsvg haga solo la capa y ffmpeg la superponga: no portarlo tal cual.
 - **Leves de las revisiones de F1:**
   - `orders._FULL_PARAMS` repite a mano límites de `width`/`height`/`model` en vez de usar `$defs/profile` del esquema de la configuración del proyecto.
   - Un lector (`list`/`get`/`enqueue`) que toma `worker.lock` un instante hace que un trabajador que arranca falle con

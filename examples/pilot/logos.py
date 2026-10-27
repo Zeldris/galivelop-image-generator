@@ -28,11 +28,11 @@ h3 { margin:14px 0 0; font-size:15px; }
 
 def svg(f):
     """El SVG sin la declaración XML, listo para ir en línea."""
-    return re.sub(r'<\?xml[^>]*\?>', '', f.read_text()).strip()
+    return re.sub(r'<\?xml[^>]*\?>', '', f.read_text(encoding='utf-8')).strip()
 
 
 def concepto(f):
-    m = re.search(r'<!--\s*(.*?)\s*-->', f.read_text(), re.S)
+    m = re.search(r'<!--\s*(.*?)\s*-->', f.read_text(encoding='utf-8'), re.S)
     return m.group(1) if m else ''
 
 
@@ -44,7 +44,7 @@ def tarjeta(proy, f):
                     f'<div class="s16">{s}</div></div>' for fondo in ('claro', 'oscuro'))
     if lock.exists():
         # Un lockup hecho para un solo fondo lo dice con data-fondo; si no, va sobre los dos.
-        m = re.search(r'<svg[^>]*\sdata-fondo="(claro|oscuro)"', lock.read_text())
+        m = re.search(r'<svg[^>]*\sdata-fondo="(claro|oscuro)"', lock.read_text(encoding='utf-8'))
         fondos = (m.group(1),) if m else ('claro', 'oscuro')
         cajas += ''.join(f'<div class="caja {fondo} lockup">{svg(lock)}</div>' for fondo in fondos)
     for var in sorted(f.parent.glob(f'{nombre}-lockup-*.svg')):
@@ -71,7 +71,7 @@ def main(argv):
         f'<p>Cada propuesta: símbolo a 128, 32 y 16 px sobre claro y oscuro, y su lockup. Marca sí/no y pega el veredicto '
         f'en el chat. Las biblias están en <code>docs/marcas/</code>.</p>{"".join(secciones)}'
         f'<section><h2>Veredicto</h2><textarea id="veredicto" readonly></textarea>'
-        f'<p><button id="copiar">Copiar veredicto</button></p></section><script>{JS}</script></body></html>')
+        f'<p><button id="copiar">Copiar veredicto</button></p></section><script>{JS}</script></body></html>', encoding='utf-8')
     print(f'Página: {out / "index.html"}')
     return 0
 

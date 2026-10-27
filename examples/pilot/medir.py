@@ -172,8 +172,9 @@ def main(argv=None):
         if a.zona:
             try:
                 zona = tuple(int(v) for v in a.zona.split(","))
-                assert len(zona) == 4
-            except (ValueError, AssertionError):
+                if len(zona) != 4:
+                    raise ValueError(a.zona)
+            except ValueError:
                 raise ErrorMedir(f"--zona: se esperaba x,y,w,h en enteros, no {a.zona!r}") from None
         res = medir(a.imagen, paleta, zona, hex_rgb(a.color_texto) if a.color_texto else None)
     except ErrorMedir as e:

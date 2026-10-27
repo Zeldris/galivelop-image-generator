@@ -8,14 +8,16 @@
 # r3: borrador (640×320, 4 pasos) contra definitivo (1280×640, 8 pasos) del estilo elegido (prompts/estilo.txt) con
 # FLUX.2 klein; en R3_FLUX3 (por defecto portal), además FLUX.3 a 640×320/8 y 1280×640/16 pasos (tope R3_TOPE, 7200 s).
 # TARKOR_GEN=<ruta de generar.sh> para otra copia; salta lo que ya existe, así que una ronda cortada se relanza igual.
-# sin pipefail: generar.sh devuelve 3 si aborta antes de arrancar (memoria, Ollama) y entonces se para la ronda entera
+# sin pipefail: generar.sh devuelve 3 si aborta antes de arrancar (memoria, Ollama) y entonces se para la ronda entera;
+# cualquier otro fallo se cuenta, la ronda sigue con el resto y el script acaba en 1
 set -u
-R=$(cd "$(dirname "$(readlink -f "$0")")/../.." && pwd)
+R=$(cd "$(dirname "$0")/../.." && pwd)
 GEN=${TARKOR_GEN:-$R/../WMF-imagenes/image-generator/scripts/generar.sh}
 PILOTO=${PILOTO:-$R/piloto}
 RONDA=${1:-}
 PROYECTOS="portal toveriai galivelop-workflow tarkor galivelop-image-generator galivelop-voice-generator galivelop-developer"
-N=$(echo $PROYECTOS | wc -w)
+N=$(echo $PROYECTOS | wc -w | tr -d ' ')
+FALLOS=0
 # r5: los fondos de las piezas de r5 (prompts/r5-{cuadrado,vertical,cabecera}.txt, más r5-og-bajo en Tarkor) en
 # piloto/r5-fondos/; las piezas compuestas las hace examples/pilot/piezas.py r5 en piloto/r5/.
 # Cada pieza es proyecto:prompt:semilla[:ancho:alto:pasos[:modelo]] (examples/<proyecto>/prompts/<prompt>.txt); por
@@ -51,11 +53,13 @@ for p in $PIEZAS; do
   env ${ENTORNO[@]+"${ENTORNO[@]}"} "$GEN" "$OUT/$proy" "$nombre" "$pf" $W $H "$semilla" $PASOS ${EXTRA[@]+"${EXTRA[@]}"} | sed -u "s|^|$proy |" | tee -a "$OUT/resumen.txt"
   rc=${PIPESTATUS[0]}
   [ "$rc" = 3 ] && { echo "Ronda parada: generar.sh abortó antes de arrancar (arriba, el motivo)"; exit 3; }
+  [ "$rc" -ne 0 ] && { echo "FALLO: $proy $nombre (generar.sh devolvió $rc)"; FALLOS=$((FALLOS + 1)); }
 done
 # Hoja de contacto: una fila por proyecto (orden alfabético), una columna por pieza del proyecto.
-if [ "$COLS" -gt 1 ] && [ "$(ls "$OUT"/*/intentos/*.png 2>/dev/null | wc -l)" = $((N * COLS)) ]; then
+if [ "$COLS" -gt 1 ] && [ "$(ls "$OUT"/*/intentos/*.png 2>/dev/null | wc -l | tr -d ' ')" -eq $((N * COLS)) ]; then
   ffmpeg -loglevel error -y -pattern_type glob -i "$OUT/*/intentos/*.png" -vf "scale=640:-1,tile=${COLS}x$N" -frames:v 1 \
     "$OUT/hoja.png" && echo "Hoja: $OUT/hoja.png"
 fi
 echo "Resumen: $OUT/resumen.txt"
 python3 "$R/examples/pilot/pagina.py" "$PILOTO"
+if [ "$FALLOS" -gt 0 ]; then echo "Ronda con $FALLOS fallo(s): las piezas que fallaron se relanzan con la misma orden"; exit 1; fi

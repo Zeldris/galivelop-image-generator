@@ -33,20 +33,37 @@ def rel(f):
 
 def fondo_de(proy, prompt):
     for ronda in ('r5-fondos', 'r3'):
-        c = [f for f in (PILOTO / ronda / proy / 'intentos').glob(f'{prompt}-*.png')
-             if '640x320' not in f.name and 'flux3' not in f.name]
+        base = (PILOTO / ronda / proy / 'intentos').resolve()
+        c = []
+        for f in base.glob(f'{prompt}-*.png'):
+            if '640x320' in f.name or 'flux3' in f.name or not f.resolve().is_relative_to(base):
+                continue
+            ancho, alto = medir.tamano(str(f))  # un ffprobe por archivo
+            c.append((ancho * alto, f.name, f))
         if c:
-            return max(c, key=lambda f: medir.tamano(str(f))[0] * medir.tamano(str(f))[1])
+            return max(c)[2]  # el de más área y, a igualdad, el de nombre mayor: no depende del orden del glob
     raise componer.ErrorComponer(f'no hay fondo de {proy}/{prompt} en piloto/r5-fondos ni piloto/r3')
 
 
 def paleta_de(proy):
     f = R / 'examples' / proy / 'prompts' / 'r2-hex.txt'
-    return [medir.hex_rgb(h) for h in sorted(set(re.findall(r'#[0-9A-Fa-f]{6}', f.read_text())))] if f.exists() else []
+    return [medir.hex_rgb(h) for h in sorted(set(re.findall(r'#[0-9A-Fa-f]{6}', f.read_text(encoding='utf-8'))))] if f.exists() else []
+
+
+def _nombre_seguro(campo, valor):
+    """D25: un nombre suelto (sin ruta): cadena sin separadores, `..`, `~`, saltos de línea ni NUL."""
+    if (not isinstance(valor, str) or not valor or valor in ('.', '..') or valor.startswith('~')
+            or any(c in valor for c in '/\\\n\r\x00*?[]') or '..' in valor):
+        raise componer.ErrorComponer(f'{campo} {valor!r}: tiene que ser un nombre sin ruta, sin «..», «~», comodines ni saltos de línea')
+
+
+def _entero_positivo(campo, valor):
+    if isinstance(valor, bool) or not isinstance(valor, int) or valor <= 0:
+        raise componer.ErrorComponer(f'{campo} {valor!r}: tiene que ser un entero positivo')
 
 
 def validar(p):
-    """Los campos que faltan y que el id y el logo no se salgan de su sitio (D25 de REVIEW.md)."""
+    """Los campos que faltan, sus tipos y que el id, el fondo y el logo no se salgan de su sitio (D25 de REVIEW.md)."""
     if 'fondo' not in p:
         raise componer.ErrorComponer('falta el campo «fondo» (null para un avatar)')
     falta = [c for c in OBLIGATORIOS + (CON_FONDO if p['fondo'] is not None else ()) if c not in p]
@@ -54,6 +71,14 @@ def validar(p):
         raise componer.ErrorComponer('falta el campo ' + ', '.join(f'«{c}»' for c in falta))
     if not isinstance(p['id'], str) or not ID.fullmatch(p['id']):
         raise componer.ErrorComponer(f'id {p["id"]!r}: solo minúsculas, cifras y guiones, hasta 40')
+    _entero_positivo('ancho', p['ancho'])
+    _entero_positivo('alto', p['alto'])
+    if p['fondo'] is not None:
+        _nombre_seguro('fondo', p['fondo'])
+    if (not isinstance(p['logo'], str) or not p['logo'] or p['logo'].startswith('~')
+            or any(c in p['logo'] for c in '\n\r\x00')):
+        raise componer.ErrorComponer(f'logo {p["logo"]!r}: tiene que ser una ruta dentro del repo, sin «~» ni '
+                                     'saltos de línea')
     logo = (R / p['logo']).resolve()
     if not logo.is_relative_to(R):
         raise componer.ErrorComponer(f'logo {p["logo"]!r}: tiene que ser una ruta dentro del repo')
@@ -76,7 +101,8 @@ def pieza(proy, cfg, p, dest):
     shutil.move(svg, dest / 'svg' / svg.name)
     with tempfile.TemporaryDirectory(prefix='piezas-') as tmp:
         limpio, png = Path(tmp) / 'limpio.svg', Path(tmp) / 'limpio.png'
-        limpio.write_text(componer.construir_svg(fondo, p['ancho'], p['alto'], logo, p['titulo'], texto=False, **kw))
+        limpio.write_text(componer.construir_svg(fondo, p['ancho'], p['alto'], logo, p['titulo'], texto=False, **kw),
+                           encoding='utf-8')
         componer.rasterizar(limpio, png, p['ancho'], p['alto'])
         zona = componer.caja_zona(p['ancho'], p['alto'], p['zona'])
         m = medir.medir(str(png), zona=zona, color_texto=medir.hex_rgb(p['color_texto']))
@@ -96,7 +122,7 @@ def main(argv):
     for proy in proys:
         f = R / 'examples' / proy / 'piezas.json'
         try:
-            cfgs[proy] = json.loads(f.read_text())
+            cfgs[proy] = json.loads(f.read_text(encoding='utf-8'))
             if not isinstance(cfgs[proy]['piezas'], list):
                 raise TypeError('no es una lista')
         except (OSError, ValueError, KeyError, TypeError) as e:
@@ -116,7 +142,8 @@ def main(argv):
                 fallos += 1
                 continue
             (dest / 'medidas').mkdir(parents=True, exist_ok=True)
-            (dest / 'medidas' / f'{p["id"]}.json').write_text(json.dumps(m, ensure_ascii=False, indent=1))
+            (dest / 'medidas' / f'{p["id"]}.json').write_text(json.dumps(m, ensure_ascii=False, indent=1),
+                                                         encoding='utf-8')
             c = m.get('contraste', {})
             print(f'{proy} {p["id"]}: ' + (f'contraste {c["media"]}:1 (peor {c["peor"]}), paleta '
                                             f'{m.get("paleta", {}).get("porcentaje")} %' if c else 'avatar'))

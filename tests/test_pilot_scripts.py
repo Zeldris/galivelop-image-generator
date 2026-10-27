@@ -1,4 +1,6 @@
 """Pruebas de los scripts de prueba de concepto de examples/pilot/ (componer.py y medir.py)."""
+import functools
+import http.server
 import os
 import re
 import shutil
@@ -64,7 +66,7 @@ class ComponerTests(unittest.TestCase):
     def test_cover_da_el_tamano_exacto(self):
         for w, h in ((120, 63), (108, 108), (50, 200)):
             salida = self.tmp / f"s{w}x{h}.png"
-            componer.componer(self.tmp / "fondo.png", salida, w, h, self.tmp / "logo.svg", "Título <&>")
+            componer.componer(self.tmp / "fondo.png", salida, w, h, self.tmp / "logo.svg", "A<&")  # corto: a 50 px la columna es de 38
             self.assertEqual(self.tamano(salida), (w, h))
             self.assertTrue(salida.with_suffix(".svg").is_file())
 
@@ -225,8 +227,22 @@ class ValidarPiezaTests(unittest.TestCase):
             self.assertIn("solo minúsculas", self.motivo(id=malo))
 
     def test_logo_fuera_del_repo(self):
-        for malo in ("/etc/passwd", "../../x.svg"):
+        for malo in ("/etc/passwd", "../../x.svg", "~/x.svg", "docs/x\n.svg", "docs/x\x00.svg"):
             self.assertIn("dentro del repo", self.motivo(logo=malo))
+
+    def test_logo_que_no_es_cadena(self):
+        for malo in (None, 3, ["a"], ""):
+            self.assertIn("dentro del repo", self.motivo(logo=malo))
+
+    def test_fondo_que_sale_de_la_carpeta(self):
+        for malo in ("../../../etc/pass", "a/b", "/abs", "~x", "a\nb", "og\n", "a\x00b", "..", "", "*", "a[b]", 3, "a\\b"):
+            self.assertIn("tiene que ser un nombre sin ruta", self.motivo(fondo=malo, titulo="t", zona="abajo",
+                                                                           color_texto="#fff", velo="#000"))
+
+    def test_ancho_y_alto_tienen_que_ser_enteros_positivos(self):
+        for campo in ("ancho", "alto"):
+            for malo in (True, 0, -4, 1.5, "10", None):
+                self.assertIn(f"{campo} {malo!r}: tiene que ser un entero positivo", self.motivo(**{campo: malo}))
 
     def test_sin_fondo_no_es_un_avatar(self):
         self.assertIn("«fondo»", self.motivo(fondo=...))
@@ -244,6 +260,140 @@ class ValidarPiezaTests(unittest.TestCase):
             self.assertEqual(self.piezas.main(["piezas.py", "r4", "no-existe"]), 2)
         self.assertIn("no se puede leer la lista «piezas»", imp.call_args[0][0])
 
+
+
+class FondoDeTests(unittest.TestCase):
+    def setUp(self):
+        import piezas
+        self.piezas = piezas
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+        self.viejo = piezas.PILOTO
+        piezas.PILOTO = self.tmp
+        self.addCleanup(setattr, piezas, "PILOTO", self.viejo)
+        d = self.tmp / "r3" / "portal" / "intentos"
+        d.mkdir(parents=True)
+        for n in ("estilo-b.png", "estilo-a.png", "estilo-c.png"):
+            (d / n).write_bytes(b"x")
+
+    def test_mide_una_vez_por_archivo_y_con_empate_gana_el_nombre(self):
+        with mock.patch.object(medir, "tamano", return_value=(10, 10)) as t:
+            f = self.piezas.fondo_de("portal", "estilo")
+        self.assertEqual(f.name, "estilo-c.png")
+        self.assertEqual(t.call_count, 3)
+
+    def test_un_enlace_que_sale_de_la_carpeta_no_cuenta(self):
+        d = self.tmp / "r3" / "portal" / "intentos"
+        fuera = self.tmp / "fuera.png"
+        fuera.write_bytes(b"x")
+        (d / "estilo-z.png").symlink_to(fuera)
+        with mock.patch.object(medir, "tamano", return_value=(10, 10)):
+            self.assertEqual(self.piezas.fondo_de("portal", "estilo").name, "estilo-c.png")
+
+
+class AjustarTests(unittest.TestCase):
+    def test_palabra_mas_ancha_que_la_columna_dice_el_motivo(self):
+        with tempfile.TemporaryDirectory() as t:
+            t = Path(t)
+            (t / "logo.svg").write_text(LOGO, encoding="utf-8")
+            (t / "fondo.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+            with self.assertRaises(componer.ErrorComponer) as cm:
+                componer.construir_svg(t / "fondo.png", 1200, 630, t / "logo.svg", "Supercalifragilisticoespialidosoextra" * 3,
+                                       zona="izquierda")
+        self.assertIn("una línea más ancha que la columna", str(cm.exception))
+
+    def test_palabra_larga_baja_el_tamano_hasta_que_cabe(self):
+        with tempfile.TemporaryDirectory() as t:
+            t = Path(t)
+            (t / "logo.svg").write_text(LOGO, encoding="utf-8")
+            (t / "fondo.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+            svg = componer.construir_svg(t / "fondo.png", 1200, 630, t / "logo.svg", "Supercalifragilisticoespialidoso",
+                                         zona="izquierda")
+        tam = int(re.search(r'font-size="(\d+)"', svg).group(1))
+        cw = componer.caja_zona(1200, 630, "izquierda")[2]
+        self.assertLessEqual(len("Supercalifragilisticoespialidoso") * tam * componer.FACTOR_TITULO, cw)
+
+
+class MedirZonaTests(unittest.TestCase):
+    def test_zona_con_pocos_valores_dice_el_motivo_sin_assert(self):
+        with mock.patch("sys.stderr") as err, mock.patch.object(sys, "flags", sys.flags):
+            self.assertEqual(medir.main(["x.png", "--zona", "1,2,3"]), 1)
+        self.assertIn("--zona: se esperaba x,y,w,h", "".join(c.args[0] for c in err.write.call_args_list))
+
+    def test_medir_no_usa_assert(self):
+        self.assertNotIn("assert ", (PILOTO / "medir.py").read_text(encoding="utf-8"))
+
+
+class RondaTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which("bash"), "hace falta bash")
+    def test_un_fallo_de_generar_no_se_traga_y_acaba_en_1(self):
+        with tempfile.TemporaryDirectory() as t:
+            t = Path(t)
+            gen = t / "generar.sh"
+            gen.write_text("#!/bin/bash\necho falla $2\nexit 1\n", encoding="utf-8")
+            gen.chmod(0o755)
+            r = subprocess.run(["bash", str(PILOTO / "ronda.sh"), "r0"], capture_output=True, text=True, timeout=60,
+                               env={**os.environ, "TARKOR_GEN": str(gen), "PILOTO": str(t / "piloto")})
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn("FALLO: portal og-s3 (generar.sh devolvió 1)", r.stdout)
+        self.assertIn("Ronda con 1 fallo(s)", r.stdout)
+        self.assertIn("Página:", r.stdout)  # regeneró las páginas igual
+
+    @unittest.skipUnless(shutil.which("bash"), "hace falta bash")
+    def test_el_codigo_3_para_la_ronda(self):
+        with tempfile.TemporaryDirectory() as t:
+            t = Path(t)
+            gen = t / "generar.sh"
+            gen.write_text("#!/bin/bash\nexit 3\n", encoding="utf-8")
+            gen.chmod(0o755)
+            r = subprocess.run(["bash", str(PILOTO / "ronda.sh"), "r0"], capture_output=True, text=True, timeout=60,
+                               env={**os.environ, "TARKOR_GEN": str(gen), "PILOTO": str(t / "piloto")})
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("Ronda parada", r.stdout)
+
+    def test_ronda_no_usa_readlink_ni_compara_conteos_como_cadena(self):
+        txt = (PILOTO / "ronda.sh").read_text(encoding="utf-8")
+        self.assertNotIn("readlink", txt)
+        self.assertNotIn("wc -l)\" =", txt)
+
+
+class ServidorTests(unittest.TestCase):
+    def setUp(self):
+        import http.client
+        import threading
+        import ver
+        self.http = http.client
+        self.srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(ver.Manejador, directory=str(ver.R)))
+        self.puerto = self.srv.server_address[1]
+        threading.Thread(target=self.srv.serve_forever, daemon=True).start()
+        self.addCleanup(self.srv.server_close)
+        self.addCleanup(self.srv.shutdown)
+
+    def get(self, ruta, host=None):
+        c = self.http.HTTPConnection("127.0.0.1", self.puerto, timeout=10)
+        c.putrequest("GET", ruta, skip_host=True)
+        c.putheader("Host", host or f"127.0.0.1:{self.puerto}")
+        c.endheaders()
+        r = c.getresponse()
+        r.read()
+        c.close()
+        return r.status
+
+    def test_pagina_permitida_da_200(self):
+        self.assertEqual(self.get("/docs/interfaz/prototipo/index.html"), 200)
+        self.assertEqual(self.get("/docs/interfaz/prototipo/index.html", f"localhost:{self.puerto}"), 200)
+
+    def test_git_y_el_resto_del_repo_no_se_sirven(self):
+        for ruta in ("/.git/config", "/AGENTS.md", "/docs/plan.md", "/piloto/../.git/config",
+                     "/piloto/%2e%2e/.git/config", "/docs/interfaz/%2e%2e/%2e%2e/.git/config", "/", "/docs/"):
+            self.assertEqual(self.get(ruta), 404, ruta)
+
+    def test_sin_listado_de_carpeta(self):
+        self.assertEqual(self.get("/docs/interfaz/"), 404)
+
+    def test_host_ajeno_da_403(self):
+        for host in ("evil.example", f"evil.example:{self.puerto}", "127.0.0.1:1"):
+            self.assertEqual(self.get("/docs/interfaz/prototipo/index.html", host), 403, host)
 
 
 class VerTests(unittest.TestCase):
