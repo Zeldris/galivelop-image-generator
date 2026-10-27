@@ -95,6 +95,14 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
   cualquier `OSError` de `Popen` sale como `engine.binary_not_executable`; si `orders.add_attempt` falla tras mover el
   log, `attempts/q<id>.log` queda huérfano; `open`/`mkdir` del log sin envolver en `GimgError`; el párrafo «Motor» del
   plan no lista `-t` (el código lo pone antes de los `args`); `sd-cli` muerto por señal sale como «exited with code -9».
+- **Leves de la revisión de `e9af90f` (F2.3; no se revisan más en este PR):** con `engine.ollama: unload` la memoria
+  previa se mide antes de descargar Ollama (puede rechazar por `engine.low_memory` justo antes de liberarla: releer tras
+  el `unload`); `GIMG_MEMINFO` con una ruta ilegible salta la protección en silencio (avisar por stderr o llamarla
+  `GIMG_TEST_MEMINFO`); `json.loads` de `/api/ps` no captura `RecursionError`; el opener sin proxy sigue redirecciones
+  (quitar `HTTPRedirectHandler`); el timeout de urllib es por socket, no total; el `unload` (hasta 15 s más los POST) no
+  mira `should_cancel`; el patrón de `ollamaUrl` del esquema acepta control y espacios (`re.ASCII`) y `test_models` no
+  prueba el campo; `min_free_mb` no llega a `orders.add_attempt` y se pierde en un intento fallido; `read_text`/`write_text`
+  sin `encoding` en los tests nuevos; `dead_ollama_url` reserva y suelta un puerto (ventana de colisión inocua).
 - **Flujo:** `rojo-sin-arreglo.sh` falla con «cannot stash» si antes se hizo `git add -N` de archivos nuevos (funciona
   sin añadirlos); proponerlo al flujo con el resto (`gw-harvest`).
 - **Cuando la persona avise:** revisar las actualizaciones de Tarkor (otro repo) sobre su generador de imágenes: lo lee
