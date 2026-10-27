@@ -7,17 +7,35 @@ alfabético, una columna por semilla).
 
 ## Ejecución
 
-Las 14 piezas con flux2 klein 4B Q8_0, 1280×640, 6 pasos, salida 0.
+Las 14 piezas con flux2 klein 4B Q8_0, 1280×640, 6 pasos, salida 0. Dos columnas: la ronda original con el `generar.sh`
+de Tarkor (2026-10-26) y la repetición con `gimg` (F2.6, 2026-10-27: `examples/<p>/orders/r1-og.json`, `seed` 3 y
+`count` 2, `gimg work` sobre los 14 intentos en cola, `master-1000-95ff762` instalado con `instalar.sh --models-from`).
 
-| Medida | Valor |
-|---|---|
-| Total por pieza | 180-182 s |
-| Muestreo | 146,0-147,0 s (~24,4 s/paso) |
-| Decodificar | 28,5-29,2 s |
-| Mín. libre (peor pieza) | 7305 MB (el resto, 7935-8206 MB) |
-| Ronda entera | ~42 min |
+| Medida | `generar.sh` | `gimg` |
+|---|---|---|
+| Total por pieza | 180-182 s | 179,6-189,3 s |
+| Carga del modelo | — (no se midió aparte) | 12,3-21,6 s (`app.load_ms`) |
+| Muestreo | 146,0-147,0 s (~24,4 s/paso) | 146,1-154,4 s (~24,3-25,7 s/paso) |
+| Decodificar | 28,5-29,2 s | 28,5-28,6 s |
+| Mín. libre (peor pieza) | 7305 MB (el resto, 7935-8206 MB) | 7586 MB (el resto, 7647-7996 MB) |
+| Ronda entera | ~42 min | ~43 min |
+| Imágenes | 14 | 14, **píxel a píxel iguales** a las de `generar.sh` (`ffmpeg -f md5`) |
 
 Ninguna pieza se acercó al umbral del vigilante (1500 MB) ni al de arranque (7000 MB, la peor quedó a 305 MB de él).
+
+**Comparación `gimg` frente a `generar.sh`.** Las 14 imágenes de `gimg` (`piloto/r1-gimg/<p>-og-s{3,4}.png`, copia de
+`~/.local/share/gimg/projects/<p>/orders/fondos/r1/@og/attempts/q<N>.png`; hoja en `piloto/r1-gimg/hoja.png`) dan el mismo
+md5 de píxeles que `piloto/r1/<p>/intentos/og-s{3,4}.png`. Los bytes de los PNG difieren solo por un bloque `tEXt` que
+añade `gimg`. La orden registrada por `gimg` (`app.image.command` en `log.jsonl`) es la de `generar.sh` más
+`--preview proj --preview-interval 1 --preview-path …`; no lleva `-t` porque el perfil de máquina no fija hilos. Lo que
+cambia son los tiempos: el muestreo salió 0-7 s más lento en portal, toveriai, workflow y tarkor, con la carga del modelo
+también más lenta en esos mismos (16-22 s frente a 12-13 s), que es lo que se espera de la caché de disco tras el episodio
+de Ollama (ver abajo) y no del motor. El decodificado es idéntico (28,5 s). Mín. libre más alto porque Ollama quedó vacío.
+
+Antes de arrancar, `gimg doctor` abortaba por Ollama (`engine.ollama: abort`): algo de Tarkor volvía a cargar
+`tarkor-narrador-llama31` cada ~20 s y la memoria libre bajaba a ~1,3-2,5 GB. Se descargaron los modelos por la API
+(`POST /api/generate` y `/api/embed` con `keep_alive: 0`) cuando la persona confirmó que nadie usaba nada, y Ollama se
+quedó vacío (9,1 GB libres) durante toda la tanda.
 
 ## Lo que se vio
 

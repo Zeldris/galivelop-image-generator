@@ -13,7 +13,7 @@
 | **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | F2.6 hecha en código (`2d224b4`: configuraciones y pedidos r1 de los siete `examples/<p>/`, `.gitignore`, test; decisiones en `docs/plan.md`, «Hecho en F2.6»). Instalado en la Deck el 2026-10-27 (`instalar.sh --models-from` Tarkor, `doctor --verify` en verde; `GIMG_DATA_HOME`/`GIMG_CONFIG_HOME` fijadas por el flatpak) y los 14 intentos de r1 encolados (`gimg queue list`). **Bloqueo:** Ollama recarga el narrador de Tarkor cada ~20 s; hasta que la persona pare lo que lo llama, `gimg work` no arranca. Luego: `gimg work`, comparar con `piloto/r1/`, dos columnas en `r1-fondos.md`; revisión del diff de F2.6 y F2.7. Presupuesto de compactaciones: 1 |
+| **Tarea en curso · `f2-motor`** | F2.6 cerrada: código en `2d224b4` (siete `examples/<p>/`, pedidos r1, `.gitignore`, test; decisiones en `docs/plan.md`, «Hecho en F2.6») y r1 repetida con `gimg` en la Deck el 2026-10-27: **14/14 píxel a píxel iguales** a `generar.sh`, dos columnas en `docs/registros/contenido/r1-fondos.md`, hoja en `piloto/r1-gimg/` (fuera de git). Ollama se descargó por la API con permiso de la persona. **Siguiente:** revisión del diff de F2.6 (`/code-review --max-findings all`, criterio `REVIEW.md`) y luego F2.7 (borradores `--draft`, `initImage`/`strength`). Presupuesto de compactaciones: 1 (gastada 1) |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.
@@ -78,6 +78,8 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 - **Generador de Tarkor libre (la persona levantó el aviso el 2026-10-27):** ya se pueden generar imágenes desde este repo.
   Antes de cada tanda, `gimg doctor`: el 2026-10-27 Ollama volvía a cargar `tarkor-narrador-llama31` cada ~20 s (algún
   proceso de Tarkor lo seguía llamando) y la memoria libre bajaba a ~2,5 GB; con eso `gimg` aborta (`engine.ollama: abort`).
+  Resuelto ese día cuando la persona confirmó que nadie usaba nada: descarga por la API de Ollama (`POST /api/generate` y
+  `/api/embed` con `keep_alive: 0`; el binario `ollama` no se ve desde el flatpak) y la r1 de `gimg` corrió entera sin recargas.
 - **URLs del catálogo a verificar [P]** (`gimg/models.json`): deducidas, no copiadas (WMF-imagenes no las apunta); las seis dan 200
   y su `x-linked-etag` coincide con el sha256 de la Deck. Confirmar el repositorio del VAE de FLUX.3
   (`Comfy-Org/flux2-dev`, `split_files/vae/flux2-vae.safetensors`) y el nombre `Qwen3VL-4B-Instruct-Q4_K_M.gguf` (el del

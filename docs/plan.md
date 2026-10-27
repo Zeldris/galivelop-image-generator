@@ -408,10 +408,12 @@ que r1 no daría lo mismo; el `style` por perfil se decide en F2.10 con lo apren
 `prompts/og.txt` sin el salto final (el log de r1 enseña que `generar.sh` tampoco lo pasó), `seed` 3 y `count` 2 (semillas 3 y 4, consecutivas como en
 `ronda.sh r1`). (4) *Entrega:* `entrega/` y el manifiesto `galivelop-images.manifest.json` de los ejemplos fuera de git (D35: sin las imágenes, el manifiesto
 solo apuntaría a archivos ausentes). (5) *Test:* registra cada ejemplo en carpetas temporales, envía el pedido y comprueba que `attempt_specs` da exactamente
-las semillas 3 y 4, el prompt de `og.txt` y 1280×640 a 6 pasos. **Queda manual (persona, en la Deck, con el generador libre):** `gimg project add
-examples/<p>` y `gimg order submit <p> examples/<p>/orders/r1-og.json` para los siete, comparar con `piloto/r1/` y escribir las dos columnas en
-`r1-fondos.md`. Diferencia conocida frente a `generar.sh`: `gimg` añade `--preview proj` y, si el perfil de máquina lo trae, `-t`; con la misma semilla no
-debería cambiar la imagen, y eso es justo lo que mide la comparación.
+las semillas 3 y 4, el prompt de `og.txt` y 1280×640 a 6 pasos. **Hecho en la Deck el 2026-10-27 (agente, con la persona autorizando la generación):** `gimg project add
+examples/<p>` y `gimg order submit <p> examples/<p>/orders/r1-og.json` para los siete, `gimg work` sobre los 14 intentos (~43 min) y comparación con
+`piloto/r1/`: **14/14 píxel a píxel iguales** (`ffmpeg -f md5`; los bytes difieren solo por el `tEXt` que añade `gimg`). Las dos columnas están en
+`r1-fondos.md`. Diferencia conocida frente a `generar.sh`: `gimg` añade `--preview proj --preview-interval 1 --preview-path …`; `-t` no aparece porque
+`steam-deck.json` no fija hilos. La imagen no cambia, que es justo lo que medía la comparación; los tiempos salen 0-7 s más lentos en cuatro proyectos por
+la caché de disco tras descargar Ollama, no por el motor.
 
 **Configuración del proyecto** (cambios en `project-config.schema.json`). El perfil añade: `targetWidth`/`targetHeight`
 (tamaño de destino; si faltan, los de generación), `draft` (`{"model"?, "steps"?, "scale"?}`, D32) y `compose`
