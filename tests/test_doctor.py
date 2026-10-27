@@ -12,7 +12,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from gimg import cli, doctor, engine_sdcpp, i18n, limits
+from gimg import cli, doctor, engine_sdcpp, i18n, limits, projects
 from tests.test_engine_protections import FakeOllama, loaded
 from tests.test_engine_sdcpp import dead_ollama_url
 
@@ -428,6 +428,94 @@ class CliTests(DoctorBase):
         code, text = self.doctor("--verify")
         self.assertEqual(code, 1)
         self.assertIn("the sha256 of v.safetensors does not match", text)
+
+
+class FontsTests(DoctorBase):
+    """F2.8: the fonts of ``compose.fonts`` of the registered projects, looked up with one ``fc-list``; always ``warn``."""
+
+    def project(self, name, fonts_by_profile):
+        root = self.tmp / name
+        root.mkdir()
+        profiles = {}
+        for profile, fonts in fonts_by_profile.items():
+            data = {"width": 1280, "height": 640, "steps": 6, "cfg": 1.0, "sampler": "euler", "model": "m-default"}
+            if fonts is not None:
+                data["compose"] = {"template": "t.svg", "fonts": fonts}
+            profiles[profile] = data
+        (root / "galivelop-images.json").write_text(json.dumps(
+            {"minVersion": "0.1.0", "name": name, "delivery": {"dir": "out", "template": "{key}-{profile}.png"},
+             "profiles": profiles}), encoding="utf-8")
+        projects.add(root)
+        return root
+
+    def fc_list(self, families):
+        """A fake ``fc-list`` that answers `families` and records its arguments."""
+        self.fc_args = self.tmp / "fc-args"
+        lines = " ".join("'%s'" % f for f in families)  # builtins only: the fake PATH has no cat
+        script(self.bin / "fc-list", 'printf "%%s\\n" "$@" >> "%s"\nprintf \'%%s\\n\' %s' % (self.fc_args, lines))
+
+    def fonts(self):
+        return {c.id: c for c in doctor.run() if c.id.startswith(("font", "fonts"))}
+
+    def test_no_project_declares_fonts_is_ok_and_fc_list_is_not_needed(self):
+        self.project("p", {"og": None})
+        self.assertEqual([(c.id, c.status, c.key) for c in self.fonts().values()], [("fonts", doctor.OK, "doctor.fonts.none")])
+
+    def test_an_installed_font_is_ok_case_insensitive_and_a_line_can_list_several_families(self):
+        self.fc_list(["Sora,Sora Thin", "Inter", "Cormorant Garamond,Cormorant Garamond Light"])
+        self.project("p", {"og": ["sora", "Cormorant Garamond"], "wide": ["Inter"]})
+        found = self.fonts()
+        self.assertEqual({k: (c.status, c.key) for k, c in found.items()},
+                         {"font:sora": (doctor.OK, "doctor.fonts.ok"), "font:Cormorant Garamond": (doctor.OK, "doctor.fonts.ok"),
+                          "font:Inter": (doctor.OK, "doctor.fonts.ok")})
+        self.assertEqual(self.fc_args.read_text().split("\n")[:-1], ["--format", "%{family}\\n"])  # ONE call, with the format
+
+    def test_a_missing_font_warns_with_the_projects_that_use_it_and_how_to_install_it(self):
+        self.fc_list(["Inter"])
+        self.project("alpha", {"og": ["Sora"]})
+        self.project("beta", {"og": ["Sora", "Inter"], "wide": ["Sora"]})
+        found = self.fonts()
+        check = found["font:Sora"]
+        self.assertEqual((check.status, check.key, check.params), (doctor.WARN, "doctor.fonts.missing",
+                                                                    {"font": "Sora", "projects": "alpha, beta"}))
+        self.assertEqual(found["font:Inter"].status, doctor.OK)
+        self.assertIn("fc-cache -f", check.fix("en"))
+        self.assertIn("~/.local/share/fonts", check.fix("es"))
+        self.assertFalse(doctor.failed(doctor.run()))  # a warning, never a failure
+
+    def test_without_fc_list_it_warns_once_and_does_not_fail(self):
+        self.project("p", {"og": ["Sora", "Inter"]})
+        found = self.fonts()
+        self.assertEqual([(c.id, c.status, c.key) for c in found.values()],
+                         [("fonts", doctor.WARN, "doctor.fonts.no_fc_list")])
+        self.assertIn("fontconfig", found["fonts"].fix("en"))
+        self.assertFalse(doctor.failed(doctor.run()))
+
+    def test_an_fc_list_that_fails_counts_as_missing(self):
+        script(self.bin / "fc-list", "exit 3")
+        self.project("p", {"og": ["Sora"]})
+        self.assertEqual(self.fonts()["fonts"].key, "doctor.fonts.no_fc_list")
+
+    def test_a_broken_project_warns_with_its_name_and_the_others_are_still_checked(self):
+        self.fc_list(["Inter"])
+        self.project("good", {"og": ["Inter"]})
+        broken = self.project("broken", {"og": ["Sora"]})
+        (broken / "galivelop-images.json").write_text("{not json", encoding="utf-8")
+        found = self.fonts()
+        check = found["fonts:broken"]
+        self.assertEqual((check.status, check.key, check.params["project"]), (doctor.WARN, "doctor.fonts.project_error", "broken"))
+        self.assertIn("galivelop-images.json", check.params["message"])
+        self.assertEqual(found["font:Inter"].status, doctor.OK)
+        self.assertNotIn("font:Sora", found)
+
+    def test_no_registered_project_is_ok(self):
+        self.assertEqual([c.key for c in self.fonts().values()], ["doctor.fonts.none"])
+
+    def test_the_texts_exist_in_both_languages(self):
+        for key in ("doctor.fonts.none", "doctor.fonts.ok", "doctor.fonts.missing", "doctor.fonts.no_fc_list",
+                    "doctor.fonts.project_error", "doctor.fix.fonts"):
+            self.assertNotEqual(i18n.t(key, "es", font="f", projects="p", project="p", message="m"),
+                                i18n.t(key, "en", font="f", projects="p", project="p", message="m"), key)
 
 
 class LocaleTests(unittest.TestCase):

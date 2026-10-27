@@ -192,6 +192,13 @@ def _apply(plan: dict, restore=False) -> None:
         raise
 
 
+def delivered_file(project: str, key: str, profile: str) -> str:
+    """Where `choose` delivers the image of (key, profile), relative to the project folder (what the manifest calls ``file``)."""
+    proj = projects.get(project)
+    root = Path(proj["root"])
+    return _target(root, proj["config"], key, profile).relative_to(root.resolve()).as_posix()
+
+
 def _lock(project: str):
     """Delivery lock of a project: lives in the generator's data dir, never inside the delivered project."""
     return fsutil.lock(paths.project_data_dir(project) / "delivery")

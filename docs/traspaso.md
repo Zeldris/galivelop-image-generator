@@ -13,7 +13,7 @@
 | **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | F2.7 cerrada; CI sin cuota: F2.6 y F2.7 «comprobadas solo en local», pendiente de que la persona lo confirme. F2.8 (`docs/plan.md`): E1 núcleo y E2 integración hechos y revisados (arreglos de `e1a5d7f`: intento antes de `render`, prefijo `.compose-q<e>-`, guardia de `raw`). **Siguiente:** E3 frente (`recompose`, `gimg compose`, `doctor` fuentes). Presupuesto de compactaciones: 1 (gastada 0) |
+| **Tarea en curso · `f2-motor`** | F2.7 cerrada; CI sin cuota: F2.6 y F2.7 «comprobadas solo en local», pendiente de que la persona lo confirme. F2.8 (`docs/plan.md`): E1, E2 y E3 hechos (E3: `gimg compose`/`recompose`, marca en `order show`, fuentes en `gimg doctor`; E1 y E2 revisados). **Siguiente:** revisión de E3 y cierre de F2.8 (bitácora, plan; leves de E1/E2 en «Pendiente»). Presupuesto de compactaciones: 1 (gastada 0) |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.

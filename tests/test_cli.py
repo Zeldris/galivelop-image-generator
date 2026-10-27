@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from gimg import __version__, cli, i18n
+from gimg import __version__, cli, compose, engine, i18n
 
 ROOT = Path(__file__).resolve().parent.parent
 EXAMPLE = json.loads((ROOT / "examples" / "galivelop-images.json").read_text())
@@ -262,3 +262,118 @@ class BadEngineTests(CliBase):
         with mock.patch("gimg.worker.run", return_value=0) as run:
             self.ok("--lang", "es", "work", "--once")
         self.assertEqual(run.call_args.kwargs["lang"], "es")
+
+
+class ComposeCliTests(CliBase):
+    """F2.8: `gimg compose` composes an attempt again from its raw image (the render is a fake: the real tools are in
+    `tests/test_recompose.py`)."""
+
+    NAME = "example-world"
+    BASE = ("example-world", "k", "og")
+
+    def setUp(self):
+        super().setUp()
+        cfg = json.loads((self.root / "galivelop-images.json").read_text())
+        cfg["profiles"]["og"] = dict(cfg["profiles"]["banner"], width=1280, height=640, targetWidth=1200, targetHeight=630,
+                                     compose={"template": "t.svg", "fields": ["title", "subtitle"]})
+        (self.root / "galivelop-images.json").write_text(json.dumps(cfg))
+        (self.root / "t.svg").write_text("<svg/>", encoding="utf-8")
+        self.calls = []
+        patch = mock.patch.object(compose, "render", self.render)
+        patch.start()
+        self.addCleanup(patch.stop)
+        self.ok("project", "add", str(self.root))
+        self.order_file.write_text(json.dumps({"key": "k", "profile": "og", "prompt": "p", "text": {"title": "Old"}}))
+        self.ok("order", "submit", self.NAME, str(self.order_file))
+        self.assertEqual(self.js("work"), {"processed": 1})
+        self.delivered = self.root / "uploads/images/k-og.png"
+        self.calls.clear()  # the worker composed the first attempt; what follows is what the tests look at
+
+    def render(self, root, cfg, raw, out, text, profile=None, prefix=None):
+        self.calls.append((Path(raw).name, Path(out).name, dict(text)))
+        Path(out).write_bytes(Path(raw).read_bytes() + json.dumps(text, sort_keys=True).encode())
+        return {"fit": "cover", "targetWidth": 1200, "targetHeight": 630, "template": "t.svg", "text": dict(text)}
+
+    def no_generation(self):
+        return mock.patch.object(engine.FakeEngine, "generate", side_effect=AssertionError("generated"))
+
+    def test_on_the_chosen_attempt_it_delivers_again_without_generating(self):
+        self.ok("choose", *self.BASE, "1")
+        before = self.delivered.read_bytes()
+        with self.no_generation():
+            out = self.ok("compose", *self.BASE, "--text", "title=New")
+        self.assertEqual(out.strip(), "Composed attempt 1 and delivered it again: uploads/images/k-og.png")
+        self.assertEqual(self.calls[-1], ("q1.raw.png", "q1.png", {"title": "New"}))
+        self.assertTrue(self.delivered.read_bytes().endswith(b'{"title": "New"}'))
+        self.assertNotEqual(self.delivered.read_bytes(), before)
+        manifest = json.loads((self.root / "galivelop-images.manifest.json").read_text())
+        self.assertEqual(manifest["images"]["k"]["og"]["compose"]["text"], {"title": "New"})
+        self.assertEqual([e["id"] for e in self.js("queue", "list")], [1])  # only the generation of the order
+
+    def test_without_a_chosen_attempt_it_composes_the_last_one_and_delivers_nothing(self):
+        self.ok("attempt", "new", *self.BASE)
+        self.js("work")
+        out = self.ok("compose", *self.BASE)
+        self.assertEqual(out.strip(), "Composed attempt 2: attempts/q2.png")
+        self.assertEqual(self.calls[-1][:2], ("q2.raw.png", "q2.png"))
+        self.assertFalse(self.delivered.exists())
+
+    def test_an_attempt_number_and_the_json_output_are_the_attempt(self):
+        self.ok("choose", *self.BASE, "1")
+        item = self.js("compose", *self.BASE, "1", "--text", "subtitle=Sub")
+        self.assertEqual((item["id"], item["compose"]["text"], item["delivered"]),
+                         (1, {"title": "Old", "subtitle": "Sub"}, "uploads/images/k-og.png"))
+        self.assertEqual(self.js("order", "show", *self.BASE)["text"], {"title": "Old", "subtitle": "Sub"})
+
+    def test_text_is_saved_in_the_order_split_at_the_first_equals_and_a_repeated_field_keeps_the_last(self):
+        self.ok("compose", *self.BASE, "--text", "title=a=b", "--text", "subtitle=", "--text", "title=c=d")
+        self.assertEqual(self.calls[-1][2], {"title": "c=d", "subtitle": ""})
+        self.assertEqual(self.js("order", "show", *self.BASE)["text"], {"title": "c=d", "subtitle": ""})
+        shown = self.ok("order", "show", *self.BASE)
+        self.assertIn("Text title: c=d", shown)
+
+    def test_a_malformed_text_says_why_and_changes_nothing(self):
+        before = self.js("order", "show", *self.BASE)
+        for bad in ("novalue", "=x", ""):
+            self.fails("compose", *self.BASE, "--text", bad,
+                       message="\"%s\" is not FIELD=TEXT" % bad)
+        self.fails("compose", *self.BASE, "--text", "novalue", message="«novalue» no es CAMPO=TEXTO",
+                   lang="es")
+        self.assertEqual((self.calls, self.js("order", "show", *self.BASE)), ([], before))
+
+    def test_a_field_the_profile_does_not_compose_is_refused(self):
+        self.fails("compose", *self.BASE, "--text", "color=red", message="\"color\" is not in compose.fields")
+        self.assertEqual(self.calls, [])
+
+    def test_an_unknown_attempt_is_refused_with_its_number(self):
+        self.fails("compose", *self.BASE, "9", message="has no attempt 9")
+        code, out, err = self.run_cli("compose", *self.BASE, "x")  # not a number: argparse refuses it
+        self.assertEqual((code, out), (2, ""))
+        self.assertEqual(self.calls, [])
+
+    def test_a_profile_with_nothing_to_compose_says_so(self):
+        other = self.tmp / "banner.json"
+        other.write_text(json.dumps(dict(ORDER, count=1)))
+        self.ok("order", "submit", self.NAME, str(other))
+        self.js("work")
+        self.fails("compose", self.NAME, ORDER["key"], ORDER["profile"],
+                   message="has nothing to compose")
+        self.assertEqual(self.calls, [])
+
+    def test_a_failed_composition_shows_its_reason_exits_1_and_order_show_marks_the_attempt(self):
+        def failing(*args, **kw):
+            raise compose.GimgError("compose.tool_failed", tool="ffmpeg", reason="boom")
+
+        with mock.patch.object(compose, "render", failing):
+            self.fails("compose", *self.BASE, message="ffmpeg failed while composing: boom")
+        shown = self.ok("order", "show", *self.BASE)
+        self.assertIn("      not composed: ffmpeg failed while composing: boom", shown)
+        self.assertIn("      sin componer: ", self.ok("--lang", "es", "order", "show", *self.BASE))
+        self.fails("choose", *self.BASE, "1", message="was not composed")
+        self.ok("compose", *self.BASE)  # fixes it
+        self.assertNotIn("not composed", self.ok("order", "show", *self.BASE))
+        self.ok("choose", *self.BASE, "1")
+
+    def test_the_help_lists_the_command_in_both_languages(self):
+        for lang, word in (("en", "again from its raw image"), ("es", "otra vez desde su imagen cruda")):
+            self.assertIn(word, self.ok("--lang", lang, "--help"))

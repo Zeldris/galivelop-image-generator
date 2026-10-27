@@ -7,7 +7,7 @@ This module neither enqueues (queue, F1.4) nor delivers (F1.5): `choose` and `un
 new chosen ids so delivery can hook in. Every read-modify-write holds `fsutil.lock` of ``order.json``.
 
 Public API: `submit`, `set_text`, `attempt_specs`, `add_attempt`, `set_composed`, `attempt_for_entry`, `attempt_image`,
-`raw_image`, `pending_image_path`, `mark`, `note`, `choose`, `undo`, `get`, `list_orders`. All raise `GimgError` with codes ``order.*`` on bad input.
+`raw_image`, `compose_names`, `compose_paths`, `pending_image_path`, `mark`, `note`, `choose`, `undo`, `get`, `list_orders`. All raise `GimgError` with codes ``order.*`` on bad input.
 """
 from __future__ import annotations
 
@@ -76,6 +76,26 @@ def raw_image(project: str, key: str, profile: str, attempt: dict) -> Path:
     one that was never composed, has no ``raw``). Same guard as `attempt_image`; path only, nothing is read."""
     rel = attempt.get("raw")
     return paths.inside(_order_dir(project, key, profile), rel if isinstance(rel, str) else attempt["image"])
+
+
+def compose_names(attempt: dict) -> tuple:
+    """``(raw, image)``, relative to the order folder, that a composed `attempt` has: its ``raw`` (else its ``image`` as
+    ``<stem>.raw.png``: an attempt made before F2.8) and the composed file (the raw one without ``.raw``:
+    ``attempts/q3.raw.png`` -> ``attempts/q3.png``; a ``raw`` that does not end in ``.raw.png`` leaves ``image`` as it is).
+    Pure: nothing is read or checked."""
+    raw = attempt.get("raw")
+    if not isinstance(raw, str):
+        image = attempt["image"]
+        raw = image[:-4] + ".raw.png" if image.endswith(".png") else image + ".raw.png"
+    image = raw[:-len(".raw.png")] + ".png" if raw.endswith(".raw.png") else attempt["image"]
+    return raw, image
+
+
+def compose_paths(project: str, key: str, profile: str, attempt: dict) -> tuple:
+    """`compose_names` of `attempt` as paths ``(raw, image)`` inside its order folder (D25). Path only; nothing is read."""
+    raw, image = compose_names(attempt)
+    folder = _order_dir(project, key, profile)
+    return paths.inside(folder, raw), paths.inside(folder, image)
 
 
 def pending_image_path(project: str, key: str, profile: str, entry_id: int) -> Path:
@@ -375,11 +395,7 @@ def set_composed(project: str, key: str, profile: str, attempt_id: int, compose:
 
     def change(order):
         item = _attempt(order, attempt_id)
-        raw = item.get("raw")
-        if not isinstance(raw, str):
-            raw = item["image"][:-4] + ".raw.png" if item["image"].endswith(".png") else item["image"] + ".raw.png"
-        if raw.endswith(".raw.png"):
-            item["image"] = raw[:-len(".raw.png")] + ".png"
+        raw, item["image"] = compose_names(item)
         item["raw"] = raw
         item["compose"] = copy.deepcopy(compose)
         item.pop("composeError", None)

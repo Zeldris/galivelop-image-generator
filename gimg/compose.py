@@ -27,13 +27,14 @@ import sys
 import tempfile
 from pathlib import Path
 
-from . import i18n, paths, png
+from . import delivery, i18n, limits, log, orders, paths, png, projects
 from .errors import GimgError
 
 TIMEOUT_S = 120
 MAX_SVG_BYTES = 5_000_000
 FITS = ("cover", "contain")
 COMPOSE_TMP_PREFIX = ".compose-"
+RECOMPOSE_TMP_PREFIX = ".compose-c%d-"  # `recompose`: never the worker's ``.compose-q<entry>-`` (`queue._clean_pending`)
 
 _HOLE = re.compile(r"\{\{([A-Za-z][A-Za-z0-9]*)\}\}")
 # What XML 1.0 cannot carry at all (C0 controls but tab, LF and CR; the two non-characters) plus lone surrogates
@@ -286,5 +287,98 @@ def render(project_root, profile_cfg, raw_path, out_path, text, profile=None, pr
     return info
 
 
-__all__ = ["render", "plan_for", "target_size", "fit_geometry", "substitute", "xml_escape", "resolve_assets",
+def _pick_attempt(order: dict, attempt_id) -> dict:
+    """The attempt `recompose` works on: `attempt_id`, else the chosen one, else the last (highest id)."""
+    if attempt_id is None:
+        attempt_id = order["chosen"]
+    if attempt_id is None and order["attempts"]:
+        attempt_id = max(a["id"] for a in order["attempts"])
+    if attempt_id is None:
+        raise GimgError("compose.no_attempts", order=order["key"], profile=order["profile"])
+    for item in order["attempts"]:
+        if type(attempt_id) is int and item["id"] == attempt_id:
+            return item
+    raise GimgError("order.attempt_unknown", attempt=attempt_id, order=order["key"], profile=order["profile"])
+
+
+def _keep_raw(source: Path, raw_path: Path) -> None:
+    """Copy `source` (the ``image`` of an attempt made before F2.8) to `raw_path`, atomically."""
+    try:
+        fd, tmp = tempfile.mkstemp(dir=str(raw_path.parent), prefix="." + raw_path.name + ".", suffix=".tmp")
+        os.close(fd)
+        try:
+            shutil.copyfile(source, tmp)
+            os.replace(tmp, raw_path)
+        except BaseException:
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+            raise
+    except OSError as exc:
+        raise GimgError("compose.write_failed", path=str(raw_path), reason=exc.strerror or str(exc))
+
+
+def _log_recompose(project, key, profile, attempt, info=None, error=None) -> None:
+    """One line in the project log, like the worker's (D26): ``app.image.compose`` or ``app.image.compose_error``; the
+    extra ``app.image.recompose`` tells it from a generation (no engine ran: no duration). Never fails the caller."""
+    try:
+        record = log.record_for(key, profile, attempt, limits.load_machine(), attempt.get("engine") or "unknown",
+                                compose=(info or {}).get("template"), compose_error=(error or {}).get("code"))
+        record["app.image.recompose"] = True
+        log.append(project, record)
+    except Exception as exc:
+        print(i18n.t("compose.log_failed", reason=str(exc)), file=sys.stderr)
+
+
+def recompose(project, key, profile, attempt_id=None, text=None) -> dict:
+    """Compose an attempt again from its raw image, without generating (D28); returns the attempt (a copy).
+
+    The attempt is `attempt_id`, else the chosen one, else the last. `text` (``{field: value}``) is merged into the
+    order's ``text`` first (`orders.set_text`: the next attempts and the gallery use it too) and the order's text is what
+    gets composed. An attempt made before F2.8 has no raw image: its ``image`` is copied to ``<stem>.raw.png`` before
+    anything else (`orders.set_composed` expects it). The temporary folder is ``.compose-c<id>-*``.
+
+    A profile with nothing to compose raises ``compose.nothing_to_do`` before anything changes. If the render fails, the
+    attempt gets the error as ``composeError`` (`orders.set_compose_error`) and it is raised again; a project log line
+    records either result. The chosen attempt is delivered again (manifest included) and the result then has
+    ``delivered``: the file, relative to the project."""
+    proj = projects.get(project)
+    profile_cfg = proj["config"]["profiles"].get(profile)
+    order = orders.get(project, key, profile)
+    if profile_cfg is None:
+        raise GimgError("order.profile_unknown", profile=profile)
+    attempt = _pick_attempt(order, attempt_id)
+    attempt_id = attempt["id"]
+    raw_path, out_path = orders.compose_paths(project, key, profile, attempt)
+    # an attempt without ``raw`` is made before F2.8; if its copy is already there, the image may be a composed one
+    keep = not isinstance(attempt.get("raw"), str) and not raw_path.is_file()
+    source = orders.attempt_image(project, key, profile, attempt) if keep else raw_path
+    if plan_for(profile_cfg, *png.size(source)) is None:
+        raise GimgError("compose.nothing_to_do", profile=profile)
+    texts = orders.set_text(project, key, profile, text) if text else dict(order.get("text") or {})
+    if keep:
+        _keep_raw(source, raw_path)
+    try:
+        info = render(proj["root"], profile_cfg, raw_path, out_path, texts, profile,
+                      prefix=RECOMPOSE_TMP_PREFIX % attempt_id)
+        done = orders.set_composed(project, key, profile, attempt_id, info)
+    except Exception as exc:
+        code, params = (exc.code, exc.params) if isinstance(exc, GimgError) else (
+            "compose.unexpected", {"reason": ("%s: %s" % (type(exc).__name__, exc))[:300]})
+        error = {"code": code, "params": json.loads(json.dumps(params, default=str))}
+        try:
+            failed = orders.set_compose_error(project, key, profile, attempt_id, error)
+        except Exception:
+            failed = attempt
+        _log_recompose(project, key, profile, failed, error=error)
+        raise
+    _log_recompose(project, key, profile, done, info=info)
+    if orders.get(project, key, profile)["chosen"] == attempt_id:
+        delivery.choose(project, key, profile, attempt_id)
+        done["delivered"] = delivery.delivered_file(project, key, profile)
+    return done
+
+
+__all__ = ["recompose", "render", "plan_for", "target_size", "fit_geometry", "substitute", "xml_escape", "resolve_assets",
            "logo_data_uri", "rsvg_argv", "ffmpeg_argv", "TIMEOUT_S", "MAX_SVG_BYTES"]

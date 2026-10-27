@@ -7,7 +7,7 @@ clone with nothing installed is not "broken", it is not installed yet.
 
 Checks, in order: Python, launcher in ``PATH``, ``config.json``, configured engine, machine profile, ``sd-cli`` and the
 ``libggml*`` next to it (``LD_LIBRARY_PATH`` is that folder, D33), models of the catalog by id, free memory, ``ffmpeg`` and
-``rsvg-convert`` (D28: checked, never installed), data folder, flatpak, Ollama.
+``rsvg-convert`` (D28: checked, never installed), the fonts of ``compose.fonts`` (F2.8), data folder, flatpak, Ollama.
 
 - **Models:** a model with no file at all is fine when it is optional (``installDefault`` is not true in the catalog) and
   a problem when it is a default one; a model with only some files is always a problem. A file that is there is checked
@@ -15,6 +15,9 @@ Checks, in order: Python, launcher in ``PATH``, ``config.json``, configured engi
 - **Flatpak:** an editor in flatpak sets ``XDG_DATA_HOME=~/.var/app/<id>/data``, and gimg run from its terminal would use
   another data folder (and models) than from a normal one. The XDG variables are honoured, not ignored; the check warns and
   says to set ``GIMG_DATA_HOME`` / ``GIMG_CONFIG_HOME`` (which win over XDG, `paths`).
+- **Fonts (F2.8):** the ``compose.fonts`` of every profile of every registered project, looked up with one
+  ``fc-list --format '%{family}\\n'`` (case-insensitive, a line may list several families). Always ``warn``, never ``fail``:
+  a missing font only changes how the composed text looks. A project that cannot be read is a ``warn`` too.
 - **Ollama:** skipped with ``engine.ollama: ignore``; the URL is the one of `engine_sdcpp.ollama_url` (``GIMG_OLLAMA_URL``)
   or the ``ollama_url`` argument. A service that is off counts as "nothing loaded", as in the engine.
 """
@@ -30,7 +33,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-from . import engine, engine_sdcpp, fsutil, i18n, limits, models, paths
+from . import engine, engine_sdcpp, fsutil, i18n, limits, models, paths, projects
 from .errors import GimgError
 
 OK, WARN, FAIL = "ok", "warn", "fail"
@@ -237,6 +240,54 @@ def _tools() -> list:
     return out
 
 
+def _installed_families():
+    """Lower-case family names ``fc-list`` knows, or ``None`` if it is missing or cannot run."""
+    exe = shutil.which("fc-list")
+    if exe is None:
+        return None
+    try:
+        done = subprocess.run([exe, "--format", "%{family}\\n"], capture_output=True, text=True, errors="replace",
+                              timeout=TOOL_TIMEOUT_S, stdin=subprocess.DEVNULL)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if done.returncode != 0:
+        return None
+    return {name.strip().lower() for line in done.stdout.splitlines() for name in line.split(",") if name.strip()}
+
+
+def _fonts() -> list:
+    """The fonts the registered projects compose with, each ``ok`` or ``warn`` (never ``fail``)."""
+    out, wanted = [], {}  # font -> project names
+    try:
+        names = list(projects.list_projects())
+    except (GimgError, OSError, ValueError) as exc:  # the registry itself is unreadable
+        return [Check("fonts", WARN, "doctor.fonts.project_error", {"project": "-", "message": str(exc)})]
+    for name in names:
+        try:
+            config = projects.get(name)["config"]
+        except GimgError as exc:
+            out.append(Check("fonts:" + name, WARN, "doctor.fonts.project_error",
+                             {"project": name, "message": exc.message(i18n.default_lang())}))
+            continue
+        for profile in config["profiles"].values():
+            for font in (profile.get("compose") or {}).get("fonts", []):
+                if name not in wanted.setdefault(font, []):
+                    wanted[font].append(name)
+    if not wanted:
+        return out + [Check("fonts", OK, "doctor.fonts.none")]
+    installed = _installed_families()
+    if installed is None:
+        return out + [Check("fonts", WARN, "doctor.fonts.no_fc_list", {}, "doctor.fix.tool",
+                            {"tool": "fc-list", "apt": "fontconfig", "pacman": "fontconfig"})]
+    for font, names in sorted(wanted.items()):
+        if font.lower() in installed:
+            out.append(Check("font:" + font, OK, "doctor.fonts.ok", {"font": font}))
+        else:
+            out.append(Check("font:" + font, WARN, "doctor.fonts.missing", {"font": font, "projects": ", ".join(names)},
+                             "doctor.fix.fonts"))
+    return out
+
+
 def _folders() -> list:
     out = []
     data = paths.data_dir()
@@ -291,6 +342,7 @@ def run(verify: bool = False, ollama_url: Optional[str] = None) -> list:
     checks += _models(machine, verify, bad)
     checks += _memory(machine)
     checks += _tools()
+    checks += _fonts()
     checks += _folders()
     checks.append(_ollama(machine, bad, ollama_url))
     return checks

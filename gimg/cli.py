@@ -7,7 +7,7 @@ import os
 import sys
 import traceback
 
-from . import __version__, delivery, doctor, engine, i18n, orders, projects, queue, worker
+from . import __version__, compose, delivery, doctor, engine, i18n, orders, projects, queue, worker
 from .errors import GimgError
 
 LANGS = ("es", "en")
@@ -82,6 +82,9 @@ def _build(lang: str) -> argparse.ArgumentParser:
 
     leaf(top, "choose", "cli.cmd.choose", project, okey, oprofile, attempt)
     leaf(top, "undo", "cli.cmd.undo", project, okey, oprofile)
+    leaf(top, "compose", "cli.cmd.compose", project, okey, oprofile,
+         arg("attempt", "cli.arg.attempt_optional", type=int, nargs="?", default=None),
+         opt("--text", "cli.arg.text_kv", action="append", default=[], metavar="FIELD=TEXT"))
 
     g = group(top, "queue", "cli.cmd.queue")
     leaf(g, "list", "cli.cmd.queue_list", opt("--state", "cli.arg.queue_state", choices=queue.STATES))
@@ -193,12 +196,36 @@ def _run(args, out: _Out) -> int:
         else:
             out.line("cli.out.chosen" if cmd == "choose" else "cli.out.undone",
                      new=out.none(result["new"]), old=out.none(result["old"]))
+    elif cmd == "compose":
+        _compose(args, out)
     elif cmd == "queue":
         _queue(args, sub, out)
     elif cmd == "work":
         handled = worker.run(once=args.once, lang=out.lang)
         out.data({"processed": handled}) if out.as_json else out.line("cli.out.processed", count=handled)
     return 0
+
+
+def _text_pairs(pairs) -> dict:
+    """``["title=Hi", ...]`` as ``{"title": "Hi"}``: split at the first ``=``; a later pair replaces an earlier one."""
+    text = {}
+    for pair in pairs:
+        field, sep, value = pair.partition("=")
+        if not sep or not field:
+            raise GimgError("cli.text_invalid", value=pair)
+        text[field] = value
+    return text
+
+
+def _compose(args, out: _Out) -> None:
+    text = _text_pairs(args.text)
+    item = compose.recompose(args.project, args.key, args.profile, args.attempt, text or None)
+    if out.as_json:
+        out.data(item)
+    elif "delivered" in item:
+        out.line("cli.out.composed_delivered", id=item["id"], path=item["delivered"])
+    else:
+        out.line("cli.out.composed", id=item["id"], image=item["image"])
 
 
 def _order(args, sub, out: _Out) -> None:
@@ -236,11 +263,16 @@ def _order(args, sub, out: _Out) -> None:
             out.line("cli.out.order_init" if o.get("strength") is not None else "cli.out.order_init_nostrength",
                      path=o["initImage"], strength=o.get("strength"))
         out.line("cli.out.order_chosen", chosen=out.none(o["chosen"]))
+        if o.get("text"):
+            for field, value in o["text"].items():
+                out.line("cli.out.order_text", field=field, value=value)
         if not o["attempts"]:
             out.line("cli.out.attempts_none")
         for a in o["attempts"]:
             out.line("cli.out.attempt_line", id=a["id"], state=a["state"], seed=a["seed"], image=a["image"],
                      draft=out.t("cli.out.draft_mark") if a.get("draft") else "")
+            if a.get("composeError"):
+                out.line("cli.out.compose_error_mark", error=queue.error_text(a["composeError"], out.lang))
             if a.get("note"):
                 out.line("cli.out.attempt_note", note=a["note"])
 

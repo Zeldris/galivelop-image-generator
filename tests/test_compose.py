@@ -82,12 +82,13 @@ class LocaleTests(unittest.TestCase):
         "bad_text": {"field": "title"}, "nothing_to_do": {"profile": "og"}, "tool_missing": {"tool": "ffmpeg"},
         "timeout": {"tool": "ffmpeg", "seconds": 120}, "tool_failed": {"tool": "ffmpeg", "reason": "Invalid data"},
         "write_failed": {"path": "out/q1.png", "reason": "No such file or directory"},
+        "no_attempts": {"order": "hero", "profile": "og"}, "unexpected": {"reason": "KeyError: 'x'"},
     }
 
     def test_every_code_of_compose_py_has_a_text_in_both_languages_that_uses_its_parameters(self):
         source = (Path(compose.__file__)).read_text(encoding="utf-8")
         import re
-        used = set(re.findall(r'"compose\.([a-z_]+)"', source)) - {"chunk_failed"}
+        used = set(re.findall(r'"compose\.([a-z_]+)"', source)) - {"chunk_failed", "log_failed"}
         self.assertEqual(used, set(self.PARAMS))  # a new code has to be added here, with its parameters
         for lang in ("es", "en"):
             for code, params in self.PARAMS.items():
