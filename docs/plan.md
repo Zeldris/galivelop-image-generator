@@ -395,7 +395,9 @@ comprueban, no se instalan). Código de salida 1 con algún `fail`; `--json` da 
 `/.var/app/` y la variable `GIMG_*_HOME` correspondiente no está fijada, y dice la línea `export GIMG_DATA_HOME="$HOME/.local/share/gimg"` (o `GIMG_CONFIG_HOME`) para que
 todas las terminales vean las mismas carpetas y modelos. **Queda:** las fuentes de las plantillas con `fc-list` (F2.8, cuando existan las plantillas); el `--dry-run`
 de la descarga real del zip y la instalación de verdad, **manual en la Deck** (la persona corre `./instalar.sh` y `gimg doctor`; hasta entonces el zip solo está
-comprobado por suma).
+comprobado por suma). *Hecho el 2026-10-27 en la Deck (agente, con permiso de la persona):* `instalar.sh --models-from <modelos de Tarkor>` bajó el zip (37 MB),
+enlazó los tres archivos del modelo rápido tras comprobar su sha256 y escribió `engine: sdcpp`; `gimg doctor --verify` en verde salvo Ollama con modelos
+cargados. El aviso de flatpak salió y se resolvió con `GIMG_DATA_HOME`/`GIMG_CONFIG_HOME`.
 
 *Hecho en F2.6* (`examples/<proyecto>/galivelop-images.json`, `examples/<proyecto>/orders/r1-og.json`, `.gitignore`, `tests/test_examples.py`): los
 **siete** proyectos del ajuste del 2026-10-26, no cuatro. **Decisiones:** (1) *Perfiles:* los de generación de la tabla de formatos que lista cada proyecto

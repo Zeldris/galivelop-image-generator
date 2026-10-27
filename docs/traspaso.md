@@ -13,7 +13,7 @@
 | **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | F2.6 hecha en código (configuraciones y pedidos r1 de los siete `examples/<p>/`, `.gitignore`, test; decisiones en `docs/plan.md`, «Hecho en F2.6»). **Manual persona, en la Deck y con el generador de Tarkor libre:** `./instalar.sh`, `gimg doctor --verify` y la r1 con `gimg` (los siete `orders/r1-og.json`) frente a `piloto/r1/`, dos columnas en `r1-fondos.md`. Sin tocar `main`. Siguiente: revisión del diff de F2.6 y luego F2.7 (`docs/plan.md`, fila F2.7). Presupuesto de compactaciones de F2.7: 1 |
+| **Tarea en curso · `f2-motor`** | F2.6 hecha en código (`2d224b4`: configuraciones y pedidos r1 de los siete `examples/<p>/`, `.gitignore`, test; decisiones en `docs/plan.md`, «Hecho en F2.6»). Instalado en la Deck el 2026-10-27 (`instalar.sh --models-from` Tarkor, `doctor --verify` en verde; `GIMG_DATA_HOME`/`GIMG_CONFIG_HOME` fijadas por el flatpak) y los 14 intentos de r1 encolados (`gimg queue list`). **Bloqueo:** Ollama recarga el narrador de Tarkor cada ~20 s; hasta que la persona pare lo que lo llama, `gimg work` no arranca. Luego: `gimg work`, comparar con `piloto/r1/`, dos columnas en `r1-fondos.md`; revisión del diff de F2.6 y F2.7. Presupuesto de compactaciones: 1 |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.
@@ -32,7 +32,7 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 
 ## Pendiente
 
-- **Carpeta de datos en flatpak (resuelto en F2.5, `49e6176`):** VS Code en flatpak fija `XDG_DATA_HOME=~/.var/app/…`, y `gimg` desde su terminal usaría otra carpeta de datos que desde una terminal normal (`docs/registros/contenido/r0-humo.md`). Decidido: no se ignora el XDG; `gimg doctor` lo avisa y dice que se fije `GIMG_DATA_HOME`/`GIMG_CONFIG_HOME` (mandan sobre XDG). Queda que la persona lo vea en la Deck al correr `gimg doctor`.
+- **Carpeta de datos en flatpak (resuelto en F2.5, `49e6176`):** VS Code en flatpak fija `XDG_DATA_HOME=~/.var/app/…`, y `gimg` desde su terminal usaría otra carpeta de datos que desde una terminal normal (`docs/registros/contenido/r0-humo.md`). Decidido: no se ignora el XDG; `gimg doctor` lo avisa y dice que se fije `GIMG_DATA_HOME`/`GIMG_CONFIG_HOME` (mandan sobre XDG). Visto en la Deck el 2026-10-27: el aviso sale y, con las dos variables, instalación y datos van a `~/.local/share/gimg` y `~/.config/gimg`.
 - **Leves de la revisión de F0** (no se revisan más en este PR):
   - F2: `width`/`height` sin `multipleOf` (lo que exija `sd-cli` por modelo); el validador aún no lo soporta.
   - `propertyNames` solo pasa el `pattern` del primer error: si falla por otra cosa, el mensaje sale vacío.
@@ -75,9 +75,9 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
   - `delivery.target_taken` también bloquea un `undo` hasta `null` si otra entrada del manifiesto comparte `file`
     (tras cambiar la plantilla), y compara sin `casefold` (no ve colisiones en discos sin mayúsculas).
   - `order submit` guarda el pedido antes de que `attempt_specs` rechace un prompt+estilo largo: queda sin encolar.
-- **Generador de Tarkor ocupado con pruebas (aviso de la persona, 2026-10-27):** no generar imágenes ni lanzar `sd-cli` o
-  `generar.sh` desde este repo hasta que la persona lo levante; lo que lo necesite (rondas, r2 de referencias, `instalar.sh` en
-  la Deck) espera.
+- **Generador de Tarkor libre (la persona levantó el aviso el 2026-10-27):** ya se pueden generar imágenes desde este repo.
+  Antes de cada tanda, `gimg doctor`: el 2026-10-27 Ollama volvía a cargar `tarkor-narrador-llama31` cada ~20 s (algún
+  proceso de Tarkor lo seguía llamando) y la memoria libre bajaba a ~2,5 GB; con eso `gimg` aborta (`engine.ollama: abort`).
 - **URLs del catálogo a verificar [P]** (`gimg/models.json`): deducidas, no copiadas (WMF-imagenes no las apunta); las seis dan 200
   y su `x-linked-etag` coincide con el sha256 de la Deck. Confirmar el repositorio del VAE de FLUX.3
   (`Comfy-Org/flux2-dev`, `split_files/vae/flux2-vae.safetensors`) y el nombre `Qwen3VL-4B-Instruct-Q4_K_M.gguf` (el del
