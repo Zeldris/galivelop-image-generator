@@ -462,7 +462,7 @@ Tres encargos en serie (E1 núcleo, E2 integración, E3 frente); cada uno deja e
 - Worker (`gimg/worker.py::_generate`): el motor escribe `.pending-<e>.png` y el chunk `gimg` se añade como hoy. Luego `plan = compose.plan_for(profile_cfg, *png.size(tmp))` con el perfil leído en ese momento (como los límites).
   - `plan is None` (sin `compose` y sin destino, o destino igual al tamaño de la cruda): todo sigue igual (`q<e>.png`, sin cruda aparte, sin ffmpeg). r1 y los tests actuales no cambian.
   - Con plan: (a) `os.replace(tmp, q<e>.raw.png)` (la cruda a salvo antes que nada); (b) `compose.render(...)` → `q<e>.png`; (c) `add_attempt` con `raw="attempts/q<e>.raw.png"` y `compose={template, logo, fit, targetWidth, targetHeight, text}`.
-  - Si `render` lanza `GimgError` `compose.*`: intento con `image=attempts/q<e>.raw.png` y `composeError`, entrada `done`, línea `worker.compose_failed` por stderr.
+  - Si `render` lanza cualquier `GimgError` (`compose.*`, `path.*`, `png.*`): intento con `image=attempts/q<e>.raw.png` y `composeError`, entrada `done`, línea `worker.compose_failed` por stderr.
   - `state["final"]` limpia también la cruda si falla `add_attempt`.
 - Sin `compose` pero con destino distinto: la cruda se escala con ffmpeg (fit `cover`). Sin ffmpeg, mismo camino de `composeError` (`compose.tool_missing`).
 - Registro: quitar `EngineResult.compose` (no es cosa del motor; ajustar `tests/test_progress.py`). `log.record_for(..., compose=None, compose_error=None)` escribe `app.image.compose` (ruta de la plantilla) y `app.image.compose_error` (código).

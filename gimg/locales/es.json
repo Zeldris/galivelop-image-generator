@@ -93,6 +93,7 @@
   "error.compose.tool_missing": "falta la herramienta «{tool}» para componer (instálala; «gimg doctor» dice cómo)",
   "error.compose.timeout": "{tool} superó los {seconds} s al componer",
   "error.compose.tool_failed": "{tool} falló al componer: {reason}",
+  "error.compose.write_failed": "no se puede escribir la imagen compuesta «{path}»: {reason}",
   "compose.chunk_failed": "gimg: no se pudieron copiar los metadatos a la imagen compuesta {path}: {reason}",
   "error.queue.bad_progress": "progreso no válido para la cola: {progress}",
   "error.queue.not_running": "la entrada {id} no está en marcha (estado: {state})",

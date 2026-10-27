@@ -35,8 +35,9 @@ MAX_SVG_BYTES = 5_000_000
 FITS = ("cover", "contain")
 
 _HOLE = re.compile(r"\{\{([A-Za-z][A-Za-z0-9]*)\}\}")
-# What XML 1.0 cannot carry at all (C0 controls but tab, LF and CR; the two non-characters).
-_XML_FORBIDDEN = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f￾￿]")
+# What XML 1.0 cannot carry at all (C0 controls but tab, LF and CR; the two non-characters) plus lone surrogates
+# (a JSON "\ud800" is a valid Python str that UTF-8 cannot encode).
+_XML_FORBIDDEN = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f\ud800-\udfff￾￿]")
 _ESCAPES = {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;"}
 
 
@@ -259,22 +260,25 @@ def render(project_root, profile_cfg, raw_path, out_path, text, profile=None) ->
             values["logo"] = logo_data_uri(logo)
         layer_svg = substitute(source, values)
     info = dict(plan, text=used)
-    with tempfile.TemporaryDirectory(dir=str(out_path.parent), prefix=".compose-") as tmp:
-        tmp = Path(tmp)
-        layer = None
-        if layer_svg is not None:
-            svg = tmp / "template.svg"
-            svg.write_text(layer_svg, encoding="utf-8")
-            layer = tmp / "layer.png"
-            _run(rsvg_argv(svg, layer, width, height), "rsvg-convert")
-            if not layer.is_file():
-                raise GimgError("compose.tool_failed", tool="rsvg-convert", reason="no output")
-        result = tmp / "out.png"
-        _run(ffmpeg_argv(raw_path, layer, result, geom, fit), "ffmpeg")
-        if not result.is_file():
-            raise GimgError("compose.tool_failed", tool="ffmpeg", reason="no output")
-        _carry_chunk(raw_path, result, info)
-        os.replace(result, out_path)
+    try:
+        with tempfile.TemporaryDirectory(dir=str(out_path.parent), prefix=".compose-") as tmp:
+            tmp = Path(tmp)
+            layer = None
+            if layer_svg is not None:
+                svg = tmp / "template.svg"
+                svg.write_text(layer_svg, encoding="utf-8")
+                layer = tmp / "layer.png"
+                _run(rsvg_argv(svg, layer, width, height), "rsvg-convert")
+                if not layer.is_file():
+                    raise GimgError("compose.tool_failed", tool="rsvg-convert", reason="no output")
+            result = tmp / "out.png"
+            _run(ffmpeg_argv(raw_path, layer, result, geom, fit), "ffmpeg")
+            if not result.is_file():
+                raise GimgError("compose.tool_failed", tool="ffmpeg", reason="no output")
+            _carry_chunk(raw_path, result, info)
+            os.replace(result, out_path)
+    except OSError as exc:
+        raise GimgError("compose.write_failed", path=str(out_path), reason=exc.strerror or str(exc))
     return info
 
 

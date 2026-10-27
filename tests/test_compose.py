@@ -81,6 +81,7 @@ class LocaleTests(unittest.TestCase):
         "svg_unreadable": {"path": "brand/t.svg", "reason": "not UTF-8"}, "no_logo": {"template": "brand/t.svg"},
         "bad_text": {"field": "title"}, "nothing_to_do": {"profile": "og"}, "tool_missing": {"tool": "ffmpeg"},
         "timeout": {"tool": "ffmpeg", "seconds": 120}, "tool_failed": {"tool": "ffmpeg", "reason": "Invalid data"},
+        "write_failed": {"path": "out/q1.png", "reason": "No such file or directory"},
     }
 
     def test_every_code_of_compose_py_has_a_text_in_both_languages_that_uses_its_parameters(self):
@@ -159,6 +160,12 @@ class SubstituteTests(unittest.TestCase):
     def test_xml_escape_drops_what_xml_cannot_carry(self):
         self.assertEqual(compose.xml_escape("a\x00b\x08c\x1fd￾e"), "abcde")
         self.assertEqual(compose.xml_escape("a\tb\nc\rd"), "a\tb\nc\rd")
+
+    def test_xml_escape_drops_lone_surrogates_so_the_result_encodes_as_utf8(self):
+        out = compose.xml_escape("a\ud800b\udfffc\udc00d")
+        self.assertEqual(out, "abcd")
+        out.encode("utf-8")
+        self.assertEqual(compose.xml_escape("😀ñ"), "😀ñ")
 
     def test_values_are_escaped_in_text_and_in_attributes(self):
         out = compose.substitute('<text a="{{t}}">{{t}}</text>', {"t": '<&>"\''})
@@ -411,6 +418,22 @@ class FailuresBeforeToolsTests(ProjectBase):
             self.render(self.profile())
         self.assertEqual(cm.exception.code, "png.invalid")
 
+    def test_a_missing_output_folder_is_a_write_failure_not_an_oserror(self):
+        out = self.work / "nope" / "q1.png"
+        with self.assertRaises(GimgError) as cm:
+            compose.render(self.root, self.profile(), self.raw, out, {})
+        self.assertEqual(cm.exception.code, "compose.write_failed")
+        self.assertEqual(cm.exception.params["path"], str(out))
+        self.assertTrue(cm.exception.params["reason"])
+
+    def test_a_write_that_fails_midway_is_a_write_failure(self):
+        self.write("t.svg", "<svg/>")
+        with mock.patch.object(Path, "write_text", side_effect=OSError(28, "No space left on device")):
+            with self.assertRaises(GimgError) as cm:
+                self.render(self.profile(compose={"template": "t.svg"}))
+        self.assertEqual((cm.exception.code, cm.exception.params["reason"]),
+                         ("compose.write_failed", "No space left on device"))
+
     def test_without_rsvg_nothing_is_written(self):
         self.write("t.svg", "<svg/>")
         with mock.patch.dict(os.environ, {"PATH": ""}):
@@ -508,6 +531,12 @@ class RenderTests(ProjectBase):
         at = pixels(self.out, 1200, 630)
         near(self, at(325, 250), (255, 0, 0))
         near(self, at(150, 250), GRAY)
+
+    def test_a_lone_surrogate_in_the_text_is_dropped_and_does_not_break_the_write(self):
+        self.write("t.svg", self.TEMPLATE)
+        profile = self.profile(compose={"template": "t.svg", "fields": ["title"]})
+        compose.render(self.root, profile, self.raw, self.out, {"title": "a\ud800b"})
+        self.assertEqual(png.size(self.out), (1200, 630))
 
     def test_a_text_that_looks_like_a_hole_is_text(self):
         self.write("t.svg", '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">'

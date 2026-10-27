@@ -304,6 +304,9 @@ class OrderTextTests(unittest.TestCase):
     def test_text_with_control_characters(self):
         for bad in ("a\nb", "a\x00b", "a\tb", "a\x7fb", "a\x1fb"):
             self.assertEqual(self.found({"title": bad}), [("/text/title", "pattern")], repr(bad))
+        for bad in ("a\ud800b", "\udfff", "a\udc00"):  # a lone surrogate cannot be encoded as UTF-8
+            self.assertEqual(self.found({"title": bad}), [("/text/title", "pattern")], repr(bad))
+        self.assertEqual(self.found({"title": "😀"}), [])  # a real pair (one code point) is fine
         self.assertEqual(self.found({"title": "ñ é \u2028 猫 <&>"}), [])  # printable and markup are the template's business
 
     def test_text_values_are_strings(self):

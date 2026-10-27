@@ -93,6 +93,7 @@
   "error.compose.tool_missing": "the tool \"{tool}\" is missing, so nothing can be composed (install it; \"gimg doctor\" says how)",
   "error.compose.timeout": "{tool} took longer than {seconds} s while composing",
   "error.compose.tool_failed": "{tool} failed while composing: {reason}",
+  "error.compose.write_failed": "cannot write the composed image \"{path}\": {reason}",
   "compose.chunk_failed": "gimg: could not copy the metadata into the composed image {path}: {reason}",
   "error.queue.bad_progress": "invalid progress for the queue: {progress}",
   "error.queue.not_running": "entry {id} is not running (state: {state})",
