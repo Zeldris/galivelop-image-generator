@@ -81,7 +81,8 @@ WORK=""
 OLD_ENGINE=""
 cleanup() {
   if [ -n "$WORK" ]; then rm -rf "$WORK"; fi
-  if [ -n "$OLD_ENGINE" ]; then rm -rf "$OLD_ENGINE"; fi
+  # El motor viejo solo se borra si el nuevo está en su sitio: si no, es la única copia.
+  if [ -n "$OLD_ENGINE" ] && [ -f "$ENGINE_DIR/sd-cli" ]; then rm -rf "$OLD_ENGINE"; fi
 }
 trap cleanup EXIT
 
@@ -175,9 +176,9 @@ else
     OLD_ENGINE="$ENGINE_DIR.old.$$"
     mv "$ENGINE_DIR" "$OLD_ENGINE"
     if ! mv "$WORK/x" "$ENGINE_DIR"; then
-      mv "$OLD_ENGINE" "$ENGINE_DIR" && OLD_ENGINE=""
-      die "no se pudo mover el motor nuevo a $ENGINE_DIR; se ha dejado el anterior" \
-        "could not move the new engine to $ENGINE_DIR; the previous one was kept"
+      mv "$OLD_ENGINE" "$ENGINE_DIR" || true
+      die "no se pudo mover el motor nuevo a $ENGINE_DIR; el anterior sigue ahí (o en $OLD_ENGINE)" \
+        "could not move the new engine to $ENGINE_DIR; the previous one is still there (or at $OLD_ENGINE)"
     fi
     rm -rf "$OLD_ENGINE"
     OLD_ENGINE=""

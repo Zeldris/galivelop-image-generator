@@ -32,7 +32,7 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 
 ## Pendiente
 
-- **Carpeta de datos en flatpak:** VS Code en flatpak fija `XDG_DATA_HOME=~/.var/app/com.visualstudio.code/data`, y `gimg` (y `ronda.sh`) lanzados desde su terminal usan otra carpeta de datos que desde una terminal normal (`docs/registros/contenido/r0-humo.md`); decidir en F2.5 (`gimg doctor` lo avisa, o se ignora el XDG de flatpak).
+- **Carpeta de datos en flatpak (resuelto en F2.5, `49e6176`):** VS Code en flatpak fija `XDG_DATA_HOME=~/.var/app/…`, y `gimg` desde su terminal usaría otra carpeta de datos que desde una terminal normal (`docs/registros/contenido/r0-humo.md`). Decidido: no se ignora el XDG; `gimg doctor` lo avisa y dice que se fije `GIMG_DATA_HOME`/`GIMG_CONFIG_HOME` (mandan sobre XDG). Queda que la persona lo vea en la Deck al correr `gimg doctor`.
 - **Leves de la revisión de F0** (no se revisan más en este PR):
   - F2: `width`/`height` sin `multipleOf` (lo que exija `sd-cli` por modelo); el validador aún no lo soporta.
   - `propertyNames` solo pasa el `pattern` del primer error: si falla por otra cosa, el mensaje sale vacío.
@@ -111,6 +111,18 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
   falta); `set_preview` y el campo `log` del intento aceptan cualquier cadena (validar con D25 antes de que F4 los sirva)
   y `_eta_text(inf)` desborda; sin marcador «sampling completed» la barra del VAE se leería como progreso si `steps` no
   coincide (solo con `FAKE_SD_NO_TIMES`); `app.image.steps/cfg` del registro son los del intento y el PNG lleva los efectivos.
+- **F2.5 manual, en la Deck (persona), solo cuando el generador de Tarkor esté libre:** `./instalar.sh` de verdad (descarga
+  del zip `master-1000-95ff762` de stable-diffusion.cpp y de los modelos de `installDefault` desde Hugging Face: ninguna
+  descarga se ha probado, solo con fakes) y `gimg doctor --verify` en verde. Si `instalar.sh` ya encuentra el motor y los
+  modelos de WMF-imagenes, `--models-from` evita bajarlos otra vez.
+- **Leves de la revisión de `49e6176` (F2.5, `instalar.sh` y `gimg doctor`; no se revisan más en este PR):** `--with` valida
+  el id con `grep -qx` sin `-F` (un `flux.*` pasa y no instala nada; con `pipefail` puede dar SIGPIPE); el `doctor` final
+  sale con 1 si faltan `ffmpeg` o `rsvg-convert`, así que `instalar.sh` acaba en error aunque lo suyo haya ido bien (decidir
+  si con `engine: fake` son `warn`, D36); `sha256_of` de `doctor.py` no captura `OSError` (permisos) y sale como error
+  interno; `--json` da `message`/`fix` localizados sin `key`/`params` (quien lo parsee depende del idioma); el lanzador
+  sobrescribe un `~/.local/bin/gimg` ajeno; el aviso de flatpak solo sale en el paso 6, tras bajar ~7 GB a la carpeta
+  equivocada (avisar antes del paso 3); `--with` con `--only-cli` se ignora en silencio; si `curl` falla, `set -e` sale sin
+  mensaje propio; `tests/test_worker.py:361` deja «disk full» en stderr (parchea `log.append` a propósito: ruido, silenciar).
 - **Flujo:** `rojo-sin-arreglo.sh` falla con «cannot stash» si antes se hizo `git add -N` de archivos nuevos (funciona
   sin añadirlos); proponerlo al flujo con el resto (`gw-harvest`).
 - **Cuando la persona avise:** revisar las actualizaciones de Tarkor (otro repo) sobre su generador de imágenes: lo lee
