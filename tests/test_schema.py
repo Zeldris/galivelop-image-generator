@@ -41,6 +41,24 @@ class KeywordTests(unittest.TestCase):
         errs = S.validate({}, sch)
         self.assertEqual([(e.path, e.code, e.params["name"]) for e in errs], [("", "required", "a")])
 
+    def test_dependent_required(self):
+        sch = {"type": "object", "dependentRequired": {"b": ["a", "c"]}}
+        self.assertEqual(codes({}, sch), [])
+        self.assertEqual(codes({"a": 1}, sch), [])
+        self.assertEqual(codes({"a": 1, "b": 2, "c": 3}, sch), [])
+        errs = S.validate({"b": 2, "c": 3}, sch)
+        self.assertEqual([(e.path, e.code, e.params["trigger"], e.params["name"]) for e in errs],
+                         [("", "dependentRequired", "b", "a")])
+        self.assertEqual(S.format_error(errs[0], "en"), '/: "b" needs "a"')
+
+    def test_dependent_required_path_of_nested_object(self):
+        sch = {"properties": {"o": {"dependentRequired": {"x": ["y"]}}}}
+        self.assertEqual(codes({"o": {"x": 1}}, sch), [("/o", "dependentRequired")])
+
+    def test_dependent_required_shape_is_checked(self):
+        with self.assertRaises(S.SchemaError):
+            S.check_schema({"dependentRequired": {"x": "y"}})
+
     def test_properties_nested_path(self):
         sch = {"properties": {"a": {"properties": {"b": {"type": "string"}}}}}
         self.assertEqual(codes({"a": {"b": "x"}}, sch), [])

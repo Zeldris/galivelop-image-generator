@@ -9,6 +9,9 @@
     "profile",
     "prompt"
   ],
+  "dependentRequired": {
+    "strength": ["initImage"]
+  },
   "properties": {
     "$schema": {
       "type": "string",

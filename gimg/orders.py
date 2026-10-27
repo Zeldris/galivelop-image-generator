@@ -166,8 +166,6 @@ def submit(project: str, order: dict) -> dict:
     errors = schema.validate(order, schema.load_schema("order"))
     if errors:
         raise GimgError("order.invalid", errors=errors)
-    if "strength" in order and "initImage" not in order:  # the validator has no dependentRequired
-        raise GimgError("order.strength_without_init")
     paths.check_key(order["key"])
     config = projects.get(project)["config"]
     _profile(config, order["profile"])
@@ -286,6 +284,8 @@ def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None)
             "prompt": spec["prompt"],
             "params": copy.deepcopy(spec["params"]),
             "references": list(spec.get("references", order["references"])),
+            "initImage": spec.get("initImage"),
+            "strength": spec.get("strength"),
             "image": "attempts/%d.png" % new_id if entry_id is None else entry_image_name(entry_id),
             "note": "",
             "createdAt": _now(),
@@ -294,9 +294,6 @@ def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None)
             record["queueEntry"] = entry_id
         if spec.get("draft") is True:  # only drafts carry the key, so stored orders keep their shape
             record["draft"] = True
-        if spec.get("initImage") is not None:  # only img2img attempts carry the keys, so stored orders keep their shape
-            record["initImage"] = spec["initImage"]
-            record["strength"] = spec.get("strength")
         for extra in ("engine", "engineVersion", "log"):  # which engine made it (the manifest repeats the first two)
             if isinstance(spec.get(extra), str):
                 record[extra] = spec[extra]

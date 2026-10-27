@@ -34,6 +34,9 @@ class FlowTests(DeliveryBase):
     def submit(self, **extra):
         return orders.submit("proj", dict(SPEC, **extra))
 
+    def submit_key(self, key, **extra):
+        return orders.submit("proj", dict(SPEC, key=key, **extra))
+
     def make_init(self, rel="refs/base.png"):
         target = self.projects["proj"] / rel
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -43,7 +46,8 @@ class FlowTests(DeliveryBase):
     def test_strength_without_init_is_rejected_with_its_code(self):
         with self.assertRaises(GimgError) as cm:
             self.submit(strength=0.5)
-        self.assertEqual(cm.exception.code, "order.strength_without_init")
+        self.assertEqual(cm.exception.code, "order.invalid")
+        self.assertEqual([(e.path, e.code) for e in cm.exception.errors], [("", "dependentRequired")])
         self.assertIn("initImage", cm.exception.message("en"))
 
     def test_submit_stores_and_resubmit_replaces_or_clears(self):
@@ -72,10 +76,43 @@ class FlowTests(DeliveryBase):
         self.assertEqual((entry["initImage"], entry["strength"]), (None, None))
         orders.add_attempt("proj", "a", "banner", dict(spec, params={}), entry_id=1)
         record = orders.get("proj", "a", "banner")["attempts"][0]
-        self.assertNotIn("initImage", record)
-        self.assertNotIn("strength", record)
-        old = {k: v for k, v in entry.items() if k not in ("initImage", "strength")}
-        self.assertIsNone(old.get("initImage"))
+        self.assertEqual((record["initImage"], record["strength"]), (None, None))
+
+    def test_old_queue_entry_without_the_keys_runs_without_init_image(self):
+        self.submit()
+        queue.enqueue("proj", "a", "banner", orders.attempt_specs("proj", "a", "banner"))
+        path = queue.queue_path()
+        data = json.loads(path.read_text())
+        for e in data["entries"]:
+            del e["initImage"], e["strength"]
+        path.write_text(json.dumps(data))
+        seen = []
+
+        class Spy(engine.FakeEngine):
+            def generate(self, job, should_cancel):
+                seen.append((job.init_image, job.strength))
+                return super().generate(job, should_cancel)
+
+        self.assertEqual(worker.run(once=True, engine=Spy()), 1)
+        self.assertEqual(seen, [(None, None)])
+        record = orders.get("proj", "a", "banner")["attempts"][0]
+        self.assertEqual((record["initImage"], record["strength"]), (None, None))
+
+    def test_delivery_manifest_carries_init_image_only_for_img2img(self):
+        from gimg import delivery
+        self.make_init()
+        self.submit(initImage="refs/base.png", strength=0.4)
+        self.submit_key("b")
+        queue.enqueue("proj", "a", "banner", orders.attempt_specs("proj", "a", "banner"))
+        queue.enqueue("proj", "b", "banner", orders.attempt_specs("proj", "b", "banner"))
+        worker.run()
+        for key in ("a", "b"):
+            delivery.choose("proj", key, "banner", orders.get("proj", key, "banner")["attempts"][0]["id"])
+        images = self.manifest()["images"]
+        self.assertEqual((images["a"]["banner"]["initImage"], images["a"]["banner"]["strength"]),
+                         ("refs/base.png", 0.4))
+        self.assertNotIn("initImage", images["b"]["banner"])
+        self.assertNotIn("strength", images["b"]["banner"])
 
     def test_worker_resolves_init_image_and_writes_metadata(self):
         init = self.make_init()
@@ -119,6 +156,30 @@ class FlowTests(DeliveryBase):
         meta = worker.metadata_for(dict(entry, initImage="d/i.png"), None)
         self.assertEqual(meta["initImage"], "i.png")
         self.assertNotIn("strength", meta)
+
+
+class LogTests(DeliveryBase):
+    def test_record_carries_init_image_name_and_strength_only_for_img2img(self):
+        from gimg import log
+        spec = {"seed": 1, "prompt": "p", "params": {}}
+        rec = log.record_for("k", "banner", dict(spec, initImage="refs/base.png", strength=0.4), {}, "fake")
+        self.assertEqual((rec["app.image.initImage"], rec["app.image.strength"]), ("base.png", 0.4))
+        rec = log.record_for("k", "banner", dict(spec, initImage=None, strength=None), {}, "fake")
+        self.assertNotIn("app.image.initImage", rec)
+        self.assertNotIn("app.image.strength", rec)
+
+    def test_estimates_group_by_img2img(self):
+        from gimg import log
+        base = {"gen_ai.provider.name": "fake", "app.task": "banner", "app.image.steps": 6, "app.image.references": 0}
+        log.append("proj", dict(base, **{"app.duration_ms": 100, "app.image.initImage": "i.png", "app.image.strength": 0.5}))
+        log.append("proj", dict(base, **{"app.duration_ms": 1000}))  # an old line: not img2img
+        log.append("proj", dict(base, **{"app.duration_ms": 3000}))
+        self.assertEqual(log.estimate("proj", "fake", "banner", 6, False, img2img=True), 100)
+        self.assertEqual(log.estimate("proj", "fake", "banner", 6, False), 2000)
+        entry = {"project": "proj", "profile": "banner", "params": {"steps": 6}, "references": []}
+        self.assertEqual(queue.estimate_for(dict(entry, initImage="refs/b.png"), "fake"), 100)
+        self.assertEqual(queue.estimate_for(dict(entry, initImage=None), "fake"), 2000)
+        self.assertEqual(queue.estimate_for(entry, "fake"), 2000)
 
 
 class ArgvTests(SdBase):

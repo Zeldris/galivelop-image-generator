@@ -71,24 +71,21 @@ def _single_worker():
         os.close(fd)
 
 
+def _inside_file(project: dict, rel: str, code: str) -> str:
+    """Absolute path of `rel` inside the project; `code` (with ``path=rel``) if it is not a file."""
+    target = paths.inside(project["root"], rel)
+    if not target.is_file():
+        raise GimgError(code, path=rel)
+    return str(target)
+
+
 def _references(project: dict, entry: dict) -> list:
-    found = []
-    for ref in entry["references"]:
-        target = paths.inside(project["root"], ref)
-        if not target.is_file():
-            raise GimgError("worker.reference_missing", path=ref)
-        found.append(str(target))
-    return found
+    return [_inside_file(project, ref, "worker.reference_missing") for ref in entry["references"]]
 
 
 def _init_image(project: dict, entry: dict):
     rel = entry.get("initImage")
-    if rel is None:
-        return None
-    target = paths.inside(project["root"], rel)
-    if not target.is_file():
-        raise GimgError("worker.init_image_missing", path=rel)
-    return str(target)
+    return None if rel is None else _inside_file(project, rel, "worker.init_image_missing")
 
 
 def _unlink(path) -> None:
@@ -181,7 +178,7 @@ def _generate(entry: dict, eng, machine: dict, state: dict, lang=None):
         prompt=entry["prompt"], width=params.get("width"), height=params.get("height"),
         seed=entry["seed"], output=str(tmp), steps=params.get("steps"), cfg=params.get("cfg"),
         sampler=params.get("sampler"), model=params.get("model"), references=references,
-        init_image=init_image, strength=entry.get("strength") if init_image else None,
+        init_image=init_image, strength=entry.get("strength"),
         machine=machine, timeout_s=machine.get("timeoutS"), on_progress=_progress_to_queue(entry_id))
     _expose_preview(entry_id, eng, tmp)
     state["result"] = eng.generate(job, lambda: queue.is_cancel_requested(entry_id))

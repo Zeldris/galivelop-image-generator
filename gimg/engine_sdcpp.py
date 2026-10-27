@@ -22,7 +22,7 @@ Decisions:
   ``start_new_session``. Where ``os.killpg`` does not exist (Windows) the fallback is ``terminate()`` then ``kill()`` of the
   process only, which leaves its children alive; the project runs on Linux, so that path is untested.
 - **Tick hook:** `_on_tick(proc, log_path, job)` runs once per poll: the memory watch and the "reported free 0.00 MB"
-  abort (F2.3) and the progress (F2.4) are there. Not implemented: ``initImage``, ``strength``.
+  abort (F2.3) and the progress (F2.4) are there.
 - **Progress (F2.4):** the new part of the log goes through `parse_progress`: the step bar of `sd-cli` is
   ``|====>   | 3/6 -  24.65s/it - ETA 01:16`` (``\r`` between bars, ``\x1b[K`` after each; ``it/s`` when it is fast). A bar
   counts only when a terminator (``\x1b``, ``\r`` or ``\n``) follows it, so a bar cut by the read boundary is kept in

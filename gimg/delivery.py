@@ -179,6 +179,8 @@ def _apply(plan: dict, restore=False) -> None:
                 "params": attempt["params"], "references": attempt.get("references", []),
                 "engine": attempt.get("engine"), "engineVersion": attempt.get("engineVersion"),
                 "attemptId": attempt["id"], "chosenAt": _now()}
+            if attempt.get("initImage") is not None:  # img2img: the manifest says what it started from
+                images[key][profile].update(initImage=attempt["initImage"], strength=attempt.get("strength"))
         fsutil.write_json(manifest, data)
     except BaseException as exc:
         if touched:
