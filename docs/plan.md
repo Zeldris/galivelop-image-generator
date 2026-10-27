@@ -397,6 +397,20 @@ todas las terminales vean las mismas carpetas y modelos. **Queda:** las fuentes 
 de la descarga real del zip y la instalación de verdad, **manual en la Deck** (la persona corre `./instalar.sh` y `gimg doctor`; hasta entonces el zip solo está
 comprobado por suma).
 
+*Hecho en F2.6* (`examples/<proyecto>/galivelop-images.json`, `examples/<proyecto>/orders/r1-og.json`, `.gitignore`, `tests/test_examples.py`): los
+**siete** proyectos del ajuste del 2026-10-26, no cuatro. **Decisiones:** (1) *Perfiles:* los de generación de la tabla de formatos que lista cada proyecto
+(`og`, `social`, `square`, `wide`, `banner`; `portrait` 896×1152 y `header` 1536×512, las medidas que r5 ya corrió en la Deck, en vez de 768×960 y 1280×448),
+todos con 6 pasos, cfg 1, euler y `flux2-klein-4b-q8`; `avatar` e `icon` son solo composición y entran con `compose` en F2.8; `targetWidth`/`targetHeight` y
+`draft` también quedan para F2.7/F2.8. (2) *Sin `style`:* los prompts del piloto llevan el estilo dentro y `attempt_specs` pegaría `, <style>` al final, con lo
+que r1 no daría lo mismo; el `style` por perfil se decide en F2.10 con lo aprendido en r2. (3) *Pedido r1:* clave `fondos/r1`, perfil `og`, `prompt` =
+`prompts/og.txt` sin el salto final (el log de r1 enseña que `generar.sh` tampoco lo pasó), `seed` 3 y `count` 2 (semillas 3 y 4, consecutivas como en
+`ronda.sh r1`). (4) *Entrega:* `entrega/` y el manifiesto `galivelop-images.manifest.json` de los ejemplos fuera de git (D35: sin las imágenes, el manifiesto
+solo apuntaría a archivos ausentes). (5) *Test:* registra cada ejemplo en carpetas temporales, envía el pedido y comprueba que `attempt_specs` da exactamente
+las semillas 3 y 4, el prompt de `og.txt` y 1280×640 a 6 pasos. **Queda manual (persona, en la Deck, con el generador libre):** `gimg project add
+examples/<p>` y `gimg order submit <p> examples/<p>/orders/r1-og.json` para los siete, comparar con `piloto/r1/` y escribir las dos columnas en
+`r1-fondos.md`. Diferencia conocida frente a `generar.sh`: `gimg` añade `--preview proj` y, si el perfil de máquina lo trae, `-t`; con la misma semilla no
+debería cambiar la imagen, y eso es justo lo que mide la comparación.
+
 **Configuración del proyecto** (cambios en `project-config.schema.json`). El perfil añade: `targetWidth`/`targetHeight`
 (tamaño de destino; si faltan, los de generación), `draft` (`{"model"?, "steps"?, "scale"?}`, D32) y `compose`
 (`{"template": <ruta relativa .svg>, "fields": ["title", "subtitle"], "logo"?: <ruta relativa .svg>, "fonts"?: ["Sora", "Inter"],

@@ -198,5 +198,66 @@ class ExampleTests(unittest.TestCase):
                           ("/engine/paramsBackend", "enum")])
 
 
+PILOT_PROJECTS = ("galivelop-developer", "galivelop-image-generator", "galivelop-voice-generator",
+                  "galivelop-workflow", "portal", "tarkor", "toveriai")
+R1_SEEDS = (3, 4)
+
+
+class PilotExampleTests(unittest.TestCase):
+    """F2.6: `examples/<proyecto>/` of the seven pilot projects, with the r1 orders that must reproduce
+    `ronda.sh r1` (same prompt as `prompts/og.txt`, seeds 3 and 4, 1280x640, 6 steps, the fast model)."""
+
+    def setUp(self):
+        import os
+        import tempfile
+        from unittest import mock
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        env = mock.patch.dict(os.environ, {"GIMG_CONFIG_HOME": tmp.name + "/cfg",
+                                           "GIMG_DATA_HOME": tmp.name + "/data"})
+        env.start()
+        self.addCleanup(env.stop)
+
+    def test_the_seven_pilot_projects_have_a_config(self):
+        found = sorted(p.parent.name for p in (ROOT / "examples").glob("*/galivelop-images.json"))
+        self.assertEqual(found, sorted(PILOT_PROJECTS))
+
+    def test_pilot_configs_load_and_deliver_to_entrega(self):
+        from gimg import projects
+        for name in PILOT_PROJECTS:
+            root = ROOT / "examples" / name
+            config = projects.load_config(root)
+            self.assertEqual(config["name"], name)
+            self.assertEqual(config["delivery"]["dir"], "entrega", name)
+            self.assertIn("og", config["profiles"], name)
+            for profile, cfg in config["profiles"].items():
+                self.assertEqual((cfg["width"] % 64, cfg["height"] % 64), (0, 0), (name, profile))
+                self.assertLessEqual(cfg["width"] * cfg["height"], 1048576, (name, profile))
+                self.assertEqual(cfg["model"], "flux2-klein-4b-q8", (name, profile))
+
+    def test_r1_orders_reproduce_ronda_r1(self):
+        from gimg import orders, projects
+        for name in PILOT_PROJECTS:
+            root = ROOT / "examples" / name
+            order = read("examples/%s/orders/r1-og.json" % name)
+            self.assertEqual(S.validate(order, S.load_schema("order")), [], name)
+            prompt = (root / "prompts" / "og.txt").read_text(encoding="utf-8").strip()
+            self.assertEqual(order["prompt"], prompt, name)
+            projects.add(root)
+            orders.submit(name, order)
+            specs = orders.attempt_specs(name, order["key"], order["profile"], order["count"])
+            self.assertEqual([s["seed"] for s in specs], list(R1_SEEDS), name)
+            self.assertEqual({s["prompt"] for s in specs}, {prompt}, name)
+            self.assertEqual(specs[0]["params"],
+                             {"width": 1280, "height": 640, "steps": 6, "cfg": 1.0, "sampler": "euler",
+                              "model": "flux2-klein-4b-q8"}, name)
+            self.assertEqual(specs[0]["references"], [], name)
+
+    def test_gitignore_keeps_pilot_deliveries_out_of_git(self):
+        lines = (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
+        self.assertIn("/examples/*/entrega/", lines)
+        self.assertIn("/examples/*/galivelop-images.manifest.json", lines)
+
+
 if __name__ == "__main__":
     unittest.main()
