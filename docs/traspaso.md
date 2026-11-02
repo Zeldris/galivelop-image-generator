@@ -1,4 +1,4 @@
-<!-- galivelop-workflow v0.4.0 -->
+<!-- galivelop-workflow v0.4.3 -->
 # Bitácora (traspaso)
 
 > Léela entera al empezar cualquier sesión. Lo que no está subido no existe: commit + push en cada punto estable,
@@ -14,6 +14,7 @@
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 | **Tarea en curso · `f2-motor`** | F2.8 cerrada y revisada (E1 `79c3442`+`529358c`, E2 `e1a5d7f`+`e563080`, E3 `a2bb37b`+`f7924ad`+este arreglo); CI no consultable (`gh` no está): F2.6-F2.8 «comprobadas solo en local», pendiente de confirmación de la persona. Decisiones 1-10 de F2.8 pendientes de que la persona las vea. **Siguiente:** F2.9 medida de marca (`docs/plan.md`, fila F2.9). Presupuesto de compactaciones: 1 (gastada 0) |
+| **Tarea en curso · `ccr-85e9d14e-zt7p8b`** | gw-update 0.4.0→0.4.3 aplicado (confirmado por la persona el 2026-11-02): scripts, skills, ganchos, CI y 3 ganchos nuevos en settings.json; `check` de `bash -n` partido en un `for` (doctor avisaba de verde falso); `compaction_budget` repuesto en `recuperar.py`. Check en verde en local (347). **Siguiente:** recogido en `f2-motor` (merge del 2026-11-02); viaja a `main` con las tres fases cuando la persona lo pida |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.
@@ -32,6 +33,7 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 
 ## Pendiente
 
+- **Proponer al flujo `compaction_budget`** (aviso de presupuesto de compactaciones en `recuperar.py --estado`, de la retro de F2.0): la v0.4.3 lo pisó y se repuso a mano; cada `/gw-update` lo volverá a pisar hasta que esté en Galivelop-workflow (`gw-harvest`).
 - **Leves de la revisión de E3 de F2.8 (`a2bb37b`; no se revisan más en este PR):** (a) si `delivery` falla tras `set_composed`, el registro ya apuntó éxito y el archivo entregado queda viejo: documentarlo o código propio («compuesto pero no entregado: `gimg choose`»); (b) `doctor._fonts`: registro ilegible muestra `str(exc)` con proyecto «-» y sin test; un `RecursionError` de `load_config` tumba todo `gimg doctor`: `exc.message()`, clave propia y `except Exception` por proyecto; (c) de E3: la línea vieja con `app.image.compose_error` sigue en el registro tras recomponer; `doctor.fonts.project_error` sale en el idioma por defecto.
 - **Leves de la revisión de E2 de F2.8 (`e1a5d7f`; no se revisan más en este PR):** (a) `delivery.choose`: si `set_composed` entra entre `orders.get` y `orders.choose`, el intento leído con `composeError` falla con `order.choose_discarded`, motivo que no corresponde: releer y lanzar `check_choosable` del intento fresco; (b) el registro deja la línea vieja con `app.image.compose_error` tras recomponer y, con perfil de solo destino, no consta la composición (E3 añade una línea `app.image.compose` al recomponer); (c) tras un SIGTERM la entrada queda `running` y la siguiente consulta la devuelve a `queued` (comportamiento previo a F2.8); (d) al componer desde la cruda tras un SIGTERM (entrada retomada) no se escribe línea de registro.
 - **Leves de la revisión de E1 de F2.8 (`79c3442`; no se revisan más en este PR):** (a) `cover` escala antes de recortar: con 4096×64 → 16×4096 el intermedio sería enorme y ffmpeg falla con `tool_failed` opaco; recortar primero en coordenadas de la cruda y escalar después; (b) si la cruda no trae chunk `gimg`, la compuesta sale sin `compose` (contradice el docstring); escribir `{"compose": info}` igualmente; (c) una plantilla con `encoding="ISO-8859-1"` y solo ASCII pasa y se escribe en UTF-8 con la declaración Latin-1 («ñ» sale mal); rechazar codificaciones distintas de UTF-8 y pasar el logo a base64 desde sus bytes; (d) `test_the_template_cannot_read_files_outside_its_own_folder` pasaría sin la carpeta temporal vacía (lo bloquea librsvg): usar un `secret.png` junto a la plantilla dentro del proyecto; (e) `fieldName` copiado a mano en los dos esquemas sin test que compare los dos `$defs`.
@@ -144,6 +146,6 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 ## Comprobar el estado
 
 - Últimos commits: `git fetch origin <rama> && git log --oneline -5 origin/<rama>`.
-- El check: `bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg` y `python3 -m unittest discover -s tests -t .`.
+- El check: `for f in .githooks/pre-commit .githooks/pre-push .githooks/commit-msg; do bash -n "$f"; done` y `python3 -m unittest discover -s tests -t .`.
 - Flujo bien montado: `python3 .claude/gw/scripts/doctor.py`.
 - Estado de la bitácora tal como lo recibe una sesión nueva: `python3 .claude/gw/scripts/recuperar.py --estado`.
