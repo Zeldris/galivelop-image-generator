@@ -723,6 +723,134 @@ cosa; una ronda que no cabe en una sesión se parte y lo hecho se apunta en el m
 - **Revisión:** todo resultado queda en `piloto/<ronda>/` con su página, y su registro va en
   `docs/registros/contenido/`. La persona revisa allí y, sin veredicto suyo, decide el agente y lo apunta.
 
+### F2.10 en detalle (rondas r2-r4 con gimg)
+
+Las rondas r2-r4 del piloto (`examples/pilot/`, registros `r2-estilo.md`, `r3-borrador.md`, `r4-composicion.md`) ya
+contestaron sus preguntas con scripts; F2.10 las vuelve a correr **con `gimg`** solo para lo que quedó abierto, con las
+reglas R1-R3 (semillas 3 y 7, una palanca, mayoría «sí») y las pautas de luz del 2026-11-02 («Estilos por proyecto»). Lo
+corrido en la Deck es manual (la persona, o el agente con su permiso explícito para esa tanda); lo demás, código o
+configuración con tests. Costes *estimados* con lo medido en el piloto: ~3 min por pieza 1280×640 a 6 pasos con
+`flux2-klein-4b-q8` (174-182 s en r2), ~1 min por borrador 640×320 a 4 pasos (51-52 s en r3); img2img se cuenta como un
+definitivo *(suposición: con `--strength` < 1 `sd-cli` muestrea menos pasos; se mide)*. Tope por tanda: ≤ ~1,5 h de Deck,
+más ~5 min de `gimg doctor` y descarga de Ollama.
+
+**Se da por contestado (no se repite):**
+- *Cómo decir el color* (palabras, hex o material): casi la misma imagen en los siete (`r2-estilo.md`); la elegida de cada
+  proyecto ya es `prompts/estilo.txt`.
+- *FLUX.3*: en la Deck solo cabe en la CPU, cuesta ~15 veces klein (59 min el 1280×640/16) y se va del estilo de marca
+  (`r3-borrador.md`): fuera de F2.10; las piezas publicables siguen siendo de klein.
+- *El borrador anticipa estilo, sujeto y hueco* en 6 de 7 proyectos y cuesta el 22 % del definitivo; *no* anticipa el
+  detalle (el definitivo recoloca).
+- *El estilo aguanta los formatos* con un prompt por formato (`r5-piezas.md`); *el texto blanco sobre los fondos oscuros*
+  da 15-20:1 sin velo (r4).
+- *Coste:* va con píxeles y pasos (±1 %), no con el prompt.
+
+**Decisiones aplazadas a F2.10** (propuestas del agente; la persona confirma o cambia cada [P] antes de E2):
+1. *`style` por perfil* (F2.6, dec. 2). **[P]** Los ejemplos siguen **sin `style`**: r2 mostró que el párrafo de estilo
+   pesa poco y r5 que basta un prompt por formato; `attempt_specs` pegaría `, <style>` y rompería la igualdad píxel a
+   píxel con el piloto. El campo sigue en el esquema para quien lo quiera.
+2. *`piezas.json` de developer, image-generator y voice-generator* (F2.8, dec. 1). **[P]** Sus configuraciones se quedan
+   con `og` y `social`, los formatos de sus biblias; `cuadrado`, `vertical` y `cabecera` no ganan perfil. `piezas.json` no
+   se toca (es la entrada congelada de `examples/pilot/piezas.py`): desde F2.10 la configuración es la fuente.
+3. *Logos dentro de cada ejemplo* (F2.8, dec. 3, D25). **[P]** Copia del lockup y del símbolo elegidos
+   (`docs/marcas/README.md`) en `examples/<p>/logos/`, y un test de `tests/test_examples.py` que exige que cada copia sea
+   **idéntica byte a byte** a su original en `docs/marcas/<p>/logos/` (un dato, un sitio, comprobado por script). Nada de
+   enlaces: `paths.inside` rechaza el que sale de la raíz.
+4. *`compose.wrap`* (F2.8, dec. 4). **[P]** Sin `wrap` en F2.10: las plantillas de dos líneas usan `title1`/`title2` y
+   el texto se parte a mano en el `text` del pedido; un test de `test_examples.py` comprueba que cada línea cabe en la
+   columna con el factor de ancho de `examples/pilot/componer.ajustar` (lo que el piloto hacía solo). `wrap` se reabre en F4
+   si la interfaz deja escribir títulos libres.
+5. *`brand.palette`* (F2.9, dec. 2). **[P]** A nivel de **proyecto**, no de perfil (la paleta es de la marca, no del
+   formato): `brand: {"palette": ["#hex", …]}` opcional (≤ 16, patrón hex) en `project-config.schema.json`, y
+   `gimg measure <imagen> --project <p>` la usa si falta `--palette`; sin umbrales ni veredicto (F2.9, dec. 2). Los colores,
+   los de `prompts/r2-hex.txt` de cada proyecto (los de la calibración). Alternativa sin código: seguir pasando
+   `--palette` y apuntar la orden en el registro.
+6. *`avatar`/`icon`* (F2.8, dec. 2). **[P]** A **F2.12**: no se generan, ninguna pregunta de r2-r4 los necesita y piden
+   cambiar el esquema (`width`/`height` obligatorios, todo pasa por la cola).
+7. *`draft` del perfil* (nueva). **[P]** `og` gana `"draft": {"scale": 0.5, "steps": 4}`: sin él, `draft_params` da 8
+   pasos, **más** que los 6 del definitivo; 4 es lo que midió r3.
+
+**r2 luz** (palanca: cómo se dicen la luz y las posiciones). *Pregunta:* ¿las pautas del 2026-11-02 arreglan el lavado de
+Tarkor (r5: YAVG 172-177, SATAVG 5-7 frente a 127/25 de su portada; EMD Cr 19-22) sin estropear a los demás? Pista: el `og`
+de r1 de Tarkor sí daba la luz y la saturación de la portada (YAVG 125-129, SATAVG 31-35) y lo perdió al cambiar de escena
+en r2 («first low sun», «muted colours», «pale washed sky»). Prompts nuevos (los escribe un subagente fable; aquí solo qué
+cambia):
+- `examples/<p>/prompts/r2-luz.txt`, en los siete: `estilo.txt` con la luz por dirección y **sin nombrar la fuente** (ni
+  «sun» ni «lamp»), la escena oscura o sobria dicha en la **primera frase**, la zona reservada y el sujeto en fracciones
+  desde un borde («the left two fifths of the frame, from the left edge») y el ancla nombrada una vez. Mismo sujeto, misma
+  paleta, mismo formato: solo cambia la palanca.
+- `examples/tarkor/prompts/r2-luz-r1.txt`: `r2-luz.txt` de Tarkor con la luz y el color del `og.txt` de r1 (contraluz cálido
+  sin nombrar el sol, cielo ámbar y carmesí en la mitad superior, polvo encendido, «rich natural colour») y sin «muted»,
+  «washed» ni «subtle grade».
+
+Pedidos (`examples/<p>/orders/`, perfil `og`, prompt = el archivo sin el salto final):
+- `r2-luz.json`: clave `estilo/r2-luz`, `seed` 3, `count` 1; la semilla 7, con `gimg attempt new <p> estilo/r2-luz og --seed 7`
+  (R1: 3 y 7 no son consecutivas, `count` 2 daría la 4).
+- `r2-control.json`: clave `estilo/r2-control`, prompt = `estilo.txt`, `seed` 7, `count` 1. La semilla 3 del control es la
+  elegida de r2 del piloto (F2.6 probó igualdad píxel a píxel); si r4 la necesita como cruda, `attempt new --seed 3` (~3 min).
+- Tarkor, además, `r2-luz-r1.json`: clave `estilo/r2-luz-r1`, igual que `r2-luz.json`.
+
+*Coste:* 7 controles + 14 de `r2-luz` + 2 de `r2-luz-r1` = 23 piezas ≈ **70 min**. Si no cabe, r2a (Tarkor, toVeriAI y
+Portal: 11 piezas, ~33 min) y r2b (el resto: 12, ~36 min). *Medida:* `gimg measure <pieza> --palette <r2-hex> --refs
+<imagen de marca>` (o `--project`, [P] 5) contra los umbrales de `calibracion-measure.md`, más el juicio a ojo, que manda.
+*Cierre:* por proyecto, «sí» si `r2-luz` gana al control a ojo en las dos semillas; la elegida es la entrada de r3 y r4.
+Si Tarkor no entra en su rango (YAVG 105-150, SATAVG 18-32) con ninguna de las dos variantes, cuenta como una ronda sin
+mejora para R2 (la segunda la decide la persona: otra vuelta del prompt, LUT de F2.11 o aceptar una marca desaturada).
+
+**r3 borrador con gimg** (palanca: de dónde sale el definitivo). *Pregunta nueva*, la que dejó abierta el piloto: si el
+definitivo recoloca, ¿un definitivo **img2img desde el borrador** (F2.7) conserva la composición que se eligió en el
+borrador? En tres proyectos, los que recolocaron de forma que importa en el piloto: Portal (el umbral gira), workflow (las
+líneas cambian de cruce) y developer (la línea cruzó el título en r4). Sobre la elegida de r2 de cada uno:
+- Borradores: `gimg attempt new <p> <clave elegida> og --draft --seed {3,7}` (sin pedido nuevo; con [P] 7, 640×320 a 4 pasos).
+  El definitivo txt2img con el mismo prompt y semilla ya existe de r2 (si la elegida es el control, falta su semilla 3: +3 min).
+- La cruda de cada borrador se escala a 1280×640 con ffmpeg (lanczos) y se copia a `examples/<p>/init/r3-s{3,7}.png`
+  (fuera de git, `.gitignore` gana `/examples/*/init/`; D25 exige la imagen dentro de la raíz) *(suposición: `sd-cli` no
+  escala la imagen inicial a `-W`×`-H`; si lo hace, sobra el escalado)*.
+- `r3-i2i-s{3,7}-f{55,75}.json`: clave `estilo/r3-i2i-s<semilla>-f<fuerza>`, perfil `og`, prompt de la elegida,
+  `initImage` `init/r3-s<semilla>.png`, `strength` 0,55 o 0,75 *(sin medir: se elige un valor bajo, que conserve, y uno
+  medio)*, `seed` = la del borrador, `count` 1. 4 por proyecto.
+
+*Coste:* 3 × (2 borradores × ~1 min + 4 img2img × ≤ ~3 min) ≈ **42 min**. *Medida:* la composición es **a ojo** (borrador,
+txt2img e img2img en fila): `measure` no ve posiciones (la EMD compara histogramas). `gimg measure` solo comprueba que el
+img2img no pierde luz ni color frente al txt2img (YAVG, SATAVG, % de paleta dentro de los umbrales) y, ya compuesto (E4),
+el contraste de la caja del título. Tiempo real de cada intento y `queue list` (estimación D10 separada por borrador e
+img2img). *Cierre:* si el img2img a alguna fuerza conserva la composición en la mayoría y no lava la pieza, la interfaz
+propone «definitivo desde este borrador» con esa fuerza (`docs/interfaz/propuesta.md`, decisión 5); si no, se queda «el
+definitivo puede recolocar».
+
+**r4 composición con gimg** (palanca: plantilla y zona). *Pregunta:* ¿la cadena real de F2.8 (capa de `rsvg-convert` +
+superposición de ffmpeg, fuentes por fontconfig, chunk, entrega) da piezas iguales de legibles que el piloto, con plantillas
+por proyecto? Sin modelo: `og` de cada ejemplo gana `targetWidth` 1200, `targetHeight` 630 y `compose` con `template`
+`plantillas/og.svg` (la zona y el velo de `piezas.json`: developer abajo, toVeriAI arriba, el resto a la izquierda; Tarkor
+con el velo y el color de texto que pida su elegida de r2), `fields` `title1`, `title2`, `subtitle`, `logo`
+`logos/<lockup elegido>.svg`, `fonts` (Sora e Inter la familia Galivelop; Cormorant Garamond y DM Sans toVeriAI; Cinzel e
+Inter Tarkor) y `fit` `cover`. El texto, el de `piezas.json` partido en líneas ([P] 4): en el `text` de los pedidos de r3 y, en
+los de r2 (ya enviados: reenviarlos encolaría otra vez), con `gimg compose --text`, que lo guarda en el pedido. Se compone con `gimg compose <p> <clave> og <intento>` la elegida de r2 de los siete
+(ambas semillas) y los img2img de r3; ~2 s por pieza, **0 min de modelo** (si una zona no sale limpia, un boceto SVG como
+`initImage` en ≤ 4 piezas, ~12 min, en la misma tanda). *Medida:* `gimg measure <compuesta> --zone <caja del título>
+--text <color del texto>` (caja: la de `componer.caja_zona` de esa zona) ≥ 4,5:1 (≥ 3:1 en titulares grandes), paleta y
+EMD con los umbrales de la calibración; `gimg doctor` con `font:*` en `ok` y, a ojo, que ninguna fuente sale sustituida;
+el chunk `gimg` de la compuesta lleva `compose`; `gimg choose` entrega a `examples/<p>/entrega/` y un cambio de título con
+`gimg compose --text` vuelve a entregar sin generar. El punto ciego de r4 (un trazo fino que cruza el texto no baja el p10)
+sigue **a ojo**. *Cierre:* «sí» por proyecto si la persona la da por publicable; la elegida y su plantilla pasan a r5 (F2.12).
+
+**Pasos** (cada uno con su commit y la bitácora al día; los de código, con el check en verde y sus tests por
+`rojo-sin-arreglo.sh`):
+
+| Paso | Qué | Tipo | Registro |
+|---|---|---|---|
+| E1 | Si se acepta [P] 5: `brand.palette` en el esquema, `gimg measure --project`, locales es/en, `brand` en los siete ejemplos; tests en `test_schema`, `test_measure` (`--palette` gana a `--project`; proyecto sin `brand` da su error) | Código | «Hecho en F2.10» aquí |
+| E2 | Prompts r2 (subagente fable) y pedidos r2; `test_examples.py`: los pedidos validan, el prompt es el archivo sin salto final, perfil `og` a 1280×640 y 6 pasos, semillas que da `attempt_specs` | Configuración | — |
+| E3 | Tanda r2 en la Deck: `gimg doctor`, `order submit`, `attempt new --seed 7`, `gimg work`, `measure`; veredicto de la persona | Manual Deck | `r2-estilo.md`, sección «Con gimg (F2.10)», con la tabla del plan de pruebas y miniaturas (D35) |
+| E4 | [P] 2, 3, 4 y 7: `logos/`, `plantillas/og.svg`, `compose`, `targetWidth`/`targetHeight` y `draft` en `og` de los siete; pedidos r3 con `text` y `.gitignore`; `test_examples.py`: copias idénticas, `compose.resolve_assets` resuelve, líneas que caben, pedidos r3 validan, y con herramientas (`skipUnless`) cada plantilla compone una cruda sintética a 1200×630 | Configuración y tests | — |
+| E5 | Tanda r3 en la Deck: borradores, escalado y copia a `init/`, img2img, `measure` | Manual Deck | `r3-borrador.md`, sección «Con gimg (F2.10)» |
+| E6 | Tanda r4: instalar las fuentes en `~/.local/share/fonts` (con permiso), `gimg compose`, `measure`, `choose`; los ajustes de plantilla que salgan van en commit propio | Manual Deck (+ configuración) | `r4-composicion.md`, sección «Con gimg (F2.10)» |
+| E7 | Cierre: «Hecho en F2.10» con lo decidido, fila F2.10 de «Pasos de F2», Pendiente de Tarkor en la bitácora, y lo que pasa a F2.11/F2.12 | Documentación | `docs/plan.md`, `docs/traspaso.md` |
+
+**Fuera de F2.10:** la LUT por marca y `compose.lut` (F2.11, solo si r2 deja a Tarkor fuera de rango); r5, avatar e icon,
+los formatos `square`, `portrait`, `header` y `banner` con composición y las propuestas a cada repo (F2.12); `compose.wrap`
+(F4); FLUX.3; una medida de bordes o p99 en la caja del texto (se apunta en Pendiente si r4 vuelve a necesitarla).
+
 ### Pasos de F2
 
 Pasos pequeños, cada uno con su commit y la bitácora al día; el orden lleva la primera ronda de contenido (F2.0) lo antes
@@ -740,7 +868,7 @@ posible.
 | F2.7 | Borradores: `draft` del perfil, `--draft`, `draft: true` en el intento, no elegible (D32); `initImage`/`strength` | Tests de specs, límites y de que no se elige un borrador |
 | F2.8 | Composición: `compose` en el perfil, `text` en el pedido, `gimg/compose.py`, `q<id>.raw.png` + `q<id>.png`, `gimg compose` (D28) | Tests con una plantilla mínima (sustitución y escape, guardia de rutas, recorte y escala; `skipUnless` ffmpeg y rsvg) |
 | F2.9 | `gimg measure` (paleta, signalstats, EMD, contraste) (D31); calibración con las imágenes de marca | Tests con PNG sintéticos de color conocido; `skipUnless` ffmpeg |
-| F2.10 | **Rondas r2-r4 en la Deck**; ajustes de estilo y plantillas que salgan | **Manual persona:** registros `r2-estilo.md`, `r3-borrador.md`, `r4-composicion.md` |
+| F2.10 | **Rondas r2-r4 en la Deck** con `gimg` («F2.10 en detalle»); ajustes de estilo y plantillas que salgan | **Manual persona:** registros `r2-estilo.md`, `r3-borrador.md`, `r4-composicion.md` |
 | F2.11 | LUT por marca solo si r2 lo pide (`compose.lut`, `gimg lut bake`), aplicada como gradación tras generar y antes de componer (el `MOMENTO=` de Tarkor: su noche gradada baja la EMD a la cuarta parte); si no, se apunta para F5 | Tests del `.cube` generado; manual: `measure` antes y después |
 | F2.12 | **Ronda r5** y propuestas `docs/propuestas/<proyecto>.md` (configuración, plantillas, logos SVG, piezas elegidas) | **Manual persona:** `r5-piezas.md`; cada propuesta enlaza su configuración de ejemplo |
 | F2.13 | README es/en (instalación, motor real, composición, medida), CHANGELOG, versión 0.2.0, tabla de fases al día | Check en verde; `minVersion` de los ejemplos = 0.2.0 |
