@@ -564,6 +564,15 @@ Un encargo; porta `examples/pilot/medir.py` (que se queda como está) y la EMD d
    (las de «Plan de pruebas de contenido», *Objetivo*) y de las piezas de r1/r5 del piloto, en
    `docs/registros/contenido/calibracion-measure.md`, con los rangos propuestos por proyecto.
 
+*Hecho en F2.9* (`gimg/measure.py`, `gimg/cli.py`, `tests/test_measure.py`): puntos 1-6; el 7 (calibración) queda pendiente. Decisiones
+menores: `--refs` acepta una o más imágenes (`nargs="+"`, así que va después de la imagen); el JSON usa claves en minúscula
+(`yavg`, `satavg`, `palette{colors,deltaE,pct,by_color}`, `emd[{ref,Y,Cb,Cr}]`, `emd_median`, `contrast{zone,text,mean,p10,p90,worst}`);
+`emd_median` solo aparece con más de una referencia. No se comparte `compose._run` (descarta la salida y esta orden necesita
+el stdout de ffmpeg): `measure._run` es su gemelo con códigos `measure.*`. El tamaño para la paleta y la zona sale de
+`ffprobe` y se pide `scale=w:h` explícito, de modo que los bytes esperados son exactos y menos bytes es `measure.unreadable`;
+una imagen que no existe también es `measure.unreadable`, y una que ffmpeg rechaza, `measure.tool_failed`. `--zone` y `--text`
+sin pareja dan `cli.measure_zone_text` (también si se llama a `measure.measure` directamente).
+
 ### Estilos por proyecto
 
 Reglas comunes, heredadas de `plantilla-prompt.md` de Tarkor: frases completas en positivo, sin prompt negativo (FLUX con cfg 1
