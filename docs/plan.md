@@ -572,6 +572,8 @@ el stdout de ffmpeg): `measure._run` es su gemelo con códigos `measure.*`. El t
 `ffprobe` y se pide `scale=w:h` explícito, de modo que los bytes esperados son exactos y menos bytes es `measure.unreadable`;
 una imagen que no existe también es `measure.unreadable`, y una que ffmpeg rechaza, `measure.tool_failed`. `--zone` y `--text`
 sin pareja dan `cli.measure_zone_text` (también si se llama a `measure.measure` directamente).
+*Calibración (punto 7, 2026-11-02):* `docs/registros/contenido/calibracion-measure.md`, con umbrales orientativos por proyecto;
+confirma con números el «no» de Tarkor en r5 (SATAVG 5-7 frente a 25 de su portada, EMD Cr 19-22). Cierra F2.9.
 
 ### Estilos por proyecto
 
