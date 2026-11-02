@@ -1,4 +1,4 @@
-<!-- galivelop-workflow v0.4.0 -->
+<!-- galivelop-workflow v0.4.3 -->
 # Bitácora (traspaso)
 
 > Léela entera al empezar cualquier sesión. Lo que no está subido no existe: commit + push en cada punto estable,
@@ -14,6 +14,7 @@
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 | **Tarea en curso · `f2-motor`** | F2.0 cerrada: pruebas de concepto e interfaz F4 en propuesta (13 decisiones confirmadas); tres fases antes de `main` hechas, marca `26bbd58` sobre `6977865`. El CI de GitHub no arranca (sin cuota): **comprobado solo en local** (347 tests), confirmado por la persona el 2026-10-27, que también confirmó ir a `main` por push directo. Siguiente: F2.1 en `f2-motor` (`docs/plan.md`, fila F2.1); presupuesto de compactaciones nuevo |
+| **Tarea en curso · `ccr-85e9d14e-zt7p8b`** | gw-update 0.4.0→0.4.3 aplicado (confirmado por la persona el 2026-11-02): scripts, skills, ganchos, CI y 3 ganchos nuevos en settings.json; `check` de `bash -n` partido en un `for` (doctor avisaba de verde falso); `compaction_budget` repuesto en `recuperar.py`. Check en verde en local (347). **Siguiente:** `f2-motor` hace `git merge origin/ccr-85e9d14e-zt7p8b`; a `main` con las tres fases cuando la persona lo pida |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.
@@ -32,6 +33,7 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 
 ## Pendiente
 
+- **Proponer al flujo `compaction_budget`** (aviso de presupuesto de compactaciones en `recuperar.py --estado`, de la retro de F2.0): la v0.4.3 lo pisó y se repuso a mano; cada `/gw-update` lo volverá a pisar hasta que esté en Galivelop-workflow (`gw-harvest`).
 - **Carpeta de datos en flatpak:** VS Code en flatpak fija `XDG_DATA_HOME=~/.var/app/com.visualstudio.code/data`, y `gimg` (y `ronda.sh`) lanzados desde su terminal usan otra carpeta de datos que desde una terminal normal (`docs/registros/contenido/r0-humo.md`); decidir en F2.5 (`gimg doctor` lo avisa, o se ignora el XDG de flatpak).
 - **Leves de la revisión de F0** (no se revisan más en este PR):
   - F2: `width`/`height` sin `multipleOf` (lo que exija `sd-cli` por modelo); el validador aún no lo soporta.
@@ -88,6 +90,6 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 ## Comprobar el estado
 
 - Últimos commits: `git fetch origin <rama> && git log --oneline -5 origin/<rama>`.
-- El check: `bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg` y `python3 -m unittest discover -s tests -t .`.
+- El check: `for f in .githooks/pre-commit .githooks/pre-push .githooks/commit-msg; do bash -n "$f"; done` y `python3 -m unittest discover -s tests -t .`.
 - Flujo bien montado: `python3 .claude/gw/scripts/doctor.py`.
 - Estado de la bitácora tal como lo recibe una sesión nueva: `python3 .claude/gw/scripts/recuperar.py --estado`.

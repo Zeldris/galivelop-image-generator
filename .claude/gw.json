@@ -1,6 +1,6 @@
 {
   "$schema": "gw/schema/gw.schema.json",
-  "version": "0.4.0",
+  "version": "0.4.3",
   "language": "es",
   "visibleLanguages": ["es", "en"],
   "log": "docs/traspaso.md",
@@ -11,7 +11,7 @@
   "ciInstall": ["sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg librsvg2-bin"],
   "setup": [],
   "check": [
-    "bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg",
+    "for f in .githooks/pre-commit .githooks/pre-push .githooks/commit-msg; do bash -n \"$f\"; done",
     "python3 -m unittest discover -s tests -t ."
   ],
   "checkWrapper": "",

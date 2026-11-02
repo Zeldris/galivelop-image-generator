@@ -1,16 +1,16 @@
-<!-- galivelop-workflow v0.4.0 -->
+<!-- galivelop-workflow v0.4.3 -->
 # galivelop-image-generator — instrucciones para agentes
 
 Este proyecto se trabaja por relevos: una sesión puede acabarse en cualquier momento (tokens, contenedor, cambio de
 cuenta) y la siguiente tiene que seguir **sin perder nada y sin preguntar por dónde iba**. Todo lo de este archivo
-existe para eso. El flujo es Galivelop-workflow v0.4.0; sus scripts están en `.claude/gw/scripts/`, sus skills
+existe para eso. El flujo es Galivelop-workflow v0.4.3; sus scripts están en `.claude/gw/scripts/`, sus skills
 en `.claude/skills/` y su configuración en `.claude/gw.json` (solo la lee `.claude/gw/scripts/config.py`).
 
 ## Al empezar cualquier sesión
 
 1. Lee la bitácora, `docs/traspaso.md`: rama, tarea en curso, qué falta y siguiente paso.
 2. `git fetch origin <rama>` y comprueba que el último commit coincide con lo que dice la bitácora.
-3. Comprueba que el check está en verde antes de tocar nada: `bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg` y `python3 -m unittest discover -s tests -t .`.
+3. Comprueba que el check está en verde antes de tocar nada: `for f in .githooks/pre-commit .githooks/pre-push .githooks/commit-msg; do bash -n "$f"; done`, `python3 -m unittest discover -s tests -t .`.
 4. Sigue por el **siguiente paso** de la bitácora, salvo que la persona pida otra cosa.
 5. Al empezar cada tarea, trae la rama protegida: `git fetch origin main` y, si trae commits,
    `git merge origin/main` (merge, nunca rebase: las ramas están subidas). Si el conflicto toca la
@@ -34,6 +34,7 @@ Cada sesión puede correr en un contenedor temporal: **lo que no está subido no
 - Si hay que parar con algo a medias o en rojo: commit igualmente con `WIP:` al principio del mensaje y, en la
   bitácora, qué falla y por qué. Nunca dejar trabajo solo en local.
 - Push a la rama de trabajo (`git push -u origin <rama>`); si falla por red, reintentar con espera 2, 4, 8 y 16 s.
+  El push y el check largo se lanzan en segundo plano y se espera su aviso, sin bucles de espera.
 - **Tras una llamada interrumpida o rechazada, `git status` y `git diff` antes de repetirla**: el cambio puede
   haberse guardado, o incluso subido, y repetirlo lo duplica.
 - Si la persona dice que se para, se para: se sube lo que haya, se deja la bitácora al día y no se sigue con nada más.
@@ -46,7 +47,7 @@ Cada sesión puede correr en un contenedor temporal: **lo que no está subido no
 
 ## Comprobar
 
-- **El check del proyecto:** `bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg` y `python3 -m unittest discover -s tests -t .`. `.githooks/pre-push` lo corre sobre el commit que se sube, y el CI
+- **El check del proyecto:** `for f in .githooks/pre-commit .githooks/pre-push .githooks/commit-msg; do bash -n "$f"; done`, `python3 -m unittest discover -s tests -t .`. `.githooks/pre-push` lo corre sobre el commit que se sube, y el CI
   (`.github/workflows/comprobar.yml`) en cada push fuera de `main` y en cada pull request.
 - **Lo comprobable lo hace un script**, no un agente: las skills y guías solo deciden lo que exige criterio. Si una
   regla se sigue rompiendo, se convierte en una comprobación.
@@ -79,8 +80,8 @@ Cada sesión puede correr en un contenedor temporal: **lo que no está subido no
   más revisiones, nunca el CI ni la retro presentada a la persona. Si el CI no arranca, vale el check en local de
   «Relevos» con la confirmación de la persona: se sube directo (el `pre-push` corre el check) o fusiona ella; el
   gancho no deja al agente fusionar un pull request sin CI.
-- La rama de un subagente vuelve con `bash .claude/gw/scripts/fusionar.sh <rama> "<mensaje>"`, que corre el check y
-  limpia su worktree.
+- La rama de un subagente vuelve con `bash .claude/gw/scripts/fusionar.sh <rama> "<mensaje>"`, que corre el check y los tests
+  relacionados, y limpia su worktree.
 
 ## Antes de ir a `main`: tres fases
 
@@ -93,7 +94,10 @@ Nunca sobre trabajo ya fusionado.
    contenido.
 2. **Entorno:** la skill `opt-tokens` y luego `retro` (más `opt-ai` si hubo medidas con un modelo de IA local). Sus
    propuestas se **presentan a la persona**; lo que confirme se aplica en la rama. Una retro escrita sin presentarla no
-   vale.
+   vale. Si la persona pidió ir a `main` y no está para decidir la retro, se deja todo listo (retro con
+   `**Estado:** pendiente`, check en verde sobre la fusión con `main`, descripción del pull request) y
+   se para antes de `revisado.sh`: su confirmación de la retro es el único paso que falta; la decisión no se escribe
+   por ella.
 3. **Cierre:** si la fase 2 trajo código, revisión solo de esos commits y sus arreglos; luego
    `bash .claude/gw/scripts/revisado.sh` (escribe la marca de revisión, `docs/registros/revisado.txt`, y hace su commit) y
    `git push`; para un pull request, su descripción con la skill `pr`. Solo entonces se sube a `main`
