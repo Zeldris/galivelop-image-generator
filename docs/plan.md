@@ -745,7 +745,7 @@ más ~5 min de `gimg doctor` y descarga de Ollama.
   da 15-20:1 sin velo (r4).
 - *Coste:* va con píxeles y pasos (±1 %), no con el prompt.
 
-**Decisiones aplazadas a F2.10** (propuestas del agente; la persona confirma o cambia cada [P] antes de E2):
+**Decisiones aplazadas a F2.10** (propuestas del agente; **las siete confirmadas por la persona el 2026-11-02**, que además autoriza al agente a correr las tandas en la Deck, avisando antes de cada una, y a instalar las fuentes OFL en `~/.local/share/fonts`):
 1. *`style` por perfil* (F2.6, dec. 2). **[P]** Los ejemplos siguen **sin `style`**: r2 mostró que el párrafo de estilo
    pesa poco y r5 que basta un prompt por formato; `attempt_specs` pegaría `, <style>` y rompería la igualdad píxel a
    píxel con el piloto. El campo sigue en el esquema para quien lo quiera.
