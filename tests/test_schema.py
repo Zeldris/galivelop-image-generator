@@ -211,6 +211,29 @@ def project(**profile):
             "profiles": {"og": dict(PROFILE, **profile)}}
 
 
+class BrandConfigTests(unittest.TestCase):
+    """`brand.palette` of the project (F2.10 E1)."""
+
+    def found(self, brand):
+        cfg = dict(project(), brand=brand)
+        return sorted((e.path, e.code) for e in S.validate(cfg, S.load_schema("project-config")))
+
+    def test_palette_is_optional_and_valid(self):
+        self.assertEqual(S.validate(project(), S.load_schema("project-config")), [])
+        self.assertEqual(self.found({}), [])
+        self.assertEqual(self.found({"palette": ["#06121c", "#E0703A"]}), [])
+        self.assertEqual(self.found({"palette": ["#000000"] * 16}), [])
+
+    def test_palette_rejects_bad_colours_and_more_than_16(self):
+        for bad in ("06121c", "#fff", "#06121cc", "#gg0000", "rojo", 5):
+            code = "type" if bad == 5 else "pattern"
+            self.assertEqual(self.found({"palette": [bad]}), [("/brand/palette/0", code)], bad)
+        self.assertEqual(self.found({"palette": ["#000000"] * 17}), [("/brand/palette", "maxItems")])
+
+    def test_brand_takes_nothing_else(self):
+        self.assertEqual(self.found({"colors": []}), [("/brand/colors", "additionalProperties")])
+
+
 class ComposeConfigTests(unittest.TestCase):
     """`compose`, `targetWidth` and `targetHeight` of a profile (F2.8, D28)."""
 

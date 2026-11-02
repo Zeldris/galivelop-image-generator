@@ -2,6 +2,14 @@
   "$schema": "../../gimg/schemas/project-config.schema.json",
   "minVersion": "0.1.0",
   "name": "toveriai",
+  "brand": {
+    "palette": [
+      "#F7F5F2",
+      "#9B2335",
+      "#2D6A4F",
+      "#B5832A"
+    ]
+  },
   "delivery": {
     "dir": "entrega",
     "template": "{key}-{profile}.png"

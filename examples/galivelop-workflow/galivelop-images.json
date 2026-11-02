@@ -2,6 +2,15 @@
   "$schema": "../../gimg/schemas/project-config.schema.json",
   "minVersion": "0.1.0",
   "name": "galivelop-workflow",
+  "brand": {
+    "palette": [
+      "#0d1b2a",
+      "#38b6e8",
+      "#f2b34a",
+      "#4cc38a",
+      "#eef6fb"
+    ]
+  },
   "delivery": {
     "dir": "entrega",
     "template": "{key}-{profile}.png"

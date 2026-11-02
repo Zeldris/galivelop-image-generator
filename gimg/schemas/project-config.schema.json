@@ -49,6 +49,22 @@
       "default": "galivelop-images.manifest.json",
       "description": "Manifest file path, relative to the project root."
     },
+    "brand": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Brand data of the project (not of a format); `gimg measure --project` reads it.",
+      "properties": {
+        "palette": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$"
+          },
+          "description": "Brand palette as #rrggbb colours (at most 16)."
+        }
+      }
+    },
     "profiles": {
       "type": "object",
       "minProperties": 1,

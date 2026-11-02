@@ -2,6 +2,14 @@
   "$schema": "../../gimg/schemas/project-config.schema.json",
   "minVersion": "0.1.0",
   "name": "galivelop-image-generator",
+  "brand": {
+    "palette": [
+      "#06121c",
+      "#A78BFA",
+      "#8B5CF6",
+      "#ffffff"
+    ]
+  },
   "delivery": {
     "dir": "entrega",
     "template": "{key}-{profile}.png"

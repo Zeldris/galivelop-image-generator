@@ -2,6 +2,17 @@
   "$schema": "../../gimg/schemas/project-config.schema.json",
   "minVersion": "0.1.0",
   "name": "portal",
+  "brand": {
+    "palette": [
+      "#06121c",
+      "#1aa6df",
+      "#5cc8f2",
+      "#E0703A",
+      "#2F7A55",
+      "#3D6FD9",
+      "#ffffff"
+    ]
+  },
   "delivery": {
     "dir": "entrega",
     "template": "{key}-{profile}.png"

@@ -2,6 +2,15 @@
   "$schema": "../../gimg/schemas/project-config.schema.json",
   "minVersion": "0.1.0",
   "name": "tarkor",
+  "brand": {
+    "palette": [
+      "#8a9aa8",
+      "#221c16",
+      "#332415",
+      "#E0703A",
+      "#f1e4d0"
+    ]
+  },
   "delivery": {
     "dir": "entrega",
     "template": "{key}-{profile}.png"

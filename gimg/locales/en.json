@@ -287,6 +287,7 @@
   "cli.arg.refs": "reference images for the EMD distance (one or more)",
   "cli.arg.zone": "text zone, as x,y,w,h in image pixels (goes with --text)",
   "cli.arg.text_color": "text colour, as #rrggbb (goes with --zone)",
+  "cli.arg.measure_project": "project whose brand.palette is used when --palette is missing",
   "cli.out.measure_head": "{image}",
   "cli.out.measure_luma": "  mean luma (YAVG) {yavg}  mean saturation (SATAVG) {satavg}",
   "cli.out.measure_palette": "  palette: {pct} % of pixels within ΔE < {delta} of {count} colours",
@@ -299,6 +300,7 @@
   "error.measure.tool_failed": "{tool} failed while measuring: {reason}",
   "error.measure.timeout": "{tool} took more than {seconds} s while measuring",
   "error.measure.unreadable": "cannot read the image \"{path}\" (it does not exist or ffmpeg does not understand it)",
+  "error.measure.no_brand_palette": "project \"{name}\" has no brand.palette in its configuration: add one or pass --palette",
   "error.measure.bad_hex": "\"{value}\" is not a #rrggbb colour",
   "error.measure.bad_zone": "\"{value}\" is not an x,y,w,h zone of integers with positive width and height",
   "error.measure.zone_outside": "the zone {zone} falls outside the image ({width}x{height})"

@@ -87,7 +87,8 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--text", "cli.arg.text_kv", action="append", default=[], metavar="FIELD=TEXT"))
 
     leaf(top, "measure", "cli.cmd.measure", arg("image", "cli.arg.image_path"),
-         opt("--palette", "cli.arg.palette"), opt("--refs", "cli.arg.refs", nargs="+", default=[], metavar="IMAGE"),
+         opt("--palette", "cli.arg.palette"), opt("--project", "cli.arg.measure_project", metavar="PROJECT"),
+         opt("--refs", "cli.arg.refs", nargs="+", default=[], metavar="IMAGE"),
          opt("--zone", "cli.arg.zone", metavar="X,Y,W,H"), opt("--text", "cli.arg.text_color", metavar="#RRGGBB"))
 
     g = group(top, "queue", "cli.cmd.queue")
@@ -236,6 +237,11 @@ def _compose(args, out: _Out) -> None:
 
 def _measure(args, out: _Out) -> None:
     palette = args.palette.split(",") if args.palette else None
+    if palette is None and args.project:
+        brand = projects.get(args.project)["config"].get("brand")
+        if not brand or not brand.get("palette"):
+            raise GimgError("measure.no_brand_palette", name=args.project)
+        palette = brand["palette"]
     res = measure.measure(args.image, palette, args.refs, args.zone, args.text)
     if out.as_json:
         out.data(res)

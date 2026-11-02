@@ -14,7 +14,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest import mock
 
-from gimg import cli, measure
+from gimg import cli, measure, projects
 from gimg.errors import GimgError
 
 TIENE_FFMPEG = shutil.which("ffmpeg") is not None and shutil.which("ffprobe") is not None
@@ -246,6 +246,65 @@ class ImagenesTests(Base):
         measure.measure(str(self.tmp / "k.png"), zone="150,0,50,100", text="#ffffff")
 
 
+class ProyectoTests(Base):
+    """`gimg measure --project` (F2.10 E1): la paleta sale de `brand.palette` del proyecto registrado."""
+
+    def setUp(self):
+        super().setUp()
+        env = mock.patch.dict(os.environ, {"GIMG_CONFIG_HOME": str(self.tmp / "cfg"),
+                                           "GIMG_DATA_HOME": str(self.tmp / "data")})
+        env.start()
+        self.addCleanup(env.stop)
+
+    def registrar(self, name, brand=None):
+        root = self.tmp / name
+        root.mkdir()
+        cfg = {"minVersion": "0.1.0", "name": name, "delivery": {"dir": "img"},
+               "profiles": {"og": {"width": 1280, "height": 640}}}
+        if brand is not None:
+            cfg["brand"] = brand
+        (root / "galivelop-images.json").write_text(json.dumps(cfg))
+        projects.add(root)
+
+    def run_cli(self, *argv):
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = cli.main(list(argv))
+        return code, out.getvalue(), err.getvalue()
+
+    def test_proyecto_sin_brand_da_su_error(self):
+        self.registrar("sinmarca")
+        for lang, frase in (("es", "no tiene brand.palette"), ("en", "has no brand.palette")):
+            code, out, err = self.run_cli("measure", "x.png", "--project", "sinmarca", "--lang", lang)
+            self.assertEqual(code, 1)
+            self.assertEqual(out, "")
+            self.assertIn(frase, err)
+            self.assertIn("sinmarca", err)
+
+    def test_brand_sin_palette_tambien_da_el_error(self):
+        self.registrar("vacia", brand={})
+        code, _, err = self.run_cli("measure", "x.png", "--project", "vacia", "--lang", "en")
+        self.assertEqual(code, 1)
+        self.assertIn("has no brand.palette", err)
+
+    def test_proyecto_desconocido(self):
+        code, _, err = self.run_cli("measure", "x.png", "--project", "nadie", "--lang", "en")
+        self.assertEqual(code, 1)
+        self.assertIn("nadie", err)
+        self.assertNotIn("brand.palette", err)
+
+    def test_palette_gana_y_no_consulta_el_proyecto(self):
+        with mock.patch.object(measure, "measure", side_effect=GimgError("measure.unreadable", path="x")) as m:
+            self.run_cli("measure", "x.png", "--project", "nadie", "--palette", "#000000")
+        self.assertEqual(m.call_args.args[1], ["#000000"])
+
+    def test_project_pasa_la_paleta_del_proyecto(self):
+        self.registrar("conmarca", brand={"palette": ["#06121c", "#E0703A"]})
+        with mock.patch.object(measure, "measure", side_effect=GimgError("measure.unreadable", path="x")) as m:
+            self.run_cli("measure", "x.png", "--project", "conmarca")
+        self.assertEqual(m.call_args.args[1], ["#06121c", "#E0703A"])
+
+
 @CON_FFMPEG
 class CliTests(Base):
     def run_cli(self, *argv):
@@ -265,6 +324,25 @@ class CliTests(Base):
         self.assertEqual(set(data), {"image", "yavg", "satavg", "palette", "emd", "contrast"})
         self.assertAlmostEqual(data["palette"]["pct"], 100.0, delta=1)
         self.assertEqual(data["contrast"]["worst"], 21.0)
+
+    def test_project_mide_con_la_paleta_de_la_marca(self):
+        env = mock.patch.dict(os.environ, {"GIMG_CONFIG_HOME": str(self.tmp / "cfg"),
+                                           "GIMG_DATA_HOME": str(self.tmp / "data")})
+        env.start()
+        self.addCleanup(env.stop)
+        root = self.tmp / "marca"
+        root.mkdir()
+        (root / "galivelop-images.json").write_text(json.dumps({
+            "minVersion": "0.1.0", "name": "marca", "delivery": {"dir": "img"}, "brand": {"palette": ["#000000"]},
+            "profiles": {"og": {"width": 1280, "height": 640}}}))
+        projects.add(root)
+        half_png(self.tmp / "h.png", "black", "white", "200x100")
+        _, out, _ = self.run_cli("measure", str(self.tmp / "h.png"), "--project", "marca", "--json")
+        self.assertEqual(json.loads(out)["palette"]["colors"], ["#000000"])
+        self.assertAlmostEqual(json.loads(out)["palette"]["pct"], 50.0, delta=2)
+        _, out, _ = self.run_cli("measure", str(self.tmp / "h.png"), "--project", "marca", "--palette", "#ffffff",
+                                 "--json")
+        self.assertEqual(json.loads(out)["palette"]["colors"], ["#ffffff"])
 
     def test_texto_legible_en_los_dos_idiomas(self):
         color_png(self.tmp / "k.png", "black", "200x100")
