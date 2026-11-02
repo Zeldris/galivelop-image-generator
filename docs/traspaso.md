@@ -13,7 +13,7 @@
 | **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | F2.8 cerrada; flujo en 0.4.3. F2.6-F2.8 «comprobadas solo en local» y decisiones 1-10 de F2.8: pendientes de la persona. Lectura de Tarkor del 2026-11-02 y sus 7 propuestas, pendientes de la persona (`docs/registros/lectura-2026-11-02-tarkor.md`). **Siguiente:** aplicar lo que confirme y seguir con F2.9 medida de marca. Presupuesto de compactaciones: 1 (gastada 0) |
+| **Tarea en curso · `f2-motor`** | F2.8 cerrada; flujo 0.4.3. La persona confirmó el 2026-11-02: F2.6-F2.8 «comprobadas solo en local» (sin `gh`), las decisiones 1-10 de F2.8 y las 7 propuestas de la lectura de Tarkor, ya en `docs/plan.md`. **En curso:** F2.9 medida de marca (`gimg measure`, D31). Presupuesto de compactaciones: 1 (gastada 0) |
 | **Tarea en curso · `ccr-85e9d14e-zt7p8b`** | gw-update 0.4.0→0.4.3 aplicado (confirmado por la persona el 2026-11-02): scripts, skills, ganchos, CI y 3 ganchos nuevos en settings.json; `check` de `bash -n` partido en un `for` (doctor avisaba de verde falso); `compaction_budget` repuesto en `recuperar.py`. Check en verde en local (347). **Siguiente:** recogido en `f2-motor` (merge del 2026-11-02); viaja a `main` con las tres fases cuando la persona lo pida |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
@@ -45,7 +45,9 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 - **Referencias de estilo (antes de F5):** ronda del piloto con `sd-cli` y 1-2 imágenes de referencia sobre Tarkor,
   medida con D31; si mejora el % de paleta sin estropear el contraste, entra en F5 (fila «Referencias» de la pestaña
   Marca). Confirmado por la persona el 2026-10-27 (`docs/interfaz/propuesta.md`, decisión nueva 1).
-- **Marca de Tarkor:** el estilo sale desaturado en todos los formatos (SATAVG 5-7 frente al 15-30 del juego;
+  Expectativa rebajada el 2026-11-02 (Tarkor, IMG-30/31): la referencia conserva un sujeto (útil para mascota o
+  producto), no el acabado ni la paleta; lo desaturado de Tarkor se espera arreglar con la LUT de F2.11.
+- **Marca de Tarkor:** (en r2, probar antes las pautas de luz del 2026-11-02 de `docs/plan.md`, «Estilos por proyecto») el estilo sale desaturado en todos los formatos (SATAVG 5-7 frente al 15-30 del juego;
   `r5-og-bajo` arregla la luz, YAVG 66, pero no el color): otra vuelta del prompt con la persona
   (`docs/registros/contenido/r5-piezas.md`).
 - **Leves de la revisión de `3dc054d` (piezas/componer, F2.0):** avatar rasterizado con `-w` y `-h` deforma un logo no

@@ -71,7 +71,7 @@ Cada fase es una rama y un pull request a `main`, con las tres fases de revisió
 | F2 Motor real | Envoltorio de `sd-cli` con el perfil de máquina (memoria, `--max-vram`, tope, cancelar, progreso); `instalar.sh` con versiones fijas y checksum; catálogo de modelos, borradores, composición de texto y logo, medida de marca; **piloto de contenido corporativo** (Portal, Tarkor, toVeriAI, Galivelop-workflow) con configuraciones de ejemplo en este repo *(aprobado 2026-10-26)* | Un pedido real generado en la Deck y la primera ronda de piezas definitivas de los cuatro proyectos elegidas por la persona (comprobación manual) |
 | F3 API y arranque | API HTTP (D17, D25) y arranque bajo demanda; unidad `systemd --user` opcional | Tests de la API; `gimg` arranca el servicio solo |
 | F4 Interfaz | Las tres pantallas de D22, es/en | Recorrido completo en el navegador |
-| F5 Piloto WMF | Configuración de ejemplo para WMF, guía de integración y propuesta de migración para su repo; medida base con `opt-ai` y comparación `sd-server` (D14); LUT por marca si F2 la deja pendiente *(aprobado 2026-10-26: el piloto corporativo pasa a F2 y WMF sigue aquí)* | WMF genera y recibe una elegida sin copia a mano |
+| F5 Piloto WMF | Configuración de ejemplo para WMF, guía de integración y propuesta de migración para su repo; medida base con `opt-ai` y comparación `sd-server` (D14); LUT por marca si F2 la deja pendiente; stable-diffusion.cpp `master-1039` o posterior con LoRA (`--lora-model-dir`, nueva versión fija en `instalar.sh`); bocetos paramétricos, planos y encuadre de Tarkor (`bocetos/plantilla.py`, `planos.sh`, `encuadre.py`); el LoRA de estilo entrenado solo tras el veredicto de IMG-32 *(aprobado 2026-10-26: el piloto corporativo pasa a F2 y WMF sigue aquí; ampliado 2026-11-02)* | WMF genera y recibe una elegida sin copia a mano |
 
 ## F1 en detalle
 
@@ -446,7 +446,7 @@ plantilla puede llevar las suyas.
 
 Tres encargos en serie (E1 núcleo, E2 integración, E3 frente); cada uno deja el check en verde y sus locales es/en.
 
-**Decisiones de F2.8** (tomadas por el agente con la autorización de la bitácora; la persona puede revertirlas):
+**Decisiones de F2.8** (tomadas por el agente con la autorización de la bitácora; **confirmadas por la persona el 2026-11-02**):
 1. `piezas.json` de developer, image-generator y voice-generator (`cuadrado`, `vertical`, `cabecera`): se decide en F2.10, cuando los ejemplos ganen `compose`; en F2.8 los ejemplos no cambian.
 2. `avatar`/`icon` (solo composición, sin modelo) quedan fuera de F2.8 (F2.10/F2.12): hoy `width`/`height` son obligatorios y todo pasa por la cola.
 3. `examples/<proyecto>/` no gana `compose`, plantillas ni logos en F2.8; en F2.8 solo la plantilla mínima de los tests. Ojo para F2.10: `piezas.json` apunta a `docs/marcas/...` fuera de la raíz de cada ejemplo (D25 lo rechaza); los logos tendrían que copiarse dentro.
@@ -540,6 +540,13 @@ rasterizado como `initImage` (fuerza 0,85-0,97 con `strength_as_noise_level`, co
 lleva la paleta en palabras, no en hexadecimales *(suposición: el modelo no respeta códigos hex; la ronda r2 lo mide)*. Los
 colores de acento de cada proyecto salen de `Portal-Galivelop/src/data/proyectos/*.json`: Tarkor `#E0703A`, toVeriAI `#2F7A55`,
 workflow `#3D6FD9`.
+
+Pautas añadidas el 2026-11-02, de `pautas.md` v5.2 de Tarkor (`docs/registros/lectura-2026-11-02-tarkor.md`; aprobadas por la
+persona): la luz se pide por dirección y **sin nombrar la fuente** («sun» pinta el disco aunque se diga fuera de cuadro); el
+modelo tiende a escena luminosa y cálida, y una escena oscura o sobria se dice **al principio** del prompt; posiciones y tamaños
+en fracciones del encuadre y desde qué borde («a quarter of the way down from the top»), no con adjetivos; un ancla nombrada una
+sola vez, y nombrar un lugar real arrastra su contenido; el color y la proporción se toman midiendo la referencia, no
+describiéndola; se gradúa una imagen que ya sale con la luz buena, no se arregla gradando.
 
 **Portal Galivelop** (marca paraguas; `examples/portal/`). *Propósito y tono:* «Taller independiente de software. Hacemos
 reales los proyectos que parecen imposibles»; cercano, humilde, honesto con el estado real; no es un escaparate ni le mueve el
@@ -636,6 +643,10 @@ Deck es comprobación manual de la persona, nunca un test**; lo que se apunta es
   por marca); contraste WCAG texto/zona reservada ≥ 4,5:1 (≥ 3:1 en titulares grandes).
 - *Subjetivo:* la persona dice sí o no a cada pieza y, si no, qué palanca toca la ronda siguiente; una pieza «sí» pasa a
   definitivo; el estilo de un proyecto se da por bueno cuando 3 de sus piezas prioritarias son «sí» a la primera o segunda ronda.
+- *Proceso, desde r2* (reglas R1-R3 de Tarkor, aprobadas el 2026-11-02): cada palanca se prueba en **2 semillas** (3 y 7); lo
+  que no mejora en 2 rondas seguidas sale del banco por prompt y pasa a boceto, LUT o composición; una ronda se cierra con la
+  mayoría de piezas «sí», no con todas. **El juicio a ojo («se lee como la marca») va antes que la medida:** `gimg measure` lo
+  apoya y fija umbrales, pero no acepta una pieza por sí solo.
 
 | Ronda | Qué | Palanca | Coste en la Deck *(estimado)* |
 |---|---|---|---|
@@ -685,7 +696,7 @@ posible.
 | F2.8 | Composición: `compose` en el perfil, `text` en el pedido, `gimg/compose.py`, `q<id>.raw.png` + `q<id>.png`, `gimg compose` (D28) | Tests con una plantilla mínima (sustitución y escape, guardia de rutas, recorte y escala; `skipUnless` ffmpeg y rsvg) |
 | F2.9 | `gimg measure` (paleta, signalstats, EMD, contraste) (D31); calibración con las imágenes de marca | Tests con PNG sintéticos de color conocido; `skipUnless` ffmpeg |
 | F2.10 | **Rondas r2-r4 en la Deck**; ajustes de estilo y plantillas que salgan | **Manual persona:** registros `r2-estilo.md`, `r3-borrador.md`, `r4-composicion.md` |
-| F2.11 | LUT por marca solo si r2 lo pide (`compose.lut`, `gimg lut bake`); si no, se apunta para F5 | Tests del `.cube` generado; manual: `measure` antes y después |
+| F2.11 | LUT por marca solo si r2 lo pide (`compose.lut`, `gimg lut bake`), aplicada como gradación tras generar y antes de componer (el `MOMENTO=` de Tarkor: su noche gradada baja la EMD a la cuarta parte); si no, se apunta para F5 | Tests del `.cube` generado; manual: `measure` antes y después |
 | F2.12 | **Ronda r5** y propuestas `docs/propuestas/<proyecto>.md` (configuración, plantillas, logos SVG, piezas elegidas) | **Manual persona:** `r5-piezas.md`; cada propuesta enlaza su configuración de ejemplo |
 | F2.13 | README es/en (instalación, motor real, composición, medida), CHANGELOG, versión 0.2.0, tabla de fases al día | Check en verde; `minVersion` de los ejemplos = 0.2.0 |
 
@@ -704,7 +715,8 @@ posible.
 - **Texto legible.** No se pide al modelo nunca; todo texto es composición. Depende de que las fuentes estén instaladas en la
   máquina (`gimg doctor` lo dice) y de que `rsvg-convert` las resuelva por fontconfig *(suposición)*. Componer con SVG o ffmpeg
   está **sin confirmar en Tarkor**: F2.8 es la primera vez.
-- **Colores por hexadecimal.** *(suposición)* El modelo no respeta códigos hex; se mide en r2 y, si no, LUT (D31).
+- **Colores por hexadecimal.** *(suposición)* El modelo no respeta códigos hex; se mide en r2 y, si no, LUT (D31). Tarkor
+  (2026-11-02) apunta a la LUT: una imagen de referencia fija el sujeto, no el acabado ni la paleta.
 - **Borrador frente a definitivo.** Que 640×320 a 8 pasos anticipe la composición de 1280×640 a 16 no está probado (IMG-19a de
   Tarkor sin resolver); `--preview proj` para FLUX.3 tampoco. r3 lo decide; si no coincide, el borrador pasa a ser el modelo rápido.
 - **Formato del progreso.** La línea de pasos de `sd-cli` se parsea del log `-v`; el formato exacto se confirma en r0 y el
