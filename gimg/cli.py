@@ -7,7 +7,7 @@ import os
 import sys
 import traceback
 
-from . import __version__, compose, delivery, doctor, engine, i18n, orders, projects, queue, worker
+from . import __version__, compose, delivery, doctor, engine, i18n, measure, orders, projects, queue, worker
 from .errors import GimgError
 
 LANGS = ("es", "en")
@@ -85,6 +85,10 @@ def _build(lang: str) -> argparse.ArgumentParser:
     leaf(top, "compose", "cli.cmd.compose", project, okey, oprofile,
          arg("attempt", "cli.arg.attempt_optional", type=int, nargs="?", default=None),
          opt("--text", "cli.arg.text_kv", action="append", default=[], metavar="FIELD=TEXT"))
+
+    leaf(top, "measure", "cli.cmd.measure", arg("image", "cli.arg.image_path"),
+         opt("--palette", "cli.arg.palette"), opt("--refs", "cli.arg.refs", nargs="+", default=[], metavar="IMAGE"),
+         opt("--zone", "cli.arg.zone", metavar="X,Y,W,H"), opt("--text", "cli.arg.text_color", metavar="#RRGGBB"))
 
     g = group(top, "queue", "cli.cmd.queue")
     leaf(g, "list", "cli.cmd.queue_list", opt("--state", "cli.arg.queue_state", choices=queue.STATES))
@@ -198,6 +202,8 @@ def _run(args, out: _Out) -> int:
                      new=out.none(result["new"]), old=out.none(result["old"]))
     elif cmd == "compose":
         _compose(args, out)
+    elif cmd == "measure":
+        _measure(args, out)
     elif cmd == "queue":
         _queue(args, sub, out)
     elif cmd == "work":
@@ -226,6 +232,29 @@ def _compose(args, out: _Out) -> None:
         out.line("cli.out.composed_delivered", id=item["id"], path=item["delivered"])
     else:
         out.line("cli.out.composed", id=item["id"], image=item["image"])
+
+
+def _measure(args, out: _Out) -> None:
+    palette = args.palette.split(",") if args.palette else None
+    res = measure.measure(args.image, palette, args.refs, args.zone, args.text)
+    if out.as_json:
+        out.data(res)
+        return
+    out.line("cli.out.measure_head", image=res["image"])
+    out.line("cli.out.measure_luma", yavg=res["yavg"], satavg=res["satavg"])
+    if "palette" in res:
+        p = res["palette"]
+        out.line("cli.out.measure_palette", pct=p["pct"], delta=p["deltaE"], count=len(p["colors"]))
+        for color, pct in p["by_color"].items():
+            out.line("cli.out.measure_palette_color", color=color, pct=pct)
+    for e in res.get("emd", ()):
+        out.line("cli.out.measure_emd", **e)
+    if "emd_median" in res:
+        out.line("cli.out.measure_emd_median", **res["emd_median"])
+    if "contrast" in res:
+        c = res["contrast"]
+        out.line("cli.out.measure_contrast", text=c["text"], zone=",".join(str(v) for v in c["zone"]),
+                 mean=c["mean"], p10=c["p10"], p90=c["p90"], worst=c["worst"])
 
 
 def _order(args, sub, out: _Out) -> None:
