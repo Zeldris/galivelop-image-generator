@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<!-- Flow diagram, left to right: how something works in four steps. Copy one per language (diagrama.es.html,
+     diagrama.en.html), fill every gap written between double braces and render with render.mjs. Three to five
+     steps: delete or copy an li. The return arrow (.vuelta) says what closes the cycle; delete it if the flow
+     does not go back to the start. -->
+<meta name="gw-size" content="1200x675">
+<title>Diagrama</title>
+<style>
+  :root {
+    /* Palette: override these to match the project (brand colors, dark or light). Nothing else needs to change. */
+    --fondo: #0f172a; --superficie: #1e293b; --borde: #334155;
+    --texto: #f1f5f9; --tenue: #94a3b8; --acento: #38bdf8; --acento-texto: #0f172a;
+    --bien: #4ade80; --mal: #f87171;
+    --fuente: system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, "DejaVu Sans", "Liberation Sans", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", "Liberation Mono", monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { width: 1200px; height: 675px; overflow: hidden; background: var(--fondo); color: var(--texto); font-family: var(--fuente);
+         padding: 52px 60px; display: flex; flex-direction: column; }
+  .marca { font-size: 18px; letter-spacing: .16em; text-transform: uppercase; color: var(--acento); font-weight: 700; }
+  h1 { font-size: 42px; margin-top: 14px; }
+  ol { list-style: none; display: flex; align-items: stretch; gap: 40px; margin-top: auto; counter-reset: paso; }
+  li { flex: 1; position: relative; background: var(--superficie); border: 2px solid var(--borde); border-radius: 16px; padding: 18px 14px; counter-increment: paso; }
+  li::before { content: counter(paso); display: inline-grid; place-items: center; width: 38px; height: 38px; border-radius: 50%;
+               background: var(--acento); color: var(--acento-texto); font-weight: 700; font-size: 20px; }
+  li:not(:last-child)::after { content: "\2192"; position: absolute; right: -34px; top: 50%; transform: translateY(-50%); font-size: 28px; color: var(--acento); }
+  li b { display: block; font-size: 22px; margin-top: 12px; line-height: 1.2; }
+  li span { display: block; font-size: 16px; color: var(--tenue); margin-top: 10px; line-height: 1.4; }
+  .vuelta { margin-top: 26px; border: 2px dashed var(--acento); border-top: none; border-radius: 0 0 16px 16px; height: 36px; position: relative; }
+  .vuelta span { position: absolute; left: 50%; bottom: -14px; transform: translateX(-50%); background: var(--fondo); padding: 0 16px; font-size: 20px; color: var(--acento); white-space: nowrap; }
+  .pie { margin-top: auto; padding-top: 30px; font-size: 20px; color: var(--tenue); }
+</style>
+</head>
+<body>
+  <div class="marca">Galivelop image generator</div>
+  <h1>Un generador por máquina, no uno por proyecto</h1>
+  <ol>
+    <li><b>Un proyecto</b><span>Cualquiera de los que usan la máquina; el generador no conoce su dominio</span></li>
+    <li><b>Un pedido</b><span>Clave + perfil + prompt + semilla</span></li>
+    <li><b>Una cola</b><span>Persistente en disco: una generación a la vez, por orden de llegada</span></li>
+    <li><b>N intentos</b><span>Cada pedido puede tener varios intentos</span></li>
+    <li><b>Una elegida</b><span>Como mucho una por pedido; se entrega al proyecto</span></li>
+  </ol>
+  <div class="vuelta"><span>Elegir otra sustituye la entrega, y se puede deshacer</span></div>
+  <div class="pie">Un servicio local por máquina: los modelos no se duplican en cada proyecto.</div>
+</body>
+</html>
