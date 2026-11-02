@@ -530,6 +530,40 @@ publicar; generación ≤ 1 Mpx y múltiplo de 64, lo que cabe en la Deck según
 El borrador de `og` es 640×320 a 8 pasos; con FLUX.3 un definitivo de 1280×640 cuesta ~25 % más que el 1280×512 medido (~60 min,
 *suposición*).
 
+### F2.9 en detalle (medida de marca, D31)
+
+Un encargo; porta `examples/pilot/medir.py` (que se queda como está) y la EMD de `medir/emd.py` de Tarkor. **Decisiones**
+(del agente, con la autorización de la bitácora; la persona puede revertirlas):
+
+1. *Orden:* `gimg measure <imagen> [--palette #hex,#hex…] [--refs <img>…] [--zone x,y,w,h] [--text #hex] [--json]`. `--zone`
+   y `--text` van juntos (uno sin otro: `cli.measure_zone_text`). Las rutas son libres, no relativas a un proyecto: la orden
+   solo lee, y calibrar necesita imágenes de marca de otros repos (D25 guarda lo que se escribe o se entrega).
+2. *Sin veredicto:* imprime números, nunca «pasa/no pasa». Los umbrales salen de la calibración (punto 7) y los aplica la
+   persona en las rondas; el juicio a ojo va antes («Plan de pruebas de contenido»). La paleta va por argumento; un
+   `brand.palette` en el perfil se decide en F2.10 si r2 lo pide.
+3. *Medidas*, en `gimg/measure.py` (stdlib + ffmpeg):
+   - `yavg`, `satavg`: `signalstats` de ffmpeg sobre la imagen entera, como el piloto (BT.601; se calibra igual).
+   - `palette_pct`: imagen reducida a 256 px de ancho (`flags=area`), RGB a CIE Lab D65, % de píxeles a ΔE76 < 15 de algún
+     color; `palette_by_color` con el % de cada color (el más cercano).
+   - `emd` frente a cada referencia y `emd_median` por canal si hay más de una: Wasserstein-1 entre histogramas de Y, Cb y
+     Cr (0-255) sobre un diezmado a 160×64 en `yuv444p`, idéntico a Tarkor para que sus cifras (Cb ≲ 6, Cr ≲ 7,5) valgan.
+   - `contrast`: con zona (píxeles de la imagen original; fuera de la imagen: `measure.zone_outside`), relación WCAG 2.x
+     del color del texto frente a la media, el percentil 10 y el 90 de la luminancia relativa de la zona; `worst` es la menor.
+4. *Errores* `GimgError("measure.*")` con locales es/en: `measure.tool_missing`, `measure.tool_failed`, `measure.timeout`,
+   `measure.unreadable` (ffmpeg no la lee o da menos bytes), `measure.bad_hex`, `measure.bad_zone`, `measure.zone_outside`.
+   Se arreglan de paso los leves del piloto: hexadecimal con `fullmatch`, `timeout` en cada subproceso, `shutil.which` antes
+   de llamar a ffmpeg o ffprobe. La ejecución de herramientas se comparte con `compose._run` si basta con pasarle el prefijo
+   del código; si no, se duplica.
+5. *Salida:* líneas legibles con `i18n` (`cli.out.measure_*`) o, con `--json`, el diccionario entero. Sin registro: medir no
+   es generar.
+6. *Tests* (`tests/test_measure.py`; patrón `EN_CI` + `skipUnless` de `tests/test_pilot_scripts.py`): PNG sintéticos de color
+   conocido (Lab de un color puro contra su valor, ΔE en el umbral, % de paleta de una imagen mitad y mitad, EMD 0 consigo
+   misma y > 0 con otra, mediana de tres, contraste blanco/negro 21:1, zona fuera, hex malo, ffmpeg ausente con `PATH`
+   vacío). Cada test con su motivo (el código del error), y los nuevos pasan por `rojo-sin-arreglo.sh`.
+7. *Calibración* (tras el código, en la Deck, sin modelo): `gimg measure --json` de las imágenes de marca de cada proyecto
+   (las de «Plan de pruebas de contenido», *Objetivo*) y de las piezas de r1/r5 del piloto, en
+   `docs/registros/contenido/calibracion-measure.md`, con los rangos propuestos por proyecto.
+
 ### Estilos por proyecto
 
 Reglas comunes, heredadas de `plantilla-prompt.md` de Tarkor: frases completas en positivo, sin prompt negativo (FLUX con cfg 1
