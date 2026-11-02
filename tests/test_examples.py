@@ -261,6 +261,33 @@ class PilotExampleTests(unittest.TestCase):
                               "model": "flux2-klein-4b-q8"}, name)
             self.assertEqual(specs[0]["references"], [], name)
 
+    def test_r2_orders_use_their_prompt_files_and_seeds(self):
+        from gimg import orders, projects
+        cases = [(name, "r2-luz", "r2-luz.txt", 3) for name in PILOT_PROJECTS]
+        cases += [(name, "r2-control", "estilo.txt", 7) for name in PILOT_PROJECTS]
+        cases.append(("tarkor", "r2-luz-r1", "r2-luz-r1.txt", 3))
+        added = set()
+        for name, stem, prompt_file, seed in cases:
+            root = ROOT / "examples" / name
+            order = read("examples/%s/orders/%s.json" % (name, stem))
+            self.assertEqual(S.validate(order, self.order_schema), [], (name, stem))
+            self.assertEqual((order["key"], order["profile"], order["count"]),
+                             ("estilo/" + stem, "og", 1), (name, stem))
+            prompt = (root / "prompts" / prompt_file).read_text(encoding="utf-8").strip()
+            self.assertEqual(order["prompt"], prompt, (name, stem))
+            if name not in added:
+                projects.add(root)
+                added.add(name)
+            orders.submit(name, order)
+            specs = orders.attempt_specs(name, order["key"], order["profile"], order["count"])
+            self.assertEqual([s["seed"] for s in specs], [seed], (name, stem))
+            self.assertEqual(specs[0]["params"],
+                             {"width": 1280, "height": 640, "steps": 6, "cfg": 1.0, "sampler": "euler",
+                              "model": "flux2-klein-4b-q8"}, (name, stem))
+            # The second seed of R1 comes from `gimg attempt new --seed 7`, not from count.
+            extra = orders.attempt_specs(name, order["key"], order["profile"], 1, seed=7)
+            self.assertEqual([s["seed"] for s in extra], [7], (name, stem))
+
     def test_gitignore_keeps_pilot_deliveries_out_of_git(self):
         lines = (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
         self.assertIn("/examples/*/entrega/", lines)
