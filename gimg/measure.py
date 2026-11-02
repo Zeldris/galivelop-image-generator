@@ -112,15 +112,20 @@ def _check_file(path) -> None:
         raise GimgError("measure.unreadable", path=str(path))
 
 
+def _input(path) -> str:
+    """`path` as ffmpeg's ``file:`` protocol: a name starting with ``-`` or with ``proto:`` is read as a file."""
+    return "file:" + os.path.abspath(str(path))
+
+
 def _ffmpeg(path, vf, *extra) -> bytes:
-    return _run(["ffmpeg", "-v", "error", "-nostdin", "-i", str(path), "-vf", vf, "-frames:v", "1", *extra],
+    return _run(["ffmpeg", "-v", "error", "-nostdin", "-i", _input(path), "-vf", vf, "-frames:v", "1", *extra],
                 "ffmpeg")
 
 
 def image_size(path) -> tuple:
     _check_file(path)
     out = _run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height",
-                "-of", "csv=p=0", str(path)], "ffprobe")
+                "-of", "csv=p=0", _input(path)], "ffprobe")
     try:
         w, h = out.decode().strip().split(",")[:2]
         size = int(w), int(h)
@@ -134,7 +139,7 @@ def image_size(path) -> tuple:
 def signalstats(path) -> tuple:
     """``(YAVG, SATAVG)`` of the whole image."""
     _check_file(path)
-    out = _ffmpeg(path, "signalstats,metadata=print:file=-", "-f", "null", "-").decode(errors="replace")
+    out = _ffmpeg(path, "format=yuv444p,signalstats,metadata=print:file=-", "-f", "null", "-").decode(errors="replace")
     vals = dict(re.findall(r"lavfi\.signalstats\.(YAVG|SATAVG)=([\d.]+)", out))
     if "YAVG" not in vals or "SATAVG" not in vals:
         raise GimgError("measure.unreadable", path=str(path))

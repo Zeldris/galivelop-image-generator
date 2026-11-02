@@ -160,6 +160,22 @@ class ImagenesTests(Base):
         self.assertLess(y_k, 20)
         self.assertLess(s_w, 5)
 
+    def test_signalstats_de_16_bits_en_escala_de_8(self):
+        img = self.tmp / "g16.png"
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "color=c=0x808080:s=64x32",
+                        "-frames:v", "1", "-pix_fmt", "rgb48be", str(img)], check=True)
+        yavg, _ = measure.signalstats(img)
+        self.assertLess(yavg, 256)
+        self.assertAlmostEqual(yavg, 126, delta=3)
+
+    def test_rutas_que_ffmpeg_tomaria_por_opcion_o_protocolo(self):
+        for name in ("-raro.png", "concat:x.png"):
+            img = self.tmp / name
+            color_png(self.tmp / "base.png", "white")
+            shutil.copy(self.tmp / "base.png", img)
+            res = measure.measure(str(img), ["#ffffff"])
+            self.assertEqual(res["palette"]["pct"], 100.0, name)
+
     def test_pixeles_de_un_color_conocido(self):
         color_png(self.tmp / "r.png", "0x336699", "300x100")
         pix = measure.pixels(str(self.tmp / "r.png"))
