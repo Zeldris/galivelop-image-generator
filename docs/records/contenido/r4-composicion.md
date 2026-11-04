@@ -113,4 +113,22 @@ proyecto, #41-#60. Hojas de contactos: `piloto/r6-detalle/<p>.png`; compuestas: 
 | galivelop-image-generator | 8/10 | gusta; el punto de luz de arriba queda inconexo; extender el brillo morado tipo humo/aura de las láminas a más partes y darle más espacio |
 | galivelop-workflow | 1/10 | la que más deja que desear: faltan brillos y efectos realistas, un árbol que se vea en 3D, más calidad; textos mal distribuidos; el logo debería seguir el formato del de Galivelop |
 
-Siguiente: r7 con estos cambios.
+
+## r7 (2026-11-04)
+
+Plantillas comunes (caja `60,60,604,510`, filete de acento, subtítulo a 24 px) en toVeriAI, Portal, image-gen y workflow;
+Tarkor a lápiz con Metamorphous y Almendra (`r7-lapiz` y `r7-lapiz-b`). 4 semillas × 8 pasos, #61-#84. Hojas:
+`piloto/r7/<p>.png`; compuestas: `piloto/r7/compuestas/`; juntas: `piloto/r7/elegidas.png` (fuera de git). Logos aún
+provisionales dibujados por Fable (D37).
+
+| Proyecto | Intento | Contraste media / p10 | Nota | Qué pide la persona (2026-11-05) |
+|---|---|---|---|---|
+| tarkor | q83 (`r7-lapiz-b` #3) | 13,2 / 11,0 | 4/10 | la idea mucho mejor, los recursos y elementos no; **la hoja se queda como está**: la trabajará la persona desde la interfaz |
+| toveriai | q71 (#3) | 14,0 / 8,7 | 8/10 | periódico como publicación de toVeriAI, gráficas en vez de una persona; utensilios viejos y modernos |
+| portal | q66 (#2) | 9,0 / 20,3 | 4/10 | demasiado contraste de color; aurora como humo o estela que sale del portal y se refleja; mármol blanco detallado, moderno y futurista, simétrico |
+| galivelop-image-generator | q62 (#2) | 10,2 / 20,3 | 9/10 | fuera el humo blanco; el humo morado por toda la imagen |
+| galivelop-workflow | q74 (#2) | 9,4 / 19,4 | 6/10 | el árbol lo forman los nodos y sus líneas; mejor reflejo; rejilla de celdas iguales y más difuminada cerca del suelo |
+
+Cambios aplicados en las hojas (fila «Estilo de imagen», «r8»). La siguiente ronda la hace la persona desde la interfaz
+(F3 y F4 se adelantan al cierre del piloto).
+
