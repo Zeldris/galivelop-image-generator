@@ -46,3 +46,29 @@ ya se pidieron con la zona libre, así que el velo casi no hace falta en los osc
    más hueco (menos bordes) entre las permitidas por el perfil, y la interfaz enseñarla.
 4. Tarkor tiene un contraste suficiente sobre fondo claro, pero el fondo sigue lavado para el juego (YAVG 169): r5 prueba
    un og más bajo de luz (`r5-og-bajo`).
+
+## Con gimg (F2.10, 2026-11-04)
+
+Cadena real de F2.8 sobre los elegidos de r2 (`r2-hojas.md`), solo los cinco proyectos activos (voice-generator y
+developer fuera). Configuración de E4: `examples/<p>/plantillas/og.svg` (zona de la hoja, caja en `data-caja`),
+`logos/<lockup>.svg` (copia idéntica, la comprueba `test_examples.py`), `compose` en el perfil `og` y el texto en
+`examples/<p>/textos/og.json` (campos `title1`, `title2`, `subtitle`, `subtitle2`: sin `wrap`, los subtítulos de 52-70
+caracteres no caben en una línea). Fuentes OFL instaladas en `~/.local/share/fonts/galivelop/` (y en la carpeta de datos
+del sandbox de VS Code, que es la que ve fontconfig ahí).
+
+Orden: `gimg compose <p> estilo/<pedido> og <n> --text CAMPO=TEXTO…` (el número es el del intento dentro del pedido, no el
+`q` de la cola), `gimg choose` (entrega en `examples/<p>/entrega/`, fuera de git) y
+`gimg --json measure --project <p> --zone <data-caja> --text <color>` sobre la compuesta. Hoja de contactos:
+`piloto/r4-gimg/elegidos.png` (fuera de git).
+
+| Proyecto | Intento | Zona | Paleta % | Contraste media / peor 10 % | A ojo |
+|---|---|---|---|---|---|
+| tarkor | q18 (#1) | izquierda 1/3, velo `#221c16:0.45` | 66,2 | 7,0 / 5,1 | legible; titular pequeño (Cinzel 27 px: la zona de 1/3 no da más) |
+| toveriai | q20 (#1) | arriba 1/3, velo `#F7F5F2:0.35` | 74,3 | 15,6 / 15,7 | limpio; lockup (34 px) y titular (40 px) modestos para la franja |
+| portal | q23 (#1) | izquierda 55 % | 73,9 | 10,3 / 17,6 | bien |
+| galivelop-image-generator | q29 (#1) | izquierda 1/2 | 79,1 | 10,6 / 17,8 | bien |
+| galivelop-workflow | q37 (#2) | izquierda 1/2 | 94,0 | 10,4 / 18,3 | bien |
+
+Las cinco pasan ≥ 4,5:1 en el peor 10 % (la media baja porque la caja incluye el propio texto). **Cierre:** pendiente de la
+persona («sí» por proyecto si la da por publicable). Ajustes propuestos para la próxima vuelta: Tarkor, titular en tres
+líneas o zona 2/5 (choca con el 1/3 de la hoja); toVeriAI, lockup y titular más grandes dentro de la franja.
