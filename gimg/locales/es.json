@@ -323,5 +323,16 @@
   "doctor.vram.ok": "VRAM del motor dentro de lo seguro para la Deck (máximo {max} GB por dispositivo)",
   "doctor.vram.high": "«{where}» pide --max-vram {value} y la Deck se bloqueó con valores altos (el perfil steam-deck usa 2 GB; aviso por encima de {max})",
   "doctor.vram.offload": "«{where}» lleva {arg} en sus args: --offload-to-cpu y un --max-vram propio bloquearon la Deck",
-  "doctor.fix.vram": "baja engine.maxVram a {max} o menos y quita --offload-to-cpu / --max-vram de engine.models.<id>.args en el perfil de máquina"
+  "doctor.fix.vram": "baja engine.maxVram a {max} o menos y quita --offload-to-cpu / --max-vram de engine.models.<id>.args en el perfil de máquina",
+  "error.api.bad_host": "la cabecera Host no es 127.0.0.1 ni localhost con el puerto del servidor",
+  "error.api.bad_origin": "el origen de la petición no es el de este servidor",
+  "error.api.content_type": "las peticiones que escriben deben llevar Content-Type: application/json",
+  "error.api.length_required": "falta una Content-Length válida",
+  "error.api.body_too_large": "el cuerpo supera el máximo de {limit} bytes",
+  "error.api.bad_json": "el cuerpo debe ser un objeto JSON",
+  "error.api.bad_param": "el parámetro «{name}» no es válido",
+  "error.api.not_found": "no existe «{path}»",
+  "error.api.method_not_allowed": "el método {method} no está permitido en esta ruta",
+  "error.api.unexpected": "error inesperado: {message}",
+  "error.measure.busy": "hay otra medición o composición en curso; espera a que termine y repite"
 }

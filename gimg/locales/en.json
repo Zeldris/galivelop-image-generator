@@ -323,5 +323,16 @@
   "doctor.vram.ok": "engine VRAM within what is safe for the Deck (at most {max} GB per device)",
   "doctor.vram.high": "\"{where}\" asks for --max-vram {value} and the Deck froze with high values (the steam-deck profile uses 2 GB; warning above {max})",
   "doctor.vram.offload": "\"{where}\" carries {arg} in its args: --offload-to-cpu and a --max-vram of its own froze the Deck",
-  "doctor.fix.vram": "lower engine.maxVram to {max} or less and remove --offload-to-cpu / --max-vram from engine.models.<id>.args in the machine profile"
+  "doctor.fix.vram": "lower engine.maxVram to {max} or less and remove --offload-to-cpu / --max-vram from engine.models.<id>.args in the machine profile",
+  "error.api.bad_host": "the Host header is not 127.0.0.1 or localhost with the server's port",
+  "error.api.bad_origin": "the request origin is not this server's",
+  "error.api.content_type": "requests that write must carry Content-Type: application/json",
+  "error.api.length_required": "a valid Content-Length is required",
+  "error.api.body_too_large": "the body exceeds the maximum of {limit} bytes",
+  "error.api.bad_json": "the body must be a JSON object",
+  "error.api.bad_param": "the parameter \"{name}\" is not valid",
+  "error.api.not_found": "\"{path}\" does not exist",
+  "error.api.method_not_allowed": "the {method} method is not allowed on this route",
+  "error.api.unexpected": "unexpected error: {message}",
+  "error.measure.busy": "another measurement or composition is running; wait for it to finish and retry"
 }

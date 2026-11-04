@@ -72,6 +72,12 @@ def _no_worker():
         os.close(fd)
 
 
+def worker_alive() -> bool:
+    """True if a worker holds ``worker.lock`` right now (also when the lock cannot be opened at all)."""
+    with _no_worker() as free:
+        return not free
+
+
 def _load() -> dict:
     path = queue_path()
     try:
