@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../gimg/schemas/order.schema.json",
+  "key": "estilo/r7",
+  "profile": "og",
+  "prompt": "Dark wide scene in deep midnight navy #06121c, rendered with physically based lighting, with a faint grid of tiny evenly spaced dots across the back wall and a dark polished floor that mirrors everything standing on it. In the right half, from the right edge to the middle, a queue of thin upright rectangular slabs of clear glass with softly rounded corners stands on the floor, slightly overlapping and receding into depth along a gentle curve, each holding a soft blurred inner glow in pale lavender. One slab, a quarter of the way in from the right edge, is lit from within by a clear violet light in #8B5CF6 far brighter than the rest: its light spills onto its neighbours, refracts through their bevelled edges in thin lavender #A78BFA fringes and casts soft violet caustics on the floor. From that slab a slow violet aura breathes out into the whole scene like luminous smoke: it drifts in soft layered wisps between and behind the slabs, pools along the floor as a low glowing mist, climbs the back wall as a wide faint haze that dims the dot grid, curls around the edges of the dimmer slabs and thins into a faint lavender veil as it reaches the middle of the frame, with fine floating dust catching the light inside it. Nothing else emits light: no lamps, no stars, no points of light in the air, only the slabs and their aura. The other slabs stay dim and translucent, with crisp white edge highlights and faint reflections of each other. The floor shows mirror reflections of every slab, of the aura and of the mist, softened toward the edges, and the dot grid fades into darkness toward the corners. The left half, from the left edge to the middle, is the same dark navy wall and floor with only the faint dot grid and the last thin trace of the violet haze, smooth and even in tone, kept clear for legibility. Style: elegant digital art, physically based rendering, soft volumetric light and smoke, crisp glass refraction and reflections, smooth gradients, fine detail. Colours: #06121c, #8B5CF6, #A78BFA, #eaf4fa and #ffffff highlights. Mood: focused, quietly creative, precise. The image is completely textless.",
+  "seed": 1,
+  "count": 4,
+  "params": {
+    "steps": 8
+  }
+}
