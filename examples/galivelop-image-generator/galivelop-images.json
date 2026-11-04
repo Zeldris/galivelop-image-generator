@@ -7,7 +7,8 @@
       "#06121c",
       "#A78BFA",
       "#8B5CF6",
-      "#ffffff"
+      "#ffffff",
+      "#eaf4fa"
     ]
   },
   "delivery": {
@@ -21,7 +22,9 @@
       "steps": 6,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8"
+      "model": "flux2-klein-4b-q8",
+      "targetWidth": 1200,
+      "targetHeight": 630
     },
     "social": {
       "width": 1280,
