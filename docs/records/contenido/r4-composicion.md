@@ -69,6 +69,20 @@ Orden: `gimg compose <p> estilo/<pedido> og <n> --text CAMPO=TEXTO…` (el núme
 | galivelop-image-generator | q29 (#1) | izquierda 1/2 | 79,1 | 10,6 / 17,8 | bien |
 | galivelop-workflow | q37 (#2) | izquierda 1/2 | 94,0 | 10,4 / 18,3 | bien |
 
-Las cinco pasan ≥ 4,5:1 en el peor 10 % (la media baja porque la caja incluye el propio texto). **Cierre:** pendiente de la
-persona («sí» por proyecto si la da por publicable). Ajustes propuestos para la próxima vuelta: Tarkor, titular en tres
+Las cinco pasan ≥ 4,5:1 en el peor 10 % (la media baja porque la caja incluye el propio texto).
+
+**Veredicto de la persona (2026-11-04): ninguna publicable.**
+
+| Proyecto | Nota | Motivo |
+|---|---|---|
+| tarkor | 2/10 | la peor respecto al juego: es el que más material tiene y sale lo más simple y genérico |
+| toveriai | 5/10 | bien, pero simple: solo una mancha; el blanco limpio queda pobre; faltan componentes y detalle |
+| portal | 0/10 | la peor: la OG del piloto anterior (r4 de octubre, rama `piloto-imagenes`, `393d314`) tenía mucha más calidad |
+| galivelop-image-generator | 6/10 | se acerca; faltan efectos y la disposición de los textos no es correcta |
+| galivelop-workflow | 1/10 | líneas sin valor, orden ni sentido, colores simples; el fondo a cuadros con difuminado sí le gusta |
+
+Lo que se busca: **imágenes de calidad, con detalle que sorprenda**, no minimalismo. Causa vista en el Portal: el prompt
+es el mismo que el de octubre, pero aquel salió con semilla 3 y 8 pasos (1280×640) y este con semilla 7 y 6 pasos: con
+una semilla por ronda el resultado es lotería. Además, los prompts de estilo piden a propósito «minimal», «nearly
+empty», «calm»: esa dirección es la que la persona rechaza. Ajustes propuestos para la próxima vuelta: Tarkor, titular en tres
 líneas o zona 2/5 (choca con el 1/3 de la hoja); toVeriAI, lockup y titular más grandes dentro de la franja.
