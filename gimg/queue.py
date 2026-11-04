@@ -2,14 +2,17 @@
 
 ``{"nextId": n, "entries": [...]}``; entry: ``id``, ``project``, ``key``, ``profile``, ``seed``, ``prompt``,
 ``params``, ``references``, ``state`` (queued|running|done|failed|cancelled), ``pid``, ``enqueuedAt``,
-``startedAt``, ``finishedAt``, ``error``, ``attemptId``, ``cancelRequested``. Entries stay in arrival order.
+``startedAt``, ``finishedAt``, ``error``, ``attemptId``, ``cancelRequested``, ``draft`` (bool; an older entry without it is not a draft), ``initImage`` (relative path or ``None``) and ``strength`` (number or ``None``; an older entry without the keys has neither) and ``text`` (object, the values of the
+profile's ``compose.fields``; an older entry without it has none: read it with ``.get``). Entries stay in arrival order.
+A running entry may also have ``progress`` (``{"step", "steps", "etaS"}``, `set_progress`) and ``preview`` (the path of
+the engine's preview image, `set_preview`); both are removed when the entry finishes or goes back to ``queued``.
 
 ``error`` of a failed entry is ``{"code": ..., "params": {...}}`` (JSON); `error_text` renders it.
 
 Every read goes through one locked transaction (`fsutil.lock` of ``queue.json``), which also recovers
 the file. Recovery is decided by the worker lock (``<data>/worker.lock``), not by pids: a process that can take
 it without waiting knows no worker is alive, so every ``running`` entry is dead and goes back to ``queued``
-(or to ``cancelled`` if a cancel was already requested), and the ``.pending-<entry>.png`` files it left are
+(or to ``cancelled`` if a cancel was already requested), and the ``.pending-<entry>.png`` files (and their ``.log`` and ``.preview.png``) it left are
 deleted. If the lock is taken, running entries are left alone. `list_entries`, `get` and `enqueue` try this;
 the worker does it right after taking its own lock (`recover_orphans`); `claim`, `cancel`, `finish`,
 `next_queued` and `is_cancel_requested` never do. ``pid`` stays in the entry as information only.
@@ -22,6 +25,7 @@ import copy
 import fcntl
 import json
 import os
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -86,9 +90,16 @@ def _clean_pending(entry: dict) -> None:
     try:
         folder = orders.pending_image_path(entry["project"], entry["key"], entry["profile"], entry["id"]).parent
         names = ".pending-%d.png" % entry["id"]
-        for found in list(folder.glob(names)) + list(folder.glob("." + names + ".*.tmp")):
+        stem = ".pending-%d" % entry["id"]  # the engine's log and preview sit next to the image
+        found_all = (list(folder.glob(names)) + list(folder.glob("." + names + ".*.tmp"))
+                     + [folder / (stem + ".log"), folder / (stem + ".preview.png")])
+        for found in found_all:
             with contextlib.suppress(OSError):
                 found.unlink()
+        # a composition of this entry killed half way (only a dead worker can leave one); the folder of another
+        # entry or of a `gimg compose` in progress has another prefix and stays
+        for leftover in folder.glob(".compose-q%d-*" % entry["id"]):
+            shutil.rmtree(leftover, ignore_errors=True)
     except Exception:  # a bad entry must not stop the recovery
         pass
 
@@ -102,6 +113,8 @@ def _recover(data: dict, running_dead: bool) -> list:
         if running_dead and entry["state"] == "running":
             entry["pid"] = None
             entry["startedAt"] = None
+            entry.pop("progress", None)
+            entry.pop("preview", None)
             if entry.get("cancelRequested"):
                 entry["state"] = "cancelled"
                 entry["finishedAt"] = now
@@ -163,6 +176,9 @@ def enqueue(project: str, key: str, profile: str, specs: list) -> list:
                      "seed": spec["seed"], "prompt": spec["prompt"],
                      "params": copy.deepcopy(spec["params"]),
                      "references": list(spec.get("references") or []),
+                     "draft": spec.get("draft") is True,
+                     "initImage": spec.get("initImage"), "strength": spec.get("strength"),
+                     "text": copy.deepcopy(spec.get("text") or {}),
                      "state": "queued", "pid": None, "enqueuedAt": now, "startedAt": None,
                      "finishedAt": None, "error": None, "attemptId": None, "cancelRequested": False}
             data["nextId"] += 1
@@ -273,9 +289,47 @@ def finish(entry_id, state: str, error=None, attempt_id=None) -> dict:
         if entry["state"] != "running":
             raise GimgError("queue.not_running", id=entry["id"], state=entry["state"])
         entry.update(state=state, error=error, attemptId=attempt_id, finishedAt=_now(), pid=None)
+        entry.pop("progress", None)
+        entry.pop("preview", None)
         return entry
 
     return _txn(change)
+
+
+def _number(value) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and value >= 0
+
+
+def _set_running(entry_id, field: str, value) -> dict:
+    def change(data):
+        entry = _find(data, entry_id)
+        if entry["state"] != "running":
+            raise GimgError("queue.not_running", id=entry["id"], state=entry["state"])
+        if entry.get(field) != value:  # a pulse with nothing new does not rewrite the file
+            entry[field] = value
+        return entry
+
+    return _txn(change)
+
+
+def set_progress(entry_id, progress: dict) -> dict:
+    """Store ``{"step": n, "steps": N, "etaS": seconds | None}`` in a running entry (the engine's progress bar).
+    Only the three keys are kept; ``0 <= step <= steps``, ``steps >= 1``; ``etaS`` is ``None`` or a number >= 0.
+    Anything else is ``queue.bad_progress``; a finished or queued entry is ``queue.not_running``."""
+    ok = (isinstance(progress, dict) and set(progress) == {"step", "steps", "etaS"}
+          and all(type(progress[k]) is int for k in ("step", "steps"))
+          and 0 <= progress["step"] <= progress["steps"] and progress["steps"] >= 1
+          and (progress["etaS"] is None or _number(progress["etaS"])))
+    if not ok:
+        raise GimgError("queue.bad_progress", progress=json.dumps(progress, default=str))
+    return _set_running(entry_id, "progress", dict(progress))
+
+
+def set_preview(entry_id, path) -> dict:
+    """Store the path of the engine's preview image in a running entry (the file may not exist yet)."""
+    if not isinstance(path, str) or not path or "\x00" in path or "\n" in path:
+        raise GimgError("queue.bad_progress", progress=repr(path))
+    return _set_running(entry_id, "preview", path)
 
 
 def is_cancel_requested(entry_id) -> bool:
@@ -288,4 +342,5 @@ def estimate_for(entry: dict, provider: str | None = None):
     if provider is None:
         provider = engine_mod.get_engine().provider
     steps = (entry.get("params") or {}).get("steps")
-    return log.estimate(entry["project"], provider, entry["profile"], steps, bool(entry.get("references")))
+    return log.estimate(entry["project"], provider, entry["profile"], steps, bool(entry.get("references")),
+                        entry.get("draft") is True, entry.get("initImage") is not None)

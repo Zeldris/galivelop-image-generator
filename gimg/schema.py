@@ -19,14 +19,14 @@ VALIDATING = frozenset(
     [
         "type", "properties", "required", "additionalProperties", "propertyNames",
         "minProperties", "items", "minItems", "maxItems", "enum", "const", "pattern",
-        "minLength", "maxLength", "minimum", "maximum", "$ref", "$defs",
+        "minLength", "maxLength", "minimum", "maximum", "$ref", "$defs", "dependentRequired",
     ]
 )
 # Every code format_error may be asked to render.
 CODES = (
     "required", "type", "enum", "const", "pattern", "minimum", "maximum",
     "minLength", "maxLength", "minItems", "maxItems", "minProperties",
-    "additionalProperties", "propertyNames", "false",
+    "additionalProperties", "propertyNames", "dependentRequired", "false",
 )
 TYPES = ("object", "array", "string", "integer", "number", "boolean", "null")
 
@@ -90,6 +90,10 @@ def _check_schema(schema, root, where="#"):
             for name in names:
                 if name not in TYPES:
                     raise SchemaError("%s: unknown type %r" % (where, name))
+        elif key == "dependentRequired":
+            if not (isinstance(value, dict) and all(
+                    isinstance(v, list) and all(isinstance(n, str) for n in v) for v in value.values())):
+                raise SchemaError("%s: dependentRequired must map names to lists of names" % where)
         elif key == "pattern":
             try:
                 _compile(value)
@@ -216,6 +220,11 @@ def _validate(value, schema, root, path, errors):
         for name in schema.get("required", []):
             if name not in value:
                 add("required", name=name)
+        for name, needed in schema.get("dependentRequired", {}).items():
+            if name in value:
+                for other in needed:
+                    if other not in value:
+                        add("dependentRequired", name=other, trigger=name)
         if "minProperties" in schema and len(value) < schema["minProperties"]:
             add("minProperties", limit=schema["minProperties"])
         if "propertyNames" in schema:

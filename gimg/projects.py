@@ -4,7 +4,7 @@ from __future__ import annotations
 import copy
 from pathlib import Path
 
-from . import __version__, fsutil, paths, schema
+from . import __version__, fsutil, models, paths, schema
 from .errors import GimgError, PathError
 
 CONFIG_FILE = "galivelop-images.json"
@@ -62,6 +62,12 @@ def load_config(root) -> dict:
         raise GimgError(
             "project.version_too_new", required=data["minVersion"], current=__version__
         )
+    catalog = None
+    for profile in data["profiles"].values():
+        for name in (profile.get("model"), profile.get("draft", {}).get("model")):
+            if name is not None:
+                catalog = catalog or models.load_catalog()
+                models.check_known(name, catalog)
     config = copy.deepcopy(data)
     config["delivery"].setdefault("template", DEFAULT_TEMPLATE)
     config.setdefault("manifest", DEFAULT_MANIFEST)

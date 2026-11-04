@@ -8,6 +8,10 @@ from datetime import datetime, timezone
 from . import fsutil, paths
 
 
+OP_GENERATION = "image_generation"
+OP_COMPOSITION = "image_composition"  # a recomposition: no engine ran (F2.8)
+
+
 def log_path(project: str):
     return paths.project_data_dir(project, "log.bad_project") / "log.jsonl"
 
@@ -16,14 +20,17 @@ def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def record_for(key: str, profile: str, spec: dict, machine: dict, provider: str,
-               result=None, error: str | None = None, ts: str | None = None) -> dict:
+def record_for(key: str, profile: str, spec: dict, machine: dict, provider: str | None,
+               result=None, error: str | None = None, ts: str | None = None,
+               compose: str | None = None, compose_error: str | None = None, operation: str = OP_GENERATION) -> dict:
     """The log line of one attempt: from an `EngineResult` (`result`) or an error message.
-    Absent values are omitted, never ``null``."""
+    `compose` is the template the image was composed with and `compose_error` the code of a composition that failed
+    (F2.8). `operation` is ``gen_ai.operation.name``; a line that is not a generation has no `provider`. Absent values
+    are omitted, never ``null``."""
     params = spec.get("params") or {}
     line = {
         "ts": ts or _now(),
-        "gen_ai.operation.name": "image_generation",
+        "gen_ai.operation.name": operation,
         "gen_ai.provider.name": provider,
         "gen_ai.request.model": params.get("model"),
         "app.task": profile,
@@ -43,6 +50,16 @@ def record_for(key: str, profile: str, spec: dict, machine: dict, provider: str,
         "app.image.sample_ms": getattr(result, "sample_ms", None),
         "app.image.decode_ms": getattr(result, "decode_ms", None),
         "app.image.min_free_mb": getattr(result, "min_free_mb", None),
+        # D34: the whole order. ``app.load_ms`` above already is the load time (the opt-ai name).
+        "app.image.model_files": getattr(result, "model_files", None),
+        "app.image.backend": getattr(result, "backend", None),
+        "app.image.threads": getattr(result, "threads", None),
+        "app.image.draft": bool(spec.get("draft")),
+        "app.image.initImage": (str(spec["initImage"]).rsplit("/", 1)[-1] if spec.get("initImage") is not None else None),
+        "app.image.strength": spec.get("strength") if spec.get("initImage") is not None else None,
+        "app.image.compose": compose,
+        "app.image.compose_error": compose_error,
+        "app.image.command": getattr(result, "command", None),
     }
     return {k: v for k, v in line.items() if v is not None}
 
@@ -72,14 +89,18 @@ def _lines(path):
                 yield line
 
 
-def estimate(project: str, provider: str, profile: str, steps, has_references: bool):
+def estimate(project: str, provider: str, profile: str, steps, has_references: bool, draft: bool = False,
+             img2img: bool = False):
     """Median ``app.duration_ms`` (ms) of the non-error lines with the same provider, profile,
-    steps and with/without references; ``None`` without data."""
+    steps, with/without references, draft and img2img (a line without ``app.image.draft`` is not a draft, one without
+    ``app.image.initImage`` is not img2img); ``None`` without data."""
     values = []
     for line in _lines(log_path(project)):
         refs, duration = line.get("app.image.references"), line.get("app.duration_ms")
         if ("app.error" in line or line.get("gen_ai.provider.name") != provider
                 or line.get("app.task") != profile or line.get("app.image.steps") != steps
+                or bool(line.get("app.image.draft")) != bool(draft)
+                or ("app.image.initImage" in line) != bool(img2img)
                 or not isinstance(refs, int) or isinstance(refs, bool)
                 or (refs > 0) != bool(has_references)
                 or not isinstance(duration, (int, float)) or isinstance(duration, bool)):

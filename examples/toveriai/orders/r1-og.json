@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../gimg/schemas/order.schema.json",
+  "key": "fondos/r1",
+  "profile": "og",
+  "prompt": "Wide abstract conceptual artwork on warm beige textured paper. Two watercolour inks meet across the frame without fully blending: a deep wine-red ink flows in from the lower left and a deep forest-green ink flows in from the lower right. Where they touch in the centre, a wide band of fine intermediate veins appears in amber and muted transitional tones, with organic pigment texture soaking into the paper fibres. The central band is the protagonist: wide, rich in nuance, neither red nor green. The upper third of the frame is calm, warm, bare beige paper with a soft natural grain. Flat even light and a printed fine art finish. Style: editorial watercolour on paper, delicate and contemplative, soft muted colours. Colours: warm beige paper, wine red, forest green, amber. Mood: serene, thoughtful, balanced. The image is completely textless.",
+  "seed": 3,
+  "count": 2
+}

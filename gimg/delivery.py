@@ -1,7 +1,8 @@
 """Delivery of the chosen attempt into the project and the manifest (D13, D21, D25).
 
 Public API: `choose(project, key, profile, attempt_id)` and `undo(project, key, profile)`. They wrap
-`orders.choose` / `orders.undo` (the CLI never calls those directly) and return their ``{"old", "new"}``.
+`orders.choose` / `orders.undo` (the CLI never calls those directly) and return their ``{"old", "new"}``. `redeliver` delivers
+the chosen attempt again after its image changed (a recomposition) without touching the order.
 
 Everything of a choose/undo runs under one lock per project (``<data>/projects/<name>/delivery.lock``, never inside
 the delivered project). The target must not be inside ``.git``, the config, the manifest, nor the ``file`` of another
@@ -141,6 +142,25 @@ def _restore_source(project: dict, order: dict):
         return False
 
 
+def _backup_delivered(target: Path):
+    """``(backup file or None, restore)`` for `_apply`: a copy of the delivered file next to the file (None when there is none to
+    keep: nothing delivered, restore None; False if the copy cannot be made: no rollback, as when the source is unknown)."""
+    if not target.is_file():
+        return None, None
+    try:
+        fd, tmp = tempfile.mkstemp(dir=str(target.parent), prefix="." + target.name + ".", suffix=".bak")
+        os.close(fd)
+    except OSError:
+        return None, False
+    try:
+        shutil.copyfile(target, tmp)
+    except OSError:
+        with contextlib.suppress(OSError):
+            os.unlink(tmp)
+        return None, False
+    return tmp, Path(tmp)
+
+
 def _rollback(plan: dict, restore) -> None:
     """Best effort: put the delivered file back as it was before `_apply`."""
     if restore is False:
@@ -179,6 +199,10 @@ def _apply(plan: dict, restore=False) -> None:
                 "params": attempt["params"], "references": attempt.get("references", []),
                 "engine": attempt.get("engine"), "engineVersion": attempt.get("engineVersion"),
                 "attemptId": attempt["id"], "chosenAt": _now()}
+            if isinstance(attempt.get("compose"), dict):  # composed (F2.8): the manifest says with what
+                images[key][profile]["compose"] = attempt["compose"]
+            if attempt.get("initImage") is not None:  # img2img: the manifest says what it started from
+                images[key][profile].update(initImage=attempt["initImage"], strength=attempt.get("strength"))
         fsutil.write_json(manifest, data)
     except BaseException as exc:
         if touched:
@@ -186,6 +210,13 @@ def _apply(plan: dict, restore=False) -> None:
         if isinstance(exc, OSError):
             raise GimgError("delivery.write_failed", path=str(plan["target"]), reason=str(exc))
         raise
+
+
+def delivered_file(project: str, key: str, profile: str) -> str:
+    """Where `choose` delivers the image of (key, profile), relative to the project folder (what the manifest calls ``file``)."""
+    proj = projects.get(project)
+    root = Path(proj["root"])
+    return _target(root, proj["config"], key, profile).relative_to(root.resolve()).as_posix()
 
 
 def _lock(project: str):
@@ -199,8 +230,14 @@ def choose(project: str, key: str, profile: str, attempt_id) -> dict:
     with _lock(project):  # read, decide, change the order, deliver and revert: one unit
         order = orders.get(project, key, profile)
         attempt = _find(order, attempt_id)
-        # an unknown attempt (or a discarded one) is reported by orders.choose itself
-        plan = _prepare(proj, order, attempt) if attempt is not None and attempt["state"] != "discarded" else None
+        # an unknown or not choosable attempt (discarded, draft) is reported by orders.choose itself
+        ok = attempt is not None
+        if ok:
+            try:
+                orders.check_choosable(attempt)
+            except GimgError:
+                ok = False
+        plan = _prepare(proj, order, attempt) if ok else None
         restore = _restore_source(proj, order) if plan is not None else False
         result = orders.choose(project, key, profile, attempt_id)
         try:
@@ -213,6 +250,31 @@ def choose(project: str, key: str, profile: str, attempt_id) -> dict:
                     orders.undo(project, key, profile)
             raise
         return result
+
+
+def redeliver(project: str, key: str, profile: str, attempt_id) -> bool:
+    """Deliver `attempt_id` again (its image changed: `compose.recompose`) if it still is the chosen one, else do nothing.
+
+    The check and the delivery run under the project lock, so a ``gimg choose`` of another attempt in between is never
+    undone. Returns whether it was delivered. The order is not changed (no `orders.choose`, no history); a failure raises
+    and leaves the delivered file as it was."""
+    proj = projects.get(project)
+    with _lock(project):
+        order = orders.get(project, key, profile)
+        attempt = _find(order, attempt_id)
+        if attempt is None or order["chosen"] != attempt_id:
+            return False
+        plan = _prepare(proj, order, attempt)
+        # the chosen attempt's image is already the new one (`orders.set_composed`, and the file itself was overwritten):
+        # the only copy of what is delivered now is the delivered file, so that is what a rollback must put back
+        backup, restore = _backup_delivered(plan["target"])
+        try:
+            _apply(plan, restore)
+        finally:
+            if backup is not None:
+                with contextlib.suppress(OSError):
+                    os.unlink(backup)
+        return True
 
 
 def undo(project: str, key: str, profile: str) -> dict:

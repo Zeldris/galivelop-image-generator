@@ -32,6 +32,24 @@ class FsutilTests(unittest.TestCase):
             os.umask(old)
         self.assertEqual(os.stat(p).st_mode & 0o777, 0o644)
 
+    def test_try_lock_says_false_while_another_holds_it_and_true_when_it_is_free(self):
+        p = self.dir / "sub" / "x"
+        with fsutil.try_lock(p) as first:
+            self.assertTrue(first)
+            with fsutil.try_lock(p) as second:  # another open file description: it conflicts even in this process
+                self.assertFalse(second)
+        with fsutil.try_lock(p) as again:
+            self.assertTrue(again)
+        self.assertEqual(sorted(x.name for x in p.parent.iterdir()), ["x.lock"])  # the same file `lock` uses
+
+    def test_try_lock_does_not_swallow_the_error_of_its_body_and_releases(self):
+        p = self.dir / "y"
+        with self.assertRaises(ValueError):
+            with fsutil.try_lock(p):
+                raise ValueError("boom")
+        with fsutil.try_lock(p) as taken:
+            self.assertTrue(taken)
+
     def test_write_format(self):
         p = self.dir / "sub" / "a.json"
         fsutil.write_json(p, {"b": 1, "a": [1]})

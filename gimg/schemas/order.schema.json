@@ -9,6 +9,9 @@
     "profile",
     "prompt"
   ],
+  "dependentRequired": {
+    "strength": ["initImage"]
+  },
   "properties": {
     "$schema": {
       "type": "string",
@@ -37,6 +40,16 @@
       },
       "description": "Reference image paths, relative to the project root."
     },
+    "initImage": {
+      "$ref": "#/$defs/relativePath",
+      "description": "Initial image for img2img, relative to the project root."
+    },
+    "strength": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "How far img2img departs from initImage (0 to 1); needs initImage."
+    },
     "seed": {
       "type": "integer",
       "minimum": 0,
@@ -57,6 +70,23 @@
           "$ref": "#/$defs/sampler"
         }
       }
+    },
+    "text": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/fieldName"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "maxLength": 200,
+        "pattern": "^[^\\u0000-\\u001f\\u007f\\ud800-\\udfff]*$"
+      },
+      "description": "Texts for the composition template, by field name (the profile's compose.fields); up to 200 characters, no control characters or lone surrogates."
+    },
+    "draft": {
+      "type": "boolean",
+      "default": false,
+      "description": "Generate drafts (D32): the profile draft settings, or half size and 8 steps."
     },
     "count": {
       "type": "integer",
@@ -94,6 +124,12 @@
       "type": "string",
       "minLength": 1,
       "description": "Sampler name."
+    },
+    "fieldName": {
+      "type": "string",
+      "pattern": "^(?!logo$)[a-z][a-zA-Z0-9]*$",
+      "maxLength": 40,
+      "description": "Name of a text field of the composition template ({{name}}): starts with a lowercase letter, letters and digits only; \"logo\" is reserved."
     }
   }
 }

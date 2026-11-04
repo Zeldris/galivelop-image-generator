@@ -1,4 +1,4 @@
-<!-- galivelop-workflow v0.4.0 -->
+<!-- galivelop-workflow v0.4.3 -->
 # opt-tokens — notas del proyecto
 
 Las lee la skill `opt-tokens` antes de proponer nada, y se actualizan cuando la persona aprueba un cambio. El flujo
@@ -15,6 +15,13 @@ las crea una vez; desde entonces son del proyecto.
   paso y un `/clear` (aprobado el 2026-10-27; cambio local del flujo, pendiente de proponerlo a Galivelop-workflow).
 - `.claude/hooks/leer-entero.py` (PreToolUse de Read): rechaza leer `docs/plan.md` entero sin `offset`/`limit` y dice
   el `grep` que basta (aprobado el 2026-10-27). Otro documento grande se añade a `GRANDES`.
+- `gimg sheet IMAGEN... --out hoja.png`: hoja de contactos con rótulos; las rondas se revisan con una hoja, no con
+  imágenes sueltas (una hoja de 6 cuesta como una imagen; aprobado el 2026-11-04).
+- Subagentes que escriben código mientras la principal sigue: en worktree (`isolation: "worktree"`) y de vuelta con
+  `fusionar.sh`, nunca en el árbol principal (el gancho de parada bloqueó 5 vueltas × ~105k el 2026-11-04; aprobado
+  ese día, propuesto al flujo en `docs/registros/retro-2026-11-04-f2-motor.md`).
+- Cada `docs/registros/lectura-*` abre con `**HEAD leído:** <repo> <rama> <sha>`: la siguiente lectura empieza con
+  `git log <sha>..` (aprobado el 2026-11-04).
 
 ## Costes conocidos
 
@@ -29,6 +36,8 @@ las crea una vez; desde entonces son del proyecto.
 - Escribir en la sesión principal el contrato de una fase («F1 en detalle»): leer `plan.md`, los esquemas y
   `schema.py` enteros arrastró unos 750k tokens (9 % de la principal en F1). Desde F2 lo escribe un subagente
   (`.claude/gw/orchestrate-dealer.md`).
+- `grep` amplio sobre `docs/plan.md` (2026-11-04: 291k arrastrados): buscar con el ancla de la fila
+  (`grep -n '^| F2.1[0-2]' docs/plan.md | cut -c1-400`) o `sed -n` sobre el rango (aprobado el 2026-11-04).
 
 - Mirar en la sesión principal las imágenes del piloto (F2.0: 25 imágenes, ~1 M arrastrado): el veredicto de estilo o
   composición lo da un subagente Fable que devuelve texto; la persona las ve en las páginas de `examples/pilot/ver.py`
@@ -59,3 +68,5 @@ las crea una vez; desde entonces son del proyecto.
 - 2026-10-26/27, sesión `3220fabf` (F2.0, r2-r5, biblias, logos, propuesta de interfaz): 318 llamadas, 5 compactaciones
   sobre un presupuesto de 4, contexto medio 114k (suelo 66k, techo 158k), 36,4 M de entrada en la principal + 16,8 M en
   20 subagentes (Fable 13,3 M). La sesión siguiente, tras `/clear`: 34 llamadas, 77k de media.
+- 2026-11-04, sesión `19a5eb0e` (lectura del LoRA, F2.10, hoja de estilo, revisión antes de `main`): 72 llamadas,
+  contexto medio 105k (suelo 43k, techo 153k), 0 compactaciones; la revisión con Opus, 20 llamadas y 2,1 M.

@@ -7,7 +7,7 @@ import os
 import sys
 import traceback
 
-from . import __version__, delivery, engine, i18n, orders, projects, queue, worker
+from . import __version__, compose, delivery, doctor, engine, i18n, measure, orders, projects, queue, sheet, worker
 from .errors import GimgError
 
 LANGS = ("es", "en")
@@ -60,7 +60,8 @@ def _build(lang: str) -> argparse.ArgumentParser:
     leaf(g, "list", "cli.cmd.project_list")
 
     g = group(top, "order", "cli.cmd.order")
-    leaf(g, "submit", "cli.cmd.order_submit", project, arg("file", "cli.arg.file"))
+    leaf(g, "submit", "cli.cmd.order_submit", project, arg("file", "cli.arg.file"),
+         opt("--draft", "cli.arg.draft", action=argparse.BooleanOptionalAction, default=None))
     lst = leaf(g, "list", "cli.cmd.order_list", project,
                opt("--profile", "cli.arg.profile_filter"))
     mutex = lst.add_mutually_exclusive_group()
@@ -72,7 +73,8 @@ def _build(lang: str) -> argparse.ArgumentParser:
     leaf(g, "new", "cli.cmd.attempt_new", project, okey, oprofile,
          opt("--seed", "cli.arg.seed", type=int), opt("--count", "cli.arg.count", type=int, default=1),
          opt("--prompt", "cli.arg.prompt"), opt("--steps", "cli.arg.steps", type=int),
-         opt("--cfg", "cli.arg.cfg", type=float), opt("--sampler", "cli.arg.sampler"))
+         opt("--cfg", "cli.arg.cfg", type=float), opt("--sampler", "cli.arg.sampler"),
+         opt("--draft", "cli.arg.draft", action=argparse.BooleanOptionalAction, default=None))
     leaf(g, "mark", "cli.cmd.attempt_mark", project, okey, oprofile, attempt,
          arg("state", "cli.arg.state", choices=orders.STATES))
     leaf(g, "note", "cli.cmd.attempt_note", project, okey, oprofile, attempt,
@@ -80,12 +82,26 @@ def _build(lang: str) -> argparse.ArgumentParser:
 
     leaf(top, "choose", "cli.cmd.choose", project, okey, oprofile, attempt)
     leaf(top, "undo", "cli.cmd.undo", project, okey, oprofile)
+    leaf(top, "compose", "cli.cmd.compose", project, okey, oprofile,
+         arg("attempt", "cli.arg.attempt_optional", type=int, nargs="?", default=None),
+         opt("--text", "cli.arg.text_kv", action="append", default=[], metavar="FIELD=TEXT"))
+
+    leaf(top, "measure", "cli.cmd.measure", arg("image", "cli.arg.image_path"),
+         opt("--palette", "cli.arg.palette"), opt("--project", "cli.arg.measure_project", metavar="PROJECT"),
+         opt("--refs", "cli.arg.refs", nargs="+", default=[], metavar="IMAGE"),
+         opt("--zone", "cli.arg.zone", metavar="X,Y,W,H"), opt("--text", "cli.arg.text_color", metavar="#RRGGBB"))
+
+    leaf(top, "sheet", "cli.cmd.sheet", arg("images", "cli.arg.sheet_images", nargs="*", metavar="IMAGE"),
+         opt("--out", "cli.arg.sheet_out", required=True, metavar="PNG"),
+         opt("--columns", "cli.arg.sheet_columns", type=int, default=sheet.DEFAULT_COLUMNS),
+         opt("--width", "cli.arg.sheet_width", type=int, default=sheet.DEFAULT_WIDTH))
 
     g = group(top, "queue", "cli.cmd.queue")
     leaf(g, "list", "cli.cmd.queue_list", opt("--state", "cli.arg.queue_state", choices=queue.STATES))
     leaf(g, "cancel", "cli.cmd.queue_cancel", arg("entry", "cli.arg.entry", type=int))
 
     leaf(top, "work", "cli.cmd.work", opt("--once", "cli.arg.once", action="store_true"))
+    leaf(top, "doctor", "cli.cmd.doctor", opt("--verify", "cli.arg.verify", action="store_true"))
     leaf(top, "version", "cli.cmd.version")
     return parser
 
@@ -139,10 +155,26 @@ def _read_order(source: str) -> dict:
         raise GimgError("cli.order_unreadable", path=source, reason=str(exc))
 
 
+def _doctor(args, out: _Out) -> int:
+    checks = doctor.run(verify=args.verify)
+    bad = doctor.failed(checks)
+    if out.as_json:
+        out.data({"ok": not bad, "checks": [c.as_dict(out.lang) for c in checks]})
+        return 1 if bad else 0
+    for c in checks:
+        out.line("doctor.line", label=c.label(out.lang), message=c.message(out.lang))
+        if c.fix_key:
+            out.line("doctor.fix_line", fix=c.fix(out.lang))
+    out.line("doctor.summary_fail" if bad else "doctor.summary_ok")
+    return 1 if bad else 0
+
+
 def _run(args, out: _Out) -> int:
     cmd, sub = args.cmd, getattr(args, "sub", None)
     if cmd == "version":
         print(__version__)
+    elif cmd == "doctor":
+        return _doctor(args, out)
     elif cmd == "project":
         if sub == "add":
             name = projects.add(args.path)
@@ -174,6 +206,19 @@ def _run(args, out: _Out) -> int:
         else:
             out.line("cli.out.chosen" if cmd == "choose" else "cli.out.undone",
                      new=out.none(result["new"]), old=out.none(result["old"]))
+    elif cmd == "compose":
+        _compose(args, out)
+    elif cmd == "measure":
+        _measure(args, out)
+    elif cmd == "sheet":
+        res = sheet.sheet(args.images, args.out, args.columns, args.width)
+        if out.as_json:
+            out.data(res)
+        else:
+            out.line("cli.out.sheet_done", out=res["out"], width=res["size"][0], height=res["size"][1],
+                     columns=res["columns"], count=len(res["images"]))
+            for i, path in enumerate(res["images"], 1):
+                out.line("cli.out.sheet_item", index=i, path=path)
     elif cmd == "queue":
         _queue(args, sub, out)
     elif cmd == "work":
@@ -182,10 +227,62 @@ def _run(args, out: _Out) -> int:
     return 0
 
 
+def _text_pairs(pairs) -> dict:
+    """``["title=Hi", ...]`` as ``{"title": "Hi"}``: split at the first ``=``; a later pair replaces an earlier one."""
+    text = {}
+    for pair in pairs:
+        field, sep, value = pair.partition("=")
+        if not sep or not field:
+            raise GimgError("cli.text_invalid", value=pair)
+        text[field] = value
+    return text
+
+
+def _compose(args, out: _Out) -> None:
+    text = _text_pairs(args.text)
+    item = compose.recompose(args.project, args.key, args.profile, args.attempt, text or None)
+    if out.as_json:
+        out.data(item)
+    elif "delivered" in item:
+        out.line("cli.out.composed_delivered", id=item["id"], path=item["delivered"])
+    else:
+        out.line("cli.out.composed", id=item["id"], image=item["image"])
+
+
+def _measure(args, out: _Out) -> None:
+    palette = args.palette.split(",") if args.palette else None
+    if palette is None and args.project:
+        brand = projects.get(args.project)["config"].get("brand")
+        if not brand or not brand.get("palette"):
+            raise GimgError("measure.no_brand_palette", name=args.project)
+        palette = brand["palette"]
+    res = measure.measure(args.image, palette, args.refs, args.zone, args.text)
+    if out.as_json:
+        out.data(res)
+        return
+    out.line("cli.out.measure_head", image=res["image"])
+    out.line("cli.out.measure_luma", yavg=res["yavg"], satavg=res["satavg"])
+    if "palette" in res:
+        p = res["palette"]
+        out.line("cli.out.measure_palette", pct=p["pct"], delta=p["deltaE"], count=len(p["colors"]))
+        for color, pct in p["by_color"].items():
+            out.line("cli.out.measure_palette_color", color=color, pct=pct)
+    for e in res.get("emd", ()):
+        out.line("cli.out.measure_emd", **e)
+    if "emd_median" in res:
+        out.line("cli.out.measure_emd_median", **res["emd_median"])
+    if "contrast" in res:
+        c = res["contrast"]
+        out.line("cli.out.measure_contrast", text=c["text"], zone=",".join(str(v) for v in c["zone"]),
+                 mean=c["mean"], p10=c["p10"], p90=c["p90"], worst=c["worst"])
+
+
 def _order(args, sub, out: _Out) -> None:
     if sub == "submit":
         order = _read_order(args.file)
         provider = engine.get_engine().provider  # a bad engine setting fails before anything is queued
+        if args.draft is not None:  # the option is the order's own field, so it is stored with the order
+            order["draft"] = args.draft
         record = orders.submit(args.project, order)
         count = order.get("count", 1)
         specs = orders.attempt_specs(args.project, record["key"], record["profile"], count)
@@ -211,11 +308,20 @@ def _order(args, sub, out: _Out) -> None:
         out.line("cli.out.order_prompt", prompt=o["prompt"])
         out.line("cli.out.order_seed", seed=out.none(o["seed"]))
         out.line("cli.out.order_refs", references=", ".join(o["references"]) or out.t("cli.out.none"))
+        if o.get("initImage") is not None:
+            out.line("cli.out.order_init" if o.get("strength") is not None else "cli.out.order_init_nostrength",
+                     path=o["initImage"], strength=o.get("strength"))
         out.line("cli.out.order_chosen", chosen=out.none(o["chosen"]))
+        if o.get("text"):
+            for field, value in o["text"].items():
+                out.line("cli.out.order_text", field=field, value=value)
         if not o["attempts"]:
             out.line("cli.out.attempts_none")
         for a in o["attempts"]:
-            out.line("cli.out.attempt_line", id=a["id"], state=a["state"], seed=a["seed"], image=a["image"])
+            out.line("cli.out.attempt_line", id=a["id"], state=a["state"], seed=a["seed"], image=a["image"],
+                     draft=out.t("cli.out.draft_mark") if a.get("draft") else "")
+            if a.get("composeError"):
+                out.line("cli.out.compose_error_mark", error=queue.error_text(a["composeError"], out.lang))
             if a.get("note"):
                 out.line("cli.out.attempt_note", note=a["note"])
 
@@ -226,7 +332,8 @@ def _attempt(args, sub, out: _Out) -> None:
         overrides = {k: v for k, v in (("steps", args.steps), ("cfg", args.cfg),
                                        ("sampler", args.sampler)) if v is not None}
         specs = orders.attempt_specs(args.project, args.key, args.profile, args.count,
-                                     seed=args.seed, prompt=args.prompt, params=overrides)
+                                     seed=args.seed, prompt=args.prompt, params=overrides,
+                                     draft=args.draft)
         _queued(out, queue.enqueue(args.project, args.key, args.profile, specs), provider)
     elif sub == "mark":
         item = orders.mark(args.project, args.key, args.profile, args.attempt, args.state)
@@ -234,6 +341,27 @@ def _attempt(args, sub, out: _Out) -> None:
     else:
         item = orders.note(args.project, args.key, args.profile, args.attempt, args.text)
         out.data(item) if out.as_json else out.line("cli.out.noted", id=item["id"])
+
+
+def _eta_text(seconds) -> str:
+    """``1:16`` or, from an hour, ``1:02:03``."""
+    seconds = int(seconds)
+    hours, rest = divmod(seconds, 3600)
+    return ("%d:%02d:%02d" % (hours, rest // 60, rest % 60)) if hours else "%d:%02d" % (rest // 60, rest % 60)
+
+
+def _queue_running_lines(out: _Out, entry: dict) -> None:
+    """The progress of a running entry and, if the engine has written it, where its preview image is."""
+    progress = entry.get("progress")
+    if isinstance(progress, dict) and isinstance(progress.get("step"), int) and isinstance(progress.get("steps"), int):
+        eta = progress.get("etaS")
+        if isinstance(eta, (int, float)) and not isinstance(eta, bool) and eta >= 0:
+            out.line("cli.out.queue_progress_eta", step=progress["step"], steps=progress["steps"], eta=_eta_text(eta))
+        else:
+            out.line("cli.out.queue_progress", step=progress["step"], steps=progress["steps"])
+    preview = entry.get("preview")
+    if isinstance(preview, str) and os.path.isfile(preview):
+        out.line("cli.out.queue_preview", path=preview)
 
 
 def _queue(args, sub, out: _Out) -> None:
@@ -245,7 +373,10 @@ def _queue(args, sub, out: _Out) -> None:
             out.line("cli.out.queue_none")
         for e in entries if not out.as_json else ():
             out.line("cli.out.queue_line", id=e["id"], state=e["state"], project=e["project"],
-                     order=e["key"], profile=e["profile"], seed=e["seed"])
+                     order=e["key"], profile=e["profile"], seed=e["seed"],
+                     draft=out.t("cli.out.draft_mark") if e.get("draft") else "")
+            if e["state"] == "running":
+                _queue_running_lines(out, e)
             text = queue.error_text(e, out.lang)
             if text:
                 out.line("cli.out.queue_error", error=text)

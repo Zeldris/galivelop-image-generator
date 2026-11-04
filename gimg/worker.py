@@ -7,13 +7,36 @@ every order, and a crash can only leave a pending file for an entry that was run
 
 Per entry: claim -> if an attempt with ``queueEntry == entry id`` already exists (crash after `add_attempt`), skip
 the engine and finish ``done`` -> machine profile and limits again (the profile may have changed since enqueue) ->
-resolve references (`paths.inside`, must be files; D25) -> engine -> `orders.add_attempt` -> log line -> finish.
+resolve references (`paths.inside`, must be files; D25) -> engine -> metadata chunk in the PNG -> `orders.add_attempt` -> log line -> finish.
+
+While the engine runs the entry shows its ``progress`` (the job's ``on_progress``, `queue.set_progress`) and ``preview`` (the
+path the engine writes its preview to, `queue.set_preview`; the file appears when the engine makes it and is deleted with
+the run). Both are best effort: a queue error there never fails the generation.
+
+Metadata (F2.4): before the image is moved into place the worker writes a ``gimg`` text chunk into the pending PNG
+(`png.add_text_chunk`; JSON with seed, steps, cfg, sampler, model, width, height, prompt, references as file names, engine and
+engine version, and ``project``/``key``/``profile``). It lives here, not in the engines, so every engine gets it and it is
+written once, atomically, on the file that is about to become the attempt's image. If it cannot be written (a PNG the engine
+damaged) the attempt goes on without it and a line goes to stderr. The attempt also records ``command``, ``modelFiles`` and
+``log`` (``attempts/q<entry>.log``, only if the log was kept) when the engine reports them.
 
 Image: named after the queue entry id, unique across the generator. The engine writes
 ``attempts/.pending-<entry>.png``; the worker `os.replace`s it onto ``attempts/q<entry>.png`` and only then calls
 `orders.add_attempt(..., entry_id=entry)`, idempotent per entry (the attempt records ``image`` and ``queueEntry``). A crash
-at any point leaves either no attempt or one with its image, and a retry never duplicates it. The pending file is
-removed on every failure or cancel; if `add_attempt` fails the moved image is removed too.
+at any point leaves either no attempt or one with its image, and a retry never duplicates it. The engine's ``.pending-<entry>.log`` is renamed to ``attempts/q<entry>.log`` right after the image. The pending file (with its
+``.log`` and ``.preview.png``) is removed on every failure or cancel; if `add_attempt` fails the moved image is removed too.
+
+Composition (F2.8, D28): after the chunk, `compose.plan_for` says whether there is anything to do (a ``compose`` in the
+profile, or a ``targetWidth``/``targetHeight`` other than the raw size; a PNG whose size cannot be read counts as
+something to do, so `render` says ``png.invalid``). With none, everything above is as before. With
+one, the pending file goes to ``attempts/q<entry>.raw.png`` first (the generation is safe) and the attempt is registered
+*before* composing, with ``raw`` and ``composeError`` ``compose.pending``: a SIGTERM or Ctrl-C half way through `render`
+leaves the raw image and that attempt, and the next worker that takes the entry (`orders.attempt_for_entry`) composes
+from the raw image instead of generating again. Then `compose.render` writes ``attempts/q<entry>.png`` (its temporary
+folder is ``.compose-q<entry>-*``) and `orders.set_composed` records ``compose``. If `render` raises a `GimgError`, or any
+other exception (``compose.unexpected``), the attempt keeps the raw image as its ``image`` and the real ``composeError``
+``{code, params}``: the entry is ``done``, a ``worker.compose_failed`` line goes to stderr and `gimg compose` can fix it
+later (it cannot be chosen meanwhile). A generation is never lost to a composition failure. Drafts are composed too.
 
 Once the attempt exists nothing can fail the entry: the success log line and `queue.finish` are best effort (an
 entry whose `finish` failed stays ``running`` and recovery deals with it), and no failure line is written. No
@@ -21,7 +44,7 @@ entry whose `finish` failed stays ``running`` and recovery deals with it), and n
 
 Errors: the entry ``error`` is ``{"code", "params"}`` plus ``"errors"`` (schema errors as path/code/params)
 when there are any (`queue.make_error`; render with `queue.error_text`):
-a `GimgError` keeps its code, params and schema errors, `EngineTimeout` is ``engine.timeout``, any other `EngineError` is
+a `GimgError` keeps its code, params and schema errors, `EngineTimeout` is ``engine.timeout``, an `EngineError` with a `code` keeps it, any other is
 ``engine.failed`` with ``{"message"}``, anything else ``worker.unexpected`` with ``{"message": "Type: msg"}``.
 Log: one line for every attempt that fails (limits, references, engine, timeout) or succeeds; for failures
 ``app.error`` is the English rendering of that error (e.g. "the attempt asks for 99 steps ..."); a cancel writes no line.
@@ -30,12 +53,20 @@ from __future__ import annotations
 
 import contextlib
 import fcntl
+import json
 import os
+import signal
 import sys
+import threading
+from pathlib import Path
 
 from . import engine as engine_mod
-from . import fsutil, i18n, limits, log, orders, paths, projects, queue
+from . import compose as compose_mod
+from . import fsutil, i18n, limits, log, orders, paths, png, projects, queue
 from .errors import GimgError
+
+
+COMPOSE_PENDING = {"code": "compose.pending", "params": {}}  # the attempt is registered, its composition not finished
 
 
 def lock_path():
@@ -57,14 +88,21 @@ def _single_worker():
         os.close(fd)
 
 
+def _inside_file(project: dict, rel: str, code: str) -> str:
+    """Absolute path of `rel` inside the project; `code` (with ``path=rel``) if it is not a file."""
+    target = paths.inside(project["root"], rel)
+    if not target.is_file():
+        raise GimgError(code, path=rel)
+    return str(target)
+
+
 def _references(project: dict, entry: dict) -> list:
-    found = []
-    for ref in entry["references"]:
-        target = paths.inside(project["root"], ref)
-        if not target.is_file():
-            raise GimgError("worker.reference_missing", path=ref)
-        found.append(str(target))
-    return found
+    return [_inside_file(project, ref, "worker.reference_missing") for ref in entry["references"]]
+
+
+def _init_image(project: dict, entry: dict):
+    rel = entry.get("initImage")
+    return None if rel is None else _inside_file(project, rel, "worker.init_image_missing")
 
 
 def _unlink(path) -> None:
@@ -77,6 +115,8 @@ def _error_for(exc: BaseException) -> dict:
         return queue.make_error(exc.code, exc.errors, **exc.params)
     if isinstance(exc, engine_mod.EngineTimeout):
         return queue.make_error("engine.timeout")
+    if isinstance(exc, engine_mod.EngineError) and exc.code:
+        return queue.make_error(exc.code, **exc.params)
     if isinstance(exc, engine_mod.EngineError):
         return queue.make_error("engine.failed", message=exc.message)
     return queue.make_error("worker.unexpected", message="%s: %s" % (type(exc).__name__, exc))
@@ -99,7 +139,115 @@ def _finish(entry_id, state, lang=None, **kw) -> None:
         print(i18n.t("worker.finish_failed", lang, id=entry_id, reason=exc), file=sys.stderr)
 
 
-def _generate(entry: dict, eng, machine: dict, state: dict):
+def _progress_to_queue(entry_id):
+    def report(progress):
+        with contextlib.suppress(Exception):
+            queue.set_progress(entry_id, progress)
+    return report
+
+
+def _expose_preview(entry_id, eng, tmp) -> None:
+    preview = eng.preview_path(tmp) if hasattr(eng, "preview_path") else None
+    if preview is not None:
+        with contextlib.suppress(Exception):
+            queue.set_preview(entry_id, str(preview))
+
+
+def metadata_for(entry: dict, result) -> dict:
+    """What the ``gimg`` chunk of the PNG says: the attempt's parameters (the engine's effective steps, cfg and sampler
+    over the entry's), the reference file names and the engine."""
+    params = dict(entry["params"])
+    params.update({k: v for k, v in (getattr(result, "params", None) or {}).items() if v is not None})
+    meta = {"project": entry["project"], "key": entry["key"], "profile": entry["profile"],
+            "seed": entry["seed"], "prompt": entry["prompt"],
+            "references": [str(ref).rsplit("/", 1)[-1] for ref in entry["references"]],
+            "engineVersion": getattr(result, "engine_version", None)}
+    if entry.get("draft") is True:
+        meta["draft"] = True
+    if entry.get("initImage") is not None:
+        meta["initImage"] = str(entry["initImage"]).rsplit("/", 1)[-1]
+        if entry.get("strength") is not None:
+            meta["strength"] = entry["strength"]
+    for name in ("model", "width", "height", "steps", "cfg", "sampler"):
+        if params.get(name) is not None:
+            meta[name] = params[name]
+    return meta
+
+
+def _compose_plan(project: dict, profile: str, image):
+    """`compose.plan_for` of the profile now configured and the size of the PNG at `image`; ``None`` (nothing to
+    compose) when the profile is gone. If the size cannot be read (the engine left something that is not a PNG) the
+    plan is that of a size that matches nothing: a profile with something to compose composes anyway and `render`
+    says ``png.invalid`` (the attempt keeps the image and the error); one with nothing keeps the image as it is."""
+    profile_cfg = project["config"]["profiles"].get(profile)
+    if profile_cfg is None:
+        return None
+    try:
+        size = png.size(image)
+    except (GimgError, OSError):
+        size = (0, 0)
+    return compose_mod.plan_for(profile_cfg, *size)
+
+
+def _unexpected_compose_error(exc: BaseException) -> dict:
+    return queue.make_error("compose.unexpected", reason=("%s: %s" % (type(exc).__name__, exc))[:300])
+
+
+def _compose_locked(entry: dict, project: dict, attempt_id: int, raw: Path, final: Path, state: dict):
+    """The composition itself, with the lock of the attempt held; returns the error dict, or None on success (or when
+    another process composed the attempt while this one waited for the lock: nothing left to do)."""
+    entry_id = entry["id"]
+    project_name, key, profile = entry["project"], entry["key"], entry["profile"]
+    try:
+        current = next((a for a in orders.get(project_name, key, profile)["attempts"] if a["id"] == attempt_id), None)
+        error = (current or {}).get("composeError")
+        if not (isinstance(error, dict) and error.get("code") == COMPOSE_PENDING["code"]):
+            return None  # `gimg compose` got there first (and then it says how it went)
+        info = compose_mod.render(
+            project["root"], project["config"]["profiles"][profile], raw, final, entry.get("text") or {}, profile,
+            prefix=".compose-q%d-" % entry_id)
+        orders.set_composed(project_name, key, profile, attempt_id, info)
+        state["compose"] = info
+        return None
+    except GimgError as exc:  # keep the generation: the raw image stands in until `gimg compose` fixes it
+        error = queue.make_error(exc.code, **exc.params)
+    except Exception as exc:
+        error = _unexpected_compose_error(exc)
+    _record_compose_error(project_name, key, profile, attempt_id, error)
+    return error
+
+
+def _record_compose_error(project_name, key, profile, attempt_id, error) -> None:
+    with contextlib.suppress(Exception):
+        orders.set_compose_error(project_name, key, profile, attempt_id,
+                                 {"code": error["code"], "params": error["params"]})
+
+
+def _compose_attempt(entry: dict, project: dict, attempt_id: int, raw: Path, final: Path, state: dict, lang=None):
+    """Compose the raw image of an attempt that is already registered: `orders.set_composed` on success, else the
+    real ``composeError`` on the attempt (best effort; if even that fails the attempt stays ``compose.pending``).
+    Never raises an `Exception`: a generation is never lost to a composition failure.
+
+    It holds the attempt's compose lock (`orders.compose_lock_path`, the one `compose.recompose` tries) for the whole
+    composition, error mark included: if a ``gimg compose`` of the same attempt is running, the worker waits for it and
+    then composes only if the attempt is still ``compose.pending``."""
+    entry_id = entry["id"]
+    error = None
+    try:
+        with fsutil.lock(orders.compose_lock_path(entry["project"], entry["key"], entry["profile"], attempt_id)):
+            error = _compose_locked(entry, project, attempt_id, raw, final, state)
+    except Exception as exc:  # the lock file itself
+        error = _unexpected_compose_error(exc)
+        _record_compose_error(entry["project"], entry["key"], entry["profile"], attempt_id, error)
+    if error is None:
+        return
+    state["compose_error"] = error
+    with contextlib.suppress(Exception):  # a closed stderr must not fail an entry whose attempt exists
+        print(i18n.t("worker.compose_failed", lang, id=entry_id, reason=queue.error_text(error, lang)),
+              file=sys.stderr)
+
+
+def _generate(entry: dict, eng, machine: dict, state: dict, lang=None):
     """Everything up to and including `add_attempt`; returns the attempt id. `state["tmp"]`/`["final"]` are
     the files to clean up if it raises."""
     entry_id = entry["id"]
@@ -108,10 +256,27 @@ def _generate(entry: dict, eng, machine: dict, state: dict):
     orders.get(project_name, key, profile)
     existing = orders.attempt_for_entry(project_name, key, profile, entry_id)
     if existing is not None:  # a crash after add_attempt: the attempt and its image are already there
+        error = existing.get("composeError")
+        if isinstance(error, dict) and error.get("code") == COMPOSE_PENDING["code"] and isinstance(existing.get("raw"), str):
+            # killed while composing: the raw image is there, compose it instead of generating again
+            try:  # the project may not load any more: that is a failed composition, not a failed entry
+                project = projects.get(project_name)
+                raw = orders.raw_image(project_name, key, profile, existing)
+            except Exception as exc:
+                error = queue.make_error(exc.code, **exc.params) if isinstance(exc, GimgError) \
+                    else _unexpected_compose_error(exc)
+                _record_compose_error(project_name, key, profile, existing["id"], error)
+                state["compose_error"] = error
+                with contextlib.suppress(Exception):
+                    print(i18n.t("worker.compose_failed", lang, id=entry_id, reason=queue.error_text(error, lang)),
+                          file=sys.stderr)
+                return existing["id"]
+            _compose_attempt(entry, project, existing["id"], raw, raw.parent / ("q%d.png" % entry_id), state, lang)
         return existing["id"]
     limits.check(entry, machine)
     project = projects.get(project_name)
     references = _references(project, entry)
+    init_image = _init_image(project, entry)
     tmp = orders.pending_image_path(project_name, key, profile, entry_id)
     state["tmp"] = tmp
     params = entry["params"]
@@ -119,31 +284,63 @@ def _generate(entry: dict, eng, machine: dict, state: dict):
         prompt=entry["prompt"], width=params.get("width"), height=params.get("height"),
         seed=entry["seed"], output=str(tmp), steps=params.get("steps"), cfg=params.get("cfg"),
         sampler=params.get("sampler"), model=params.get("model"), references=references,
-        machine=machine, timeout_s=machine.get("timeoutS"))
+        init_image=init_image, strength=entry.get("strength"),
+        machine=machine, timeout_s=machine.get("timeoutS"), on_progress=_progress_to_queue(entry_id))
+    _expose_preview(entry_id, eng, tmp)
     state["result"] = eng.generate(job, lambda: queue.is_cancel_requested(entry_id))
     if queue.is_cancel_requested(entry_id):
         raise engine_mod.Cancelled()
-    final = tmp.parent / ("q%d.png" % entry_id)
     try:
-        os.replace(tmp, final)
+        png.add_text_chunk(tmp, "gimg", json.dumps(metadata_for(entry, state["result"]), ensure_ascii=False,
+                                                   sort_keys=True))
+    except (GimgError, OSError) as exc:
+        reason = exc.params.get("reason", exc.code) if isinstance(exc, GimgError) else str(exc)
+        print(i18n.t("worker.metadata_failed", lang, id=entry_id, reason=reason), file=sys.stderr)
+    final = tmp.parent / ("q%d.png" % entry_id)
+    try:  # the profile as it is now: the engine may have run for minutes
+        project = projects.get(project_name)
+    except GimgError:
+        pass
+    plan = _compose_plan(project, profile, tmp)
+    raw = tmp.parent / Path(orders.raw_image_name(entry_id)).name if plan is not None else None
+    try:
+        os.replace(tmp, final if raw is None else raw)  # the raw image is safe before anything else is done
     except OSError as exc:
         raise GimgError("worker.image_move", reason=str(exc))
+    engine_log = getattr(state["result"], "log_path", None)
+    kept_log = None
+    if engine_log:  # best effort: the log is a nicety, the attempt does not depend on it
+        try:
+            os.replace(engine_log, tmp.parent / ("q%d.log" % entry_id))
+            kept_log = "attempts/q%d.log" % entry_id
+        except OSError:
+            pass
     state["tmp"] = None
-    state["final"] = final
+    state["final"] = [final if raw is None else raw]  # if add_attempt fails nothing refers to the image
+    result = state["result"]
+    extra = {}
+    if raw is not None:  # registered before composing: a kill in `render` keeps the raw image and this attempt
+        extra["raw"] = orders.raw_image_name(entry_id)
+        extra["composeError"] = dict(COMPOSE_PENDING)
     attempt_id = orders.add_attempt(project_name, key, profile, {
         "seed": entry["seed"], "prompt": entry["prompt"], "params": params,
         "references": entry["references"], "engine": eng.provider,
-        "engineVersion": state["result"].engine_version}, entry_id=entry_id)
+        "engineVersion": result.engine_version, "command": getattr(result, "command", None),
+        "modelFiles": getattr(result, "model_files", None), "log": kept_log,
+        "draft": entry.get("draft") is True,
+        "initImage": entry.get("initImage"), "strength": entry.get("strength"), **extra}, entry_id=entry_id)
     state["final"] = None
+    if raw is not None:
+        _compose_attempt(entry, project, attempt_id, raw, final, state, lang)
     return attempt_id
 
 
 def _process(entry: dict, eng, lang=None) -> None:
     entry_id = entry["id"]
     machine = {}
-    state = {"tmp": None, "final": None, "result": None}
+    state = {"tmp": None, "final": None, "result": None, "compose": None, "compose_error": None}
     try:
-        attempt_id = _generate(entry, eng, machine, state)
+        attempt_id = _generate(entry, eng, machine, state, lang)
     except engine_mod.Cancelled:
         _finish(entry_id, "cancelled", lang)
         return
@@ -153,17 +350,47 @@ def _process(entry: dict, eng, lang=None) -> None:
         _finish(entry_id, "failed", lang, error=error)
         return
     finally:
-        for leftover in (state["tmp"], state["final"]):
+        for leftover in [state["tmp"]] + list(state["final"] or []):
             if leftover is not None:
                 _unlink(leftover)
+        if state["tmp"] is not None:  # the engine's log and preview of a failed or cancelled run
+            for suffix in (".log", ".preview.png"):
+                _unlink(state["tmp"].with_suffix(suffix))
     # the attempt exists: from here nothing may fail the entry
     if state["result"] is not None:
         try:
             log.append(entry["project"], log.record_for(
-                entry["key"], entry["profile"], entry, machine, eng.provider, result=state["result"]))
+                entry["key"], entry["profile"], entry, machine, eng.provider, result=state["result"],
+                compose=(state["compose"] or {}).get("template"),
+                compose_error=(state["compose_error"] or {}).get("code")))
         except Exception as exc:
             print(i18n.t("worker.log_failed", lang, id=entry_id, reason=exc), file=sys.stderr)
     _finish(entry_id, "done", lang, attempt_id=attempt_id)
+
+
+def _terminate(signum, frame):
+    raise SystemExit(128 + signum)
+
+
+@contextlib.contextmanager
+def _exit_on_signals():
+    """SIGTERM and SIGHUP end the worker through `SystemExit`, like Ctrl-C does through `KeyboardInterrupt`: the
+    ``finally`` blocks run, so the engine kills the process group of `sd-cli` (``start_new_session``) instead of
+    leaving it alive with its memory. The entry in progress stays ``running`` (as after Ctrl-C) and
+    `queue.recover_orphans` requeues it on the next run. Only in the main thread; the old handlers come back on exit."""
+    if threading.current_thread() is not threading.main_thread():
+        yield
+        return
+    previous = {}
+    try:
+        for name in ("SIGTERM", "SIGHUP"):
+            if hasattr(signal, name):
+                num = getattr(signal, name)
+                previous[num] = signal.signal(num, _terminate)
+        yield
+    finally:
+        for num, handler in previous.items():
+            signal.signal(num, handler)
 
 
 def run(once: bool = False, engine=None, lang=None) -> int:
@@ -171,7 +398,7 @@ def run(once: bool = False, engine=None, lang=None) -> int:
 
     `lang` is the language of the messages the worker prints (the CLI passes its ``--lang``).
     Raises ``GimgError("worker.already_running")`` if another process holds the worker lock."""
-    with _single_worker():
+    with _single_worker(), _exit_on_signals():
         queue.recover_orphans()
         eng = engine or engine_mod.get_engine()
         handled = 0

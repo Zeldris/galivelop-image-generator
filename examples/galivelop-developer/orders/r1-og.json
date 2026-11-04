@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../gimg/schemas/order.schema.json",
+  "key": "fondos/r1",
+  "profile": "og",
+  "prompt": "Wide abstract technical illustration on a deep midnight navy background with a faint grid of tiny evenly spaced dots. A single straight horizontal line of soft white light runs straight across the whole frame. In the right half, a short side branch of teal light leaves the main line, makes a small careful loop and returns to it, passing through a bright glowing ring where it rejoins the main line. The left half of the frame is calm and dark, with only the main line and the faint grid, nearly empty. Style: clean minimal vector-like digital illustration, thin precise strokes, soft glow, flat dark background. Colours: deep midnight navy, teal, soft white. Mood: calm, careful, reliable. The image is completely textless.",
+  "seed": 3,
+  "count": 2
+}

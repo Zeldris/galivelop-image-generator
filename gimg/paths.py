@@ -29,6 +29,14 @@ def data_dir() -> Path:
     return _home_dir("GIMG_DATA_HOME", "XDG_DATA_HOME", (".local", "share", "gimg"))
 
 
+def models_dir() -> Path:
+    """Model files folder: ``$GIMG_MODELS_HOME`` (e.g. an SD card), else ``<data>/models``."""
+    explicit = os.environ.get("GIMG_MODELS_HOME")
+    if explicit:
+        return Path(explicit)
+    return data_dir() / "models"
+
+
 def check_relative(rel) -> str:
     """Reject anything that is not a plain relative path; return it unchanged."""
     if not isinstance(rel, str):

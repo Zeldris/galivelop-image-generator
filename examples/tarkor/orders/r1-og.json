@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../gimg/schemas/order.schema.json",
+  "key": "fondos/r1",
+  "profile": "og",
+  "prompt": "Wide cinematic fantasy panorama at golden hour. In the right half of the frame, tall broken pillars of red sandstone rise from a dusty plain, connected high above the ground by long sagging rope bridges with wooden planks. The low sun sits behind the pillars and burns through drifting dust that glows amber in the backlight, outlining the rock edges with a bright rim of light. An amber and crimson sky fills the upper half. The left half of the frame is a wide open stretch of hazy sky and soft distant plain, calm and nearly empty. Style: photorealistic fantasy matte painting, cinematic concept art, warm atmospheric haze, rich natural colour. Mood: epic, ancient, quiet. Shot on a full-frame camera with a 35mm lens. The image is completely textless.",
+  "seed": 3,
+  "count": 2
+}

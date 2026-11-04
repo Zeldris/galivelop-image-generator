@@ -1,8 +1,11 @@
 import copy
 import json
+import os
 import re
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from gimg import schema as S
 
@@ -137,7 +140,7 @@ class ExampleTests(unittest.TestCase):
 
     def test_shared_defs_are_identical_across_schemas(self):
         seen = {}
-        for name in ("project-config", "order", "machine-profile"):
+        for name in ("project-config", "order", "machine-profile", "models"):
             for key, definition in S.load_schema(name).get("$defs", {}).items():
                 seen.setdefault(key, []).append((name, definition))
         for key in ("name", "profileName", "relativePath", "steps", "cfg", "sampler"):
@@ -196,6 +199,99 @@ class ExampleTests(unittest.TestCase):
         self.assertEqual(self.errs(steam, self.machine_schema),
                          [("", "required"), ("/engine/maxVram", "pattern"),
                           ("/engine/paramsBackend", "enum")])
+
+
+PILOT_PROJECTS = ("galivelop-developer", "galivelop-image-generator", "galivelop-voice-generator",
+                  "galivelop-workflow", "portal", "tarkor", "toveriai")
+R1_SEEDS = (3, 4)
+
+
+class PilotExampleTests(unittest.TestCase):
+    """F2.6: `examples/<proyecto>/` of the seven pilot projects, with the r1 orders that must reproduce
+    `ronda.sh r1` (same prompt as `prompts/og.txt`, seeds 3 and 4, 1280x640, 6 steps, the fast model)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.order_schema = S.load_schema("order")
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        env = mock.patch.dict(os.environ, {"GIMG_CONFIG_HOME": tmp.name + "/cfg",
+                                           "GIMG_DATA_HOME": tmp.name + "/data"})
+        env.start()
+        self.addCleanup(env.stop)
+
+    def test_the_seven_pilot_projects_have_a_config(self):
+        found = sorted(p.parent.name for p in (ROOT / "examples").glob("*/galivelop-images.json"))
+        self.assertEqual(found, sorted(PILOT_PROJECTS))
+
+    def test_pilot_configs_load_and_fit_the_deck(self):
+        from gimg import limits, projects
+        deck = limits.load_machine("steam-deck")
+        for name in PILOT_PROJECTS:
+            root = ROOT / "examples" / name
+            config = projects.load_config(root)
+            self.assertEqual(config["name"], name)
+            self.assertEqual(config["delivery"]["dir"], "entrega", name)
+            self.assertIn("og", config["profiles"], name)
+            for profile, cfg in config["profiles"].items():
+                self.assertEqual((cfg["width"] % 64, cfg["height"] % 64), (0, 0), (name, profile))
+                try:
+                    limits.check({"params": cfg, "references": []}, deck)
+                except limits.LimitError as exc:
+                    self.fail("%s/%s: %s" % (name, profile, exc))
+                self.assertEqual(cfg["model"], "flux2-klein-4b-q8", (name, profile))
+
+    def test_r1_orders_reproduce_ronda_r1(self):
+        from gimg import orders, projects
+        for name in PILOT_PROJECTS:
+            root = ROOT / "examples" / name
+            order = read("examples/%s/orders/r1-og.json" % name)
+            self.assertEqual(S.validate(order, self.order_schema), [], name)
+            prompt = (root / "prompts" / "og.txt").read_text(encoding="utf-8").strip()
+            self.assertEqual(order["prompt"], prompt, name)
+            projects.add(root)
+            orders.submit(name, order)
+            specs = orders.attempt_specs(name, order["key"], order["profile"], order["count"])
+            self.assertEqual([s["seed"] for s in specs], list(R1_SEEDS), name)
+            self.assertEqual({s["prompt"] for s in specs}, {prompt}, name)
+            self.assertEqual(specs[0]["params"],
+                             {"width": 1280, "height": 640, "steps": 6, "cfg": 1.0, "sampler": "euler",
+                              "model": "flux2-klein-4b-q8"}, name)
+            self.assertEqual(specs[0]["references"], [], name)
+
+    def test_r2_orders_use_their_prompt_files_and_seeds(self):
+        from gimg import orders, projects
+        cases = [(name, "r2-luz", "r2-luz.txt", 3) for name in PILOT_PROJECTS]
+        cases += [(name, "r2-control", "estilo.txt", 7) for name in PILOT_PROJECTS]
+        cases.append(("tarkor", "r2-luz-r1", "r2-luz-r1.txt", 3))
+        added = set()
+        for name, stem, prompt_file, seed in cases:
+            root = ROOT / "examples" / name
+            order = read("examples/%s/orders/%s.json" % (name, stem))
+            self.assertEqual(S.validate(order, self.order_schema), [], (name, stem))
+            self.assertEqual((order["key"], order["profile"], order["count"]),
+                             ("estilo/" + stem, "og", 1), (name, stem))
+            prompt = (root / "prompts" / prompt_file).read_text(encoding="utf-8").strip()
+            self.assertEqual(order["prompt"], prompt, (name, stem))
+            if name not in added:
+                projects.add(root)
+                added.add(name)
+            orders.submit(name, order)
+            specs = orders.attempt_specs(name, order["key"], order["profile"], order["count"])
+            self.assertEqual([s["seed"] for s in specs], [seed], (name, stem))
+            self.assertEqual(specs[0]["params"],
+                             {"width": 1280, "height": 640, "steps": 6, "cfg": 1.0, "sampler": "euler",
+                              "model": "flux2-klein-4b-q8"}, (name, stem))
+            # The second seed of R1 comes from `gimg attempt new --seed 7`, not from count.
+            extra = orders.attempt_specs(name, order["key"], order["profile"], 1, seed=7)
+            self.assertEqual([s["seed"] for s in extra], [7], (name, stem))
+
+    def test_gitignore_keeps_pilot_deliveries_out_of_git(self):
+        lines = (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
+        self.assertIn("/examples/*/entrega/", lines)
+        self.assertIn("/examples/*/galivelop-images.manifest.json", lines)
 
 
 if __name__ == "__main__":

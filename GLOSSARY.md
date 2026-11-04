@@ -1,4 +1,4 @@
-<!-- galivelop-workflow v0.4.0 -->
+<!-- galivelop-workflow v0.4.3 -->
 # Glosario
 
 Vocabulario de galivelop-image-generator. Primero van los términos del flujo; el proyecto añade debajo los de su dominio y los
@@ -10,7 +10,7 @@ mantiene al día (skill `domain-modeling`). El flujo nunca sobrescribe este arch
   check.
 - **Relevo**: una sesión que se acaba y otra que sigue desde la bitácora, sin preguntar por dónde iba.
 - **Punto estable**: un estado con el check en verde, con commit y subido.
-- **Check**: las órdenes del proyecto que tienen que pasar en cada commit que se sube: `bash -n .githooks/pre-commit .githooks/pre-push .githooks/commit-msg` y `python3 -m unittest discover -s tests -t .`.
+- **Check**: las órdenes del proyecto que tienen que pasar en cada commit que se sube: `for f in .githooks/pre-commit .githooks/pre-push .githooks/commit-msg; do bash -n "$f"; done` y `python3 -m unittest discover -s tests -t .`.
 - **Commit `WIP:`**: un commit subido con algo a medias o en rojo; la bitácora dice qué falla y por qué.
 - **Rama protegida**: `main`, lo publicado; solo recibe trabajo revisado, con confirmación
   de la persona.

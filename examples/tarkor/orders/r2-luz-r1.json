@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../gimg/schemas/order.schema.json",
+  "key": "estilo/r2-luz-r1",
+  "profile": "og",
+  "prompt": "Cinematic landscape photograph of a wild fantasy plain in deep warm backlight, grounded and natural, with rich natural colour and the ground darker than the sky. The left third, from the left edge inward, is a calm, open stretch of plain under soft hazy light in the colour #8a9aa8, flat and quiet. In the right two thirds, from the right edge inward, a cluster of tall slender needles of rock in the colour #221c16 rises from low ridges of sand in #332415, each needle leaning slightly, the tallest a quarter of the way in from the right edge with its tip a fifth of the way down from the top edge. A strong warm light in #E0703A comes from low behind them, from the right, outlining every rock edge with a bright rim and burning through drifting dust that glows amber between them, while their bases stay in deep shadow. A thin thread of smoke rises far away among the dust, and a small weathered banner of rough cloth hangs from a wooden pole on the nearest ridge. An amber and crimson sky in #f2b34a fills the upper half, from the top edge down to the horizon, deepest in colour at the horizon with a soft band of glowing haze there. Style: cinematic landscape photograph, warm atmospheric haze, rich natural colour, deep filmic contrast, fine detail. Colours: #E0703A, #f2b34a, #221c16, #332415, #8a9aa8. Mood: wild, quiet, lived-in. The image is completely textless.",
+  "seed": 3,
+  "count": 1
+}

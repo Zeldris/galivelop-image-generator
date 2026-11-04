@@ -67,7 +67,7 @@ class LocaleTests(unittest.TestCase):
 
     def test_all_messages_render(self):
         params = {"path": "/p", "name": "n", "expected": "e", "allowed": "a",
-                  "pattern": "p", "limit": 1}
+                  "pattern": "p", "limit": 1, "trigger": "t"}
         for lang in ("es", "en"):
             for code in S.CODES:
                 text = i18n.t("schema." + code, lang, **params)

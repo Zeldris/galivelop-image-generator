@@ -44,7 +44,7 @@ class LogTests(unittest.TestCase):
             "app.image.key": "a/b", "app.image.steps": 4, "app.image.cfg": 1.5,
             "app.image.sampler": "euler", "app.image.width": 64, "app.image.height": 32,
             "app.image.seed": 5, "app.image.references": 1, "app.image.engine_version": "fake-1",
-            "app.image.sample_ms": 100, "app.image.decode_ms": 20})
+            "app.image.sample_ms": 100, "app.image.decode_ms": 20, "app.image.draft": False})
 
     def test_record_error_and_no_nulls(self):
         spec = {"seed": 0, "prompt": "p", "params": {}}
@@ -55,6 +55,14 @@ class LogTests(unittest.TestCase):
         self.assertEqual(rec["app.image.references"], 0)
         self.assertNotIn(None, rec.values())
         self.assertRegex(rec["ts"], r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$")
+
+    def test_a_composition_line_is_not_a_generation_and_the_estimate_ignores_it(self):
+        rec = log.record_for("k", "banner", SPEC, MACHINE, None, operation=log.OP_COMPOSITION, compose="t.svg")
+        self.assertEqual((rec["gen_ai.operation.name"], rec["app.image.compose"]), ("image_composition", "t.svg"))
+        self.assertNotIn("gen_ai.provider.name", rec)
+        self.put(dict(rec, **{"app.duration_ms": 1}))  # even with a duration it has no provider: not counted
+        self.assertIsNone(log.estimate("proj", "fake", "banner", 4, True))
+        self.assertEqual(log.record_for("k", "t", SPEC, MACHINE, "fake")["gen_ai.operation.name"], "image_generation")
 
     def test_append_writes_jsonl(self):
         self.put({"a": 1}, {"b": "é"})

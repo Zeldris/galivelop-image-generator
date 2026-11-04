@@ -1,0 +1,38 @@
+{
+  "$schema": "../../gimg/schemas/project-config.schema.json",
+  "minVersion": "0.1.0",
+  "name": "galivelop-image-generator",
+  "brand": {
+    "palette": [
+      "#06121c",
+      "#A78BFA",
+      "#8B5CF6",
+      "#ffffff",
+      "#eaf4fa"
+    ]
+  },
+  "delivery": {
+    "dir": "entrega",
+    "template": "{key}-{profile}.png"
+  },
+  "profiles": {
+    "og": {
+      "width": 1280,
+      "height": 640,
+      "steps": 6,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "flux2-klein-4b-q8",
+      "targetWidth": 1200,
+      "targetHeight": 630
+    },
+    "social": {
+      "width": 1280,
+      "height": 640,
+      "steps": 6,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "flux2-klein-4b-q8"
+    }
+  }
+}
