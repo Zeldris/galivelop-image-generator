@@ -85,8 +85,8 @@ la pieza (`r4-composicion.md` l.28-33). El repo de Workflow no tiene favicon ni 
 
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
-| Familia de titular | Rec. (familia Galivelop, con valor propio) | Inter (reserva `sans-serif`), como los títulos de los diagramas del Portal; el wordmark del lockup sigue en Sora 700 para casar con «Galivelop». **Peso:** la biblia dice 800; las piezas de r4-r5 salieron a 700 (`piezas.json` no declara peso y `componer.py` usa `peso_titulo=700`). Ver «Contradicciones» | heredado de Portal-Galivelop `aa76b34` (`docs/diagramas/gw-*.svg`, vía `biblia.md` §3); repo (`piezas.json` `fuente`; `examples/pilot/componer.py` l.119) |
-| Familia de texto | Rec. | Inter (reserva `sans-serif`); la biblia pide 600 en subtítulos, las piezas salieron a 400 con opacidad 0,82 | repo (`piezas.json` `fuente_texto`; `componer.py` l.159-160); `biblia.md` §3 |
+| Familia de titular | Rec. (familia Galivelop, con valor propio) | Inter (reserva `sans-serif`), como los títulos de los diagramas del Portal; el wordmark del lockup sigue en Sora 700 para casar con «Galivelop». **Peso: 700** (lo compuesto en r4-r5: `piezas.json` no declara peso y `componer.py` usa `peso_titulo=700`; decidido el 2026-11-04, ver «Contradicciones», 3) | heredado de Portal-Galivelop `aa76b34` (`docs/diagramas/gw-*.svg`, vía `biblia.md` §3); repo (`piezas.json` `fuente`; `examples/pilot/componer.py` l.119) |
+| Familia de texto | Rec. | Inter (reserva `sans-serif`), **400 con opacidad 0,82** en subtítulos (lo compuesto en r4-r5; decidido el 2026-11-04, ver «Contradicciones», 3) | repo (`piezas.json` `fuente_texto`; `componer.py` l.159-160); `biblia.md` §3 |
 | Licencia y archivo | Rec. | Inter y Sora, OFL, del repo `google/fonts`; `examples/pilot/fuentes.sh` las baja a `piloto/fuentes/` (fuera de git) y `componer.py` las suma por `FONTCONFIG_FILE`; no instaladas en `~/.local/share/fonts` *(suposición: `gimg doctor` lo dirá cuando haya `compose.fonts`)*. DejaVu Sans Mono (código, rutas, órdenes): fuente del sistema, sin archivo en ningún repo *(suposición: instalada en la Deck; las plantillas de Workflow la listan en su reserva `--mono`)* | repo (`examples/pilot/fuentes.sh` l.8-12); Workflow (`skills/gw-media-content/template/media/source/card.html` l.16-17) |
 | Tracking y mayúsculas | Opc. | títulos Inter −0,02 em; wordmark Sora −0,03 em; sin mayúsculas sostenidas (el nombre va «Galivelop-workflow», con su guion y la w minúscula, en una línea y un solo color); monoespaciada para claves y órdenes (`reviewed.sh`, `docs/handoff.md`) | heredado de Portal-Galivelop `aa76b34` (vía `biblia.md` §3); la monoespaciada es **[P]** (`biblia.md` §3, sin pieza que la use) |
 
@@ -293,10 +293,8 @@ Entre el repo de Workflow (`7d61089`) y la biblia (`a50b544`), o entre la biblia
 2. **Resuelto (2026-11-04): `arriba 1/2`, lo medido; biblia corregida.** **Zona reservada del `square`.** Biblia §7: «el tercio superior en `square`». `prompts/r5-cuadrado.txt` y `r5-vertical.txt`
    piden «the upper half», `piezas.json` compone en `arriba` (48 % del alto) y la medida salió 15,75 (peor 15,54).
    **Propuesta:** `arriba 1/2`, lo medido; corregir la biblia.
-3. **Abierta:** la persona elige viendo una pieza. **Pesos de Inter.** Biblia §3: títulos Inter 800, subtítulos 600. Las piezas de r4-r5 salieron a 700 y 400 (`componer.py`
-   `peso_titulo=700`, subtítulo `font-weight="400"` con opacidad 0,82); `piezas.json` no declara peso. **Propuesta:** que la
-   persona vea la pieza y elija; si prefiere los 800/600 de los diagramas, se cambia `componer.py` (o el futuro `compose`) y se
-   recompone sin regenerar; si no, se corrige la biblia a 700/400.
+3. **Resuelta (2026-11-04): titular 700, subtítulo Inter 400 con opacidad 0,82; biblia corregida.** **Pesos de Inter.** Biblia §3 decía títulos Inter 800 y subtítulos 600. Las piezas de r4-r5 salieron a 700 y 400 (`componer.py`
+   `peso_titulo=700`, subtítulo `font-weight="400"` con opacidad 0,82); `piezas.json` no declara peso. **Decisión (delegada, `docs/records/decisiones-hojas-2026-11-04.md`, fila 4):** manda lo compuesto y visto, y es la misma regla para los siete proyectos; los 800/600 quedan solo en los diagramas del Portal, que no son piezas de `gimg`.
 4. **Resuelto (2026-11-04): se mantienen los trazos; biblia y plan corregidos.** **Dibujo del monograma.** `docs/plan.md` l.640 y la biblia §4 (tabla) hablan del «gw» «en Inter 800 blanco»; el SVG `a`
    dibuja las letras en trazos de 12/128 con remates redondos, sin fuente. **Propuesta:** mantener los trazos (sin dependencia
    de fuente, mismo lenguaje que `gv-logo.svg`) y apuntarlo en la biblia; es la parte **[P]** del logo.
