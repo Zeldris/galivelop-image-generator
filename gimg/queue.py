@@ -352,10 +352,41 @@ def entry_view(entry: dict, lang: str | None = None) -> dict:
     return item
 
 
-def estimate_for(entry: dict, provider: str | None = None):
-    """Median duration (ms) of similar past attempts, or ``None``. `provider` defaults to the configured engine's."""
+def estimate_for(entry: dict, provider: str | None = None, memo: dict | None = None):
+    """Median duration (ms) of similar past attempts, or ``None``. `provider` defaults to the configured engine's.
+    With a `memo` dict, entries that ask the same question share one read of the log."""
     if provider is None:
         provider = engine_mod.get_engine().provider
     steps = (entry.get("params") or {}).get("steps")
-    return log.estimate(entry["project"], provider, entry["profile"], steps, bool(entry.get("references")),
-                        entry.get("draft") is True, entry.get("initImage") is not None)
+    args = (entry["project"], provider, entry["profile"], steps, bool(entry.get("references")),
+            entry.get("draft") is True, entry.get("initImage") is not None)
+    if memo is None:
+        return log.estimate(*args)
+    if args not in memo:
+        memo[args] = log.estimate(*args)
+    return memo[args]
+
+
+def submit_order(project: str, order: dict, draft=None) -> tuple:
+    """`gimg order submit` and ``POST /api/projects/{p}/orders``: store the order and enqueue its attempts.
+    Returns ``(entries, provider)``; a bad engine setting fails before anything is stored or queued."""
+    provider = engine_mod.get_engine().provider
+    if draft is not None:  # the option is the order's own field, so it is stored with the order
+        order["draft"] = draft
+    record = orders.submit(project, order)
+    specs = orders.attempt_specs(project, record["key"], record["profile"], order.get("count", 1))
+    return enqueue(project, record["key"], record["profile"], specs), provider
+
+
+def new_attempts(project: str, key: str, profile: str, count: int = 1, *, seed=None, prompt=None, params=None,
+                 draft=None) -> tuple:
+    """`gimg attempt new` and ``POST …/attempts``: enqueue `count` more attempts. Returns ``(entries, provider)``."""
+    provider = engine_mod.get_engine().provider
+    specs = orders.attempt_specs(project, key, profile, count, seed=seed, prompt=prompt, params=params, draft=draft)
+    return enqueue(project, key, profile, specs), provider
+
+
+def queued_view(entries: list, provider: str, lang: str | None = None) -> dict:
+    """The JSON of a fresh enqueue: ``{"entries", "estimateMs"}`` (the estimate of the first entry)."""
+    estimate = estimate_for(entries[0], provider) if entries else None
+    return {"entries": [entry_view(e, lang) for e in entries], "estimateMs": estimate}

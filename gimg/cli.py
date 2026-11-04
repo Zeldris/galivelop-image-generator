@@ -7,7 +7,7 @@ import os
 import sys
 import traceback
 
-from . import __version__, compose, delivery, doctor, engine, i18n, measure, orders, projects, queue, sheet, worker
+from . import __version__, compose, delivery, doctor, i18n, measure, orders, projects, queue, sheet, worker
 from .errors import GimgError
 
 LANGS = ("es", "en")
@@ -128,10 +128,10 @@ def _entry_json(out: _Out, entry: dict) -> dict:
 
 
 def _queued(out: _Out, entries: list, provider: str) -> None:
-    estimate = queue.estimate_for(entries[0], provider) if entries else None
     if out.as_json:
-        out.data({"entries": [_entry_json(out, e) for e in entries], "estimateMs": estimate})
+        out.data(queue.queued_view(entries, provider, out.lang))
         return
+    estimate = queue.estimate_for(entries[0], provider) if entries else None
     out.line("cli.out.queued", count=len(entries), ids=", ".join(str(e["id"]) for e in entries))
     if estimate is None:
         out.line("cli.out.no_estimate")
@@ -276,13 +276,7 @@ def _measure(args, out: _Out) -> None:
 def _order(args, sub, out: _Out) -> None:
     if sub == "submit":
         order = _read_order(args.file)
-        provider = engine.get_engine().provider  # a bad engine setting fails before anything is queued
-        if args.draft is not None:  # the option is the order's own field, so it is stored with the order
-            order["draft"] = args.draft
-        record = orders.submit(args.project, order)
-        count = order.get("count", 1)
-        specs = orders.attempt_specs(args.project, record["key"], record["profile"], count)
-        entries = queue.enqueue(args.project, record["key"], record["profile"], specs)
+        entries, provider = queue.submit_order(args.project, order, args.draft)
         _queued(out, entries, provider)
     elif sub == "list":
         chosen = True if args.chosen else False if args.unchosen else None
@@ -324,13 +318,12 @@ def _order(args, sub, out: _Out) -> None:
 
 def _attempt(args, sub, out: _Out) -> None:
     if sub == "new":
-        provider = engine.get_engine().provider  # a bad engine setting fails before anything is queued
         overrides = {k: v for k, v in (("steps", args.steps), ("cfg", args.cfg),
                                        ("sampler", args.sampler)) if v is not None}
-        specs = orders.attempt_specs(args.project, args.key, args.profile, args.count,
-                                     seed=args.seed, prompt=args.prompt, params=overrides,
-                                     draft=args.draft)
-        _queued(out, queue.enqueue(args.project, args.key, args.profile, specs), provider)
+        entries, provider = queue.new_attempts(args.project, args.key, args.profile, args.count,
+                                               seed=args.seed, prompt=args.prompt, params=overrides,
+                                               draft=args.draft)
+        _queued(out, entries, provider)
     elif sub == "mark":
         item = orders.mark(args.project, args.key, args.profile, args.attempt, args.state)
         out.data(item) if out.as_json else out.line("cli.out.marked", id=item["id"], state=item["state"])

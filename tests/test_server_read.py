@@ -6,6 +6,7 @@ import io
 import json
 import os
 import unittest
+from unittest import mock
 from pathlib import Path
 from urllib.parse import quote
 
@@ -248,6 +249,22 @@ class QueueTests(ReadBase):
         self.err(resp, payload, 404, "api.not_found")
 
 
+class QueueResilienceTests(ReadBase):
+    def test_bad_engine_omits_the_estimate_instead_of_500(self):
+        self.make_order(work=False)
+        with mock.patch.dict(os.environ, {"GIMG_ENGINE": "nope"}):
+            got = self.ok_json("/api/queue")
+        self.assertEqual(len(got), 2)
+        self.assertNotIn("estimateMs", got[0])
+
+    def test_estimate_is_read_once_per_question(self):
+        self.make_order(work=False, count=3)
+        with mock.patch("gimg.queue.log.estimate", return_value=5) as est:
+            got = self.ok_json("/api/queue")
+        self.assertEqual([e["estimateMs"] for e in got], [5, 5, 5])
+        self.assertEqual(est.call_count, 1)
+
+
 class AssetTests(ReadBase):
     def url(self, kind, profile="og"):
         return "/api/projects/%s/profiles/%s/assets/%s" % (NAME, profile, kind)
@@ -260,12 +277,19 @@ class AssetTests(ReadBase):
             self.assertEqual(resp.getheader("Content-Type"), "image/svg+xml")
             self.assertEqual(resp.getheader("Content-Security-Policy"),
                              "sandbox; default-src 'none'; style-src 'unsafe-inline'")
+            self.assertEqual(resp.getheader("Cache-Control"), "no-store")
+
+    def test_big_svg_is_a_project_fault(self):
+        with open(self.root / "t.svg", "ab") as fh:
+            fh.truncate(5_000_001)
+        resp, payload = self.get(self.url("template"))
+        self.err(resp, payload, 500, "compose.svg_too_big")
 
     def test_errors(self):
         resp, payload = self.get(self.url("template", "zzz"))
         self.err(resp, payload, 404, "order.profile_unknown")
         resp, payload = self.get(self.url("template", "banner"))
-        self.err(resp, payload, 404, "api.not_found")
+        self.err(resp, payload, 404, "compose.template_missing")
         resp, payload = self.get(self.url("other"))
         self.err(resp, payload, 404, "api.not_found")
         (self.root / "logo.svg").unlink()

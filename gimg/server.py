@@ -5,6 +5,7 @@ Routes are lines in ``ROUTES`` (method, pattern, handler); ``@route("GET", "/api
 """
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import stat as _stat
@@ -16,7 +17,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote
 
-from . import __version__, compose, i18n, orders, paths, projects, queue
+from . import __version__, compose, delivery, i18n, measure, orders, paths, projects, queue
 from .errors import GimgError
 
 API_VERSION = 1
@@ -51,7 +52,7 @@ _EXACT = {
           "api.bad_param"),
 }
 # Server-side faults whose names match the 400 patterns below: checked first.
-_SERVER_FAULTS = ("engine.unknown", "engine.bad_delay", "machine.invalid", "machine.bad_path", "machine.bad_name",
+_SERVER_FAULTS = ("compose.svg_too_big", "engine.unknown", "engine.bad_delay", "machine.invalid", "machine.bad_path", "machine.bad_name",
                   "model.catalog_invalid", "png.invalid", "png.bad_key", "order.spec_invalid", "queue.bad_progress",
                   "compose.bad_fit", "compose.bad_size", "project.config_invalid")
 _PREFIX = (("order.choose_", 409), ("order.undo_", 409), ("path.", 400), ("key.", 400), ("limit.", 400))
@@ -509,12 +510,12 @@ def profile_asset(req):
     project = projects.get(q["p"])
     cfg = _config_profile(project["config"], q["profile"]).get("compose")
     if not cfg:
-        raise GimgError("api.not_found", path=q["kind"])
+        raise GimgError("compose.template_missing", path="")
     template, logo = compose.resolve_assets(project["root"], cfg)
     path = template if q["kind"] == "template" else logo
     if path is None:
         raise GimgError("compose.logo_missing", path="")
-    reply = _file_reply(req, path, "image/svg+xml", cache="no-cache", etag=False)
+    reply = _file_reply(req, path, "image/svg+xml", cache="no-store", etag=False)
     reply.headers["Content-Security-Policy"] = SVG_CSP
     return reply
 
@@ -526,15 +527,19 @@ def queue_list(req):
         raise GimgError("queue.bad_state", state=state, states=", ".join(queue.STATES))
     entries = queue.list_entries(None if state is None else [state])
     provider = None
+    memo = {}
     out = []
     for entry in entries:
         item = queue.entry_view(entry, req.lang)
         item.pop("preview", None)
         if entry["state"] in ("queued", "running"):
-            if provider is None:
-                from . import engine
-                provider = engine.get_engine().provider
-            estimate = queue.estimate_for(entry, provider)
+            try:  # the estimate is optional: a bad engine setting must not take the whole queue down
+                if provider is None:
+                    from . import engine
+                    provider = engine.get_engine().provider
+                estimate = queue.estimate_for(entry, provider, memo)
+            except GimgError:
+                estimate = None
             if estimate is not None:
                 item["estimateMs"] = estimate
         out.append(item)
@@ -554,6 +559,146 @@ def queue_preview(req):
         raise GimgError("api.not_found", path="preview")
     path = _guarded(lambda: paths.inside(data, rel))
     return _file_reply(req, path, "image/png", cache="no-store", etag=False)
+
+
+# --- write routes of F3.3 (the same functions the CLI calls) ---
+HEAVY_WAIT_S = float(os.environ.get("GIMG_HEAVY_WAIT_S") or 60)  # tests set the attribute
+_HEAVY = threading.BoundedSemaphore(1)
+
+
+@contextlib.contextmanager
+def _heavy(code: str, **params):
+    """One heavy task (ffmpeg/rsvg: compose, measure) at a time; the second waits `HEAVY_WAIT_S`, then 409 `code`."""
+    if not _HEAVY.acquire(timeout=HEAVY_WAIT_S):
+        raise GimgError(code, **params)
+    try:
+        yield
+    finally:
+        _HEAVY.release()
+
+
+def _after_enqueue() -> None:
+    """The one place where the server will start the worker after an enqueue (F3.4)."""
+
+
+def _fields(body: dict, allowed: tuple) -> dict:
+    for name in body:
+        if name not in allowed:
+            raise GimgError("api.bad_param", name=name)
+    return body
+
+
+def _attempt_id(value) -> int:
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise GimgError("api.bad_param", name="attempt")
+    return value
+
+
+def _str_field(body: dict, name: str) -> str:
+    value = body.get(name)
+    if not isinstance(value, str):
+        raise GimgError("api.bad_param", name=name)
+    return value
+
+
+@route("POST", "/api/projects/{p}/orders")
+def order_submit(req):
+    entries, provider = queue.submit_order(req.params["p"], dict(req.body))
+    _after_enqueue()
+    # the order itself is read back by its own key: `submit` normalises it (profile, params)
+    record = orders.get(req.params["p"], entries[0]["key"], entries[0]["profile"]) if entries else None
+    view = queue.queued_view(entries, provider, req.lang)
+    return Reply(201, {"order": record, **view}, json=True)
+
+
+_ORD = "/api/projects/{p}/orders/{profile}/{key}"
+
+
+@route("PUT", _ORD + "/text")
+def order_text(req):
+    q = req.params
+    text = req.body.get("text")
+    if not isinstance(_fields(req.body, ("text",)).get("text"), dict):
+        raise GimgError("api.bad_param", name="text")
+    orders.set_text(q["p"], q["key"], q["profile"], text)
+    return orders.get(q["p"], q["key"], q["profile"])
+
+
+@route("POST", _ORD + "/attempts")
+def attempt_new(req):
+    q, body = req.params, _fields(req.body, ("count", "seed", "prompt", "steps", "cfg", "sampler", "draft"))
+    draft = body.get("draft")
+    if draft is not None and not isinstance(draft, bool):
+        raise GimgError("api.bad_param", name="draft")
+    overrides = {k: body[k] for k in ("steps", "cfg", "sampler") if body.get(k) is not None}
+    entries, provider = queue.new_attempts(q["p"], q["key"], q["profile"], body.get("count", 1),
+                                           seed=body.get("seed"), prompt=body.get("prompt"), params=overrides,
+                                           draft=draft)
+    _after_enqueue()
+    return Reply(202, queue.queued_view(entries, provider, req.lang), json=True)
+
+
+@route("POST", _ATT + "/mark")
+def attempt_mark(req):
+    q = req.params
+    state = _str_field(_fields(req.body, ("state",)), "state")
+    return orders.mark(q["p"], q["key"], q["profile"], _int_param("id", q["id"]), state)
+
+
+@route("POST", _ATT + "/note")
+def attempt_note(req):
+    q = req.params
+    text = _fields(req.body, ("text",)).get("text")
+    return orders.note(q["p"], q["key"], q["profile"], _int_param("id", q["id"]), text)
+
+
+@route("POST", _ORD + "/choose")
+def order_choose(req):
+    q = req.params
+    attempt = _attempt_id(_fields(req.body, ("attempt",)).get("attempt"))
+    return delivery.choose(q["p"], q["key"], q["profile"], attempt)
+
+
+@route("POST", _ORD + "/undo")
+def order_undo(req):
+    q = req.params
+    _fields(req.body, ())
+    return delivery.undo(q["p"], q["key"], q["profile"])
+
+
+@route("POST", _ATT + "/compose")
+def attempt_compose(req):
+    q = req.params
+    text = _fields(req.body, ("text",)).get("text")
+    if text is not None and not (isinstance(text, dict) and all(isinstance(v, str) for v in text.values())):
+        raise GimgError("api.bad_param", name="text")
+    attempt_id = _int_param("id", q["id"])
+    with _heavy("compose.busy", attempt=attempt_id):
+        return compose.recompose(q["p"], q["key"], q["profile"], attempt_id, text or None)
+
+
+@route("GET", _ATT + "/measure")
+def attempt_measure(req):
+    q = req.params
+    _order, attempt = _attempt_of(req)
+    raw = (req.query.get("raw") or [""])[0]
+    if raw not in ("", "0", "1"):
+        raise GimgError("api.bad_param", name="raw")
+    zone = (req.query.get("zone") or [None])[0]
+    text = (req.query.get("text") or [None])[0]
+    if (zone is None) != (text is None):
+        raise GimgError("api.bad_param", name="zone" if zone is None else "text")
+    find = orders.raw_image if raw == "1" else orders.attempt_image
+    path = _guarded(lambda: find(q["p"], q["key"], q["profile"], attempt))
+    brand = projects.get(q["p"])["config"].get("brand") or {}
+    with _heavy("measure.busy"):
+        return measure.measure(path, brand.get("palette") or None, (), zone, text)
+
+
+@route("POST", "/api/queue/{id}/cancel")
+def queue_cancel(req):
+    _fields(req.body, ())
+    return queue.entry_view(queue.cancel(_int_param("id", req.params["id"])), req.lang)
 
 
 # --- server ---
