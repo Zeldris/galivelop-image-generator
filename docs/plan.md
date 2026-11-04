@@ -909,6 +909,185 @@ posible.
 - **Herramientas del CI.** ffmpeg y rsvg-convert se instalan con `apt` en `check.yml`; si el CI no arranca (sin cuota), vale el
   check en local con la confirmación de la persona (`AGENTS.md`, «Relevos»).
 
+## F3 en detalle
+
+**Propuesta del agente (2026-11-05), pendiente de la persona** (preguntas al final). Es la **F3 mínima** de D39: la API
+HTTP local y `gimg serve`, lo justo para construir encima F4a-F4c; lo demás de F3 (unidad `systemd`, lo que pida F4d)
+queda para después. Las decisiones que no son de la persona las toma el contrato y se marcan **Decisión**.
+
+### Alcance
+
+**Entra:** `gimg serve` (servidor y estado), `gimg ui` y el arranque bajo demanda (D11); la API de la tabla de abajo marcada
+F3; la seguridad de D25; los errores en JSON con las claves de `errors.py`; una `gimg/ui/index.html` provisional (F4a la
+sustituye) para probar el servido de estáticos; `docs/api.md` (D17).
+
+**No entra:** SSE o WebSocket (la interfaz sondea cada 3 s, `docs/interfaz/propuesta.md`); token de acceso (pregunta 4);
+escucha fuera de `127.0.0.1`; unidad `systemd --user` (pregunta 3); registrar o quitar proyectos por la API (es de la CLI,
+D12); reordenar la cola, contadores por proyecto, pestañas Piezas y Marca y `doctor` por la API (F4d); `sd-server` (D14);
+librería cliente (D17). **La API es la misma capa que la CLI:** cada ruta llama a la función que ya llama `gimg/cli.py`
+(`projects`, `orders`, `queue`, `delivery`, `compose`, `measure`); ninguna lógica nueva del dominio vive en el servidor.
+
+### `gimg serve` y el arranque bajo demanda
+
+| Pieza | Contrato |
+|---|---|
+| Módulos nuevos | `gimg/server.py` (router, seguridad, errores, estáticos; `ThreadingHTTPServer`) y `gimg/service.py` (archivo de estado, `ensure_running()`, `stop()`, lanzar el trabajador) |
+| Dirección | Siempre `127.0.0.1` (D25), sin opción `--host`. Puerto: `--port`, si no `GIMG_PORT`, si no `"serve": {"port"}` de `<config>/config.json`, si no **8737**. Ocupado: `serve.port_busy` (no se busca otro: WMF y los marcadores necesitan uno fijo). `--port 0` (tests) toma uno libre y lo apunta |
+| Una instancia | `<data>/serve.lock` con `flock` no bloqueante durante toda la vida del proceso, como `worker.lock`; otro `gimg serve` da `serve.already_running` con la URL |
+| Archivo de estado | `<data>/serve.json` (`fsutil.write_json`, 0600): `{"pid", "port", "url", "version", "startedAt"}`. Vivo = el cerrojo está tomado **y** `GET /api/health` responde; un `serve.json` sin cerrojo es de un proceso muerto y se ignora (y se sobrescribe) |
+| Órdenes | `gimg serve` (primer plano; Ctrl-C para), `gimg serve --detach` (arranca en segundo plano, espera a `health` hasta 5 s y escribe la URL; `--json` da `serve.json`), `gimg serve --status`, `gimg serve --stop` (SIGTERM al pid de `serve.json` si el cerrojo sigue tomado), `--idle-min N` |
+| `gimg ui` (nueva) | `ensure_running()` y `webbrowser.open(url)` (stdlib); escribe la URL siempre, por si no hay navegador |
+| Arranque bajo demanda | `ensure_running()`: si no está vivo, lanza `sys.executable -m gimg serve` con `start_new_session=True`, salida a `<data>/serve.log`, y espera `health` hasta 5 s; si no, `serve.start_failed` con las últimas 5 líneas del log. Lo llaman `gimg ui` y, **si la persona lo confirma (pregunta 1)**, `gimg order submit` y `gimg attempt new` tras encolar. `GIMG_AUTOSTART=0` lo apaga (los tests lo fijan). Si `health.version` ≠ la instalada y no hay trabajador vivo, se para el viejo y se arranca el nuevo; con trabajador vivo se usa el viejo y se avisa |
+| Trabajador | El servidor **no genera**: lanza `sys.executable -m gimg work --lang <lang>` como proceso aparte (`start_new_session=True`, salida a `<data>/worker.log`) cuando hay entradas `queued` (`queue.next_queued()`) y el cerrojo del trabajador está libre (`queue.worker_alive()`, nueva y pública, sobre el `_no_worker` de hoy). Se comprueba tras cada encolado por la API y en un pulso de 2 s (lo encolado por la CLI con `GIMG_AUTOSTART=0` también se coge). `worker.run` sale solo con la cola vacía, así que no queda nada residente. Un `gimg work` a mano sigue valiendo: el cerrojo hace que solo uno corra y el servidor no lanza otro; un `worker.already_running` del hijo es carrera inocua |
+| Inactividad | Se para solo tras `--idle-min` (por defecto **15**; `"serve": {"idleMinutes"}`; `0` = nunca) sin peticiones, sin trabajador vivo y sin entradas `queued`/`running`. La interfaz abierta sondea y lo mantiene vivo; cerrar la pestaña lo deja parar |
+| Parada | SIGTERM, SIGINT o inactividad: deja de aceptar, espera hasta 10 s a las peticiones en curso, borra `serve.json` y suelta el cerrojo. **Nunca toca al trabajador**: parar el servidor no corta una generación (para eso, `POST /api/queue/{id}/cancel`) |
+| `systemd --user` | Fuera de la mínima (pregunta 3); `gimg serve` en primer plano ya sirve de `ExecStart=` el día que entre |
+
+**Decisión:** el trabajador va en su propio proceso y no en un hilo del servidor: `worker.run` instala manejadores de
+señales (`_exit_on_signals`, solo posible en el hilo principal), `sd-cli` puede ocupar 7 GB y un fallo del motor no debe
+tumbar la API; además reutiliza `gimg work` tal cual, con sus tests.
+
+### Rutas
+
+Prefijo `/api`; `{p}` es el proyecto, `{profile}` el perfil, `{key}` la clave del pedido en **un solo segmento codificado**
+(`fauna%2Faullador-rojo`, `encodeURIComponent` en la interfaz): el servidor parte la ruta por `/` y luego decodifica cada
+segmento; las validaciones de forma son las de siempre (`orders._check_id`, `paths.check_key`). Abreviatura:
+`…/o` = `/api/projects/{p}/orders/{profile}/{key}`, `…/a/{id}` = `…/o/attempts/{id}`. Respuestas JSON salvo imágenes,
+log y SVG. Fase: **F3** o la de la interfaz que la añade.
+
+| Fase | Método y ruta | Cuerpo | Respuesta | Llama a | Errores propios |
+|---|---|---|---|---|---|
+| F3 | `GET /api/health` | — | `{"ok", "api": 1, "version", "pid", "port", "engine", "worker": bool}` | `engine.get_engine().provider`, `queue.worker_alive` | — |
+| F3 | `GET /api/locales/{lang}` | — | el `gimg/locales/<lang>.json` (textos de errores y de la interfaz, D16) | — | `api.not_found` |
+| F3 | `GET /api/projects` | — | `[{"name", "root", "ok", "error"?}]` (`error` si su configuración no carga) | `projects.list_projects`, `projects.get` | — |
+| F3 | `GET /api/projects/{p}` | — | `{"name", "root", "config"}` (perfiles, `compose`, `brand`) | `projects.get` | `project.*` |
+| F3 | `GET /api/projects/{p}/orders?profile=&chosen=true\|false` | — | lista de pedidos, como `order list --json` | `orders.list_orders` | `order.profile_unknown` |
+| F3 | `POST /api/projects/{p}/orders` | el pedido (`order.schema.json`, con su `count`) + `"draft"?` | 201 `{"order", "entries", "estimateMs"}` | `orders.submit`, `orders.attempt_specs`, `queue.enqueue`, `queue.estimate_for` | `order.invalid`, `limit.*`, `key.*` |
+| F3 | `GET …/o` | — | el pedido con sus intentos, como `order show --json` | `orders.get` | `order.unknown` |
+| F3 | `PUT …/o/text` | `{"text": {"title": "…"}}` | el pedido | `orders.set_text` | `order.text_unknown_field` |
+| F3 | `POST …/o/attempts` (otra semilla, retoque de prompt, N seguidas, borrador) | `{"count"?, "seed"?, "prompt"?, "steps"?, "cfg"?, "sampler"?, "draft"?}` | 202 `{"entries", "estimateMs"}` | `orders.attempt_specs`, `queue.enqueue` | `order.count_invalid`, `order.prompt_too_long`, `limit.*` |
+| F3 | `POST …/a/{id}/mark` | `{"state": "new\|candidate\|discarded"}` | el intento | `orders.mark` | `order.state_invalid`, `order.discard_chosen` |
+| F3 | `POST …/a/{id}/note` | `{"text": "…"}` | el intento | `orders.note` | `order.note_invalid` |
+| F3 | `POST …/o/choose` | `{"attempt": id}` | `{"new", "old"}` | `delivery.choose` | `order.choose_*`, `delivery.*` |
+| F3 | `POST …/o/undo` | `{}` | `{"new", "old"}` | `delivery.undo` | `order.history_empty`, `order.undo_*` |
+| F3 | `POST …/a/{id}/compose` | `{"text"?}` | el intento (`delivered` si es la elegida) | `compose.recompose` | `compose.busy` (409), `compose.*` |
+| F3 | `GET …/a/{id}/image?raw=1` | — | PNG: `image` o, con `raw=1`, la cruda | `orders.attempt_image`, `orders.raw_image` | `api.not_found` |
+| F3 | `GET …/a/{id}/log` | — | `text/plain` del `attempts/q<id>.log` | — | `api.not_found` |
+| F3 | `GET …/a/{id}/measure?zone=x,y,w,h&text=%23RRGGBB&raw=1` | — | lo de `gimg measure --json`, con la paleta de `brand` | `measure.measure` | `measure.*` |
+| F3 | `GET /api/projects/{p}/profiles/{profile}/assets/{template\|logo}` | — | el SVG declarado en `compose` (para la previsualización de la interfaz) | `compose.resolve_assets` | `compose.template_missing`, `compose.logo_missing`, `path.*` |
+| F3 | `GET /api/queue?state=` | — | `[entrada + "errorText"?, "estimateMs"?]`, con `progress` y sin la ruta de `preview` | `queue.list_entries`, `queue.error_text`, `queue.estimate_for` | `queue.bad_state` |
+| F3 | `POST /api/queue/{id}/cancel` | `{}` | la entrada | `queue.cancel` | `queue.unknown`, `queue.not_cancellable` |
+| F3 | `GET /api/queue/{id}/preview` | — | PNG de la vista previa mientras corre (`Cache-Control: no-store`) | `queue.get` | `api.not_found` |
+| F4b | `GET /api/projects/{p}/profiles/{profile}/templates` | — | `[{"id", "template", "logo", "fields", "default": bool}]` | (nuevo, sobre `compose`) | — |
+| F4b | `POST …/a/{id}/compose` gana `"template": "<id>"`; `POST …/o/attempts` también (plantilla de los intentos nuevos) | | el intento guarda `compose.template` = id | `compose.recompose` con parámetro nuevo | `compose.template_unknown` (nuevo) |
+| F4b | `GET …/assets/template?id=<id>` | — | el SVG de esa plantilla | | |
+| F4c | `POST …/a/{id}/compose` gana `"layout": {"<elemento>": {"x", "y", "w", "h"}}` (píxeles del destino) | | el intento con `compose.layout` y `contrast` por elemento de texto (la medida de D31 sobre su caja y su color) | `compose.recompose`, `measure.contrast` | `compose.element_unknown`, `compose.bad_layout` (nuevos) |
+| F4c | `POST /api/projects/{p}/profiles/{profile}/templates` | `{"from": {"key", "attempt"}, "name"}` | 201 la plantilla nueva | (nuevo; dónde se guarda: pregunta 2) | `compose.template_exists` (nuevo) |
+
+**Decisiones:** (1) las imágenes se sirven por id del intento, nunca por ruta: el servidor resuelve la ruta con `orders` y
+comprueba con `paths.inside` que cae en la carpeta del pedido, y la vista previa con `paths.inside(paths.data_dir(), …)`.
+(2) `measure` es `GET` porque no escribe nada; F4c la llama tras mover un elemento. (3) Los elementos de F4c se nombran en
+la plantilla SVG con `id="gimg-<elemento>"` (`gimg-title`, `gimg-subtitle`, `gimg-logo`, `gimg-ornament1`…); el detalle
+(cómo se aplica `layout` al SVG) es del contrato de F4c, no de este. (4) `POST` para acciones y `PUT` solo para `text`
+(sustituye el valor); sin `DELETE` en la mínima.
+
+### Seguridad (D25)
+
+En cada petición, en este orden, antes de tocar nada:
+
+1. **Host:** exactamente `127.0.0.1:<puerto>` o `localhost:<puerto>`; si no, 403 `api.bad_host` (corta el
+   *DNS rebinding*).
+2. **Origin:** si viene, `http://127.0.0.1:<puerto>` o `http://localhost:<puerto>`; si no, 403 `api.bad_origin`. Sin
+   Origin se acepta (CLI, `curl`, WMF desde Node, D17). `Sec-Fetch-Site`, si viene, `same-origin` o `none`.
+3. **Métodos que escriben** (`POST`, `PUT`): `Content-Type: application/json` (con `charset` opcional), si no 415
+   `api.content_type`; `Content-Length` obligatorio (411 `api.length_required`) y ≤ 1 MiB (413 `api.body_too_large`); cuerpo = un objeto
+   JSON (vale `{}`), si no 400 `api.bad_json`. Así un formulario de otra web no puede escribir y nada pasa sin preflight.
+4. **Sin CORS:** no se envía ningún `Access-Control-*`; `OPTIONS` y cualquier otro método dan 405
+   `api.method_not_allowed`.
+5. **Rutas:** solo las de la tabla y los estáticos; cualquier segmento con `..`, `\`, NUL o vacío da 404 sin llegar a
+   disco. Lo que viene del proyecto pasa por `paths.inside`; lo de la carpeta de datos, también.
+
+**Cabeceras en toda respuesta:** `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`,
+`Cross-Origin-Resource-Policy: same-origin`, `Cross-Origin-Opener-Policy: same-origin`, `Cache-Control: no-store` en
+`/api` (salvo imágenes de intentos: `private, no-cache` con `ETag` de tamaño y mtime y `304` a `If-None-Match`, porque
+recomponer, F4c, cambia la imagen del mismo intento). Los SVG del proyecto se sirven con
+`Content-Security-Policy: sandbox; default-src 'none'; style-src 'unsafe-inline'`: abiertos sueltos no pueden ejecutar
+script con el origen de la API (como `<img>` nunca lo hacen).
+
+**Estáticos de la interfaz:** `GET /` sirve `gimg/ui/index.html` y `GET /ui/<ruta>` los archivos de `gimg/ui/` por
+`paths.inside(<gimg>/ui, ruta)`, solo con extensiones conocidas (`.html .css .js .svg .png .woff2 .json`, cada una con su
+tipo; otra da 404). Cabecera `Content-Security-Policy: default-src 'self'; img-src 'self' data: blob:; script-src 'self';
+style-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'` (sin JS en línea, sin CDN, D6).
+
+### Errores e idioma
+
+Toda respuesta de error es `{"error": {"code", "params", "message", "errors"?}}`: `code` y `params` de la `GimgError`
+(la misma forma que `queue.make_error`, que se reutiliza), `message` = `exc.message(lang)` y `errors` las líneas del
+esquema (`schema.format_error`). Idioma: `?lang=es|en`, si no el primero soportado de `Accept-Language`, si no
+`i18n.default_lang()`; la interfaz manda `?lang` con el idioma elegido en su selector.
+
+| Estado | Códigos |
+|---|---|
+| 400 | `*.invalid`, `*.bad_*`, `*_invalid`, `path.*`, `key.*`, `limit.*`, `order.prompt_too_long`, `order.text_unknown_field`, `compose.field_unknown`, `api.bad_json`, `api.bad_param` |
+| 403 | `api.bad_host`, `api.bad_origin` |
+| 404 | `project.unknown`, `order.unknown`, `order.profile_unknown`, `order.attempt_unknown`, `queue.unknown`, `api.not_found`, `compose.template_missing`, `compose.logo_missing` (los demás `*.unknown`, como `model.unknown`, son 400) |
+| 405 / 411 / 413 / 415 | `api.method_not_allowed` / `api.length_required` / `api.body_too_large` / `api.content_type` |
+| 409 | `compose.busy`, `measure.busy`, `compose.nothing_to_do`, `compose.no_attempts`, `order.choose_*`, `order.discard_chosen`, `order.undo_*`, `order.history_empty`, `queue.not_cancellable`, `delivery.target_taken` |
+| 500 | el resto de `GimgError` (corruptos, herramientas, escritura) y cualquier otra excepción como `api.unexpected` con `{"message": "Tipo: texto"}` (traza a `serve.log` solo con `GIMG_DEBUG=1`) |
+
+La tabla vive en `server.py` como lista de prefijos y sufijos; un código sin entrada da 500 y un test recorre las claves
+`error.*` de `es.json` para que ninguna caiga en 500 sin querer. Claves nuevas (es/en): `api.bad_host`, `api.bad_origin`,
+`api.content_type`, `api.length_required`, `api.body_too_large`, `api.bad_json`, `api.bad_param`, `api.not_found`,
+`api.method_not_allowed`, `api.unexpected`, `measure.busy`, `serve.port_busy`, `serve.already_running`, `serve.start_failed`,
+`serve.not_running`.
+
+### Concurrencia
+
+`http.server.ThreadingHTTPServer` con `daemon_threads = True` y tiempo de lectura de 30 s por conexión. Lo que ya está
+serializado entre procesos sigue igual y sirve también entre hilos (cada `fsutil.lock` abre su propio descriptor y
+`flock` choca aunque sea el mismo proceso): la cola (`queue.json`), cada pedido, la entrega (`delivery._lock`) y la
+composición de un intento (`compose_lock_path`, que da `compose.busy` en vez de esperar). Lo nuevo que se serializa en el
+servidor: (a) lanzar el trabajador, con un `threading.Lock` alrededor de «¿cola con algo y trabajador libre? → lanzar»;
+(b) **una sola tarea pesada a la vez** (`compose` y `measure`, que corren ffmpeg/rsvg): `threading.BoundedSemaphore(1)`; la
+segunda espera hasta 60 s y luego da 409 `compose.busy`/`measure.busy`; (c) el reloj de inactividad, actualizado en cada
+petición bajo un `Lock`. Las lecturas (`projects.get`, `orders.get`, `queue.list_entries`) no se serializan: los archivos
+se escriben atómicos (`fsutil.write_json`).
+
+### Pasos de F3
+
+| Paso | Qué | Comprobación |
+|---|---|---|
+| F3.1 | `gimg/server.py`: router, comprobaciones de seguridad, errores JSON con idioma, cabeceras, estáticos con `gimg/ui/index.html` provisional, `GET /api/health` y `/api/locales`; claves `api.*` es/en | Tests con el servidor en un hilo y `--port 0`: Host, Origin, Content-Type, tamaño, `..` y codificados, 405 y `OPTIONS`, cabeceras, idioma por `?lang` y `Accept-Language`, test de la tabla de estados |
+| F3.2 | Rutas de lectura: proyectos, pedidos, pedido, cola, imágenes, cruda, log, vista previa, SVG de `compose` | Tests sobre datos de `tests/` con el motor falso; una imagen fuera de su carpeta da 404; el SVG con su CSP |
+| F3.3 | Rutas de escritura: pedido nuevo, intentos, `mark`, `note`, `text`, `compose`, `choose`, `undo`, `cancel`, `measure`; semáforo de pesadas | Tests: mismas respuestas que la CLI con `--json` para el mismo caso; cada error con su código y estado; `compose.busy` con el cerrojo tomado (`skipUnless` ffmpeg y rsvg donde compone) |
+| F3.4 | `gimg/service.py` y `gimg serve` (`--detach`, `--status`, `--stop`, `--idle-min`): cerrojo, `serve.json`, inactividad, lanzar el trabajador; `queue.worker_alive` | Tests en subproceso: segundo `serve` rechazado, `serve.json` borrado al parar, parada por inactividad con `--idle-min` en segundos de prueba (`GIMG_SERVE_IDLE_S`), entrada encolada por la API procesada por el `gimg work` lanzado, parar no mata al trabajador |
+| F3.5 | Arranque bajo demanda: `ensure_running`, `gimg ui`, arranque desde `order submit`/`attempt new` (según la pregunta 1), `GIMG_AUTOSTART`, versión distinta | Tests en subproceso con `GIMG_AUTOSTART=1` y carpetas temporales; `serve.start_failed` con el log; **manual Deck:** `gimg ui` abre el navegador y el servicio se para solo a los 15 min |
+| F3.6 | `docs/api.md` (es; en en `docs/en/api.md` si D16 lo pide para docs técnicos), README (sección «Servicio»), CHANGELOG, versión 0.3.0, fila F3 de «Fases» al día | Check en verde; cada ruta de la tabla tiene su ejemplo `curl` en `docs/api.md` |
+
+Cada paso, un commit con la bitácora al día y `/code-review` del paso al cerrarlo (proceso de F2). F4a empieza tras F3.3:
+lo de F3.4-F3.6 no lo bloquea (la interfaz se prueba con `gimg serve` en primer plano).
+
+### Preguntas para la persona
+
+1. **¿`gimg order submit` y `gimg attempt new` arrancan el servicio (y con él el trabajador) al encolar?** Recomiendo
+   **sí**, con `GIMG_AUTOSTART=0` para apagarlo: es lo que pide D11 y quita el `gimg work` a mano de cada ronda. Alternativa:
+   solo `gimg ui` arranca el servicio y la CLI sigue como hoy.
+2. **¿Dónde guarda el editor de elementos (F4c) una «plantilla nueva»?** D25 no deja escribir en el repo del proyecto.
+   Recomiendo **en la carpeta de datos** (`<data>/projects/<p>/templates/`), listada junto a las del proyecto con la marca
+   «local» y un botón «Exportar» que da el SVG para llevarlo al repo (el proyecto sigue siendo la fuente, D2). Alternativa:
+   ampliar D25 con una carpeta de plantillas declarada en la configuración del proyecto donde `gimg` sí escribe.
+3. **¿Unidad `systemd --user` en F3?** Recomiendo **no en la mínima**: el arranque bajo demanda y la parada a los 15 min
+   cubren la Deck (nada residente mientras se juega, D11); se añade en F4d o F6 si se echa de menos.
+4. **¿Token de acceso además de Host, Origin y Content-Type?** Recomiendo **no por ahora**: la Deck es de un solo usuario
+   y D25 no lo pide; protege de otras webs, no de otro usuario del mismo equipo. Si algún día se comparte equipo, token en
+   `serve.json` (0600) y cabecera `Authorization`.
+5. **¿Varias plantillas por perfil (F4b) como `compose.templates` en la configuración del proyecto?** Cambia el contrato
+   con los proyectos (D17). Recomiendo **`compose.templates: {"<id>": {"template", "logo"?, "fields"?}}`** con
+   `compose.template` como la de por defecto, compatible con las configuraciones de hoy; `minVersion` 0.3.0 solo para quien
+   use `templates`.
+6. **¿Puerto fijo 8737 por defecto?** Recomiendo **sí, fijo y configurable** (`GIMG_PORT`, `config.json`): un
+   marcador y WMF siempre lo encuentran; si está ocupado, error claro en vez de otro puerto al azar.
+
 ## Pendiente
 
 - Proponer al flujo (`gw-harvest`) una operación de imagen en `opt-ai/references/log-format.md` (D26).

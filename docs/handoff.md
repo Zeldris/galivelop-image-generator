@@ -13,7 +13,7 @@
 | **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | F2.0-F2.9 y parte de F2.10/F2.12 en `main` (PR #1). r7 hecha y valorada (Tarkor 4, toVeriAI 8, Portal 4, image-gen 9, workflow 6); hojas con la dirección r8 (Tarkor, sin tocar: la persona la trabajará en la interfaz). D37 (todo gráfico de gimg), D38 («Galivelop IG», GVIG), D39 (F3 y F4 antes de cerrar el piloto). Check en verde. **Siguiente:** contrato de F3 mínima (API local, `gimg serve`) y luego F4a-F4c. Compactaciones: 2 (gastadas 2) |
+| **Tarea en curso · `f2-motor`** | F2.0-F2.9 y parte de F2.10/F2.12 en `main` (PR #1). r7 valorada; hojas con la dirección r8; D37-D39. **F3 mínima:** borrador del contrato en `docs/plan.md` («F3 en detalle», agente opus, revisado), con 6 preguntas pendientes de la persona. Check en verde. **Siguiente:** respuestas de la persona → apuntar decisiones en el contrato → F3.1 (`gimg/server.py`). Presupuesto de compactaciones: 3 (gastadas 2) |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.
