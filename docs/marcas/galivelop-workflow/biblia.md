@@ -46,13 +46,15 @@ Combinaciones por contexto:
 
 | Uso | Familia | Peso | Tracking |
 |---|---|---|---|
-| Títulos de diagramas y piezas | Inter | 800 | -0,02 em |
-| Subtítulos | Inter | 600 | 0 |
+| Títulos de las piezas | Inter | 700 | -0,02 em |
+| Subtítulos de las piezas | Inter | 400, opacidad 0,82 | 0 |
 | Código, rutas, órdenes | DejaVu Sans Mono | 400 | 0 |
 | Wordmark (lockup) | Sora | 700 | -0,03 em (como «Galivelop» en el Portal) |
 
+- Pesos de las piezas: lo compuesto en r4-r5, decidido el 2026-11-04 para toda la familia
+  (`docs/records/decisiones-hojas-2026-11-04.md`, fila 4). Los diagramas del Portal siguen en Inter 800 / 600.
 - El wordmark es «Galivelop-workflow» tal cual, con guion y la W minúscula; una sola línea y un solo color.
-- Alternativa **[P]**: wordmark en Inter 800, igual que los títulos de los diagramas; se descarta de partida para que el
+- Alternativa **[P]**: wordmark en Inter 800, igual que los títulos de los diagramas del Portal; se descarta de partida para que el
   nombre encaje con el del Portal.
 
 ## 4. Logo
