@@ -1,5 +1,7 @@
 # Lectura 2026-11-04: el LoRA de estilo de Tarkor (IMG-32/33)
 
+**HEAD leído:** `WMF-imagenes` `claude/plan-imagenes` `8a48fe52`
+
 Resumen de un subagente `sonnet` (solo lectura) de lo cambiado desde la lectura del 2026-11-02
 (`lectura-2026-11-02-tarkor.md`, HEAD `56653c08`) hasta `8a48fe52` de `WMF-imagenes` (`claude/plan-imagenes`), más
 lo que no está en git en `World-Maker-Fantasy/image-generator/` (`bin-nuevo/`, `loras/`, `generated/banco/img32/`).

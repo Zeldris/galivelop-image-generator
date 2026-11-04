@@ -1,6 +1,6 @@
 # Retro 2026-11-04: f2-motor antes del PR a `main` (lectura del LoRA, F2.10, hoja de estilo)
 
-**Estado:** pendiente de la persona.
+**Estado:** aprobada por la persona el 2026-11-04 y aplicada (P1-P5; P1 además propuesta al flujo).
 
 Sesión del 2026-11-04 en `f2-motor`: lectura de Tarkor (IMG-32/33), propuestas del LoRA aprobadas, `gimg sheet`,
 aviso de VRAM en `doctor`, plantilla de hoja de estilo y hoja real de este proyecto, revisión antes de `main` (3 medios
@@ -31,8 +31,8 @@ arranque de un subagente cuesta ~26k. La revisión de código con `opus` costó 
 5. **`/clear` al cerrar este PR** (proyecto). El contexto medio (105k) está cerca del umbral de 150k; la bitácora basta
    para retomar con E3 (r2).
 
-Decisiones abiertas fuera de esta retro: los 17 cambios a la plantilla y los huecos del perfil de la hoja real
-(`docs/marcas/galivelop-image-generator/hoja.md`), y dónde vive el validador de la hoja.
+Fuera de esta retro, aprobado también el 2026-11-04: los 17 cambios a la plantilla, los huecos del perfil de la hoja
+real y el validador de la hoja en `gimg doctor --project` (antes de r5).
 
 ## For Galivelop-workflow
 

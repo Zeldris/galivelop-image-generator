@@ -3,3 +3,4 @@ __pycache__/
 /piloto/
 /examples/*/entrega/
 /examples/*/galivelop-images.manifest.json
+.claude/worktrees/
