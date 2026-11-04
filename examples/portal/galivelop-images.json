@@ -24,7 +24,28 @@
       "steps": 6,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8"
+      "model": "flux2-klein-4b-q8",
+      "targetWidth": 1200,
+      "targetHeight": 630,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      },
+      "compose": {
+        "template": "plantillas/og.svg",
+        "fields": [
+          "title1",
+          "title2",
+          "subtitle",
+          "subtitle2"
+        ],
+        "logo": "logos/portal-a-lockup.svg",
+        "fonts": [
+          "Sora",
+          "Inter"
+        ],
+        "fit": "cover"
+      }
     },
     "social": {
       "width": 1280,

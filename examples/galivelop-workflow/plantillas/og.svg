@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" data-caja="38,38,562,554">
+<defs><linearGradient id="velo" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0d1b2a" stop-opacity="0"/><stop offset="0.500" stop-color="#0d1b2a" stop-opacity="0.000"/><stop offset="0.900" stop-color="#0d1b2a" stop-opacity="0"/></linearGradient></defs>
+<rect id="velo-rect" x="0" y="0" width="1200" height="630" fill="url(#velo)"/>
+<image id="logo" x="38" y="38" width="338.4" height="57" href="{{logo}}"/>
+<text id="title1" x="38" y="304.4" font-family="Inter, sans-serif" font-weight="700" font-size="57" fill="#eef6fb">{{title1}}</text>
+<text id="title2" x="38" y="368.2" font-family="Inter, sans-serif" font-weight="700" font-size="57" fill="#eef6fb">{{title2}}</text>
+<text id="subtitle" x="38" y="424.4" font-family="Inter, sans-serif" font-weight="400" font-size="24" fill="#eef6fb" fill-opacity="0.82">{{subtitle}}</text>
+<text id="subtitle2" x="38" y="455.6" font-family="Inter, sans-serif" font-weight="400" font-size="24" fill="#eef6fb" fill-opacity="0.82">{{subtitle2}}</text>
+</svg>
