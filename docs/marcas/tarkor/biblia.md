@@ -49,6 +49,8 @@ Base «madera + hierro» del juego (`index.css`, decisión nº 6); el acento est
 
 ## 3. Tipografía
 
+*r7 (propuesta, pendiente de la persona): titular Metamorphous 400, texto Almendra 400, wordmark New Rocker a trazos; todas OFL. Ver `hoja.md`, bloque r7.*
+
 - **Cinzel** (OFL, empaquetada en el juego) para títulos y wordmark: **700** en el titular de las piezas y en el lockup.
 - **Inter** en texto: 400 en el subtítulo de las piezas, con opacidad 0,82 (lo compuesto en r4-r5, la misma regla de toda la
   familia); 500 en el **eyebrow**, en mayúsculas con tracking 0,3 em, como en la Home del juego (`Home.tsx`: `text-xs
@@ -63,7 +65,7 @@ Propuestas en `logos/`; conceptos del README. Todas se leen a 16 px (comprobado 
 | | Concepto | Nota de dibujo |
 |---|---|---|
 | a | **Los Pilares Rotos:** dos torres de hueso que nacen del borde de la baldosa de la familia (arcilla), unidas por un puente colgante | «en un trazo» se leía como una M; va en silueta rellena con el puente como trazo de 6 |
-| b | **La gema:** el rombo `.gem` tallado en cuatro caras de cristal, con filetes `accent-hairline` a los lados | los filetes desaparecen a 16 px; la gema basta |
+| b | **La Semilla rota (r7, sustituye a «la gema», que queda en git `aeea253`):** la Semilla de Tarkor en hierro, partida en dos mitades resbaladas con la arcilla en la grieta; siete esquirlas (las siete ramas de su magia) abren el sello que la rodea; wordmark New Rocker a trazos, grabado | propuesta r7, pendiente de la persona: fantasía cruda y Tarkor como musa (`hoja.md`, bloque r7) |
 | c | **La Semilla:** semilla vertical partida en dos mitades que han resbalado, cristal claro y hierro, misma piel de cristal | fidelidad (una piel) y ruptura (el corte); nada morado |
 | d | **Hierro y madera:** escudo de tablones con aro de hierro, cuatro remaches y una T forjada | el aro se funde con el fondo oscuro, a propósito |
 
@@ -94,6 +96,8 @@ rotado ni con sombra o brillo; el texto del lockup se pasa a trazos con Cinzel.
 - **Cierres [P]:** «Juega en local. Nadie mira.» · «En desarrollo, a la vista.»
 
 ## 7. Estilo de imagen (FLUX)
+
+*r7 (propuesta, pendiente de la persona): fuera la fotografía; ilustración a lápiz de grafito (y tinta) sobre papel crema, solo motivos del juego (Agujas Imán con Rocas Imanidas y Cardo Brújula; Osario de la Manada con tótem Maktor), lavado mínimo de arcilla. Ver `hoja.md`, bloque r7.*
 
 - **Sí:** paisajes de Berig sin criaturas; «rich natural colour» con un acento por escena (arcilla); gradación fílmica
   suave; huella pequeña (empalizadas, pasarelas, estandartes, tótems); madera, piel, hueso, piedra, hierro negro.

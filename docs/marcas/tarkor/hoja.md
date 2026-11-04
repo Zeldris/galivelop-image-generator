@@ -29,6 +29,26 @@ todos los formatos (SATAVG 5-7 frente a los 18-32 de la portada); r2-luz y r2-lu
 
 ---
 
+## r7 (2026-11-04): dirección «lápiz de fantasía» — propuesta r7, pendiente de la persona
+
+Respuesta al 1/10 de r6 (`../../records/contenido/r4-composicion.md` § r6): fondo realista fuera, logo y tipografía nuevos.
+Todo lo de este bloque es **propuesta r7, pendiente de la persona**; donde choque con las secciones 3-7, manda este bloque
+hasta que la persona decida. Referencias miradas en el juego (WMF-imagenes `backend/uploads/images/`): `location/pilares-rotos-*`,
+`agujas-iman-*`, `campamento-serhu-*`, `osario-de-la-manada-*`; `item/totem-maktor-banner.png`, `mapa-de-las-llanuras-banner.png`;
+`image-generator/estilo/mundo.json` (preámbulo y vetadas); lore en `docs/rpgtarkor/lore-mundo/regiones/llanuras-del-viento-rojo.md`
+(Agujas Imán, Rocas Imanidas, Cardo Brújula, Osario de la Manada) y `genesis.md` («El arco de Tarkor»).
+
+| Campo | Valor r7 | Antes (r6) |
+|---|---|---|
+| Estilo de imagen | **ilustración a lápiz de grafito sobre papel crema `#f1e4d0`** (con tinta en la variante b), página de cuaderno de concepto, grano de papel visible, tramado y difuminado, un lavado seco mínimo de arcilla `#E0703A`; «Style: hand-drawn pencil illustration, fantasy sketchbook page, visible paper texture, matte finish. Mood: wild, quiet, ancient.» Nada de fotografía ni «cinematic»: es contenido para redes | fotografía cinematográfica realista |
+| Motivos | **solo cosas del juego**: a) las Agujas Imán (agujas de roca negra imantada, arena peinada en crestas, Rocas Imanidas flotando, Cardo Brújula en primer término); b) el Osario de la Manada (costillas blanqueadas de Gargantúa de Ceniza como arco, huesos medio enterrados, tótem Maktor de madera con plumas y cuentas de hueso, mesas rojas en la calima, hilo de humo). Pedidos: `examples/tarkor/orders/r7-lapiz.json` y `r7-lapiz-b.json` (seed 1, 4 intentos, 8 pasos) | asentamiento inventado (atalaya, carromatos) |
+| Zona reservada | la misma: tercio izquierdo (`data-caja` `38,38,362,554`), pedido como «bare paper… faint construction lines… fading out», lo natural en un boceto | igual |
+| Velo | **claro**: hueso `#f1e4d0` 0,62 → 0,5 (33 %) → 0 (62 %), para asentar el papel bajo el texto; marco de lámina doble (`#46311d`, 1,2/0,6 px, opacidad 0,5/0,4) | velo oscuro `#221c16` 0,72 |
+| Texto: color | titular **madera 900 `#241a10`** (tinta sobre papel); subtítulo **madera 700 `#46311d`** a opacidad 1; filete corto `#5c4126` con la gema (rombo) en arcilla entre titular y subtítulo. Medido sobre papel plano con el velo, caja del texto: **12,77:1** (peor 12,62) el titular y **9,15:1** (peor 9,04) el subtítulo | hueso sobre velo oscuro, 5,1:1 |
+| Tipografía | titular **Metamorphous** 400, 40 px, tres líneas a 50 px (OFL, Sorkin Type: letra tallada con pie afilado, de fantasía, legible en caja baja); subtítulo **Almendra** 400, 22 px (OFL, caligráfica de libro, hace juego); wordmark **New Rocker** (OFL), solo en el logo y ya pasada a trazos. Descartadas: Cinzel Decorative (es la Cinzel de siempre), Uncial Antiqua (la «g» y la «u» unciales estorban en español), Grenze Gotisch y Pirata One (gótica europea, no es Berig), MedievalSharp (fina), Eagle Lake y Macondo (caligrafía blanda). Instaladas en `~/.local/share/fonts/galivelop/` y `$XDG_DATA_HOME/fonts/galivelop/`; copia y `OFL.txt` en `piloto/fuentes/` (fuera de git); `compose.fonts: ["Metamorphous", "Almendra"]` | Cinzel 700 + Inter 400 |
+| Logo | **`logos/tarkor-b-lockup.svg` (sustituye al lockup b «gema» de r5; el original queda en git, `aeea253`)**: la **Semilla rota**: Tarkor es una de las 13 Semillas, la que volvió «frío y oscuro»; una semilla de hierro `#221c16` partida en dos mitades que han resbalado (fidelidad y ruptura, lo único que el canon deja insinuar), por cuya grieta asoma la arcilla de las Llanuras (único acento); de su cima salen **siete esquirlas**, las siete ramas de la magia que nace de él, y abren el sello de hierro que la rodea. Wordmark «TARKOR» en New Rocker pasado a trazos (sin `<text>`: no depende de fuentes), grabado con sombra de madera 600 `#5c4126`; filete con la gema de la interfaz. `viewBox 0 0 468 128`; tinta hierro para fondo claro (sobre oscuro: hueso y madera 400, variante pendiente). Lee a 16 px de alto (comprobado con rsvg). Listón de oficio: logos de RPG comerciales; nada copiado | Pilares Rotos en baldosa arcilla + Cinzel |
+| Fantasía cruda + Tarkor como musa | la Semilla de hierro, agrietada y con la arcilla dentro, es Tarkor mismo (frío, oscuro, roto por dentro); las esquirlas rompen el sello: su magia abre el mundo; la letra de pinchos de New Rocker y el grabado quitan lo «noble» de Cinzel. En la ilustración, Tarkor como musa no cabe sin inventar canon (no se muestra su figura ni la luz morada): se queda en el logo | — |
+
 ## 0. Ficha
 
 | Campo | Nivel | Valor | Estado |
@@ -79,6 +99,8 @@ problema de Tarkor no es la paleta: es la **saturación** (sección 7).
 
 ## 4. Logo
 
+*r7: el lockup en uso pasa a `tarkor-b-lockup.svg` (la Semilla rota); ver el bloque r7 arriba. Lo de esta sección describe el a, que sigue en `logos/`.*
+
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
 | Símbolo SVG | Obl. | `docs/marcas/tarkor/logos/tarkor-a.svg`: **los Pilares Rotos**, dos torres de hueso `#f1e4d0` en silueta rellena, desiguales (la izquierda alta, la derecha quebrada a media altura), unidas por un puente colgante en trazo de 6 con remate redondo, sobre la baldosa de la familia (`rx` 30/128) con el degradado arcilla `#E0703A → #8a3b1e`. `viewBox="0 0 128 128"`, `<title>Tarkor: Los Pilares Rotos</title>`, sin `<text>`, `<image>` ni `filter`. El **concepto** lo aprobó la persona (el emblema del plan, 2026-10-26); la **elección** entre a-d y el **retoque** para que no se lea como una M (el que lleva el archivo desde `c63761f`) son del agente, delegados: faltan sus ojos. Copia en `examples/tarkor/logos/`: **no hay** (F2.10, dec. 3) | archivo: repo (`docs/marcas/tarkor/logos/tarkor-a.svg`, último cambio `c63761f`); dibujo **[P]** (`biblia.md` §4 l.65-67; `docs/marcas/README.md` l.16 y l.33; `docs/plan.md` l.257-261 y l.655-657) |
@@ -90,6 +112,8 @@ problema de Tarkor no es la paleta: es la **saturación** (sección 7).
 
 ## 5. Tipografía
 
+*r7: Metamorphous (titular), Almendra (texto) y New Rocker (wordmark, a trazos), todas OFL; ver el bloque r7 arriba. Cinzel e Inter quedan como lo que usa el juego.*
+
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
 | Familia de titular | Obl. | **Cinzel 700** (titular de las piezas y wordmark), reserva `serif`. Es la `--font-serif` del juego («Cinzel», Georgia, serif) y la de su `<h1>` de la Home (`font-serif`); la persona la aprobó para el wordmark «provisional hasta r4»; r4 y r5 se compusieron con ella (`piezas.json` `fuente: Cinzel`) y falta su «sí» definitivo | WMF (`frontend/src/index.css` l.9-14; `pages/Home.tsx` l.31-33); repo (`docs/plan.md` l.258; `examples/tarkor/piezas.json`) |
@@ -98,6 +122,8 @@ problema de Tarkor no es la paleta: es la **saturación** (sección 7).
 | Tracking y mayúsculas | Opc. | wordmark «TARKOR» en mayúsculas, Cinzel 700, **0,18 em** (9 px a 50 px). El juego lleva otro rótulo «Tarkor» como eyebrow de la Home: `text-xs`, `uppercase`, **0,3 em**, en cristal `accent-400` y **sin `font-serif`** (hereda Inter del cuerpo), con filetes y gema: el eyebrow es **Inter 500**, no Cinzel (biblia §3 corregida; ver «Contradicciones», 8) | repo (`tarkor-a-lockup.svg`; `biblia.md` §3); WMF (`pages/Home.tsx` l.24-33; `index.css` l.113-117) |
 
 ## 6. Escenas y motivos (lo que el modelo pinta)
+
+*r7: estilo a lápiz sobre papel, solo motivos del juego (Agujas Imán, Osario de la Manada); ver el bloque r7 arriba.*
 
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
