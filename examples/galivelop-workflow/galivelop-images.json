@@ -8,7 +8,10 @@
       "#38b6e8",
       "#f2b34a",
       "#4cc38a",
-      "#eef6fb"
+      "#eef6fb",
+      "#3D6FD9",
+      "#FFFFFF",
+      "#8a9bb0"
     ]
   },
   "delivery": {
@@ -22,7 +25,13 @@
       "steps": 6,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8"
+      "model": "flux2-klein-4b-q8",
+      "targetWidth": 1200,
+      "targetHeight": 630,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
     },
     "social": {
       "width": 1280,
@@ -38,7 +47,9 @@
       "steps": 6,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8"
+      "model": "flux2-klein-4b-q8",
+      "targetWidth": 1080,
+      "targetHeight": 1080
     },
     "banner": {
       "width": 1280,
