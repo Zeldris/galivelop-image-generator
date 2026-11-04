@@ -359,7 +359,8 @@ motor.
    producto; se le pide al Portal un solo acento por entidad, y a las hojas de las herramientas que lean el suyo del Portal
    cuando se publique.
 5. **Resuelta en la hoja: «no consta en el repo».** **LinkedIn como canal.** La biblia §9 dice «Redes: Discord, LinkedIn y
-   GitHub». En el repo solo constan correo, GitHub y Discord (`src/data/marca.ts` l.3-5; `sameAs` de JSON-LD); LinkedIn
+   GitHub». En el repo solo constan correo, GitHub y Discord (`src/data/marca.ts` l.3-5; el `sameAs` de JSON-LD,
+   `paginas-estaticas.mjs` l.105, enlaza los proyectos, no redes del taller); LinkedIn
    aparece solo como destino de la vista previa (`index.html` l.12, comentario) y en la tabla común de este repo.
    **Propuesta:** la cabecera 1584×396 de LinkedIn queda **[P]** hasta que la persona confirme una página; la biblia §9 pasa a
    «Discord y GitHub constan; LinkedIn, no».
