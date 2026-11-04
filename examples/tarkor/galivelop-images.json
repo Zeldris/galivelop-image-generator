@@ -39,6 +39,7 @@
         "fields": [
           "title1",
           "title2",
+          "title3",
           "subtitle",
           "subtitle2"
         ],

@@ -2,8 +2,9 @@
 <defs><linearGradient id="velo" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#221c16" stop-opacity="0.45"/><stop offset="0.333" stop-color="#221c16" stop-opacity="0.396"/><stop offset="0.733" stop-color="#221c16" stop-opacity="0"/></linearGradient></defs>
 <rect id="velo-rect" x="0" y="0" width="1200" height="630" fill="url(#velo)"/>
 <image id="logo" x="38" y="38" width="208.4" height="57" href="{{logo}}"/>
-<text id="title1" x="38" y="317.6" font-family="Cinzel, serif" font-weight="700" font-size="27" fill="#f1e4d0">{{title1}}</text>
-<text id="title2" x="38" y="347.8" font-family="Cinzel, serif" font-weight="700" font-size="27" fill="#f1e4d0">{{title2}}</text>
-<text id="subtitle" x="38" y="390.8" font-family="Inter, sans-serif" font-weight="400" font-size="21" fill="#f1e4d0" fill-opacity="0.82">{{subtitle}}</text>
-<text id="subtitle2" x="38" y="418.1" font-family="Inter, sans-serif" font-weight="400" font-size="21" fill="#f1e4d0" fill-opacity="0.82">{{subtitle2}}</text>
+<text id="title1" x="38" y="296" font-family="Cinzel, serif" font-weight="700" font-size="42" fill="#f1e4d0">{{title1}}</text>
+<text id="title2" x="38" y="346" font-family="Cinzel, serif" font-weight="700" font-size="42" fill="#f1e4d0">{{title2}}</text>
+<text id="title3" x="38" y="396" font-family="Cinzel, serif" font-weight="700" font-size="42" fill="#f1e4d0">{{title3}}</text>
+<text id="subtitle" x="38" y="438" font-family="Inter, sans-serif" font-weight="400" font-size="21" fill="#f1e4d0" fill-opacity="0.82">{{subtitle}}</text>
+<text id="subtitle2" x="38" y="466" font-family="Inter, sans-serif" font-weight="400" font-size="21" fill="#f1e4d0" fill-opacity="0.82">{{subtitle2}}</text>
 </svg>

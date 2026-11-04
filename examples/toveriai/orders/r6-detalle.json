@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../gimg/schemas/order.schema.json",
+  "key": "estilo/r6-detalle",
+  "profile": "og",
+  "prompt": "Wide overhead still life on a large sheet of warm unbleached cotton paper in #F7F5F2, photographed straight down under flat even daylight with only the faintest soft warm shadows, with a printed fine art finish. The upper third of the frame, from the top edge down, is open bare paper showing only its fine cotton grain, even in tone and kept clear for legibility. Across the lower two thirds, two watercolour inks meet and keep their own colour where they touch: dried oxblood in #9B2335 flows in from the lower left corner and deep moss green in shade in #2D6A4F flows in from the lower right corner, and where they meet, halfway across the frame, a wide band of fine intermediate veins in resin amber #B5832A and dusty earth tones spreads through the paper fibres, with granulating pigment, soft blooming edges and a few scattered droplets. Resting on the paper around the band, each casting a soft warm shadow: a hand-painted graduated scale strip that runs from oxblood through amber to moss, with small pencil ticks along its edge; a pair of brass drafting dividers set open across the amber band as if measuring it; a glass dropper with a bead of amber ink at its tip; a small ink-drawn circular gauge ring with a thin needle; and a loose stack of three torn paper swatches in the same three colours near the lower edge. The cotton sheet has a soft deckled edge and lies on a pale warm linen cloth in #F0EDE8 that shows only at the very corners. Fine detail everywhere: paper grain, pigment granulation, brushed brass, the meniscus of the ink. Style: editorial watercolour still life on paper, delicate and contemplative, soft muted colours, low saturation, high key. Colours: #F7F5F2, #9B2335, #2D6A4F, #B5832A, #F0EDE8, #1A1A1A in the details. Mood: serene, thoughtful, measured. The image is completely textless.",
+  "seed": 1,
+  "count": 4,
+  "params": {
+    "steps": 8
+  }
+}

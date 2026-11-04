@@ -324,7 +324,9 @@ class ComposeExampleTests(unittest.TestCase):
             self.assertEqual(cfg["compose"]["template"], "plantillas/og.svg", name)
             self.assertEqual(cfg["compose"]["logo"], "logos/" + logo, name)
             self.assertEqual(cfg["compose"]["fit"], "cover", name)
-            self.assertEqual(cfg["compose"]["fields"][:3], ["title1", "title2", "subtitle"], name)
+            # El titular va en title1, title2 (y title3 si hace falta una tercera línea, r6: Tarkor); luego el subtítulo.
+            self.assertEqual(cfg["compose"]["fields"][:2], ["title1", "title2"], name)
+            self.assertIn("subtitle", cfg["compose"]["fields"], name)
 
     def test_logo_copies_are_identical_to_their_originals(self):
         for name, logo, root, cfg in self.each():

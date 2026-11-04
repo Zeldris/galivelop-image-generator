@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../gimg/schemas/order.schema.json",
+  "key": "estilo/r6-detalle",
+  "profile": "og",
+  "prompt": "Dark wide technical illustration on a flat deep navy background in #0d1b2a, covered by a fine square grid of thin lines in #8a9bb0 at low opacity that fades out radially toward the edges and corners of the frame. In the right half, from the right edge to the middle, a branch diagram of thin glowing lines of light in sky blue #38b6e8 is drawn with the order of an engineering drawing: a main line runs perfectly level across the middle of the right half toward the right edge; two branch lines leave it at smooth shallow curves, run level in parallel lanes above and below it at even spacing, and rejoin it further right with the same gentle curves; every split and every join is marked by a small round node, a bead of glass with a bright core and a soft halo. Along the main line, evenly spaced short ticks divide it into segments, and at one node a quarter of the way in from the right edge a short bright dash of warm amber light in #f2b34a passes from the end of one segment into the start of the next, the brightest point of the image, with a faint amber trail behind it. At the final join the node glows soft green in #4cc38a and is wrapped by a thin green ring. Each line casts a soft bloom on the background and a faint dim reflection beneath it; the lines are crisp, of even weight, with rounded ends, and every curve is smooth. The left half, from the left edge to the middle, is the plain navy background with only the faint fading grid, even in tone and kept clear for legibility. Style: clean vector-style digital illustration, thin precise strokes, soft glow, flat dark background with a fine grid, ordered and exact. Colours: #0d1b2a, #38b6e8, #f2b34a, #4cc38a, #eef6fb, #8a9bb0. Mood: precise, trustworthy, in motion. The image is completely textless.",
+  "seed": 1,
+  "count": 4,
+  "params": {
+    "steps": 8
+  }
+}

@@ -1,8 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" data-caja="38,24,1124,186">
 <defs><linearGradient id="velo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F7F5F2" stop-opacity="0.35"/><stop offset="0.333" stop-color="#F7F5F2" stop-opacity="0.308"/><stop offset="0.733" stop-color="#F7F5F2" stop-opacity="0"/></linearGradient></defs>
 <rect id="velo-rect" x="0" y="0" width="1200" height="630" fill="url(#velo)"/>
-<image id="logo" x="38" y="24" width="138.1" height="34" href="{{logo}}"/>
-<text id="title1" x="38" y="100.0" font-family="Cormorant Garamond, serif" font-weight="300" font-size="40" fill="#1A1A1A">{{title1}}</text>
-<text id="title2" x="38" y="144.8" font-family="Cormorant Garamond, serif" font-weight="300" font-size="40" fill="#1A1A1A">{{title2}}</text>
-<text id="subtitle" x="38" y="189.6" font-family="DM Sans, sans-serif" font-weight="400" font-size="20" fill="#1A1A1A" fill-opacity="0.82">{{subtitle}}</text>
+<image id="logo" x="38" y="24" width="231.5" height="57" href="{{logo}}"/>
+<text id="title1" x="38" y="143" font-family="Cormorant Garamond, serif" font-weight="300" font-size="68" fill="#1A1A1A">{{title1}} <tspan id="title2">{{title2}}</tspan></text>
+<text id="subtitle" x="38" y="184" font-family="DM Sans, sans-serif" font-weight="400" font-size="22" fill="#1A1A1A" fill-opacity="0.82">{{subtitle}}</text>
 </svg>
