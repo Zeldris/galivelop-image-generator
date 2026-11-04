@@ -7,7 +7,7 @@ import os
 import sys
 import traceback
 
-from . import __version__, compose, delivery, doctor, engine, i18n, measure, orders, projects, queue, worker
+from . import __version__, compose, delivery, doctor, engine, i18n, measure, orders, projects, queue, sheet, worker
 from .errors import GimgError
 
 LANGS = ("es", "en")
@@ -90,6 +90,11 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--palette", "cli.arg.palette"), opt("--project", "cli.arg.measure_project", metavar="PROJECT"),
          opt("--refs", "cli.arg.refs", nargs="+", default=[], metavar="IMAGE"),
          opt("--zone", "cli.arg.zone", metavar="X,Y,W,H"), opt("--text", "cli.arg.text_color", metavar="#RRGGBB"))
+
+    leaf(top, "sheet", "cli.cmd.sheet", arg("images", "cli.arg.sheet_images", nargs="*", metavar="IMAGE"),
+         opt("--out", "cli.arg.sheet_out", required=True, metavar="PNG"),
+         opt("--columns", "cli.arg.sheet_columns", type=int, default=sheet.DEFAULT_COLUMNS),
+         opt("--width", "cli.arg.sheet_width", type=int, default=sheet.DEFAULT_WIDTH))
 
     g = group(top, "queue", "cli.cmd.queue")
     leaf(g, "list", "cli.cmd.queue_list", opt("--state", "cli.arg.queue_state", choices=queue.STATES))
@@ -205,6 +210,15 @@ def _run(args, out: _Out) -> int:
         _compose(args, out)
     elif cmd == "measure":
         _measure(args, out)
+    elif cmd == "sheet":
+        res = sheet.sheet(args.images, args.out, args.columns, args.width)
+        if out.as_json:
+            out.data(res)
+        else:
+            out.line("cli.out.sheet_done", out=res["out"], width=res["size"][0], height=res["size"][1],
+                     columns=res["columns"], count=len(res["images"]))
+            for i, path in enumerate(res["images"], 1):
+                out.line("cli.out.sheet_item", index=i, path=path)
     elif cmd == "queue":
         _queue(args, sub, out)
     elif cmd == "work":

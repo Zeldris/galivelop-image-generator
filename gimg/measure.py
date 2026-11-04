@@ -89,27 +89,28 @@ def _last_line(text: bytes) -> str:
     return lines[-1][:300] if lines else ""
 
 
-def _run(argv, tool) -> bytes:
-    """Run `argv` (no shell, no input, time limit) and return its stdout; a failure is a ``measure.*`` error."""
+def _run(argv, tool, scope="measure") -> bytes:
+    """Run `argv` (no shell, no input, time limit) and return its stdout; a failure is a ``<scope>.*`` error
+    (``measure`` by default; ``gimg sheet`` passes its own so the message names what it was doing)."""
     if shutil.which(argv[0]) is None:
-        raise GimgError("measure.tool_missing", tool=tool)
+        raise GimgError(scope + ".tool_missing", tool=tool)
     try:
         done = subprocess.run(argv, capture_output=True, stdin=subprocess.DEVNULL, timeout=TIMEOUT_S)
     except subprocess.TimeoutExpired:
-        raise GimgError("measure.timeout", tool=tool, seconds=TIMEOUT_S)
+        raise GimgError(scope + ".timeout", tool=tool, seconds=TIMEOUT_S)
     except FileNotFoundError:
-        raise GimgError("measure.tool_missing", tool=tool)
+        raise GimgError(scope + ".tool_missing", tool=tool)
     except OSError as exc:
-        raise GimgError("measure.tool_failed", tool=tool, reason=str(exc.strerror or exc)[:300])
+        raise GimgError(scope + ".tool_failed", tool=tool, reason=str(exc.strerror or exc)[:300])
     if done.returncode != 0:
-        raise GimgError("measure.tool_failed", tool=tool,
+        raise GimgError(scope + ".tool_failed", tool=tool,
                         reason=_last_line(done.stderr) or "exit code %d" % done.returncode)
     return done.stdout
 
 
-def _check_file(path) -> None:
+def _check_file(path, scope="measure") -> None:
     if not os.path.isfile(path):
-        raise GimgError("measure.unreadable", path=str(path))
+        raise GimgError(scope + ".unreadable", path=str(path))
 
 
 def _input(path) -> str:
@@ -122,17 +123,17 @@ def _ffmpeg(path, vf, *extra) -> bytes:
                 "ffmpeg")
 
 
-def image_size(path) -> tuple:
-    _check_file(path)
+def image_size(path, scope="measure") -> tuple:
+    _check_file(path, scope)
     out = _run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height",
-                "-of", "csv=p=0", _input(path)], "ffprobe")
+                "-of", "csv=p=0", _input(path)], "ffprobe", scope)
     try:
         w, h = out.decode().strip().split(",")[:2]
         size = int(w), int(h)
     except ValueError:
-        raise GimgError("measure.unreadable", path=str(path))
+        raise GimgError(scope + ".unreadable", path=str(path))
     if size[0] <= 0 or size[1] <= 0:
-        raise GimgError("measure.unreadable", path=str(path))
+        raise GimgError(scope + ".unreadable", path=str(path))
     return size
 
 

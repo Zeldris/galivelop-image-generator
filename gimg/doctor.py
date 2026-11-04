@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -224,6 +225,37 @@ def _memory(machine: dict) -> list:
     return [Check("memory", WARN, "doctor.memory.low", {"free": free, "needed": needed}, "doctor.fix.memory")]
 
 
+# A Deck (16 GB shared between CPU and GPU) froze in Tarkor with --max-vram vulkan0=6 and --offload-to-cpu. The shipped
+# steam-deck profile uses vulkan0=2, so anything above 2 GB is a warning, not an error: the person may know better.
+MAX_SAFE_VRAM_GB = 2
+_RISKY_ARGS = ("--offload-to-cpu", "--max-vram")
+
+
+def _vram_gb(value) -> Optional[float]:
+    """GB in a ``maxVram`` such as ``2``, ``"vulkan0=6"`` or ``"6.5"``; ``None`` if it has no number."""
+    match = re.search(r"(\d+(?:\.\d+)?)\s*$", str(value))
+    return float(match.group(1)) if match else None
+
+
+def _vram(machine: dict) -> list:
+    """A warning for each ``maxVram`` above `MAX_SAFE_VRAM_GB` and each risky flag in a model's ``args``; else one ok."""
+    eng = machine.get("engine") or {}
+    found = []
+    value = eng.get("maxVram")
+    if value and (gb := _vram_gb(value)) is not None and gb > MAX_SAFE_VRAM_GB:
+        found.append(Check("vram:engine", WARN, "doctor.vram.high",
+                           {"where": "engine.maxVram", "value": value, "max": MAX_SAFE_VRAM_GB}, "doctor.fix.vram",
+                           {"max": MAX_SAFE_VRAM_GB}))
+    for model_id, own in sorted((eng.get("models") or {}).items()):
+        args = [str(a) for a in (own or {}).get("args", [])]
+        where = "engine.models.%s.args" % model_id
+        for arg in args:
+            if arg in _RISKY_ARGS or arg.startswith("--max-vram="):
+                found.append(Check("vram:%s:%s" % (model_id, arg.split("=")[0]), WARN, "doctor.vram.offload",
+                                   {"where": where, "arg": arg}, "doctor.fix.vram", {"max": MAX_SAFE_VRAM_GB}))
+    return found or [Check("vram", OK, "doctor.vram.ok", {"max": MAX_SAFE_VRAM_GB})]
+
+
 def _tools() -> list:
     out = []
     for name, (flag, apt, pacman) in TOOLS.items():
@@ -347,6 +379,7 @@ def run(verify: bool = False, ollama_url: Optional[str] = None) -> list:
     checks += _binary(machine, bad)
     checks += _models(machine, verify, bad)
     checks += _memory(machine)
+    checks += _vram(machine)
     checks += _tools()
     checks += _fonts()
     checks += _folders()
