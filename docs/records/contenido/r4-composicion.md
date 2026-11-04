@@ -103,4 +103,14 @@ proyecto, #41-#60. Hojas de contactos: `piloto/r6-detalle/<p>.png`; compuestas: 
 | galivelop-image-generator | q46 (#2) | 11,2 / 18,6 | láminas de cristal con neblina violeta y reflejo |
 | galivelop-workflow | q49 (#1) | ≥ 4,5 | ramas con orden, pero sigue siendo un diagrama simple: probable cambio de concepto |
 
-**Cierre:** pendiente del veredicto de la persona.
+**Veredicto de la persona (2026-11-04):**
+
+| Proyecto | Nota | Qué pide |
+|---|---|---|
+| tarkor | 1/10 | lo mismo con más cosas que ni son del juego; logo cutre frente a logos de otros juegos; tipografía OFL de temática RPG fantástica y mejor color de texto; **nada de fondo realista**: texturas de fantasía en dibujo a lápiz (es contenido para redes); referencia de calidad: las imágenes que genera el propio juego (`../WMF-imagenes`, su image-generator) |
+| toveriai | 7/10 | le encanta el papel rasgado sobre los objetos; más toque de periodismo (noticias); la posición de los textos es lo que menos convence |
+| portal | 7/10 | le encantan los detalles de luz; más color: que los puntos reflejen como una aurora sobre el agua; borde del portal de mármol blanco pulido con detalles modernos; mejorar la posición de los textos |
+| galivelop-image-generator | 8/10 | gusta; el punto de luz de arriba queda inconexo; extender el brillo morado tipo humo/aura de las láminas a más partes y darle más espacio |
+| galivelop-workflow | 1/10 | la que más deja que desear: faltan brillos y efectos realistas, un árbol que se vea en 3D, más calidad; textos mal distribuidos; el logo debería seguir el formato del de Galivelop |
+
+Siguiente: r7 con estos cambios.
