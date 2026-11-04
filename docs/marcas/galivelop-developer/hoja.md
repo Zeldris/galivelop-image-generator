@@ -30,7 +30,7 @@ ADR dicen lo que es y lo que nunca hace.
 | Nombre de marca | Obl. | «galivelop-developer»: en minúsculas, con guion, de una pieza, como se llama el repo y como va en el título del `README.md` y en el `<text>` de los lockups. La orden es `gdev`. En los textos del propio repo se le llama «el agente local» o «el tercer relevo» | developer (`README.md` l.1; `GLOSSARY.md` l.30-33; `docs/plan.md` D8); repo (`logos/galivelop-developer-d-lockup*.svg`) |
 | Nombre en código | Obl. | `galivelop-developer` | repo (`examples/galivelop-developer/galivelop-images.json`, `name`); coincide con el nombre del repo y con `galivelop-developer.json`, su archivo de configuración (`README.md` l.38) |
 | Fuente de verdad | Rec. | galivelop-developer `claude/f1-instalacion` `8fa309c` (voz, propósito, límites, idiomas, estado); Portal `aa76b34` (fondos, texto, tipografía, baldosa); este repo `fd2ae53` (acento, prompts, piezas, medidas, logos dibujados). Rutas por campo en la sección 13 | repo |
-| Quién decide | Obl. | La persona. Dio ella el veredicto de r1 (2026-10-26, «sí» a developer en s3 y s4); desde entonces, delegado al agente («lo dejo en tus manos») hasta que diga otra cosa; cada decisión delegada lleva **[P]** y se le propone al cerrar F2 | repo (`docs/records/contenido/r1-fondos.md` l.44 y l.52; `docs/marcas/README.md` l.22-24, «Elegido por el agente») |
+| Quién decide | Obl. | La persona. Dio ella el veredicto de r1 (2026-10-26, «sí» a developer en s3 y s4); desde entonces, delegado al agente («lo dejo en tus manos») hasta que diga otra cosa; cada decisión delegada lleva **[P]** y se le propone al cerrar F2 | repo (`docs/records/contenido/r1-fondos.md` l.44 y l.52; `docs/marcas/README.md` l.24-26, «Elegido por el agente») |
 | Fecha de la hoja | Rec. | `2026-11-04` | — |
 | Familia visual | Rec. | `Galivelop`, sin cambiar ningún valor de la familia: fondo `#06121c`, texto `#eaf4fa`, Sora 700 e Inter, baldosa `rx` 30/128 con trazo 12. Solo añade el acento y sus dos tonos | heredado de Portal-Galivelop `aa76b34` (vía `biblia.md` §2-§3 y `docs/marcas/portal/biblia.md` §2); la familia para las herramientas la fija `docs/plan.md` l.662-666 **[P]** (la persona las añadió; la familia la propuso el agente) |
 | Hereda de | Opc. | Portal-Galivelop `aa76b34` (leído solo a través de `biblia.md` §10 y `docs/marcas/portal/biblia.md`) | repo |
@@ -210,7 +210,7 @@ textless.». Ninguno lleva palabra vetada de la biblia ni negación.
   (motivos, estilo, zona por formato, luz).
 - `docs/marcas/galivelop-developer/logos/galivelop-developer-d.svg`, `-d-lockup.svg`, `-d-lockup-oscuro.svg` (último cambio
   `3dc054d`); las propuestas `a`-`c` siguen en la carpeta.
-- `docs/marcas/README.md` l.19 (fila del proyecto, elegido **d**), l.22-24 y l.36 («Elegido por el agente»: quién decide, el
+- `docs/marcas/README.md` l.19 (fila del proyecto, elegido **d**), l.24-26 y l.36 («Elegido por el agente»: quién decide, el
   porqué de **d**), l.38 (acento `#2BB3A3`), l.80-99 («Común a todos», tabla de destinos), l.186-191 (conceptos de logo).
 - `docs/marcas/galivelop-developer/biblia.md` (`74d99f8`, contenido de `a50b544`; paleta, tipografía, reglas del logo, vetos,
   frases; lo que es **[P]** allí lo sigue siendo aquí).
@@ -219,7 +219,7 @@ textless.». Ninguno lleva palabra vetada de la biblia ni negación.
   (developer en r3 y r4: la línea que cruzó el título, zona `abajo`).
 - `docs/records/contenido/calibracion-measure.md` l.17, l.43, l.73, l.76; `r1-fondos.md` l.44, l.52, l.61; `r2-estilo.md`
   l.21-23, l.47; `r3-borrador.md` l.52, l.64-66; `r4-composicion.md` l.22, l.29-35; `r5-piezas.md` l.36, l.52-55, l.64.
-- `docs/records/lectura-2026-10-26-tarkor-y-marcas.md` l.176-185 y l.202-209 (lectura de las herramientas: sin identidad
+- `docs/records/lectura-2026-10-26-tarkor-y-marcas.md` l.173-186 y l.202-211 (lectura de las herramientas: sin identidad
   visual, límites, metáfora).
 - `examples/pilot/componer.py` l.105-115 (`caja_zona`), l.119 (`peso_titulo=700`), l.124-137 (margen 6 %, logo al 9 %), l.135
   (cuerpo del título), l.160 (subtítulo 400, opacidad 0,82); `examples/pilot/fuentes.sh` l.8-12 (origen y licencia de las fuentes).
