@@ -1,6 +1,8 @@
 # Tarkor — biblia de estilo
 
-Marca nueva, creada desde cero (decisión de la persona, 2026-10-26): casi todo es **[P]**. Lo que no lleva marca sale del
+Marca nueva, creada desde cero (decisión de la persona, 2026-10-26): casi todo es **[P]** (propuesta del agente; las dudas
+se decidieron por delegación el 2026-11-04, ver [`hoja.md`](hoja.md) y
+[`../../records/decisiones-hojas-2026-11-04.md`](../../records/decisiones-hojas-2026-11-04.md), que manda si difiere). Lo que no lleva marca sale del
 repo del juego, World-Maker-Fantasy (WMF) `73965f62`, o del Portal `aa76b34`; rutas en la sección 10. Molde y reglas
 comunes: [../README.md](../README.md).
 
@@ -19,35 +21,38 @@ comunes: [../README.md](../README.md).
 
 ## 2. Paleta
 
-Base «madera + hierro» del juego (`index.css`, decisión nº 6); el acento es la decisión abierta de abajo.
+Base «madera + hierro» del juego (`index.css`, decisión nº 6); el acento está decidido (abajo).
 
 | Rol | Hex | Uso |
 |---|---|---|
-| Madera 900 / 800 | `#241a10` / `#332415` | fondo de pieza oscura, tablón |
+| Madera 900 / 800 | `#241a10` / `#332415` | fondo de pieza oscura (plano `#241a10`), tablón |
 | Madera 700 / 600 / 400 | `#46311d` / `#5c4126` / `#a3814f` | veta de tablón; madera vista; wordmark en el lockup de revisión **[P]** |
 | Madera 100 (hueso) | `#f1e4d0` | texto sobre oscuro; trazo del símbolo a; fondo de pieza clara **[P]** |
 | Hierro | `#0e0b08` / `#171310` / `#221c16` | aros, remaches, texto sobre claro |
-| Acero | `#52626f` / `#8a9aa8` | filo de remache, texto secundario |
+| Acero | `#52626f` / `#8a9aa8` | filo de remache, texto secundario; cielo y llanura de la escena |
 | Arcilla (Portal) | `#E0703A` → `#8a3b1e` | acento A: baldosa de la familia, roca de los Pilares |
-| Cristal (juego) | `#a8d8f0` / `#7bc4e8` / `#4aa8d8` / `#3488b8` | acento B: gema, filetes, Semilla |
+| Cristal (juego) | `#a8d8f0` / `#7bc4e8` / `#4aa8d8` / `#3488b8` | acento B, **solo dentro del juego**: gema, filetes, Semilla |
 | Musgo | `#8fae6a` | solo semántico (multijugador en el juego); no en marca |
 
 - **Combinaciones:** pieza clara: hueso `#f1e4d0` + texto hierro `#221c16` + un acento; pieza oscura: madera 900
-  `#241a10` + texto hueso + un acento; sobre imagen: texto hueso con banda de madera 950 `#1b130c` al 70 % **[P]**.
+  `#241a10` + texto hueso + un acento; sobre imagen: velo `#221c16:0.45` (lo medido) y texto hueso, sin banda (la de madera
+  950 `#1b130c` al 70 % sale).
 - **Prohibidos:** negro `#000` y blanco `#fff` puros; morado/violeta (luz reservada); neón; más de un acento por pieza;
   degradados fuera de la baldosa de la familia y la gema.
-- **Decisión abierta [P]: arcilla `#E0703A` o cristal `#4aa8d8` como acento de marca.** Recomendación: **arcilla
-  fuera del juego, cristal dentro.** Razones: 1) todo el arte que existe (portada y 304 `.webp`) es roca roja de las
-  Llanuras, y la marca debe casar con él; 2) en la familia Galivelop el cristal `#4aa8d8` choca con el celeste del
-  Portal (`#1aa6df`) y el azul del workflow; la arcilla es el único acento cálido y ya es el asignado por el Portal;
-  3) arcilla, madera y hierro son una sola familia de materiales. El cristal queda como acento secundario (gema,
-  noche, interfaz) y no se cambia en el juego. Si la persona elige b o c, gana el cristal y se invierte la regla.
+- **Acento (decidido el 2026-11-04, delegado): arcilla `#E0703A` en las piezas, cristal `#4aa8d8` solo dentro del
+  juego.** Razones: 1) todo el arte que existe (portada y 304 `.webp`) es roca roja de las Llanuras, y la marca debe
+  casar con él; 2) en la familia Galivelop el cristal `#4aa8d8` choca con el celeste del Portal (`#1aa6df`) y el azul
+  del workflow; la arcilla es el único acento cálido y ya es el asignado por el Portal, que presenta a Tarkor con ella;
+  3) arcilla, madera y hierro son una sola familia de materiales. El cristal queda como acento secundario (gema, noche,
+  interfaz) y no se cambia en el juego. El icono del Instalador (concepto b, cristal) queda como propuesta a ese repo.
+  Nunca los dos acentos en la misma pieza.
 
 ## 3. Tipografía
 
-- **Cinzel** (OFL, empaquetada en el juego) para títulos y wordmark: 700 en el lockup, 400 con tracking 0,3 em en
-  filetes y eyebrows, como el título de la Home **[P]**.
-- **Inter** 400/500 en texto; Cascadia Code en datos (solo en el juego).
+- **Cinzel** (OFL, empaquetada en el juego) para títulos y wordmark: **700** en el titular de las piezas y en el lockup.
+- **Inter** en texto: 400 en el subtítulo de las piezas, con opacidad 0,82 (lo compuesto en r4-r5, la misma regla de toda la
+  familia); 500 en el **eyebrow**, en mayúsculas con tracking 0,3 em, como en la Home del juego (`Home.tsx`: `text-xs
+  tracking-[0.3em] uppercase`, sin `font-serif`: es Inter, no Cinzel). Cascadia Code en datos (solo en el juego).
 - **Wordmark:** «TARKOR» en mayúsculas, Cinzel 700, tracking 0,18 em (9 px a 50 px); en el lockup, altura de la
   mayúscula ≈ 0,28 del símbolo. Reserva: `serif`.
 
@@ -62,7 +67,8 @@ Propuestas en `logos/`; conceptos del README. Todas se leen a 16 px (comprobado 
 | c | **La Semilla:** semilla vertical partida en dos mitades que han resbalado, cristal claro y hierro, misma piel de cristal | fidelidad (una piel) y ruptura (el corte); nada morado |
 | d | **Hierro y madera:** escudo de tablones con aro de hierro, cuatro remaches y una T forjada | el aro se funde con el fondo oscuro, a propósito |
 
-**Elegido (agente, delegado):** a — los Pilares Rotos, el emblema aprobado en el plan; retocado para que no se lea
+**Elegido (agente, delegado):** a — los Pilares Rotos, el emblema aprobado en el plan; **retocado, pendiente de la persona**,
+para que no se lea
 como una M (torres desiguales, la derecha quebrada a media altura, puente más largo y más bajo que sale del flanco de
 la alta).
 
@@ -89,18 +95,21 @@ rotado ni con sombra o brillo; el texto del lockup se pasa a trazos con Cinzel.
 
 ## 7. Estilo de imagen (FLUX)
 
-- **Sí:** paisajes de Berig sin criaturas; colores naturales y apagados con un acento por escena; gradación fílmica
+- **Sí:** paisajes de Berig sin criaturas; «rich natural colour» con un acento por escena (arcilla); gradación fílmica
   suave; huella pequeña (empalizadas, pasarelas, estandartes, tótems); madera, piel, hueso, piedra, hierro negro.
 - **No:** texto, personajes, interfaz, criaturas fuera del canon, oscuridad total, cielo de otro mundo, tráiler AAA.
 - **Motivos:** Pilares Rotos con puentes y estandartes (ya en la portada: no repetir en el og), Agujas Imán y crestas
   de arena imán, empalizada de troncos de Telda, obelisco goirnte, noche con estrellas y velo perlado (sin disco).
 - **Vetadas** (`mundo.json`): moon/moonlit/moonlight, crystal dust, heavens, scar/wound/gash, negaciones (`no`,
-  `without`...), nombres propios, humanos, pólvora.
-- **Zona reservada:** un tercio izquierdo liso (og, banner, header); tercio inferior en `square` y `portrait`.
+  `without`...), nombres propios, humanos, pólvora; y de la marca: `purple`, `violet`, `like` y **`sun`** (pinta el disco: se
+  dice la dirección, no la fuente).
+- **Zona reservada:** un tercio izquierdo liso (og, banner); la **mitad** izquierda en `header`; la mitad inferior en `square` y
+  `portrait` (el prompt pide esa mitad libre, como la caja del 48 %). Una sola zona por perfil, la misma en prompt, plantilla
+  y medida.
 - **Qué cambiar tras el «no» de r1 [P]** (la persona no dio motivo; hipótesis, a confirmar en una ronda):
   1. El fondo repetía la portada del Portal: elegir otro motivo (Agujas Imán al amanecer o empalizada al ocaso).
   2. «Cinematic matte painting at golden hour» con cielo ámbar y carmesí es justo el AAA que la biblia veta: usar el
-     preámbulo del juego («grounded... muted natural colours, subtle filmic grade, single accent colour»).
+     preámbulo del juego («grounded... rich natural colour, subtle filmic grade, single accent colour»).
   3. La mitad izquierda vacía quedaba muerta: pedir «calm open plain in soft haze», no «nearly empty».
   4. Nada decía «el mundo sigue»: una huella mínima de vida (humo de un campamento lejano, estandartes al viento).
 
@@ -116,22 +125,28 @@ rotado ni con sombra o brillo; el texto del lockup se pasa a trazos con Cinzel.
 | `examples/tarkor/prompts/r5-cuadrado.txt` | r5: generado y compuesto (`piloto/r5/tarkor/intentos/cuadrado.png`), contraste 6.28:1, peor 5.18:1, paleta 84.35 %; el más justo de r5 (sobre AA, no AAA). Misma escena en cuadrado 1080×1080 (se genera a 1024×1024): agujas y cielo en los dos tercios superiores, tercio inferior de llanura en calima libre |
 | `examples/tarkor/prompts/r5-vertical.txt` | r5: generado y compuesto (`piloto/r5/tarkor/intentos/vertical.png`), contraste 7.22:1, peor 4.98:1, paleta 69.21 %; el más justo de r5 (sobre AA, no AAA). Misma escena en vertical 1080×1350 (896×1152): agujas arriba, tercio inferior de llanura libre |
 | `examples/tarkor/prompts/r5-cabecera.txt` | r5: generado y compuesto (`piloto/r5/tarkor/intentos/cabecera.png`), contraste 11.39:1, peor 6.89:1, paleta 73.33 %. Misma escena en cabecera 1500×500 (1536×512): llanura en la mitad izquierda, agujas en la derecha |
-| `examples/tarkor/prompts/r5-og-bajo.txt` | r5: generado y compuesto (`piloto/r5/tarkor/intentos/og-bajo.png`), contraste 9.5:1, peor 7.36:1, paleta 50.52 %; YAVG 169 → 66 frente al og de r4, pero SATAVG sigue en 5 (el juego pide 15-30). Misma escena del og (1280×640) con la luz más baja y más color (cielo #52626f, banda cálida en el horizonte, acento #E0703A fuerte), buscando YAVG 70-95 y SATAVG 15-30 (r2 dio ~155 y ~7) |
+| `examples/tarkor/prompts/r5-og-bajo.txt` | r5: generado y compuesto (`piloto/r5/tarkor/intentos/og-bajo.png`), contraste 9.5:1, peor 7.36:1, paleta 50.52 %; YAVG 169 → 66 frente al og de r4, pero SATAVG sigue en 5 (el juego pide 15-30). Misma escena del og (1280×640) con la luz más baja y más color (cielo #52626f, banda cálida en el horizonte, acento #E0703A fuerte), buscando YAVG 70-95 y SATAVG 15-30 (r2 dio ~155 y ~7; objetivo de marca: el de la portada, no el 70-95 del juego) |
+
+**Históricos (2026-11-04):** `og.txt`, `estilo.txt`, `r2-hex/palabras/material.txt` y `r5-*.txt` nombran «sun» (vetada); `estilo.txt`
+y `r2-palabras/hex/material` piden «natural muted colours»; `r5-cuadrado.txt` y `r5-vertical.txt` piden «lower third». No se tocan:
+se rehacen con la hoja (`r2-luz.txt` es el candidato a `estilo.txt`). Sus medidas siguen valiendo como medidas de lo que eran.
+El objetivo de luminosidad de la marca es el de la portada (YAVG 105-150, SATAVG 18-32), no el 70-95 del juego.
 
 Plantilla para uno nuevo: preámbulo de `mundo.json` (día o atardecer) → encuadre con la zona reservada («the left
 third is a calm, nearly plain stretch of haze») → sujeto y región con su luz (`regiones.*.luz`) → «Style: cinematic
-landscape photograph, natural muted colours, subtle filmic grade. Mood: wild, quiet, lived-in.» → «The image is
+landscape photograph, rich natural colour, subtle filmic grade. Mood: wild, quiet, lived-in.» → «The image is
 completely textless.» Entre 120 y 320 palabras, sin negaciones ni comparaciones.
 
 ## 9. Formatos y piezas
 
-Perfiles: `banner`, `og`, `social`, `square`, `header` (Discord 960×540), `avatar`, `icon`.
+Perfiles: `banner` (1600×640), `og` (1200×630), `social`, `square` (1080×1080), `portrait` (1080×1350), `header` (**1500×500**, cabecera de X),
+`avatar`, `icon`. Discord (960×540) y LinkedIn (1584×396) son perfiles aparte, cuando se pidan.
 
 Primera ronda **[P]:**
 
 1. Elegir logo y paleta (esta página).
 2. og 1200×630 nuevo, desde la sección 7.
-3. Banner 1600×640 del Portal y cabecera 960×540 de Discord.
+3. Banner 1600×640 del Portal y cabecera 1500×500 de X (la de Discord, 960×540, aparte cuando se pida).
 4. `square` 1080×1080 con el lema.
 5. Avatar 512×512 e `icon` del símbolo elegido.
 
