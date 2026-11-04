@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import stat as _stat
 import sys
 import threading
 import traceback
@@ -15,7 +16,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote
 
-from . import __version__, i18n, paths, queue
+from . import __version__, compose, i18n, orders, paths, projects, queue
 from .errors import GimgError
 
 API_VERSION = 1
@@ -239,8 +240,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(reply.status)
         for name, value in BASE_HEADERS.items():
             self.send_header(name, value)
-        self.send_header("Content-Type", ctype)
-        self.send_header("Content-Length", str(len(data)))
+        if reply.status != 304:  # a 304 has no body, so no length or type of one
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(data)))
         if no_store and "Cache-Control" not in reply.headers:
             self.send_header("Cache-Control", "no-store")
         for name, value in reply.headers.items():
@@ -371,6 +373,187 @@ def locales(req):
         raise GimgError("api.not_found", path=lang)
     with open(LOCALES_DIR / (lang + ".json"), encoding="utf-8") as fh:
         return json.load(fh)
+
+
+# --- read routes of F3.2 (the same functions the CLI calls) ---
+def _int_param(name: str, value: str) -> int:
+    if not value.isascii() or not value.isdigit() or len(value) > 9:
+        raise GimgError("api.bad_param", name=name)
+    return int(value)
+
+
+def _bool_query(req, name: str):
+    raw = (req.query.get(name) or [None])[0]
+    if raw is None:
+        return None
+    if raw not in ("true", "false"):
+        raise GimgError("api.bad_param", name=name)
+    return raw == "true"
+
+
+def _config_profile(config: dict, profile: str) -> dict:
+    found = config["profiles"].get(profile)
+    if found is None:
+        raise GimgError("order.profile_unknown", profile=profile)
+    return found
+
+
+@route("GET", "/api/projects")
+def projects_list(req):
+    out = []
+    for name, entry in projects.list_projects().items():
+        item = {"name": name, "root": entry["root"], "ok": True}
+        try:
+            projects.get(name)
+        except GimgError as exc:
+            item["ok"] = False
+            item["error"] = safe_error_body(exc, req.lang)["error"]
+        out.append(item)
+    return out
+
+
+@route("GET", "/api/projects/{p}")
+def project_show(req):
+    return projects.get(req.params["p"])
+
+
+@route("GET", "/api/projects/{p}/orders")
+def orders_list(req):
+    name = req.params["p"]
+    profile = (req.query.get("profile") or [None])[0] or None
+    if profile is not None:
+        _config_profile(projects.get(name)["config"], profile)
+    return orders.list_orders(name, profile, _bool_query(req, "chosen"))
+
+
+@route("GET", "/api/projects/{p}/orders/{profile}/{key}")
+def order_show(req):
+    return orders.get(req.params["p"], req.params["key"], req.params["profile"])
+
+
+def _etag(st) -> str:
+    return '"%x-%x"' % (st.st_size, st.st_mtime_ns)
+
+
+def _file_reply(req, path, ctype: str, cache: str = "private, no-cache", etag: bool = True):
+    """Serve `path` (already guarded); 404 if it is not a file. With `etag`, honour ``If-None-Match`` (304)."""
+    try:
+        with open(path, "rb") as fh:
+            st = os.fstat(fh.fileno())
+            if not _stat.S_ISREG(st.st_mode):
+                raise GimgError("api.not_found", path=path.name)
+            tag = _etag(st)
+            wanted = req.headers.get("If-None-Match") if etag else None
+            headers = {"Cache-Control": cache}
+            if etag:
+                headers["ETag"] = tag
+            if wanted is not None and (wanted.strip() == "*" or tag in [w.strip() for w in wanted.split(",")]):
+                return Reply(304, b"", ctype, headers)
+            return Reply(200, fh.read(), ctype, headers)
+    except OSError:
+        raise GimgError("api.not_found", path=path.name)
+
+
+def _guarded(call):
+    """Run a path-resolving `call`; a path that fails the D25 guard is simply not found (404)."""
+    try:
+        return call()
+    except GimgError as exc:
+        if exc.code.startswith("path."):
+            raise GimgError("api.not_found", path="") from exc
+        raise
+
+
+def _attempt_of(req) -> tuple:
+    q = req.params
+    order = orders.get(q["p"], q["key"], q["profile"])
+    attempt_id = _int_param("id", q["id"])
+    for item in order["attempts"]:
+        if item["id"] == attempt_id:
+            return order, item
+    raise GimgError("order.attempt_unknown", attempt=attempt_id, order=order["key"], profile=order["profile"])
+
+
+_ATT = "/api/projects/{p}/orders/{profile}/{key}/attempts/{id}"
+
+
+@route("GET", _ATT + "/image")
+def attempt_image(req):
+    _order, attempt = _attempt_of(req)
+    q = req.params
+    raw = (req.query.get("raw") or [""])[0]
+    if raw not in ("", "0", "1"):
+        raise GimgError("api.bad_param", name="raw")
+    find = orders.raw_image if raw == "1" else orders.attempt_image
+    path = _guarded(lambda: find(q["p"], q["key"], q["profile"], attempt))
+    return _file_reply(req, path, "image/png")
+
+
+@route("GET", _ATT + "/log")
+def attempt_log(req):
+    _order, attempt = _attempt_of(req)
+    q = req.params
+    rel = attempt.get("log")
+    if not isinstance(rel, str):
+        raise GimgError("api.not_found", path="log")
+    folder = _guarded(lambda: orders.attempt_image(q["p"], q["key"], q["profile"], {"image": "."}))
+    path = _guarded(lambda: paths.inside(folder, rel))
+    return _file_reply(req, path, "text/plain; charset=utf-8", cache="no-store", etag=False)
+
+
+@route("GET", "/api/projects/{p}/profiles/{profile}/assets/{kind}")
+def profile_asset(req):
+    q = req.params
+    if q["kind"] not in ("template", "logo"):
+        raise GimgError("api.not_found", path=q["kind"])
+    project = projects.get(q["p"])
+    cfg = _config_profile(project["config"], q["profile"]).get("compose")
+    if not cfg:
+        raise GimgError("api.not_found", path=q["kind"])
+    template, logo = compose.resolve_assets(project["root"], cfg)
+    path = template if q["kind"] == "template" else logo
+    if path is None:
+        raise GimgError("compose.logo_missing", path="")
+    reply = _file_reply(req, path, "image/svg+xml", cache="no-cache", etag=False)
+    reply.headers["Content-Security-Policy"] = SVG_CSP
+    return reply
+
+
+@route("GET", "/api/queue")
+def queue_list(req):
+    state = (req.query.get("state") or [None])[0]
+    if state is not None and state not in queue.STATES:
+        raise GimgError("queue.bad_state", state=state, states=", ".join(queue.STATES))
+    entries = queue.list_entries(None if state is None else [state])
+    provider = None
+    out = []
+    for entry in entries:
+        item = queue.entry_view(entry, req.lang)
+        item.pop("preview", None)
+        if entry["state"] in ("queued", "running"):
+            if provider is None:
+                from . import engine
+                provider = engine.get_engine().provider
+            estimate = queue.estimate_for(entry, provider)
+            if estimate is not None:
+                item["estimateMs"] = estimate
+        out.append(item)
+    return out
+
+
+@route("GET", "/api/queue/{id}/preview")
+def queue_preview(req):
+    entry = queue.get(_int_param("id", req.params["id"]))
+    shown = entry.get("preview")
+    if not isinstance(shown, str):
+        raise GimgError("api.not_found", path="preview")
+    data = paths.data_dir().resolve()
+    try:
+        rel = os.path.relpath(Path(shown).resolve(), data)
+    except (OSError, ValueError, RuntimeError):
+        raise GimgError("api.not_found", path="preview")
+    path = _guarded(lambda: paths.inside(data, rel))
+    return _file_reply(req, path, "image/png", cache="no-store", etag=False)
 
 
 # --- server ---

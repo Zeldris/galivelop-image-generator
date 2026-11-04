@@ -343,6 +343,15 @@ def is_cancel_requested(entry_id) -> bool:
     return _txn(lambda data: bool(_find(data, entry_id).get("cancelRequested")))
 
 
+def entry_view(entry: dict, lang: str | None = None) -> dict:
+    """The JSON form of an entry for `gimg queue list --json` and ``GET /api/queue``: the entry plus ``errorText``."""
+    item = dict(entry)
+    text = error_text(entry, lang)
+    if text:
+        item["errorText"] = text
+    return item
+
+
 def estimate_for(entry: dict, provider: str | None = None):
     """Median duration (ms) of similar past attempts, or ``None``. `provider` defaults to the configured engine's."""
     if provider is None:

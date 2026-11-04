@@ -124,11 +124,7 @@ class _Out:
 
 
 def _entry_json(out: _Out, entry: dict) -> dict:
-    item = dict(entry)
-    text = queue.error_text(entry, out.lang)
-    if text:
-        item["errorText"] = text
-    return item
+    return queue.entry_view(entry, out.lang)
 
 
 def _queued(out: _Out, entries: list, provider: str) -> None:
