@@ -1,16 +1,22 @@
 # toVeriAI — biblia de estilo
 
-Fuente de verdad: repo `VeriNews_AI`, commit `02ac654`, sobre todo su kit visual v1.1 (rutas en la sección 10). Sin marca,
-el dato sale del repo; **[P]** es propuesta pendiente de la persona; *(suposición)* se comprueba en una ronda.
+Fuente de verdad: repo `VeriNews_AI`, commit `5a7401f` (`main`, 2026-11-03), sobre todo su kit visual v1.1 (rutas en la sección 10).
+La hoja [`hoja.md`](hoja.md) (aprobada el 2026-11-04 por delegación de la persona, ver
+[`../../records/decisiones-hojas-2026-11-04.md`](../../records/decisiones-hojas-2026-11-04.md)) es lo que `gimg` lee; esta biblia es la
+lectura larga y se alinea con ella. Sin marca, el dato sale del repo; **[P]** es propuesta del agente aprobada por delegación;
+*(suposición)* se comprueba en una ronda.
 
-**Incoherencias del repo, pendientes de decidir [P]:**
+**Incoherencias del repo, resueltas el 2026-11-04 (aprobadas por delegación):**
 
 1. **Wordmark:** el kit dice «toVeriAI» (tres segmentos `to` + `Veri` + `AI`, sin puntos medios); los PNG del frontend
-   (`logo.png`, `logo-vertical.png`) dicen «VeriNews» con «Veri» gris `#4A4A4A`. Aquí manda el kit: «toVeriAI».
-2. **Rangos del IMI:** el kit dice 0-39 / 40-69 / 70-100; `marketing.html` dice 0-49 / 50-74 / 75-100.
+   (`logo.png`, `logo-vertical.png`) dicen «VeriNews» con «Veri» gris `#4A4A4A`. Aquí manda el kit: «toVeriAI»; se propone al repo retirar los PNG huérfanos.
+2. **Rangos del IMI:** el kit, `imiColors.js` y la interfaz dicen 0-39 (granate) / 40-69 (ámbar) / 70-100 (verde);
+   `marketing.html` dice 0-49 / 50-74 / 75-100. En las piezas mandan los del kit.
 3. **Colores del símbolo:** el `favicon.png` usa un verde salvia (~`#6B8176` medido) y un dorado (~`#AD8E5C`), no los hex del
-   kit; las propuestas usan los del kit (`#2D6A4F`, `#B5832A`).
-4. `favicon.svg` (morado) es un archivo huérfano; se ignora.
+   kit; el símbolo en SVG usa los del kit (`#2D6A4F`, `#B5832A`).
+4. El acento es `#2D6A4F` (el del repo); el `#2F7A55` que el Portal da al proyecto es cosa del Portal.
+
+(`favicon.svg` ya no existe en `5a7401f`, borrado en `e8b251c`: la antigua incoherencia 4 se retira.)
 
 ## 1. Esencia
 
@@ -32,9 +38,9 @@ el dato sale del repo; **[P]** es propuesta pendiente de la persona; *(suposici�
 | Borde y línea | `#E8E4DF`, `#D8D4CF` | filetes |
 | Texto | `#1A1A1A`; gris `#999999`; borde oscuro `#2A2A2A` | texto y pieza oscura |
 | Verde de marca | `#2D6A4F` | «Veri», único acento en piezas genéricas, símbolo |
-| Verdes de apoyo | `#52B788`, `#74C69D`, `#B7E4C7`, pálido `#E8F4EE` | IMI alto, fondos tenues |
-| Ámbar | `#B5832A` | IMI medio; hojas del símbolo |
-| Granate | `#9B2335` | IMI bajo |
+| Verdes de apoyo | `#52B788`, `#74C69D`, `#B7E4C7`, pálido `#E8F4EE` | IMI alto (70-100), fondos tenues |
+| Ámbar | `#B5832A` | IMI medio (40-69); hojas del símbolo |
+| Granate | `#9B2335` | IMI bajo (0-39) |
 | Hero | `#1c3028 → #2D6A4F` | solo el hero de la web |
 
 Combinaciones:
@@ -43,7 +49,7 @@ Combinaciones:
 - **Pieza oscura:** fondo `#1A1A1A` con texto blanco; «Veri» sigue en verde. Solo cuando la pieza lo pide; la web es solo
   modo claro.
 - **Sobre imagen:** sobre papel o acuarela, en la zona reservada; texto `#1A1A1A`.
-- **Semáforo IMI:** granate, ámbar y verde solo cuando la pieza habla de un nivel de credibilidad (rangos: ver incoherencia 2).
+- **Semáforo IMI:** granate, ámbar y verde solo cuando la pieza habla de un nivel de credibilidad (rangos del kit: 0-39, 40-69, 70-100).
 
 Prohibidos: `#000`, blanco puro de fondo, azules corporativos, degradados brillantes, neón, glassmorphism, estética tech
 azul; degradados en el símbolo.
@@ -119,7 +125,9 @@ Tras elegir **[P]**:
   de score.
 - **Palabras vetadas:** fake, stop, magnifying glass, stamp, scissors, shield, red arrow, newspaper headline, text, logo,
   letters, pink, magenta (el vino tira a magenta: r1), y cualquier «like …».
-- **Zona reservada:** el tercio superior «calm, bare paper» (og, wide) o la mitad superior (square) para wordmark y frase.
+- **Zona reservada** (una sola por perfil, la del prompt): `arriba 1/3` «calm, bare paper» en `og` y `wide`; `arriba 1/2` en
+  `square` y `portrait`; `izquierda 2/3` en `header` (las tintas dentro del tercio derecho), para wordmark y frase. La caja del
+  piloto se alinea a estas fracciones al portar a `compose`.
 
 ## 8. Prompts
 
@@ -153,11 +161,11 @@ manifest desde el símbolo elegido (solo composición).
 
 ## 10. Fuentes
 
-Repo `VeriNews_AI`, commit `02ac654`:
+Repo `VeriNews_AI`, commit `5a7401f` (la biblia citaba `02ac654`; entre los dos solo cambia, de lo visual, `Navbar.jsx`):
 
 - Kit visual (paleta, tipografía, logo, forma, tono, IMI, frases, 20 prompts, formatos): `Documentacion/v1.1/kit-visual-ia.html`.
 - Símbolo: `frontend/public/favicon.png` (512×512, medido aquí), `frontend/src/assets/logo.png` y `logo-vertical.png`
-  (wordmark «VeriNews»); `frontend/public/favicon.svg` huérfano.
-- Rangos del IMI en `marketing.html` (incoherencia 2).
+  (wordmark «VeriNews»).
+- Rangos del IMI: `frontend/src/utils/imiColors.js` e i18n (los del kit); `marketing.html` difiere (incoherencia 2).
 - Resumen de lectura: `docs/records/lectura-2026-10-26-tarkor-y-marcas.md`, secciones 2 y 4; plan: `docs/plan.md`,
   «Estilos por proyecto»; veredicto r1: `docs/records/contenido/r1-fondos.md`.
