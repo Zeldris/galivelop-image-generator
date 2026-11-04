@@ -26,7 +26,7 @@ tanto, del Portal (heredado) o de la biblia y los prompts de este repo; la ident
 | Nombre de marca | Obl. | «Galivelop-workflow»: G mayúscula, guion, w minúscula, de una pieza. Así va en el título del `README.md`, en `plugin.json` («Galivelop-workflow served from its own repository») y en el lockup. En los textos del propio repo se le llama «el flujo» | Workflow (`README.md` l.1, `README.es.md` l.1, `.claude-plugin/plugin.json`) |
 | Nombre en código | Obl. | `galivelop-workflow` | repo (`examples/galivelop-workflow/galivelop-images.json`, `name`); coincide con `name` de `.claude-plugin/plugin.json` de Workflow |
 | Fuente de verdad | Rec. | Galivelop-workflow `main` `7d61089` (voz, propósito, licencia, canales); Portal `aa76b34` (paleta, tipografía, baldosa, acento); este repo `78f0083` (prompts, piezas, medidas, logos dibujados). Rutas por campo en la sección 13 | repo |
-| Quién decide | Obl. | La persona. Dio ella el veredicto de r1 (2026-10-26, «sí» a workflow pese a la nota de las líneas); desde entonces, delegado al agente («lo dejo en tus manos») hasta que diga otra cosa; cada decisión delegada lleva **[P]** y se le propone al cerrar F2 | repo (`docs/registros/contenido/r1-fondos.md` l.52-53; `docs/marcas/README.md`, «Elegido por el agente») |
+| Quién decide | Obl. | La persona. Dio ella el veredicto de r1 (2026-10-26, «sí» a workflow pese a la nota de las líneas); desde entonces, delegado al agente («lo dejo en tus manos») hasta que diga otra cosa; cada decisión delegada lleva **[P]** y se le propone al cerrar F2 | repo (`docs/records/contenido/r1-fondos.md` l.52-53; `docs/marcas/README.md`, «Elegido por el agente») |
 | Fecha de la hoja | Rec. | `2026-11-04` | — |
 | Familia visual | Rec. | `Galivelop`, **con tres valores propios justificados**: fondo `#0d1b2a` (no `#06121c`), texto `#eef6fb` (no `#eaf4fa`) y titular Inter (no Sora), porque la biblia toma la paleta y la letra de los siete diagramas `gw-*.svg` que el Portal ya publica del flujo: son lo más parecido a una marca que Workflow tiene. Baldosa del logo, la de la familia (`rx` 30/128, trazo 12) | heredado de Portal-Galivelop `aa76b34` (`docs/diagramas/gw-*.svg`, vía `biblia.md` §2-§3 y §10) |
 | Hereda de | Opc. | Portal-Galivelop `aa76b34` (leído solo a través de `biblia.md` §10 y `docs/marcas/portal/biblia.md`) | repo |
@@ -36,7 +36,7 @@ tanto, del Portal (heredado) o de la biblia y los prompts de este repo; la ident
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
 | Propósito | Obl. | «La forma de trabajar del taller Galivelop con agentes de programación (primero Claude Code), fuente única y versionada de sus skills, ganchos, scripts y plantillas»; para quien trabaja por relevos con agentes y no quiere perder nada entre sesiones | Workflow (`README.es.md` l.5-8; `.claude-plugin/plugin.json`, `description`) |
-| Lema | Rec. | «Lo que no está subido no existe» | Workflow (`AGENTS.md` l.24; `README.es.md`, «Relevos de verdad…»; `templates/es/log.md` l.4; `templates/es/AGENTS.md` l.27) |
+| Lema | Rec. | «Lo que no está subido no existe» | Workflow (`AGENTS.md` l.24; `README.es.md` l.43; `templates/es/log.md` l.4; `templates/es/AGENTS.md` l.27) |
 | Tono | Rec. | técnico, sobrio, pragmático; dice lo que hace y lo que falta («Estado: 0.4.3, etapa 1 en rodaje»); desconfía de la buena voluntad y confía en el script («Las reglas las hace cumplir un script, no la buena voluntad del agente»); agradece a quien enseñó (sección «Agradecimientos», `CREDITS.md`). No es: vendedor, épico, «mágico» | Workflow (`README.es.md` l.9, l.30-32, «Calidad primero», «Agradecimientos»; `CREDITS.md`) |
 | Idiomas | Opc. | `es, en`: el repo publica todo en los dos (`README.md` en inglés, `README.es.md`; `docs/en/`, `docs/es/`; plantillas `templates/{es,en}/`), y su skill de redes da por defecto `Languages: es, en` con `es` primero. Las piezas de r4-r5 van solo en `es`; la versión `en` de cada pieza está sin hacer | Workflow (`README.md`, `README.es.md`, `skills/gw-media-content/note.md` tabla «Key»; `.claude/gw.json` `language: es`) |
 | Campo semántico | Opc. | dentro: relevo, bitácora, punto estable, check en verde, marca de revisión, rama protegida, subir, fusionar, retro, testigo, «Siguiente:»; fuera: magia, autonomía, robot, «el agente decide» | Workflow (`templates/es/GLOSSARY.md` l.11 «Relevo»; `AGENTS.md` §«Relevos»; `README.es.md`); «testigo» y la lista «fuera», `biblia.md` §6 |
@@ -62,7 +62,7 @@ tanto, del Portal (heredado) o de la biblia y los prompts de este repo; la ident
 | Degradados | Opc. | solo la baldosa del logo (`#3D6FD9 → #0d1b2a`) | repo (`logos/galivelop-workflow-a.svg`); regla de familia en `docs/marcas/README.md` |
 
 **Medido:** la calibración da a este proyecto paleta ≥ 90 % (r1 y r5: 93-96 %; r2 palabras 96,6 %; r4 og 93,38 %), el más alto de los
-siete (`docs/registros/contenido/calibracion-measure.md` l.40 y l.71): un fondo plano de un solo azul con líneas finas cae casi
+siete (`docs/records/contenido/calibracion-measure.md` l.40 y l.71): un fondo plano de un solo azul con líneas finas cae casi
 entero dentro de ΔE76 < 15. r2 enseñó que hex, palabras o materiales dan casi la misma paleta (96,5 / 96,6 / 83,8 %): se eligió
 «palabras» porque material deja una mancha (`r2-estilo.md` l.30-32, l.50).
 
@@ -159,7 +159,7 @@ palabras, dentro del rango 120-320; todos acaban en «The image is completely te
 
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
-| Veredicto | Obl. | la persona: r1 «sí» (2026-10-26, por proyecto y no por semilla, «pasa pese a la nota»); r2-r5 delegado al agente. Apuntado en `docs/registros/contenido/r1-fondos.md` l.47-57, `r2-estilo.md` l.50 (elegida «palabras»), `r4-composicion.md` l.18, `r5-piezas.md` l.32 | repo |
+| Veredicto | Obl. | la persona: r1 «sí» (2026-10-26, por proyecto y no por semilla, «pasa pese a la nota»); r2-r5 delegado al agente. Apuntado en `docs/records/contenido/r1-fondos.md` l.47-57, `r2-estilo.md` l.50 (elegida «palabras»), `r4-composicion.md` l.18, `r5-piezas.md` l.32 | repo |
 | Contraste del texto | Rec. | ≥ 4,5:1 (por defecto); medido: og r4 16,64 (peor 15,86) sin velo; r5 cuadrado 15,75 (15,54), vertical 15,89 (15,64), cabecera 15,14 (14,82) con velo 0,3. Todas sobre el 7:1 de AAA | repo (`r4-composicion.md` l.18; `r5-piezas.md` l.32) |
 | Umbrales de medida | Rec. | los de las secciones 3 y 7: paleta ≥ 90 %, YAVG 30-50, SATAVG 8-12 | repo (`calibracion-measure.md` l.71) |
 | EMD frente a la marca | Opc. | Cb ≤ 3 / Cr ≤ 4 (medido frente a la portada del Portal: Cb 0,9-1,8, Cr 1,4-3,5), los más bajos de los siete | repo (`calibracion-measure.md` l.40, l.71) *(suposición: la referencia, sección 8)* |
@@ -209,7 +209,7 @@ palabras, dentro del rango 120-320; todos acaban en «The image is completely te
   allí lo sigue siendo aquí).
 - `docs/plan.md` l.258-261 (decisiones de la persona del 2026-10-26: monograma «gw»), l.632-644 («Estilos por proyecto»,
   Galivelop-workflow), l.900 («Marcas sin material»).
-- `docs/registros/contenido/calibracion-measure.md` l.39-40, l.56, l.71; `r1-fondos.md` l.47-57; `r2-estilo.md` l.30-32, l.50;
+- `docs/records/contenido/calibracion-measure.md` l.39-40, l.56, l.71; `r1-fondos.md` l.47-57; `r2-estilo.md` l.30-32, l.50;
   `r3-borrador.md` l.48, l.66; `r4-composicion.md` l.18, l.28-33; `r5-piezas.md` l.32, l.51.
 - `examples/pilot/componer.py` l.105-115 (`caja_zona`), l.119 (`peso_titulo=700`), l.129-137 (logo al 9 %), l.159-160
   (subtítulo 400); `examples/pilot/fuentes.sh` l.8-12 (origen y licencia de las fuentes).
@@ -288,7 +288,7 @@ Entre el repo de Workflow (`7d61089`) y la biblia (`a50b544`), o entre la biblia
    nota `.claude/gw/gw-media-content.md` que lo haría. **Propuesta:** la hoja manda con la biblia; en `docs/propuestas/galivelop-workflow.md`
    se le pide a Workflow una nota con `Palette:` que mapee `--background: #0d1b2a; --surface: #06121c; --border: #1b3447;
    --text: #eef6fb; --muted: #8a9bb0; --accent: #38b6e8; --accent-text: #0d1b2a; --good: #4cc38a; --bad: #f0716a` y
-   `--font: Inter, …` (el borde `#1b3447` es el del Portal; la biblia no da uno: **[P]**). El `.brand` en mayúsculas queda como está
+   `--font: Inter, …` (el borde `#1b3447` es el de las superficies oscuras del Portal, `docs/marcas/portal/biblia.md` l.28; la biblia de Workflow no lo lista). El `.brand` en mayúsculas queda como está
    si la persona lo acepta como rótulo de tarjeta, no como wordmark.
 2. **Zona reservada del `square`.** Biblia §7: «el tercio superior en `square`». `prompts/r5-cuadrado.txt` y `r5-vertical.txt`
    piden «the upper half», `piezas.json` compone en `arriba` (48 % del alto) y la medida salió 15,75 (peor 15,54).
@@ -301,7 +301,7 @@ Entre el repo de Workflow (`7d61089`) y la biblia (`a50b544`), o entre la biblia
    dibuja las letras en trazos de 12/128 con remates redondos, sin fuente. **Propuesta:** mantener los trazos (sin dependencia
    de fuente, mismo lenguaje que `gv-logo.svg`) y apuntarlo en la biblia; es la parte **[P]** del logo.
 5. **Rutas y versión desfasadas en la biblia.** §10 cita `skills/gw-media-content/reglas.json` y el commit `56212e8`; hoy el
-   archivo es `rules.json` (renombrado, `CHANGELOG.md` l.145) y el commit `7d61089`. §1 dice «v0.4.x»; el `README` dice
+   archivo es `rules.json` (el `CHANGELOG.md` l.743 y l.879 aún lo nombran `reglas.json`) y el commit `7d61089`. §1 dice «v0.4.x»; el `README` dice
    `0.4.3` y `.claude-plugin/plugin.json` y `.claude/gw.json` dicen `0.5.0` (la versión en desarrollo). **Propuesta:** actualizar
    §10; en las piezas no se nombra versión salvo que la pida una tarjeta de release, que la toma de `figures.py`.
 
