@@ -86,3 +86,21 @@ es el mismo que el de octubre, pero aquel salió con semilla 3 y 8 pasos (1280×
 una semilla por ronda el resultado es lotería. Además, los prompts de estilo piden a propósito «minimal», «nearly
 empty», «calm»: esa dirección es la que la persona rechaza. Ajustes propuestos para la próxima vuelta: Tarkor, titular en tres
 líneas o zona 2/5 (choca con el 1/3 de la hoja); toVeriAI, lockup y titular más grandes dentro de la franja.
+
+## r6 «detalle» (2026-11-04)
+
+Respuesta al veredicto: Fable reescribe los cinco prompts (`examples/<p>/orders/r6-detalle.json`, sin «minimal» ni
+«nearly empty»; materia, luz, profundidad y elementos con sentido) y las plantillas OG de image-generator (titular en una
+línea), Tarkor (tres líneas, campo `title3`) y toVeriAI (lockup y titular mayores). 4 semillas (1-4) × 8 pasos por
+proyecto, #41-#60. Hojas de contactos: `piloto/r6-detalle/<p>.png`; compuestas: `piloto/r6-detalle/compuestas/` y
+`piloto/r6-detalle/elegidas.png` (fuera de git). Elegidas por el agente (delegado):
+
+| Proyecto | Intento | Contraste media / p10 | Nota del agente |
+|---|---|---|---|
+| tarkor | q59 (#3) | 5,1 / 10,4 (velo subido a 0,72: con 0,45 daba 3,3) | asentamiento con atalaya, empalizada y agujas; cielo pálido, menos drama que r4 |
+| toveriai | q55 (#3) | 15,2 / 13,0 | bodegón con regla, compás, cuentagotas y muestras; el compás roza el subtítulo |
+| portal | q42 (#2) | 9,2 / 18,3 | umbral 3D de piedra con haces y ondas; más gris que el turquesa de octubre |
+| galivelop-image-generator | q46 (#2) | 11,2 / 18,6 | láminas de cristal con neblina violeta y reflejo |
+| galivelop-workflow | q49 (#1) | ≥ 4,5 | ramas con orden, pero sigue siendo un diagrama simple: probable cambio de concepto |
+
+**Cierre:** pendiente del veredicto de la persona.
