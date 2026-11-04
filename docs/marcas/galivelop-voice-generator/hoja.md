@@ -1,12 +1,12 @@
 # Hoja de estilo mínima: galivelop-voice-generator
 
-**Propuesta** (2026-11-04), pendiente de la persona; tercer caso de [`../plantilla-hoja-de-estilo.md`](../plantilla-hoja-de-estilo.md)
+**Aprobada el 2026-11-04** (decisiones delegadas por la persona; ver `docs/records/decisiones-hojas-2026-11-04.md`); tercer caso de [`../plantilla-hoja-de-estilo.md`](../plantilla-hoja-de-estilo.md)
 (F2.12), rellenada tras [`../galivelop-image-generator/hoja.md`](../galivelop-image-generator/hoja.md) y
 [`../galivelop-workflow/hoja.md`](../galivelop-workflow/hoja.md) (las dos aprobadas el 2026-11-04) y con su misma forma.
 Complementa a [`biblia.md`](biblia.md): la biblia es la lectura larga; esta hoja es lo que `gimg` necesita, campo a campo y en el
 orden de la plantilla. Estados como en [`../README.md`](../README.md): sin marca sale de un repo (ruta en la sección 13);
 **heredado de `<marca>`** sale del repo de la marca paraguas (el Portal) leído a través de su biblia; **[P]** es propuesta
-pendiente de la persona, con su porqué en la misma celda; *(suposición)* se comprueba en una ronda; «no hay» solo donde la
+del agente, **aprobada por delegación** el 2026-11-04 (la persona no la ha visto pieza a pieza), con su porqué en la misma celda; *(suposición)* se comprueba en una ronda; «no hay» solo donde la
 plantilla lo admite.
 
 Commits de referencia: galivelop-voice-generator `ab1ff10` (`claude/voces-f1`, el mismo que cita la biblia; `main` solo tiene el
@@ -28,7 +28,7 @@ repo de voces (`README.md`, `GLOSSARY.md`).
 | Nombre de marca | Obl. | «galivelop-voice-generator»: en minúsculas, con guiones, de una pieza (así va en el título de `README.md` y `README.en.md` y en el lockup). No tiene nombre «bonito»; en los textos del propio repo se le llama «el generador» | voces (`README.md` l.1, `README.en.md` l.1; `GLOSSARY.md` l.32-36, «Generador») |
 | Nombre en código | Obl. | `galivelop-voice-generator` | repo (`examples/galivelop-voice-generator/galivelop-images.json`, `name`); coincide con el nombre del repo `github.com/Zeldris/galivelop-voice-generator` |
 | Fuente de verdad | Rec. | galivelop-voice-generator `claude/voces-f1` `ab1ff10` (propósito, tono, vocabulario, idiomas, estado); Portal `aa76b34` (fondo, texto, tipografía, baldosa); este repo `fd2ae53` (acento, prompts, piezas, medidas, logos dibujados). Rutas por campo en la sección 13 | repo |
-| Quién decide | Obl. | La persona. Dio ella el veredicto de r1 (2026-10-26, «sí» a voice-generator en las semillas 3 y 4); desde entonces, delegado al agente («lo dejo en tus manos») hasta que diga otra cosa; cada decisión delegada lleva **[P]** y se le propone al cerrar F2 | repo (`docs/records/contenido/r1-fondos.md` l.46 y l.52-53; `docs/marcas/README.md` l.24-38, «Elegido por el agente») |
+| Quién decide | Obl. | La persona. Dio ella el veredicto de r1 (2026-10-26, «sí» a voice-generator en las semillas 3 y 4); desde entonces, delegado al agente («lo dejo en tus manos») hasta que diga otra cosa; cada decisión delegada lleva **[P]** y se le propone al cerrar F2. El 2026-11-04 delegó las dudas de esta hoja y quedó aprobada (`docs/records/decisiones-hojas-2026-11-04.md`) | repo (`docs/records/contenido/r1-fondos.md` l.46 y l.52-53; `docs/marcas/README.md` l.24-38, «Elegido por el agente») |
 | Fecha de la hoja | Rec. | `2026-11-04` | — |
 | Familia visual | Rec. | `Galivelop`: fondo, texto, tipografía y baldosa son los de la familia, sin cambios (Rec. aquí, no Obl.) | heredado de Portal-Galivelop `aa76b34` (vía `docs/marcas/portal/biblia.md` §2-§4); `docs/plan.md` l.662-665 («Herramientas del taller … entran en la familia del Portal **[P]**»; la familia está confirmada por las piezas de r1-r5, el acento sigue **[P]**) |
 | Hereda de | Opc. | Portal-Galivelop `aa76b34` (leído solo a través de `docs/marcas/portal/biblia.md`) | repo |
@@ -56,18 +56,18 @@ repo de voces (`README.md`, `GLOSSARY.md`).
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
 | Fondo | Rec. (familia Galivelop) | oscura (por defecto) `#06121c`; clara `#f6fafd` **[P]** (ninguna pieza clara hecha) | heredado de Portal-Galivelop `aa76b34` (`global.css` vía `portal/biblia.md` §2); repo (`galivelop-images.json` `brand.palette`; `piezas.json` `velo`) |
-| Texto | Rec. (familia Galivelop) | `#eaf4fa` sobre oscuro (secundario `#9fb4c4`); `#0a1a28` sobre claro **[P]** (va con la pieza clara) | heredado de Portal-Galivelop `aa76b34`; `#eaf4fa` es el `color_texto` de las cuatro piezas compuestas de `piezas.json`, **y no está en `brand.palette`** (image-generator lo añadió el 2026-11-04; aquí no) |
+| Texto | Rec. (familia Galivelop) | `#eaf4fa` sobre oscuro (secundario `#9fb4c4`); `#0a1a28` sobre claro **[P]** (va con la pieza clara) | heredado de Portal-Galivelop `aa76b34`; `#eaf4fa` es el `color_texto` de las cuatro piezas compuestas de `piezas.json`; **ya está en `brand.palette`** (añadido el 2026-11-04, contradicción 3) |
 | Acento | Obl. | `#D9467A` (frambuesa), uno por pieza: la cinta de onda en la imagen, la baldosa y el nombre del lockup; sobre fondo claro, `#A62E5A` | **[P]** (`docs/plan.md` l.665-666 «Acentos propuestos [P] … voces frambuesa `#D9467A`»; `docs/marcas/README.md` l.38 «Acentos de las herramientas … como se propusieron», decisión delegada); repo (`galivelop-images.json` `brand.palette`; `prompts/r2-hex.txt`; `logos/galivelop-voice-generator-a.svg`) |
 | Acentos en imagen, en orden de peso y significado | Rec. | un solo acento con su tono claro, en este orden: frambuesa `#D9467A` (la cinta: la voz, la toma elegida), rosa `#F6B1CA` (los anillos finos y los halos: las tomas no elegidas, la huella), blanco `#FFFFFF` (las crestas de la cinta). Es el reparto de `r2-hex.txt` («rings … in #F6B1CA. The ribbon glows in #D9467A with soft highlights in #ffffff») | repo (`prompts/r2-hex.txt`, descartado en r2 pero es el que fija los hex de `brand.palette` y de la calibración); el significado de cada tono, **[P]** (`biblia.md` §2) |
-| Resto de la paleta | Rec. | acento claro `#F6B1CA` **[P]**; acento oscuro `#A62E5A` (final del degradado de la baldosa; acento sobre claro) **[P]**; superficies `#0c1d2b`, `#11283a`; borde `#1b3447`; texto 2 `#9fb4c4`; blanco `#FFFFFF` (trazo del símbolo). `brand.palette` de hoy lleva 4: `#06121c`, `#F6B1CA`, `#D9467A`, `#ffffff`; **faltan** `#eaf4fa` (el texto) y `#A62E5A` (el logo) | repo (`galivelop-images.json` `brand.palette`, de `prompts/r2-hex.txt`); superficies, borde y texto 2 heredados de Portal-Galivelop `aa76b34` (vía `portal/biblia.md` §2); los tres tonos frambuesa **[P]** (`biblia.md` §2) |
+| Resto de la paleta | Rec. | acento claro `#F6B1CA` **[P]**; acento oscuro `#A62E5A` (final del degradado de la baldosa; acento sobre claro) **[P]**; superficies `#0c1d2b`, `#11283a`; borde `#1b3447`; texto 2 `#9fb4c4`; blanco `#FFFFFF` (trazo del símbolo). `brand.palette` lleva 6: `#06121c`, `#F6B1CA`, `#D9467A`, `#ffffff`, `#eaf4fa` (el texto) y `#A62E5A` (el logo); los dos últimos entraron el 2026-11-04 | repo (`galivelop-images.json` `brand.palette`, de `prompts/r2-hex.txt`); superficies, borde y texto 2 heredados de Portal-Galivelop `aa76b34` (vía `portal/biblia.md` §2); los tres tonos frambuesa **[P]** (`biblia.md` §2) |
 | Combinaciones | Rec. | oscura: `#06121c` + texto `#eaf4fa` + velo `#06121c:0` en `og` (contraste sobra, 16,97) y `#06121c:0.3` en `cuadrado`, `vertical` y `cabecera`; sobre imagen: texto `#eaf4fa` en la zona reservada que el prompt deja lisa, el logo siempre en su baldosa; clara **[P]**: `#f6fafd` + `#0a1a28` + acento `#A62E5A` | repo (`piezas.json`, `velo`, `color_texto`; `r4-composicion.md` l.21); la clara **[P]** (`biblia.md` §2, sin pieza hecha) |
-| Prohibidos | Rec. | el celeste del Portal `#1aa6df` como acento de la herramienta; el violeta `#8B5CF6` del generador de imágenes (son gemelos: no se mezclan); rojo puro o magenta neón; negro `#000`; acento sobre acento; más de un acento por pieza | **[P]** (`biblia.md` §2: lo escribió el agente; ninguna pieza lo ha puesto a prueba) |
+| Prohibidos | Rec. | el celeste del Portal `#1aa6df` como acento de la herramienta; el violeta `#8B5CF6` del generador de imágenes (son gemelos: no se mezclan); rojo puro o magenta neón; negro `#000`; acento sobre acento; más de un acento por pieza | **[P]**, aprobada por delegación (`biblia.md` §2: lo escribió el agente; ninguna pieza lo ha puesto a prueba) |
 | Degradados | Opc. | solo la baldosa del logo (`#D9467A → #A62E5A`) | repo (`logos/galivelop-voice-generator-a.svg`); regla de familia en `docs/marcas/README.md` «Común a todos» |
 
 **Medido:** la calibración da a este proyecto paleta ≥ 72 % (r1 y r5: 75-86 %; r2 palabras 75,7 %; r5 cuadrado 80 %, vertical 81 %,
-cabecera 75 %), con los 4 hex de `brand.palette` y ΔE76 < 15 (`docs/records/contenido/calibracion-measure.md` l.44 y l.74). **La og
+cabecera 75 %), con los 4 hex que entonces tenía `brand.palette` y ΔE76 < 15 (`docs/records/contenido/calibracion-measure.md` l.44 y l.74). **La og
 compuesta de r4 midió 70,22 %**, por debajo de ese umbral (`r4-composicion.md` l.21): el texto `#eaf4fa` y el nombre del lockup no
-cuentan como paleta porque no están en `brand.palette` (ver «Contradicciones», 3). r2 confirmó que hex, palabras o materiales dan
+contaban como paleta porque no estaban en `brand.palette`; ya están (ver «Contradicciones», 3), falta volver a medir. r2 confirmó que hex, palabras o materiales dan
 casi la misma imagen (74,3 / 74,4 / 75,7 %); se eligió «palabras» porque material ensucia el fondo con textura (`r2-estilo.md`
 l.27-29 y l.49).
 
@@ -80,7 +80,7 @@ l.27-29 y l.49).
 | Variante clara y oscura | Rec. | la baldosa lleva su propio fondo y vale sobre los dos; el nombre del lockup, `#D9467A` sobre oscuro (único archivo que existe) y `#A62E5A` sobre claro | **[P]** (`biblia.md` §4; solo existe el archivo para oscuro y nadie ha medido `#A62E5A` sobre `#f6fafd`) |
 | Tamaño mínimo y margen | Rec. | símbolo 16 px; lockup 24 px de alto y por debajo solo el símbolo; margen libre un cuarto del lado de la baldosa; nombre a la derecha a 28/128 de separación, nunca debajo | **[P]** (`biblia.md` §4; reglas escritas por el agente al elegir) |
 | Usos prohibidos | Opc. | cambiar el `rx` o el trazo, sacar el dibujo de la baldosa, rotar, recolorear, sombra o brillo, **convertir la onda en boca o en micrófono** | **[P]** (`biblia.md` §4) |
-| Logo fuera de la paleta | Opc. | `#A62E5A` (final del degradado) está en el SVG y **no** en `brand.palette` de la configuración; sí en la tabla de la biblia | repo (diferencia entre `galivelop-images.json` y `biblia.md` §2) |
+| Logo fuera de la paleta | Opc. | no hay: `#A62E5A` (final del degradado) está en el SVG, en `brand.palette` (desde el 2026-11-04) y en la tabla de la biblia | repo (`galivelop-images.json`, `biblia.md` §2) |
 
 Copia en `examples/galivelop-voice-generator/logos/`: **no hay** (F2.10, dec. 3, pendiente); `piezas.json` apunta hoy a
 `docs/marcas/…/logos/`. En r4 el lockup de 1100×128 salía a ~24 px de alto y el nombre no se leía; desde entonces el piloto lo pone al
@@ -90,8 +90,8 @@ Copia en `examples/galivelop-voice-generator/logos/`: **no hay** (F2.10, dec. 3,
 
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
-| Familia de titular | Rec. (familia Galivelop) | Sora 700 (reserva `sans-serif`); tracking −0,03 em en el wordmark. Las piezas de r4-r5 salieron a 700 (`componer.py` `peso_titulo=700`): coincide con la biblia | heredado de Portal-Galivelop `aa76b34` (`Logo.tsx` vía `portal/biblia.md` §3); repo (`piezas.json` `fuente`; lockup `font-family="Sora, sans-serif"`; `examples/pilot/componer.py` l.119) |
-| Familia de texto | Rec. | Inter 400/500 (reserva `sans-serif`); las piezas salieron a 400 con opacidad 0,82 | heredado de Portal-Galivelop `aa76b34`; repo (`piezas.json` `fuente_texto`; `componer.py` l.159-160) |
+| Familia de titular | Rec. (familia Galivelop) | Sora 700 (reserva `sans-serif`); tracking −0,03 em en el wordmark. **Peso 700 en el titular**, como salió en r4-r5 (`componer.py` `peso_titulo=700`) y como pone la biblia; es la misma regla de los siete proyectos (`docs/records/decisiones-hojas-2026-11-04.md`) | heredado de Portal-Galivelop `aa76b34` (`Logo.tsx` vía `portal/biblia.md` §3); repo (`piezas.json` `fuente`; lockup `font-family="Sora, sans-serif"`; `examples/pilot/componer.py` l.119) |
+| Familia de texto | Rec. | Inter (reserva `sans-serif`); **el subtítulo, Inter 400 con opacidad 0,82**, como salió en las piezas; el 500 solo en interfaz, no en pieza | heredado de Portal-Galivelop `aa76b34`; repo (`piezas.json` `fuente_texto`; `componer.py` l.159-160) |
 | Licencia y archivo | Rec. | Sora e Inter, OFL, del repo `google/fonts`; `examples/pilot/fuentes.sh` las baja a `piloto/fuentes/` (fuera de git) y `componer.py` las suma por `FONTCONFIG_FILE`. No instaladas en `~/.local/share/fonts` *(suposición: `gimg doctor` lo dirá cuando haya `compose.fonts`)* | repo (`examples/pilot/fuentes.sh` l.8-12) |
 | Tracking y mayúsculas | Opc. | títulos Sora −0,02 em; sin mayúsculas sostenidas (el nombre va en minúsculas, con sus guiones, en una línea y un solo color); monoespaciada del sistema para claves y órdenes (`orcos/guerrero-1`, `gvoice`) | heredado de Portal-Galivelop `aa76b34` (vía `portal/biblia.md` §3); monoespaciada **[P]** (`biblia.md` §3, sin pieza que la use); las claves, voces (`GLOSSARY.md` l.97-100; `docs/plan.md` D9) |
 
@@ -101,15 +101,14 @@ Copia en `examples/galivelop-voice-generator/logos/`: **no hay** (F2.10, dec. 3,
 |---|---|---|---|
 | Motivos Sí | Obl. | 1) una sola cinta de luz con forma de onda sonora («sound-wave ribbon») que entra desde el centro y se enrosca en anillos concéntricos finos hechos de hilos de luz (la huella de la voz); 2) frambuesa cálida con crestas blancas (la voz, la toma elegida); 3) azul noche profundo con rejilla tenue de puntos (la web del Portal). Sin usar aún, de la biblia: las barras de tomas con una encendida; los anillos concéntricos sueltos | repo (`prompts/estilo.txt`, «sí» de la persona en r1 sobre `og.txt`, elegido en r2; `docs/plan.md` l.670 «Voces: una cinta de onda que se enrosca en una huella»; `biblia.md` §7) |
 | Motivos No | Obl. | micrófonos, cascos, altavoces, estudios, bocas, caras, personas, cantantes, actores de voz, robots, cerebros, chispas, texto | repo (`biblia.md` §7; `docs/plan.md` l.666-667; `docs/marcas/README.md` l.179) |
-| Palabras vetadas | Obl. | `microphone`, `mic`, `headphones`, `speaker`, `studio`, `mouth`, `lips`, `face`, `person`, `singer`, `voice actor`, `human`, `robot`, `brain`, `sparkle`, `magic`, `text`, `letters`, `logo`; más `like` y cualquier lugar real (reglas comunes) | repo (`biblia.md` §7). `estilo.txt`, `r2-*.txt` y `r5-*.txt` no las contienen (grep del 2026-11-04); **`og.txt` y `orders/r1-og.json` llevan «shaped like a sound wave»** (comparación con `like`, prompt de r1 superado: r2 lo cambió a «sound-wave ribbon») |
+| Palabras vetadas | Obl. | `microphone`, `mic`, `headphones`, `speaker`, `studio`, `mouth`, `lips`, `face`, `person`, `singer`, `voice actor`, `human`, `robot`, `brain`, `sparkle`, `magic`, `text`, `letters`, `logo`; más `like` y cualquier lugar real (reglas comunes) | repo (`biblia.md` §7). `estilo.txt`, `r2-*.txt` y `r5-*.txt` no las contienen (grep del 2026-11-04); `og.txt` y `orders/r1-og.json` llevan «shaped like a sound wave» y se **dejan como históricos** (prompt de r1, superado: r2 lo cambió a «sound-wave ribbon»; contradicción 4) |
 | Estilo de imagen | Rec. | «Style: minimal elegant digital art, thin precise luminous lines, soft glow, smooth gradients. Colours: deep midnight navy, raspberry pink, soft rose and white highlights. Mood: calm, warm, attentive.» | repo (`prompts/estilo.txt`, elegido en r2) |
 | Lenguaje de forma | Opc. | ondas, barras, anillos y espirales; curvas continuas, plano, sin perspectiva ni sombra dura; una sola toma encendida; trazo 12/128 con remates redondos; `rx` 30/128 en la baldosa | repo (`biblia.md` §5; `logos/…-a.svg`); baldosa y trazo heredados de Portal-Galivelop `aa76b34` (`gv-logo.svg`) |
 
 Prompts del proyecto (`examples/galivelop-voice-generator/prompts/`): `estilo.txt` (= `r2-palabras.txt`, **118 palabras**; elegido
-en r2), `og.txt` (r1, 122; «sí» de la persona en semillas 3 y 4; lleva «shaped like»: superado por `estilo.txt`, se conserva como
-historia), `r2-hex.txt` (**115**) y `r2-material.txt` (131) (descartados), `r5-cuadrado.txt` (124), `r5-vertical.txt` (125),
-`r5-cabecera.txt` (127) (compuestos y medidos), `r2-luz.txt` (160, sin veredicto). **Dos están por debajo del mínimo de 120 de la
-plantilla** (`estilo.txt` y `r2-hex.txt`; ver «Contradicciones», 2); los demás, 122-160. Todos acaban en «The image is completely
+en r2), `og.txt` (r1, 122; «sí» de la persona en semillas 3 y 4; lleva «shaped like»: histórico, superado por `estilo.txt`), `r2-hex.txt` (**115**) y `r2-material.txt` (131) (descartados), `r5-cuadrado.txt` (124), `r5-vertical.txt` (125),
+`r5-cabecera.txt` (127) (compuestos y medidos), `r2-luz.txt` (160, sin veredicto). **Dos están por debajo de los 120 de la
+plantilla** (`estilo.txt` y `r2-hex.txt`; el mínimo pasa a aviso, ver «Contradicciones», 2); `r2-control.json` tiene 119 y es histórico; los demás, 122-161. Todos acaban en «The image is completely
 textless.».
 
 ## 7. Luz y atmósfera
@@ -131,13 +130,13 @@ textless.».
 
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
-| Perfiles | Obl. | en la configuración: `og` 1280×640 (**sin** `targetWidth`/`targetHeight` 1200×630) y `social` 1280×640. Hechos en el piloto y sin perfil: `square` 1024×1024 → 1080×1080 (`cuadrado`), `portrait` 896×1152 → 1080×1350 (`vertical`), `header` 1536×512 → 1500×500 (`cabecera`) | repo (`galivelop-images.json`; `piezas.json`); los tres de r5 **[P]** (F2.10, dec. 2: «se quedan con `og` y `social`, los formatos de sus biblias»; `docs/plan.md` l.752-754) |
-| Zona reservada | Obl. | `og`, `social`, `header`: `izquierda 1/2` («The left half of the frame is a calm, smooth, dark navy surface, nearly empty and softly out of focus»); `square`, `portrait`: `arriba 1/2` («The upper half of the frame is a calm, smooth, dark navy surface…»). En píxeles (conversión de la plantilla): `og` entregado 1200×630 → `0,0,600,630`; `social` 1280×640 → `0,0,640,640`; `square` 1080×1080 → `0,0,1080,540`; `portrait` 1080×1350 → `0,0,1080,675`; `header` 1500×500 → `0,0,750,500`. La caja del piloto es 55 % del ancho menos margen (izquierda) o 48 % del alto (arriba), margen 6 %: no coincide con 1/2 y se alinea al portar a `compose` | repo (`prompts/*.txt`; `examples/pilot/componer.py` `caja_zona` l.105-115). **La biblia dice «tercio superior [P]» para `square`; r5 pidió y midió la mitad** (ver «Contradicciones», 1) |
+| Perfiles | Obl. | en la configuración: `og` 1280×640 → 1200×630 (con `draft`), `social` 1280×640, `square` 1024×1024 → 1080×1080 (`cuadrado`), `portrait` 896×1152 → 1080×1350 (`vertical`), `header` 1536×512 → 1500×500 (`cabecera`). Los tres últimos, hechos en r5, se declararon el 2026-11-04 (F2.10, dec. 2 los había dejado fuera) | repo (`galivelop-images.json`; `piezas.json`; `docs/records/decisiones-hojas-2026-11-04.md`) |
+| Zona reservada | Obl. | `og`, `social`, `header`: `izquierda 1/2` («The left half of the frame is a calm, smooth, dark navy surface, nearly empty and softly out of focus»); `square`, `portrait`: `arriba 1/2` («The upper half of the frame is a calm, smooth, dark navy surface…»). En píxeles (conversión de la plantilla): `og` entregado 1200×630 → `0,0,600,630`; `social` 1280×640 → `0,0,640,640`; `square` 1080×1080 → `0,0,1080,540`; `portrait` 1080×1350 → `0,0,1080,675`; `header` 1500×500 → `0,0,750,500`. La caja del piloto es 55 % del ancho menos margen (izquierda) o 48 % del alto (arriba), margen 6 %: no coincide con 1/2 y se alinea al portar a `compose` | repo (`prompts/*.txt`; `examples/pilot/componer.py` `caja_zona` l.105-115). Para `square` manda la mitad (`arriba 1/2`), la que pidió y midió r5; la biblia ya no dice «tercio» (ver «Contradicciones», 1) |
 | Velo por perfil | Rec. | `og` `#06121c:0`; `cuadrado`, `vertical` y `cabecera` `#06121c:0.3` | repo (`piezas.json`, `velo`) |
 | Logo en la pieza | Rec. | lockup al 9 % del alto de la pieza (57 px en el `og`), en lo alto de la caja de la zona con el título debajo, margen 6 %; solo baja si no cabe a lo ancho de la columna | repo (`componer.py` l.129-137; `r4-composicion.md` l.29-33) |
 | Composición por perfil | Rec. | no hay plantilla SVG ni `compose` en la configuración: el piloto construye el SVG en código (`componer.construir_svg`: velo en degradado, lockup al 9 %, título Sora 700, subtítulo Inter 400). Portar a `compose: {template, logo, fields: ["title","subtitle"], fonts: ["Sora","Inter"], fit: "cover"}` | **[P]** (F2.8/F2.12) |
 | Piezas solo de logo | Rec. | `avatar` 512×512: `galivelop-voice-generator-a.svg` rasterizado, sin fondo (`"fondo": null`); hecho en r5, limpio. `icon` 180/192/512: no hay; el repo de voces no tiene web ni favicon que lo consuma | repo (`piezas.json`; `r5-piezas.md` l.56); `icon` **[P]** |
-| Borrador | Opc. | no hay en la configuración; r3 midió 640×320 a 4 pasos (51 s): YAVG/SATAVG/paleta 35/12/86 % frente a 47/16/75 % del definitivo, con la espiral anticipada y el hueco a la izquierda. Propuesto `draft: {scale: 0.5, steps: 4}` en `og` | **[P]** (F2.10, dec. 7; `r3-borrador.md` l.51 y l.62-64) |
+| Borrador | Opc. | `draft: {scale: 0.5, steps: 4}` en `og` (declarado el 2026-11-04); r3 midió 640×320 a 4 pasos (51 s): YAVG/SATAVG/paleta 35/12/86 % frente a 47/16/75 % del definitivo, con la espiral anticipada y el hueco a la izquierda | repo (`galivelop-images.json`; F2.10, dec. 7; `r3-borrador.md` l.51 y l.62-64) |
 | Palancas extra | Opc. | no hay: sin referencias de sujeto (motivo abstracto), sin imagen inicial (la zona salió limpia en r1-r5 sin boceto), sin LUT (paleta 75-86 %, dentro de rango), sin conversión final por parte de `gimg` | repo (`r1-fondos.md` l.46; `r5-piezas.md` l.35 y l.50-52) |
 | Prioridad | Rec. | la de la biblia: 1) logo elegido y `avatar` 512; 2) `social` 1280×640 de GitHub; 3) `og` 1200×630. Hechas en el piloto: `avatar`, `og`, `cuadrado`, `vertical`, `cabecera`; `social` sale del mismo fondo que `og` sin recortar. `banner` 1600×640 solo si el Portal presenta las herramientas | repo (`biblia.md` §9; `docs/plan.md` l.667-668 y l.672) |
 
@@ -146,9 +145,9 @@ textless.».
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
 | Titular del primer perfil compuesto | Obl. | «Una voz, su huella, todas sus frases.» (37 caracteres), en `og` | **[P]** (`piezas.json`, r4; es el lema, que es propuesta) |
-| Subtítulo | Rec. | «Voces con IA local para desarrollo: un servicio por máquina, varios proyectos.» (**78**; pasa del orientativo ≤ 70, pero cupo: `componer.py` no falló y el contraste se midió) | **[P]** como frase (`piezas.json`, r4); es casi literal de la primera frase del `README.md` de voces (l.5: «Generador de voces con IA local para desarrollo: un servicio por máquina que comparten varios proyectos») |
+| Subtítulo | Rec. | «Voces con IA local: un servicio por máquina, para varios proyectos.» (**67**, ≤ 70; la forma del subtítulo de image-generator). `piezas.json` aún lleva la frase de 78 y se actualiza al recomponer el `og` | **[P]**, aprobada por delegación (decisión del 2026-11-04); la frase de `piezas.json` r4 es casi literal de la primera frase del `README.md` de voces (l.5: «Generador de voces con IA local para desarrollo: un servicio por máquina que comparten varios proyectos») |
 | Variaciones, ganchos y cierres | Rec. | usados en r5: `cuadrado` «Cinco tomas, una elegida.» / «Voces sintéticas, elegidas toma a toma.»; `vertical` «Suena igual en cada frase.» / «La referencia manda; el motor puede cambiar.»; `cabecera` «Tú eliges la toma.» / «IA local: nada sale de tu equipo. Sin instalar nada.» | «Suena igual en cada frase» y «La referencia manda; el motor puede cambiar» resumen el glosario de voces («Voz: … suena igual en todas sus frases», `GLOSSARY.md` l.44; «Referencia: … la fuente de verdad de la voz, válida con cualquier motor futuro», l.49); «Sin instalar nada» resume «Sin dependencias: Python 3 solo con la biblioteca estándar» (`README.md` l.6); «Tú eliges la toma» es «Elegida: el intento que la persona escoge» (l.116); «toma» como palabra visible lo admite el glosario (l.104). El resto **[P]** (`biblia.md` §6; `piezas.json`): «cinco» no sale de ningún texto |
-| Longitud máxima por campo | Rec. | la fija la composición: `componer.py` baja el cuerpo hasta 16 px y falla si el texto no cabe en la zona. Orientativo: titular ≤ 40 (los de r4-r5 van de 18 a 37), subtítulo ≤ 70 (el de `og` tiene 78 y entró; los de r5, 39-52) | repo (`examples/pilot/componer.py` l.139-151; `piezas.json`) |
+| Longitud máxima por campo | Rec. | la fija la composición: `componer.py` baja el cuerpo hasta 16 px y falla si el texto no cabe en la zona. Orientativo: titular ≤ 40 (los de r4-r5 van de 18 a 37), subtítulo ≤ 70 (el de `og` pasa a 67; los de r5, 39-52) | repo (`examples/pilot/componer.py` l.139-151; `piezas.json`) |
 | Wordmark compuesto como texto | Opc. | el nombre va en el lockup (Sora 700, `#D9467A`), nunca como `text` del pedido | repo (lockup) |
 
 ## 11. Entrega
@@ -221,20 +220,18 @@ trazo 12).
 
 Sin línea aquí y por tanto **[P]** o *(suposición)*: el acento y sus tres tonos, el lema y las frases que no resumen el glosario, el
 logo elegido (no su concepto), las reglas del logo tras elegir, la pieza clara, los prohibidos de la paleta, la monoespaciada, «clonar»
-y «dar vida» como palabras fuera, los perfiles `square`/`portrait`/`header`, `draft`, `compose`, `icon`, el Portal como destino, la
+y «dar vida» como palabras fuera, `compose`, `icon`, el Portal como destino, la
 nota `Palette:` para un `gw-media-content` que el repo aún no tiene.
 
 **Lo que la configuración no refleja aún** (entrada de la propuesta a este repo; al de voces no hay nada que proponer hoy):
 
-- `og` sin `targetWidth` 1200 / `targetHeight` 630 (image-generator lo arregló el 2026-11-04; aquí no).
-- `#eaf4fa` (el texto de las cuatro piezas) fuera de `brand.palette` (image-generator lo añadió el 2026-11-04; aquí no): por eso la
-  og compuesta mide 70,22 % y no llega al ≥ 72 % de la calibración.
-- `#A62E5A` (final del degradado de la baldosa) fuera de `brand.palette`.
-- `square`, `portrait` y `header` hechos en r5 (`piezas.json`) y sin perfil; F2.10, dec. 2, los dejó fuera a propósito.
+- Hecho el 2026-11-04 en `galivelop-images.json`: `og` con `targetWidth` 1200 / `targetHeight` 630 y `draft`; `#eaf4fa` y `#A62E5A`
+  en `brand.palette`; perfiles `square`, `portrait` y `header` con su destino. Falta volver a medir la og (70,22 % antes de añadir
+  `#eaf4fa`) y poner el subtítulo de 67 caracteres en `piezas.json`.
 - `compose`: plantilla, fuentes, zona, velo y logo en la pieza viven en `examples/pilot/componer.py`.
-- `prompts/og.txt` y `orders/r1-og.json` llevan «shaped like a sound wave» (comprobación 8): o se marcan como históricos o se
-  retiran; `estilo.txt` ya es el que manda.
-- `prompts/estilo.txt` (118 palabras) y `r2-hex.txt` (115) quedan bajo el mínimo de 120 de la comprobación 9.
+- `prompts/og.txt` y `orders/r1-og.json` llevan «shaped like a sound wave» (comprobación 8): se dejan como históricos;
+  `estilo.txt` es el que manda.
+- `prompts/estilo.txt` (118 palabras) y `r2-hex.txt` (115) quedan bajo los 120 de la comprobación 9, que pasa a aviso.
 - Copia de los logos en `examples/galivelop-voice-generator/logos/`: pendiente (F2.10, dec. 3).
 
 ---
@@ -246,19 +243,19 @@ nota `Palette:` para un `gw-media-content` que el repo aún no tiene.
 | 1 | `name` válido | pasa (esquema) |
 | 2 | Propósito en una frase | pasa (criterio; es la primera frase del `README.md` de voces) |
 | 3 | «Nunca se muestra» no vacío | pasa; nadie lo valida por script |
-| 4 | `brand.palette` ≥ 3 hex ≤ 16; fondo, texto y acento nombrados | hex pasa (4); fondo `#06121c` y acento `#D9467A` están; **el texto `#eaf4fa` no está** (la hoja nombra los roles, la configuración no los lleva) |
+| 4 | `brand.palette` ≥ 3 hex ≤ 16; fondo, texto y acento nombrados | pasa (6 hex); fondo `#06121c`, texto `#eaf4fa` y acento `#D9467A` están (la hoja nombra los roles, la configuración no los lleva) |
 | 5 | Símbolo SVG válido | pasa a mano (viewBox, `<title>`, sin `<text>`/`<image>`/`filter`; legible a 16 px según la elección de `docs/marcas/README.md`); copia en `examples/<p>/logos/` **no hay** |
 | 6 | Familia de titular instalada | **no comprobable**: sin `compose.fonts`, y las fuentes viven en `piloto/fuentes/`, no en `~/.local/share/fonts` |
 | 7 | Motivos Sí, No y palabras vetadas no vacíos | pasa; nadie lo valida |
-| 8 | Ningún prompt con palabra vetada, negación ni «like» | **no pasa del todo:** `og.txt` y `orders/r1-og.json` llevan «shaped like» (prompt de r1, superado); `estilo.txt`, `r2-palabras/hex/material/luz.txt`, `r5-*.txt`, `orders/r2-control.json` y `r2-luz.json` pasan |
-| 9 | Prompt acaba en «The image is completely textless.» y tiene 120-320 palabras | cierre pasa, los nueve; **palabras no pasa en dos:** `estilo.txt` 118 y `r2-hex.txt` 115 (los otros siete, 122-160) |
-| 10 | ≥ 1 perfil con múltiplos de 64; `targetWidth`/`targetHeight` cuando el destino difiere | múltiplos de 64 pasa; **`og` sin destino declarado** (1200×630) |
-| 11 | Cada perfil compuesto declara su zona y el prompt la describe | el prompt la describe en los cuatro formatos; ningún perfil la declara (hueco) |
+| 8 | Ningún prompt con palabra vetada, negación ni «like» | pasa, salvo `og.txt` y `orders/r1-og.json` («shaped like»), históricos por decisión; `estilo.txt`, `r2-palabras/hex/material/luz.txt`, `r5-*.txt`, `orders/r2-control.json` y `r2-luz.json` pasan (comprobado el 2026-11-04 por palabra) |
+| 9 | Prompt acaba en «The image is completely textless.» y tiene 120-320 palabras | cierre pasa, los nueve; palabras: **aviso en tres** (`estilo.txt` 118, `r2-hex.txt` 115, `r2-control.json` 119; el mínimo es aviso desde el 2026-11-04), los otros 122-161 |
+| 10 | ≥ 1 perfil con múltiplos de 64; `targetWidth`/`targetHeight` cuando el destino difiere | múltiplos de 64 pasa; `og` 1200×630, `square` 1080×1080, `portrait` 1080×1350 y `header` 1500×500 declarados |
+| 11 | Cada perfil compuesto declara su zona y el prompt la describe | el prompt la describe en los cuatro formatos; ningún perfil la declara (hueco: hasta `compose`, la zona vive en este documento y en `piezas.json`) |
 | 12 | Titular ≤ 200, cabe en la columna | pasa (37 caracteres; r4 compuesto) |
 | 13 | `delivery.dir` relativa | pasa (esquema) |
 | 14 | «Quién decide» rellenado | pasa; nadie lo valida |
-| 15 | Todo hex de Fondo, Texto y Acento (y del logo) en `brand.palette` | **no pasa:** texto `#eaf4fa` y `#A62E5A` del logo no están; fondo claro `#f6fafd`, texto sobre claro `#0a1a28`, texto 2 `#9fb4c4` y superficies tampoco (se decide con la persona si la clara entra); fondo oscuro, acento y blanco sí |
-| 16 | Destino ≠ generación implica `targetWidth`/`targetHeight` | **no pasa** para `og` (1280×640 → 1200×630); `square`, `portrait` y `header` no están declarados (hueco) |
+| 15 | Todo hex de Fondo, Texto y Acento (y del logo) en `brand.palette` | pasa para los hex de la pieza oscura y del logo (`#eaf4fa` y `#A62E5A` entraron el 2026-11-04); no están el fondo claro `#f6fafd`, texto sobre claro `#0a1a28`, texto 2 `#9fb4c4` y las superficies (la clara no está hecha: entran con ella) |
+| 16 | Destino ≠ generación implica `targetWidth`/`targetHeight` | pasa (`og`, `square`, `portrait`, `header` declarados) |
 
 Validador: `gimg doctor --project <p>`, antes de r5 (aún no implementado). **Obligatorios de esta hoja: 15** (familia Galivelop;
 18 con la familia propia). Fondo, texto y titular son Rec. y están completos, heredados del Portal sin cambios.
@@ -283,38 +280,38 @@ apruebe pasa a ser la referencia; hasta entonces, «imagen de marca» es «no ha
 
 Entre el repo de voces (`ab1ff10`) y la biblia, o entre la biblia, la plantilla y lo que ya generó el motor.
 
-1. **Abierta: `arriba 1/2`, lo medido; corregir la biblia.** **Zona reservada del `square`.** Biblia §7: «en `square` **[P]**, el
+1. **Resuelta: `arriba 1/2`** (criterios 2 y 3 de `docs/records/decisiones-hojas-2026-11-04.md`: lo compuesto y medido manda; una zona por perfil); la biblia §7 queda corregida. **Zona reservada del `square`.** Biblia §7: «en `square` **[P]**, el
    tercio superior». `prompts/r5-cuadrado.txt` y `r5-vertical.txt` piden «The upper half of the frame», `piezas.json` compone en
    `arriba` (48 % del alto) y la medida salió 15,46 (peor 14,6) y 15,89 (15,66). Es el mismo caso que Workflow resolvió el
    2026-11-04 a favor de la mitad. **Propuesta:** `arriba 1/2`; corregir la biblia §7.
-2. **Abierta: la persona decide.** **Dos prompts bajo el mínimo de 120 palabras.** La plantilla (comprobación 9, «máquina») exige
+2. **Resuelta: el mínimo de 120 pasa a aviso** (cambio de plantilla, ya aplicado); no se alarga `estilo.txt`. **Dos prompts bajo el mínimo de 120 palabras.** La plantilla (comprobación 9, «máquina») exige
    120-320 palabras; `estilo.txt`, el prompt que manda (= `r2-palabras.txt`, elegido en r2 y heredero del «sí» de r1), tiene 118, y
    `r2-hex.txt` 115. El prompt no está mal: es el más corto de los siete proyectos porque la escena es una sola cinta (image-generator
    va en 124-130, «en el suelo»). **Propuesta:** no alargar `estilo.txt` por dos palabras (cambiaría la imagen aprobada); dos
    salidas: (a) cuando r2-luz tenga veredicto, su versión de 160 palabras pasa a ser `estilo.txt` y la comprobación queda en verde;
    (b) la plantilla baja el mínimo o lo deja en aviso (ver «Cambios que pediría a la plantilla», 1). Mientras, la comprobación 9
    se apunta «no pasa en dos».
-3. **Abierta: añadir `#eaf4fa` a `brand.palette` y volver a medir.** **La og compuesta no llega a su propio umbral de paleta.**
+3. **Resuelta: `#eaf4fa` y `#A62E5A` entran en `brand.palette`** (hecho el 2026-11-04); queda volver a medir la og, y si sigue bajo 72 se fija el umbral en lo medido (≥ 70). **La og compuesta no llega a su propio umbral de paleta.**
    La calibración fija ≥ 72 % para este proyecto (de r1 y r5: 75-86 %), pero la og compuesta de r4 midió 70,22 %
    (`r4-composicion.md` l.21): el texto `#eaf4fa` y el nombre del lockup no están en los 4 hex de `brand.palette`, así que la
    composición baja el porcentaje. Image-generator lo arregló el 2026-11-04 añadiendo `#eaf4fa`; aquí no se hizo. **Propuesta:**
    añadir `#eaf4fa` (y `#A62E5A`, el del logo) a `brand.palette` y medir de nuevo la og; si sigue bajo 72, el umbral de las piezas
    compuestas se fija en lo medido (≥ 70) y se apunta en `calibracion-measure.md`.
-4. **Abierta: históricos o fuera.** **«shaped like a sound wave» en `og.txt` y `orders/r1-og.json`.** Es el prompt de r1 (el que la
+4. **Resuelta: históricos.** `og.txt` y `orders/r1-og.json` se dejan como están, marcados históricos en esta hoja; `estilo.txt` manda. **«shaped like a sound wave» en `og.txt` y `orders/r1-og.json`.** Es el prompt de r1 (el que la
    persona aprobó) y lleva una comparación con «like», que la plantilla veta (comprobación 8); r2 lo cambió a «sound-wave ribbon»
    sin que la imagen cambiara (r2 palabras: «Igual que hex, con más aire a la izquierda»). **Propuesta:** como en Workflow:
    marcarlos como históricos (o retirarlos); `estilo.txt` ya es el que manda.
-5. **Abierta: la persona decide viendo la pieza.** **Subtítulo del `og` de 78 caracteres.** La plantilla da ≤ 70 como orientativo
+5. **Resuelta: se recorta a «Voces con IA local: un servicio por máquina, para varios proyectos.» (67)**; `piezas.json` se actualiza al recomponer. **Subtítulo del `og` de 78 caracteres.** La plantilla da ≤ 70 como orientativo
    (salido de las piezas de r5 a un tercio de `og`); este es el más largo de las cuatro piezas y entró porque la zona es la mitad,
    no un tercio. **Propuesta:** dejarlo (cupo y mide 16,97 de contraste) o acortarlo a «Voces con IA local: un servicio por
    máquina, para varios proyectos.» (65), que es la forma del subtítulo de image-generator.
-6. **Menor: biblia desfasada.** §Fuentes cita este repo en `24d69c8` (hoy `fd2ae53`) y la tabla de §8 dice que `og.txt` es «aprobado
+6. **Resuelta: biblia al día** (citas de este repo a `fd2ae53`, `og.txt` marcado histórico). **Menor: biblia desfasada.** §Fuentes cita este repo en `24d69c8` (hoy `fd2ae53`) y la tabla de §8 dice que `og.txt` es «aprobado
    en r1» sin avisar de su «shaped like». El repo de voces sigue en `ab1ff10`, como dice la biblia; su `README.md` dice «F0 hecha» y la
    bitácora F1.5: la frase «Aún no genera voces» sigue siendo cierta (motor de pruebas), que es lo que importa a «Promesas».
 
 ## Cambios que pediría a la plantilla
 
-Voice-generator es la herramienta más parecida a image-generator (gemelas por diseño, D1 de su plan), y la plantilla con los 20
+**Aplicados el 2026-11-04** (mínimo de 120 palabras como aviso; licencia en «Promesas»). Voice-generator es la herramienta más parecida a image-generator (gemelas por diseño, D1 de su plan), y la plantilla con los 20
 cambios ya aplicados le encaja casi entera. Pediría uno:
 
 1. **El mínimo de palabras de la comprobación 9 como aviso, no como bloqueo** (o bajarlo a ~100). El prompt aprobado de este
