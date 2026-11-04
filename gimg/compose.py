@@ -359,7 +359,8 @@ def recompose(project, key, profile, attempt_id=None, text=None) -> dict:
     (`orders.compose_lock_path`, also the worker's) is held, and if it is not free this raises ``compose.busy``. With
     the lock taken, what an earlier ``gimg compose`` that was killed left (``.compose-c<id>-*``, ``.<raw>.*.tmp``) is removed.
 
-    A profile with nothing to compose raises ``compose.nothing_to_do`` before anything changes. If the render fails, the
+    A profile with nothing to compose raises ``compose.nothing_to_do`` before anything changes, unless the attempt has a
+    ``composeError``: then the error is dropped (`orders.clear_compose_error`) and it returns normally. If the render fails, the
     attempt gets the error as ``composeError`` (`orders.set_compose_error`) and it is raised again; a project log line
     records either result. The chosen attempt is delivered again (manifest included; `delivery.redeliver` checks it still
     is the chosen one under the delivery lock) and the result then has ``delivered``: the file, relative to the project."""
@@ -400,7 +401,14 @@ def _recompose_locked(proj, project, key, profile, profile_cfg, attempt_id, text
     keep = not isinstance(attempt.get("raw"), str) and not raw_path.is_file()
     source = orders.attempt_image(project, key, profile, attempt) if keep else raw_path
     if plan_for(profile_cfg, *png.size(source)) is None:
-        raise GimgError("compose.nothing_to_do", profile=profile)
+        if "composeError" not in attempt:
+            raise GimgError("compose.nothing_to_do", profile=profile)
+        # the profile stopped composing after a failure: the raw image is the attempt's image, as for a profile that never
+        # composed. The error goes away (it blocks choose/undo) and this ends well: there is nothing left to fix.
+        done = orders.clear_compose_error(project, key, profile, attempt_id)
+        if delivery.redeliver(project, key, profile, attempt_id):
+            done["delivered"] = delivery.delivered_file(project, key, profile)
+        return done
     texts = orders.set_text(project, key, profile, text) if text else dict(order.get("text") or {})
     if keep:
         _keep_raw(source, raw_path)

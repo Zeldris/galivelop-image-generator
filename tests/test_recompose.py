@@ -12,7 +12,7 @@ from unittest import mock
 
 from gimg import compose, delivery, engine, fsutil, i18n, log, orders, png, queue
 from gimg.errors import GimgError
-from tests.test_compose_worker import CON_HERRAMIENTAS, ComposeWorkerBase
+from tests.test_compose_worker import BASE, CON_HERRAMIENTAS, ComposeWorkerBase
 
 
 class FakeRender:
@@ -281,6 +281,23 @@ class NothingToDoTests(RecomposeBase):
         self.run_worker()
         with mock.patch.object(compose, "render", side_effect=AssertionError("render was called")):
             self.assertEqual(self.code(compose.recompose, "proj", "a", "same"), "compose.nothing_to_do")
+
+
+class ProfileStopsComposingTests(RecomposeBase):
+    def test_after_a_failed_composition_a_profile_without_compose_frees_the_attempt_to_be_chosen(self):
+        self.made(choose=None)
+        with mock.patch.object(compose, "render", side_effect=GimgError("compose.tool_failed", tool="x", reason="y")):
+            self.assertEqual(self.code(compose.recompose, "proj", "a", "og"), "compose.tool_failed")
+        self.assertEqual(self.code(orders.choose, "proj", "a", "og", 1), "order.choose_uncomposed")
+        self.profiles({"og": dict(BASE)})  # no compose, no target
+        with mock.patch.object(compose, "render", side_effect=AssertionError("render was called")):
+            att = compose.recompose("proj", "a", "og")
+        self.assertEqual((att["id"], "composeError" in att, "compose" in att), (1, False, False))
+        self.assertEqual(att["image"], att["raw"])
+        self.assertEqual(orders.get("proj", "a", "og")["attempts"][0], att)
+        delivery.choose("proj", "a", "og", 1)
+        self.assertEqual(self.delivered().read_bytes(), (self.folder("og") / "q1.raw.png").read_bytes())
+        self.assertEqual(self.code(compose.recompose, "proj", "a", "og"), "compose.nothing_to_do")  # a clean one still warns
 
 
 class OldAttemptTests(RecomposeBase):

@@ -431,6 +431,21 @@ def set_compose_error(project: str, key: str, profile: str, attempt_id: int, err
     return _modify(project, key, profile, change)
 
 
+def clear_compose_error(project: str, key: str, profile: str, attempt_id: int) -> dict:
+    """Drop ``composeError`` (and ``compose``) of attempt `attempt_id`, for a profile that no longer composes: its ``image``
+    is then the raw one, which already is what `set_compose_error` left. Returns the attempt (a copy). Nothing on disk."""
+    def change(order):
+        item = _attempt(order, attempt_id)
+        item.pop("composeError", None)
+        item.pop("compose", None)
+        if isinstance(item.get("raw"), str):
+            paths.inside(_order_dir(project, key, profile), item["raw"])
+            item["image"] = item["raw"]
+        return copy.deepcopy(item)
+
+    return _modify(project, key, profile, change)
+
+
 def mark(project: str, key: str, profile: str, attempt_id: int, state: str) -> dict:
     """Set an attempt's state (new|candidate|discarded); the chosen one cannot be discarded."""
     if state not in STATES:

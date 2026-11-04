@@ -471,6 +471,16 @@ class RedeliverTests(DeliveryBase):
         self.assertEqual(self.code(delivery.redeliver, "proj", "a", "banner", one), "delivery.source_missing")
         self.assertEqual(self.delivered().read_bytes(), before)
 
+    def test_a_manifest_failure_puts_back_the_delivered_file_it_replaced_not_the_new_image(self):
+        (one, _two) = self.attempts()
+        delivery.choose("proj", "a", "banner", one)
+        old = self.delivered().read_bytes()
+        orders.attempt_image("proj", "a", "banner", orders.get("proj", "a", "banner")["attempts"][0]).write_bytes(b"new image")
+        with DeliveryRollbackTests.fail_manifest_write(self):
+            self.assertEqual(self.code(delivery.redeliver, "proj", "a", "banner", one), "delivery.write_failed")
+        self.assertEqual(self.delivered().read_bytes(), old)
+        self.assertEqual([p.name for p in self.delivered().parent.iterdir()], [self.delivered().name])  # no backup left
+
     def test_it_runs_under_the_delivery_lock(self):
         (one, _two) = self.attempts()
         delivery.choose("proj", "a", "banner", one)

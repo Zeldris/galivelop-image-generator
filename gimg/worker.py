@@ -259,9 +259,19 @@ def _generate(entry: dict, eng, machine: dict, state: dict, lang=None):
         error = existing.get("composeError")
         if isinstance(error, dict) and error.get("code") == COMPOSE_PENDING["code"] and isinstance(existing.get("raw"), str):
             # killed while composing: the raw image is there, compose it instead of generating again
-            raw = orders.raw_image(project_name, key, profile, existing)
-            _compose_attempt(entry, projects.get(project_name), existing["id"], raw,
-                             raw.parent / ("q%d.png" % entry_id), state, lang)
+            try:  # the project may not load any more: that is a failed composition, not a failed entry
+                project = projects.get(project_name)
+                raw = orders.raw_image(project_name, key, profile, existing)
+            except Exception as exc:
+                error = queue.make_error(exc.code, **exc.params) if isinstance(exc, GimgError) \
+                    else _unexpected_compose_error(exc)
+                _record_compose_error(project_name, key, profile, existing["id"], error)
+                state["compose_error"] = error
+                with contextlib.suppress(Exception):
+                    print(i18n.t("worker.compose_failed", lang, id=entry_id, reason=queue.error_text(error, lang)),
+                          file=sys.stderr)
+                return existing["id"]
+            _compose_attempt(entry, project, existing["id"], raw, raw.parent / ("q%d.png" % entry_id), state, lang)
         return existing["id"]
     limits.check(entry, machine)
     project = projects.get(project_name)
