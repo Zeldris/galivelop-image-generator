@@ -301,7 +301,7 @@ COMPOSE_PROJECTS = {  # proyecto -> lockup elegido (docs/marcas/README.md)
     "toveriai": "toveriai-a-lockup.svg",
     "portal": "portal-a-lockup.svg",
     "galivelop-image-generator": "galivelop-image-generator-b-lockup.svg",
-    "galivelop-workflow": "galivelop-workflow-a-lockup.svg",
+    "galivelop-workflow": "galivelop-workflow-b-lockup.svg",
 }
 FACTOR_TITULO, FACTOR_SUB = 0.56, 0.5  # los de examples/pilot/componer.py (`ajustar`)
 
