@@ -154,5 +154,5 @@ Primera ronda (huecos del repo y del Portal):
 | Paleta y tipografía de los diagramas | Portal-Galivelop `aa76b34` | `docs/diagramas/gw-*.svg` |
 | Baldosa de la familia | Portal-Galivelop `aa76b34` | `public/marca/gv-logo.svg`, `src/components/Logo.tsx` |
 | Fondos claro y oscuro del Portal | Portal-Galivelop `aa76b34` | tema (`#06121c`, `#f6fafd`, `#0a1a28`) |
-| Lectura y veredicto r1 | este repo | `docs/registros/lectura-2026-10-26-tarkor-y-marcas.md` (§2, §4), `docs/registros/contenido/r1-fondos.md` |
+| Lectura y veredicto r1 | este repo | `docs/records/lectura-2026-10-26-tarkor-y-marcas.md` (§2, §4), `docs/records/contenido/r1-fondos.md` |
 | Propuesta de logo del plan | este repo | `docs/plan.md`, «Estilos por proyecto», Galivelop-workflow |

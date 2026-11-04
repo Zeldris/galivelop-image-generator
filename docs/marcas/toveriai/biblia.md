@@ -159,5 +159,5 @@ Repo `VeriNews_AI`, commit `02ac654`:
 - Símbolo: `frontend/public/favicon.png` (512×512, medido aquí), `frontend/src/assets/logo.png` y `logo-vertical.png`
   (wordmark «VeriNews»); `frontend/public/favicon.svg` huérfano.
 - Rangos del IMI en `marketing.html` (incoherencia 2).
-- Resumen de lectura: `docs/registros/lectura-2026-10-26-tarkor-y-marcas.md`, secciones 2 y 4; plan: `docs/plan.md`,
-  «Estilos por proyecto»; veredicto r1: `docs/registros/contenido/r1-fondos.md`.
+- Resumen de lectura: `docs/records/lectura-2026-10-26-tarkor-y-marcas.md`, secciones 2 y 4; plan: `docs/plan.md`,
+  «Estilos por proyecto»; veredicto r1: `docs/records/contenido/r1-fondos.md`.

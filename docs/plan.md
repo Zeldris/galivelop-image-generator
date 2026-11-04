@@ -35,7 +35,7 @@ Tomadas con `grilling` el 2026-10-25.
 | D23 | Repo `galivelop-image-generator`, orden **`gimg`**, configuración del proyecto en `galivelop-images.json` | Corto y sin choques habituales en Linux |
 | D24 | Instalación con `git clone` + `instalar.sh` (pone `gimg` en `~/.local/bin`, descarga motor y modelos, D5); la configuración del proyecto declara la **versión mínima** del generador y `gimg` avisa si la instalada es más antigua; semver y CHANGELOG | Sin pip ni paquetes; un proyecto sabe si su configuración vale con lo instalado |
 | D25 | **Solo escribe** en su carpeta de datos y en la carpeta de entrega de proyectos registrados; **solo lee** referencias dentro del proyecto; rechaza `..` y enlaces que salgan. API solo en localhost, Content-Type JSON y mismo Origin | Las rutas de un pedido vienen del proyecto |
-| D26 | El registro es **JSONL en el formato de `opt-ai`** (`.claude/skills/opt-ai/references/log-format.md`), una línea por intento: `gen_ai.provider.name` = `stable-diffusion.cpp`, `gen_ai.request.model`, `app.task` = perfil, `app.machine_profile`, `app.duration_ms`, `app.load_ms`, `app.error`, y lo propio de la imagen bajo `app.image.*` (pasos, cfg, sampler, tamaño, semilla, referencias, commit del motor, tiempos de muestreo y decodificado, memoria mínima). Se propone al flujo, con `gw-harvest`, una operación de imagen en `log-format.md` | `medir.py` acepta cualquier operación y agrupa por perfil de máquina, tarea y modelo, así que mide imágenes sin cambios; cierra IMG-3 de WMF |
+| D26 | El registro es **JSONL en el formato de `opt-ai`** (`.claude/skills/gw-opt-ai/references/log-format.md`), una línea por intento: `gen_ai.provider.name` = `stable-diffusion.cpp`, `gen_ai.request.model`, `app.task` = perfil, `app.machine_profile`, `app.duration_ms`, `app.load_ms`, `app.error`, y lo propio de la imagen bajo `app.image.*` (pasos, cfg, sampler, tamaño, semilla, referencias, commit del motor, tiempos de muestreo y decodificado, memoria mínima). Se propone al flujo, con `gw-harvest`, una operación de imagen en `log-format.md` | `medir.py` acepta cualquier operación y agrupa por perfil de máquina, tarea y modelo, así que mide imágenes sin cambios; cierra IMG-3 de WMF |
 | D27 | **Contrato y código en inglés**: claves JSON en camelCase (esquemas, API, configuración del proyecto), identificadores y comentarios del código en inglés; los textos visibles siguen en es/en (D16) y el glosario da el nombre en código de cada término (pedido = `order`, intento = `attempt`, elegida = `chosen`…) | Decidido por la persona en F0: herramienta para publicar; la bitácora, el plan y los commits siguen en español |
 | D28 | **La composición de texto y logo la hace el generador, como paso declarado, no el modelo ni el proyecto.** El perfil declara `compose` (una plantilla SVG con huecos `{{title}}`, `{{subtitle}}`, `{{logo}}`… y el tamaño de destino) y el pedido trae `text` (los valores); el generador rasteriza la plantilla con `rsvg-convert` y la superpone con `ffmpeg` sobre la imagen generada, recortada y escalada al tamaño de destino. Se guardan las dos: `attempts/q<id>.raw.png` (lo que dio el modelo) y `attempts/q<id>.png` (la compuesta, la que ve la galería y se entrega); `gimg compose` recompone desde la cruda sin volver a generar. Alternativas: pedir el texto al modelo (FLUX no da texto legible: los prompts de Tarkor piden «completely textless»); que cada proyecto componga (repite ffmpeg y rsvg en cada repo, justo lo que D1 evita). Es compatible con D2: la plantilla es datos sin lógica, como el estilo. **Recomendación:** esta; **[P]** confirmar que ffmpeg y rsvg-convert entran como herramientas externas junto a `sd-cli` (D6: las comprueba `gimg doctor`, no se instalan con `instalar.sh` porque vienen del sistema; en la Deck ya están: ffmpeg 7.1.3 y rsvg-convert 2.63.3) | Un cambio de titular tras 49 min de generación no puede costar otros 49 |
 | D29 | **Los logos son SVG vectoriales, nunca generados.** El modelo no reproduce una marca; cada proyecto aporta su logo en SVG dentro de su repo (`{{logo}}` lo referencia por ruta relativa, guardada por D25) y la composición lo coloca. Donde no hay SVG (toVeriAI solo tiene `favicon.png` de 512 px; Galivelop-workflow y Tarkor no tienen nada) el generador sirve para **bocetar** conceptos (intentos de 1024×1024 con el prompt del símbolo) y el logo final lo escribe el agente como SVG (código, como `gv-logo.svg`), la persona lo aprueba y se propone al repo de cada proyecto. Alternativa descartada: vectorizar lo generado (no hay herramienta stdlib y el resultado no es una marca estable) | Un logo tiene que ser idéntico en todas las piezas y escalar sin pérdida |
@@ -44,7 +44,7 @@ Tomadas con `grilling` el 2026-10-25.
 | D32 | **Borrador antes del definitivo.** `order submit --draft` y `attempt new --draft` aplican el `draft` del perfil, que por defecto es el **mismo modelo a la mitad de lado** (redondeado a múltiplo de 64) y **8 pasos**, como el 640×256 de Tarkor (~5-9 min con FLUX.3; `[E]` en su plan); un perfil puede declarar otro (`{"model": "flux2-klein-4b-q8", "steps": 6}`: el modelo rápido a tamaño completo, ~2,5 min). El intento guarda `draft: true` y no se puede elegir. Además, todo intento escribe una vista previa por paso (`--preview proj --preview-interval 1` a `attempts/.preview-<entrada>.png`) para abortar a tiempo. **Recomendación:** por defecto el mismo modelo pequeño (misma composición *(suposición)*: lo comprueba la ronda r3, igual que IMG-19a en Tarkor, aún sin resolver); si no coincide, el borrador pasa a ser el modelo rápido y solo decide el prompt | A 49 min por definitivo, iterar sin borrador no es posible |
 | D33 | **El motor real corre `sd-cli` como proceso en su propio grupo, con las protecciones de `generar.sh` en Python y sin `timeout`:** memoria libre mínima antes de arrancar, vigilante de `MemAvailable` que mata el grupo por debajo de `watchMemoryMb`, aborto si el log dice «reported free 0.00 MB», tope de tiempo del perfil (o del modelo) y comprobación de Ollama (`engine.ollama`: `abort` por defecto, `unload` o `ignore`). Cancelar y tope matan el grupo entero (`os.killpg`): en Tarkor, matar `timeout` dejaba `sd-cli` vivo con la memoria. `LD_LIBRARY_PATH` es la carpeta del motor (las librerías de Ollama le quitan la GPU) | Las protecciones son lo único que evita que la Deck se congele; hoy valen solo para Tarkor |
 | D34 | **El registro guarda la orden completa.** Cada intento guarda `command` (argv de `sd-cli` con rutas relativas a la carpeta de modelos) y el registro añade `app.image.model_files` (difusión, texto, VAE), `app.image.backend`, `app.image.threads`, `app.image.draft` y `app.image.compose` (plantilla); `app.image.engine_version` es la release de stable-diffusion.cpp (`master-1000-95ff762`). Lo que no se registró no se reproduce (D13) | Tarkor no guardaba cfg ni modelo y hubo que rehacer pruebas |
-| D35 | **Las elegidas del piloto no van a git.** La carpeta de entrega de cada `examples/<proyecto>/` (`entrega/`) está en `.gitignore`; cada ronda deja en `docs/registros/contenido/rN-<tema>.md` su tabla y una miniatura WebP ≤ 100 KB por pieza (`ffmpeg`, 640 px de ancho) **[P]**. Las piezas definitivas se proponen a cada repo con la configuración | Un og:image PNG pesa 1-2 MB y el repo no es un almacén de imágenes (D5) |
+| D35 | **Las elegidas del piloto no van a git.** La carpeta de entrega de cada `examples/<proyecto>/` (`entrega/`) está en `.gitignore`; cada ronda deja en `docs/records/contenido/rN-<tema>.md` su tabla y una miniatura WebP ≤ 100 KB por pieza (`ffmpeg`, 640 px de ancho) **[P]**. Las piezas definitivas se proponen a cada repo con la configuración | Un og:image PNG pesa 1-2 MB y el repo no es un almacén de imágenes (D5) |
 | D36 | **El motor por defecto sigue siendo `fake` hasta que `instalar.sh` escribe `"engine": "sdcpp"` en `<config>/config.json`**; `GIMG_ENGINE` manda sobre el archivo. Los tests fijan `fake` y nunca necesitan `sd-cli`, GPU, ffmpeg ni rsvg: el envoltorio se prueba con un `sd-cli` falso (`GIMG_SD_CLI=tests/fake_sd_cli.py`) y la composición y la medida con `skipUnless(shutil.which(...))` **[P]** (el CI de GitHub los instala con `apt`; sin ellos, los tests que los usan se saltan y lo dicen) | El check tiene que pasar en cualquier máquina y en el CI |
 
 Decisiones difíciles de revertir, con su ADR: [0001](adr/0001-servicio-local-independiente.md) (D1) y
@@ -71,7 +71,7 @@ Cada fase es una rama y un pull request a `main`, con las tres fases de revisió
 | F2 Motor real | Envoltorio de `sd-cli` con el perfil de máquina (memoria, `--max-vram`, tope, cancelar, progreso); `instalar.sh` con versiones fijas y checksum; catálogo de modelos, borradores, composición de texto y logo, medida de marca; **piloto de contenido corporativo** (Portal, Tarkor, toVeriAI, Galivelop-workflow) con configuraciones de ejemplo en este repo *(aprobado 2026-10-26)* | Un pedido real generado en la Deck y la primera ronda de piezas definitivas de los cuatro proyectos elegidas por la persona (comprobación manual) |
 | F3 API y arranque | API HTTP (D17, D25) y arranque bajo demanda; unidad `systemd --user` opcional | Tests de la API; `gimg` arranca el servicio solo |
 | F4 Interfaz | Las tres pantallas de D22, es/en | Recorrido completo en el navegador |
-| F5 Piloto WMF | Configuración de ejemplo para WMF, guía de integración y propuesta de migración para su repo; medida base con `opt-ai` y comparación `sd-server` (D14); LUT por marca si F2 la deja pendiente; stable-diffusion.cpp `master-1039` o posterior con LoRA (`--lora-model-dir`, nueva versión fija en `instalar.sh`); bocetos paramétricos, planos y encuadre de Tarkor (`bocetos/plantilla.py`, `planos.sh`, `encuadre.py`); LoRA en el perfil (`style.lora`: archivo, peso, palabra disparadora y sha256; `--lora-model-dir` y la etiqueta en el prompt; todo en el registro, D34), para que WMF use su `wmf-estilo` sin código propio *(aprobado 2026-10-26: el piloto corporativo pasa a F2 y WMF sigue aquí; ampliado 2026-11-02; LoRA en el perfil aprobado 2026-11-04, `docs/registros/lectura-2026-11-04-tarkor.md`)* | WMF genera y recibe una elegida sin copia a mano |
+| F5 Piloto WMF | Configuración de ejemplo para WMF, guía de integración y propuesta de migración para su repo; medida base con `opt-ai` y comparación `sd-server` (D14); LUT por marca si F2 la deja pendiente; stable-diffusion.cpp `master-1039` o posterior con LoRA (`--lora-model-dir`, nueva versión fija en `instalar.sh`); bocetos paramétricos, planos y encuadre de Tarkor (`bocetos/plantilla.py`, `planos.sh`, `encuadre.py`); LoRA en el perfil (`style.lora`: archivo, peso, palabra disparadora y sha256; `--lora-model-dir` y la etiqueta en el prompt; todo en el registro, D34), para que WMF use su `wmf-estilo` sin código propio *(aprobado 2026-10-26: el piloto corporativo pasa a F2 y WMF sigue aquí; ampliado 2026-11-02; LoRA en el perfil aprobado 2026-11-04, `docs/records/lectura-2026-11-04-tarkor.md`)* | WMF genera y recibe una elegida sin copia a mano |
 
 ## F1 en detalle
 
@@ -223,7 +223,7 @@ mensaje traducido por stderr con salida 1; un error de uso de `argparse` sale co
 ## F2 en detalle
 
 **Aprobado por la persona el 2026-10-26** con las recomendaciones de cada [P] (abajo); lo marcado
-*(suposición)* no está en las fuentes y se comprueba en la primera ronda. Fuentes: `docs/registros/lectura-2026-10-26-tarkor-y-marcas.md`
+*(suposición)* no está en las fuentes y se comprueba en la primera ronda. Fuentes: `docs/records/lectura-2026-10-26-tarkor-y-marcas.md`
 (generador de Tarkor y marcas), el kit visual de toVeriAI (`VeriNews_AI/Documentacion/v1.1/kit-visual-ia.html`), el Portal
 (`public/marca/`, `src/estilos/global.css`, `src/data/proyectos/`) y, en Tarkor, `image-generator/scripts/` y
 `docs/producto/plan-imagenes/`. Las decisiones nuevas, D28-D36, están en la tabla general. F2 sigue el modelo del generador de Tarkor: sus protecciones, sus dos perfiles (rápido y de calidad), su banco de
@@ -413,7 +413,7 @@ examples/<p>` y `gimg order submit <p> examples/<p>/orders/r1-og.json` para los 
 `piloto/r1/`: **14/14 píxel a píxel iguales** (`ffmpeg -f md5`; los bytes difieren solo por el `tEXt` que añade `gimg`). Las dos columnas están en
 `r1-fondos.md`. Diferencia conocida frente a `generar.sh`: `gimg` añade `--preview proj --preview-interval 1 --preview-path …`; `-t` no aparece porque
 `steam-deck.json` no fija hilos. La imagen no cambia, que es justo lo que medía la comparación; los tiempos salen 0-7 s más lentos en cuatro proyectos por
-la caché de disco tras descargar Ollama, no por el motor. CI de GitHub sin cuota el 2026-10-27: los pasos del CI (`comprobar.yml`: check y `pre-commit` de `main` sobre el rango) reproducidos en local sobre `370cf91`, en verde; comprobado solo en local a petición de la persona.
+la caché de disco tras descargar Ollama, no por el motor. CI de GitHub sin cuota el 2026-10-27: los pasos del CI (`check.yml`: check y `pre-commit` de `main` sobre el rango) reproducidos en local sobre `370cf91`, en verde; comprobado solo en local a petición de la persona.
 
 *Hecho en F2.7 (a)* (`gimg/orders.py`, `queue.py`, `worker.py`, `engine.py`, `engine_sdcpp.py`, `delivery.py`, `projects.py`, `cli.py`, esquemas `project-config` y `order`, `locales/`, `tests/test_draft.py`): borradores (D32). **Decisiones:**
 (1) *Perfil:* `draft` `{model?, steps?, scale?}` (`scale` 0.1-1); `load_config` comprueba `draft.model` contra el catálogo. (2) *Pedido:* `draft` booleano (por defecto false), guardado en `orders.submit`.
@@ -494,7 +494,7 @@ Tres encargos en serie (E1 núcleo, E2 integración, E3 frente); cada uno deja e
 
 **5. `gimg doctor`** (E3): ffmpeg y rsvg-convert ya los comprueba `_tools()`. Añadir `_fonts()` tras `_tools` en `doctor.run`: recorre `projects.list_projects()`, `load_config` de cada uno (si falla, `warn doctor.fonts.project_error` {project, message}); junta los `compose.fonts`; una sola llamada `fc-list --format '%{family}\n'`, familias separadas por coma, comparación sin mayúsculas. Falta una → `warn doctor.fonts.missing` {font, projects} con `doctor.fix.fonts` (copiar a `~/.local/share/fonts` y `fc-cache -f`). Sin `fc-list` → `warn doctor.fonts.no_fc_list`; sin fuentes declaradas → `ok doctor.fonts.none`.
 
-**6. Tests** (cada uno por `rojo-sin-arreglo.sh`; patrón `EN_CI` + `skipUnless` de `tests/test_pilot_scripts.py`, con `color_png`):
+**6. Tests** (cada uno por `red-without-fix.sh`; patrón `EN_CI` + `skipUnless` de `tests/test_pilot_scripts.py`, con `color_png`):
 - `tests/test_compose.py` sin herramientas: `fit_geometry` (og, wide, square, contain, tamaños ≤ 0); `substitute` (escape de `<&"'`, una sola pasada, hueco desconocido con motivo, `{{logo}}` data URI); guardia de rutas de plantilla y logo (`../`, absoluta, `~`, `\n`, `\x00`, enlace que sale, no es archivo) con su código; `rsvg_argv`/`ffmpeg_argv` exactos (cover, contain, sin capa); `plan_for` (None cuando no hay nada que hacer); `tool_missing` con `PATH` vacío.
 - `tests/test_compose.py` con herramientas: plantilla mínima con un rect y `{{title}}` con `&<` → salida 1200×630; píxeles con `ffmpeg -f rawvideo -pix_fmt rgb24 -` (cover: fondo de dos colores, la franja recortada no aparece; logo de color conocido en su sitio); el chunk `gimg` sigue en la compuesta con `compose`; `tool_failed` con SVG roto, comprobando el motivo.
 - `tests/test_schema.py`, `tests/test_orders.py`: `targetWidth` sin `targetHeight`, `fit` fuera del enum, campo `logo` reservado, `text` > 200 o con control, clave fuera de `fields`, `choose_uncomposed`.
@@ -559,10 +559,10 @@ Un encargo; porta `examples/pilot/medir.py` (que se queda como está) y la EMD d
 6. *Tests* (`tests/test_measure.py`; patrón `EN_CI` + `skipUnless` de `tests/test_pilot_scripts.py`): PNG sintéticos de color
    conocido (Lab de un color puro contra su valor, ΔE en el umbral, % de paleta de una imagen mitad y mitad, EMD 0 consigo
    misma y > 0 con otra, mediana de tres, contraste blanco/negro 21:1, zona fuera, hex malo, ffmpeg ausente con `PATH`
-   vacío). Cada test con su motivo (el código del error), y los nuevos pasan por `rojo-sin-arreglo.sh`.
+   vacío). Cada test con su motivo (el código del error), y los nuevos pasan por `red-without-fix.sh`.
 7. *Calibración* (tras el código, en la Deck, sin modelo): `gimg measure --json` de las imágenes de marca de cada proyecto
    (las de «Plan de pruebas de contenido», *Objetivo*) y de las piezas de r1/r5 del piloto, en
-   `docs/registros/contenido/calibracion-measure.md`, con los rangos propuestos por proyecto.
+   `docs/records/contenido/calibracion-measure.md`, con los rangos propuestos por proyecto.
 
 *Hecho en F2.9* (`gimg/measure.py`, `gimg/cli.py`, `tests/test_measure.py`): puntos 1-6; el 7 (calibración) queda pendiente. Decisiones
 menores: `--refs` acepta una o más imágenes (`nargs="+"`, así que va después de la imagen); el JSON usa claves en minúscula
@@ -572,7 +572,7 @@ el stdout de ffmpeg): `measure._run` es su gemelo con códigos `measure.*`. El t
 `ffprobe` y se pide `scale=w:h` explícito, de modo que los bytes esperados son exactos y menos bytes es `measure.unreadable`;
 una imagen que no existe también es `measure.unreadable`, y una que ffmpeg rechaza, `measure.tool_failed`. `--zone` y `--text`
 sin pareja dan `cli.measure_zone_text` (también si se llama a `measure.measure` directamente).
-*Calibración (punto 7, 2026-11-02):* `docs/registros/contenido/calibracion-measure.md`, con umbrales orientativos por proyecto;
+*Calibración (punto 7, 2026-11-02):* `docs/records/contenido/calibracion-measure.md`, con umbrales orientativos por proyecto;
 confirma con números el «no» de Tarkor en r5 (SATAVG 5-7 frente a 25 de su portada, EMD Cr 19-22). Cierra F2.9.
 
 ### Estilos por proyecto
@@ -586,7 +586,7 @@ lleva la paleta en palabras, no en hexadecimales *(suposición: el modelo no res
 colores de acento de cada proyecto salen de `Portal-Galivelop/src/data/proyectos/*.json`: Tarkor `#E0703A`, toVeriAI `#2F7A55`,
 workflow `#3D6FD9`.
 
-Pautas añadidas el 2026-11-02, de `pautas.md` v5.2 de Tarkor (`docs/registros/lectura-2026-11-02-tarkor.md`; aprobadas por la
+Pautas añadidas el 2026-11-02, de `pautas.md` v5.2 de Tarkor (`docs/records/lectura-2026-11-02-tarkor.md`; aprobadas por la
 persona): la luz se pide por dirección y **sin nombrar la fuente** («sun» pinta el disco aunque se diga fuera de cuadro); el
 modelo tiende a escena luminosa y cálida, y una escena oscura o sobria se dice **al principio** del prompt; posiciones y tamaños
 en fracciones del encuadre y desde qué borde («a quarter of the way down from the top»), no con adjetivos; un ancla nombrada una
@@ -677,7 +677,7 @@ Portal solo si la persona decide presentarlas allí. *Metáforas* (de sus textos
 ### Plan de pruebas de contenido
 
 Como el banco de Tarkor (`banco.sh` y `resultados.md`): **semilla fija (3), una palanca por ronda, borrador y luego definitivo,
-y veredicto «sí/no a ojo» de la persona.** Cada ronda es un archivo `docs/registros/contenido/rN-<tema>.md` con la tabla
+y veredicto «sí/no a ojo» de la persona.** Cada ronda es un archivo `docs/records/contenido/rN-<tema>.md` con la tabla
 (proyecto, clave, perfil, modelo, semilla, pasos, palanca, tiempo, memoria mínima, medida, veredicto) y las miniaturas (D35); los
 pedidos de la ronda son los JSON de `examples/<proyecto>/orders/` enviados con `gimg order submit`. **Todo lo que corre en la
 Deck es comprobación manual de la persona, nunca un test**; lo que se apunta es lo medido, no lo previsto. Criterios:
@@ -721,7 +721,7 @@ cosa; una ronda que no cabe en una sesión se parte y lo hecho se apunta en el m
   - el logo elegido (`docs/marcas/README.md`), el texto y la medida, sobre los definitivos;
   - r5 con 3-4 piezas por proyecto.
 - **Revisión:** todo resultado queda en `piloto/<ronda>/` con su página, y su registro va en
-  `docs/registros/contenido/`. La persona revisa allí y, sin veredicto suyo, decide el agente y lo apunta.
+  `docs/records/contenido/`. La persona revisa allí y, sin veredicto suyo, decide el agente y lo apunta.
 
 ### F2.10 en detalle (rondas r2-r4 con gimg)
 
@@ -835,7 +835,7 @@ el chunk `gimg` de la compuesta lleva `compose`; `gimg choose` entrega a `exampl
 sigue **a ojo**. *Cierre:* «sí» por proyecto si la persona la da por publicable; la elegida y su plantilla pasan a r5 (F2.12).
 
 **Pasos** (cada uno con su commit y la bitácora al día; los de código, con el check en verde y sus tests por
-`rojo-sin-arreglo.sh`):
+`red-without-fix.sh`):
 
 | Paso | Qué | Tipo | Registro |
 |---|---|---|---|
@@ -845,7 +845,7 @@ sigue **a ojo**. *Cierre:* «sí» por proyecto si la persona la da por publicab
 | E4 | [P] 2, 3, 4 y 7: `logos/`, `plantillas/og.svg`, `compose`, `targetWidth`/`targetHeight` y `draft` en `og` de los siete; pedidos r3 con `text` y `.gitignore`; `test_examples.py`: copias idénticas, `compose.resolve_assets` resuelve, líneas que caben, pedidos r3 validan, y con herramientas (`skipUnless`) cada plantilla compone una cruda sintética a 1200×630 | Configuración y tests | — |
 | E5 | Tanda r3 en la Deck: borradores, escalado y copia a `init/`, img2img, `measure` | Manual Deck | `r3-borrador.md`, sección «Con gimg (F2.10)» |
 | E6 | Tanda r4: instalar las fuentes en `~/.local/share/fonts` (con permiso), `gimg compose`, `measure`, `choose`; los ajustes de plantilla que salgan van en commit propio | Manual Deck (+ configuración) | `r4-composicion.md`, sección «Con gimg (F2.10)» |
-| E7 | Cierre: «Hecho en F2.10» con lo decidido, fila F2.10 de «Pasos de F2», Pendiente de Tarkor en la bitácora, y lo que pasa a F2.11/F2.12 | Documentación | `docs/plan.md`, `docs/traspaso.md` |
+| E7 | Cierre: «Hecho en F2.10» con lo decidido, fila F2.10 de «Pasos de F2», Pendiente de Tarkor en la bitácora, y lo que pasa a F2.11/F2.12 | Documentación | `docs/plan.md`, `docs/handoff.md` |
 
 **Fuera de F2.10:** la LUT por marca y `compose.lut` (F2.11, solo si r2 deja a Tarkor fuera de rango); r5, avatar e icon,
 los formatos `square`, `portrait`, `header` y `banner` con composición y las propuestas a cada repo (F2.12); `compose.wrap`
@@ -858,7 +858,7 @@ posible.
 
 | Paso | Qué | Comprobación |
 |---|---|---|
-| F2.0 | **Arranque [P]:** prompts de los cuatro estilos en `examples/<proyecto>/prompts/` y rondas r0 y r1 con el `generar.sh` de Tarkor (solo ejecutado, salida en `<datos>/pilot/`) | **Manual persona:** `docs/registros/contenido/r0-humo.md` y `r1-fondos.md`, con el log real de `sd-cli` guardado para F2.2-F2.4 |
+| F2.0 | **Arranque [P]:** prompts de los cuatro estilos en `examples/<proyecto>/prompts/` y rondas r0 y r1 con el `generar.sh` de Tarkor (solo ejecutado, salida en `<datos>/pilot/`) | **Manual persona:** `docs/records/contenido/r0-humo.md` y `r1-fondos.md`, con el log real de `sd-cli` guardado para F2.2-F2.4 |
 | F2.1 | Catálogo `gimg/models.json` y su esquema; `model` del perfil validado contra el catálogo; `engine.*` nuevo en el perfil de máquina y `steam-deck.json` con FLUX.3 (D30) | Tests del esquema, del catálogo y de la resolución modelo + máquina |
 | F2.2 | `engine_sdcpp.py`: argv, `LD_LIBRARY_PATH`, proceso en su grupo, tope, cancelar, código de salida, `EngineResult` con tiempos y `command` (D33, D34); `GIMG_ENGINE=sdcpp` y `config.json` (D36); `tests/fake_sd_cli.py` | Tests con el `sd-cli` falso: argv exacto, cancelar mata el grupo, tope, fallo con el motivo |
 | F2.3 | Protecciones: memoria previa, vigilante, «reported free 0.00 MB», Ollama (`urllib`), `min_free_mb` | Tests con `/proc/meminfo` y Ollama simulados; cada fallo con su motivo |
@@ -901,7 +901,7 @@ posible.
   persona decida [P]; sin su decisión, su ronda r5 no empieza. El símbolo de toVeriAI necesita SVG antes de componerlo.
 - **Sumas y URLs del catálogo.** Se toman de lo descargado en la Deck y la persona las verifica; sin red o con cuota de Hugging
   Face, `instalar.sh` reintenta con `-C -`.
-- **Herramientas del CI.** ffmpeg y rsvg-convert se instalan con `apt` en `comprobar.yml`; si el CI no arranca (sin cuota), vale el
+- **Herramientas del CI.** ffmpeg y rsvg-convert se instalan con `apt` en `check.yml`; si el CI no arranca (sin cuota), vale el
   check en local con la confirmación de la persona (`AGENTS.md`, «Relevos»).
 
 ## Pendiente

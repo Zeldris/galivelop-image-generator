@@ -146,4 +146,4 @@ Primera ronda:
 | Ausencia de identidad visual | galivelop-developer `8fa309c` | ningún svg/png/css en el árbol |
 | Familia: baldosa, fondos, textos, tipografías | Portal-Galivelop `aa76b34` | `public/marca/gv-logo.svg`, `src/components/Logo.tsx`, tema |
 | Acento `#2BB3A3` y metáfora de la rama | este repo | `docs/plan.md`, «Herramientas del taller» **[P]** |
-| Lectura y veredicto r1 | este repo | `docs/registros/lectura-2026-10-26-tarkor-y-marcas.md` (§3), `docs/registros/contenido/r1-fondos.md` |
+| Lectura y veredicto r1 | este repo | `docs/records/lectura-2026-10-26-tarkor-y-marcas.md` (§3), `docs/records/contenido/r1-fondos.md` |

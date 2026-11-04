@@ -8,7 +8,7 @@ la sección 13); **heredado de `<marca>`** sale del repo de la marca paraguas (a
 2026-11-04 con la plantilla de los 17 cambios aprobados.
 
 Commits de referencia: este repo `2259370` (rama `f2-motor`); Portal-Galivelop `aa76b34` (lo heredado, vía
-`docs/marcas/portal/biblia.md`, que lo lee desde `docs/registros/lectura-2026-10-26-tarkor-y-marcas.md`; desde aquí no se
+`docs/marcas/portal/biblia.md`, que lo lee desde `docs/records/lectura-2026-10-26-tarkor-y-marcas.md`; desde aquí no se
 abre ese repo).
 
 ---
@@ -56,7 +56,7 @@ abre ese repo).
 | Degradados | Opc. | solo la baldosa del logo (`#8B5CF6 → #5B34C9`) | repo (`logos/galivelop-image-generator-b.svg`); regla de familia en `docs/marcas/README.md` |
 
 **Medido:** la calibración da a este proyecto paleta ≥ 72 % (r1 y r5: 75-88 %; r4 og 72,36 %) con `brand.palette` de 4 hex (medido
-antes de añadir el texto `#eaf4fa`) y ΔE76 < 15 (`docs/registros/contenido/calibracion-measure.md`). r2 confirmó que hex, palabras o materiales dan casi la misma
+antes de añadir el texto `#eaf4fa`) y ΔE76 < 15 (`docs/records/contenido/calibracion-measure.md`). r2 confirmó que hex, palabras o materiales dan casi la misma
 imagen (69,9 / 74,8 / 76,3 %); se eligió «palabras» (`r2-estilo.md`).
 
 ## 4. Logo
@@ -150,7 +150,7 @@ r1 en semillas 3 y 4, elegido r2), `r5-cuadrado.txt`, `r5-vertical.txt`, `r5-cab
 
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
-| Veredicto | Obl. | la persona; delegado al agente desde el 2026-10-26. Apuntado en `docs/registros/contenido/r1-fondos.md` (sí, s3 y s4, «de las mejores»), `r2-estilo.md` (elegida «palabras»), `r4-composicion.md`, `r5-piezas.md` | repo |
+| Veredicto | Obl. | la persona; delegado al agente desde el 2026-10-26. Apuntado en `docs/records/contenido/r1-fondos.md` (sí, s3 y s4, «de las mejores»), `r2-estilo.md` (elegida «palabras»), `r4-composicion.md`, `r5-piezas.md` | repo |
 | Contraste del texto | Rec. | ≥ 4,5:1 (por defecto); medido: og r4 17,08 (peor 16,49) sin velo; r5 cuadrado 16,48 (15,42), vertical 16,44 (16,28), cabecera 15,49 (15,33) con velo 0,3 | repo (`r4-composicion.md`, `r5-piezas.md`) |
 | Umbrales de medida | Rec. | los de las secciones 3 y 7: paleta ≥ 72 %, YAVG 33-52, SATAVG 10-16 | repo (`calibracion-measure.md`) |
 | EMD frente a la marca | Opc. | Cb ≤ 4 / Cr ≤ 5 (medido frente a la portada del Portal: Cb 1,2-3,3, Cr 2,5-4,2) | repo (`calibracion-measure.md`) *(suposición: la referencia, sección 8)* |
@@ -174,12 +174,12 @@ r1 en semillas 3 y 4, elegido r2), `r5-cuadrado.txt`, `r5-vertical.txt`, `r5-cab
   lo sigue siendo aquí).
 - `docs/plan.md` «Estilos por proyecto» (herramientas del taller: familia del Portal, acento, *No*, formatos, metáforas),
   F2.8 dec. 2 y F2.10 dec. 6-7 (`avatar`/`icon`, `draft`), fila F2.12.
-- `docs/registros/contenido/calibracion-measure.md` (umbrales y medidas), `r1-fondos.md`, `r2-estilo.md`,
+- `docs/records/contenido/calibracion-measure.md` (umbrales y medidas), `r1-fondos.md`, `r2-estilo.md`,
   `r4-composicion.md`, `r5-piezas.md` (veredictos y medidas).
 - `examples/pilot/componer.py` (`caja_zona`, ajuste del texto), `examples/pilot/fuentes.sh` (origen y licencia de las fuentes).
 
 **Portal-Galivelop** `aa76b34` (marca paraguas, «heredado de»), leído solo a través de `docs/marcas/portal/biblia.md` y
-`docs/registros/lectura-2026-10-26-tarkor-y-marcas.md`: `src/estilos/global.css` (fondos, texto, superficies, borde),
+`docs/records/lectura-2026-10-26-tarkor-y-marcas.md`: `src/estilos/global.css` (fondos, texto, superficies, borde),
 `src/componentes/Logo.tsx` (Sora 700, −0,03 em), `public/marca/gv-logo.svg` (baldosa `rx` 30, trazo 12).
 
 Sin línea aquí y por tanto **[P]** o *(suposición)*: acento y sus dos tonos, lema y frases, logo elegido, reglas del logo

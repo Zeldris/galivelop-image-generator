@@ -97,7 +97,7 @@ Tras elegir **[P]**:
 
 | Archivo | Estado |
 |---|---|
-| `examples/galivelop-image-generator/prompts/og.txt` | aprobado en r1 (sí en semillas 3 y 4, «de las mejores», `docs/registros/contenido/r1-fondos.md`) |
+| `examples/galivelop-image-generator/prompts/og.txt` | aprobado en r1 (sí en semillas 3 y 4, «de las mejores», `docs/records/contenido/r1-fondos.md`) |
 | `examples/galivelop-image-generator/prompts/r2-palabras.txt` | r2, **elegida** (ahora `estilo.txt`). Misma escena de og; paleta en palabras |
 | `examples/galivelop-image-generator/prompts/r2-hex.txt` | r2, descartada. Misma escena, colores en hex |
 | `examples/galivelop-image-generator/prompts/r2-material.txt` | r2, descartada. Misma escena, paleta en materiales y luz (agua quieta de noche, cristal, amatista, vidrio esmerilado) |
@@ -119,8 +119,8 @@ Perfiles (tabla del `README.md` de marcas): `social`, `og`, `avatar`, `icon`; `b
 
 - Este repo `24d69c8`: `README.md` (qué es, estado, D-números), `GLOSSARY.md` (campo semántico), `docs/plan.md`
   «Estilos por proyecto» (acento, familia, metáforas, vetos, formatos y primera ronda),
-  `examples/galivelop-image-generator/prompts/og.txt`, `docs/registros/contenido/r1-fondos.md` (veredicto).
+  `examples/galivelop-image-generator/prompts/og.txt`, `docs/records/contenido/r1-fondos.md` (veredicto).
 - Portal-Galivelop `aa76b34`: `public/marca/gv-logo.svg` (baldosa), `Logo.tsx` (Sora 700, tracking −0,03 em), tema
   (`#06121c`, `#0c1d2b`, `#11283a`, `#1b3447`, `#eaf4fa`, `#9fb4c4`, `#f6fafd`, `#0a1a28`), vía
-  `docs/registros/lectura-2026-10-26-tarkor-y-marcas.md`.
+  `docs/records/lectura-2026-10-26-tarkor-y-marcas.md`.
 - Sin dato en ningún repo (**[P]**): acento y sus tonos, lema y frases, monoespaciada, reglas del logo tras elegir.

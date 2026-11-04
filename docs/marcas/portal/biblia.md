@@ -151,5 +151,5 @@ Repo `Portal-Galivelop`, commit `aa76b34`:
 - Logo y wordmark: `public/marca/gv-logo.svg`, `src/componentes/Logo.tsx`; imágenes existentes en `public/marca/`
   (`galivelop-social.png`, `galivelop-portal.jpg`, `gv-logo-512.png`).
 - Acentos de proyecto: `src/data/proyectos/*.json`.
-- Resumen de lectura: `docs/registros/lectura-2026-10-26-tarkor-y-marcas.md`, secciones 2 y 4; plan: `docs/plan.md`,
-  «Estilos por proyecto»; veredicto r1: `docs/registros/contenido/r1-fondos.md`.
+- Resumen de lectura: `docs/records/lectura-2026-10-26-tarkor-y-marcas.md`, secciones 2 y 4; plan: `docs/plan.md`,
+  «Estilos por proyecto»; veredicto r1: `docs/records/contenido/r1-fondos.md`.

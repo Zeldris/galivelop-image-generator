@@ -93,7 +93,7 @@ Mínimo tres roles, porque la composición los necesita (fondo bajo el texto, co
 
 **Cómo se mide** (`gimg measure <imagen> --project <p>`): `palette_pct` es el % de píxeles a ΔE76 < 15 de algún color
 de `brand.palette`, sobre la imagen reducida a 256 px de ancho; `palette_by_color` reparte ese % por color. Calibrado
-(`docs/registros/contenido/calibracion-measure.md`): Tarkor ≥ 30 % (su portada da 42), toVeriAI ≥ 65 %, workflow ≥ 90 %.
+(`docs/records/contenido/calibracion-measure.md`): Tarkor ≥ 30 % (su portada da 42), toVeriAI ≥ 65 %, workflow ≥ 90 %.
 r2 enseñó que decir el color en palabras, en hex o por materiales da casi la misma imagen: el prompt lleva una línea
 «Colours: #…, #…» por costumbre, no porque el modelo obedezca el hex.
 
@@ -205,7 +205,7 @@ composición; una ronda se cierra con la mayoría de piezas «sí».
 
 | Campo | Nivel | Qué es y formato | Ejemplo | Dónde acaba |
 |---|---|---|---|---|
-| Veredicto | Obl. *(ya en la ficha: quién da el «sí»; sin veredicto decide el agente y lo apunta)* | Persona o delegado; dónde se apunta | `docs/registros/contenido/rN-<tema>.md` | solo el agente |
+| Veredicto | Obl. *(ya en la ficha: quién da el «sí»; sin veredicto decide el agente y lo apunta)* | Persona o delegado; dónde se apunta | `docs/records/contenido/rN-<tema>.md` | solo el agente |
 | Contraste del texto | Rec. *(por defecto WCAG ≥ 4,5:1; ≥ 3:1 en titulares grandes)* | Relación mínima entre el color del texto y la zona reservada, con velo si lo hay | Tarkor og r4: peor 6,97:1; toVeriAI: 15:1 | `gimg measure --zone --text` (`contrast.worst`) |
 | Umbrales de medida | Rec. | Los números **no se repiten aquí**: % de paleta mínimo de la sección 3, YAVG y SATAVG de la sección 7 | Tarkor ≥ 30 % y 105-150 / 18-32; toVeriAI ≥ 65 % | solo el agente (`calibracion-measure.md`) |
 | EMD frente a la marca | Opc. | Mediana por canal; Cb ≲ 6 y Cr ≲ 7,5 son los de Tarkor, a revalidar por marca; la EMD de Y pesa la composición y no sirve sola | toVeriAI ≤ 6 / ≤ 6; workflow ≤ 3 / ≤ 4 | `gimg measure --refs` (`emd_median`) |

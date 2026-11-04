@@ -148,5 +148,5 @@ Primera ronda **[P]:**
 - Portal `aa76b34`: `src/data/proyectos/tarkor.json` l.7 (acento `#E0703A`); `public/proyectos/tarkor/portada.webp`
   (1600×640, Pilares Rotos); `public/marca/gv-logo.svg` (baldosa de la familia).
 - Aquí: `docs/plan.md` «Estilos por proyecto», párrafo Tarkor (`#8a3b1e`, `#1b0f0a`, `#c98a3a`, `#efe3cf`, `#f2b34a`,
-  medidos sobre la portada, *suposición*); `docs/registros/contenido/r1-fondos.md`;
-  `docs/registros/lectura-2026-10-26-tarkor-y-marcas.md` §1, §2 y §4.
+  medidos sobre la portada, *suposición*); `docs/records/contenido/r1-fondos.md`;
+  `docs/records/lectura-2026-10-26-tarkor-y-marcas.md` §1, §2 y §4.

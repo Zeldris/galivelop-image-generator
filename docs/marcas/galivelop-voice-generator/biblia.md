@@ -100,7 +100,7 @@ Tras elegir **[P]**:
 
 | Archivo | Estado |
 |---|---|
-| `examples/galivelop-voice-generator/prompts/og.txt` (este repo) | aprobado en r1 (sí en semillas 3 y 4, `docs/registros/contenido/r1-fondos.md`) |
+| `examples/galivelop-voice-generator/prompts/og.txt` (este repo) | aprobado en r1 (sí en semillas 3 y 4, `docs/records/contenido/r1-fondos.md`) |
 | `examples/galivelop-voice-generator/prompts/r2-palabras.txt` | r2, **elegida** (ahora `estilo.txt`). Misma escena de og (sin el «shaped like»); paleta en palabras |
 | `examples/galivelop-voice-generator/prompts/r2-hex.txt` | r2, descartada. Misma escena, colores en hex |
 | `examples/galivelop-voice-generator/prompts/r2-material.txt` | r2, descartada. Misma escena, paleta en materiales y luz (terciopelo azul, cristal frambuesa, cuarzo rosa) |
@@ -123,8 +123,8 @@ Perfiles (tabla del `README.md` de marcas): `social`, `og`, `avatar`, `icon`; `b
 - galivelop-voice-generator `ab1ff10` (`claude/voces-f1`): `README.md` (qué es, motor, D3), `GLOSSARY.md` (voz,
   referencia, huella, toma, cadena de efectos, paquete de voces). Allí no hay ningún dato visual.
 - Este repo `24d69c8`: `docs/plan.md` «Estilos por proyecto» (acento, familia, metáfora, vetos, formatos y primera
-  ronda), `examples/galivelop-voice-generator/prompts/og.txt`, `docs/registros/contenido/r1-fondos.md` (veredicto),
-  `docs/registros/lectura-2026-10-26-tarkor-y-marcas.md` sección 3 (límites: nada que sugiera clonar).
+  ronda), `examples/galivelop-voice-generator/prompts/og.txt`, `docs/records/contenido/r1-fondos.md` (veredicto),
+  `docs/records/lectura-2026-10-26-tarkor-y-marcas.md` sección 3 (límites: nada que sugiera clonar).
 - Portal-Galivelop `aa76b34`: `public/marca/gv-logo.svg` (baldosa), `Logo.tsx` (Sora 700), tema oscuro y claro, vía la
   misma lectura.
 - Sin dato en ningún repo (**[P]**): acento y sus tonos, lema y frases, monoespaciada, reglas del logo tras elegir.
