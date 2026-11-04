@@ -37,7 +37,8 @@
         "fields": [
           "title1",
           "title2",
-          "subtitle"
+          "subtitle",
+          "subtitle2"
         ],
         "logo": "logos/toveriai-a-lockup.svg",
         "fonts": [

@@ -43,10 +43,10 @@
           "subtitle",
           "subtitle2"
         ],
-        "logo": "logos/tarkor-a-lockup.svg",
+        "logo": "logos/tarkor-b-lockup.svg",
         "fonts": [
-          "Cinzel",
-          "Inter"
+          "Metamorphous",
+          "Almendra"
         ],
         "fit": "cover"
       }
