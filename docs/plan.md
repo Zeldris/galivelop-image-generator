@@ -49,6 +49,7 @@ Tomadas con `grilling` el 2026-10-25.
 | D37 | **Todo elemento gráfico nace del generador, y el generador acabado no depende de agentes ni de cuotas: solo de lo local** (decisión de la persona del 2026-11-04, sustituye a D29). *Logos:* `gimg` genera el **emblema** (perfil `logo`, 1024×1024 sobre fondo plano declarado), quita el fondo en local (ffmpeg) y lo guarda como PNG con transparencia; el **nombre** lo escribe la composición con la fuente OFL de la hoja. La persona elige una vez y ese emblema queda fijo en el proyecto (misma marca en todas las piezas). Los SVG dibujados por agentes (Tarkor «La Semilla rota», workflow b) quedan **solo como referencia** del concepto (prompt y, si el modelo lo admite, `initImage`). *Prompts, plantillas y elección:* lo que hoy hace un agente pasa a un paso **local y opcional** con un LLM de Ollama, que redacta y mejora prompts desde la hoja de estilo y la biblia y propone la elegida con `gimg measure`; sin Ollama, el generador sigue funcionando con prompts escritos a mano. Los agentes desarrollan el código, pero no producen piezas gráficas finales. Alternativas descartadas: vectorizar con potrace (otra herramienta, y pierde degradados y textura) y lockup entero generado (FLUX klein no escribe texto legible) | Un generador que necesita a Claude para dar sus piezas no está terminado y depende de cuotas externas |
 | D38 | **El producto se llama «Galivelop IG» y sus siglas son «GVIG»** (decisión de la persona del 2026-11-04). Es el nombre de marca: interfaz, README, hoja de estilo, textos y piezas. El repo (`galivelop-image-generator`), el paquete y la orden `gimg` no cambian mientras la persona no lo pida | Nombre corto y reconocible; renombrar el código rompería instalaciones y rutas sin aportar nada |
 | D39 | **F3 y F4 se adelantan al cierre del piloto** (decisión de la persona del 2026-11-05): las rondas del piloto (F2.10/F2.12) las hace la persona desde la interfaz, aceptando, rechazando y ajustando sin pasar por un agente. Orden: F3 mínima (API local y `gimg serve`) → F4a pantalla de pedido (galería, sí/no y nota, otra semilla, retoque de prompt y textos, elegir) → F4b **plantillas elegibles** (varias por formato, selector por intento) → F4c **editor de elementos** (mover y redimensionar titular, subtítulo, logo y adornos sobre la imagen; se guarda como ajuste del intento o como plantilla nueva, y se vuelve a medir el contraste) → F4d resto de D22. La interfaz sigue la hoja de estilo de este proyecto (`docs/marcas/galivelop-image-generator/hoja.md`) con el nombre de D38. F2.14 y F6 entran después como acciones de la interfaz | Cada ronda a través de un agente gasta cuota y quita control a la persona (D37); el piloto es la prueba real de la interfaz |
+| D40 | **La persona elige dónde se guarda una plantilla nueva** (decisión de la persona del 2026-11-05, F4c): al guardar se elige el destino entre la carpeta de datos (`<data>/projects/<p>/templates/`, marca «local», con «Exportar» que da el SVG) y la carpeta de plantillas que el proyecto declare en su configuración (`compose.templatesDir`, relativa a la raíz y dentro de ella). Es la única ampliación de D25: `gimg` escribe ahí solo si el proyecto la declara, con `paths.inside` y sin sobrescribir sin confirmar | Cada proyecto se configura a su manera: unos quieren las plantillas en su repo y otros solo en local |
 
 Decisiones difíciles de revertir, con su ADR: [0001](adr/0001-servicio-local-independiente.md) (D1) y
 [0002](adr/0002-generador-sin-dominio.md) (D2).
@@ -911,7 +912,7 @@ posible.
 
 ## F3 en detalle
 
-**Propuesta del agente (2026-11-05), pendiente de la persona** (preguntas al final). Es la **F3 mínima** de D39: la API
+**Contrato aprobado por la persona el 2026-11-05** (sus respuestas, al final). Es la **F3 mínima** de D39: la API
 HTTP local y `gimg serve`, lo justo para construir encima F4a-F4c; lo demás de F3 (unidad `systemd`, lo que pida F4d)
 queda para después. Las decisiones que no son de la persona las toma el contrato y se marcan **Decisión**.
 
@@ -921,8 +922,8 @@ queda para después. Las decisiones que no son de la persona las toma el contrat
 F3; la seguridad de D25; los errores en JSON con las claves de `errors.py`; una `gimg/ui/index.html` provisional (F4a la
 sustituye) para probar el servido de estáticos; `docs/api.md` (D17).
 
-**No entra:** SSE o WebSocket (la interfaz sondea cada 3 s, `docs/interfaz/propuesta.md`); token de acceso (pregunta 4);
-escucha fuera de `127.0.0.1`; unidad `systemd --user` (pregunta 3); registrar o quitar proyectos por la API (es de la CLI,
+**No entra:** SSE o WebSocket (la interfaz sondea cada 3 s, `docs/interfaz/propuesta.md`); token de acceso (decisión 4);
+escucha fuera de `127.0.0.1`; unidad `systemd --user` (decisión 3); registrar o quitar proyectos por la API (es de la CLI,
 D12); reordenar la cola, contadores por proyecto, pestañas Piezas y Marca y `doctor` por la API (F4d); `sd-server` (D14);
 librería cliente (D17). **La API es la misma capa que la CLI:** cada ruta llama a la función que ya llama `gimg/cli.py`
 (`projects`, `orders`, `queue`, `delivery`, `compose`, `measure`); ninguna lógica nueva del dominio vive en el servidor.
@@ -937,11 +938,11 @@ librería cliente (D17). **La API es la misma capa que la CLI:** cada ruta llama
 | Archivo de estado | `<data>/serve.json` (`fsutil.write_json`, 0600): `{"pid", "port", "url", "version", "startedAt"}`. Vivo = el cerrojo está tomado **y** `GET /api/health` responde; un `serve.json` sin cerrojo es de un proceso muerto y se ignora (y se sobrescribe) |
 | Órdenes | `gimg serve` (primer plano; Ctrl-C para), `gimg serve --detach` (arranca en segundo plano, espera a `health` hasta 5 s y escribe la URL; `--json` da `serve.json`), `gimg serve --status`, `gimg serve --stop` (SIGTERM al pid de `serve.json` si el cerrojo sigue tomado), `--idle-min N` |
 | `gimg ui` (nueva) | `ensure_running()` y `webbrowser.open(url)` (stdlib); escribe la URL siempre, por si no hay navegador |
-| Arranque bajo demanda | `ensure_running()`: si no está vivo, lanza `sys.executable -m gimg serve` con `start_new_session=True`, salida a `<data>/serve.log`, y espera `health` hasta 5 s; si no, `serve.start_failed` con las últimas 5 líneas del log. Lo llaman `gimg ui` y, **si la persona lo confirma (pregunta 1)**, `gimg order submit` y `gimg attempt new` tras encolar. `GIMG_AUTOSTART=0` lo apaga (los tests lo fijan). Si `health.version` ≠ la instalada y no hay trabajador vivo, se para el viejo y se arranca el nuevo; con trabajador vivo se usa el viejo y se avisa |
+| Arranque bajo demanda | `ensure_running()`: si no está vivo, lanza `sys.executable -m gimg serve` con `start_new_session=True`, salida a `<data>/serve.log`, y espera `health` hasta 5 s; si no, `serve.start_failed` con las últimas 5 líneas del log. Lo llaman `gimg ui` y, **si la persona lo confirma (decisión 1)**, `gimg order submit` y `gimg attempt new` tras encolar. `GIMG_AUTOSTART=0` lo apaga (los tests lo fijan). Si `health.version` ≠ la instalada y no hay trabajador vivo, se para el viejo y se arranca el nuevo; con trabajador vivo se usa el viejo y se avisa |
 | Trabajador | El servidor **no genera**: lanza `sys.executable -m gimg work --lang <lang>` como proceso aparte (`start_new_session=True`, salida a `<data>/worker.log`) cuando hay entradas `queued` (`queue.next_queued()`) y el cerrojo del trabajador está libre (`queue.worker_alive()`, nueva y pública, sobre el `_no_worker` de hoy). Se comprueba tras cada encolado por la API y en un pulso de 2 s (lo encolado por la CLI con `GIMG_AUTOSTART=0` también se coge). `worker.run` sale solo con la cola vacía, así que no queda nada residente. Un `gimg work` a mano sigue valiendo: el cerrojo hace que solo uno corra y el servidor no lanza otro; un `worker.already_running` del hijo es carrera inocua |
 | Inactividad | Se para solo tras `--idle-min` (por defecto **15**; `"serve": {"idleMinutes"}`; `0` = nunca) sin peticiones, sin trabajador vivo y sin entradas `queued`/`running`. La interfaz abierta sondea y lo mantiene vivo; cerrar la pestaña lo deja parar |
 | Parada | SIGTERM, SIGINT o inactividad: deja de aceptar, espera hasta 10 s a las peticiones en curso, borra `serve.json` y suelta el cerrojo. **Nunca toca al trabajador**: parar el servidor no corta una generación (para eso, `POST /api/queue/{id}/cancel`) |
-| `systemd --user` | Fuera de la mínima (pregunta 3); `gimg serve` en primer plano ya sirve de `ExecStart=` el día que entre |
+| `systemd --user` | Fuera de la mínima (decisión 3); `gimg serve` en primer plano ya sirve de `ExecStart=` el día que entre |
 
 **Decisión:** el trabajador va en su propio proceso y no en un hilo del servidor: `worker.run` instala manejadores de
 señales (`_exit_on_signals`, solo posible en el hilo principal), `sd-cli` puede ocupar 7 GB y un fallo del motor no debe
@@ -982,7 +983,7 @@ log y SVG. Fase: **F3** o la de la interfaz que la añade.
 | F4b | `POST …/a/{id}/compose` gana `"template": "<id>"`; `POST …/o/attempts` también (plantilla de los intentos nuevos) | | el intento guarda `compose.template` = id | `compose.recompose` con parámetro nuevo | `compose.template_unknown` (nuevo) |
 | F4b | `GET …/assets/template?id=<id>` | — | el SVG de esa plantilla | | |
 | F4c | `POST …/a/{id}/compose` gana `"layout": {"<elemento>": {"x", "y", "w", "h"}}` (píxeles del destino) | | el intento con `compose.layout` y `contrast` por elemento de texto (la medida de D31 sobre su caja y su color) | `compose.recompose`, `measure.contrast` | `compose.element_unknown`, `compose.bad_layout` (nuevos) |
-| F4c | `POST /api/projects/{p}/profiles/{profile}/templates` | `{"from": {"key", "attempt"}, "name"}` | 201 la plantilla nueva | (nuevo; dónde se guarda: pregunta 2) | `compose.template_exists` (nuevo) |
+| F4c | `POST /api/projects/{p}/profiles/{profile}/templates` | `{"from": {"key", "attempt"}, "name", "dest"}` | 201 la plantilla nueva | (nuevo; destino `local` o `project`, D40) | `compose.template_exists` (nuevo) |
 
 **Decisiones:** (1) las imágenes se sirven por id del intento, nunca por ruta: el servidor resuelve la ruta con `orders` y
 comprueba con `paths.inside` que cae en la carpeta del pedido, y la vista previa con `paths.inside(paths.data_dir(), …)`.
@@ -1061,32 +1062,23 @@ se escriben atómicos (`fsutil.write_json`).
 | F3.2 | Rutas de lectura: proyectos, pedidos, pedido, cola, imágenes, cruda, log, vista previa, SVG de `compose` | Tests sobre datos de `tests/` con el motor falso; una imagen fuera de su carpeta da 404; el SVG con su CSP |
 | F3.3 | Rutas de escritura: pedido nuevo, intentos, `mark`, `note`, `text`, `compose`, `choose`, `undo`, `cancel`, `measure`; semáforo de pesadas | Tests: mismas respuestas que la CLI con `--json` para el mismo caso; cada error con su código y estado; `compose.busy` con el cerrojo tomado (`skipUnless` ffmpeg y rsvg donde compone) |
 | F3.4 | `gimg/service.py` y `gimg serve` (`--detach`, `--status`, `--stop`, `--idle-min`): cerrojo, `serve.json`, inactividad, lanzar el trabajador; `queue.worker_alive` | Tests en subproceso: segundo `serve` rechazado, `serve.json` borrado al parar, parada por inactividad con `--idle-min` en segundos de prueba (`GIMG_SERVE_IDLE_S`), entrada encolada por la API procesada por el `gimg work` lanzado, parar no mata al trabajador |
-| F3.5 | Arranque bajo demanda: `ensure_running`, `gimg ui`, arranque desde `order submit`/`attempt new` (según la pregunta 1), `GIMG_AUTOSTART`, versión distinta | Tests en subproceso con `GIMG_AUTOSTART=1` y carpetas temporales; `serve.start_failed` con el log; **manual Deck:** `gimg ui` abre el navegador y el servicio se para solo a los 15 min |
+| F3.5 | Arranque bajo demanda: `ensure_running`, `gimg ui`, arranque desde `order submit`/`attempt new` (decisión 1), `GIMG_AUTOSTART`, versión distinta | Tests en subproceso con `GIMG_AUTOSTART=1` y carpetas temporales; `serve.start_failed` con el log; **manual Deck:** `gimg ui` abre el navegador y el servicio se para solo a los 15 min |
 | F3.6 | `docs/api.md` (es; en en `docs/en/api.md` si D16 lo pide para docs técnicos), README (sección «Servicio»), CHANGELOG, versión 0.3.0, fila F3 de «Fases» al día | Check en verde; cada ruta de la tabla tiene su ejemplo `curl` en `docs/api.md` |
 
 Cada paso, un commit con la bitácora al día y `/code-review` del paso al cerrarlo (proceso de F2). F4a empieza tras F3.3:
 lo de F3.4-F3.6 no lo bloquea (la interfaz se prueba con `gimg serve` en primer plano).
 
-### Preguntas para la persona
+### Decisiones de la persona (2026-11-05)
 
-1. **¿`gimg order submit` y `gimg attempt new` arrancan el servicio (y con él el trabajador) al encolar?** Recomiendo
-   **sí**, con `GIMG_AUTOSTART=0` para apagarlo: es lo que pide D11 y quita el `gimg work` a mano de cada ronda. Alternativa:
-   solo `gimg ui` arranca el servicio y la CLI sigue como hoy.
-2. **¿Dónde guarda el editor de elementos (F4c) una «plantilla nueva»?** D25 no deja escribir en el repo del proyecto.
-   Recomiendo **en la carpeta de datos** (`<data>/projects/<p>/templates/`), listada junto a las del proyecto con la marca
-   «local» y un botón «Exportar» que da el SVG para llevarlo al repo (el proyecto sigue siendo la fuente, D2). Alternativa:
-   ampliar D25 con una carpeta de plantillas declarada en la configuración del proyecto donde `gimg` sí escribe.
-3. **¿Unidad `systemd --user` en F3?** Recomiendo **no en la mínima**: el arranque bajo demanda y la parada a los 15 min
-   cubren la Deck (nada residente mientras se juega, D11); se añade en F4d o F6 si se echa de menos.
-4. **¿Token de acceso además de Host, Origin y Content-Type?** Recomiendo **no por ahora**: la Deck es de un solo usuario
-   y D25 no lo pide; protege de otras webs, no de otro usuario del mismo equipo. Si algún día se comparte equipo, token en
-   `serve.json` (0600) y cabecera `Authorization`.
-5. **¿Varias plantillas por perfil (F4b) como `compose.templates` en la configuración del proyecto?** Cambia el contrato
-   con los proyectos (D17). Recomiendo **`compose.templates: {"<id>": {"template", "logo"?, "fields"?}}`** con
-   `compose.template` como la de por defecto, compatible con las configuraciones de hoy; `minVersion` 0.3.0 solo para quien
-   use `templates`.
-6. **¿Puerto fijo 8737 por defecto?** Recomiendo **sí, fijo y configurable** (`GIMG_PORT`, `config.json`): un
-   marcador y WMF siempre lo encuentran; si está ocupado, error claro en vez de otro puerto al azar.
+1. **Arranque al encolar:** sí. `gimg order submit` y `gimg attempt new` llaman a `ensure_running()` tras encolar;
+   `GIMG_AUTOSTART=0` lo apaga (los tests lo fijan).
+2. **Plantilla nueva de F4c:** la persona elige el destino al guardar (D40): carpeta de datos o `compose.templatesDir`
+   del proyecto, si lo declara. La ruta `POST …/templates` gana `"dest": "local|project"`; `project` sin
+   `templatesDir` da `compose.templates_dir_missing` (nuevo).
+3. **Varias plantillas (F4b):** `compose.templates: {"<id>": {"template", "logo"?, "fields"?}}`, con `compose.template`
+   como la de por defecto; `minVersion` 0.3.0 solo para quien use `templates`.
+4. **Sin `systemd --user`** en la mínima, **sin token** (Host, Origin y Content-Type bastan) y **puerto 8737** fijo y
+   configurable.
 
 ## Pendiente
 
