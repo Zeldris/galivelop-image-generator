@@ -334,5 +334,6 @@
   "error.api.not_found": "no existe «{path}»",
   "error.api.method_not_allowed": "el método {method} no está permitido en esta ruta",
   "error.api.unexpected": "error inesperado: {message}",
-  "error.measure.busy": "hay otra medición o composición en curso; espera a que termine y repite"
+  "error.measure.busy": "hay otra medición o composición en curso; espera a que termine y repite",
+  "error.api.bad_request": "la petición no se pudo interpretar"
 }

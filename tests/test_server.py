@@ -22,12 +22,15 @@ INTENDED_500 = {
     "queue.corrupt", "queue.not_running",
     "compose.svg_too_big", "compose.svg_unreadable", "compose.no_logo", "compose.tool_missing", "compose.timeout",
     "compose.tool_failed", "compose.write_failed", "compose.pending", "compose.unexpected",
+    "queue.bad_progress", "engine.unknown", "engine.bad_delay", "machine.invalid", "machine.bad_path",
+    "machine.bad_name", "model.catalog_invalid", "png.invalid", "png.bad_key", "order.spec_invalid",
+    "compose.bad_fit", "compose.bad_size", "project.config_invalid",
     "worker.already_running", "worker.reference_missing", "worker.init_image_missing", "worker.image_move",
     "worker.unexpected", "delivery.reserved", "delivery.manifest_corrupt", "delivery.source_missing",
     "delivery.write_failed", "cli.order_unreadable", "cli.measure_zone_text",
     "model.not_installed", "model.required",
     "measure.tool_missing", "measure.tool_failed", "measure.timeout", "measure.unreadable",
-    "measure.no_brand_palette", "measure.zone_outside", "sheet.no_images", "sheet.too_many", "sheet.unreadable",
+    "measure.no_brand_palette", "sheet.no_images", "sheet.too_many", "sheet.unreadable",
     "sheet.out_is_input", "sheet.tool_missing", "sheet.tool_failed", "sheet.timeout", "api.unexpected",
 }
 
@@ -322,6 +325,33 @@ class Statics(ServerBase):
             self.addCleanup(f.unlink)
             resp, _ = self.call(path="/ui/" + name)
             self.assertEqual((resp.status, resp.getheader("Content-Type").split(";")[0]), (200, ctype))
+
+
+class Robustness(ServerBase):
+    def test_error_that_cannot_render_still_answers(self):
+        @server.route("GET", "/api/test/noparam")
+        def noparam(req):
+            raise GimgError("api.not_found")  # its text needs {path}
+        resp, payload = self.call(path="/api/test/noparam")
+        self.assertEqual(resp.status, 404)
+        self.assertEqual(json.loads(payload)["error"], {"code": "api.not_found", "params": {}, "message": "api.not_found"})
+
+    def test_short_body_is_400_not_500(self):
+        server.Handler.timeout = 1
+        self.addCleanup(setattr, server.Handler, "timeout", server.READ_TIMEOUT)
+        self.err(*self.call("POST", "/api/test/echo/k", headers={"Content-Type": "application/json",
+                 "Content-Length": "50"}, raw_body=b"{}"), 400, "api.bad_json")
+
+    def test_huge_content_length_is_413(self):
+        self.err(*self.call("POST", "/api/test/echo/k", headers={"Content-Type": "application/json",
+                 "Content-Length": "9" * 5000}, raw_body=b"{}"), 413, "api.body_too_large")
+
+    def test_long_uri_keeps_414_with_bad_request(self):
+        resp, payload = self.call(path="/api/" + "a" * 70000)
+        self.err(resp, payload, 414, "api.bad_request")
+
+    def test_zone_outside_is_400(self):
+        self.assertEqual(server.status_for("measure.zone_outside"), 400)
 
 
 class RouterTable(unittest.TestCase):

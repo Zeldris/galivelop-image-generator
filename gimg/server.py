@@ -46,9 +46,13 @@ _EXACT = {
     415: ("api.content_type",),
     409: ("compose.busy", "measure.busy", "compose.nothing_to_do", "compose.no_attempts", "order.discard_chosen",
           "order.history_empty", "queue.not_cancellable", "delivery.target_taken"),
-    400: ("order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "api.bad_json",
+    400: ("measure.zone_outside", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "api.bad_json",
           "api.bad_param"),
 }
+# Server-side faults whose names match the 400 patterns below: checked first.
+_SERVER_FAULTS = ("engine.unknown", "engine.bad_delay", "machine.invalid", "machine.bad_path", "machine.bad_name",
+                  "model.catalog_invalid", "png.invalid", "png.bad_key", "order.spec_invalid", "queue.bad_progress",
+                  "compose.bad_fit", "compose.bad_size", "project.config_invalid")
 _PREFIX = (("order.choose_", 409), ("order.undo_", 409), ("path.", 400), ("key.", 400), ("limit.", 400))
 _SUFFIX = ((".invalid", 400), ("_invalid", 400), (".unknown", 400))
 _BAD = ".bad_"
@@ -56,6 +60,8 @@ _BAD = ".bad_"
 
 def status_for(code: str) -> int:
     """HTTP status of a `GimgError` code; 500 when the table has no entry."""
+    if code in _SERVER_FAULTS:
+        return 500
     for status, codes in _EXACT.items():
         if code in codes:
             return status
@@ -183,6 +189,14 @@ def error_body(exc: GimgError, lang: str) -> dict:
     return {"error": body}
 
 
+def safe_error_body(exc: GimgError, lang: str) -> dict:
+    """`error_body`, or a minimal body (message = code) if rendering the error itself fails."""
+    try:
+        return error_body(exc, lang)
+    except Exception:  # noqa: BLE001 - a missing param or a bad schema line must not kill the response
+        return {"error": {"code": exc.code, "params": {}, "message": exc.code}}
+
+
 # --- handler ---
 class Handler(BaseHTTPRequestHandler):
     server_version = "gimg"
@@ -195,11 +209,13 @@ class Handler(BaseHTTPRequestHandler):
 
     def send_error(self, code, message=None, explain=None):  # malformed request line etc.
         lang = i18n.default_lang()
-        gcode = "api.method_not_allowed" if code == 501 else "api.not_found" if code == 404 else "api.bad_json"
-        params = {"method": self.command or "?"} if gcode == "api.method_not_allowed" else (
-            {"path": ""} if gcode == "api.not_found" else {})
-        self._write(Reply(405 if code == 501 else 404 if code == 404 else 400,
-                          error_body(GimgError(gcode, **params), lang), json=True))
+        if code == 501:
+            exc, status = GimgError("api.method_not_allowed", method=self.command or "?"), 405
+        elif code == 404:
+            exc, status = GimgError("api.not_found", path=""), 404
+        else:
+            exc, status = GimgError("api.bad_request"), code if 400 <= code < 500 else 400
+        self._write(Reply(status, safe_error_body(exc, lang), json=True))
 
     def handle_one_request(self):
         try:
@@ -235,7 +251,7 @@ class Handler(BaseHTTPRequestHandler):
         self.close_connection = True
 
     def _fail(self, exc: GimgError, lang: str):
-        self._write(Reply(status_for(exc.code), error_body(exc, lang), json=True))
+        self._write(Reply(status_for(exc.code), safe_error_body(exc, lang), json=True))
 
     # the five checks of D25, in order
     def _check_origin(self):
@@ -258,9 +274,14 @@ class Handler(BaseHTTPRequestHandler):
         length = self.headers.get("Content-Length")
         if self.headers.get("Transfer-Encoding") or length is None or not length.isascii() or not length.isdigit():
             raise GimgError("api.length_required")
-        if int(length) > MAX_BODY:
+        if len(length) > 8 or int(length) > MAX_BODY:
             raise GimgError("api.body_too_large", limit=MAX_BODY)
-        raw = self.rfile.read(int(length))
+        try:
+            raw = self.rfile.read(int(length))
+        except (TimeoutError, OSError):
+            raise GimgError("api.bad_json")
+        if len(raw) != int(length):
+            raise GimgError("api.bad_json")
         try:
             body = json.loads(raw.decode("utf-8"))
         except (UnicodeDecodeError, ValueError):

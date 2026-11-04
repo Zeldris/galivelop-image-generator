@@ -1029,12 +1029,12 @@ esquema (`schema.format_error`). Idioma: `?lang=es|en`, si no el primero soporta
 
 | Estado | Códigos |
 |---|---|
-| 400 | `*.invalid`, `*.bad_*`, `*_invalid`, `path.*`, `key.*`, `limit.*`, `order.prompt_too_long`, `order.text_unknown_field`, `compose.field_unknown`, `api.bad_json`, `api.bad_param` |
+| 400 | `*.invalid`, `*.bad_*`, `*_invalid`, `path.*`, `key.*`, `limit.*`, `order.prompt_too_long`, `order.text_unknown_field`, `compose.field_unknown`, `measure.zone_outside`, `api.bad_json`, `api.bad_param`, `api.bad_request` |
 | 403 | `api.bad_host`, `api.bad_origin` |
 | 404 | `project.unknown`, `order.unknown`, `order.profile_unknown`, `order.attempt_unknown`, `queue.unknown`, `api.not_found`, `compose.template_missing`, `compose.logo_missing` (los demás `*.unknown`, como `model.unknown`, son 400) |
 | 405 / 411 / 413 / 415 | `api.method_not_allowed` / `api.length_required` / `api.body_too_large` / `api.content_type` |
 | 409 | `compose.busy`, `measure.busy`, `compose.nothing_to_do`, `compose.no_attempts`, `order.choose_*`, `order.discard_chosen`, `order.undo_*`, `order.history_empty`, `queue.not_cancellable`, `delivery.target_taken` |
-| 500 | el resto de `GimgError` (corruptos, herramientas, escritura) y cualquier otra excepción como `api.unexpected` con `{"message": "Tipo: texto"}` (traza a `serve.log` solo con `GIMG_DEBUG=1`) |
+| 500 | antes de los patrones de 400, los fallos del lado del servidor: `engine.unknown`, `engine.bad_delay`, `machine.invalid`, `machine.bad_path`, `machine.bad_name`, `model.catalog_invalid`, `png.invalid`, `png.bad_key`, `order.spec_invalid`, `queue.bad_progress`, `compose.bad_fit`, `compose.bad_size`, `project.config_invalid`; y el resto de `GimgError` (corruptos, herramientas, escritura) y cualquier otra excepción como `api.unexpected` con `{"message": "Tipo: texto"}` (traza a `serve.log` solo con `GIMG_DEBUG=1`) |
 
 La tabla vive en `server.py` como lista de prefijos y sufijos; un código sin entrada da 500 y un test recorre las claves
 `error.*` de `es.json` para que ninguna caiga en 500 sin querer. Claves nuevas (es/en): `api.bad_host`, `api.bad_origin`,
