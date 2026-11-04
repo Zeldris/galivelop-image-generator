@@ -1,6 +1,6 @@
 # Hoja de estilo mínima: Galivelop-workflow
 
-**Propuesta** (2026-11-04), segundo caso de [`../plantilla-hoja-de-estilo.md`](../plantilla-hoja-de-estilo.md) (F2.12), rellenada
+**Propuesta** (2026-11-04), **Aprobada por la persona el 2026-11-04**; segundo caso de [`../plantilla-hoja-de-estilo.md`](../plantilla-hoja-de-estilo.md) (F2.12), rellenada
 tras [`../galivelop-image-generator/hoja.md`](../galivelop-image-generator/hoja.md) y con su misma forma. Complementa a
 [`biblia.md`](biblia.md): la biblia es la lectura larga; esta hoja es lo que `gimg` necesita, campo a campo y en el orden de la
 plantilla. Estados como en [`../README.md`](../README.md): sin marca sale de un repo (ruta en la sección 13); **heredado de
@@ -279,7 +279,7 @@ paleta genérica de sus plantillas). Nada los alinea hoy. Ver «Cambios que pedi
 
 Entre el repo de Workflow (`7d61089`) y la biblia (`a50b544`), o entre la biblia y lo que ya generó el motor.
 
-1. **Paleta y letra de las tarjetas de redes.** Lo único con color del repo de Workflow son las plantillas de
+1. **Resuelto (2026-11-04): la hoja manda con la biblia; el cambio va al repo de Workflow como propuesta (`gw-harvest`), no se hace desde aquí.** **Paleta y letra de las tarjetas de redes.** Lo único con color del repo de Workflow son las plantillas de
    `gw-media-content` (`skills/gw-media-content/template/media/source/*.html`): fondo `#0f172a`, superficie `#1e293b`, borde
    `#334155`, texto `#f1f5f9`, apagado `#94a3b8`, acento `#38bdf8`, verde `#4ade80`, rojo `#f87171`, fuente `system-ui…`, nombre
    del proyecto en mayúsculas con tracking 0,16 em. La biblia §2-§3 dice `#0d1b2a`, `#eef6fb`, `#8a9bb0`, `#38b6e8`, `#4cc38a`,
@@ -290,22 +290,24 @@ Entre el repo de Workflow (`7d61089`) y la biblia (`a50b544`), o entre la biblia
    --text: #eef6fb; --muted: #8a9bb0; --accent: #38b6e8; --accent-text: #0d1b2a; --good: #4cc38a; --bad: #f0716a` y
    `--font: Inter, …` (el borde `#1b3447` es el de las superficies oscuras del Portal, `docs/marcas/portal/biblia.md` l.28; la biblia de Workflow no lo lista). El `.brand` en mayúsculas queda como está
    si la persona lo acepta como rótulo de tarjeta, no como wordmark.
-2. **Zona reservada del `square`.** Biblia §7: «el tercio superior en `square`». `prompts/r5-cuadrado.txt` y `r5-vertical.txt`
+2. **Resuelto (2026-11-04): `arriba 1/2`, lo medido; biblia corregida.** **Zona reservada del `square`.** Biblia §7: «el tercio superior en `square`». `prompts/r5-cuadrado.txt` y `r5-vertical.txt`
    piden «the upper half», `piezas.json` compone en `arriba` (48 % del alto) y la medida salió 15,75 (peor 15,54).
    **Propuesta:** `arriba 1/2`, lo medido; corregir la biblia.
-3. **Pesos de Inter.** Biblia §3: títulos Inter 800, subtítulos 600. Las piezas de r4-r5 salieron a 700 y 400 (`componer.py`
+3. **Abierta:** la persona elige viendo una pieza. **Pesos de Inter.** Biblia §3: títulos Inter 800, subtítulos 600. Las piezas de r4-r5 salieron a 700 y 400 (`componer.py`
    `peso_titulo=700`, subtítulo `font-weight="400"` con opacidad 0,82); `piezas.json` no declara peso. **Propuesta:** que la
    persona vea la pieza y elija; si prefiere los 800/600 de los diagramas, se cambia `componer.py` (o el futuro `compose`) y se
    recompone sin regenerar; si no, se corrige la biblia a 700/400.
-4. **Dibujo del monograma.** `docs/plan.md` l.640 y la biblia §4 (tabla) hablan del «gw» «en Inter 800 blanco»; el SVG `a`
+4. **Resuelto (2026-11-04): se mantienen los trazos; biblia y plan corregidos.** **Dibujo del monograma.** `docs/plan.md` l.640 y la biblia §4 (tabla) hablan del «gw» «en Inter 800 blanco»; el SVG `a`
    dibuja las letras en trazos de 12/128 con remates redondos, sin fuente. **Propuesta:** mantener los trazos (sin dependencia
    de fuente, mismo lenguaje que `gv-logo.svg`) y apuntarlo en la biblia; es la parte **[P]** del logo.
-5. **Rutas y versión desfasadas en la biblia.** §10 cita `skills/gw-media-content/reglas.json` y el commit `56212e8`; hoy el
+5. **Resuelto (2026-11-04): biblia al día (`rules.json`, `7d61089`, v0.5.0).** **Rutas y versión desfasadas en la biblia.** §10 cita `skills/gw-media-content/reglas.json` y el commit `56212e8`; hoy el
    archivo es `rules.json` (el `CHANGELOG.md` l.743 y l.879 aún lo nombran `reglas.json`) y el commit `7d61089`. §1 dice «v0.4.x»; el `README` dice
    `0.4.3` y `.claude-plugin/plugin.json` y `.claude/gw.json` dicen `0.5.0` (la versión en desarrollo). **Propuesta:** actualizar
    §10; en las piezas no se nombra versión salvo que la pida una tarjeta de release, que la toma de `figures.py`.
 
 ## Cambios que pediría a la plantilla
+
+**Aplicados (2026-11-04)** en [`../plantilla-hoja-de-estilo.md`](../plantilla-hoja-de-estilo.md): los tres.
 
 Workflow es una herramienta de desarrollo sin producto visual, sin web propia y con otro generador de piezas dentro de su repo.
 Tres cosas de la plantilla no le encajan sin forzar:

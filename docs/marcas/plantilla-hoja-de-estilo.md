@@ -4,7 +4,8 @@
 `og`, `social`, `square`, `portrait`, `header`, `banner`, `avatar`, `icon`. **Borrador de F2.12** (pedido de la persona
 del 2026-11-04); se ajusta con lo que enseñen r2-r4 y se congela en r5. Los 17 cambios que dejó rellenarla por primera vez
 ([`galivelop-image-generator/hoja.md`](galivelop-image-generator/hoja.md)) están aplicados desde el 2026-11-04, aprobados
-por la persona.
+por la persona; los 3 que dejó la segunda ([`galivelop-workflow/hoja.md`](galivelop-workflow/hoja.md)) lo están desde el
+2026-11-04 (acentos en imagen, otro sistema que hace piezas, canales de publicación).
 
 **Cómo se usa:**
 
@@ -85,7 +86,8 @@ Mínimo tres roles, porque la composición los necesita (fondo bajo el texto, co
 |---|---|---|---|---|
 | Fondo | Obl. fuera de la familia Galivelop; Rec. dentro *(decide pieza clara u oscura y el velo)* | hex `#RRGGBB`, uno por variante (clara / oscura) | Tarkor: hueso `#f1e4d0` (clara), madera 900 `#241a10` (oscura) | `brand.palette`; velo de la plantilla SVG; prompt («the left third … in the colour #8a9aa8») |
 | Texto | Obl. fuera de la familia Galivelop; Rec. dentro *(sin él no hay contraste que medir)* | hex, sobre fondo claro y sobre oscuro | hierro `#221c16` sobre claro; hueso `#f1e4d0` sobre oscuro | plantilla SVG (`fill`); `gimg measure --text` |
-| Acento | Obl. *(el único color que hace de marca en la imagen; uno por pieza)* | hex; si hay varios candidatos, cuál manda fuera del producto | Tarkor arcilla `#E0703A` **[P]** (cristal `#4aa8d8` dentro del juego); toVeriAI verde `#2D6A4F` | `brand.palette`; prompt («a single warm accent in #E0703A»); logo |
+| Acento | Obl. *(el color que hace de marca; uno por pieza, salvo que la fila siguiente declare varios)* | hex; si hay varios candidatos, cuál manda fuera del producto. Puede ser el «acento de marca (logo y wordmark)» cuando la imagen habla otro lenguaje | Tarkor arcilla `#E0703A` **[P]** (cristal `#4aa8d8` dentro del juego); toVeriAI verde `#2D6A4F` | `brand.palette`; prompt («a single warm accent in #E0703A»); logo |
+| Acentos en imagen, en orden de peso y significado | Rec. *(para proyectos cuyo lenguaje visual es un diagrama: varios acentos con sentido)* | Lista ordenada de hex con lo que significa cada uno; los proyectos con un solo acento escriben «no hay» | Workflow: celeste `#38b6e8` (lo propio), ámbar `#f2b34a` (el testigo), verde `#4cc38a` (ok), en ese orden | prompt («Colours: …»); `brand.palette`; plantilla SVG |
 | Resto de la paleta | Rec. | Tabla rol / hex / uso (3-12 colores más): superficies, bordes, secundarios, semánticos | toVeriAI: papel `#F7F5F2`, ámbar `#B5832A` y granate `#9B2335` solo si la pieza habla del IMI | `brand.palette` (≤ 16 hex en total, `^#[0-9A-Fa-f]{6}$`) |
 | Combinaciones | Rec. | Qué va con qué en pieza clara, pieza oscura y sobre imagen (velo: hex y opacidad 0-1) | Tarkor clara: `#f1e4d0` + texto `#221c16` + velo `#f1e4d0:0.55`; oscura: `#241a10` + `#f1e4d0` + velo `#221c16:0.45` | plantilla SVG |
 | Prohibidos | Rec. | Colores y efectos que no entran | `#000` y `#fff` puros, neón, morado (Tarkor), azules corporativos (toVeriAI), más de un acento por pieza | solo el agente; palabras vetadas |
@@ -151,7 +153,7 @@ Las pautas de luz son del 2026-11-02 y **r2-luz las está comprobando** *(suposi
 
 | Campo | Nivel | Qué es y formato | Ejemplo | Dónde acaba |
 |---|---|---|---|---|
-| Imágenes de marca | Rec. *(sin ellas no hay EMD ni rangos propios: se usan los de la calibración; sirve también de «lo ya publicado»)* | Dos datos por imagen, 1-3 imágenes: **publicada dónde** (ruta, repo, commit; así se sabe qué existe y no se repite) y **vale como referencia** (sí / no / **[P]**, según la persona) | Tarkor: `public/proyectos/tarkor/portada.webp` (Portal `aa76b34`), ya enseña los Pilares Rotos: el `og` va con otro motivo; toVeriAI: su portada es casi blanca, **[P]** si vale | `gimg measure --refs` (EMD Y/Cb/Cr); solo el agente (motivo que no se repite) |
+| Imágenes de marca | Rec. *(sin ellas no hay EMD ni rangos propios: se usan los de la calibración; sirve también de «lo ya publicado»)* | Dos datos por imagen, 1-3 imágenes: **publicada dónde** (ruta, repo, commit; así se sabe qué existe y no se repite; admite una lista de canales, cada uno «consta / no consta en el repo», y el social preview de GitHub va como no comprobable desde el repo) y **vale como referencia** (sí / no / **[P]**, según la persona) | Tarkor: `public/proyectos/tarkor/portada.webp` (Portal `aa76b34`), ya enseña los Pilares Rotos: el `og` va con otro motivo; toVeriAI: su portada es casi blanca, **[P]** si vale | `gimg measure --refs` (EMD Y/Cb/Cr); solo el agente (motivo que no se repite) |
 
 ## 9. Formatos y piezas
 
@@ -193,7 +195,8 @@ Tabla común de destinos en [README.md](README.md) («Común a todos»).
 |---|---|---|---|---|
 | Carpeta de entrega | Obl. *(el esquema la exige; es lo único que `gimg` escribe en el repo del proyecto, D25)* | Ruta relativa a la raíz del repo, sin `..` ni absoluta | `entrega`, `public/proyectos/tarkor` | `delivery.dir` |
 | Nombre del archivo | Rec. | Plantilla con `{key}` y `{profile}`, acabada en `.png` | `{key}-{profile}.png` (por defecto) → `estilo-og.png` | `delivery.template` |
-| Dónde se publica cada pieza | Rec. | Ruta o etiqueta que consume la pieza en su repo o web | og:image de `index.html` (hoy apunta al favicon de 512); `public/proyectos/tarkor/portada.webp` (1600×640) | solo el agente (propuesta al repo) |
+| Dónde se publica cada pieza | Rec. | Ruta o etiqueta que consume la pieza en su repo o web; admite una lista de canales, cada uno «consta / no consta en el repo» (el social preview de GitHub se marca no comprobable: lo fija la interfaz, no un archivo) | og:image de `index.html` (hoy apunta al favicon de 512); `public/proyectos/tarkor/portada.webp` (1600×640) | solo el agente (propuesta al repo) |
+| Otras piezas de marca que hace otro sistema | Rec. *(la hoja es la fuente de los hex de todo sistema que haga piezas de marca: `gimg` y `gw-media-content`)* | Qué sistema, qué formatos y de dónde toma paleta y fuente; si no hay otro, «no hay» | Workflow: tarjetas de redes 1200×675 de `gw-media-content-now` (HTML → PNG/WebP, en `docs/media/`), paleta de la hoja vía `Palette:` en su nota | solo el agente (propuesta al repo del proyecto) |
 | Manifiesto | Opc. | Dónde queda la lista de entregas | `galivelop-images.manifest.json` (por defecto) | `manifest` |
 | Conversión final | Opc. | Si el repo pide otro formato o peso (webp, ≤ KB) | Portal: `.webp` 1600×640 | solo el agente (fuera de `gimg`, D35) |
 

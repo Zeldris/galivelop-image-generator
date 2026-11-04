@@ -637,7 +637,7 @@ cuaderno de bitácora; fondo oscuro `#0d1b2a` con rejilla tenue como los siete d
 luminosos, circuitos brillantes, lluvia de código, humanoides, manos de robot sobre teclados. *Paleta:* la de los diagramas:
 fondo `#0d1b2a`, texto `#eef6fb` y `#8a9bb0`, acentos `#38b6e8`, `#f2b34a` (lo de Matt Pocock va en ámbar en los diagramas) y
 `#4cc38a`; acento del Portal `#3D6FD9`. *Tipografía (composición):* Inter (800 en títulos, como los diagramas) y DejaVu Sans
-Mono para lo que es código. *Logo:* **no existe** nada en el repo. Propuesta **[P]**: monograma «gw» en Inter 800 blanco sobre
+Mono para lo que es código. *Logo:* **no existe** nada en el repo. Propuesta **[P]**: monograma «gw» en trazos blancos de la familia (sin fuente) sobre
 cuadrado rx 30 con degradado `#3D6FD9 → #0d1b2a`, de la misma familia que `gv-logo.svg` (mismo cuadrado y radio, otro acento),
 dibujado a mano como SVG. *Formatos:* `social`, `og`, `square`, `banner`, `avatar`. *Primera ronda (huecos):* 1) logo y avatar
 512×512 [P]; 2) social preview de GitHub 1280×640; 3) og:image 1200×630 de su ficha en el Portal; 4) `square` 1080×1080 con el

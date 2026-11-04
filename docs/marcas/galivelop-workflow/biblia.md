@@ -5,7 +5,7 @@ decide la persona. Fuentes con ruta y commit en la sección 10.
 
 ## 1. Esencia
 
-- **Qué es:** el flujo de trabajo del taller con agentes de IA (plugin para Claude Code primero), MIT, v0.4.x; fuente
+- **Qué es:** el flujo de trabajo del taller con agentes de IA (plugin para Claude Code primero), MIT, v0.5.0; fuente
   única y versionada de sus skills, ganchos y plantillas.
 - **Lema:** «Lo que no está subido no existe».
 - **Para quién:** quien trabaja por relevos con agentes y no quiere perder nada entre sesiones.
@@ -66,7 +66,7 @@ Propuestas en `logos/` (símbolo `galivelop-workflow-<letra>.svg` y su `-lockup.
 | c | Tres commits en línea, dos huecos y el último lleno, con la flecha de subida saliendo de él | sí la silueta; hueco/lleno se distingue desde 32 px |
 | d | Sello de revisión: anillo con la marca de visto, cuyo brazo largo sale por la abertura del anillo | sí |
 
-**Elegido (agente, delegado):** a — el monograma «gw» que la persona ya eligió en el plan.
+**Elegido (agente, delegado):** a — el monograma «gw» que la persona ya eligió en el plan, dibujado en trazos de la familia (12/128, remates redondos; sin fuente, no es Inter 800 blanco).
 
 Reglas tras elegir (valen para cualquiera):
 
@@ -107,7 +107,7 @@ Reglas tras elegir (valen para cualquiera):
 - **Motivos:** relevo, grafo de ramas, sello, cuaderno de bitácora (cerrado, sin texto legible).
 - **Palabras vetadas** (el modelo pinta lo que se nombra): `robot`, `brain`, `circuit`, `code rain`, `capsule` (en r1
   salió una píldora), `like a …`, `hand`, `keyboard`, `screen`.
-- **Zona reservada para texto:** la mitad izquierda en `og`, `social` y `banner`; el tercio superior en `square`.
+- **Zona reservada para texto:** la mitad izquierda en `og`, `social` y `banner`; la mitad superior en `square`.
 
 ## 8. Prompts
 
@@ -146,10 +146,10 @@ Primera ronda (huecos del repo y del Portal):
 
 | Dato | Repo y commit | Ruta |
 |---|---|---|
-| Qué es, versión, licencia, valores | Galivelop-workflow `56212e8` | `README.md`, `CHANGELOG.md`, `LICENSE` |
-| Créditos | Galivelop-workflow `56212e8` | `CREDITS.md` |
-| Lema y campo semántico | Galivelop-workflow `56212e8` | `AGENTS.md`, `templates/es/log.md` |
-| Límites por red de `gw-media-content` | Galivelop-workflow `56212e8` | `skills/gw-media-content/reglas.json` |
+| Qué es, versión, licencia, valores | Galivelop-workflow `7d61089` | `README.md`, `CHANGELOG.md`, `LICENSE` |
+| Créditos | Galivelop-workflow `7d61089` | `CREDITS.md` |
+| Lema y campo semántico | Galivelop-workflow `7d61089` | `AGENTS.md`, `templates/es/log.md` |
+| Límites por red de `gw-media-content` | Galivelop-workflow `7d61089` | `skills/gw-media-content/rules.json` |
 | Acento `#3D6FD9` | Portal-Galivelop `aa76b34` | `src/data/proyectos/galivelop-workflow.json` |
 | Paleta y tipografía de los diagramas | Portal-Galivelop `aa76b34` | `docs/diagramas/gw-*.svg` |
 | Baldosa de la familia | Portal-Galivelop `aa76b34` | `public/marca/gv-logo.svg`, `src/components/Logo.tsx` |
