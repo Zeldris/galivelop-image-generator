@@ -297,7 +297,7 @@ class PilotExampleTests(unittest.TestCase):
 
 
 COMPOSE_PROJECTS = {  # proyecto -> lockup elegido (docs/marcas/README.md)
-    "tarkor": "tarkor-a-lockup.svg",
+    "tarkor": "tarkor-b-lockup.svg",
     "toveriai": "toveriai-a-lockup.svg",
     "portal": "portal-a-lockup.svg",
     "galivelop-image-generator": "galivelop-image-generator-b-lockup.svg",
