@@ -31,6 +31,20 @@
       "draft": {
         "scale": 0.5,
         "steps": 4
+      },
+      "compose": {
+        "template": "plantillas/og.svg",
+        "fields": [
+          "title1",
+          "title2",
+          "subtitle"
+        ],
+        "logo": "logos/toveriai-a-lockup.svg",
+        "fonts": [
+          "Cormorant Garamond",
+          "DM Sans"
+        ],
+        "fit": "cover"
       }
     },
     "square": {
