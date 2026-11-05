@@ -15,7 +15,7 @@
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 | **Tarea en curso · `f2-motor`** | Fusionada en `main` por el PR #2 (`624f7a9`, 2026-11-05, CI en verde); rama terminada. |
 | **Tarea en curso · `plan-piezas`** | Fusionada en `main` por el PR #3 (`d128106`, 2026-11-05, CI en verde); rama terminada. v0.4.0 etiquetada en `d128106`; `release.yml` falló (sin `ffmpeg`/`rsvg-convert`) y la release se creó a mano con `releases.py notes` y el mismo título (mismo árbol que el CI verde del PR); `releases.py check` en verde. |
-| **Tarea en curso · `release-install`** | `release.yml` no tenía el paso «Install» de `check.yml` (`ciInstall`: `ffmpeg`, `librsvg2-bin`) y su check falló al etiquetar v0.4.0. Hecho: el paso, y un test (`tests.test_releases.ReleaseWorkflowTests`, rojo sin el arreglo). **Siguiente:** con la confirmación de la persona, las tres fases y el PR a `main`; luego decidir la fase de «Piezas, edición y borrado» |
+| **Tarea en curso · `release-install`** | `release.yml` no tenía el paso «Install» de `check.yml` (`ciInstall`: `ffmpeg`, `librsvg2-bin`) y su check falló al etiquetar v0.4.0. Hecho: el paso, y un test (`tests.test_releases.ReleaseWorkflowTests`, rojo sin el arreglo). Fase 1 hecha (2026-11-05): arreglados el Python 3.10 de `release.yml` (ahora el del runner, como `check.yml`), `</dev/null` en sus bucles y el test, que exige también el paso del check. **Siguiente:** fases 2 (`gw-opt-tokens`, `retro`, presentadas a la persona) y 3, y PR a `main` con su confirmación; luego decidir la fase de «Piezas, edición y borrado» |
 
 Aquí `logRows` está apagado en `.claude/gw.json`: las filas se editan a mano (`handoff.py set-row` no escribe) y no
 hace falta `GW_SHARED_LOG`. Aun así, cada rama toca solo su fila salvo al cerrar o fusionar otra.
@@ -34,6 +34,7 @@ hace falta `GW_SHARED_LOG`. Aun así, cada rama toca solo su fila salvo al cerra
 
 ## Pendiente
 
+- **Leves de la fase 1 de `release-install` (2026-11-05, no se revisan más en este PR):** `release.yml` copia a mano los pasos «Install» y «Check» de `check.yml` (un workflow reutilizable con `workflow_call` quitaría la copia), y su test solo busca dos cadenas, no compara los dos workflows; el test inestable de `test_engine_sdcpp` puede tumbar una release: se reintenta con `gh run rerun`.
 - **Releases en GitHub** (pedido de la persona del 2026-11-05, `docs/plan.md` tras la tabla de fases): v0.1.0, v0.3.0 y v0.4.0 hechas (v0.4.0 a mano: ver `release-install`); las siguientes, con `releases.py bump` y la etiqueta (`release.yml`) (`python3 releases.py check` en cada cierre de fase).
 - **Test inestable en el CI:** `tests.test_engine_sdcpp.RunTests.test_cancel_kills_the_whole_group` falló en `1eae6d7` y `44f8987` y pasó en la subida siguiente; diagnosticarlo con `diagnosing-bugs` tras el PR de F4 (retro del 2026-11-05).
 - **Leve de la fase 3 de `f2-motor`:** el check deja dos `ResourceWarning: unclosed file` (descriptores 7 y 8), seguramente el `stderr=PIPE` del Chrome de `tests/browser.py`, que `close()` no cierra.

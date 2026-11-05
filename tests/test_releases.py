@@ -232,6 +232,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
         wf = (R / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
         install, check = wf.find("config.py get ciInstall)"), wf.find("config.py get check)")
         self.assertNotEqual(install, -1, "release.yml no instala `ciInstall` de .claude/gw.json")
+        self.assertNotEqual(check, -1, "release.yml no corre `check` de .claude/gw.json")
         self.assertLess(install, check, "release.yml instala después de correr el check")
 
 
