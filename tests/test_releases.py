@@ -65,6 +65,19 @@ class NotesTests(unittest.TestCase):
         self.assertIn("## Español", text)
         self.assertIn("## English", text)
 
+    def test_both_changelogs_have_the_same_versions_and_items(self):
+        def items(name):
+            out, current = {}, None
+            for line in (R / name).read_text(encoding="utf-8").splitlines():
+                if line.startswith("## ["):
+                    current = line[4:line.index("]")].replace("Sin publicar", "Unreleased")
+                    out[current] = 0
+                elif current and line.startswith("- "):
+                    out[current] += 1
+            return out
+        self.assertEqual(items("CHANGELOG.es.md"), items("CHANGELOG.md"),
+                         "versiones y número de puntos (por versión) de CHANGELOG.es.md frente a CHANGELOG.md")
+
 
 class CheckTests(unittest.TestCase):
     def test_all_there(self):

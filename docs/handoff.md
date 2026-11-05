@@ -14,10 +14,10 @@
 | **Siguiente paso** | el de la fila de `plan-piezas` |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 | **Tarea en curso · `f2-motor`** | Fusionada en `main` por el PR #2 (`624f7a9`, 2026-11-05, CI en verde); rama terminada. |
-| **Tarea en curso · `plan-piezas`** | Plan de «Piezas, edición y borrado» (7 puntos) en `docs/plan.md`, MIT, versión 0.4.0 y `releases.py`; v0.1.0 y v0.3.0 publicadas. Fase 1 hecha (`docs/records/revision-fase1-plan-piezas-2026-11-05.md`): arreglos en `releases.py` y F1/F2 en el CHANGELOG de 0.3.0. **Siguiente:** fase 2 (`gw-opt-tokens` y `retro`), fase 3 y a `main`; luego v0.4.0 y decidir la fase de «Piezas, edición y borrado» |
+| **Tarea en curso · `plan-piezas`** | Plan de «Piezas, edición y borrado», MIT, 0.4.0 y `releases.py`. Fase 1 hecha (`docs/records/revision-fase1-plan-piezas-2026-11-05.md`); notas de v0.3.0 republicadas con F1/F2. Fase 2 hecha (`docs/records/retro-2026-11-05-plan-piezas.md`, 4 propuestas aplicadas). Fase 3: revisados los tests nuevos. **Siguiente:** `reviewed.sh`, PR a `main` con confirmación de la persona; luego v0.4.0 y decidir la fase de «Piezas, edición y borrado» |
 
-Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
-la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.
+Aquí `logRows` está apagado en `.claude/gw.json`: las filas se editan a mano (`handoff.py set-row` no escribe) y no
+hace falta `GW_SHARED_LOG`. Aun así, cada rama toca solo su fila salvo al cerrar o fusionar otra.
 
 ## Para la próxima publicación
 
