@@ -20,7 +20,7 @@ images yet**: the real engine (`sd-cli`) arrives in F2.
 | F4 UI | Three browser screens, es/en |
 | F5 WMF pilot | Example config, integration guide and measurements |
 | F6 Local director | Optional: a local LLM (Ollama) drafts prompts and helps choose |
-| F7 Windows | Last phase: engine and installer for Windows, and an `arrancar.cmd` launcher |
+| F7 Compatibility | Last phase: any machine, not only Vulkan (CPU, CUDA, ROCm, Metal), other Linux distros, Windows and maybe macOS |
 
 Details, decisions D1-D27 and exit criteria in [`docs/plan.md`](docs/plan.md) (in Spanish).
 
