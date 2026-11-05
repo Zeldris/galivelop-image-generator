@@ -36,6 +36,7 @@ hace falta `GW_SHARED_LOG`. Aun así, cada rama toca solo su fila salvo al cerra
 ## Pendiente
 
 - **Responsive, accesibilidad y diseño de la interfaz** (pedido de la persona del 2026-11-05, tras probar F4e.5): «un montón de errores de responsive»; que la sesión compruebe ella misma que los paneles están bien creados y conectados; la interfaz le parece muy poco accesible. Revisar generadores actuales y conocidos (Leonardo y otros) y mejorar todo, con Fable para el diseño. Primero una auditoría (`docs/interfaz/`), luego la mejora por pasos con su prueba en el navegador (`tests/test_ui_browser.py`).
+- **Test inestable sin localizar (2026-11-06, UI.5):** una pasada del check falló con `AssertionError: 3024093 != 3024103` (10 bytes de diferencia, ajeno a la interfaz); las dos siguientes, en verde. Si reaparece, buscar qué test compara tamaños de archivo.
 - **Test inestable arreglado (2026-11-05):** `test_compose_delete` `test_the_chosen_one_says_so…` comparaba `updatedAt`, que sube al borrar la composición; falló al cambiar de segundo. Ya no lo compara.
 - **Leves de UI.3 (2026-11-05, no se tocan):** «1 intentos, 1 nuevos» sin plural; `T`/`X` con el foco en `body` (fuera de la vista) no llegan, igual que `R`, porque el `keydown` escucha en la vista.
 - **Leves de F4e.2b (2026-11-05, no se tocan):** el `reason` de `/api/fonts` es el literal `not_found` o el texto crudo del fallo, sin clave i18n (doctor sí las usa); la lectura de `fc-list` está en `compose.families_status` y en `doctor._installed_families` (otro formato).
