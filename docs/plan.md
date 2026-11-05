@@ -1143,6 +1143,80 @@ lo de F3.4-F3.6 no lo bloquea (la interfaz se prueba con `gimg serve` en primer 
 | F4b.2 | Rutas de la API de la tabla | Tests como F3.3: mismas respuestas que la CLI, códigos y estados |
 | F4b.3 | Interfaz, `docs/api.md`, `docs/interfaz/f4a.md` §8, README, CHANGELOG | `tests/test_ui.py` (estáticos y claves `ui.*` es/en); JS sin ejecutar: recorrido en navegador, de la persona |
 
+## F4c en detalle (editor de elementos, D39 y D40)
+
+**Estado:** contrato decidido por la sesión el 2026-11-05, **pendiente de la persona** (puede cambiarse antes de `main`).
+
+### Elementos en la plantilla
+
+- Un elemento editable es un nodo del SVG con `id="gimg-<nombre>"` y `data-gimg-box="x y w h"` (su caja, en píxeles
+  del destino); `<nombre>` es `title`, `subtitle`, otro campo de `fields` (texto), `logo`, o `ornament<N>` (adorno).
+  Solo cuentan si el `viewBox` de la plantilla es `0 0 <targetWidth> <targetHeight>` (así caja y destino comparten
+  unidades); si no, la plantilla no tiene elementos editables y `doctor` lo avisa.
+- Opcional `data-gimg-color="#RRGGBB"` en un elemento de texto: su color para el contraste; sin él, el `textColor` de la
+  plantilla y luego el de `brand`.
+- Lectura con una expresión sobre la etiqueta de apertura (sin reescribir el SVG con `xml.etree`, que cambia prefijos):
+  `compose.elements(svg_text)` → `[{"id", "kind": "text|logo|ornament", "box": {x, y, w, h}, "color"?}]`. Un `id`
+  repetido o una caja mal escrita dan `compose.bad_element` (nuevo); sin elementos, `[]`.
+
+### Aplicar `layout`
+
+- `layout`: `{"<nombre>": {"x", "y", "w", "h"}}`, enteros, `w`,`h` ≥ 1 y la caja dentro del destino; un nombre que la
+  plantilla no tiene da `compose.element_unknown` y una caja mala `compose.bad_layout` (nuevos, 400).
+- `compose.apply_layout(svg_text, layout)`: a la etiqueta de apertura de cada elemento movido se le antepone
+  `transform="translate(x y) scale(w/w0 h/h0) translate(-x0 -y0)"` (delante del `transform` que ya tuviera) y se
+  reescribe su `data-gimg-box`. La escala puede no ser uniforme; el editor la bloquea por defecto (proporción fija) y
+  la suelta con Mayús.
+- `render(..., layout=None)` lo aplica tras sustituir los huecos; el intento guarda `compose.layout` (solo lo movido) y
+  `compose.contrast`: `{"<texto>": <resultado de la medida>}` por cada elemento de texto, medido sobre la **imagen
+  base** (la cruda llevada al destino, sin la capa) en la caja final con su color.
+- `recompose(..., layout=None)`: con `layout`, ese (`{}` vuelve a la plantilla); sin él, el `layout` que el intento
+  tenía, salvo si cambia la plantilla (sus elementos son otros: se vacía). Como `templateId`, sobrevive a un fallo
+  (`composeError.layout`).
+
+### La medida sobre la imagen base (arregla F4b)
+
+Hoy el chip mide la `zone` sobre la imagen compuesta, con el texto ya pintado encima. Desde F4c,
+`GET …/measure?zone=…&base=1` (nuevo; `raw=1` no cambia de sentido) toma la `zone` en píxeles del destino y la lleva a
+la cruda (`compose.zone_to_raw(profile_cfg, raw_w, raw_h, zone)`, la inversa de `fit_geometry`; una zona en la banda
+de `contain` se recorta a la imagen); la interfaz mide así la zona y los elementos.
+
+### Plantilla nueva (D40)
+
+- `POST /api/projects/{p}/profiles/{profile}/templates` `{"from": {"key", "attempt"}, "name", "dest": "local|project"}`
+  → 201 la entrada nueva de `templates_of`. Escribe el SVG de la plantilla del intento con su `layout` aplicado y los
+  huecos sin sustituir, y al lado `<name>.json` `{"base": <id>, "logo"?, "fields"?, "zone"?, "textColor"?}` (lo
+  heredado de la plantilla de origen).
+- Destinos: `local` = `<data>/projects/<p>/templates/<perfil>/<name>.svg`; `project` = `<templatesDir>/<perfil>/<name>.svg`,
+  con `compose.templatesDir` (nuevo en el esquema, relativo a la raíz) y `paths.inside`; sin él,
+  `compose.templates_dir_missing`. `name` con el patrón de los id y que no exista ya (en ninguna fuente):
+  `compose.template_exists` (409). Nunca se sobrescribe.
+- `templates_of` suma tres fuentes, por este orden: `compose.templates` de la configuración, `templatesDir/<perfil>/`
+  y la carpeta local; cada entrada gana `"source": "config|project|local"`. Un id repetido entre fuentes: gana el
+  primero y `doctor` avisa.
+- CLI: `gimg compose --layout '<json>'` y `gimg template save <proyecto> <perfil> <clave> <intento> <nombre>
+  [--dest local|project]`.
+
+### Interfaz
+
+- `slots.js#editorSlot` abre el editor sobre la imagen del intento: la imagen base (`raw=1`) y una caja por elemento,
+  que muestra el trozo de la imagen compuesta de su caja original (así se ve el elemento moverse sin componer).
+- Mover y redimensionar con puntero (asas en las esquinas), con teclado (flechas 1 px, con Mayús 10 px; `Alt`+flechas
+  cambia el tamaño; Tab entre elementos) y con mando (lo que Steam Input mande como teclado). Proporción fija salvo
+  con Mayús. Chip de contraste en vivo por elemento de texto (`measure` con `base=1`, con espera de 400 ms tras soltar).
+- «Aplicar» = `POST …/compose {"layout"}`; «Volver a la plantilla» = `{"layout": {}}`; «Guardar como plantilla» abre un
+  `dialog` con nombre y destino (`project` solo si el perfil declara `templatesDir`). Las plantillas `local` tienen
+  «Exportar» (descarga de `assets/template?id=`).
+- Sustituye a la previsualización HTML de `compose-preview.js`.
+
+### Pasos de F4c
+
+| Paso | Qué | Comprobación |
+|---|---|---|
+| F4c.1 | `compose.elements`, `apply_layout`, `zone_to_raw`, `render`/`recompose` con `layout` y `contrast`, `composeError.layout`, esquema (`templatesDir`), CLI `--layout`, `doctor` (viewBox, ids repetidos), claves de error es/en | Tests: lectura de elementos y errores, transform anidado, caja fuera, layout que sobrevive a recomponer y se vacía al cambiar de plantilla, `zone_to_raw` con `cover` y `contain` contra `fit_geometry`, contraste medido sin la capa (`skipUnless` ffmpeg/rsvg) |
+| F4c.2 | Plantilla nueva: tres fuentes en `templates_of`, `POST …/templates`, `gimg template save`, `measure` con `base=1`; rutas de la API | Tests: los dos destinos, sin `templatesDir`, nombre repetido, nada sobrescrito, `paths.inside`, `source` en la lista, mismas respuestas CLI/API |
+| F4c.3 | Editor en la interfaz, docs (`docs/api.md`, `docs/interfaz/f4a.md` §8, CHANGELOG) | `tests/test_ui.py`; JS sin ejecutar: recorrido en navegador (puntero, teclado y mando), de la persona |
+
 ## Pendiente
 
 - Proponer al flujo (`gw-harvest`) una operación de imagen en `opt-ai/references/log-format.md` (D26).
