@@ -50,6 +50,7 @@ Tomadas con `grilling` el 2026-10-25.
 | D38 | **El producto se llama «Galivelop IG» y sus siglas son «GVIG»** (decisión de la persona del 2026-11-04). Es el nombre de marca: interfaz, README, hoja de estilo, textos y piezas. El repo (`galivelop-image-generator`), el paquete y la orden `gimg` no cambian mientras la persona no lo pida | Nombre corto y reconocible; renombrar el código rompería instalaciones y rutas sin aportar nada |
 | D39 | **F3 y F4 se adelantan al cierre del piloto** (decisión de la persona del 2026-11-05): las rondas del piloto (F2.10/F2.12) las hace la persona desde la interfaz, aceptando, rechazando y ajustando sin pasar por un agente. Orden: F3 mínima (API local y `gimg serve`) → F4a pantalla de pedido (galería, sí/no y nota, otra semilla, retoque de prompt y textos, elegir) → F4b **plantillas elegibles** (varias por formato, selector por intento) → F4c **editor de elementos** (mover y redimensionar titular, subtítulo, logo y adornos sobre la imagen; se guarda como ajuste del intento o como plantilla nueva, y se vuelve a medir el contraste) → F4d resto de D22. La interfaz sigue la hoja de estilo de este proyecto (`docs/marcas/galivelop-image-generator/hoja.md`) con el nombre de D38. F2.14 y F6 entran después como acciones de la interfaz | Cada ronda a través de un agente gasta cuota y quita control a la persona (D37); el piloto es la prueba real de la interfaz |
 | D40 | **Puertas abiertas: lo que se guarda o se entrega, donde diga la persona** (decisión de la persona del 2026-11-05): quien quiera trastear tiene que poder cambiar desde la interfaz dónde van los resultados (la carpeta de entrega de cada perfil, que ya es configuración del proyecto) y las plantillas. Plantilla nueva (F4c): al guardar se elige el destino entre la carpeta de datos (`<data>/projects/<p>/templates/`, marca «local», con «Exportar» que da el SVG) y la carpeta de plantillas que el proyecto declare en su configuración (`compose.templatesDir`, relativa a la raíz y dentro de ella). Es la única ampliación de D25: `gimg` escribe ahí solo si el proyecto la declara, con `paths.inside` y sin sobrescribir sin confirmar | Cada proyecto se configura a su manera: unos quieren las plantillas en su repo y otros solo en local |
+| D41 | **Borrar de verdad, con confirmación** (decisión de la persona del 2026-11-05, F4e.1): borrar un intento quita sus archivos y su entrada, y su número no se reutiliza nunca. Borrar una composición devuelve el intento a su imagen sin componer. Las plantillas se borran también en el repo del proyecto (segunda ampliación de D25, tras D40: solo en `compose.templatesDir`, con `paths.inside`). Un elemento no se borra, se oculta en el layout. Todo pasa por un «sí / no» en la interfaz y por `--yes` en la CLI | Liberar disco y quitar ruido sin una papelera que mantener; lo que no tiene arreglo (la elegida, la plantilla por defecto) se protege |
 
 Decisiones difíciles de revertir, con su ADR: [0001](adr/0001-servicio-local-independiente.md) (D1) y
 [0002](adr/0002-generador-sin-dominio.md) (D2).
@@ -1313,6 +1314,44 @@ de `contain` se recorta a la imagen); la interfaz mide así la zona y los elemen
 |---|---|---|
 | F4d.1 | Motor y API: esquema `brand`, `template` en el pedido nuevo, `model` en intentos, `GET /api/models`, `GET …/check`, mover y vaciar la cola (con la CLI), `docs/api.md` | Tests como F3.3 (CLI = API, códigos y estados); la cola respeta el orden movido con el trabajador |
 | F4d.2 | Interfaz: panel Nuevo pedido, pestañas Piezas y Marca, modelo en el retoque, subir/bajar/vaciar en el cajón de la cola; docs y CHANGELOG | `tests/test_ui.py`; recorrido en navegador, de la persona |
+
+## F4e en detalle (piezas y edición)
+
+**Estado:** F4e.1 (Borrar) decidido por la persona el 2026-11-05 (D41). F4e.2-F4e.4 (puntos 7, 1 y 4(a)(c) de
+«Piezas, edición y borrado»), por diseñar, en ese orden salvo que la persona diga otro.
+
+### F4e.1 Borrar (punto 5, D41)
+
+1. **Intento.** Se borran su imagen, la imagen sin componer, la vista previa, `attempts/q<id>.log` y su entrada en
+   `order.json`. El pedido guarda `nextId` (y un pedido viejo sin él lo toma de `max(ids)+1`), así que un número nunca
+   se reutiliza. Las apariciones del intento en `chosenHistory` se quitan. **La elegida no se borra**
+   (`order.delete_chosen`, 409): antes hay que elegir otra o deshacer. Un intento en cola o generándose no se borra
+   (`order.delete_busy`): se cancela. Lo ya entregado (`delivery.dir`) no se toca. Queda en el registro JSONL
+   (`attempt.delete`).
+2. **Composición.** Se borra la imagen compuesta con su `compose` (layout incluido) y el intento vuelve a su imagen
+   sin componer, como `clear_compose_error`. Si es la elegida, el modal lo dice y avisa de que la entrega ya hecha no
+   cambia hasta volver a entregar. Para recomponer está «Componer», como hoy.
+3. **Plantilla**, local o de proyecto: se borran el `.svg` y su `.json`. La plantilla por defecto de un perfil
+   (`DEFAULT_TEMPLATE` o la que fije `compose`) no se borra (`compose.delete_default`): el error dice que antes hay que
+   cambiarla. El modal dice cuántos intentos la usan (`templateId`), que no se podrán recomponer con ella, y, en una de
+   proyecto, que el cambio queda en el repo sin commit. Solo dentro de `compose.templatesDir` o la carpeta local, con
+   `paths.inside`.
+4. **Elemento** (editor de F4c): «Borrar» lo oculta. El layout del intento gana `"hidden": true` por elemento
+   (`{x, y, w, h, hidden?}`), `apply_layout` le pone `display="none"` y el contraste no lo mide. «Mostrar» lo
+   recupera. «Guardar como plantilla» lo guarda oculto. La plantilla no se toca. Es la base de «quitar elementos» del
+   punto 7.
+5. **Superficies.** Interfaz: botón «Borrar» en cada intento, composición, plantilla y elemento, con modal «sí / no» que
+   dice qué se borra y qué deja de funcionar (es/en, accesible con teclado y mando como el resto de modales). API:
+   `DELETE /api/projects/{p}/orders/{key}/@{profile}/attempts/{id}`, `DELETE …/attempts/{id}/compose` y
+   `DELETE /api/projects/{p}/profiles/{profile}/templates/{id}` (las rutas exactas siguen las de `docs/api.md`). CLI:
+   `gimg attempt rm`, `gimg compose rm` y `gimg template rm`, que sin `--yes` preguntan y sin terminal fallan.
+
+### Pasos de F4e
+
+| Paso | Qué | Comprobación |
+|---|---|---|
+| F4e.1a | Motor, API y CLI de F4e.1: `nextId`, borrar intento, composición y plantilla, `hidden` en el layout; `docs/api.md`, es/en | Tests como F3.3 (CLI = API, códigos y estados): número no reutilizado, `chosenHistory` limpio, elegida y por defecto protegidas, nada fuera de `paths.inside` |
+| F4e.1b | Interfaz de F4e.1: botones y modal, ocultar y mostrar en el editor; CHANGELOG | `tests/test_ui.py`; recorrido en navegador, de la persona |
 
 ## Pendiente
 

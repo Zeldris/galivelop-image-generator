@@ -11,11 +11,11 @@
 | **Rama** | `f4e-piezas` (desde `main` + la bitácora de `release-install`) |
 | **Fase / tarea** | F4e (Piezas y edición): la persona partió «Piezas, edición y borrado» el 2026-11-05 (F4e: 1, 4(a)(c), 5, 7; F5: 2, 3, 4(b), 6); primero el «en detalle» de 5 (Borrar) |
 | **Último punto estable** | `main` en `71a69a3` (PR #4, CI en verde), etiqueta y release v0.4.0 |
-| **Siguiente paso** | «F4e en detalle», punto 5 (Borrar): diseñarlo con la persona (`grilling`) y escribirlo en `docs/plan.md` |
+| **Siguiente paso** | F4e.1a (motor, API y CLI de Borrar, `docs/plan.md` «F4e en detalle»), repartido a un subagente `sonnet` con `gw-orchestrate-dealer` |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 | **Tarea en curso · `f2-motor`** | Fusionada en `main` por el PR #2 (`624f7a9`, 2026-11-05, CI en verde); rama terminada. |
 | **Tarea en curso · `plan-piezas`** | Fusionada en `main` por el PR #3 (`d128106`, 2026-11-05, CI en verde); rama terminada. v0.4.0 etiquetada en `d128106`; `release.yml` falló (sin `ffmpeg`/`rsvg-convert`) y la release se creó a mano con `releases.py notes` y el mismo título (mismo árbol que el CI verde del PR); `releases.py check` en verde. |
-| **Tarea en curso · `f4e-piezas`** | Abierta el 2026-11-05. Hecho: decisión de fase (plan). Falta: «en detalle» de 5, 7, 1 y 4(a)(c), e implementarlos. Presupuesto de compactaciones: 3 |
+| **Tarea en curso · `f4e-piezas`** | Abierta el 2026-11-05. Hecho: decisión de fase y «en detalle» de 5 (F4e.1, D41). Falta: F4e.1a y F4e.1b; «en detalle» de 7, 1 y 4(a)(c), e implementarlos. Presupuesto de compactaciones: 3 |
 | **Tarea en curso · `release-install`** | Fusionada en `main` por el PR #4 (`71a69a3`, 2026-11-05, CI en verde, confirmado por la persona); rama terminada. `release.yml` instala `ciInstall` y usa el Python de `check.yml`; un test compara sus pasos con los de `check.yml`. Retro: `docs/records/retro-2026-11-05-release-install.md`. |
 
 Aquí `logRows` está apagado en `.claude/gw.json`: las filas se editan a mano (`handoff.py set-row` no escribe) y no
