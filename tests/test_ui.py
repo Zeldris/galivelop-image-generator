@@ -239,6 +239,13 @@ class ReviewFixes(unittest.TestCase):
         self.assertIn("textColor ? zoneParam", read(UI / "js" / "components" / "slots.js"))
         self.assertIn("ctx.zone && ctx.textColor", read(UI / "js" / "components" / "measure-chip.js"))
 
+    def test_the_measured_zone_is_the_one_of_the_template_of_each_attempt(self):
+        slots = read(UI / "js" / "components" / "slots.js")
+        self.assertIn("zoneParam(tpl ? tpl.zone : ctx.measure.zone)", slots)  # the profile's zone is only the fallback
+        self.assertIn("const { tpl } = templateOf(ctx, attempt)", slots[slots.index("export function measureFor"):])
+        for name in ("attempt-card.js", "compare-view.js"):
+            self.assertNotIn("ctx.measure.zone", read(UI / "js" / "components" / name), name)
+
     def test_failed_compose_reloads_the_order_and_select_keeps_focus(self):
         text = self.js("components/order-view.js")
         self.assertIn("finally", text)
@@ -391,6 +398,10 @@ class LayoutEditor(unittest.TestCase):
 
     def comp(self, name):
         return read(UI / "js" / "components" / name)
+
+    def test_the_applied_layout_falls_back_to_the_one_of_the_compose_error(self):
+        self.assertIn("(attempt.composeError || attempt.compose || {}).layout", self.comp("layout-editor.js"))
+        self.assertNotIn("attempt.compose && attempt.compose.layout", self.comp("layout-editor.js"))
 
     def test_the_slot_opens_the_editor_only_with_elements_and_a_composed_attempt(self):
         slots = self.comp("slots.js")

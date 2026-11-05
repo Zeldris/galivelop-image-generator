@@ -82,7 +82,8 @@ export function openLayoutEditor(ctx, attempt, tpl, opener) {
   const cfg = ctx.profileCfg || {};
   const W = cfg.targetWidth || cfg.width;
   const H = cfg.targetHeight || cfg.height;
-  const applied0 = (attempt.compose && attempt.compose.layout) || {};
+  // la maqueta aplicada: la de la composición o, si la última falló (`compose` se va y queda `composeError`), la del error
+  const applied0 = ((attempt.composeError || attempt.compose || {}).layout) || {};
   let appliedNow = { ...applied0 };
   let closed = false;
   let busy = false;
