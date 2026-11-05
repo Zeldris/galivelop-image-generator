@@ -11,6 +11,7 @@ import { composePreview } from './compose-preview.js';
 import { templateSlot, editorSlot, measureFor } from './slots.js';
 import { progressOf, remainingMs } from './queue-bar.js';
 import { openLightbox } from './lightbox.js';
+import { imageVersion } from './attempt-util.js';
 
 /** Estado de presentación de un intento: chosen > candidate/discarded/new. */
 export function stateOf(order, attempt) {
@@ -34,7 +35,7 @@ export function attemptCard(ctx, attempt) {
   const id = attempt.id;
   const compared = ctx.compare.includes(id);
   const raw = ctx.showRaw && attempt.raw;
-  const version = (attempt.compose && attempt.compose.at) || attempt.createdAt || '';
+  const version = imageVersion(attempt);
   const src = paths.image(ctx.project, ctx.profile, ctx.key, id, { raw, v: version });
   const alt = t('ui.attempt.image', { id, seed: attempt.seed });
 

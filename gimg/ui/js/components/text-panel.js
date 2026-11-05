@@ -7,7 +7,8 @@ import { h } from '../dom.js';
 import { t, fieldLabel } from '../i18n.js';
 
 export function textPanel(ctx, { onSave, onRecompose, onPreview }) {
-  const fields = (ctx.profileCfg.compose && ctx.profileCfg.compose.fields) || [];
+  // la unión (sin repetidos, en orden) de los campos del perfil y de los de todas sus plantillas
+  const fields = [...new Set([...((ctx.profileCfg.compose && ctx.profileCfg.compose.fields) || []), ...(ctx.templates || []).flatMap((x) => x.fields || [])])];
   const saved = { ...(ctx.order.text || {}) };
   if (!fields.length) {
     return { node: h('section.card', {}, h('h2', {}, t('ui.text.title')), h('p.hint', {}, t('ui.text.noFields'))), values: () => ({}), setChosen() {} };

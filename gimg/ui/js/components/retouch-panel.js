@@ -5,6 +5,7 @@
 
 import { h, mmss, replace } from '../dom.js';
 import { t } from '../i18n.js';
+import { stripStyle } from './attempt-util.js';
 
 const MAX_PROMPT = 2000; // tope orientativo; la API responde order.prompt_too_long con el real
 
@@ -25,13 +26,15 @@ export function retouchPanel(ctx, { onSubmit }) {
   const count = h('input', { type: 'number', min: 2, max: 20, value: 3, aria: { label: t('ui.retouch.batchCount') } });
   const templates = ctx.templates || [];
   const templateOfChosen = () => {
-    const a = (order.attempts || []).find((x) => x.id === order.chosen);
+    const a = (ctx.order.attempts || []).find((x) => x.id === ctx.order.chosen);
     const id = a && ((a.compose && a.compose.templateId) || (a.composeError && a.composeError.templateId));
     return templates.some((x) => x.id === id) ? id : (templates.find((x) => x.default) || {}).id;
   };
   const template = templates.length > 1
     ? h('select', { id: 'retouch-template' }, templates.map((x) => h('option', { value: x.id, selected: x.id === templateOfChosen() }, x.default ? t('ui.attempt.templateDefault', { id: x.id }) : x.id)))
     : null;
+  let templateTouched = false;
+  if (template) template.addEventListener('change', () => { templateTouched = true; });
   const dirty = h('span.dirty', { hidden: true }, t('ui.retouch.changed'));
 
   const checkPrompt = () => {
@@ -45,7 +48,8 @@ export function retouchPanel(ctx, { onSubmit }) {
 
   const spec = (extra = {}) => {
     const s = { count: 1, ...extra };
-    if (prompt.value !== (order.prompt || '')) s.prompt = prompt.value;
+    const text = stripStyle(prompt.value, cfg.style);
+    if (text !== (order.prompt || '')) s.prompt = text;
     const num = (el) => (el.value === '' ? undefined : Number(el.value));
     if (num(steps) !== undefined && num(steps) !== params.steps) s.steps = num(steps);
     if (num(cfgScale) !== undefined && num(cfgScale) !== params.cfg) s.cfg = num(cfgScale);
@@ -92,7 +96,7 @@ export function retouchPanel(ctx, { onSubmit }) {
     /** Carga los parámetros de un intento (Recrear). */
     load(attempt) {
       const p = attempt.params || {};
-      prompt.value = attempt.prompt || order.prompt || '';
+      prompt.value = attempt.prompt ? stripStyle(attempt.prompt, cfg.style) : order.prompt || '';
       if (p.steps !== undefined) steps.value = p.steps;
       if (p.cfg !== undefined) cfgScale.value = p.cfg;
       if (p.sampler !== undefined) sampler.value = p.sampler;
@@ -110,6 +114,8 @@ export function retouchPanel(ctx, { onSubmit }) {
       seed.value = next;
       onSubmit(spec({ seed: next }));
     },
+    /** Cambió la elegida: el selector de plantilla pasa a la de la elegida, salvo que la persona lo haya tocado. */
+    setChosen() { if (template && !templateTouched) template.value = templateOfChosen(); },
     focusPrompt() { prompt.focus(); },
     another() { another.click(); },
   };

@@ -11,6 +11,7 @@ import * as store from '../store.js';
 import * as poll from '../queue-poll.js';
 import { attemptCard, queueCard, stateOf } from './attempt-card.js';
 import { compareView } from './compare-view.js';
+import { stripStyle } from './attempt-util.js';
 import { retouchPanel } from './retouch-panel.js';
 import { textPanel } from './text-panel.js';
 import { invalidateMeasure } from './measure-chip.js';
@@ -84,9 +85,12 @@ export async function orderView(host, route) {
     },
     recreate: (a) => retouch.load(a),
     vary: (a) => retouch.vary(a),
-    copyParams: (a) => copy(JSON.stringify({ seed: a.seed, prompt: a.prompt, ...(a.params || {}) }, null, 2), t('ui.attempt.copied')),
+    copyParams: (a) => copy(JSON.stringify({ seed: a.seed, prompt: a.prompt === null || a.prompt === undefined ? a.prompt : stripStyle(a.prompt, profileCfg.style), ...(a.params || {}) }, null, 2), t('ui.attempt.copied')),
     copyError: (e) => copy(e.errorText || JSON.stringify(e.error), t('ui.attempt.copied')),
-    retry: guard(async (e) => { await submit({ count: 1, seed: e.seed, draft: Boolean(e.draft), ...(e.template ? { template: e.template } : {}), ...pick(e.params, ['steps', 'cfg', 'sampler']) }); }),
+    retry: guard(async (e) => {
+      const text = e.prompt === null || e.prompt === undefined ? null : stripStyle(e.prompt, profileCfg.style);
+      await submit({ count: 1, seed: e.seed, draft: Boolean(e.draft), ...(text !== null && text !== (ctx.order.prompt || '') ? { prompt: text } : {}), ...(e.template ? { template: e.template } : {}), ...pick(e.params, ['steps', 'cfg', 'sampler']) });
+    }),
     cancel: guard(async (e) => { await api.cancel(e.id); toast(t('ui.queue.cancelled', { id: e.id })); await poll.refreshNow(); }),
     setTemplate: async (a, id) => {
       try {
@@ -95,9 +99,21 @@ export async function orderView(host, route) {
         toastOk(t('ui.attempt.templateChanged', { id: a.id, template: id }));
         await reload();
         return true;
-      } catch (e) { toastError(describeError(e, t)); return false; }
+      } catch (e) {
+        toastError(describeError(e, t));
+        await reload(); // el servidor ya cambió el intento (composeError, imagen cruda)
+        return false;
+      }
     },
-    recompose: guard(async (a) => { await api.compose(project, profile, key, a.id, {}); invalidateMeasure(`${project}/${profile}/${key}/${a.id}@`); toastOk(t('ui.text.recomposed', { id: a.id })); await reload(); }),
+    recompose: guard(async (a) => {
+      try {
+        await api.compose(project, profile, key, a.id, {});
+        toastOk(t('ui.text.recomposed', { id: a.id }));
+      } finally {
+        invalidateMeasure(`${project}/${profile}/${key}/${a.id}@`);
+        await reload();
+      }
+    }),
   });
 
   async function submit(spec) {
@@ -113,7 +129,7 @@ export async function orderView(host, route) {
   function section(node, sig, build) {
     if (node.dataset.sig === sig) return;
     node.dataset.sig = sig;
-    const FOCUSABLE = 'button, a, input, summary';
+    const FOCUSABLE = 'button, a, input, select, summary';
     const active = document.activeElement;
     const idx = node.contains(active) ? [...node.querySelectorAll(FOCUSABLE)].indexOf(active) : -1;
     node.replaceChildren(...[].concat(build()).filter(Boolean));
@@ -167,7 +183,10 @@ export async function orderView(host, route) {
         onPreview: (text) => { ctx.previewText = text; store.set('previewText', Boolean(text)); paintGalleryOnly(); },
       });
       panel.replaceChildren(retouch.node, texts.node);
-    } else if (texts && texts.setChosen) texts.setChosen(order.chosen);
+    } else {
+      if (texts && texts.setChosen) texts.setChosen(order.chosen);
+      if (retouch && retouch.setChosen) retouch.setChosen();
+    }
   }
 
   /** Concilia la galería por clave: solo se rehace la tarjeta cuya firma cambió; el resto (con su foco, su nota a
@@ -206,14 +225,14 @@ export async function orderView(host, route) {
           const fresh = w.make();
           fresh.setAttribute('role', 'listitem');
           if (old) {
-            const els = [...old.node.querySelectorAll('button, a, input, summary')];
+            const els = [...old.node.querySelectorAll('button, a, input, select, summary')];
             const idx = old.node.contains(active) ? (active === old.node ? -1 : els.indexOf(active)) : -2;
             const was = old.node.querySelector('details');
             const det = fresh.querySelector('details');
             if (was && det && was.open) det.open = true;
             old.node.replaceWith(fresh);
             if (idx === -1) fresh.focus();
-            else if (idx >= 0) { const again = [...fresh.querySelectorAll('button, a, input, summary')][idx]; (again || fresh).focus(); }
+            else if (idx >= 0) { const again = [...fresh.querySelectorAll('button, a, input, select, summary')][idx]; (again || fresh).focus(); }
           }
           node = fresh;
           cardsByKey.set(w.k, { sig: w.sig, node });

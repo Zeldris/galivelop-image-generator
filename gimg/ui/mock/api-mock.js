@@ -29,7 +29,7 @@ const projects = {
 
 let nextAttempt = 7;
 let nextEntry = 12;
-const att = (id, seed, state, extra = {}) => ({ id, state, seed, prompt: null, params: { steps: 6, cfg: 1.0, sampler: 'euler', model: 'flux2-klein-4b-q8', width: 1280, height: 640 }, image: `attempts/q${id}.png`, raw: `attempts/q${id}.raw.png`, note: '', createdAt: ago(3600 - id * 300), log: `attempts/q${id}.log`, durationMs: 11000 + id * 700, compose: { at: ago(3000 - id * 300) }, ...extra });
+const att = (id, seed, state, extra = {}) => ({ id, state, seed, prompt: null, params: { steps: 6, cfg: 1.0, sampler: 'euler', model: 'flux2-klein-4b-q8', width: 1280, height: 640 }, image: `attempts/q${id}.png`, raw: `attempts/q${id}.raw.png`, note: '', createdAt: ago(3600 - id * 300), log: `attempts/q${id}.log`, durationMs: 11000 + id * 700, compose: { templateId: 'default' }, ...extra });
 const orders = [
   { key: 'portada/og', profile: 'og', prompt: 'a vast dark abyssal ocean, violet bioluminescent filaments rising, calm, cinematic, no text', params: { steps: 6, cfg: 1.0, sampler: 'euler', model: 'flux2-klein-4b-q8' }, seed: 12, draft: false,
     text: { title1: 'Galivelop', title2: 'Image Generator', subtitle: 'Imágenes de marca en local', subtitle2: 'Steam Deck · sin instalaciones' },
@@ -62,7 +62,7 @@ setInterval(() => {
       const order = findOrder(running.project, running.profile, running.key);
       const id = nextAttempt++;
       const prof = projects[running.project].config.profiles[running.profile];
-      order.attempts.push({ ...att(id, running.seed, 'new'), params: { ...prof, ...running.params, width: running.params.width || prof.width, height: running.params.height || prof.height }, prompt: running.prompt || null, draft: running.draft, compose: prof.compose && !running.draft ? { at: now() } : undefined, createdAt: now(), durationMs: Math.round(elapsed * 1000) });
+      order.attempts.push({ ...att(id, running.seed, 'new'), params: { ...prof, ...running.params, width: running.params.width || prof.width, height: running.params.height || prof.height }, prompt: running.prompt || null, draft: running.draft, compose: prof.compose && !running.draft ? { templateId: 'default' } : undefined, createdAt: now(), durationMs: Math.round(elapsed * 1000) });
       order.updatedAt = now();
       running.attemptId = id;
     }
@@ -158,7 +158,7 @@ export async function transport(method, url, body) {
         if (r7 === 'note') { a.note = body.text; return ok(a); }
         if (r7 === 'compose') {
           if (a.composeError && a.id === 6) return err(422, 'compose.font_missing', 'Falta la fuente Sora (gimg doctor)', { font: 'Sora' });
-          a.compose = { at: now() }; a.composeError = undefined; return ok(a);
+          a.compose = { templateId: (body && body.template) || (a.compose && a.compose.templateId) || 'default' }; a.composeError = undefined; return ok(a);
         }
         if (r7 === 'measure') {
           if (a.id === 3 && !measureBusyOnce.done) { measureBusyOnce.done = true; return err(409, 'measure.busy', 'Hay otra medida en marcha (espera 60 s)'); }

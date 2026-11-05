@@ -27,8 +27,9 @@ export function zoneParam(zone) {
     `compose`; el color, en último término, el de la marca). Sin zona, solo la paleta. */
 export function measureFor(ctx, attempt) {
   const { tpl } = templateOf(ctx, attempt);
-  const zone = zoneParam(tpl ? tpl.zone : ctx.measure.zone);
-  return { ...ctx.measure, zone, textColor: (tpl && tpl.textColor) || ctx.measure.textColor };
+  const textColor = (tpl && tpl.textColor) || ctx.measure.textColor;
+  const zone = textColor ? zoneParam(tpl ? tpl.zone : ctx.measure.zone) : undefined; // zona sin color: la API responde 400
+  return { ...ctx.measure, zone, textColor };
 }
 
 /** F4b: un <select> con las plantillas del perfil, marcada la del intento; solo si hay más de una. Al cambiar,
