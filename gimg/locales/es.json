@@ -337,5 +337,21 @@
   "error.order.seed_range": "la semilla {seed} con {count} intentos pasa del máximo {max}",
   "error.api.heavy_busy": "hay otra tarea pesada (medición o composición) en curso; espera a que termine y repite",
   "error.measure.busy": "hay otra medición o composición en curso; espera a que termine y repite",
-  "error.api.bad_request": "la petición no se pudo interpretar"
+  "error.api.bad_request": "la petición no se pudo interpretar",
+  "cli.cmd.serve": "servicio local: API e interfaz en 127.0.0.1 (con --detach, --status o --stop)",
+  "cli.arg.serve_port": "puerto (por defecto GIMG_PORT, la configuración o 8737; 0 = uno libre)",
+  "cli.arg.serve_idle": "minutos sin uso tras los que se para (0 = nunca; por defecto 15)",
+  "cli.arg.serve_detach": "arrancar en segundo plano y esperar a que responda",
+  "cli.arg.serve_status": "decir si el servicio está en marcha (código 1 si no)",
+  "cli.arg.serve_stop": "parar el servicio en marcha (no toca al trabajador)",
+  "cli.out.serve_running": "Servicio en {url} (pid {pid}). Ctrl-C para parar.",
+  "cli.out.serve_status": "En marcha: {url} (pid {pid}, desde {since}).",
+  "cli.out.serve_stopped": "El servicio no está en marcha.",
+  "cli.out.serve_stopping": "Parando el servicio (pid {pid}).",
+  "error.serve.port_busy": "el puerto {port} está ocupado; libéralo o elige otro con --port",
+  "error.serve.already_running": "el servicio ya está en marcha en {url}",
+  "error.serve.start_failed": "el servicio no arrancó a tiempo. Últimas líneas de serve.log:\n{log}",
+  "error.serve.not_running": "el servicio no está en marcha",
+  "error.serve.bad_port": "puerto no válido «{value}»: debe ser un número de 0 a 65535",
+  "error.serve.bad_idle": "tiempo de inactividad no válido «{value}»: debe ser un número de minutos de 0 en adelante"
 }

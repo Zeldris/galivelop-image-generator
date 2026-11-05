@@ -72,10 +72,24 @@ def _no_worker():
         os.close(fd)
 
 
-def worker_alive() -> bool:
-    """True if a worker holds ``worker.lock`` right now (also when the lock cannot be opened at all)."""
-    with _no_worker() as free:
-        return not free
+def worker_alive():
+    """Does a worker hold ``worker.lock`` right now? ``True`` / ``False``, or ``None`` when it cannot be known (the
+    lock exists but cannot be opened). A pure read: it creates neither the data folder nor the lock (no lock file
+    means no worker has ever run, so ``False``). Callers that start workers must treat ``None`` as "do not start"."""
+    try:
+        fd = os.open(str(worker_lock_path()), os.O_RDWR)
+    except FileNotFoundError:
+        return False
+    except OSError:
+        return None
+    try:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            return True
+        return False
+    finally:
+        os.close(fd)  # closing releases the lock
 
 
 def _load() -> dict:

@@ -11,6 +11,7 @@ import os
 import stat as _stat
 import sys
 import threading
+import time
 import traceback
 from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -46,7 +47,7 @@ _EXACT = {
           "api.not_found", "compose.template_missing", "compose.logo_missing"),
     405: ("api.method_not_allowed",), 411: ("api.length_required",), 413: ("api.body_too_large",),
     415: ("api.content_type",),
-    409: ("compose.busy", "measure.busy", "api.heavy_busy", "compose.nothing_to_do", "compose.no_attempts", "order.discard_chosen",
+    409: ("compose.busy", "measure.busy", "api.heavy_busy", "compose.nothing_to_do", "compose.no_attempts", "serve.already_running", "serve.port_busy", "serve.not_running", "order.discard_chosen",
           "order.history_empty", "queue.not_cancellable", "delivery.target_taken"),
     400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "api.bad_json",
           "api.bad_param"),
@@ -294,6 +295,13 @@ class Handler(BaseHTTPRequestHandler):
         return body
 
     def _dispatch(self):
+        self.server.begin_request()
+        try:
+            self._dispatch_one()
+        finally:
+            self.server.end_request()
+
+    def _dispatch_one(self):
         raw, _, qs = self.path.partition("?")
         query = parse_qs(qs, keep_blank_values=True)
         lang = pick_lang(query, self.headers.get("Accept-Language"))
@@ -364,7 +372,7 @@ def health(req):
     except GimgError:
         provider = None
     return {"ok": True, "api": API_VERSION, "version": __version__, "pid": os.getpid(),
-            "port": req.server.server_address[1], "engine": provider, "worker": queue.worker_alive()}
+            "port": req.server.server_address[1], "engine": provider, "worker": queue.worker_alive() is True}
 
 
 @route("GET", "/api/locales/{lang}")
@@ -579,7 +587,9 @@ def _heavy():
 
 
 def _after_enqueue() -> None:
-    """The one place where the server will start the worker after an enqueue (F3.4)."""
+    """The one place where the server starts the worker after an enqueue (a no-op unless `gimg serve` runs it)."""
+    from . import service
+    service.kick()
 
 
 def _fields(body: dict, allowed: tuple) -> dict:
@@ -709,6 +719,27 @@ def queue_cancel(req):
 class Server(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._clock = threading.Lock()
+        self.last_activity = time.monotonic()  # the idle clock of `gimg serve`
+        self.inflight = 0
+
+    def begin_request(self) -> None:
+        with self._clock:
+            self.inflight += 1
+            self.last_activity = time.monotonic()
+
+    def end_request(self) -> None:
+        with self._clock:
+            self.inflight -= 1
+            self.last_activity = time.monotonic()
+
+    def activity(self) -> tuple:
+        """``(seconds since the last request began or ended, requests in progress)``."""
+        with self._clock:
+            return time.monotonic() - self.last_activity, self.inflight
 
     @property
     def port(self) -> int:

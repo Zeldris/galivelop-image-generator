@@ -86,6 +86,7 @@ python3 -m gimg attempt new mi-proyecto fauna/red-howler banner --count 2 --step
 python3 -m gimg order list mi-proyecto --unchosen
 python3 -m gimg queue list                            # estado de la cola, con los errores
 python3 -m gimg queue cancel 3
+python3 -m gimg serve                                 # servicio local en 127.0.0.1:8737 (--detach, --status, --stop, --port, --idle-min)
 python3 -m gimg project list | project remove mi-proyecto | version
 ```
 

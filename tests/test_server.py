@@ -32,6 +32,7 @@ INTENDED_500 = {
     "measure.tool_missing", "measure.tool_failed", "measure.timeout", "measure.unreadable",
     "measure.no_brand_palette", "sheet.no_images", "sheet.too_many", "sheet.unreadable",
     "sheet.out_is_input", "sheet.tool_missing", "sheet.tool_failed", "sheet.timeout", "api.unexpected",
+    "serve.start_failed",
 }
 
 

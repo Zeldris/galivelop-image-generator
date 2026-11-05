@@ -337,5 +337,21 @@
   "error.order.seed_range": "seed {seed} with {count} attempts goes past the maximum {max}",
   "error.api.heavy_busy": "another heavy task (measure or compose) is running; wait for it to finish and retry",
   "error.measure.busy": "another measurement or composition is running; wait for it to finish and retry",
-  "error.api.bad_request": "the request could not be understood"
+  "error.api.bad_request": "the request could not be understood",
+  "cli.cmd.serve": "local service: API and interface on 127.0.0.1 (with --detach, --status or --stop)",
+  "cli.arg.serve_port": "port (default GIMG_PORT, the config or 8737; 0 = any free one)",
+  "cli.arg.serve_idle": "idle minutes after which it stops (0 = never; default 15)",
+  "cli.arg.serve_detach": "start in the background and wait until it answers",
+  "cli.arg.serve_status": "say whether the service is running (exit code 1 if not)",
+  "cli.arg.serve_stop": "stop the running service (does not touch the worker)",
+  "cli.out.serve_running": "Service at {url} (pid {pid}). Ctrl-C to stop.",
+  "cli.out.serve_status": "Running: {url} (pid {pid}, since {since}).",
+  "cli.out.serve_stopped": "The service is not running.",
+  "cli.out.serve_stopping": "Stopping the service (pid {pid}).",
+  "error.serve.port_busy": "port {port} is busy; free it or pick another with --port",
+  "error.serve.already_running": "the service is already running at {url}",
+  "error.serve.start_failed": "the service did not start in time. Last lines of serve.log:\n{log}",
+  "error.serve.not_running": "the service is not running",
+  "error.serve.bad_port": "invalid port '{value}': it must be a number from 0 to 65535",
+  "error.serve.bad_idle": "invalid idle time '{value}': it must be a number of minutes, 0 or more"
 }

@@ -7,7 +7,7 @@ import os
 import sys
 import traceback
 
-from . import __version__, compose, delivery, doctor, i18n, measure, orders, projects, queue, sheet, worker
+from . import __version__, compose, delivery, doctor, i18n, measure, orders, projects, queue, service, sheet, worker
 from .errors import GimgError
 
 LANGS = ("es", "en")
@@ -101,6 +101,12 @@ def _build(lang: str) -> argparse.ArgumentParser:
     leaf(g, "cancel", "cli.cmd.queue_cancel", arg("entry", "cli.arg.entry", type=int))
 
     leaf(top, "work", "cli.cmd.work", opt("--once", "cli.arg.once", action="store_true"))
+    serve = leaf(top, "serve", "cli.cmd.serve", opt("--port", "cli.arg.serve_port", type=int),
+                 opt("--idle-min", "cli.arg.serve_idle", type=int, metavar="N"))
+    mode = serve.add_mutually_exclusive_group()
+    mode.add_argument("--detach", action="store_true", help=t("cli.arg.serve_detach"))
+    mode.add_argument("--status", action="store_true", help=t("cli.arg.serve_status"))
+    mode.add_argument("--stop", action="store_true", help=t("cli.arg.serve_stop"))
     leaf(top, "doctor", "cli.cmd.doctor", opt("--verify", "cli.arg.verify", action="store_true"))
     leaf(top, "version", "cli.cmd.version")
     return parser
@@ -217,9 +223,40 @@ def _run(args, out: _Out) -> int:
                 out.line("cli.out.sheet_item", index=i, path=path)
     elif cmd == "queue":
         _queue(args, sub, out)
+    elif cmd == "serve":
+        return _serve(args, out)
     elif cmd == "work":
         handled = worker.run(once=args.once, lang=out.lang)
         out.data({"processed": handled}) if out.as_json else out.line("cli.out.processed", count=handled)
+    return 0
+
+
+def _serve(args, out: _Out) -> int:
+    def show(state):
+        if out.as_json:
+            out.data(state)
+        else:
+            out.line("cli.out.serve_running", url=state["url"], pid=state["pid"])
+        sys.stdout.flush()
+
+    if args.status:
+        state = service.status()
+        if out.as_json:
+            out.data({"running": state is not None, **(state or {})})
+        elif state is None:
+            out.line("cli.out.serve_stopped")
+        else:
+            out.line("cli.out.serve_status", url=state["url"], pid=state["pid"], since=state["startedAt"])
+        return 0 if state else 1
+    if args.stop:
+        state = service.stop()
+        out.data(state) if out.as_json else out.line("cli.out.serve_stopping", pid=state["pid"])
+        return 0
+    if args.detach:
+        show(service.detach(args.port, args.idle_min, out.lang))
+        return 0
+    idle_s = None if args.idle_min is None else service.resolve_idle_s(args.idle_min)
+    service.run(args.port, idle_s, out.lang, announce=show)
     return 0
 
 
