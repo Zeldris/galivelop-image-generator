@@ -1,11 +1,13 @@
-/* Huecos para las fases siguientes (D39). Cada uno es un componente con la misma firma que tendrá después, para que la
-   tarjeta y el panel no cambien de forma cuando lleguen:
+/* Piezas de la tarjeta de un intento que dependen de la plantilla (D39):
    - F4b: selector de plantilla por intento (GET …/profiles/{profile}/templates; POST …/compose {"template"}).
-   - F4c: editor de elementos (mover y redimensionar titular, subtítulo, logo y adornos; POST …/compose {"layout"};
-     guardar como plantilla nueva con destino local/proyecto, D40). */
+   - F4c: botón del editor de elementos (layout-editor.js; POST …/compose {"layout"}; guardar como plantilla nueva con
+     destino local/proyecto, D40) y «Exportar» de las plantillas locales.
+   - F4d: hueco del panel «Nuevo pedido». */
 
 import { h } from '../dom.js';
 import { t } from '../i18n.js';
+import { paths } from '../api.js';
+import { openLayoutEditor } from './layout-editor.js';
 
 /** La plantilla de un intento: la de su composición (`compose.templateId`), si falló la de `composeError.templateId`,
     si no la de por defecto. Devuelve `{id, tpl}`: `tpl` es null si el id guardado ya no existe o no hay plantillas. */
@@ -50,12 +52,22 @@ export function templateSlot(ctx, attempt) {
     if (!ok) select.value = known ? id : '';
   });
   return h('div.slot', { data: { slot: 'template', attempt: attempt.id } },
-    h('label', { for: `template-${attempt.id}` }, t('ui.attempt.template', { id: attempt.id })), select);
+    h('label', { for: `template-${attempt.id}` }, t('ui.attempt.template', { id: attempt.id })), select, exportLink(list.find((x) => x.id === id), ctx));
 }
 
-/** F4c: aquí irá el botón que abre el editor sobre la imagen del intento. */
-export function editorSlot(attempt) {
-  return h('div.slot', { data: { slot: 'editor', attempt: attempt.id } }, h('span.chip', {}, 'F4c'), t('ui.attempt.editSoon'));
+/** F4c: el botón «Editar composición», solo si la plantilla del intento tiene elementos y el intento está compuesto.
+    Abre el editor (layout-editor.js) sobre la imagen compuesta del intento. */
+export function editorSlot(ctx, attempt) {
+  const { tpl } = templateOf(ctx, attempt);
+  if (!tpl || !(tpl.elements || []).length || !attempt.compose || attempt.composeError) return null;
+  const button = h('button.btn', { type: 'button', onclick: () => openLayoutEditor(ctx, attempt, tpl, button) }, '✎ ', t('ui.editor.open'));
+  return h('div.slot', { data: { slot: 'editor', attempt: attempt.id } }, button, exportLink(tpl, ctx));
+}
+
+/** «Exportar» de una plantilla `local`: descarga su SVG (`assets/template?id=`). null si no es local. */
+export function exportLink(tpl, ctx) {
+  if (!tpl || tpl.source !== 'local') return null;
+  return h('a.btn.btn-ghost', { href: paths.asset(ctx.project, ctx.profile, 'template', tpl.id), download: `${tpl.id}.svg`, title: t('ui.editor.exportHint', { id: tpl.id }) }, '⭳ ', t('ui.editor.export'));
 }
 
 /** F4d: panel «Nuevo pedido» desde Piezas o Pedidos (POST /api/projects/{p}/orders ya existe en F3). */

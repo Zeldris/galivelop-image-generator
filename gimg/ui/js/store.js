@@ -5,7 +5,6 @@ const state = {
   queue: [],            // entradas de GET /api/queue, tal cual
   queueAt: null,        // Date.now() del último sondeo bueno
   showRaw: false,       // galería: ver el fondo crudo en vez de la compuesta
-  previewText: false,   // galería: superponer los textos del panel (borrador) sobre los intentos
   filters: {},          // por proyecto: {profile, state}
 };
 const subs = new Map();

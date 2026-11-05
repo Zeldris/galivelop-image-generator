@@ -14,6 +14,10 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Plantillas elegibles por perfil (F4b): `compose.templates`, `zone` y `textColor`; `gimg templates`, `--template` en
   `compose` y `attempt new`, rutas de la API y un selector de plantilla por intento en la interfaz (también en el
   panel de retoque). El chip de contraste mide con la zona y el color de texto de la plantilla.
+- Editor de elementos en la interfaz (F4c): mover y redimensionar titular, logo y adornos de un intento compuesto con
+  puntero o teclado, chip de contraste en vivo por texto, aplicar, volver a la plantilla y guardar como plantilla nueva
+  (local o del proyecto), exportar las plantillas locales. `GET …/templates` trae los `elements` de cada plantilla.
+  Sustituye a la previsualización HTML de los textos.
 
 ## [0.3.0] - 2026-11-05
 

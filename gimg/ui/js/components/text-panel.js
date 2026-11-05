@@ -1,12 +1,11 @@
 /* Textos de la composición (D28, por pedido: decisión 4 de propuesta.md): un campo por `compose.fields` del perfil,
-   PUT …/o/text al guardar, «Recomponer la elegida» (POST …/a/{id}/compose sin generar) y una previsualización
-   inmediata (superposición HTML sobre los intentos) mientras se escribe. Color, velo y zona no están en el esquema del
-   pedido hoy (solo `compose.fields`): llegan con el editor (F4c). */
+   PUT …/o/text al guardar y «Recomponer la elegida» (POST …/a/{id}/compose sin generar). La previsualización HTML se
+   quitó en F4c: la sustituye el editor de elementos (layout-editor.js). */
 
 import { h } from '../dom.js';
 import { t, fieldLabel } from '../i18n.js';
 
-export function textPanel(ctx, { onSave, onRecompose, onPreview }) {
+export function textPanel(ctx, { onSave, onRecompose }) {
   // la unión (sin repetidos, en orden) de los campos del perfil y de los de todas sus plantillas
   const fields = [...new Set([...((ctx.profileCfg.compose && ctx.profileCfg.compose.fields) || []), ...(ctx.templates || []).flatMap((x) => x.fields || [])])];
   const saved = { ...(ctx.order.text || {}) };
@@ -15,10 +14,9 @@ export function textPanel(ctx, { onSave, onRecompose, onPreview }) {
   }
   const inputs = new Map();
   const dirty = h('span.dirty', { hidden: true }, t('ui.text.dirty'));
-  const preview = h('input', { type: 'checkbox', checked: ctx.previewText });
   const values = () => Object.fromEntries([...inputs].map(([k, el]) => [k, el.value]));
   const isDirty = () => fields.some((f) => (saved[f] || '') !== (inputs.get(f).value || ''));
-  const onInput = () => { dirty.hidden = !isDirty(); if (preview.checked) onPreview(values()); };
+  const onInput = () => { dirty.hidden = !isDirty(); };
 
   const rows = fields.map((f) => {
     const id = `text-${f}`;
@@ -26,7 +24,6 @@ export function textPanel(ctx, { onSave, onRecompose, onPreview }) {
     inputs.set(f, input);
     return h('div.field', {}, h('label', { for: id }, fieldLabel(f)), input);
   });
-  preview.addEventListener('change', () => onPreview(preview.checked ? values() : null));
 
   const save = h('button.btn.btn-primary', { type: 'button', onclick: async () => {
     const v = values();
@@ -38,7 +35,6 @@ export function textPanel(ctx, { onSave, onRecompose, onPreview }) {
   const node = h('section.card', { aria: { labelledby: 'text-h' } },
     h('h2', { id: 'text-h' }, t('ui.text.title'), ' ', dirty),
     rows,
-    h('label.check', {}, preview, h('span', {}, t('ui.text.preview'))),
     h('div.panel-actions', {}, save, recompose),
     h('p.hint', {}, t('ui.text.hint')));
   /** Elegir o deshacer cambia solo este botón: el panel (y lo escrito en él) no se reconstruye. */

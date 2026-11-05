@@ -96,11 +96,12 @@ export const paths = {
   image: (p, profile, key, id, { raw = false, v = '' } = {}) =>
     `${paths.attempt(p, profile, key, id)}/image${raw ? '?raw=1' : ''}${v ? (raw ? '&' : '?') + 'v=' + enc(v) : ''}`,
   log: (p, profile, key, id) => `${paths.attempt(p, profile, key, id)}/log`,
-  measure: (p, profile, key, id, { zone, text, raw } = {}) => {
+  measure: (p, profile, key, id, { zone, text, raw, base } = {}) => {
     const q = [];
     if (zone) q.push('zone=' + enc(zone));
     if (text) q.push('text=' + enc(text));
     if (raw) q.push('raw=1');
+    if (base) q.push('base=1');
     return `${paths.attempt(p, profile, key, id)}/measure${q.length ? '?' + q.join('&') : ''}`;
   },
   choose: (p, profile, key) => `${paths.order(p, profile, key)}/choose`,
@@ -125,6 +126,7 @@ export const api = {
   mark: (p, profile, key, id, st) => post(paths.mark(p, profile, key, id), { state: st }),
   note: (p, profile, key, id, text) => post(paths.note(p, profile, key, id), { text }),
   templates: (p, profile) => get(paths.templates(p, profile)),
+  saveTemplate: (p, profile, body) => post(paths.templates(p, profile), body),
   compose: (p, profile, key, id, body = {}) => post(paths.compose(p, profile, key, id), body),
   measure: (p, profile, key, id, opts) => get(paths.measure(p, profile, key, id, opts)),
   choose: (p, profile, key, attempt) => post(paths.choose(p, profile, key), { attempt }),

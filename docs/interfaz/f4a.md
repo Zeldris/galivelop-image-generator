@@ -71,8 +71,8 @@ La clave del pedido puede llevar `/` (`portada/og`): va codificada en un solo se
   cola del perfil o la del último 202). Solo se envía lo que difiere del pedido (`POST …/attempts`).
 - **Textos** (`text-panel.js`): un campo por `compose.fields` del perfil (rótulos `ui.text.field.*`, o el nombre del
   campo si no hay rótulo), «sin guardar», **Guardar** (`PUT …/text`), **Recomponer la elegida** (`POST …/compose`) y
-  casilla «Previsualizar»: superpone en HTML (logo SVG del perfil, titular, subtítulo, velo) sobre el fondo crudo
-  mientras se escribe (`compose-preview.js`). Es una aproximación: la composición real la hace `gimg compose`.
+  casilla «Previsualizar» (quitada en F4c): superponía en HTML (logo SVG del perfil, titular, subtítulo, velo) sobre el fondo crudo
+  mientras se escribe (la sustituye el editor, §8).
 - **Entregada**: caja verde arriba con `q<id>`, la ruta de entrega si la API la da y **Deshacer** (`POST …/undo`).
 - **Refresco**: al cambiar la cola (sondeo) se repinta solo si el pedido tiene entradas; al terminar, fallar o
   cancelarse una entrada del pedido se recarga `GET order`. El foco se conserva en la misma tarjeta. El panel solo se
@@ -92,7 +92,7 @@ La clave del pedido puede llevar `/` (`portada/og`): va codificada en un solo se
 | `order-view.js` | `GET …/orders/{profile}/{key}`, `POST …/choose`, `POST …/undo`, `POST …/attempts` |
 | `attempt-card.js` | `GET …/attempts/{id}/image[?raw=1]`, `POST …/mark`, `POST …/note`, `POST …/compose`, `GET …/log` |
 | `measure-chip.js` | `GET …/attempts/{id}/measure?zone=&text=` (409 `measure.busy`: reintento a los 5 s, 3 veces, luego botón «Medir») |
-| `compose-preview.js` | `GET /api/projects/{p}/profiles/{profile}/assets/logo` |
+| `layout-editor.js` | `GET …/profiles/{profile}/templates`, `POST …/a/{id}/compose {layout}`, `GET …/a/{id}/measure?base=1`, `POST …/profiles/{profile}/templates`, `GET …/assets/template` |
 | `retouch-panel.js` / `text-panel.js` | `POST …/attempts` (202 `{entries, estimateMs}`), `PUT …/text`, `POST …/compose` |
 | `app.js` | `GET /api/health` (aviso si `worker: false`), banda «sin servicio» con `onOffline` |
 
@@ -162,9 +162,32 @@ Ajuste mínimo pedido a la hoja (ya propuesto en `hoja.md` §3, pendiente de la 
   `template` en `POST …/attempts`; el chip de contraste y la previsualización usan la `zone` (`x,y,w,h`), el
   `textColor`, los campos y el logo de la plantilla del intento. Queda: la previsualización HTML sigue siendo una
   aproximación (zona izquierda/arriba) hasta el editor de F4c.
-- **F4c** (`slots.js#editorSlot`): editor de elementos sobre la imagen (mover/redimensionar titular, subtítulo, logo,
-  adornos; `POST …/compose {"layout"}`; guardar como plantilla local o del proyecto, D40). Sustituye a la
-  previsualización HTML de `compose-preview.js`.
+- **F4c** (hecha; JS sin ejecutar, recorrido en navegador —puntero, teclado y mando— pendiente de la persona):
+  `slots.js#editorSlot` pone «Editar composición» en «Más» de la tarjeta (solo si la plantilla del intento tiene
+  `elements` y el intento está compuesto) y abre `components/layout-editor.js` en un `dialog` a pantalla casi completa.
+  Cómo se usa:
+  - La imagen de fondo es la **compuesta** del intento (la cruda no está llevada al destino); cada caja (contorno y
+    nombre; color por tipo: texto, logo, adorno) pinta como fondo el trozo de esa imagen que ocupaba, así se ve moverse
+    el elemento. Es una aproximación: el hueco que deja sigue visible hasta aplicar.
+  - Ratón o táctil: arrastrar la caja la mueve; las asas de las esquinas cambian el tamaño con la proporción fija
+    (**Mayús** al arrastrar la suelta). Teclado: Tab pasa de una caja a otra, flechas 1 px, Mayús+flechas 10 px,
+    Alt+flechas cambia el tamaño (ancho con izquierda/derecha, alto con arriba/abajo). Las cajas no salen del destino
+    y las coordenadas son píxeles del destino.
+  - Cada elemento de texto con color (`data-gimg-color`, o el `textColor` de la plantilla o de la marca) muestra un
+    chip de contraste en la lista lateral: `measure?zone=…&text=…&base=1`, 400 ms después de soltar o de la última
+    tecla, por la misma cola de medidas del chip de la tarjeta.
+  - **Aplicar** manda `POST …/compose {"layout"}` con lo que difiere de la plantilla, cierra y recarga el pedido;
+    **Volver a la plantilla** manda `{"layout": {}}`; **Guardar como plantilla…** pide nombre (`^[a-z0-9][a-z0-9-]{0,39}$`,
+    validado antes de enviar, no `default`, no repetido) y destino (`local`; `project` solo si el perfil declara
+    `compose.templatesDir`), aplica antes lo pendiente y llama a `POST …/templates`; después se piden de nuevo las
+    plantillas y la nueva sale en los selectores. Las plantillas `local` tienen «Exportar» (descarga de
+    `assets/template?id=`) en el selector y en el editor.
+  - `Esc` cierra; el foco queda atrapado en el diálogo y vuelve al botón (o a la tarjeta) al cerrar. Los errores van al
+    toast y además a un aviso dentro del diálogo (un `dialog` modal tapa los avisos flotantes). Mientras está abierto
+    no actúan los atajos de la galería ni los globales.
+  - Sustituye a la previsualización HTML (`compose-preview.js` y la casilla «Previsualizar» del panel de textos, que se
+    quitaron). `GET …/templates` trae `elements` por plantilla (y `source`); `templatesDir` llega por
+    `GET /api/projects/{p}` (`config.profiles.<perfil>.compose`).
 - **F4d** (`slots.js#newOrderSlot`, pestañas Piezas y Marca): nuevo pedido desde la interfaz, piezas como índice,
   marca con la validación de `gimg doctor`, catálogo de modelos en la API, reordenar y vaciar la cola.
 - Pendiente de comprobar **en la Deck** (no se puede probar con tests): mapa de Steam Input, panel táctil sobre

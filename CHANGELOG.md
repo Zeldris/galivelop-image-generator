@@ -14,6 +14,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Selectable templates per profile (F4b): `compose.templates`, `zone` and `textColor`; `gimg templates`,
   `--template` on `compose` and `attempt new`, API routes and a per-attempt template selector in the interface
   (also in the retouch panel). The contrast chip measures with the template's zone and text color.
+- Element editor in the interface (F4c): move and resize the headline, logo and ornaments of a composed attempt with
+  pointer or keyboard, live contrast chip per text element, apply, back to the template and save as a new template
+  (local or project), export of local templates. `GET …/templates` lists the `elements` of each template. It replaces
+  the HTML text preview.
 
 ## [0.3.0] - 2026-11-05
 

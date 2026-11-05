@@ -369,6 +369,55 @@ class ApiRoutes(unittest.TestCase):
                 self.assertIn(name, patterns, rel(path))
 
 
+class LayoutEditor(unittest.TestCase):
+    """F4c.3: el editor de elementos, comprobado en estático (no hay navegador: el recorrido es de la persona)."""
+
+    def comp(self, name):
+        return read(UI / "js" / "components" / name)
+
+    def test_the_slot_opens_the_editor_only_with_elements_and_a_composed_attempt(self):
+        slots = self.comp("slots.js")
+        self.assertIn("editorSlot(ctx, attempt)", self.comp("attempt-card.js"))
+        self.assertIn("openLayoutEditor(ctx, attempt, tpl, button)", slots)
+        self.assertRegex(slots, r"!\(tpl\.elements \|\| \[\]\)\.length|!tpl\.elements")
+        self.assertIn("!attempt.compose || attempt.composeError", slots)
+        self.assertNotIn("editSoon", "".join(read(f) for f in JS))
+
+    def test_the_html_preview_is_gone(self):
+        self.assertFalse((UI / "js" / "components" / "compose-preview.js").exists())
+        self.assertNotIn("compose-preview", "".join(read(f) for f in JS + CSS))
+        self.assertNotIn("previewText", "".join(read(f) for f in JS))
+
+    def test_apply_reset_and_save_use_the_api_shapes(self):
+        editor, order = self.comp("layout-editor.js"), self.comp("order-view.js")
+        self.assertIn("setLayout(attempt, changedLayout(items))", editor)
+        self.assertIn("setLayout(attempt, {})", editor)
+        self.assertIn("{ layout }", order)
+        self.assertIn("from: { key, attempt: a.id }, name, dest", order)
+        self.assertIn("base: true", editor)
+        self.assertIn("MEASURE_DELAY_MS = 400", editor)
+        self.assertIn("base=1", read(UI / "js" / "api.js"))
+
+    def test_template_name_pattern_is_the_one_of_the_server(self):
+        from gimg import compose
+        editor = self.comp("layout-editor.js")
+        self.assertIn("NAME_PATTERN = /^[a-z0-9][a-z0-9-]{0,39}$/", editor)
+        self.assertIn("[a-z0-9][a-z0-9-]{0,39}", compose._TEMPLATE_ID.pattern)
+        self.assertIn("name !== 'default'", editor)
+        self.assertIn("compose || {}).templatesDir", editor)
+
+    def test_dialog_traps_focus_stops_global_keys_and_returns_focus(self):
+        editor = self.comp("layout-editor.js")
+        for needle in ("showModal()", "ev.key !== 'Tab'", "ev.stopPropagation()", "opener.focus()", "setPointerCapture", "ev.shiftKey", "ev.altKey"):
+            self.assertIn(needle, editor)
+        self.assertNotIn("setAttribute('style'", editor)
+
+    def test_local_templates_get_an_export_link_with_download(self):
+        slots = self.comp("slots.js")
+        self.assertIn("tpl.source !== 'local'", slots)
+        self.assertRegex(slots, r"download: `\$\{tpl\.id\}\.svg`")
+
+
 class Served(ServerBase):
     TYPES = {".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".svg": "image/svg+xml",
              ".png": "image/png", ".ttf": "font/ttf", ".woff2": "font/woff2", ".json": "application/json"}

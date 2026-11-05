@@ -42,7 +42,7 @@ export async function orderView(host, route) {
   const ctx = {
     project, profile, key, order, profileCfg, brand, templates: Array.isArray(templates) ? templates : [],
     measure: { zone: compose.zone, textColor: compose.textColor || brand.textColor, paletteMin: brand.paletteMin },
-    showRaw: store.get('showRaw'), previewText: null, compare: [], queuedIds: [], estimateMs: estimateFor(profile),
+    showRaw: store.get('showRaw'), compare: [], queuedIds: [], estimateMs: estimateFor(profile),
     actions: {},
   };
 
@@ -104,6 +104,27 @@ export async function orderView(host, route) {
         await reload(); // el servidor ya cambió el intento (composeError, imagen cruda)
         return false;
       }
+    },
+    /** El editor de elementos (layout-editor.js): `layout` = solo lo movido; `{}` vuelve a la plantilla. Si falla, recarga
+        el pedido (el servidor ya dejó el intento con su composeError) y relanza el error para que el editor lo muestre. */
+    setLayout: async (a, layout) => {
+      try {
+        await api.compose(project, profile, key, a.id, { layout });
+        invalidateMeasure(`${project}/${profile}/${key}/${a.id}@`);
+        toastOk(t(Object.keys(layout).length ? 'ui.editor.applied' : 'ui.editor.resetDone', { id: a.id }));
+        await reload();
+      } catch (e) {
+        await reload();
+        throw e;
+      }
+    },
+    /** Plantilla nueva desde un intento (D40); después se piden otra vez las plantillas para que salga en los selectores. */
+    saveTemplate: async (a, name, dest) => {
+      const entry = await api.saveTemplate(project, profile, { from: { key, attempt: a.id }, name, dest });
+      toastOk(t('ui.editor.saved', { name }));
+      try { ctx.templates = await api.templates(project, profile); } catch (e) { toastError(describeError(e, t)); }
+      paintGalleryOnly();
+      return entry;
     },
     recompose: guard(async (a) => {
       try {
@@ -180,7 +201,6 @@ export async function orderView(host, route) {
       texts = textPanel(ctx, {
         onSave: async (text) => { try { await api.setText(project, profile, key, text); ctx.order.text = text; toastOk(t('ui.text.saved')); return true; } catch (e) { toastError(describeError(e, t)); return false; } },
         onRecompose: (id) => ctx.actions.recompose({ id }),
-        onPreview: (text) => { ctx.previewText = text; store.set('previewText', Boolean(text)); paintGalleryOnly(); },
       });
       panel.replaceChildren(retouch.node, texts.node);
     } else {
@@ -202,7 +222,7 @@ export async function orderView(host, route) {
         const { note, ...rest } = a; // la nota la escribe la propia tarjeta: no cuenta como cambio
         const st = stateOf(order, a);
         const compared = ctx.compare.includes(a.id);
-        return { k: `attempt:${a.id}`, sig: JSON.stringify([rest, st, compared, ctx.showRaw, a.raw && ctx.previewText ? ctx.previewText : null]), make: () => attemptCard(ctx, a) };
+        return { k: `attempt:${a.id}`, sig: JSON.stringify([rest, st, compared, ctx.showRaw, ctx.templates.map((x) => x.id)]), make: () => attemptCard(ctx, a) };
       }),
     ];
     if (!wanted.length) {

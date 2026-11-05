@@ -75,6 +75,8 @@ export function measureChip(ctx, attempt) {
   return node;
 }
 
+export { render as renderMeasure, requestMeasure };
+
 function level(ok, warn) { return ok ? 'ok' : warn ? 'warn' : 'bad'; }
 const worse = (a, b) => (['bad', 'warn', 'ok'].indexOf(a) <= ['bad', 'warn', 'ok'].indexOf(b) ? a : b);
 
