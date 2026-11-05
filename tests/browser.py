@@ -241,11 +241,16 @@ class Browser:
         self.proc = None
         try:
             args = self.command + ["--headless=new", "--no-sandbox", "--disable-gpu", "--no-first-run",
-                                   "--disable-extensions", "--disk-cache-size=1", "--disable-gpu-shader-disk-cache",
+                                   "--disable-extensions", "--disable-dev-shm-usage", "--disk-cache-size=1", "--disable-gpu-shader-disk-cache",
                                    "--lang=" + lang, "--accept-lang=" + lang,
                                    "--remote-debugging-port=0", "--user-data-dir=" + self.profile, "about:blank"]
+            # Chrome's temporaries go inside the profile, so close() removes them too (the shared 1.5 GB tmpfs of the
+            # Deck filled up on 2026-11-05 with what a flatpak Chrome left in its own temporary folder).
+            tmp = os.path.join(self.profile, "tmp")
+            os.makedirs(tmp, exist_ok=True)
+            env = dict(os.environ, TMPDIR=tmp)
             self.proc = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True,
-                                         start_new_session=True)
+                                         start_new_session=True, env=env)
             self.ws_url = self._find_ws_url()
             self.ws = WebSocket(self.ws_url)
         except BaseException:
@@ -299,6 +304,15 @@ class Browser:
         return out
 
     def close(self):
+        # Browser.close first: a flatpak or host Chrome lives outside our process group, so killpg alone left it
+        # running (46 headless Chromes piled up on 2026-11-05 and later tests timed out).
+        if self.ws:
+            try:
+                self.ws.send(json.dumps({"id": 1 << 30, "method": "Browser.close", "params": {}}))
+                if self.proc:
+                    self.proc.wait(timeout=5)
+            except Exception:
+                pass
         for page in self.pages:
             page.ws.close()
         if self.ws:

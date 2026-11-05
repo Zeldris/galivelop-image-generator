@@ -42,6 +42,20 @@ def run_cli(*argv):
 
 
 @unittest.skipUnless(browser.find_chrome(), "no Chrome/Chromium found (set GIMG_TEST_CHROME)")
+class BrowserLifetime(unittest.TestCase):
+    def test_close_shuts_the_browser_down_even_outside_our_process_group(self):
+        # A flatpak or host Chrome is not in our process group: killpg alone left it running. After close(), its
+        # DevTools port must refuse new connections.
+        b = browser.Browser()
+        url = b.ws_url
+        b.close()
+        with self.assertRaises(OSError) as caught:
+            browser.WebSocket(url, timeout=3).close()
+        self.assertIsInstance(caught.exception, (ConnectionRefusedError, ConnectionResetError, TimeoutError),
+                              "the DevTools port still answers after close(): %r" % caught.exception)
+
+
+@unittest.skipUnless(browser.find_chrome(), "no Chrome/Chromium found (set GIMG_TEST_CHROME)")
 class UiBase(unittest.TestCase):
     """One server and one browser for the whole class; each test opens a fresh tab."""
 

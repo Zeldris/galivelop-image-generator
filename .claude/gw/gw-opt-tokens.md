@@ -47,7 +47,11 @@ las crea una vez; desde entonces son del proyecto.
 
 ## Ajustes en vigor
 
-- Ventana de compactación automática: `CLAUDE_CODE_AUTO_COMPACT_WINDOW` en `.claude/settings.json`.
+- Ventana de compactación automática: `CLAUDE_CODE_AUTO_COMPACT_WINDOW` en `.claude/settings.json`, 140000 desde el
+  2026-11-05 (antes 200000; la regla de `/clear` a los 120k se incumplió en F4: 229 llamadas a 105k de media y techos
+  de 168k).
+- Un paso del plan por subagente implementador (no «F4b.1-F4b.2»): los de dos pasos hicieron 60-66 llamadas a
+  96-105k de media, ~6,3 M cada uno (aprobado el 2026-11-05).
 - `/clear` entre tareas: al cerrar cada PR y cada fase (F0…F5), con la bitácora escrita y subida (aprobado el
   2026-10-25; el diseño fue un solo tramo de 50 llamadas que llegó a 166k).
 - `/clear` también al cerrar cada paso de una fase (F1.x) si la sesión principal pasa de ~120k (aprobado el
@@ -58,6 +62,8 @@ las crea una vez; desde entonces son del proyecto.
 ## Referencias medidas
 
 <!-- Cifras medidas con las que comparar: fecha, sesión, contexto medio, llamadas, total. -->
+- 2026-11-05, `f2-motor` desde `849b301` (F3.3-F4d, 4 sesiones): ~98 M de entrada, 66 % en subagentes; la principal
+  más cara, `0e571705`: 229 llamadas, 105k de media, 3 tramos (118/166, 110/168, 77/95).
 - 2026-10-25, sesión `a0f496d5` (aplicar el flujo y diseño D1-D26): 50 llamadas, contexto medio 113k (suelo 38k,
   techo 166k), 5,6 M de entrada en la principal + 0,9 M en subagentes.
 - 2026-10-25, sesión `1d4848af` (F0 hasta la retro): 30 llamadas, contexto medio 81k (suelo 45k, techo 115k),
