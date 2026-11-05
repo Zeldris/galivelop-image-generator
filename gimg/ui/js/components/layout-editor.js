@@ -20,6 +20,7 @@ import { api, paths, describeError } from '../api.js';
 import { toastError } from './toast.js';
 import { renderMeasure, requestMeasure } from './measure-chip.js';
 import { imageVersion } from './attempt-util.js';
+import { trapFocus } from '../lib/focus-trap.js';
 
 export const NAME_PATTERN = /^[a-z0-9][a-z0-9-]{0,39}$/;
 export const MEASURE_DELAY_MS = 400;
@@ -27,7 +28,6 @@ const STEP = 1;
 const STEP_BIG = 10;
 const CORNERS = ['nw', 'ne', 'sw', 'se'];
 const ARROWS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
-const FOCUSABLE = 'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), [tabindex="0"]';
 
 const clamp = (v, lo, hi) => Math.min(Math.max(lo, hi), Math.max(lo, v));
 export const sameBox = (a, b) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
@@ -266,14 +266,8 @@ export function openLayoutEditor(ctx, attempt, tpl, opener) {
   // --- foco atrapado y cierre ---
   dlg.addEventListener('keydown', (ev) => {
     ev.stopPropagation(); // los atajos de la galería y los globales no actúan con el editor abierto
-    if (ev.key !== 'Tab') return;
-    const nodes = [...dlg.querySelectorAll(FOCUSABLE)].filter((n) => n.getClientRects().length > 0);
-    if (!nodes.length) return;
-    const first = nodes[0];
-    const last = nodes[nodes.length - 1];
-    if (ev.shiftKey && (document.activeElement === first || document.activeElement === dlg)) { ev.preventDefault(); last.focus(); }
-    else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
   });
+  trapFocus(dlg);
   dlg.addEventListener('close', () => {
     closed = true;
     for (const it of items) clearTimeout(it.timer);
