@@ -18,7 +18,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote
 
-from . import __version__, compose, delivery, i18n, measure, orders, paths, projects, queue
+from . import __version__, compose, delivery, doctor, i18n, measure, models, orders, paths, projects, queue
 from .errors import GimgError
 
 API_VERSION = 1
@@ -48,7 +48,7 @@ _EXACT = {
     405: ("api.method_not_allowed",), 411: ("api.length_required",), 413: ("api.body_too_large",),
     415: ("api.content_type",),
     409: ("compose.template_exists", "compose.busy", "measure.busy", "api.heavy_busy", "compose.nothing_to_do", "compose.no_attempts", "serve.already_running", "serve.port_busy", "serve.not_running", "order.discard_chosen",
-          "order.history_empty", "queue.not_cancellable", "delivery.target_taken"),
+          "order.history_empty", "queue.not_cancellable", "queue.not_movable", "delivery.target_taken"),
     400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "compose.template_unknown", "compose.element_unknown", "compose.bad_layout", "compose.bad_element", "compose.templates_dir_missing", "api.bad_json",
           "api.bad_param"),
 }
@@ -667,7 +667,9 @@ def _str_field(body: dict, name: str) -> str:
 
 @route("POST", "/api/projects/{p}/orders")
 def order_submit(req):
-    entries, provider = queue.submit_order(req.params["p"], dict(req.body))
+    order = dict(req.body)
+    template = _template_param(order.pop("template", None))  # not part of the order file: it goes to the attempts
+    entries, provider = queue.submit_order(req.params["p"], order, template=template)
     _after_enqueue()
     # the order itself is read back by its own key: `submit` normalises it (profile, params)
     record = orders.get(req.params["p"], entries[0]["key"], entries[0]["profile"]) if entries else None
@@ -690,14 +692,17 @@ def order_text(req):
 
 @route("POST", _ORD + "/attempts")
 def attempt_new(req):
-    q, body = req.params, _fields(req.body, ("count", "seed", "prompt", "steps", "cfg", "sampler", "draft", "template"))
+    q, body = req.params, _fields(req.body, ("count", "seed", "prompt", "steps", "cfg", "sampler", "draft", "template", "model"))
+    model = body.get("model")
+    if model is not None and not isinstance(model, str):
+        raise GimgError("api.bad_param", name="model")
     draft = body.get("draft")
     if draft is not None and not isinstance(draft, bool):
         raise GimgError("api.bad_param", name="draft")
     overrides = {k: body[k] for k in ("steps", "cfg", "sampler") if body.get(k) is not None}
     entries, provider = queue.new_attempts(q["p"], q["key"], q["profile"], body.get("count", 1),
                                            seed=body.get("seed"), prompt=body.get("prompt"), params=overrides,
-                                           draft=draft, template=_template_param(body.get("template")))
+                                           draft=draft, template=_template_param(body.get("template")), model=model)
     _after_enqueue()
     return Reply(202, queue.queued_view(entries, provider, req.lang), json=True)
 
@@ -787,6 +792,33 @@ def attempt_measure(req):
 def queue_cancel(req):
     _fields(req.body, ())
     return queue.entry_view(queue.cancel(_int_param("id", req.params["id"])), req.lang)
+
+
+@route("POST", "/api/queue/{id}/move")
+def queue_move(req):
+    to = _fields(req.body, ("to",)).get("to")
+    if not isinstance(to, str):
+        raise GimgError("api.bad_param", name="to")
+    return queue.entry_view(queue.move(_int_param("id", req.params["id"]), to), req.lang)
+
+
+@route("POST", "/api/queue/clear")
+def queue_clear(req):
+    project = _fields(req.body, ("project",)).get("project")
+    if project is not None and not isinstance(project, str):
+        raise GimgError("api.bad_param", name="project")
+    return [queue.entry_view(e, req.lang) for e in queue.clear(project)]
+
+
+@route("GET", "/api/models")
+def models_list(req):
+    return models.listing(req.lang)
+
+
+@route("GET", "/api/projects/{p}/check")
+def project_check(req):
+    projects.get(req.params["p"])  # project.unknown (404) before anything else
+    return [{k: v for k, v in c.as_dict(req.lang).items() if v is not None} for c in doctor.run_project(req.params["p"])]
 
 
 # --- server ---

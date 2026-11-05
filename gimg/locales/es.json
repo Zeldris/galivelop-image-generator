@@ -604,5 +604,14 @@
   "ui.text.field.title1": "Titular (línea 1)",
   "ui.text.field.title2": "Titular (línea 2)",
   "ui.text.field.subtitle": "Subtítulo",
-  "ui.text.field.subtitle2": "Subtítulo (línea 2)"
+  "ui.text.field.subtitle2": "Subtítulo (línea 2)",
+  "error.queue.not_movable": "la entrada {id} no está esperando ({state}) y no se puede mover",
+  "error.queue.bad_move": "movimiento «{to}» no válido; usa uno de: {allowed}",
+  "cli.cmd.queue_move": "mover una entrada que espera en la cola (up, down o top)",
+  "cli.cmd.queue_clear": "cancelar todas las entradas que esperan (nunca la que corre)",
+  "cli.arg.queue_to": "adónde moverla: up, down o top",
+  "cli.arg.queue_project": "solo las entradas de este proyecto",
+  "cli.arg.model": "modelo del catálogo para estos intentos (ver GET /api/models en docs/api.md)",
+  "cli.out.moved": "Entrada {id}: movida ({to}).",
+  "cli.out.cleared": "Canceladas {count} entradas que esperaban: {ids}."
 }

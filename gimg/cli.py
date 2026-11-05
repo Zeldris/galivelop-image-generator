@@ -61,7 +61,8 @@ def _build(lang: str) -> argparse.ArgumentParser:
 
     g = group(top, "order", "cli.cmd.order")
     leaf(g, "submit", "cli.cmd.order_submit", project, arg("file", "cli.arg.file"),
-         opt("--draft", "cli.arg.draft", action=argparse.BooleanOptionalAction, default=None))
+         opt("--draft", "cli.arg.draft", action=argparse.BooleanOptionalAction, default=None),
+         opt("--template", "cli.arg.template", metavar="ID"))
     lst = leaf(g, "list", "cli.cmd.order_list", project,
                opt("--profile", "cli.arg.profile_filter"))
     mutex = lst.add_mutually_exclusive_group()
@@ -75,7 +76,8 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--prompt", "cli.arg.prompt"), opt("--steps", "cli.arg.steps", type=int),
          opt("--cfg", "cli.arg.cfg", type=float), opt("--sampler", "cli.arg.sampler"),
          opt("--draft", "cli.arg.draft", action=argparse.BooleanOptionalAction, default=None),
-         opt("--template", "cli.arg.template", metavar="ID"))
+         opt("--template", "cli.arg.template", metavar="ID"),
+         opt("--model", "cli.arg.model", metavar="ID"))
     leaf(g, "mark", "cli.cmd.attempt_mark", project, okey, oprofile, attempt,
          arg("state", "cli.arg.state", choices=orders.STATES))
     leaf(g, "note", "cli.cmd.attempt_note", project, okey, oprofile, attempt,
@@ -106,6 +108,9 @@ def _build(lang: str) -> argparse.ArgumentParser:
     g = group(top, "queue", "cli.cmd.queue")
     leaf(g, "list", "cli.cmd.queue_list", opt("--state", "cli.arg.queue_state", choices=queue.STATES))
     leaf(g, "cancel", "cli.cmd.queue_cancel", arg("entry", "cli.arg.entry", type=int))
+    leaf(g, "move", "cli.cmd.queue_move", arg("entry", "cli.arg.entry", type=int),
+         arg("to", "cli.arg.queue_to", choices=queue.MOVES))
+    leaf(g, "clear", "cli.cmd.queue_clear", opt("--project", "cli.arg.queue_project", metavar="P"))
 
     leaf(top, "work", "cli.cmd.work", opt("--once", "cli.arg.once", action="store_true"))
     serve = leaf(top, "serve", "cli.cmd.serve", opt("--port", "cli.arg.serve_port", type=int),
@@ -423,7 +428,7 @@ def _measure(args, out: _Out) -> None:
 def _order(args, sub, out: _Out) -> None:
     if sub == "submit":
         order = _read_order(args.file)
-        entries, provider = queue.submit_order(args.project, order, args.draft)
+        entries, provider = queue.submit_order(args.project, order, args.draft, template=args.template)
         _queued(out, entries, provider)
     elif sub == "list":
         chosen = True if args.chosen else False if args.unchosen else None
@@ -469,7 +474,7 @@ def _attempt(args, sub, out: _Out) -> None:
                                        ("sampler", args.sampler)) if v is not None}
         entries, provider = queue.new_attempts(args.project, args.key, args.profile, args.count,
                                                seed=args.seed, prompt=args.prompt, params=overrides,
-                                               draft=args.draft, template=args.template)
+                                               draft=args.draft, template=args.template, model=args.model)
         _queued(out, entries, provider)
     elif sub == "mark":
         item = orders.mark(args.project, args.key, args.profile, args.attempt, args.state)
@@ -516,6 +521,15 @@ def _queue(args, sub, out: _Out) -> None:
             text = queue.error_text(e, out.lang)
             if text:
                 out.line("cli.out.queue_error", error=text)
+    elif sub == "move":
+        entry = queue.move(args.entry, args.to)
+        out.data(_entry_json(out, entry)) if out.as_json else out.line("cli.out.moved", id=entry["id"], to=args.to)
+    elif sub == "clear":
+        found = queue.clear(args.project)
+        if out.as_json:
+            out.data([_entry_json(out, e) for e in found])
+        else:
+            out.line("cli.out.cleared", count=len(found), ids=", ".join(str(e["id"]) for e in found) or "-")
     else:
         entry = queue.cancel(args.entry)
         if out.as_json:
