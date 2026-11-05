@@ -418,6 +418,56 @@ class LayoutEditor(unittest.TestCase):
         self.assertRegex(slots, r"download: `\$\{tpl\.id\}\.svg`")
 
 
+class F4dUi(unittest.TestCase):
+    """F4d.2: panel de pedido nuevo, piezas, marca, modelo y cola movible, comprobados en estático."""
+
+    def comp(self, name):
+        return read(UI / "js" / "components" / name)
+
+    def test_the_new_order_body_follows_the_api_and_the_schema(self):
+        panel = self.comp("new-order.js")
+        pattern = json.loads(read(Path(server.__file__).parent / "schemas" / "order.schema.json"))["properties"]["key"]["pattern"]
+        self.assertIn("KEY_PATTERN = /%s/" % pattern.replace("/", "\\/"), panel)
+        for needle in ("api.newOrder(project, body)", "body.template = ", "body.model = ", "body.params = ", "novalidate", "showModal()",
+                       "ev.stopPropagation()", "opener.focus()", "disabled: m.allowed === false", "m.reason.message"):
+            self.assertIn(needle, panel)
+        self.assertIn("newOrder: (p, body) => post(paths.newOrder(p), body)", read(UI / "js" / "api.js"))
+        self.assertNotIn("newOrderSoon", "".join(read(f) for f in JS))
+
+    def test_banned_words_only_warn(self):
+        panel = self.comp("new-order.js")
+        self.assertIn("bannedWord(allText(), banned)", panel)
+        self.assertNotIn("banned", panel[panel.index("function buildBody"):panel.index("function showError")])
+        self.assertIn("export function bannedWord", self.comp("attempt-util.js"))
+
+    def test_attempts_can_carry_a_model_and_blocked_ones_are_disabled(self):
+        retouch = self.comp("retouch-panel.js")
+        self.assertIn("s.model = modelSel.value", retouch)
+        self.assertIn("disabled: m.allowed === false", retouch)
+        self.assertIn("api.models()", self.comp("order-view.js"))
+
+    def test_the_queue_moves_only_queued_entries_and_clearing_asks_first(self):
+        bar = self.comp("queue-bar.js")
+        self.assertIn("if (e.state === 'queued') {", bar)
+        for to in ("up", "down", "top"):
+            self.assertIn("mover('%s'" % to, bar)
+        self.assertIn("api.move(e.id, to2)", bar)
+        self.assertIn("if (!ok) return;\n  try {\n    const cancelled = await api.clearQueue(project)", bar)
+        self.assertIn("confirmAction(", bar)
+        self.assertIn("showModal()", self.comp("confirm.js"))
+        api = read(UI / "js" / "api.js")
+        self.assertIn("post(paths.move(id), { to })", api)
+        self.assertIn("post(paths.clear(), project ? { project } : {})", api)
+
+    def test_the_project_tabs_use_the_new_views(self):
+        view = self.comp("project-view.js")
+        for needle in ("piecesTab(panel, project, cfg)", "brandTab(panel, project, cfg)", "newOrderButton(project)"):
+            self.assertIn(needle, view)
+        self.assertIn("api.check(project)", self.comp("brand-tab.js"))
+        self.assertIn("STATUS_CHIP", self.comp("brand-tab.js"))
+        self.assertIn("paths.asset(project, name, 'template', x.id)", self.comp("pieces-tab.js"))
+
+
 class Served(ServerBase):
     TYPES = {".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".svg": "image/svg+xml",
              ".png": "image/png", ".ttf": "font/ttf", ".woff2": "font/woff2", ".json": "application/json"}

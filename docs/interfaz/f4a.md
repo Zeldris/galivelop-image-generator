@@ -188,8 +188,24 @@ Ajuste mínimo pedido a la hoja (ya propuesto en `hoja.md` §3, pendiente de la 
   - Sustituye a la previsualización HTML (`compose-preview.js` y la casilla «Previsualizar» del panel de textos, que se
     quitaron). `GET …/templates` trae `elements` por plantilla (y `source`); `templatesDir` llega por
     `GET /api/projects/{p}` (`config.profiles.<perfil>.compose`).
-- **F4d** (`slots.js#newOrderSlot`, pestañas Piezas y Marca): nuevo pedido desde la interfaz, piezas como índice,
-  marca con la validación de `gimg doctor`, catálogo de modelos en la API, reordenar y vaciar la cola.
+- **F4d** (hecha; JS sin ejecutar, recorrido en navegador pendiente de la persona). Cómo se usa:
+  - **Nuevo pedido** (`components/new-order.js`, `slots.js#newOrderButton`): botón en la pestaña Pedidos y «Pedir» en
+    cada pieza; abre un `dialog` con clave (`^[a-z0-9][a-z0-9-]*(/[a-z0-9][a-z0-9-]*)*$`, validada antes de enviar),
+    perfil, «Copiar de…» (prompt, textos, semilla, borrador y steps/cfg/sampler de un pedido existente), prompt con
+    aviso de palabras prohibidas de la marca (avisa, no bloquea), textos del perfil, plantilla (solo con más de una),
+    modelo (los bloqueados salen desactivados con su motivo, de `GET /api/models`), semilla, borrador y número de
+    intentos. Manda `POST …/orders`; `template` solo si no es la de por defecto y `model` solo si se eligió. Al
+    acabar, avisa y abre el pedido.
+  - **Piezas** (`components/pieces-tab.js`): una tarjeta por perfil con tamaños, ajuste, modelo, campos, miniaturas de
+    plantilla y cuántos pedidos y entregas tiene; «Pedir» y «Ver pedidos» (filtra la pestaña Pedidos).
+  - **Marca** (`components/brand-tab.js`, solo lectura): paleta, `textColor`, `paletteMin`, `bannedWords`, fuentes,
+    logos y el resultado de `GET …/check` (estado, qué arreglar y «Comprobar de nuevo»).
+  - **Retoque:** selector de modelo (`model` en `POST …/attempts`) y el mismo aviso de palabras prohibidas.
+  - **Cola:** las entradas en espera, en el orden del worker (`position`), con subir, bajar y «arriba del todo»
+    (`POST /api/queue/{id}/move`); «Vaciar cola» (y «Vaciar la de este proyecto») con confirmación
+    (`confirm.js`, `POST /api/queue/clear`); lo que está en marcha no se toca.
+  - Fuera del contrato: «Copiar de…» no copia el resto de `params`; Piezas no lee `piezas.json`; el único cambio de
+    servidor es `model` en `POST …/orders` y en `gimg order submit --model`.
 - Pendiente de comprobar **en la Deck** (no se puede probar con tests): mapa de Steam Input, panel táctil sobre
   `details`/`dialog`, rendimiento de la galería con 30+ imágenes de 1280 px (`loading=lazy` ya puesto).
 

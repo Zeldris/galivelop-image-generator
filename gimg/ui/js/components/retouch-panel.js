@@ -1,11 +1,11 @@
 /* Panel de retoque del pedido: prompt (D19) + estilo del perfil en solo lectura, parámetros (pasos, cfg, sampler,
    semilla con dado, borrador) y las acciones que encolan: «Otra semilla» (semilla + 1, vecindario) y «N seguidas».
    Envía POST …/o/attempts con solo lo que difiere del pedido. «Recrear» y «Variar» de las tarjetas entran por `load()`.
-   El modelo se muestra, no se cambia: la API mínima no publica el catálogo (F4d). */
+   El modelo se elige entre los de GET /api/models (F4d): los que la máquina no permite salen deshabilitados, con su motivo. */
 
 import { h, mmss, replace } from '../dom.js';
 import { t } from '../i18n.js';
-import { stripStyle } from './attempt-util.js';
+import { bannedWord, stripStyle } from './attempt-util.js';
 
 const MAX_PROMPT = 2000; // tope orientativo; la API responde order.prompt_too_long con el real
 
@@ -14,6 +14,13 @@ export function retouchPanel(ctx, { onSubmit }) {
   const cfg = ctx.profileCfg;
   const params = { ...(order.params || {}) };
   const model = params.model || cfg.model || '—';
+  const models = Array.isArray(ctx.models) ? ctx.models : [];
+  const blocked = (m) => (m.allowed === false ? t('ui.newOrder.modelBlocked', { id: m.id, reason: (m.reason && m.reason.message) || '' }) : m.id);
+  const modelSel = models.length
+    ? h('select', { id: 'retouch-model' },
+      h('option', { value: '' }, t('ui.retouch.modelCurrent', { id: model })),
+      models.map((m) => h('option', { value: m.id, disabled: m.allowed === false }, blocked(m))))
+    : null;
   const banned = (ctx.brand && ctx.brand.bannedWords) || [];
 
   const prompt = h('textarea', { id: 'retouch-prompt', value: order.prompt || '', spellcheck: 'false', aria: { describedby: 'retouch-prompt-hint' } });
@@ -39,7 +46,7 @@ export function retouchPanel(ctx, { onSubmit }) {
 
   const checkPrompt = () => {
     const text = prompt.value;
-    const hit = banned.find((w) => new RegExp(`\\b${w}\\b`, 'i').test(text));
+    const hit = bannedWord(text, banned);
     replace(promptHint, hit ? h('span.field-error', {}, t('ui.retouch.bannedWord', { w: hit })) : t('ui.retouch.chars', { n: text.length, max: MAX_PROMPT }));
     dirty.hidden = text === (order.prompt || '');
   };
@@ -56,6 +63,7 @@ export function retouchPanel(ctx, { onSubmit }) {
     if (sampler.value && sampler.value !== params.sampler) s.sampler = sampler.value;
     s.draft = draft.checked;
     if (template && template.value) s.template = template.value;
+    if (modelSel && modelSel.value) s.model = modelSel.value;
     return s;
   };
 
@@ -78,7 +86,9 @@ export function retouchPanel(ctx, { onSubmit }) {
     cfg.style ? h('div.field', {}, h('span.label', {}, t('ui.retouch.style')), h('div.readonly', {}, cfg.style)) : null,
     h('div.row', {}, h('button.btn', { type: 'button', onclick: () => { prompt.value = order.prompt || ''; checkPrompt(); } }, t('ui.retouch.restore'))),
     h('h3', {}, t('ui.retouch.params')),
-    h('div.field', {}, h('span.label', {}, t('ui.retouch.model')), h('div.readonly.mono', {}, model)),
+    modelSel
+      ? h('div.field', {}, h('label', { for: 'retouch-model' }, t('ui.retouch.model')), modelSel)
+      : h('div.field', {}, h('span.label', {}, t('ui.retouch.model')), h('div.readonly.mono', {}, model)),
     h('div.cols-3', {},
       h('div.field', {}, h('label', { for: 'retouch-steps' }, t('ui.retouch.steps')), Object.assign(steps, { id: 'retouch-steps' })),
       h('div.field', {}, h('label', { for: 'retouch-cfg' }, t('ui.retouch.cfg')), Object.assign(cfgScale, { id: 'retouch-cfg' })),
@@ -102,6 +112,10 @@ export function retouchPanel(ctx, { onSubmit }) {
       if (p.sampler !== undefined) sampler.value = p.sampler;
       seed.value = attempt.seed;
       draft.checked = Boolean(attempt.draft);
+      if (modelSel) {
+        const opt = [...modelSel.options].find((o) => o.value === p.model && !o.disabled);
+        modelSel.value = opt && p.model !== model ? p.model : '';
+      }
       const tid = (attempt.compose && attempt.compose.templateId) || (attempt.composeError && attempt.composeError.templateId);
       if (template && templates.some((x) => x.id === tid)) template.value = tid;
       checkPrompt();

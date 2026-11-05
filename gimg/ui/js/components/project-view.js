@@ -1,13 +1,15 @@
-/* Pantalla de un proyecto: pestañas Pedidos (lista con filtros por perfil y estado) y Piezas / Marca («próximamente»,
-   F4d: la pieza como índice de pedidos, D21/D37). Usa GET /api/projects/{p} (config: perfiles, marca) y
-   GET /api/projects/{p}/orders?profile=&chosen=. */
+/* Pantalla de un proyecto: pestañas Pedidos (lista con filtros por perfil y estado y el botón «Nuevo pedido»), Piezas
+   (los perfiles: pieces-tab.js) y Marca (solo lectura y comprobación: brand-tab.js). Usa GET /api/projects/{p} (config:
+   perfiles, marca) y GET /api/projects/{p}/orders?profile=&chosen=. */
 
 import { h, when } from '../dom.js';
 import { t } from '../i18n.js';
 import { api, paths, describeError } from '../api.js';
 import { to } from '../router.js';
 import * as store from '../store.js';
-import { newOrderSlot } from './slots.js';
+import { newOrderButton } from './slots.js';
+import { piecesTab } from './pieces-tab.js';
+import { brandTab } from './brand-tab.js';
 
 const TABS = ['pedidos', 'piezas', 'marca'];
 
@@ -28,8 +30,8 @@ export async function projectView(host, route) {
     h('section', { id: 'tab-panel', aria: { label: t(`ui.project.tab.${tab}`) } }));
   const panel = host.querySelector('#tab-panel');
   if (tab === 'pedidos') await ordersTab(panel, project, profiles, cfg);
-  else if (tab === 'piezas') panel.append(h('div.empty', {}, h('p', {}, t('ui.project.piecesSoon')), h('p.hint', {}, t('ui.project.piecesHint'))), newOrderSlot());
-  else panel.append(brandTab(cfg));
+  else if (tab === 'piezas') await piecesTab(panel, project, cfg);
+  else await brandTab(panel, project, cfg);
 }
 
 async function ordersTab(panel, project, profiles, cfg) {
@@ -62,8 +64,8 @@ async function ordersTab(panel, project, profiles, cfg) {
     h('div.filters', {},
       h('div.field', {}, h('label', { for: 'f-profile' }, t('ui.project.filter.profile')), profileSel),
       h('div.field', {}, h('label', { for: 'f-state' }, t('ui.project.filter.state')), stateSel),
-      count),
-    list, newOrderSlot());
+      count, h('span.grow'), newOrderButton(project)),
+    list);
   await load();
 }
 
@@ -84,13 +86,4 @@ function row(project, o, cfg) {
       pending ? h('span.chip.chip-accent', {}, t('ui.project.pending', { n: pending })) : null,
       o.updatedAt ? h('span', {}, when(o.updatedAt)) : null)),
     chosen ? h('span.chip.chip-ok', {}, `★ ${t('ui.state.chosen')} q${o.chosen}`) : h('span.chip', {}, t('ui.project.filter.pending')));
-}
-
-function brandTab(cfg) {
-  const brand = cfg.brand || {};
-  const palette = brand.palette || [];
-  return h('div.stack', {},
-    h('div.empty', {}, h('p', {}, t('ui.project.brandSoon')), h('p.hint', {}, t('ui.project.brandHint'))),
-    palette.length ? h('div.card', {}, h('h2', {}, t('ui.project.palette')), h('div.swatches', {}, palette.map((c) =>
-      h('span.swatch', { title: c, vars: { sw: c }, role: 'img', aria: { label: c } })))) : null);
 }

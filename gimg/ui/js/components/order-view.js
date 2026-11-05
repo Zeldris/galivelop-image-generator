@@ -26,9 +26,10 @@ export async function orderView(host, route) {
   let info;
   let order;
   let templates = [];
+  let models = [];
   try {
-    // las plantillas se piden una vez por vista; si falla esa petición, el pedido sigue sin selector
-    [info, order, templates] = await Promise.all([api.project(project), api.order(project, profile, key), api.templates(project, profile).catch(() => [])]);
+    // las plantillas y el catálogo de modelos se piden una vez por vista; si fallan, el pedido sigue sin selector
+    [info, order, templates, models] = await Promise.all([api.project(project), api.order(project, profile, key), api.templates(project, profile).catch(() => []), api.models().catch(() => [])]);
   } catch (e) {
     host.replaceChildren(h('h1', {}, key), h('p.notice.notice-bad', { role: 'alert' }, describeError(e, t)),
       h('p', {}, h('a.btn', { href: to.project(project) }, '← ', t('ui.order.backToProject'))));
@@ -40,7 +41,7 @@ export async function orderView(host, route) {
   const brand = cfg.brand || {};
   const compose = profileCfg.compose || {};
   const ctx = {
-    project, profile, key, order, profileCfg, brand, templates: Array.isArray(templates) ? templates : [],
+    project, profile, key, order, profileCfg, brand, templates: Array.isArray(templates) ? templates : [], models: Array.isArray(models) ? models : [],
     measure: { zone: compose.zone, textColor: compose.textColor || brand.textColor, paletteMin: brand.paletteMin },
     showRaw: store.get('showRaw'), compare: [], queuedIds: [], estimateMs: estimateFor(profile),
     actions: {},

@@ -18,6 +18,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   pointer or keyboard, live contrast chip per text element, apply, back to the template and save as a new template
   (local or project), export of local templates. `GET …/templates` lists the `elements` of each template. It replaces
   the HTML text preview.
+- New order panel and F4d views in the interface (F4d): profile, prompt, count, draft, template and model (blocked
+  models disabled with their reason), "copy from…", banned-word warning; a Pieces tab (the project's profiles), a
+  read-only Brand tab with the `/check` result, a model selector in the retouch panel, and move up/down/top plus a
+  confirmed "clear queue" in the queue drawer. `POST …/orders` and `gimg order submit` accept `model`.
 
 ## [0.3.0] - 2026-11-05
 

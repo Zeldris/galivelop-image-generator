@@ -86,6 +86,7 @@ export const paths = {
       .map(([k, v]) => `${enc(k)}=${enc(v)}`).join('&');
     return `/api/projects/${enc(p)}/orders${qs ? '?' + qs : ''}`;
   },
+  newOrder: (p) => `/api/projects/${enc(p)}/orders`,
   order: (p, profile, key) => `/api/projects/${enc(p)}/orders/${enc(profile)}/${enc(key)}`,
   text: (p, profile, key) => `${paths.order(p, profile, key)}/text`,
   attempts: (p, profile, key) => `${paths.order(p, profile, key)}/attempts`,
@@ -110,6 +111,10 @@ export const paths = {
   templates: (p, profile) => `/api/projects/${enc(p)}/profiles/${enc(profile)}/templates`,
   queue: (state) => `/api/queue${state ? '?state=' + enc(state) : ''}`,
   cancel: (id) => `/api/queue/${enc(id)}/cancel`,
+  move: (id) => `/api/queue/${enc(id)}/move`,
+  clear: () => '/api/queue/clear',
+  models: () => '/api/models',
+  check: (p) => `/api/projects/${enc(p)}/check`,
   preview: (id) => `/api/queue/${enc(id)}/preview?t=${Date.now()}`,
 };
 
@@ -133,6 +138,11 @@ export const api = {
   undo: (p, profile, key) => post(paths.undo(p, profile, key), {}),
   queue: (state) => get(paths.queue(state)),
   cancel: (id) => post(paths.cancel(id), {}),
+  move: (id, to) => post(paths.move(id), { to }),
+  clearQueue: (project) => post(paths.clear(), project ? { project } : {}),
+  models: () => get(paths.models()),
+  check: (p) => get(paths.check(p)),
+  newOrder: (p, body) => post(paths.newOrder(p), body),
 };
 
 /** Texto legible de cualquier fallo, para los avisos (el mensaje de la API ya viene en el idioma pedido). */

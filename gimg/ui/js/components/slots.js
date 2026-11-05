@@ -2,12 +2,13 @@
    - F4b: selector de plantilla por intento (GET …/profiles/{profile}/templates; POST …/compose {"template"}).
    - F4c: botón del editor de elementos (layout-editor.js; POST …/compose {"layout"}; guardar como plantilla nueva con
      destino local/proyecto, D40) y «Exportar» de las plantillas locales.
-   - F4d: hueco del panel «Nuevo pedido». */
+   - F4d: el botón que abre el panel «Nuevo pedido» (new-order.js). */
 
 import { h } from '../dom.js';
 import { t } from '../i18n.js';
 import { paths } from '../api.js';
 import { openLayoutEditor } from './layout-editor.js';
+import { openNewOrder } from './new-order.js';
 
 /** La plantilla de un intento: la de su composición (`compose.templateId`), si falló la de `composeError.templateId`,
     si no la de por defecto. Devuelve `{id, tpl}`: `tpl` es null si el id guardado ya no existe o no hay plantillas. */
@@ -70,7 +71,11 @@ export function exportLink(tpl, ctx) {
   return h('a.btn.btn-ghost', { href: paths.asset(ctx.project, ctx.profile, 'template', tpl.id), download: `${tpl.id}.svg`, title: t('ui.editor.exportHint', { id: tpl.id }) }, '⭳ ', t('ui.editor.export'));
 }
 
-/** F4d: panel «Nuevo pedido» desde Piezas o Pedidos (POST /api/projects/{p}/orders ya existe en F3). */
-export function newOrderSlot() {
-  return h('div.slot', { data: { slot: 'new-order' } }, h('span.chip', {}, 'F4d'), t('ui.project.newOrderSoon'));
+/** F4d: el botón «Nuevo pedido» (Pedidos) o «Pedir» (Piezas, con el perfil de la pieza): abre el panel de new-order.js. */
+export function newOrderButton(project, { profile = '', label = null, aria = null, primary = true } = {}) {
+  const button = h(primary ? 'button.btn.btn-primary' : 'button.btn', {
+    type: 'button', aria: { label: aria }, data: { slot: 'new-order', profile },
+    onclick: () => openNewOrder(project, { profile, opener: button }),
+  }, '＋ ', label || t('ui.newOrder.button'));
+  return button;
 }

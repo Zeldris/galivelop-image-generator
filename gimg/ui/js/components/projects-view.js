@@ -5,7 +5,6 @@ import { h } from '../dom.js';
 import { t } from '../i18n.js';
 import { api, describeError } from '../api.js';
 import { to } from '../router.js';
-import { newOrderSlot } from './slots.js';
 
 export async function projectsView(host) {
   host.append(h('div.page-head', {}, h('h1', {}, t('ui.projects.title'))), h('p.empty', {}, h('span.spin', { aria: { hidden: true } }), ' ', t('ui.loading')));
@@ -20,8 +19,7 @@ export async function projectsView(host) {
   host.replaceChildren(
     h('div.page-head', {}, h('h1', {}, t('ui.projects.title')), h('span.hint', {}, t('ui.projects.count', { n: list.length }))),
     list.length ? h('div.project-grid', {}, list.map(card)) : h('div.empty', {}, h('p', {}, t('ui.projects.empty')), h('code.mono', {}, 'gimg project add <ruta>')),
-    h('p.hint', {}, t('ui.projects.hint')),
-    newOrderSlot());
+    h('p.hint', {}, t('ui.projects.hint')));
 }
 
 function card(p) {

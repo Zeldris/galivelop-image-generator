@@ -17,3 +17,10 @@ export function stripStyle(prompt, style) {
   const suffix = `, ${style}`;
   return text.endsWith(suffix) ? text.slice(0, -suffix.length) : text;
 }
+
+/** La primera palabra vetada (`brand.bannedWords`) que aparece en `text` como palabra entera, sin distinguir
+    mayúsculas; null si no hay ninguna. Es un aviso, nunca un bloqueo. */
+export function bannedWord(text, words) {
+  const escape = (w) => String(w).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return (words || []).find((w) => w && new RegExp(`\\b${escape(w)}\\b`, 'i').test(text || '')) || null;
+}

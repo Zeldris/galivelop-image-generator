@@ -98,8 +98,33 @@ export async function transport(method, url, body) {
       e.state = 'cancelled'; e.finishedAt = now(); e.progress = undefined;
       return ok(e);
     }
+    if (r1 === 'clear' && method === 'POST') {
+      const gone = queue.filter((e) => e.state === 'queued' && (!(body && body.project) || e.project === body.project));
+      for (const e of gone) { e.state = 'cancelled'; e.finishedAt = now(); }
+      return ok(gone.map((e) => ({ ...e })));
+    }
+    if (r1 && r2 === 'move') {
+      const e = queue.find((x) => x.id === Number(r1));
+      if (!e) return err(404, 'queue.not_found', `No hay entrada ${r1}`, { id: r1 });
+      if (e.state !== 'queued') return err(409, 'queue.not_movable', `La entrada ${r1} no espera`, { id: r1 });
+      if (!['up', 'down', 'top'].includes(body && body.to)) return err(400, 'queue.bad_move', 'Movimiento no válido', { to: body && body.to });
+      const pos = (x) => (Number.isFinite(x.position) ? x.position : x.id);
+      const line = queue.filter((x) => x.state === 'queued').sort((a, b) => pos(a) - pos(b) || a.id - b.id);
+      const slots = line.map(pos);
+      const from = line.indexOf(e);
+      const dest = body.to === 'top' ? 0 : body.to === 'up' ? Math.max(0, from - 1) : Math.min(line.length - 1, from + 1);
+      line.splice(from, 1); line.splice(dest, 0, e);
+      line.forEach((x, i) => { x.position = slots[i]; });
+      return ok({ ...e });
+    }
     const st = u.searchParams.get('state');
     return ok(queue.filter((e) => !st || e.state === st).map((e) => ({ ...e })));
+  }
+  if (r0 === 'models' && method === 'GET') {
+    return ok([
+      { id: 'flux2-klein-4b-q8', license: 'Apache-2.0', defaults: { steps: 6, cfg: 1, sampler: 'euler' }, installDefault: true, allowed: true },
+      { id: 'flux3-klein-q8', license: 'FLUX-dev-NC', defaults: { steps: 28, cfg: 3.5, sampler: 'euler' }, installDefault: false, allowed: false, reason: { code: 'limit.steps', message: 'Los pasos por defecto (28) superan el máximo de la máquina (20)' } },
+    ]);
   }
   if (r0 === 'projects') {
     if (!r1) return ok(Object.values(projects).map((p) => ({ name: p.name, root: p.root, error: p.error || undefined, orders: (ordersOf[p.name] || []).length, chosen: (ordersOf[p.name] || []).filter((o) => o.chosen !== null).length, profiles: p.config ? Object.keys(p.config.profiles) : undefined })));
@@ -107,8 +132,37 @@ export async function transport(method, url, body) {
     if (!p) return err(404, 'project.not_found', `No existe el proyecto «${r1}»`, { name: r1 });
     if (p.error) return err(409, p.error.code, p.error.message);
     if (!r2) return ok({ name: p.name, root: p.root, config: p.config });
+    if (r2 === 'check') {
+      return ok([
+        { id: 'fonts.Sora', status: 'ok', message: 'Fuente Sora instalada' },
+        { id: 'fonts.Inter', status: 'warn', message: 'Fuente Inter no instalada: se usará una de reserva', fix: 'gimg fonts install Inter' },
+        { id: 'template.cuadrado.viewbox', status: 'fail', message: 'El viewBox de plantillas/cuadrado.svg no es 1024×1024', fix: 'Ajusta el viewBox del SVG al tamaño del destino' },
+      ]);
+    }
+    if (r2 === 'profiles' && r4 === 'templates') {
+      const prof = p.config.profiles[r3];
+      if (!prof) return err(404, 'order.profile_unknown', `Perfil desconocido: ${r3}`, { profile: r3 });
+      if (!prof.compose) return ok([]);
+      const base = { template: prof.compose.template, logo: prof.compose.logo || null, fields: prof.compose.fields || [], source: 'config', elements: [] };
+      return ok(r3 === 'og' ? [{ id: 'default', default: true, ...base }, { id: 'claro', default: false, ...base, source: 'local' }] : [{ id: 'default', default: true, ...base }]);
+    }
     if (r2 === 'profiles') return err(404, 'api.not_found', 'El prototipo no sirve recursos por la API');
     if (r2 === 'orders') {
+      if (!r3 && method === 'POST') {
+        const spec = { ...(body || {}) };
+        const prof = p.config.profiles[spec.profile];
+        if (!prof) return err(400, 'order.profile_unknown', `Perfil desconocido: ${spec.profile}`, { profile: spec.profile });
+        if (findOrder(r1, spec.profile, spec.key)) return err(409, 'order.exists', `Ya existe el pedido «${spec.key}»`, { key: spec.key });
+        const n = Math.max(1, Math.min(50, spec.count || 1));
+        const order = { key: spec.key, profile: spec.profile, prompt: spec.prompt, seed: spec.seed, params: spec.params || {}, draft: Boolean(spec.draft), text: spec.text || {}, attempts: [], chosen: null, chosenHistory: [], createdAt: now(), updatedAt: now() };
+        (ordersOf[r1] = ordersOf[r1] || []).push(order);
+        const entries = [];
+        for (let i = 0; i < n; i += 1) {
+          const e = { id: nextEntry++, project: r1, key: order.key, profile: order.profile, seed: (spec.seed ?? Math.floor(Math.random() * 1e6)) + i, params: { steps: prof.steps, cfg: prof.cfg, sampler: prof.sampler, model: spec.model || prof.model, width: spec.draft ? prof.width / 2 : prof.width, height: spec.draft ? prof.height / 2 : prof.height }, draft: Boolean(spec.draft), text: order.text, template: spec.template, state: 'queued', startedAt: null, finishedAt: null, error: null, attemptId: null, estimateMs: (spec.draft ? 8 : prof.steps) * 2000 };
+          queue.push(e); entries.push(e);
+        }
+        return ok({ order, entries, estimateMs: entries[0].estimateMs }, 201);
+      }
       if (!r3) {
         const prof = u.searchParams.get('profile'); const chosen = u.searchParams.get('chosen');
         if (chosen !== null && chosen !== '' && chosen !== 'true' && chosen !== 'false') return err(400, 'api.bad_param', `Parámetro «chosen» no válido: ${chosen}`, { name: 'chosen' });

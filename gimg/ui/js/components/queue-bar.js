@@ -1,15 +1,19 @@
 /* Barra de cola persistente: pastilla en la cabecera («1 generando · 2 en cola», progreso) y cajón desplegable con las
    entradas (filtro pendientes / terminadas / fallidas / todas), cancelar, vista previa del intento en marcha y enlace al
-   intento terminado. Se alimenta de store.queue (queue-poll.js). Reordenar y «vaciar pendientes» esperan a F4d (la API
-   mínima no reordena). */
+   intento terminado. Se alimenta de store.queue (queue-poll.js).
+   F4d: cada entrada `queued` se sube, baja o pasa a primera (POST /api/queue/{id}/move) y «Vaciar cola» cancela todo lo
+   que espera (POST /api/queue/clear, con confirmación; nunca toca lo que corre). El orden de la fila es el de
+   `position` (si la entrada no la trae, su id), que es de donde toma el trabajador. */
 
 import { h, mmss, replace } from '../dom.js';
 import * as i18n from '../i18n.js';
 import { t } from '../i18n.js';
 import { api, paths, describeError } from '../api.js';
 import * as store from '../store.js';
+import * as router from '../router.js';
 import { to } from '../router.js';
 import { toast, toastError } from './toast.js';
+import { confirmAction } from './confirm.js';
 
 const FILTERS = ['pending', 'done', 'failed', 'all'];
 const PENDING = ['queued', 'running'];
@@ -31,6 +35,12 @@ export function toggleQueue(force) {
 }
 
 export function isQueueOpen() { return open; }
+
+/** Las entradas `queued` en el orden de la fila (`position`, si no el id), de donde toma el trabajador. */
+export function queuedOrder(entries) {
+  const pos = (e) => (Number.isFinite(e.position) ? e.position : e.id);
+  return entries.filter((e) => e.state === 'queued').sort((a, b) => pos(a) - pos(b) || a.id - b.id);
+}
 
 /** Tiempo restante estimado (ms) de una entrada, o null. */
 export function remainingMs(e) {
@@ -58,7 +68,7 @@ function render() {
   // Solo se repinta si cambia lo que se ve (cada sondeo vuelve a llamar aquí); con algo en marcha, las cuentas atrás
   // y las barras por tiempo se refrescan en cada sondeo (cubo de 3 s).
   const tick = entries.some((e) => e.state === 'running') ? Math.floor(Date.now() / 3000) : 0;
-  const sig = JSON.stringify([i18n.lang(), open, filter, entries, tick]);
+  const sig = JSON.stringify([i18n.lang(), open, filter, entries, tick, router.parse().project || null]);
   if (sig === lastSig) return;
   lastSig = sig;
   const active = document.activeElement;
@@ -85,18 +95,28 @@ function paint(entries) {
   const drawer = hosts.drawerHost;
   drawer.hidden = !open;
   if (!open) return;
+  const line = queuedOrder(entries);
+  const queuedIds = line.map((e) => e.id);
+  // lo que corre primero, y lo que espera en el orden de la fila; el resto, como llega
   const shown = entries.filter((e) => filter === 'all' || (filter === 'pending' ? PENDING.includes(e.state) : e.state === filter));
-  const queuedIds = entries.filter((e) => e.state === 'queued').map((e) => e.id);
+  if (filter === 'pending') shown.sort((a, b) => (a.state === 'running' ? 0 : 1) - (b.state === 'running' ? 0 : 1) || queuedIds.indexOf(a.id) - queuedIds.indexOf(b.id));
+  const current = router.parse().project;
+  const inProject = current ? line.filter((e) => e.project === current).length : 0;
   replace(drawer,
     h('div.row-between', {}, h('h2', {}, t('ui.queue.label')),
       h('button.btn.btn-icon.btn-ghost', { type: 'button', data: { fid: 'close' }, aria: { label: t('ui.queue.close') }, onclick: () => toggleQueue(false) }, '✕')),
     h('div.row', { role: 'group', aria: { label: t('ui.queue.filterLabel') } }, FILTERS.map((f) =>
       h('button.btn.btn-toggle', { type: 'button', data: { fid: `filter-${f}` }, aria: { pressed: filter === f }, onclick: () => { filter = f; render(); } }, t(`ui.queue.filter.${f}`)))),
-    shown.length ? h('div.stack', {}, shown.map((e) => entry(e, queuedIds.indexOf(e.id)))) : h('p.empty', {}, t(filter === 'pending' ? 'ui.queue.empty' : 'ui.queue.nothing')),
+    shown.length ? h('div.stack', {}, shown.map((e) => entry(e, queuedIds.indexOf(e.id), line.length))) : h('p.empty', {}, t(filter === 'pending' ? 'ui.queue.empty' : 'ui.queue.nothing')),
+    line.length ? h('div.row', { role: 'group', aria: { label: t('ui.queue.clear') } },
+      h('button.btn.btn-danger', { type: 'button', data: { fid: 'clear-all' }, onclick: () => clearQueue(null, line.length) }, t('ui.queue.clear'), ` (${line.length})`),
+      inProject && inProject < line.length
+        ? h('button.btn', { type: 'button', data: { fid: 'clear-project' }, onclick: () => clearQueue(current, inProject) }, t('ui.queue.clearProject', { project: current }), ` (${inProject})`)
+        : null) : null,
     h('p.hint', {}, t('ui.queue.idle')));
 }
 
-function entry(e, queuedPos) {
+function entry(e, queuedPos, queuedCount) {
   const who = `${e.project} · ${e.key} @ ${e.profile}`;
   const what = [];
   if (e.state === 'running') {
@@ -121,6 +141,14 @@ function entry(e, queuedPos) {
   else thumb = h('div.thumb-empty');
 
   const actions = [];
+  if (e.state === 'queued') {
+    const who2 = `${e.key} @ ${e.profile}`;
+    const first = queuedPos <= 0;
+    const last = queuedPos >= queuedCount - 1;
+    const mover = (to2, label, glyph, disabled) => h('button.btn.btn-icon', { type: 'button', disabled, title: label, data: { fid: `${to2}-${e.id}` }, aria: { label: `${label}: ${who2}` }, onclick: () => move(e, to2) }, glyph);
+    actions.push(h('div.row.queue-move', { role: 'group', aria: { label: t('ui.queue.position', { n: queuedPos + 1 }) } },
+      mover('up', t('ui.queue.up'), '▲', first), mover('down', t('ui.queue.down'), '▼', last), mover('top', t('ui.queue.top'), '⤒', first)));
+  }
   if (PENDING.includes(e.state)) {
     actions.push(h('button.btn.btn-danger', { type: 'button', data: { fid: `cancel-${e.id}` }, onclick: () => cancel(e) }, t('ui.queue.cancel')));
   } else if (e.state === 'done' && e.attemptId !== null && e.attemptId !== undefined) {
@@ -143,5 +171,34 @@ async function cancel(e) {
     toast(t('ui.queue.cancelled', { id: e.id }));
     const { refreshNow } = await import('../queue-poll.js');
     refreshNow();
+  } catch (err) { toastError(describeError(err, t)); }
+}
+
+/** Mueve una entrada que espera y, si su botón queda deshabilitado (ya es la primera o la última), deja el foco en el
+    siguiente movimiento posible de la misma entrada. */
+async function move(e, to2) {
+  try {
+    await api.move(e.id, to2);
+    toast(t('ui.queue.moved', { id: e.id }));
+    const { refreshNow } = await import('../queue-poll.js');
+    await refreshNow();
+    const next = [to2, 'down', 'up'].map((d) => document.querySelector(`[data-fid="${d}-${e.id}"]`)).find((b) => b && !b.disabled);
+    if (next && next !== document.activeElement) next.focus();
+  } catch (err) { toastError(describeError(err, t)); }
+}
+
+/** «Vaciar cola»: confirma y cancela todo lo que espera (de un proyecto, si se da). Lo que corre no se toca. */
+async function clearQueue(project, n) {
+  const fid = project ? 'clear-project' : 'clear-all';
+  const ok = await confirmAction({
+    title: t('ui.queue.clearTitle'), message: t('ui.queue.clearMessage', { n }), confirmLabel: t('ui.queue.clearConfirm'),
+    opener: () => document.querySelector(`[data-fid="${fid}"]`) || document.querySelector('[data-fid="pill"]'),
+  });
+  if (!ok) return;
+  try {
+    const cancelled = await api.clearQueue(project);
+    toast(t('ui.queue.cleared', { n: Array.isArray(cancelled) ? cancelled.length : n }));
+    const { refreshNow } = await import('../queue-poll.js');
+    await refreshNow();
   } catch (err) { toastError(describeError(err, t)); }
 }
