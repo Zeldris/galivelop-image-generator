@@ -1,5 +1,6 @@
 """F3.3: the write routes of the local API (and `measure`), on the fake engine and temporary folders."""
 import json
+import os
 import shutil
 import threading
 import unittest
@@ -158,13 +159,20 @@ class ChooseTests(WriteBase):
 
     def test_choose_and_undo_equal_the_cli(self):
         got = self.ok("POST", self.url + "/choose", {"attempt": 1})
-        self.assertEqual(sorted(got), ["new", "old"])
+        self.assertEqual(sorted(got), ["deliveredTo", "new", "old"])
+        self.assertFalse(os.path.isabs(got["deliveredTo"]))
+        self.assertTrue((self.root / got["deliveredTo"]).is_file())
         other, _ = self.make_order(key="fauna/otro")  # a second, fresh order for the CLI side
         cli = self.cli_json("choose", NAME, other, self.profile, "1")
-        self.assertEqual(got, cli)
+        self.assertEqual(got, dict(cli, deliveredTo=got["deliveredTo"]))
         self.ok("POST", self.url + "/choose", {"attempt": 2})
         undone = self.ok("POST", self.url + "/undo", {})
-        self.assertEqual(sorted(undone), ["new", "old"])
+        self.assertEqual(sorted(undone), ["deliveredTo", "new", "old"])
+        self.assertEqual(undone["new"], 1)
+        self.assertEqual(undone["deliveredTo"], got["deliveredTo"])
+        first = self.ok("POST", self.url + "/undo", {})
+        self.assertIsNone(first["new"])
+        self.assertIsNone(first["deliveredTo"])
 
     def test_discarded_and_bad_attempt(self):
         self.ok("POST", self.att(self.key, self.profile, 2, "/mark"), {"state": "discarded"})

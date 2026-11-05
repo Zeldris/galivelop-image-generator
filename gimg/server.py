@@ -411,10 +411,13 @@ def _config_profile(config: dict, profile: str) -> dict:
 def projects_list(req):
     out = []
     for name, entry in projects.list_projects().items():
-        item = {"name": name, "root": entry["root"], "ok": True}
+        item = {"name": name, "root": entry["root"], "ok": True, "profiles": [], "orders": 0, "delivered": 0}
         try:
-            projects.get(name)
-        except GimgError as exc:
+            item["profiles"] = list(projects.get(name)["config"]["profiles"])
+            found = orders.list_orders(name)
+            item["orders"] = len(found)
+            item["delivered"] = sum(1 for o in found if o["chosen"] is not None)
+        except GimgError as exc:  # a broken project must not take the list down
             item["ok"] = False
             item["error"] = safe_error_body(exc, req.lang)["error"]
         out.append(item)
@@ -435,9 +438,22 @@ def orders_list(req):
     return orders.list_orders(name, profile, _bool_query(req, "chosen"))
 
 
+def _delivered_to(project: str, key: str, profile: str, chosen) -> str | None:
+    """Path (relative to the project root, never absolute) of the delivered file, or None if nothing is chosen."""
+    if chosen is None:
+        return None
+    try:
+        return delivery.delivered_file(project, key, profile)
+    except GimgError:
+        return None
+
+
 @route("GET", "/api/projects/{p}/orders/{profile}/{key}")
 def order_show(req):
-    return orders.get(req.params["p"], req.params["key"], req.params["profile"])
+    q = req.params
+    order = orders.get(q["p"], q["key"], q["profile"])
+    order["deliveredTo"] = _delivered_to(q["p"], q["key"], q["profile"], order["chosen"])
+    return order
 
 
 def _etag(st) -> str:
@@ -667,14 +683,18 @@ def attempt_note(req):
 def order_choose(req):
     q = req.params
     attempt = _attempt_id(_fields(req.body, ("attempt",)).get("attempt"))
-    return delivery.choose(q["p"], q["key"], q["profile"], attempt)
+    result = delivery.choose(q["p"], q["key"], q["profile"], attempt)
+    result["deliveredTo"] = _delivered_to(q["p"], q["key"], q["profile"], result["new"])
+    return result
 
 
 @route("POST", _ORD + "/undo")
 def order_undo(req):
     q = req.params
     _fields(req.body, ())
-    return delivery.undo(q["p"], q["key"], q["profile"])
+    result = delivery.undo(q["p"], q["key"], q["profile"])
+    result["deliveredTo"] = _delivered_to(q["p"], q["key"], q["profile"], result["new"])
+    return result
 
 
 @route("POST", _ATT + "/compose")

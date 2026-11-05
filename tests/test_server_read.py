@@ -67,7 +67,13 @@ class ReadBase(ServerBase):
 class ProjectTests(ReadBase):
     def test_list_and_show(self):
         listed = self.ok_json("/api/projects")
-        self.assertEqual(listed, [{"name": NAME, "root": str(self.root), "ok": True}])
+        self.assertEqual(listed, [{"name": NAME, "root": str(self.root), "ok": True, "profiles": ["banner", "thumbnail", "og"],
+                                   "orders": 0, "delivered": 0}])
+        self.make_order()
+        self.cli("choose", NAME, "fauna/lobo", "banner", "1")
+        self.make_order(key="fauna/otro")
+        got = self.ok_json("/api/projects")[0]
+        self.assertEqual((got["orders"], got["delivered"]), (2, 1))
         shown = self.ok_json("/api/projects/" + NAME)
         self.assertEqual(shown["name"], NAME)
         self.assertIn("banner", shown["config"]["profiles"])
@@ -108,7 +114,17 @@ class OrderTests(ReadBase):
         key, profile = self.make_order()
         url = self.order_url(key, profile)
         self.assertIn("%2F", url)
-        self.assertEqual(self.ok_json(url), self.cli_json("order", "show", NAME, key, profile))
+        shown = self.ok_json(url)
+        self.assertIsNone(shown.pop("deliveredTo"))
+        self.assertEqual(shown, self.cli_json("order", "show", NAME, key, profile))
+
+    def test_delivered_to_is_relative(self):
+        key, profile = self.make_order()
+        self.cli("choose", NAME, key, profile, "1")
+        got = self.ok_json(self.order_url(key, profile))["deliveredTo"]
+        self.assertIsInstance(got, str)
+        self.assertFalse(os.path.isabs(got), got)
+        self.assertTrue((self.root / got).is_file(), got)
 
     def test_unknown_order(self):
         resp, payload = self.get(self.order_url("nada", "banner"))
