@@ -1,6 +1,6 @@
 # Retro de `release-install` (2026-11-05)
 
-**Estado:** pendiente de la decisión de la persona.
+**Estado:** aprobada por la persona el 2026-11-05: P1 aplicada (`test_release_runs_install_and_check_like_check_yml`); P2 aprobada y llevada al flujo (sección «For Galivelop-workflow»); P3 sin cambio.
 
 Tarea: `release.yml` falló al etiquetar v0.4.0 porque no instalaba `ffmpeg`/`rsvg-convert` (`ciInstall`). La
 revisión de fase 1 encontró otro desajuste de la misma clase: `release.yml` pasaba el check con Python 3.10 y

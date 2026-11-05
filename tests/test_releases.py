@@ -235,6 +235,33 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertNotEqual(check, -1, "release.yml no corre `check` de .claude/gw.json")
         self.assertLess(install, check, "release.yml instala después de correr el check")
 
+    def test_release_runs_install_and_check_like_check_yml(self):
+        # release.yml copia pasos de check.yml (retro 2026-11-05, P1): si se desvían, el check de la release no es el
+        # del PR (v0.4.0 falló sin `ciInstall`; la fase 1 vio Python 3.10 frente al del runner).
+        check, release = _workflow_steps("check.yml"), _workflow_steps("release.yml")
+        for name in ("Install", "Check"):
+            self.assertIsNotNone(check.get(name), f"check.yml no tiene el paso «{name}»: actualiza este test")
+            self.assertEqual(release.get(name), check.get(name), f"«{name}» de release.yml no es el de check.yml")
+        setup = check.get("actions/setup-python@v5", [])
+        if any(line.startswith("if: hashFiles(") for line in setup):
+            self.assertFalse("actions/setup-python@v5" in release, "release.yml fija Python; check.yml, el del runner")
+
+
+def _workflow_steps(name):
+    """Pasos de un workflow por `name:` (o `uses:`), con sus líneas sin comentarios ni `</dev/null` final."""
+    steps, current = {}, None
+    for raw in (R / ".github" / "workflows" / name).read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if raw.startswith("      - "):
+            line = line[2:]
+            key = line.split(": ", 1)[1].strip() if line.startswith(("name:", "uses:")) else None
+            current = None if key is None else steps.setdefault(key, [])
+            continue
+        if current is None or not line or line.startswith("#") or not raw.startswith("        "):
+            continue
+        current.append(line.removesuffix(" </dev/null"))
+    return steps
+
 
 if __name__ == "__main__":
     unittest.main()
