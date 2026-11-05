@@ -13,7 +13,7 @@
 | **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | F4a-F4d hechas (`arrancar.sh`; F7 Compatibilidad como última fase). Interfaz probada en Chrome headless (`tests/test_ui_browser.py`, 21 recorridos sin generar): arreglados `h()` sin atributos, la lista de pedidos, la separación de las tarjetas y la carrera de filtros. **Siguiente:** fase 1 antes de `main` (`/code-review` contra `origin/main`) → fase 2 → PR; luego licencia MIT y releases. Compactaciones: 4 (gastadas 4) |
+| **Tarea en curso · `f2-motor`** | F4a-F4d hechas. Fase 1 antes de `main` hecha: 5 hallazgos medios arreglados con test (`docs/records/revision-fase1-f2-motor-2026-11-05.md`), leves en Pendiente. **Siguiente:** fase 2 (`gw-opt-tokens` y `retro`, a presentar a la persona) → fase 3 (`reviewed.sh`) → PR; luego licencia MIT y releases. Compactaciones: 4 (gastadas 4) |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.
@@ -34,6 +34,7 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 
 - **Licencia MIT** (pedido de la persona del 2026-11-05, `docs/plan.md` tras la tabla de fases): lo siguiente tras llevar F4 a `main`; falta el titular del copyright.
 - **Releases en GitHub** (pedido de la persona del 2026-11-05, `docs/plan.md` tras la tabla de fases): etiqueta y release con notas del CHANGELOG en cada versión; empezar con 0.4.0 al cerrar F4 y crear las atrasadas 0.1.0-0.3.0.
+- **Leves de la revisión de fase 1 de `f2-motor` (2026-11-05, no se revisan más en este PR)** (`docs/records/revision-fase1-f2-motor-2026-11-05.md`): (6) `_contrast_of` decodifica la imagen una vez por elemento de texto; (7) `save_template` puede dejar un `.json` huérfano que bloquea el nombre; (8) `_sidecar` no comprueba que `zone` quepa en `target_size`; sin verificar: `gimg queue list` quizá ordena por archivo y no por `position`.
 - **Leves de la revisión de F4a** (`docs/records/revision-F4a-2026-11-05.md`, 10-16): no se revisan más en este PR. Además: con algo en marcha, el cajón de la cola se repinta cada 3 s (conserva el foco por `data-fid`, no el desplazamiento).
 
 - `docs/en/api.md` (D16 pide docs en es y en).
