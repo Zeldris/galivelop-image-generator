@@ -2,7 +2,7 @@
 
 * ``<data>/serve.lock``: non-blocking ``flock`` held for the whole life of the process; a second `run` is refused
   with ``serve.already_running``. Alive = the lock is held **and** ``GET /api/health`` answers.
-* ``<data>/serve.json`` (0600, `fsutil.write_json`): ``{"pid", "port", "url", "version", "startedAt"}``. One without
+* ``<data>/serve.json`` (0600, `fsutil.write_json`): ``{"pid", "port", "url", "version", "build", "startedAt"}``. One without
   the lock is a dead process's and is ignored (and overwritten).
 * The server never generates: `maybe_launch_worker` starts ``python -m gimg work`` as a separate process (own
   session, output to ``<data>/worker.log``) when something is ``queued`` and nobody holds ``worker.lock``. It runs
@@ -26,7 +26,7 @@ import time
 import urllib.request
 from datetime import datetime, timezone
 
-from . import __version__, fsutil, i18n, paths, queue
+from . import __version__, build_id, fsutil, i18n, paths, queue
 from .errors import GimgError
 
 DEFAULT_PORT = 8737
@@ -277,7 +277,7 @@ def run(port=None, idle_s=None, lang=None, announce=None) -> dict:
                 previous[sig] = signal.signal(sig, on_signal)
         bound = httpd.server_address[1]
         state = {"pid": os.getpid(), "port": bound, "url": "http://127.0.0.1:%d" % bound,
-                 "version": __version__, "startedAt": _now()}
+                 "version": __version__, "build": server_mod.BUILD, "startedAt": _now()}
         launcher = _Launcher(lang)
         thread = None
         try:
@@ -372,18 +372,25 @@ def autostart_enabled() -> bool:
 
 def ensure_running(lang=None, warn=None) -> dict:
     """The state of a live service, starting one in the background if there is none. A running service of another
-    version is stopped and replaced unless a worker is alive (or may be): then it is kept and `warn(text)` says so.
+    version, or of the same version but older code (`build_id`), is stopped and replaced unless a worker is alive (or
+    may be): then it is kept and `warn(text)` says so.
     Raises ``serve.start_failed`` / ``serve.port_busy`` when none comes up."""
     lang = lang or i18n.default_lang()
     current = status()
     if current is not None:
         answer = health(current["port"]) or {}
         running = answer.get("version") or current.get("version")
-        if running == __version__:
+        built = answer.get("build") or current.get("build")
+        mine = build_id()
+        if running == __version__ and built == mine:
             return current
         if queue.worker_alive() is not False:
             if warn:
-                warn(i18n.t("cli.warn.service_old_version", lang, running=running, installed=__version__))
+                if running == __version__:  # same version, older code (a checkout that changed): say which build
+                    running, installed = "%s+%s" % (running, built or "?"), "%s+%s" % (__version__, mine)
+                else:
+                    installed = __version__
+                warn(i18n.t("cli.warn.service_old_version", lang, running=running, installed=installed))
             return current
         # one CLI at a time replaces it (a second SIGTERM would cut the old one's requests in progress)
         paths.data_dir().mkdir(parents=True, exist_ok=True)
