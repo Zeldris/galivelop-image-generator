@@ -13,7 +13,7 @@
 | **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | F2 en `main` (PR #1). F3 hecha (0.3.0). **F4a hecha salvo la prueba en navegador**: `gimg/ui/` casada con la API real, textos `ui.*` en locales, fuentes OFL, `tests/test_ui.py`, `docs/interfaz/f4a.md`; propuesta de color en `hoja.md` §3 pendiente de la persona. Pendiente de la persona: recorrido completo de F4a en la Deck y en escritorio, con teclado y con mando. **Siguiente:** F4b (plantillas) y, antes de `main`, las tres fases de `AGENTS.md`. Compactaciones: 3 (gastadas 2) |
+| **Tarea en curso · `f2-motor`** | F3 hecha (F3.1-F3.6, cada paso revisado y arreglado; 0.3.0). F4a integrada en `gimg/ui/` (`7c0dee1`) y revisada: 3 graves y 6 medios por arreglar (`docs/records/revision-F4a-2026-11-05.md`, hallazgos 1-9; 10-16 leves). Sin navegador aquí: recorrido en la Deck, de la persona. **Siguiente:** arreglos 1-9 de F4a con un subagente `sonnet` → F4b/F4c (contratos los decide la sesión, «pendiente de la persona») → fase 1-2 antes de `main` (parar antes de `reviewed.sh`). Presupuesto de compactaciones: 3 (gastadas 2) |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.
@@ -31,6 +31,8 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 5. 2026-10-25 — Diseño ronda 2 aprobada: pedido/intentos/elegida, cola, perfil de máquina, es+en, ADR 0001-0002.
 
 ## Pendiente
+
+- **Leves de la revisión de F4a** (`docs/records/revision-F4a-2026-11-05.md`, 10-16): no se revisan más en este PR salvo que el arreglo de 1-9 los toque.
 
 - `docs/en/api.md` (D16 pide docs en es y en).
 - **Leve de la revisión de F3.3:** `queue.submit_order/new_attempts/queued_view` son orquestación (engine + orders + queue), no cola; si molesta, un `gimg/actions.py` fino que importe los tres.
