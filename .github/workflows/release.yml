@@ -1,0 +1,50 @@
+# Creates the GitHub release when a vX.Y.Z tag is pushed: the tagged commit must be on origin/main and match
+# __version__, the project's check must pass, and the notes come from the two CHANGELOG (releases.py notes).
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Tagged commit is on main
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+      - name: Tag matches __version__
+        run: python3 releases.py verify-tag "$GITHUB_REF_NAME" --ref "$GITHUB_SHA"
+      - name: Git hooks path
+        run: git config core.hooksPath .githooks
+      - name: Check
+        run: |
+          cmds="$(python3 .claude/gw/scripts/config.py get check)"
+          while IFS= read -r cmd; do
+            [ -n "$cmd" ] || continue
+            echo "== $cmd"
+            bash -c "$cmd"
+          done <<<"$cmds"
+      - name: Notes
+        run: python3 releases.py notes "${GITHUB_REF_NAME#v}" > "$RUNNER_TEMP/notes.md"
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "galivelop-image-generator $TAG" --notes-file "$RUNNER_TEMP/notes.md"
+          else
+            gh release create "$TAG" --verify-tag --title "galivelop-image-generator $TAG" \
+              --notes-file "$RUNNER_TEMP/notes.md"
+          fi

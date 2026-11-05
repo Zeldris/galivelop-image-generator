@@ -91,6 +91,13 @@ proyecto desde GitHub. Se empieza con **0.4.0 al cerrar F4**, y en el mismo paso
 `5d9585c`, no en la fusión `624f7a9`, que ya trae F4. v0.1.0 y v0.3.0 publicadas el 2026-11-05 por la sesión, con
 permiso de la persona; falta v0.4.0, cuando `plan-piezas` llegue a `main`.)*
 
+**Cómo se publica una versión (como Galivelop-workflow):** SemVer en 0.x: la menor es una fase o una capacidad nueva
+(puede romper en 0.x), el parche son arreglos y la mayor rompe el config del proyecto, el pedido o la API y obliga a
+tocar el repo que integra. Se sube con `releases.py suggest` (qué piden los commits) y `releases.py bump X.Y.Z` en la
+rama, antes de la revisión de `main`. Tras fusionar, etiqueta ligera `vX.Y.Z` en la punta de `origin/main` y
+`git push origin vX.Y.Z`; `release.yml` comprueba (commit en `main`, etiqueta == `__version__`, check en verde) y
+crea la release, y `releases.py check` lo confirma. A lo sumo una release al día; solo la última menor recibe parches.
+
 **Licencia MIT** (pedido de la persona del 2026-11-05; **hecha** el 2026-11-05 en `plan-piezas`, titular «Galivelop and Álvaro García Graña (Zeldris)»): `LICENSE` con el
 texto MIT en la raíz, y en los dos README la línea «Todavía no hay licencia» pasa a decir que el código es MIT y que
 los modelos (`gimg/models.json`) tienen su propia licencia.
