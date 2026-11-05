@@ -1407,6 +1407,31 @@ instalar (D6).
    mismas fuentes locales); la que vale es la de «Aplicar», que compone en el servidor y trae `overflow` y
    `missingFonts`. Todo es/en, con teclado y mando como el resto del editor.
 
+### F4e.5 Renombrar un pedido
+
+Pedido de la persona del 2026-11-05. Lo que no dijo lo decidió la sesión con el criterio de D41 (proteger lo que no
+tiene arreglo); la persona puede cambiarlo.
+
+1. **Qué se renombra:** la clave (`key`) de un pedido, es decir, un par `(key, profile)`. Los demás perfiles con la misma
+   clave no cambian. La clave nueva pasa por `orders._check_id` (esquema y `paths.check_key`), igual que al crearlo.
+2. **Cuándo se rechaza (409):** si el pedido tiene una entrada de la cola `queued` o `running`, o un intento
+   componiéndose (`compose-<id>.lock` tomado): `order.busy`. Si ya hay un pedido con la clave nueva en ese perfil:
+   `order.exists`. Si la clave nueva es la misma: `order.same_key`, 400.
+3. **Qué hace, con el bloqueo del pedido:** mueve la carpeta del pedido a la de la clave nueva (un `rename` en la misma
+   carpeta de datos) y cambia `key` en `order.json`. En `queue.json`, las entradas terminadas (`done`, `failed`,
+   `cancelled`) de ese pedido pasan a la clave nueva, para que «Reintentar» y los enlaces sigan funcionando.
+4. **Entrega:** si el pedido tiene una imagen elegida y el destino (`delivery.template`) cambia con la clave, se entrega
+   en el destino nuevo y se borran el archivo viejo y su entrada del manifiesto, con el bloqueo de entrega. Si el destino
+   nuevo está ocupado por un archivo que no es de gimg (`delivery.target_taken`), se rechaza antes de mover nada
+   (`delivery.target_taken`, 409). Si algo falla a medias, se deshace: la carpeta vuelve a su sitio.
+5. **Lo que no cambia:** las líneas viejas del registro (`log`) conservan la clave vieja, y se añade una `order.rename`
+   con las dos. Un archivo de pedidos del repo del proyecto (el que se pasa a `gimg order submit`) no se toca (D25):
+   volver a enviarlo crea otra vez la clave vieja. Así lo dice `docs/api.md`.
+6. **Superficies:** `POST /api/projects/{p}/orders/{profile}/{key}/rename` con `{"key": "nueva"}` devuelve el pedido con
+   la clave nueva; `gimg order rename <proyecto> <clave> <perfil> <clave-nueva>`; en la interfaz, «Renombrar» junto
+   al título del pedido abre un modal con la clave actual en un campo de texto, y al aceptar se lleva a la persona al
+   pedido renombrado. Errores con su motivo, es/en, `docs/api.md` y CHANGELOG.
+
 ### Pasos de F4e
 
 | Paso | Qué | Comprobación |
@@ -1416,9 +1441,13 @@ instalar (D6).
 | F4e.2a | Motor de F4e.2: `text`, `style` y `add` en el layout (validar, pintar, guardar como plantilla), encoger y avisar (`fitted`, `overflow`), `missingFonts`, `fonts` de la plantilla y `doctor` | Tests de `apply_layout` (contenido escapado, `tspan`, `align`, estilo gana a `<style>`), de la medida (con `rsvg-convert`; sin él, salta como los de F2.8) y de cada `bad_layout` con su motivo |
 | F4e.2b | API y CLI de F4e.2: `GET /api/fonts`, `gimg fonts`, claves nuevas en `docs/api.md`, es/en | Tests como F3.3 (CLI = API); `fc-list` simulado |
 | F4e.2c | Interfaz de F4e.2: panel de texto y tipografía, añadir y quitar, avisos de `overflow` y `missingFonts`; CHANGELOG | `tests/test_ui.py` y `tests/test_ui_browser.py`; recorrido en navegador, de la persona |
+| F4e.5 | Renombrar un pedido (F4e.5): motor, API, CLI e interfaz; `docs/api.md`, es/en, CHANGELOG | Tests como F3.3 (CLI = API): cada 409 con su motivo, cola y entrega con la clave nueva, deshacer si falla la entrega; `tests/test_ui.py`; recorrido en navegador, de la persona |
 
 ## Pendiente
 
+- **Piezas y marca editables** (pedido de la persona del 2026-11-05; hoja de ruta, por diseñar y fasear tras F4e): editar
+  desde la interfaz las piezas (los perfiles del proyecto: tamaño, campos, plantilla por defecto, entrega) y la marca
+  (logo, colores, tipografías), que hoy se cambian a mano en la configuración del proyecto.
 - **Panel del equipo** (pedido de la persona del 2026-11-05; por diseñar y fasear tras F4e): una vista de la interfaz
   (y su equivalente en la CLI, p. ej. `gimg doctor --machine`) que **mide el equipo**: CPU (modelo, núcleos, uso,
   temperatura), GPU (modelo, uso, temperatura, VRAM; en la Deck, la compartida con la RAM), RAM y swap (total y
