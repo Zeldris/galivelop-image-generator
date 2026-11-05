@@ -11,6 +11,8 @@ from . import fsutil, paths
 OP_GENERATION = "image_generation"
 OP_COMPOSITION = "image_composition"  # a recomposition: no engine ran (F2.8)
 OP_ATTEMPT_DELETE = "attempt.delete"  # an attempt deleted for good (F4e.1): not a generation, no provider
+OP_COMPOSE_DELETE = "compose.delete"  # the composition of an attempt deleted (F4e.1): the attempt stays, raw again
+OP_TEMPLATE_DELETE = "template.delete"  # a template deleted (F4e.1): its files, no attempt
 
 
 def log_path(project: str):
@@ -69,6 +71,22 @@ def attempt_delete_record(key: str, profile: str, seed, attempt_id: int, files_r
     """The line for a deleted attempt: no provider, so `estimate` never counts it."""
     return {"ts": _now(), "gen_ai.operation.name": OP_ATTEMPT_DELETE, "app.task": profile, "app.image.key": key,
             "app.image.seed": seed, "app.attempt.id": attempt_id, "app.files_removed": files_removed}
+
+
+def compose_delete_record(key: str, profile: str, seed, attempt_id: int, files_removed: int, template_id,
+                          chosen: bool) -> dict:
+    """The line for a deleted composition: no provider. ``app.image.template`` is the template it had (if any)."""
+    line = {"ts": _now(), "gen_ai.operation.name": OP_COMPOSE_DELETE, "app.task": profile, "app.image.key": key,
+            "app.image.seed": seed, "app.attempt.id": attempt_id, "app.files_removed": files_removed,
+            "app.attempt.chosen": chosen, "app.image.template": template_id}
+    return {k: v for k, v in line.items() if v is not None}
+
+
+def template_delete_record(profile: str, template_id: str, source: str, files_removed: int, used_by: int) -> dict:
+    """The line for a deleted template: no key, no attempt; ``app.template.used_by`` counts the attempts that had it."""
+    return {"ts": _now(), "gen_ai.operation.name": OP_TEMPLATE_DELETE, "app.task": profile,
+            "app.image.template": template_id, "app.template.source": source, "app.files_removed": files_removed,
+            "app.template.used_by": used_by}
 
 
 def append(project: str, record: dict) -> None:

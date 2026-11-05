@@ -94,10 +94,14 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--text", "cli.arg.text_kv", action="append", default=[], metavar="FIELD=TEXT"),
          opt("--template", "cli.arg.template", metavar="ID"),
          opt("--layout", "cli.arg.layout", metavar="JSON"))
+    leaf(top, "compose-rm", "cli.cmd.compose_rm", project, okey, oprofile, attempt,  # `gimg compose rm` (see `main`)
+         opt("--yes", "cli.arg.yes", action="store_true"))
     leaf(top, "templates", "cli.cmd.templates", project, oprofile)
     g = group(top, "template", "cli.cmd.template")
     leaf(g, "save", "cli.cmd.template_save", project, oprofile, okey, attempt, arg("name", "cli.arg.template_name"),
          opt("--dest", "cli.arg.template_dest", choices=("local", "project"), default="local"))
+    leaf(g, "rm", "cli.cmd.template_rm", project, oprofile, arg("id", "cli.arg.template_id"),
+         opt("--yes", "cli.arg.yes", action="store_true"))
 
     leaf(top, "measure", "cli.cmd.measure", arg("image", "cli.arg.image_path"),
          opt("--palette", "cli.arg.palette"), opt("--project", "cli.arg.measure_project", metavar="PROJECT"),
@@ -251,10 +255,12 @@ def _run(args, out: _Out) -> int:
                      new=out.none(result["new"]), old=out.none(result["old"]))
     elif cmd == "compose":
         _compose(args, out)
+    elif cmd == "compose-rm":
+        _compose_rm(args, out)
     elif cmd == "templates":
         _templates(args, out)
     elif cmd == "template":
-        _template_save(args, out)
+        _template_save(args, out) if args.sub == "save" else _template_rm(args, out)
     elif cmd == "measure":
         _measure(args, out)
     elif cmd == "sheet":
@@ -375,6 +381,32 @@ def _compose(args, out: _Out) -> None:
         out.line("cli.out.composed_delivered", id=item["id"], path=item["delivered"])
     else:
         out.line("cli.out.composed", id=item["id"], image=item["image"])
+
+
+def _compose_rm(args, out: _Out) -> None:
+    order = orders.get(args.project, args.key, args.profile)
+    chosen = order["chosen"] == args.attempt
+    _confirm(args, out, "cli.confirm.compose_rm", id=args.attempt, order=args.key, profile=args.profile,
+             chosen=(" " + out.t("cli.confirm.compose_chosen")) if chosen else "")
+    result = orders.delete_compose(args.project, args.key, args.profile, args.attempt)
+    if out.as_json:
+        out.data(result)
+    else:
+        out.line("cli.out.compose_deleted", id=result["attempt"], image=result["image"])
+        if result["chosen"]:
+            out.line("cli.out.compose_deleted_chosen")
+
+
+def _template_rm(args, out: _Out) -> None:
+    usage = compose.template_usage(args.project, args.profile, args.id)  # fails here, before asking, if it cannot go
+    _confirm(args, out, "cli.confirm.template_rm", id=usage["id"], source=usage["source"], used=usage["usedBy"],
+             repo=(" " + out.t("cli.confirm.template_repo")) if usage["inRepo"] else "")
+    result = compose.delete_template(args.project, args.profile, args.id)
+    if out.as_json:
+        out.data(result)
+    else:
+        out.line("cli.out.template_deleted", id=result["id"], source=result["source"], files=result["files"],
+                 used=result["usedBy"])
 
 
 def _template_save(args, out: _Out) -> None:
@@ -564,6 +596,11 @@ def _queue(args, sub, out: _Out) -> None:
 def main(argv=None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     lang = _prescan_lang(argv)
+    for i, word in enumerate(argv[:-1]):  # `gimg compose rm …` is the command `compose-rm` (`compose` itself is a leaf)
+        if word == "compose":
+            if argv[i + 1] == "rm":
+                argv[i:i + 2] = ["compose-rm"]
+            break
     parser = _build(lang)
     try:
         args = parser.parse_args(argv)

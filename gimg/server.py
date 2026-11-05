@@ -44,11 +44,11 @@ BASE_HEADERS = {
 _EXACT = {
     403: ("api.bad_host", "api.bad_origin"),
     404: ("project.unknown", "order.unknown", "order.profile_unknown", "order.attempt_unknown", "queue.unknown",
-          "api.not_found", "compose.template_missing", "compose.logo_missing"),
+          "api.not_found", "compose.template_missing", "compose.logo_missing", "compose.delete_unknown"),
     405: ("api.method_not_allowed",), 411: ("api.length_required",), 413: ("api.body_too_large",),
     415: ("api.content_type",),
     409: ("compose.template_exists", "compose.busy", "measure.busy", "api.heavy_busy", "compose.nothing_to_do", "compose.no_attempts", "serve.already_running", "serve.port_busy", "serve.not_running", "order.discard_chosen",
-          "order.delete_chosen", "order.delete_busy", "order.history_empty", "queue.not_cancellable", "queue.not_movable", "delivery.target_taken"),
+          "order.delete_chosen", "order.delete_busy", "order.compose_none", "order.compose_no_raw", "compose.delete_default", "compose.delete_config", "order.history_empty", "queue.not_cancellable", "queue.not_movable", "delivery.target_taken"),
     400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "compose.template_unknown", "compose.element_unknown", "compose.bad_layout", "compose.bad_element", "compose.templates_dir_missing", "api.bad_json",
           "api.bad_param"),
 }
@@ -559,6 +559,21 @@ def profile_template_save(req):
     return Reply(201, compose.save_template(q["p"], origin["key"], q["profile"], attempt_id, name, dest), json=True)
 
 
+_TPL = "/api/projects/{p}/profiles/{profile}/templates/{id}"
+
+
+@route("GET", _TPL)
+def profile_template_usage(req):
+    q = req.params
+    return compose.template_usage(q["p"], q["profile"], q["id"])
+
+
+@route("DELETE", _TPL)
+def profile_template_delete(req):
+    q = req.params
+    return compose.delete_template(q["p"], q["profile"], q["id"])
+
+
 @route("GET", "/api/projects/{p}/profiles/{profile}/assets/{kind}")
 def profile_asset(req):
     q = req.params
@@ -714,6 +729,12 @@ def attempt_new(req):
 def attempt_delete(req):
     q = req.params
     return orders.delete_attempt(q["p"], q["key"], q["profile"], _int_param("id", q["id"]))
+
+
+@route("DELETE", _ATT + "/compose")
+def attempt_compose_delete(req):
+    q = req.params
+    return orders.delete_compose(q["p"], q["key"], q["profile"], _int_param("id", q["id"]))
 
 
 @route("POST", _ATT + "/mark")

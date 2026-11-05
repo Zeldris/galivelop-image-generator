@@ -87,7 +87,8 @@ class LocaleTests(unittest.TestCase):
         "element_unknown": {"element": "ghost", "allowed": "title, logo"},
         "bad_layout": {"element": "title", "reason": "outside 1200x630"},
         "bad_element": {"id": "gimg-title", "reason": "data-gimg-box"}, "templates_dir_missing": {"profile": "og"},
-        "template_exists": {"template": "claro"}, "bad_name": {"name": "Mal Nombre"},
+        "template_exists": {"template": "claro"}, "delete_default": {"template": "default"},
+        "delete_config": {"template": "viejo"}, "delete_unknown": {"template": "zz", "profile": "og"}, "bad_name": {"name": "Mal Nombre"},
         "bad_dest": {"dest": "nube", "allowed": "local, project"},
     }
 

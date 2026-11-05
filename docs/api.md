@@ -65,8 +65,8 @@ Toda respuesta de error es:
 líneas del esquema cuando el pedido no valida. Idioma: `?lang=es|en`, si no el primero soportado de `Accept-Language`,
 si no el del sistema. Estados: 400 petición mal formada o valor no válido (`api.bad_json`, `api.bad_param`, `*.invalid`,
 `limit.*`, `path.*`, `key.*`); 403 Host u Origin; 404 `project.unknown`, `order.unknown`, `order.profile_unknown`,
-`order.attempt_unknown`, `queue.unknown`, `api.not_found`; 405, 411, 413, 415 de arriba; 409 estado que no lo permite
-(`compose.template_exists`, `order.choose_*`, `order.undo_*`, `order.history_empty`, `order.delete_chosen`, `order.delete_busy`, `queue.not_cancellable`, `queue.not_movable`, `compose.busy`, `measure.busy`,
+`order.attempt_unknown`, `queue.unknown`, `compose.delete_unknown`, `api.not_found`; 405, 411, 413, 415 de arriba; 409 estado que no lo permite
+(`compose.template_exists`, `order.choose_*`, `order.undo_*`, `order.history_empty`, `order.delete_chosen`, `order.delete_busy`, `order.compose_none`, `order.compose_no_raw`, `compose.delete_default`, `compose.delete_config`, `queue.not_cancellable`, `queue.not_movable`, `compose.busy`, `measure.busy`,
 `api.heavy_busy`, `delivery.target_taken`); 500 fallos del lado del servidor (`api.unexpected` lleva `"message":
 "Tipo: texto"`). Los textos de todos los códigos: `GET /api/locales/{lang}`.
 
@@ -196,6 +196,20 @@ componiéndose). Añade una línea `attempt.delete` al log. CLI: `gimg attempt r
 curl -s -X DELETE $B/api/projects/mi-proyecto/orders/banner/fauna%2Flobo/attempts/2
 ```
 
+### DELETE /api/projects/{p}/orders/{profile}/{key}/attempts/{id}/compose
+
+Borra la imagen compuesta del intento junto con su `compose` (el layout incluido): el intento vuelve a su imagen sin
+componer (`raw`), como tras un fallo de composición. Respeta el cerrojo de composición y el de entrega. No toca lo ya
+entregado: si el intento es el elegido, `chosen` es `true` (la interfaz avisa de que la entrega hecha no cambia).
+Sin cuerpo. Respuesta: `{"attempt": id, "files": n, "chosen": bool, "image": "<imagen sin componer>"}`. Errores:
+`order.compose_none` (409, no tiene composición), `order.compose_no_raw` (409, falta su imagen sin componer),
+`order.delete_busy` (409, en cola, generándose o componiéndose), `order.attempt_unknown` (404), `api.bad_param` (400).
+Añade una línea `compose.delete` al log. CLI: `gimg compose rm <proyecto> <clave> <perfil> <id> [--yes]`.
+
+```sh
+curl -s -X DELETE $B/api/projects/mi-proyecto/orders/banner/fauna%2Flobo/attempts/2/compose
+```
+
 ### POST /api/projects/{p}/orders/{profile}/{key}/choose
 
 Elige un intento y entrega su PNG y el manifiesto al proyecto. Cuerpo: `{"attempt": <id>}` (entero). Respuesta:
@@ -294,6 +308,30 @@ sin `templatesDir`), `compose.bad_name`, `compose.bad_dest`, `compose.element_un
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/profiles/og/templates \
   -d '{"from":{"key":"fauna/lobo","attempt":1},"name":"lobo-izquierda","dest":"local"}'
+```
+
+### GET /api/projects/{p}/profiles/{profile}/templates/{id}
+
+Lo que borraría `DELETE` sobre la misma ruta, sin borrar: `{"id", "source": "project|local", "usedBy": n, "inRepo":
+bool}`. `usedBy` cuenta los intentos del proyecto que guardan ese `templateId` (en su `compose` o su `composeError`);
+`inRepo` es `true` si la plantilla es de proyecto (queda en el repositorio sin commit). Mismos errores que `DELETE`.
+La CLI lo usa para avisar antes de preguntar.
+
+```sh
+curl -s $B/api/projects/mi-proyecto/profiles/og/templates/lobo-izquierda
+```
+
+### DELETE /api/projects/{p}/profiles/{profile}/templates/{id}
+
+Borra una plantilla local o de proyecto: su `.svg` y su `.json`. Solo dentro de `compose.templatesDir` o de la carpeta
+local (`paths.inside`). Los intentos que la usan no cambian. Respuesta: `{"id", "source", "files": n, "usedBy": n,
+"inRepo": bool}`. Errores: `compose.delete_default` (409, es la plantilla por defecto del perfil), `compose.delete_config`
+(409, está declarada en `compose.templates`, no es un archivo), `compose.delete_unknown` (404, no hay plantilla local ni de
+proyecto con ese id), `compose.bad_name` (400, id no válido), `path.*` (400), `order.profile_unknown` (404). Añade una
+línea `template.delete` al log. CLI: `gimg template rm <proyecto> <perfil> <id> [--yes]`.
+
+```sh
+curl -s -X DELETE $B/api/projects/mi-proyecto/profiles/og/templates/lobo-izquierda
 ```
 
 ### GET /api/projects/{p}/profiles/{profile}/assets/{kind}

@@ -7,7 +7,7 @@ This module neither enqueues (queue, F1.4) nor delivers (F1.5): `choose` and `un
 new chosen ids so delivery can hook in. Every read-modify-write holds `fsutil.lock` of ``order.json``.
 
 Public API: `submit`, `set_text`, `attempt_specs`, `add_attempt`, `set_composed`, `attempt_for_entry`, `attempt_image`,
-`raw_image`, `delete_attempt`, `compose_names`, `compose_paths`, `compose_lock_path`, `pending_image_path`, `mark`, `note`, `choose`, `undo`, `get`, `list_orders`. All raise `GimgError` with codes ``order.*`` on bad input.
+`raw_image`, `delete_attempt`, `delete_compose`, `compose_names`, `compose_paths`, `compose_lock_path`, `pending_image_path`, `mark`, `note`, `choose`, `undo`, `get`, `list_orders`. All raise `GimgError` with codes ``order.*`` on bad input.
 """
 from __future__ import annotations
 
@@ -603,6 +603,54 @@ def delete_attempt(project: str, key: str, profile: str, attempt_id: int) -> dic
             pass
     log.append(project, log.attempt_delete_record(key, profile, item["seed"], attempt_id, removed))
     return {"deleted": attempt_id, "files": removed}
+
+
+def delete_compose(project: str, key: str, profile: str, attempt_id: int) -> dict:
+    """Delete the composed image of attempt `attempt_id` with its ``compose`` (layout and template included) and give
+    the attempt back its raw image (F4e.1, D41; as `clear_compose_error`: ``image`` is ``raw`` again, ``composeError``
+    stays absent). The composed file goes; the raw one stays. Returns ``{"attempt": id, "files": n, "chosen": bool,
+    "image": raw}``: ``chosen`` says the attempt is the chosen one, whose delivery does not change until it is
+    delivered again (the delivery is never touched). A line ``compose.delete`` goes to the project log.
+
+    ``order.compose_none`` (nothing composed: no ``compose``, or no raw image recorded); ``order.compose_no_raw`` (the raw
+    image is not a file: deleting the composed one would leave the attempt with no image); ``order.delete_busy`` (queued,
+    running or being composed); ``order.attempt_unknown``. The delivery lock is taken as `delete_attempt` does."""
+    from . import delivery  # delivery imports this module
+
+    order = get(project, key, profile)
+    item = copy.deepcopy(_attempt(order, attempt_id))
+    _check_not_busy(item, order)
+    with delivery._lock(project), fsutil.try_lock(compose_lock_path(project, key, profile, attempt_id)) as taken:
+        if not taken:
+            raise GimgError("order.delete_busy", attempt=attempt_id, order=key, profile=profile)
+        folder = _order_dir(project, key, profile)
+
+        def change(current):
+            now = _attempt(current, attempt_id)
+            if "compose" not in now or not isinstance(now.get("raw"), str):
+                raise GimgError("order.compose_none", attempt=attempt_id, order=key, profile=profile)
+            raw, composed = compose_names(now)
+            raw_path, composed_path = paths.inside(folder, raw), paths.inside(folder, composed)
+            if not raw_path.is_file():
+                raise GimgError("order.compose_no_raw", attempt=attempt_id, order=key, profile=profile)
+            done = {"template": now["compose"].get("templateId"), "chosen": current["chosen"] == attempt_id,
+                    "path": None if composed == raw else composed_path, "image": raw}
+            now.pop("compose")
+            now.pop("composeError", None)
+            now["image"] = raw
+            return done
+
+        done = _modify(project, key, profile, change)
+        removed = 0
+        if done["path"] is not None:
+            try:
+                done["path"].unlink()
+                removed = 1
+            except OSError:
+                pass  # already gone: the record is what counts
+    log.append(project, log.compose_delete_record(key, profile, item["seed"], attempt_id, removed, done["template"],
+                                                  done["chosen"]))
+    return {"attempt": attempt_id, "files": removed, "chosen": done["chosen"], "image": done["image"]}
 
 
 def mark(project: str, key: str, profile: str, attempt_id: int, state: str) -> dict:
