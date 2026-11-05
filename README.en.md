@@ -16,7 +16,7 @@ images yet**: the real engine (`sd-cli`) arrives in F2.
 | F0 Skeleton | Schemas for project config, order and machine profile; es/en texts; README; tests |
 | F1 Core | Projects, orders, attempts, chosen candidate, delivery, persistent queue and a basic `gimg` CLI |
 | F2 Real engine | `sd-cli` wrapper driven by the machine profile, and `instalar.sh` |
-| F3 API and startup | HTTP API, on-demand startup and an optional `systemd --user` unit |
+| F3 API and startup | Local HTTP API (`gimg serve`), on-demand startup and `gimg ui` (0.3.0) |
 | F4 UI | Three browser screens, es/en |
 | F5 WMF pilot | Example config, integration guide and measurements |
 
@@ -91,6 +91,13 @@ python3 -m gimg project list | project remove my-project | version
 
 Data goes to `$GIMG_DATA_HOME` (default `~/.local/share/gimg`) and the project registry to `$GIMG_CONFIG_HOME`
 (`~/.config/gimg`). Errors go to stderr with exit code 1 (`GIMG_DEBUG=1` adds the traceback).
+
+## Service
+
+`gimg serve` starts a local HTTP API on `127.0.0.1:8737` (the same layer as the CLI) and the UI in `gimg/ui`; `gimg ui`
+starts it if needed and opens the browser. It listens on localhost only and requires `Content-Type: application/json`
+for writes. `GIMG_PORT` changes the port and `GIMG_AUTOSTART=0` turns off on-demand start. Routes, bodies, errors and
+`curl` examples are in [`docs/api.md`](docs/api.md) (in Spanish).
 
 ## Installation (planned, **does not exist yet**)
 
