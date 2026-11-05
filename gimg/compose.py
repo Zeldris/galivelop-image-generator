@@ -322,12 +322,15 @@ def _elements(svg_text, target=None) -> list:
                 raise GimgError("compose.bad_element", id=ident, reason="data-gimg-color")
             if element["kind"] == "text":
                 element["color"] = color[0]
+        if _is_hidden_in(attrs):
+            element["hidden"] = True
         found.append(dict(element, _tag=(m, attrs)))
     return found
 
 
 def elements(svg_text, target=None) -> list:
-    """The editable elements of a template: ``[{"id", "kind": "text|logo|ornament", "box": {x, y, w, h}, "color"?}]``,
+    """The editable elements of a template: ``[{"id", "kind": "text|logo|ornament", "box": {x, y, w, h}, "color"?,
+    "hidden"?}]`` (``hidden: true`` when the template itself carries ``display="none"``),
     in document order. An element is any tag with ``id="gimg-<name>"`` and ``data-gimg-box="x y w h"`` (``id`` here is
     the ``<name>``, the key of a layout). With `target` (``(width, height)``) only a template whose ``viewBox`` is
     ``0 0 <width> <height>`` has elements (``[]`` otherwise). A repeated id or a bad box or colour raises

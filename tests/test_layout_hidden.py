@@ -89,6 +89,13 @@ class InheritedHiddenTests(unittest.TestCase):
     def test_without_hidden_the_template_stays_hidden(self):
         self.assertEqual(compose.apply_layout(self.SAVED, {}, TARGET), self.SAVED)
 
+    def test_elements_say_which_ones_the_template_hides(self):
+        hidden = compose.apply_layout(SVG, {"title": HID}, TARGET)
+        by_id = {e["id"]: e for e in compose.elements(hidden, TARGET)}
+        self.assertIs(by_id["title"].get("hidden"), True)
+        self.assertNotIn("hidden", by_id["logo"])
+        self.assertTrue(all("hidden" not in e for e in compose.elements(SVG, TARGET)))
+
     def test_style_display_is_written_and_removed_inside_style(self):
         svg = SVG.replace('<rect id="gimg-ornament1"', '<rect id="gimg-ornament1" style="fill:red;display:inline"')
         box = dict(x=0, y=600, w=1200, h=30)

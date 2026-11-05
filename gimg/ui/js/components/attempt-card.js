@@ -72,6 +72,8 @@ export function attemptCard(ctx, attempt) {
     h('button.btn', { type: 'button', title: t('ui.attempt.varyHint'), onclick: () => ctx.actions.vary(attempt) }, '▶ ', t('ui.attempt.vary')),
     h('button.btn', { type: 'button', onclick: () => ctx.actions.copyParams(attempt) }, '⎘ ', t('ui.attempt.copyParams')),
     attempt.log ? h('a.btn', { href: paths.log(ctx.project, ctx.profile, ctx.key, id), target: '_blank', rel: 'noopener' }, t('ui.attempt.log')) : null,
+    attempt.compose ? h('button.btn.btn-danger', { type: 'button', data: { fid: `delete-compose-${id}` }, title: t('ui.attempt.deleteComposeHint'), onclick: () => ctx.actions.deleteCompose(attempt) }, t('ui.attempt.deleteCompose')) : null,
+    h('button.btn.btn-danger', { type: 'button', data: { fid: `delete-${id}` }, disabled: st === 'chosen', title: st === 'chosen' ? t('ui.attempt.deleteChosenHint') : t('ui.attempt.deleteHint'), onclick: () => ctx.actions.deleteAttempt(attempt) }, t('ui.attempt.delete')),
   ), h('div.stack', {}, templateSlot(ctx, attempt), editorSlot(ctx, attempt)));
 
   const extras = [];

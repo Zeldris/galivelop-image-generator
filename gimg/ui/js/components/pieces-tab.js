@@ -5,10 +5,12 @@
 
 import { h } from '../dom.js';
 import { t } from '../i18n.js';
-import { api, paths } from '../api.js';
+import { api, paths, describeError } from '../api.js';
 import { to } from '../router.js';
 import * as store from '../store.js';
 import { newOrderButton } from './slots.js';
+import { confirmAction } from './confirm.js';
+import { toastError, toastOk } from './toast.js';
 
 export async function piecesTab(panel, project, cfg) {
   const names = Object.keys(cfg.profiles || {});
@@ -17,18 +19,35 @@ export async function piecesTab(panel, project, cfg) {
   const grid = h('div.piece-grid', { aria: { busy: 'true' } }, names.map((name) => h('div.card.piece-card', { data: { profile: name } },
     h('h2', {}, name), h('p.empty', {}, h('span.spin', { aria: { hidden: true } }), ' ', t('ui.loading')))));
   panel.append(grid);
-  await Promise.all(names.map(async (name, i) => {
+  const load = async (name, i) => {
     const [templates, orders] = await Promise.all([
       api.templates(project, name).catch(() => []),
       api.orders(project, { profile: name }).catch(() => []),
     ]);
     grid.children[i].replaceWith(card(project, name, (cfg.profiles || {})[name] || {}, Array.isArray(templates) ? templates : [],
-      Array.isArray(orders) ? orders : (orders && orders.orders) || []));
-  }));
+      Array.isArray(orders) ? orders : (orders && orders.orders) || [], () => load(name, i)));
+  };
+  await Promise.all(names.map(load));
   grid.setAttribute('aria-busy', 'false');
 }
 
-function card(project, name, p, templates, orders) {
+/** F4e.1: borrar una plantilla. Antes de confirmar pregunta al servidor (GET) cuántos intentos la usan y si es del repo. */
+async function deleteTemplate(project, profile, x, reload, opener) {
+  let info;
+  try { info = await api.template(project, profile, x.id); } catch (e) { toastError(describeError(e, t)); return; }
+  const used = info.usedBy > 1 ? t('ui.pieces.deleteUsed', { n: info.usedBy }) : info.usedBy === 1 ? t('ui.pieces.deleteUsedOne') : t('ui.pieces.deleteUnused');
+  const ok = await confirmAction({ title: t('ui.pieces.deleteTitle', { id: x.id }),
+    message: [used, info.inRepo ? t('ui.pieces.deleteInRepo') : ''].filter(Boolean).join(' '),
+    confirmLabel: t('ui.pieces.deleteConfirm'), opener });
+  if (!ok) return;
+  try {
+    await api.deleteTemplate(project, profile, x.id);
+    toastOk(t('ui.pieces.deleted', { id: x.id }));
+  } catch (e) { toastError(describeError(e, t)); }
+  await reload();
+}
+
+function card(project, name, p, templates, orders, reload) {
   const compose = p.compose || {};
   const fields = compose.fields || [];
   const delivered = orders.filter((o) => o.chosen !== null && o.chosen !== undefined).length;
@@ -47,7 +66,10 @@ function card(project, name, p, templates, orders) {
     templates.length
       ? h('ul.tpl-list', {}, templates.map((x) => h('li.tpl', {},
         h('img.tpl-thumb', { src: paths.asset(project, name, 'template', x.id), alt: '', loading: 'lazy' }),
-        h('span', {}, x.default ? t('ui.attempt.templateDefault', { id: x.id }) : x.id))))
+        h('span', {}, x.default ? t('ui.attempt.templateDefault', { id: x.id }) : x.id),
+        h('button.btn.btn-danger', { type: 'button', data: { fid: `delete-template-${name}-${x.id}` }, disabled: Boolean(x.default),
+          title: x.default ? t('ui.pieces.deleteDefaultHint') : null, aria: { label: t('ui.pieces.deleteAria', { id: x.id }) },
+          onclick: (ev) => deleteTemplate(project, name, x, reload, ev.currentTarget) }, t('ui.pieces.delete')))))
       : h('p.hint', {}, t('ui.pieces.noTemplates')),
     h('div.row-between', {},
       h('span.hint', {}, t('ui.pieces.orders', { n: orders.length, c: delivered })),

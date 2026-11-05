@@ -87,6 +87,8 @@ dialog.editor[open] { display: flex; }
 .ed-box { position: absolute; box-sizing: border-box; background-repeat: no-repeat; outline: 2px solid var(--accent-text); outline-offset: -2px; cursor: move; touch-action: none; line-height: 1.2; }
 .ed-box.ed-logo { outline-color: var(--ok); }
 .ed-box.ed-ornament { outline-color: var(--warn); }
+.ed-box.is-hidden { opacity: .35; outline-style: dashed; }
+.ed-item.is-hidden .hint { font-style: italic; }
 .ed-box:focus-visible { outline: var(--focus-w) solid var(--focus); outline-offset: -3px; }
 .ed-name { position: absolute; left: 0; top: 0; max-width: 100%; padding: 1px 6px; font: 600 12px / 1.4 var(--font-body); background: var(--surface); color: var(--text); border-bottom-right-radius: var(--r-s); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
 .ed-handle { position: absolute; width: 16px; height: 16px; background: var(--accent-fill); border: 2px solid var(--on-accent); border-radius: 50%; box-sizing: border-box; touch-action: none; }

@@ -63,10 +63,15 @@ export function resizeBox(b, corner, dx, dy, lock, W, H) {
   return { x: east ? anchorX : anchorX - w, y: south ? anchorY : anchorY - hh, w, h: hh };
 }
 
-/** `{nombre: caja}` de lo que difiere de la caja de la plantilla (lo que se manda a la API). */
+/** `{nombre: caja}` de lo que difiere de la plantilla (lo que se manda a la API): la caja movida o `hidden` cuando no
+    es el de la plantilla (`true` oculta; `false` muestra lo que la plantilla trae oculto). `hidden` se lee del layout
+    aplicado y se reenvía, o aplicar deshace un oculto puesto por la CLI (F4e.1). */
 export function changedLayout(items) {
   const out = {};
-  for (const it of items) if (!sameBox(it.cur, it.tplBox)) out[it.name] = { ...it.cur };
+  for (const it of items) {
+    if (it.hidden !== Boolean(it.tplHidden)) out[it.name] = { ...it.cur, hidden: it.hidden };
+    else if (!sameBox(it.cur, it.tplBox)) out[it.name] = { ...it.cur };
+  }
   return out;
 }
 
@@ -98,15 +103,18 @@ export function openLayoutEditor(ctx, attempt, tpl, opener) {
   const items = tpl.elements.map((e) => {
     const box = { ...(applied0[e.id] || e.box) };
     const it = { name: e.id, kind: e.kind, color: e.color || tpl.textColor || (ctx.measure && ctx.measure.textColor) || null,
-      tplBox: { ...e.box }, start: { ...box }, cur: { ...box }, timer: null, zone: null };
+      tplBox: { ...e.box }, start: { ...box }, cur: { ...box }, tplHidden: e.hidden === true, timer: null, zone: null };
+    it.hidden = typeof (applied0[e.id] || {}).hidden === 'boolean' ? applied0[e.id].hidden : it.tplHidden;
+    it.startHidden = it.hidden;
     it.node = h('div.ed-box', { class: `ed-${e.kind}`, tabindex: 0, role: 'group', data: { element: e.id } },
       h('span.ed-name', {}, e.id), CORNERS.map((c) => h('span.ed-handle', { class: `h-${c}`, data: { corner: c }, aria: { hidden: true } })));
     it.node.style.setProperty('background-image', `url("${src}")`);
     it.nums = h('output.ed-nums');
     it.chip = e.kind === 'text' && it.color ? h('span.measure', { aria: { live: 'off' } }) : null;
+    it.toggle = h('button.btn.btn-ghost', { type: 'button', aria: { pressed: it.hidden }, onclick: () => toggleHidden(it) });
     it.row = h('li.ed-item', {},
       h('button.btn.btn-ghost', { type: 'button', onclick: () => it.node.focus() }, h('b', {}, e.id), ' ', h('span.hint', {}, t(`ui.editor.kind.${e.kind}`))),
-      it.nums, it.chip);
+      it.nums, it.chip, it.toggle);
     stage.append(it.node);
     list.append(it.row);
     it.node.addEventListener('pointerdown', (ev) => startDrag(ev, it, null));
@@ -150,9 +158,21 @@ export function openLayoutEditor(ctx, attempt, tpl, opener) {
     it.node.setAttribute('aria-label', label);
     it.nums.textContent = `${it.cur.x}, ${it.cur.y} · ${it.cur.w}×${it.cur.h}`;
     const changed = Object.keys(changedLayout(items)).length > 0;
-    apply.disabled = busy || items.every((x) => sameBox(x.cur, x.start));
+    it.node.classList.toggle('is-hidden', it.hidden);
+    it.row.classList.toggle('is-hidden', it.hidden);
+    it.toggle.textContent = it.hidden ? t('ui.editor.show') : t('ui.editor.hide');
+    it.toggle.setAttribute('aria-pressed', String(it.hidden));
+    it.toggle.setAttribute('aria-label', it.hidden ? t('ui.editor.showAria', { name: it.name }) : t('ui.editor.hideAria', { name: it.name }));
+    apply.disabled = busy || items.every((x) => sameBox(x.cur, x.start) && x.hidden === x.startHidden);
     reset.disabled = busy || (!changed && !Object.keys(appliedNow).length);
     save.disabled = busy;
+  }
+
+  /** F4e.1: «Ocultar» / «Mostrar» un elemento (`hidden: true` en su entrada del layout; no se borra nada). */
+  function toggleHidden(it) {
+    if (busy) return;
+    it.hidden = !it.hidden;
+    refresh(it);
   }
 
   function setBusy(v) { busy = v; for (const it of items) refresh(it); }

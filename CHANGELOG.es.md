@@ -9,6 +9,17 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Sin publicar]
 
+### Añadido
+
+- Borrar desde la interfaz (F4e.1b): «Borrar» con confirmación sí / no en cada intento, en su composición (avisa de que
+  la entrega ya hecha no cambia si el intento es el elegido) y en cada plantilla (dice cuántos intentos la usan y, si es
+  de proyecto, que el cambio queda en el repositorio sin commit); «Ocultar» / «Mostrar» por elemento en el editor.
+
+### Corregido
+
+- El editor de elementos lee `hidden` del layout aplicado y lo reenvía, así que aplicar o guardar como plantilla ya no
+  muestra un elemento oculto desde la línea de comandos.
+
 ## [0.4.0] - 2026-11-05
 
 ### Añadido

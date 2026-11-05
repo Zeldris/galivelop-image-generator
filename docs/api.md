@@ -289,7 +289,8 @@ Las plantillas de composición del perfil: `[{"id", "template", "logo", "fields"
 `source` dice de dónde sale: `config` (`compose.templates`), `project` (`<compose.templatesDir>/<perfil>/`) o `local`
 (`<datos>/projects/<p>/templates/<perfil>/`); un id repetido entre fuentes vale el de la primera. Un perfil sin
 `compose` da `[]`. Cada entrada trae además `"elements"`: lo que lee `compose.elements` en su SVG
-(`[{"id", "kind": "text|logo|ornament", "box": {x, y, w, h}, "color"?}]`), `[]` si el `viewBox` no es el del destino, si no
+(`[{"id", "kind": "text|logo|ornament", "box": {x, y, w, h}, "color"?, "hidden"?}]`; `hidden: true` si la propia
+plantilla lo trae oculto, `display="none"`, y entonces el layout lo muestra con `"hidden": false`), `[]` si el `viewBox` no es el del destino, si no
 hay elementos o si el SVG no se puede leer (el resto de la lista sale igual). Es la misma lista que `gimg templates --json`.
 Si el perfil admite guardar en el proyecto lo dice `compose.templatesDir` de la configuración (`GET /api/projects/{p}`).
 Error: `order.profile_unknown`.

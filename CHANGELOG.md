@@ -9,6 +9,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Delete from the interface (F4e.1b): "Delete" with a yes/no confirmation on each attempt, on its composition (it
+  warns that the delivery already made does not change if the attempt is the chosen one) and on each template (it
+  says how many attempts use it and, for a project template, that the change stays in the repository without a
+  commit); "Hide" / "Show" per element in the element editor.
+
+### Fixed
+
+- The element editor now reads `hidden` from the applied layout and sends it again, so applying or saving as a template
+  no longer shows an element hidden from the command line.
+
 ## [0.4.0] - 2026-11-05
 
 ### Added

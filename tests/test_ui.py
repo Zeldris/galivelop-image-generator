@@ -487,6 +487,41 @@ class F4dUi(unittest.TestCase):
         self.assertIn("post(paths.move(id), { to })", api)
         self.assertIn("post(paths.clear(), project ? { project } : {})", api)
 
+    def test_every_delete_asks_first_and_uses_the_delete_routes(self):
+        order, pieces, card, api = self.comp("order-view.js"), self.comp("pieces-tab.js"), self.comp("attempt-card.js"), read(UI / "js" / "api.js")
+        self.assertIn("request('DELETE', path)", api)
+        for needle in ("del(paths.attempt(p, profile, key, id))", "del(paths.compose(p, profile, key, id))", "del(paths.template(p, profile, id))", "get(paths.template(p, profile, id))"):
+            self.assertIn(needle, api)
+        for call in ("api.deleteAttempt(", "api.deleteCompose("):
+            self.assertIn("if (!ok) return;\n      try {\n        await " + call, order)
+        self.assertEqual(order.count("confirmAction("), 2)
+        self.assertIn("if (!ok) return;\n  try {\n    await api.deleteTemplate(", pieces)
+        self.assertIn("confirmAction(", pieces)
+        # el modal de la composición avisa de la entrega si es la elegida
+        self.assertIn("ctx.order.chosen === a.id", order)
+        self.assertIn("deleteComposeChosenMessage", order)
+        # el intento elegido no se borra desde la tarjeta; la composición solo se ofrece si hay
+        self.assertIn("disabled: st === 'chosen'", card)
+        self.assertIn("deleteChosenHint", card)
+        self.assertIn("attempt.compose ? h('button.btn.btn-danger'", card)
+
+    def test_template_delete_asks_used_by_and_in_repo_and_protects_the_default(self):
+        pieces = self.comp("pieces-tab.js")
+        ask, confirm = pieces.index("api.template(project, profile, x.id)"), pieces.index("confirmAction(")
+        self.assertLess(ask, confirm)
+        self.assertLess(confirm, pieces.index("api.deleteTemplate("))
+        for needle in ("info.usedBy", "info.inRepo", "disabled: Boolean(x.default)"):
+            self.assertIn(needle, pieces)
+
+    def test_editor_reads_and_resends_hidden_and_can_toggle_it(self):
+        editor = self.comp("layout-editor.js")
+        self.assertIn("typeof (applied0[e.id] || {}).hidden === 'boolean' ? applied0[e.id].hidden : it.tplHidden", editor)
+        self.assertIn("tplHidden: e.hidden === true", editor)  # the template itself may hide it: «Mostrar» sends false
+        self.assertIn("if (it.hidden !== Boolean(it.tplHidden)) out[it.name] = { ...it.cur, hidden: it.hidden }", editor)
+        self.assertIn("x.hidden === x.startHidden", editor)
+        self.assertIn("toggleHidden(it)", editor)
+        self.assertIn("is-hidden", read(UI / "css" / "components.css"))
+
     def test_the_project_tabs_use_the_new_views(self):
         view = self.comp("project-view.js")
         for needle in ("piecesTab(panel, project, cfg)", "brandTab(panel, project, cfg)", "newOrderButton(project)"):

@@ -142,9 +142,18 @@ export async function transport(method, url, body) {
     if (r2 === 'profiles' && r4 === 'templates') {
       const prof = p.config.profiles[r3];
       if (!prof) return err(404, 'order.profile_unknown', `Perfil desconocido: ${r3}`, { profile: r3 });
+      if (r5) {
+        if (method === 'GET' || method === 'DELETE') {
+          if (r5 === 'default') return err(409, 'compose.delete_default', 'La plantilla por defecto no se borra: cambia antes la del perfil', { id: r5 });
+          if (r5 !== 'claro' || deletedTemplates.has(r5)) return err(404, 'compose.delete_unknown', `No hay plantilla «${r5}»`, { id: r5 });
+          const usedBy = Object.values(ordersOf).flat().flatMap((o) => o.attempts).filter((x) => x.compose && x.compose.templateId === r5).length;
+          if (method === 'DELETE') deletedTemplates.add(r5);
+          return ok({ id: r5, source: 'local', ...(method === 'DELETE' ? { files: 2 } : {}), usedBy, inRepo: false });
+        }
+      }
       if (!prof.compose) return ok([]);
       const base = { template: prof.compose.template, logo: prof.compose.logo || null, fields: prof.compose.fields || [], source: 'config', elements: [] };
-      return ok(r3 === 'og' ? [{ id: 'default', default: true, ...base }, { id: 'claro', default: false, ...base, source: 'local' }] : [{ id: 'default', default: true, ...base }]);
+      return ok(r3 === 'og' ? [{ id: 'default', default: true, ...base }, ...(deletedTemplates.has('claro') ? [] : [{ id: 'claro', default: false, ...base, source: 'local' }])] : [{ id: 'default', default: true, ...base }]);
     }
     if (r2 === 'profiles') return err(404, 'api.not_found', 'El prototipo no sirve recursos por la API');
     if (r2 === 'orders') {
@@ -208,6 +217,17 @@ export async function transport(method, url, body) {
       if (r5 === 'attempts' && r6) {
         const a = order.attempts.find((x) => x.id === Number(r6));
         if (!a) return err(404, 'attempt.not_found', `No hay intento q${r6}`, { id: r6 });
+        if (method === 'DELETE' && !r7) {
+          if (order.chosen === a.id) return err(409, 'order.delete_chosen', `q${a.id} es la elegida: elige otra o deshaz antes`, { id: a.id });
+          if (queue.some((e) => ['queued', 'running'].includes(e.state) && e.attemptId === a.id)) return err(409, 'order.delete_busy', `q${a.id} está en uso`, { id: a.id });
+          order.attempts.splice(order.attempts.indexOf(a), 1); order.chosenHistory = order.chosenHistory.filter((x) => x !== a.id);
+          return ok({ deleted: a.id, files: 4 });
+        }
+        if (method === 'DELETE' && r7 === 'compose') {
+          if (!a.compose) return err(409, 'order.compose_none', `q${a.id} no tiene composición`, { id: a.id });
+          a.compose = undefined;
+          return ok({ attempt: a.id, files: 1, chosen: order.chosen === a.id, image: a.raw });
+        }
         if (r7 === 'mark') { if (body.state === 'discarded' && order.chosen === a.id) return err(409, 'order.discard_chosen', 'No se descarta la elegida: deshaz primero'); a.state = body.state; return ok(a); }
         if (r7 === 'note') { a.note = body.text; return ok(a); }
         if (r7 === 'compose') {
@@ -226,6 +246,7 @@ export async function transport(method, url, body) {
   return err(404, 'api.not_found', `Ruta desconocida: ${method} ${u.pathname}`, { path: u.pathname });
 }
 const measureBusyOnce = { done: false };
+const deletedTemplates = new Set();
 
 /* ---- imágenes por canvas ---- */
 const imgCache = new Map();

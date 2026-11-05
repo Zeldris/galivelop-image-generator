@@ -73,6 +73,7 @@ async function request(method, path, body) {
 export const get = (path) => request('GET', path);
 export const post = (path, body = {}) => request('POST', path, body);
 export const put = (path, body = {}) => request('PUT', path, body);
+export const del = (path) => request('DELETE', path);
 
 /* ---- rutas: el segmento de la clave va codificado en un solo segmento (`fauna%2Faullador-rojo`) ---- */
 const enc = encodeURIComponent;
@@ -109,6 +110,7 @@ export const paths = {
   undo: (p, profile, key) => `${paths.order(p, profile, key)}/undo`,
   asset: (p, profile, kind, id) => `/api/projects/${enc(p)}/profiles/${enc(profile)}/assets/${enc(kind)}${id ? '?id=' + enc(id) : ''}`,
   templates: (p, profile) => `/api/projects/${enc(p)}/profiles/${enc(profile)}/templates`,
+  template: (p, profile, id) => `${paths.templates(p, profile)}/${enc(id)}`,
   queue: (state) => `/api/queue${state ? '?state=' + enc(state) : ''}`,
   cancel: (id) => `/api/queue/${enc(id)}/cancel`,
   move: (id) => `/api/queue/${enc(id)}/move`,
@@ -131,6 +133,10 @@ export const api = {
   mark: (p, profile, key, id, st) => post(paths.mark(p, profile, key, id), { state: st }),
   note: (p, profile, key, id, text) => post(paths.note(p, profile, key, id), { text }),
   templates: (p, profile) => get(paths.templates(p, profile)),
+  template: (p, profile, id) => get(paths.template(p, profile, id)),
+  deleteTemplate: (p, profile, id) => del(paths.template(p, profile, id)),
+  deleteAttempt: (p, profile, key, id) => del(paths.attempt(p, profile, key, id)),
+  deleteCompose: (p, profile, key, id) => del(paths.compose(p, profile, key, id)),
   saveTemplate: (p, profile, body) => post(paths.templates(p, profile), body),
   compose: (p, profile, key, id, body = {}) => post(paths.compose(p, profile, key, id), body),
   measure: (p, profile, key, id, opts) => get(paths.measure(p, profile, key, id, opts)),

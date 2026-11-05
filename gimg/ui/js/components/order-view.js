@@ -17,6 +17,7 @@ import { textPanel } from './text-panel.js';
 import { invalidateMeasure } from './measure-chip.js';
 import { isTyping, oneKeyEnabled } from './shortcuts.js';
 import { toast, toastError, toastOk } from './toast.js';
+import { confirmAction } from './confirm.js';
 
 const PENDING = ['queued', 'running'];
 
@@ -128,6 +129,35 @@ export async function orderView(host, route) {
       paintGalleryOnly();
       return entry;
     },
+    /** F4e.1: borrar un intento o su composición; siempre tras el modal «sí / no». El 409 del servidor sale en el toast. */
+    deleteAttempt: guard(async (a) => {
+      const opener = () => document.querySelector(`[data-attempt="${a.id}"][data-kind="attempt"]`);
+      const ok = await confirmAction({ title: t('ui.attempt.deleteTitle', { id: a.id }), message: t('ui.attempt.deleteMessage', { id: a.id }), confirmLabel: t('ui.attempt.deleteConfirm'), opener });
+      if (!ok) return;
+      try {
+        await api.deleteAttempt(project, profile, key, a.id);
+        ctx.compare = ctx.compare.filter((x) => x !== a.id);
+        toastOk(t('ui.attempt.deleted', { id: a.id }));
+      } finally {
+        invalidateMeasure(`${project}/${profile}/${key}/${a.id}@`);
+        await reload();
+      }
+    }),
+    deleteCompose: guard(async (a) => {
+      const chosen = ctx.order.chosen === a.id;
+      const opener = () => document.querySelector(`[data-attempt="${a.id}"][data-kind="attempt"]`);
+      const ok = await confirmAction({ title: t('ui.attempt.deleteComposeTitle', { id: a.id }),
+        message: chosen ? t('ui.attempt.deleteComposeChosenMessage', { id: a.id }) : t('ui.attempt.deleteComposeMessage', { id: a.id }),
+        confirmLabel: t('ui.attempt.deleteComposeConfirm'), opener });
+      if (!ok) return;
+      try {
+        await api.deleteCompose(project, profile, key, a.id);
+        toastOk(t('ui.attempt.composeDeleted', { id: a.id }));
+      } finally {
+        invalidateMeasure(`${project}/${profile}/${key}/${a.id}@`);
+        await reload();
+      }
+    }),
     recompose: guard(async (a) => {
       try {
         await api.compose(project, profile, key, a.id, {});
