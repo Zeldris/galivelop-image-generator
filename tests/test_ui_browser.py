@@ -143,6 +143,24 @@ class UiBase(unittest.TestCase):
         self.page.pump(0.3)
         self.assertEqual(self.browser.take_problems(), [])
 
+    # UI.4: every visible control is a 44 px target (a checkbox counts through the label that wraps it). Inline links
+    # inside running text are exempt (WCAG 2.5.8): none remain. The only exception is `.ed-box`, the boxes of the
+    # layout editor drawn over the image at the size of the template's own geometry (essential, WCAG 2.5.8); they
+    # have a keyboard alternative (arrows) and numeric fields, which are 44 px.
+    SMALL_TARGETS = """(() => { const out = [];
+        for (const n of document.querySelectorAll('a, button, input, select, [tabindex="0"]')) {
+            if (!n.getClientRects().length || n.disabled || n.type === 'hidden' || n.matches('.ed-box')) continue;
+            let box = n;
+            if (n.matches('input[type=checkbox], input[type=radio]')) box = n.closest('label') || n;
+            const r = box.getBoundingClientRect();
+            if (r.width < 43.5 || r.height < 43.5) out.push((n.id ? '#' + n.id : n.tagName.toLowerCase() + '.' + n.className) + ' ' + Math.round(r.width) + 'x' + Math.round(r.height) + ' "' + (n.textContent || n.getAttribute('aria-label') || '').trim().slice(0, 20) + '"');
+        }
+        return out; })()"""
+
+    def assert_tap_targets(self, where):
+        small = self.js(self.SMALL_TARGETS)
+        self.assertEqual(small, [], "targets under 44x44 %s" % where)
+
     def api(self, method, path, body=None):
         return self.js("fetch(%s, {method: %s, headers: {'Content-Type': 'application/json'}, body: %s}).then(r => r.json())"
                        % (json.dumps(path), json.dumps(method), json.dumps(json.dumps(body)) if body is not None else "undefined"))
@@ -465,6 +483,75 @@ class OrderScreen(UiBase):
         self.assertEqual(a["compose"]["templateId"], "claro")
         self.no_problems()
 
+    def test_tap_targets_are_44px(self):
+        """UI.4: at 360 and 1440, no visible link, button, field or tab stop is smaller than 44x44 on the projects
+        list, an order page (retouch and texts panels, lists open) or the editor."""
+        key = "fondos/atajos"
+        for width in (360, 1440):
+            self.page.ws.close()
+            self.page = self.browser.new_page(width=width, height=780)
+            where = "at %d" % width
+            self.open("/", "document.querySelector('a.project-card')")
+            self.assert_tap_targets("on the projects list " + where)
+            for tab, ready in (("pedidos", ".order-row"), ("piezas", ".piece-card"), ("marca", ".check-list .check-item")):
+                self.open("/p/%s/%s" % (PROJECT, tab), "document.querySelector(%s)" % json.dumps(ready))
+                self.assert_tap_targets("on the %s tab %s" % (tab, where))
+            self.open("/p/%s/pedidos" % PROJECT, "document.querySelector('.order-row')")
+            self.click("button[data-slot=new-order]")
+            self.page.wait("document.querySelector('dialog.new-order[open]') && document.getElementById('no-copy')")
+            self.assert_tap_targets("in the new order panel " + where)
+            self.page.key("Escape")
+            self.page.wait("!document.querySelector('dialog[open]')")
+            self.order(key)
+            self.click("#help")
+            self.page.wait("document.querySelector('dialog[open]')")
+            self.assert_tap_targets("in the shortcuts dialog " + where)
+            self.page.key("Escape")
+            self.page.wait("!document.querySelector('dialog[open]')")
+            self.js("for (const d of document.querySelectorAll('.attempt details, .order-panel details')) d.open = true")
+            self.assert_tap_targets("on the order page " + where)
+            self.open_editor(key)
+            self.assert_tap_targets("in the editor " + where)
+        self.no_problems()
+
+    def check_measure_chip(self, sel, *expected):
+        """The chip at `sel` is a 44 px button; Enter opens its detail (each expected text in it), Esc closes it and the
+        focus returns to the chip."""
+        self.page.wait("document.querySelector(%s)" % json.dumps(sel))
+        m = self.js("""(() => { const c = document.querySelector(%s), r = c.getBoundingClientRect();
+            return {tag: c.tagName, h: r.height, expanded: c.getAttribute('aria-expanded'), label: c.getAttribute('aria-label'),
+                    controls: c.getAttribute('aria-controls'), target: c.getAttribute('popovertarget')}; })()""" % json.dumps(sel))
+        self.assertEqual(m["tag"], "BUTTON")
+        self.assertGreaterEqual(m["h"], 44)
+        self.assertEqual(m["expanded"], "false")
+        self.assertTrue(m["label"].startswith("Medida de marca: "), m["label"])
+        self.assertTrue(m["controls"] and m["controls"] == m["target"])
+        box = "document.getElementById(%s)" % json.dumps(m["controls"])
+        self.js("document.querySelector(%s).focus()" % json.dumps(sel))
+        self.page.key("Enter")
+        self.page.wait("%s.matches(':popover-open')" % box)
+        self.assertEqual(self.js("document.querySelector(%s).getAttribute('aria-expanded')" % json.dumps(sel)), "true")
+        text = self.js("%s.textContent" % box)
+        for want in expected:
+            self.assertRegex(text, want)
+        self.page.key("Escape")
+        self.page.wait("!%s.matches(':popover-open')" % box)
+        self.assertTrue(self.js("document.activeElement === document.querySelector(%s)" % json.dumps(sel)), "the focus did not return to the chip")
+        self.assertEqual(self.js("document.querySelector(%s).getAttribute('aria-expanded')" % json.dumps(sel)), "false")
+
+    def test_measure_chip_opens_its_detail(self):
+        """UI.4: the measure chip is a 44 px button that opens a native popover with the contrast (mean and worst) and
+        the palette, each line with its verdict in words; Esc closes it and the focus returns to the chip. On the card
+        there is no zone, so only the palette is measured; in the editor the text elements have one."""
+        verdict = r"(correcto|justo|insuficiente)"
+        palette = r"Paleta \d+ % dentro de la marca \(mínimo \d+ %\): " + verdict
+        self.order("fondos/atajos")
+        self.check_measure_chip(".gallery .attempt[data-kind=attempt] .measure button.chip", r"Sin zona declarada", palette)
+        self.open_editor("fondos/atajos")
+        self.check_measure_chip("dialog.editor .measure button.chip", r"Contraste medio \d+\.\d:1 \(AA ≥ 4,5\): " + verdict,
+                                r"Contraste del peor punto \d+\.\d:1 \(ámbar ≥ 3\): " + verdict)
+        self.no_problems()
+
     # the editor -------------------------------------------------------------------------------------------------
     def open_editor(self, key, n=2):
         self.order(key)
@@ -595,6 +682,17 @@ class QueueDrawer(UiBase):
         self.assertEqual([e for e in self.api("GET", "/api/queue") if e["state"] == "queued"], [])
         self.no_problems()
 
+
+    def test_tap_targets_are_44px(self):
+        """UI.4: every control of the queue drawer (and the pill) is at least 44x44 at 360 and 1440."""
+        for width in (360, 1440):
+            self.page.ws.close()
+            self.page = self.browser.new_page(width=width, height=780)
+            self.open("/", "document.querySelector('.queue-pill')")
+            self.click(".queue-pill")
+            self.page.wait("document.querySelectorAll('#queue-drawer .queue-entry').length >= 3")
+            self.assert_tap_targets("in the queue drawer at %d" % width)
+        self.no_problems()
 
     def test_queue_drawer_fits_and_traps_focus(self):
         """UI.2: the drawer is a modal dialog right under the header at any width, nothing in it scrolls sideways,

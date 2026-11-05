@@ -36,7 +36,7 @@ img { display: block; max-width: 100%; }
 }
 .skip {
   position: absolute; left: 8px; top: -60px; z-index: 50;
-  padding: 10px 14px; background: var(--accent-fill); color: var(--on-accent); border-radius: var(--r-s);
+  display: inline-flex; align-items: center; min-height: var(--tap); padding: 0 14px; background: var(--accent-fill); color: var(--on-accent); border-radius: var(--r-s);
 }
 .skip:focus { top: 8px; }
 
@@ -58,7 +58,7 @@ img { display: block; max-width: 100%; }
 .btn-ghost { background: transparent; border-color: transparent; }
 .btn-ghost:hover { background: var(--surface-2); border-color: var(--border-strong); }
 .btn-danger { color: var(--bad); border-color: var(--bad); }
-.btn-icon { padding: 8px; width: var(--tap); }
+.btn-icon { padding: 8px; width: var(--tap); min-height: var(--tap); }
 .btn-yes[aria-pressed="true"] { background: var(--ok); border-color: var(--ok); color: var(--on-status); }
 .btn-no[aria-pressed="true"] { background: var(--bad); border-color: var(--bad); color: var(--on-status); }
 .btn-toggle[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
