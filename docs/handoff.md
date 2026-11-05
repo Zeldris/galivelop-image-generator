@@ -32,7 +32,6 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 
 ## Pendiente
 
-- **Por fusionar en `f2-motor`:** rama `claude/f4b-ui-arreglos` (`7b73bc5`, arreglos de la revisión del flujo de la interfaz: estilo duplicado al variar, versión de la imagen sin `compose.at`, recarga tras fallo, campos de todas las plantillas, zona sin color, plantilla de la elegida, foco en `select`), con `merge-branch.sh` cuando acabe F4c.1-2.
 - **Leves de la revisión de F4a** (`docs/records/revision-F4a-2026-11-05.md`, 10-16): no se revisan más en este PR. Además: con algo en marcha, el cajón de la cola se repinta cada 3 s (conserva el foco por `data-fid`, no el desplazamiento).
 
 - `docs/en/api.md` (D16 pide docs en es y en).
