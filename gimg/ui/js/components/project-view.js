@@ -2,7 +2,7 @@
    (los perfiles: pieces-tab.js) y Marca (solo lectura y comprobación: brand-tab.js). Usa GET /api/projects/{p} (config:
    perfiles, marca) y GET /api/projects/{p}/orders?profile=&chosen=. */
 
-import { h, when } from '../dom.js';
+import { h, replace, when } from '../dom.js';
 import { t } from '../i18n.js';
 import { api, paths, describeError } from '../api.js';
 import { to } from '../router.js';
@@ -52,7 +52,7 @@ async function ordersTab(panel, project, profiles, cfg) {
       const orders = Array.isArray(res) ? res : (res && res.orders) || [];
       orders.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
       count.textContent = t('ui.project.orderCount', { n: orders.length });
-      list.replaceChildren(orders.length ? orders.map((o) => row(project, o, cfg)) : h('div.empty', {}, h('p', {}, t('ui.project.noOrders')), h('code.mono', {}, `gimg order submit ${project} <clave> --profile <perfil>`)));
+      replace(list, orders.length ? orders.map((o) => row(project, o, cfg)) : h('div.empty', {}, h('p', {}, t('ui.project.noOrders')), h('code.mono', {}, `gimg order submit ${project} <clave> --profile <perfil>`)));
     } catch (e) {
       list.replaceChildren(h('p.notice.notice-bad', { role: 'alert' }, describeError(e, t)));
     }

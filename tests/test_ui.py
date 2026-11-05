@@ -44,6 +44,14 @@ class Csp(unittest.TestCase):
             code = re.sub(r"/\*.*?\*/|//[^\n]*", "", read(path), flags=re.S)
             self.assertIsNone(banned.search(code), rel(path))
 
+    def test_no_else_after_a_loop_body_without_braces(self):
+        # `else if (a) for (…) if (b) x; else …` ties the else to the inner if: in dom.js#h() that dropped every
+        # attribute after `aria` (no href, no onclick) and nothing could be clicked.
+        dangling = re.compile(r"\b(for|while)\s*\([^\n{]*\)\s*if\s*\([^\n{]*;[ \t]*\n\s*else\b")
+        for path in JS:
+            code = re.sub(r"/\*.*?\*/|//[^\n]*", "", read(path), flags=re.S)
+            self.assertIsNone(dangling.search(code), rel(path))
+
     def test_css_has_no_external_urls(self):
         for path in CSS:
             for url in re.findall(r"url\(\s*['\"]?([^'\")]+)", read(path)):

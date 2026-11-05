@@ -9,8 +9,12 @@ export function h(spec, attrs = {}, ...children) {
   for (const [k, v] of Object.entries(attrs || {})) {
     if (v === null || v === undefined || v === false) continue;
     if (k === 'class') el.className += (el.className ? ' ' : '') + v;
-    else if (k === 'data') for (const [dk, dv] of Object.entries(v)) el.dataset[dk] = dv;
-    else if (k === 'aria') for (const [ak, av] of Object.entries(v)) if (av !== null && av !== undefined) el.setAttribute('aria-' + ak, av);
+    else if (k === 'data') { for (const [dk, dv] of Object.entries(v)) el.dataset[dk] = dv; }
+    else if (k === 'aria') {
+      // Con llaves: sin ellas, el `else` siguiente se ataba al `if` de dentro del bucle y no se ponía ningún otro
+      // atributo (ni href, ni onclick, ni type).
+      for (const [ak, av] of Object.entries(v)) if (av !== null && av !== undefined) el.setAttribute('aria-' + ak, av);
+    }
     else if (k === 'vars') setVars(el, v);
     else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2), v);
     else if (k === 'text') el.textContent = v;
