@@ -102,13 +102,13 @@ class EngineTests(unittest.TestCase):
         self.assertTrue(image.exists())
 
     def test_busy_attempt_is_protected(self):
-        entries = []
-        for n in (1, 2):
-            entries = queue.enqueue("proj", "a", "banner", orders.attempt_specs("proj", "a", "banner", 1))
-        entry = entries[0]
+        entry = queue.enqueue("proj", "a", "banner", orders.attempt_specs("proj", "a", "banner", 1))[0]
         orders.add_attempt("proj", "a", "banner", {"seed": 1, "prompt": "p", "params": {}}, entry_id=entry["id"])
         image = self.put("attempts/q%d.png" % entry["id"])
         self.assertEqual(self.code(self.delete, 1), "order.delete_busy")  # queued
+        self.assertTrue(image.exists())
+        self.assertEqual(queue.claim()["id"], entry["id"])
+        self.assertEqual(self.code(self.delete, 1), "order.delete_busy")  # running
         self.assertTrue(image.exists())
         queue.cancel(entry["id"])  # a cancelled entry is not busy
         self.assertEqual(self.delete(1)["deleted"], 1)
@@ -162,9 +162,40 @@ class EngineTests(unittest.TestCase):
         data = self.stored()
         data["attempts"][0]["image"] = "../../../../../outside.png"
         fsutil.write_json(self.folder / "order.json", data)
-        self.assertTrue(self.code(self.delete, 1).startswith("path."))
+        self.assertEqual(self.code(self.delete, 1), "path.dotdot")
+        data["attempts"][0]["image"] = "attempts/link.png"  # a link that leads out of the folder
+        (self.folder / "attempts").mkdir(exist_ok=True)
+        (self.folder / "attempts" / "link.png").symlink_to(outside)
+        fsutil.write_json(self.folder / "order.json", data)
+        self.assertEqual(self.code(self.delete, 1), "path.outside")
         self.assertTrue(outside.exists())
         self.assertEqual(len(self.stored()["attempts"]), 1)  # refused before anything was touched
+
+    def test_history_has_no_adjacent_duplicates_after_deleting(self):
+        for n in (1, 2, 3):
+            self.add(n)
+        data = self.stored()
+        data["chosenHistory"] = [None, 1, 3, 1]
+        data["chosen"] = 2
+        fsutil.write_json(self.folder / "order.json", data)
+        self.delete(3)
+        self.assertEqual(self.stored()["chosenHistory"], [None, 1])
+
+    def test_a_delete_waits_for_the_delivery_lock(self):
+        """`delivery.undo` plans and applies under this lock: a delete that could slip in between would edit the
+        history it planned on. Held by someone else, the delete does not go through."""
+        import threading
+        from gimg import delivery
+        self.add(), self.add()
+        done = threading.Event()
+        with delivery._lock("proj"):
+            thread = threading.Thread(target=lambda: (self.delete(2), done.set()))
+            thread.start()
+            self.assertFalse(done.wait(0.5))
+            self.assertEqual(len(self.stored()["attempts"]), 2)
+        thread.join(5)
+        self.assertTrue(done.is_set())
+        self.assertEqual([a["id"] for a in self.stored()["attempts"]], [1])
 
     def test_the_log_gets_an_attempt_delete_line(self):
         self.add(5)

@@ -10,6 +10,7 @@ from . import fsutil, paths
 
 OP_GENERATION = "image_generation"
 OP_COMPOSITION = "image_composition"  # a recomposition: no engine ran (F2.8)
+OP_ATTEMPT_DELETE = "attempt.delete"  # an attempt deleted for good (F4e.1): not a generation, no provider
 
 
 def log_path(project: str):
@@ -62,6 +63,12 @@ def record_for(key: str, profile: str, spec: dict, machine: dict, provider: str 
         "app.image.command": getattr(result, "command", None),
     }
     return {k: v for k, v in line.items() if v is not None}
+
+
+def attempt_delete_record(key: str, profile: str, seed, attempt_id: int, files_removed: int) -> dict:
+    """The line for a deleted attempt: no provider, so `estimate` never counts it."""
+    return {"ts": _now(), "gen_ai.operation.name": OP_ATTEMPT_DELETE, "app.task": profile, "app.image.key": key,
+            "app.image.seed": seed, "app.attempt.id": attempt_id, "app.files_removed": files_removed}
 
 
 def append(project: str, record: dict) -> None:

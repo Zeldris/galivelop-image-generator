@@ -564,11 +564,13 @@ def delete_attempt(project: str, key: str, profile: str, attempt_id: int) -> dic
 
     ``order.delete_chosen`` (the chosen one stays: choose another or undo first); ``order.delete_busy`` (queued, running,
     or being composed: cancel it); ``order.attempt_unknown``."""
+    from . import delivery  # delivery imports this module
+
     order = get(project, key, profile)
     item = copy.deepcopy(_attempt(order, attempt_id))
-    files = _delete_paths(project, key, profile, item)
     _check_not_busy(item, order)
-    with fsutil.try_lock(compose_lock_path(project, key, profile, attempt_id)) as taken:
+    # the delivery lock first (as `delivery.undo` and `choose` take it): an undo cannot plan on a history this edits
+    with delivery._lock(project), fsutil.try_lock(compose_lock_path(project, key, profile, attempt_id)) as taken:
         if not taken:
             raise GimgError("order.delete_busy", attempt=attempt_id, order=key, profile=profile)
 
@@ -576,11 +578,18 @@ def delete_attempt(project: str, key: str, profile: str, attempt_id: int) -> dic
             gone = _attempt(current, attempt_id)
             if current["chosen"] == attempt_id:
                 raise GimgError("order.delete_chosen", attempt=attempt_id, order=key, profile=profile)
+            # the paths come from the record as it is now, and before it changes: `path.*` leaves it untouched
+            found = _delete_paths(project, key, profile, gone)
             current["nextId"] = _next_id(current)
             current["attempts"].remove(gone)
-            current["chosenHistory"] = [h for h in current["chosenHistory"] if h != attempt_id]
+            history = []
+            for h in current["chosenHistory"]:
+                if h != attempt_id and (not history or history[-1] != h):  # [None, 1, 3, 1] -> [None, 1]
+                    history.append(h)
+            current["chosenHistory"] = history
+            return found
 
-        _modify(project, key, profile, change)
+        files = _modify(project, key, profile, change)
         removed = 0
         for path in files:
             try:
@@ -592,9 +601,7 @@ def delete_attempt(project: str, key: str, profile: str, attempt_id: int) -> dic
             compose_lock_path(project, key, profile, attempt_id).with_name("compose-%d.lock" % attempt_id).unlink()
         except OSError:
             pass
-    log.append(project, {"ts": _now(), "gen_ai.operation.name": "attempt.delete", "app.task": profile,
-                         "app.image.key": key, "app.image.seed": item["seed"], "app.attempt.id": attempt_id,
-                         "app.files_removed": removed})
+    log.append(project, log.attempt_delete_record(key, profile, item["seed"], attempt_id, removed))
     return {"deleted": attempt_id, "files": removed}
 
 
