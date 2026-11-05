@@ -98,6 +98,9 @@
 /* pedido: galería + panel lateral */
 .order-layout { display: grid; grid-template-columns: minmax(0, 1fr) var(--panel-w); gap: 16px; align-items: start; }
 .order-panel { display: grid; gap: var(--gap); position: sticky; top: calc(var(--header-h) + 10px); max-height: calc(100vh - var(--header-h) - 20px); overflow: auto; padding-right: 2px; }
+.panel-head, .retouch-open { display: none; }
+.panel-head h2 { margin: 0; font-size: 18px; }
+.panel-head h2:focus { outline: none; }
 .gallery-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
 .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--gap); }
 .delivered { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; border-color: var(--ok); margin-bottom: 12px; }
@@ -105,13 +108,17 @@
 
 @media (max-width: 1000px) {
   .order-layout { grid-template-columns: 1fr; }
-  .order-panel { position: static; max-height: none; }
+  /* UI.5: el panel es un diálogo lateral (como el cajón de la cola) que abre el botón «Retoque» */
+  .order-panel { display: none; position: fixed; top: var(--header-h); right: 0; bottom: 0; z-index: 30; width: min(100vw, 440px); max-height: none; padding: 12px; align-content: start; background: var(--surface); border-left: 1px solid var(--border); box-shadow: var(--shadow); }
+  .order-panel.is-open { display: grid; }
+  .order-panel .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .retouch-open { display: inline-flex; }
 }
 @media (max-width: 640px) {
   .app-header { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: 48px 44px; grid-template-areas: "brand tools" "crumbs crumbs"; --header-h-fixed: 92px; }
   .brand > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .queue-pill { max-width: 100%; }
-  .queue-drawer { width: 100vw; border-left: 0; }
+  .queue-drawer, .order-panel { width: 100vw; border-left: 0; }
   .queue-pill > span:not(.dot) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .queue-pill progress { display: none; }
   .app-main { padding: 10px 10px 60px; }

@@ -19,8 +19,17 @@ import { isTyping, oneKeyEnabled } from './shortcuts.js';
 import { toast, toastError, toastOk } from './toast.js';
 import { confirmAction } from './confirm.js';
 import { renameDialog } from './rename-dialog.js';
+import { trapFocus } from '../lib/focus-trap.js';
 
 const PENDING = ['queued', 'running'];
+
+/* UI.5: a ≤1000 px el panel (retoque + plantilla + textos) es un diálogo lateral que abre el botón «Retoque» de la barra
+   de la galería; a más ancho es la columna de siempre (el mismo nodo, otra presentación). */
+const NARROW = '(max-width: 1000px)';
+let panelDialog = null; // {isOpen, close, open} del pedido en pantalla
+
+export function isPanelOpen() { return Boolean(panelDialog && panelDialog.isOpen()); }
+export function closePanel() { if (panelDialog) panelDialog.close(); }
 
 export async function orderView(host, route) {
   const { project, profile, key } = route;
@@ -54,10 +63,56 @@ export async function orderView(host, route) {
   const compareHost = h('div');
   const deliveredHost = h('div');
   const panel = h('aside.order-panel', { aria: { label: t('ui.order.panel') } });
+  const panelHead = h('div.panel-head', {}, h('h2', { id: 'order-panel-title', tabindex: '-1' }, t('ui.order.panel')),
+    h('button.btn.btn-icon.btn-ghost', { type: 'button', data: { fid: 'panel-close' }, aria: { label: t('ui.order.panelClose') }, onclick: () => closePanel() }, '✕'));
+  const narrow = window.matchMedia(NARROW);
+  let panelOpen = false;
+  let untrap = null;
+  let inerted = [];
+  const setInert = (on) => {
+    for (const n of inerted) n.inert = false;
+    inerted = [];
+    if (!on) return;
+    // todo lo que no es el panel ni uno de sus ancestros (la cabecera y el resto de la página) queda inerte
+    const main = document.getElementById('main');
+    for (let n = panel; n && n !== main; n = n.parentElement) {
+      for (const sib of n.parentElement.children) if (sib !== n) inerted.push(sib);
+    }
+    const header = document.querySelector('.app-header');
+    if (header) inerted.push(header);
+    for (const n of inerted) n.inert = true;
+  };
+  const setPanelOpen = (on, { restore = true } = {}) => {
+    if (on === panelOpen) return;
+    panelOpen = on;
+    panel.classList.toggle('is-open', on);
+    const opener = galleryBar.querySelector('.retouch-open');
+    if (on) {
+      panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-modal', 'true');
+      panel.setAttribute('aria-labelledby', 'order-panel-title'); panel.removeAttribute('aria-label');
+      setInert(true);
+      untrap = trapFocus(panel);
+    } else {
+      panel.removeAttribute('role'); panel.removeAttribute('aria-modal'); panel.removeAttribute('aria-labelledby');
+      panel.setAttribute('aria-label', t('ui.order.panel'));
+      setInert(false);
+      if (untrap) { untrap(); untrap = null; }
+      if (restore && opener) opener.focus();
+    }
+    if (opener) opener.setAttribute('aria-expanded', String(on));
+  };
+  const onNarrow = () => { if (!narrow.matches) setPanelOpen(false, { restore: false }); };
+  narrow.addEventListener('change', onNarrow);
+  panelDialog = {
+    isOpen: () => panelOpen,
+    close: () => setPanelOpen(false),
+    open: () => { setPanelOpen(true); panelHead.querySelector('h2').focus(); },
+  };
   const title = h('div.page-head', {}, h('h1', { tabindex: '-1' }, key), h('span.chip', {}, profile, profileCfg.width ? ` · ${profileCfg.width}×${profileCfg.height}` : ''),
     h('button.btn', { type: 'button', data: { fid: 'rename-order' }, onclick: () => ctx.actions.rename() }, t('ui.order.rename')),
     h('a.btn.btn-ghost', { href: to.project(project) }, '← ', t('ui.order.backToProject')));
-  host.replaceChildren(title, h('div.order-layout', {}, h('div', {}, deliveredHost, compareHost, galleryBar, gallery), panel));
+  // el título va en la columna de la galería para que el panel arranque a la altura de la cabecera (UI.5: cabe entero en la ventana)
+  host.replaceChildren(h('div.order-layout', {}, h('div', {}, title, deliveredHost, compareHost, galleryBar, gallery), panel));
 
   let retouch;
   let texts;
@@ -231,6 +286,7 @@ export async function orderView(host, route) {
     section(galleryBar, JSON.stringify([counts, ctx.showRaw, Boolean(compose.template)]), () => [
       h('span.hint', {}, t('ui.order.counts', counts)),
       h('span.grow'),
+      h('button.btn.retouch-open', { type: 'button', data: { fid: 'retouch-open' }, aria: { haspopup: 'dialog', expanded: String(panelOpen) }, onclick: () => panelDialog.open() }, t('ui.order.retouchOpen'), h('kbd.kbd', { aria: { hidden: true } }, 'T')),
       compose.template ? h('button.btn.btn-toggle', { type: 'button', aria: { pressed: ctx.showRaw }, onclick: () => { ctx.showRaw = !ctx.showRaw; store.set('showRaw', ctx.showRaw); paint(); } }, t(ctx.showRaw ? 'ui.order.showingRaw' : 'ui.order.showingComposed'), h('kbd.kbd', { aria: { hidden: true } }, 'F')) : null,
       h('button.btn.btn-ghost', { type: 'button', onclick: reload }, '⟳ ', t('ui.order.refresh'))]);
 
@@ -259,7 +315,7 @@ export async function orderView(host, route) {
         onSave: async (text) => { try { await api.setText(project, profile, key, text); ctx.order.text = text; toastOk(t('ui.text.saved')); return true; } catch (e) { toastError(describeError(e, t)); return false; } },
         onRecompose: (id) => ctx.actions.recompose({ id }),
       });
-      panel.replaceChildren(retouch.node, texts.node);
+      panel.replaceChildren(panelHead, retouch.node, texts.node);
     } else {
       if (texts && texts.setChosen) texts.setChosen(order.chosen);
       if (retouch && retouch.setChosen) retouch.setChosen();
@@ -339,6 +395,7 @@ export async function orderView(host, route) {
     else if (k === 'r' || k === 'R') { e.preventDefault(); if (retouch) retouch.focusPrompt(); }
     else if (k === 't' || k === 'T' || k === 'x' || k === 'X') {
       const zone = (k === 't' || k === 'T') ? retouch && retouch.node : texts && texts.node;
+      if (narrow.matches && zone && !panelOpen) setPanelOpen(true); // a ≤1000 el panel está cerrado: se abre y se enfoca su primer control
       const c = zone && zone.querySelector('button, a, input, select, textarea, summary');
       if (c) { e.preventDefault(); c.focus(); }
     }
@@ -363,7 +420,7 @@ export async function orderView(host, route) {
     poll.on('failed', (e) => { if (mine(e)) reload(); }),
     poll.on('cancelled', (e) => { if (mine(e)) reload(); }),
   ];
-  host.cleanup = () => { host.removeEventListener('keydown', onKey); offs.forEach((off) => off()); };
+  host.cleanup = () => { host.removeEventListener('keydown', onKey); narrow.removeEventListener('change', onNarrow); setPanelOpen(false, { restore: false }); panelDialog = null; offs.forEach((off) => off()); };
 
   paint();
   const want = route.query && route.query.a;
