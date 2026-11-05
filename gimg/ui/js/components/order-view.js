@@ -90,7 +90,8 @@ export async function orderView(host, route) {
     copyError: (e) => copy(e.errorText || JSON.stringify(e.error), t('ui.attempt.copied')),
     retry: guard(async (e) => {
       const text = e.prompt === null || e.prompt === undefined ? null : stripStyle(e.prompt, profileCfg.style);
-      await submit({ count: 1, seed: e.seed, draft: Boolean(e.draft), ...(text !== null && text !== (ctx.order.prompt || '') ? { prompt: text } : {}), ...(e.template ? { template: e.template } : {}), ...pick(e.params, ['steps', 'cfg', 'sampler']) });
+      await submit({ count: 1, seed: e.seed, draft: Boolean(e.draft), ...(text !== null && text !== (ctx.order.prompt || '') ? { prompt: text } : {}), ...(e.template ? { template: e.template } : {}), ...pick(e.params, ['steps', 'cfg', 'sampler']),
+        ...(e.params && e.params.model && e.params.model !== (ctx.order.params || {}).model && e.params.model !== profileCfg.model ? { model: e.params.model } : {}) }); // F4d: el modelo del intento, si no es el del pedido ni el del perfil
     }),
     cancel: guard(async (e) => { await api.cancel(e.id); toast(t('ui.queue.cancelled', { id: e.id })); await poll.refreshNow(); }),
     setTemplate: async (a, id) => {

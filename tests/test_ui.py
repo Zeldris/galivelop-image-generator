@@ -244,6 +244,15 @@ class ReviewFixes(unittest.TestCase):
         self.assertIn("finally", text)
         self.assertNotIn("'button, a, input, summary'", text)
 
+    def test_retry_resends_the_model_of_the_entry_when_it_is_not_the_profile_one(self):
+        text = self.js("components/order-view.js")
+        retry = text[text.index("retry: guard("):text.index("cancel: guard(")]
+        self.assertRegex(retry, r"e\.params\.model !== profileCfg\.model\s*\?\s*\{ model: e\.params\.model \}")
+        # recreate and vary go through the retouch panel, which loads the model of the attempt into its selector and sends it
+        panel = self.js("components/retouch-panel.js")
+        self.assertIn("modelSel.value = opt && p.model !== model ? p.model : ''", panel)
+        self.assertIn("s.model = modelSel.value", panel)
+
     def test_estimate_is_per_entry(self):
         text = self.js("components/order-view.js")
         self.assertNotIn("estimateMs / Math.max", text)
