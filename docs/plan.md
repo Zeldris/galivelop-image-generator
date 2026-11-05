@@ -85,6 +85,10 @@ proyecto desde GitHub. Se empieza con **0.4.0 al cerrar F4**, y en el mismo paso
 0.3.0, sobre el commit de `main` en que entró cada una). Comprobable: un script que diga si la versión de `gimg` en
 `main` tiene su etiqueta y su release, en el cierre de cada fase.
 
+**Licencia MIT** (pedido de la persona del 2026-11-05; **lo siguiente tras llevar F4 a `main`**): `LICENSE` con el
+texto MIT en la raíz, y en los dos README la línea «Todavía no hay licencia» pasa a decir que el código es MIT y que
+los modelos (`gimg/models.json`) tienen su propia licencia. Falta que la persona diga el titular del copyright.
+
 ## F1 en detalle
 
 Contrato de F1 (lo implementan los pasos de abajo; un cambio de este contrato se apunta aquí en el mismo commit).
