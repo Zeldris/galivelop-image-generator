@@ -54,6 +54,7 @@
 .project-card:hover { border-color: var(--accent); }
 .project-card.is-broken { opacity: .7; border-style: dashed; }
 .project-card h2 { font-size: 17px; }
+.project-card .meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 13px; color: var(--text-2); }
 .project-card .path { font-size: 12px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* proyecto: pestañas y lista de pedidos */

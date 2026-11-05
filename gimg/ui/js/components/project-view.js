@@ -42,18 +42,22 @@ async function ordersTab(panel, project, profiles, cfg) {
     ['', 'pending', 'chosen'].map((s) => h('option', { value: s, selected: s === saved.state }, t(`ui.project.filter.${s || 'allStates'}`))));
   const list = h('div.order-list', { aria: { live: 'polite', busy: 'true' } });
   const count = h('span.hint');
+  let loadSeq = 0;
   const load = async () => {
+    const seq = ++loadSeq; // dos cambios seguidos de filtro: solo vale la respuesta del último
     const f = { profile: profileSel.value, state: stateSel.value };
     store.set('filters', { ...store.get('filters'), [project]: f });
     list.setAttribute('aria-busy', 'true');
     list.replaceChildren(h('p.empty', {}, h('span.spin', { aria: { hidden: true } }), ' ', t('ui.loading')));
     try {
       const res = await api.orders(project, { profile: f.profile, chosen: f.state === 'chosen' ? 'true' : f.state === 'pending' ? 'false' : undefined });
+      if (seq !== loadSeq) return;
       const orders = Array.isArray(res) ? res : (res && res.orders) || [];
       orders.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
       count.textContent = t('ui.project.orderCount', { n: orders.length });
       replace(list, orders.length ? orders.map((o) => row(project, o, cfg)) : h('div.empty', {}, h('p', {}, t('ui.project.noOrders')), h('code.mono', {}, `gimg order submit ${project} <clave> --profile <perfil>`)));
     } catch (e) {
+      if (seq !== loadSeq) return;
       list.replaceChildren(h('p.notice.notice-bad', { role: 'alert' }, describeError(e, t)));
     }
     list.setAttribute('aria-busy', 'false');
