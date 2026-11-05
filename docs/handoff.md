@@ -8,13 +8,14 @@
 
 | Campo | Valor |
 |---|---|
-| **Rama** | `main` (F0-F4, `plan-piezas` y `release-install` fusionadas, v0.4.0); sin rama de trabajo abierta |
-| **Fase / tarea** | F4 cerrada y publicada (v0.4.0); `release.yml` arreglado (PR #4). Siguiente: decidir la fase de «Piezas, edición y borrado» |
+| **Rama** | `f4e-piezas` (desde `main` + la bitácora de `release-install`) |
+| **Fase / tarea** | F4e (Piezas y edición): la persona partió «Piezas, edición y borrado» el 2026-11-05 (F4e: 1, 4(a)(c), 5, 7; F5: 2, 3, 4(b), 6); primero el «en detalle» de 5 (Borrar) |
 | **Último punto estable** | `main` en `71a69a3` (PR #4, CI en verde), etiqueta y release v0.4.0 |
-| **Siguiente paso** | decidir con la persona la fase de «Piezas, edición y borrado» (`docs/plan.md`), en una rama nueva desde `main` |
+| **Siguiente paso** | «F4e en detalle», punto 5 (Borrar): diseñarlo con la persona (`grilling`) y escribirlo en `docs/plan.md` |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 | **Tarea en curso · `f2-motor`** | Fusionada en `main` por el PR #2 (`624f7a9`, 2026-11-05, CI en verde); rama terminada. |
 | **Tarea en curso · `plan-piezas`** | Fusionada en `main` por el PR #3 (`d128106`, 2026-11-05, CI en verde); rama terminada. v0.4.0 etiquetada en `d128106`; `release.yml` falló (sin `ffmpeg`/`rsvg-convert`) y la release se creó a mano con `releases.py notes` y el mismo título (mismo árbol que el CI verde del PR); `releases.py check` en verde. |
+| **Tarea en curso · `f4e-piezas`** | Abierta el 2026-11-05. Hecho: decisión de fase (plan). Falta: «en detalle» de 5, 7, 1 y 4(a)(c), e implementarlos. Presupuesto de compactaciones: 3 |
 | **Tarea en curso · `release-install`** | Fusionada en `main` por el PR #4 (`71a69a3`, 2026-11-05, CI en verde, confirmado por la persona); rama terminada. `release.yml` instala `ciInstall` y usa el Python de `check.yml`; un test compara sus pasos con los de `check.yml`. Retro: `docs/records/retro-2026-11-05-release-install.md`. |
 
 Aquí `logRows` está apagado en `.claude/gw.json`: las filas se editan a mano (`handoff.py set-row` no escribe) y no
