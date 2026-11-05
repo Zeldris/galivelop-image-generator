@@ -729,5 +729,15 @@
   "ui.editor.hide": "Ocultar",
   "ui.editor.show": "Mostrar",
   "ui.editor.hideAria": "Ocultar el elemento {name}",
-  "ui.editor.showAria": "Mostrar el elemento {name}"
+  "ui.editor.showAria": "Mostrar el elemento {name}",
+  "error.queue.not_removable": "la entrada {id} está {state}: solo se borra una fallida o cancelada (una en cola o generándose se cancela antes; una hecha es su intento, «gimg attempt rm»)",
+  "cli.cmd.queue_rm": "borrar de la cola una entrada fallida o cancelada",
+  "cli.confirm.queue_rm": "Se quitará de la cola la entrada {id} (fallida o cancelada); no se podrá reintentar desde ella.",
+  "cli.out.queue_removed": "Entrada {id} quitada de la cola.",
+  "ui.queue.delete": "Borrar",
+  "ui.queue.deleteHint": "Quita esta entrada fallida o cancelada de la lista",
+  "ui.queue.deleteTitle": "¿Borrar q{id}?",
+  "ui.queue.deleteMessage": "La entrada q{id} sale de la cola y de este pedido; ya no se podrá reintentar desde ella. No hay imagen que borrar.",
+  "ui.queue.deleteConfirm": "Borrar entrada",
+  "ui.queue.deleted": "q{id} borrada."
 }

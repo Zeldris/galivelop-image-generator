@@ -98,6 +98,12 @@ export async function transport(method, url, body) {
       e.state = 'cancelled'; e.finishedAt = now(); e.progress = undefined;
       return ok(e);
     }
+    if (r1 && !r2 && method === 'DELETE') {
+      const i = queue.findIndex((x) => x.id === Number(r1));
+      if (i < 0) return err(404, 'queue.unknown', `No hay entrada ${r1}`, { id: r1 });
+      if (!['failed', 'cancelled'].includes(queue[i].state)) return err(409, 'queue.not_removable', `La entrada ${r1} no ha fallado ni se ha cancelado`, { id: r1 });
+      return ok(queue.splice(i, 1)[0]);
+    }
     if (r1 === 'clear' && method === 'POST') {
       const gone = queue.filter((e) => e.state === 'queued' && (!(body && body.project) || e.project === body.project));
       for (const e of gone) { e.state = 'cancelled'; e.finishedAt = now(); }

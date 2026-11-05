@@ -729,5 +729,15 @@
   "ui.editor.hide": "Hide",
   "ui.editor.show": "Show",
   "ui.editor.hideAria": "Hide the element {name}",
-  "ui.editor.showAria": "Show the element {name}"
+  "ui.editor.showAria": "Show the element {name}",
+  "error.queue.not_removable": "entry {id} is {state}: only a failed or cancelled one can be deleted (a queued or running one is cancelled first; a done one is its attempt, \"gimg attempt rm\")",
+  "cli.cmd.queue_rm": "delete a failed or cancelled entry from the queue",
+  "cli.confirm.queue_rm": "Queue entry {id} (failed or cancelled) will be removed; it can no longer be retried from it.",
+  "cli.out.queue_removed": "Entry {id} removed from the queue.",
+  "ui.queue.delete": "Delete",
+  "ui.queue.deleteHint": "Remove this failed or cancelled entry from the list",
+  "ui.queue.deleteTitle": "Delete q{id}?",
+  "ui.queue.deleteMessage": "Entry q{id} leaves the queue and this order; it can no longer be retried from it. There is no image to delete.",
+  "ui.queue.deleteConfirm": "Delete entry",
+  "ui.queue.deleted": "q{id} deleted."
 }

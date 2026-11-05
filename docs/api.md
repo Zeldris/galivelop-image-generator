@@ -374,6 +374,16 @@ Cancela una entrada. Cuerpo: `{}`. Respuesta: la entrada. Errores: `queue.unknow
 curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/3/cancel -d '{}'
 ```
 
+### DELETE /api/queue/{id}
+
+Quita de la cola una entrada `failed` o `cancelled` (F4e.1, D41) y lo que hubiera dejado (`.pending-<id>.*`). Sin
+cuerpo. Respuesta: la entrada quitada. Errores: `queue.unknown`, `queue.not_removable` (409: en cola o generándose se
+cancela antes; una `done` es su intento, `DELETE …/attempts/{id}`). CLI: `gimg queue rm <id> [--yes]`.
+
+```sh
+curl -s -X DELETE $B/api/queue/3
+```
+
 ### POST /api/queue/{id}/move
 
 Mueve una entrada que espera (`queued`) en la fila de la que toma el trabajador. Cuerpo: `{"to": "up|down|top"}`

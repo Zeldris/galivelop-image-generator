@@ -27,7 +27,7 @@ function aspect(ctx, a) {
 
 /**
  * ctx: {project, profile, key, order, profileCfg, brand, measure: {zone, textColor, paletteMin}, templates: [plantillas del perfil], showRaw,
- *       compare: [ids], actions: {mark, note, choose, undo, compare, recreate, vary, copyParams, openLog, retry, cancel, copyError, recompose, setTemplate, setLayout, saveTemplate}}
+ *       compare: [ids], actions: {mark, note, choose, undo, compare, recreate, vary, copyParams, openLog, retry, cancel, copyError, removeEntry, recompose, setTemplate, setLayout, saveTemplate}}
  */
 export function attemptCard(ctx, attempt) {
   const st = stateOf(ctx.order, attempt);
@@ -108,7 +108,8 @@ export function queueCard(ctx, entry) {
     block.append(h('b', {}, t(`ui.state.${entry.state}`)), h('div.err', {}, entry.errorText || (entry.error && entry.error.code) || ''),
       h('div.actions', {},
         h('button.btn', { type: 'button', onclick: () => ctx.actions.retry(entry) }, t('ui.attempt.retry')),
-        entry.errorText ? h('button.btn', { type: 'button', onclick: () => ctx.actions.copyError(entry) }, '⎘ ', t('ui.attempt.copyError')) : null));
+        entry.errorText ? h('button.btn', { type: 'button', onclick: () => ctx.actions.copyError(entry) }, '⎘ ', t('ui.attempt.copyError')) : null,
+        h('button.btn.btn-danger', { type: 'button', data: { fid: `delete-entry-${entry.id}` }, title: t('ui.queue.deleteHint'), onclick: () => ctx.actions.removeEntry(entry) }, t('ui.queue.delete'))));
   }
   figure.append(block, badges(entry.state, entry));
   const meta = h('div.meta', {}, h('span.id', {}, id), h('span', {}, `${t('ui.attempt.seed')} `, h('b', {}, entry.seed)),

@@ -14,6 +14,8 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Borrar desde la interfaz (F4e.1b): «Borrar» con confirmación sí / no en cada intento, en su composición (avisa de que
   la entrega ya hecha no cambia si el intento es el elegido) y en cada plantilla (dice cuántos intentos la usan y, si es
   de proyecto, que el cambio queda en el repositorio sin commit); «Ocultar» / «Mostrar» por elemento en el editor.
+- Borrar las entradas de la cola fallidas o canceladas: «Borrar» con confirmación sí / no en su tarjeta,
+  `DELETE /api/queue/{id}` y `gimg queue rm <id> [--yes]`.
 
 ### Corregido
 

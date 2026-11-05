@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   warns that the delivery already made does not change if the attempt is the chosen one) and on each template (it
   says how many attempts use it and, for a project template, that the change stays in the repository without a
   commit); "Hide" / "Show" per element in the element editor.
+- Delete failed or cancelled queue entries: "Delete" with a yes/no confirmation on their cards, `DELETE /api/queue/{id}`
+  and `gimg queue rm <id> [--yes]`.
 
 ### Fixed
 

@@ -492,9 +492,12 @@ class F4dUi(unittest.TestCase):
         self.assertIn("request('DELETE', path)", api)
         for needle in ("del(paths.attempt(p, profile, key, id))", "del(paths.compose(p, profile, key, id))", "del(paths.template(p, profile, id))", "get(paths.template(p, profile, id))"):
             self.assertIn(needle, api)
-        for call in ("api.deleteAttempt(", "api.deleteCompose("):
+        self.assertIn("del(paths.entry(id))", api)
+        for call in ("api.deleteAttempt(", "api.deleteCompose(", "api.removeEntry("):
             self.assertIn("if (!ok) return;\n      try {\n        await " + call, order)
-        self.assertEqual(order.count("confirmAction("), 2)
+        self.assertEqual(order.count("confirmAction("), 3)
+        # la entrada fallida o cancelada tiene su «Borrar» junto a «Reintentar»
+        self.assertIn("onclick: () => ctx.actions.removeEntry(entry) }, t('ui.queue.delete')", card)
         self.assertIn("if (!ok) return;\n  try {\n    await api.deleteTemplate(", pieces)
         self.assertIn("confirmAction(", pieces)
         # el modal de la composición avisa de la entrega si es la elegida

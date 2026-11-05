@@ -48,7 +48,7 @@ _EXACT = {
     405: ("api.method_not_allowed",), 411: ("api.length_required",), 413: ("api.body_too_large",),
     415: ("api.content_type",),
     409: ("compose.template_exists", "compose.busy", "measure.busy", "api.heavy_busy", "compose.nothing_to_do", "compose.no_attempts", "serve.already_running", "serve.port_busy", "serve.not_running", "order.discard_chosen",
-          "order.delete_chosen", "order.delete_busy", "order.compose_none", "order.compose_no_raw", "compose.delete_default", "compose.delete_config", "compose.delete_symlink", "order.history_empty", "queue.not_cancellable", "queue.not_movable", "delivery.target_taken"),
+          "order.delete_chosen", "order.delete_busy", "order.compose_none", "order.compose_no_raw", "compose.delete_default", "compose.delete_config", "compose.delete_symlink", "order.history_empty", "queue.not_cancellable", "queue.not_movable", "queue.not_removable", "delivery.target_taken"),
     400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "compose.template_unknown", "compose.element_unknown", "compose.bad_layout", "compose.bad_element", "compose.templates_dir_missing", "api.bad_json",
           "api.bad_param"),
 }
@@ -822,6 +822,11 @@ def attempt_measure(req):
 def queue_cancel(req):
     _fields(req.body, ())
     return queue.entry_view(queue.cancel(_int_param("id", req.params["id"])), req.lang)
+
+
+@route("DELETE", "/api/queue/{id}")
+def queue_remove(req):
+    return queue.entry_view(queue.remove(_int_param("id", req.params["id"])), req.lang)
 
 
 @route("POST", "/api/queue/{id}/move")

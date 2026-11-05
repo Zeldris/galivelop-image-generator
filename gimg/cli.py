@@ -120,6 +120,8 @@ def _build(lang: str) -> argparse.ArgumentParser:
     leaf(g, "cancel", "cli.cmd.queue_cancel", arg("entry", "cli.arg.entry", type=int))
     leaf(g, "move", "cli.cmd.queue_move", arg("entry", "cli.arg.entry", type=int),
          arg("to", "cli.arg.queue_to", choices=queue.MOVES))
+    leaf(g, "rm", "cli.cmd.queue_rm", arg("entry", "cli.arg.entry", type=int),
+         opt("--yes", "cli.arg.yes", action="store_true"))
     leaf(g, "clear", "cli.cmd.queue_clear", opt("--project", "cli.arg.queue_project", metavar="P"))
 
     leaf(top, "work", "cli.cmd.work", opt("--once", "cli.arg.once", action="store_true"))
@@ -579,6 +581,10 @@ def _queue(args, sub, out: _Out) -> None:
     elif sub == "move":
         entry = queue.move(args.entry, args.to)
         out.data(_entry_json(out, entry)) if out.as_json else out.line("cli.out.moved", id=entry["id"], to=args.to)
+    elif sub == "rm":
+        _confirm(args, out, "cli.confirm.queue_rm", id=args.entry)
+        entry = queue.remove(args.entry)
+        out.data(_entry_json(out, entry)) if out.as_json else out.line("cli.out.queue_removed", id=entry["id"])
     elif sub == "clear":
         found = queue.clear(args.project)
         if out.as_json:

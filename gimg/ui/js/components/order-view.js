@@ -95,6 +95,18 @@ export async function orderView(host, route) {
         ...(e.params && e.params.model && e.params.model !== (ctx.order.params || {}).model && e.params.model !== profileCfg.model ? { model: e.params.model } : {}) }); // F4d: el modelo del intento, si no es el del pedido ni el del perfil
     }),
     cancel: guard(async (e) => { await api.cancel(e.id); toast(t('ui.queue.cancelled', { id: e.id })); await poll.refreshNow(); }),
+    /** F4e.1: quitar de la cola una entrada fallida o cancelada (sin intento ni imagen), tras el modal «sí / no». */
+    removeEntry: guard(async (e) => {
+      const opener = () => document.querySelector(`[data-entry="${e.id}"][data-kind="entry"]`);
+      const ok = await confirmAction({ title: t('ui.queue.deleteTitle', { id: e.id }), message: t('ui.queue.deleteMessage', { id: e.id }), confirmLabel: t('ui.queue.deleteConfirm'), opener });
+      if (!ok) return;
+      try {
+        await api.removeEntry(e.id);
+        toastOk(t('ui.queue.deleted', { id: e.id }));
+      } finally {
+        await poll.refreshNow();
+      }
+    }),
     setTemplate: async (a, id) => {
       try {
         await api.compose(project, profile, key, a.id, { template: id });

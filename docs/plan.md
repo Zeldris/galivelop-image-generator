@@ -138,8 +138,11 @@ Se diseña con su «en detalle», como F4b-F4d:
    en vivo), alineación e interlineado; y añadir o quitar elementos de texto. Es viable sin instalar nada (D6): la
    plantilla es SVG que pinta `rsvg`, y todo eso son atributos (`font-family`, `font-size`, `font-weight`,
    `font-style`, `fill`, `text-anchor`). Los cambios se aplican a una copia del intento (la original no se toca) y se
-   pueden guardar como plantilla nueva, como hoy la posición. Por decidir en su «en detalle»: el texto largo que no
-   cabe en la caja (encoger, cortar o avisar) y si la fuente elegida viaja con el proyecto (archivo en el repo, D25).
+   pueden guardar como plantilla nueva, como hoy la posición. **Decidido por la persona el 2026-11-05:** el texto que no
+   cabe en su caja se encoge hasta un mínimo y, si ni así, se pinta igual y el editor lo marca con aviso (nunca se
+   corta); de la fuente viaja solo el nombre de la familia (va a `compose.fonts`, y `doctor` avisa si falta), sin
+   copiar archivos al repo; «una copia del intento» es como hoy la posición: la imagen cruda no se toca, texto y
+   tipografía van al `layout` del intento y «Volver a la plantilla» lo deshace (no se crea un intento nuevo).
 
 ## F1 en detalle
 
@@ -1345,6 +1348,11 @@ de `contain` se recorta a la imagen); la interfaz mide así la zona y los elemen
    `DELETE /api/projects/{p}/orders/{key}/@{profile}/attempts/{id}`, `DELETE …/attempts/{id}/compose` y
    `DELETE /api/projects/{p}/profiles/{profile}/templates/{id}` (las rutas exactas siguen las de `docs/api.md`). CLI:
    `gimg attempt rm`, `gimg compose rm` y `gimg template rm`, que sin `--yes` preguntan y sin terminal fallan.
+6. **Entrada de la cola fallida o cancelada** (pedido de la persona del 2026-11-05, tras F4e.1b): su tarjeta («Cancelada»
+   o «Fallida», con «Reintentar») gana «Borrar» con el modal «sí / no». Solo `failed` y `cancelled`
+   (`queue.not_removable`, 409: en cola o generándose se cancela antes; una `done` es su intento). Se quita de
+   `queue.json` con sus `.pending-<id>.*`; su número no se reutiliza. API `DELETE /api/queue/{id}`, CLI
+   `gimg queue rm <id> [--yes]`.
 
 ### Pasos de F4e
 

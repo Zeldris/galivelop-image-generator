@@ -308,6 +308,25 @@ def clear(project: str | None = None) -> list:
     return _txn(change)
 
 
+REMOVABLE = ("failed", "cancelled")
+
+
+def remove(entry_id) -> dict:
+    """Take a ``failed`` or ``cancelled`` entry out of the queue for good (F4e.1, D41) and clean what it may have left
+    (``.pending-<id>.*``). Any other state is ``queue.not_removable``: a ``queued``/``running`` one is cancelled first,
+    and a ``done`` one is its attempt (``attempt rm``). Returns the removed entry."""
+    def change(data):
+        entry = _find(data, entry_id)
+        if entry["state"] not in REMOVABLE:
+            raise GimgError("queue.not_removable", id=entry["id"], state=entry["state"])
+        data["entries"] = [e for e in data["entries"] if e is not entry]
+        return entry
+
+    entry = _txn(change)
+    _clean_pending(entry)
+    return entry
+
+
 def next_queued():
     """The first queued entry, without taking it; ``None`` if there is none."""
     return _txn(_first_queued)
