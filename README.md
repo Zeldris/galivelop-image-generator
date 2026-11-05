@@ -20,6 +20,8 @@ reales**: el motor real (`sd-cli`) llega en F2.
 | F3 API y arranque | API HTTP local (`gimg serve`), arranque bajo demanda y `gimg ui` (0.3.0) |
 | F4 Interfaz | Tres pantallas en el navegador, es/en |
 | F5 Piloto WMF | Configuración de ejemplo, guía de integración y medidas |
+| F6 Director local | Opcional: un LLM local (Ollama) redacta prompts y ayuda a elegir |
+| F7 Windows | Última fase: motor e instalador para Windows y lanzador `arrancar.cmd` |
 
 Detalle, decisiones D1-D27 y criterios de cierre en [`docs/plan.md`](docs/plan.md).
 

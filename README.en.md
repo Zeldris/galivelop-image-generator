@@ -19,6 +19,8 @@ images yet**: the real engine (`sd-cli`) arrives in F2.
 | F3 API and startup | Local HTTP API (`gimg serve`), on-demand startup and `gimg ui` (0.3.0) |
 | F4 UI | Three browser screens, es/en |
 | F5 WMF pilot | Example config, integration guide and measurements |
+| F6 Local director | Optional: a local LLM (Ollama) drafts prompts and helps choose |
+| F7 Windows | Last phase: engine and installer for Windows, and an `arrancar.cmd` launcher |
 
 Details, decisions D1-D27 and exit criteria in [`docs/plan.md`](docs/plan.md) (in Spanish).
 
