@@ -91,6 +91,32 @@ proyecto desde GitHub. Se empieza con **0.4.0 al cerrar F4**, y en el mismo paso
 texto MIT en la raíz, y en los dos README la línea «Todavía no hay licencia» pasa a decir que el código es MIT y que
 los modelos (`gimg/models.json`) tienen su propia licencia. Falta que la persona diga el titular del copyright.
 
+**Piezas, edición y borrado** (pedido de la persona del 2026-11-05; tras licencia y releases, **sin fase asignada aún**:
+la persona decide si es una F4e o va con otra). Se diseña con su «en detalle», como F4b-F4d:
+
+1. **Composición con piezas:** la og (y cualquier pieza compuesta) se monta por capas con piezas que ya existen:
+   **fondo**, **logo**, **elementos sueltos** y el texto encima, cada capa colocable, escalable y ordenable en el
+   editor. Las piezas salen de intentos elegidos de gimg (de cualquier pedido del proyecto) **o de archivos de la
+   persona** (PNG o SVG).
+2. **Transparencia opcional:** una casilla al generar para pedir la pieza con fondo transparente, y un botón «Quitar
+   fondo» sobre una pieza sin transparencia, que deja una copia y conserva la original. Por investigar antes de
+   prometerlo: cómo quitar el fondo sin instalar nada (D6): si `sd-cli` o un modelo local lo hace, o un recorte por
+   color para fondos lisos.
+3. **Imágenes de referencia al generar una pieza:** una o varias (intentos de gimg o archivos de la persona) para
+   seguir un estilo, una forma o un personaje. Comprobar qué acepta hoy `sd-cli` y qué modelos del catálogo.
+4. **Cajas de texto antes de generar:** en el pedido nuevo se colocan, al tamaño de la pieza, las cajas de titular,
+   subtítulo y logo (partiendo de las de la plantilla); el generador las tiene en cuenta: (a) frase en el prompt para
+   que esa zona quede tranquila, (b) imagen inicial o máscara con la zona lisa si el modelo lo acepta, (c) el chip de
+   contraste de esas cajas marca los intentos donde no se lee. Las cajas viajan con el pedido y la composición las
+   usa. Qué sirve de (a) y (b) con los modelos de la Deck se decide con una prueba.
+5. **Borrar:** cada intento generado, cada composición, cada plantilla (local o de proyecto) y cada elemento tiene un
+   botón «Borrar» con un modal de confirmación «sí / no». No se borra la elegida ni la plantilla `default` de un perfil
+   sin avisar de qué deja de funcionar.
+6. **Edición por prompt:** una casilla «Editar con prompt»; marcada, cada intento enseña su campo de prompt de
+   edición y un botón para lanzarlo, que encola un intento nuevo a partir de ese (el original no se toca). Por
+   investigar: un modelo de edición local que `sd-cli` acepte y quepa en la Deck, o img2img con fuerza ajustable;
+   y si además se quiere edición por zona marcada (inpainting), pregunta abierta a la persona.
+
 ## F1 en detalle
 
 Contrato de F1 (lo implementan los pasos de abajo; un cambio de este contrato se apunta aquí en el mismo commit).
