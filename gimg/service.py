@@ -362,3 +362,38 @@ def detach(port=None, idle_min=None, lang=None) -> dict:
     else:
         proc.wait()
     raise GimgError("serve.start_failed", log=_tail(log_path()))
+
+
+# --- on demand (F3.5) ---
+def autostart_enabled() -> bool:
+    """``GIMG_AUTOSTART=0`` turns the on-demand start off (the test suite sets it)."""
+    return os.environ.get("GIMG_AUTOSTART") != "0"
+
+
+def ensure_running(lang=None, warn=None) -> dict:
+    """The state of a live service, starting one in the background if there is none. A running service of another
+    version is stopped and replaced unless a worker is alive (or may be): then it is kept and `warn(text)` says so.
+    Raises ``serve.start_failed`` / ``serve.port_busy`` when none comes up."""
+    lang = lang or i18n.default_lang()
+    current = status()
+    if current is not None:
+        answer = health(current["port"]) or {}
+        running = answer.get("version") or current.get("version")
+        if running == __version__:
+            return current
+        if queue.worker_alive() is not False:
+            if warn:
+                warn(i18n.t("cli.warn.service_old_version", lang, running=running, installed=__version__))
+            return current
+        with contextlib.suppress(GimgError):  # it may have stopped by itself meanwhile
+            stop()
+        if lock_held():
+            raise GimgError("serve.start_failed", log="")
+    try:
+        return detach(lang=lang)
+    except GimgError as exc:
+        if exc.code == "serve.already_running":  # another process started it first
+            alive = wait_status(HEALTH_WAIT_S)
+            if alive is not None:
+                return alive
+        raise

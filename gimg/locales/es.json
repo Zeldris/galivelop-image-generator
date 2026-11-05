@@ -353,5 +353,10 @@
   "error.serve.start_failed": "el servicio no arrancó a tiempo. Últimas líneas de serve.log:\n{log}",
   "error.serve.not_running": "el servicio no está en marcha",
   "error.serve.bad_port": "puerto no válido «{value}»: debe ser un número de 0 a 65535",
-  "error.serve.bad_idle": "tiempo de inactividad no válido «{value}»: debe ser un número de minutos de 0 en adelante"
+  "error.serve.bad_idle": "tiempo de inactividad no válido «{value}»: debe ser un número de minutos de 0 en adelante",
+  "cli.cmd.ui": "abrir la interfaz en el navegador (arranca el servicio si hace falta)",
+  "cli.arg.no_browser": "no abrir el navegador, solo escribir la URL",
+  "cli.out.ui_url": "Interfaz en {url}",
+  "cli.warn.service_old_version": "aviso: el servicio en marcha es de la versión {running} y la instalada es la {installed}; hay un trabajador vivo, así que se usa el viejo. Se actualizará al pararlo («gimg serve --stop») con la cola vacía.",
+  "cli.warn.service_failed": "aviso: la entrada quedó en la cola, pero el servicio no arrancó: {error}"
 }

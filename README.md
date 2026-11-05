@@ -87,6 +87,7 @@ python3 -m gimg order list mi-proyecto --unchosen
 python3 -m gimg queue list                            # estado de la cola, con los errores
 python3 -m gimg queue cancel 3
 python3 -m gimg serve                                 # servicio local en 127.0.0.1:8737 (--detach, --status, --stop, --port, --idle-min)
+python3 -m gimg ui                                    # abre la interfaz en el navegador (arranca el servicio si hace falta; --no-browser)
 python3 -m gimg project list | project remove mi-proyecto | version
 ```
 

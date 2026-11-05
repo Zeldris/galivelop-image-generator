@@ -56,7 +56,7 @@ class SubmitTests(WriteBase):
         f = self.tmp / "o.json"
         f.write_text(json.dumps(self.order(key="fauna/otro")))
         cli = self.cli_json("order", "submit", NAME, str(f))
-        self.assertEqual(sorted(cli), ["entries", "estimateMs"])
+        self.assertEqual(sorted(cli), ["entries", "estimateMs", "service"])  # `service`: F3.5, CLI only
         self.assertEqual(sorted(got["entries"][0]), sorted(cli["entries"][0]))
         self.assertEqual(got["estimateMs"], cli["estimateMs"])
         self.assertEqual(len(queue.list_entries()), 4)
@@ -96,7 +96,7 @@ class AttemptTests(WriteBase):
         self.assertEqual([e["seed"] for e in got["entries"]], [7, 8])
         cli = self.cli_json("attempt", "new", NAME, self.key, self.profile, "--seed", "7", "--count", "2",
                             "--steps", "4", "--draft")
-        self.assertEqual(sorted(got), sorted(cli))
+        self.assertEqual(sorted(got), sorted(set(cli) - {"service"}))  # `service`: F3.5, CLI only
         self.assertEqual([e["seed"] for e in cli["entries"]], [7, 8])
         self.assertEqual(sorted(got["entries"][0]), sorted(cli["entries"][0]))
 
