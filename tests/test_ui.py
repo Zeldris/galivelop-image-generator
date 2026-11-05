@@ -436,8 +436,11 @@ class LayoutEditor(unittest.TestCase):
 
     def test_dialog_traps_focus_stops_global_keys_and_returns_focus(self):
         editor = self.comp("layout-editor.js")
-        for needle in ("showModal()", "ev.key !== 'Tab'", "ev.stopPropagation()", "opener.focus()", "setPointerCapture", "ev.shiftKey", "ev.altKey"):
+        for needle in ("showModal()", "trapFocus(dlg)", "ev.stopPropagation()", "opener.focus()", "setPointerCapture", "ev.altKey"):
             self.assertIn(needle, editor)
+        trap = read(UI / "js" / "lib" / "focus-trap.js")  # UI.2: the Tab trap is shared with the queue drawer
+        for needle in ("ev.key !== 'Tab'", "ev.shiftKey"):
+            self.assertIn(needle, trap)
         self.assertNotIn("setAttribute('style'", editor)
 
     def test_local_templates_get_an_export_link_with_download(self):

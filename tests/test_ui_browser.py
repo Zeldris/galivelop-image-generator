@@ -3,6 +3,7 @@ real `gimg serve` (in a thread) on the fake engine, temporary folders and an exa
 fake engine writes placeholder images. Every scenario ends by asserting the page reported no exception, no console
 error, no CSP violation and no failed load. Skipped when no Chrome is found (see ``GIMG_TEST_CHROME``)."""
 import contextlib
+import fcntl
 import io
 import json
 import os
@@ -569,6 +570,59 @@ class QueueDrawer(UiBase):
         self.page.wait("!document.querySelector('dialog.confirm')")
         self.page.wait("document.querySelectorAll('#queue-drawer .queue-entry').length === 0")
         self.assertEqual([e for e in self.api("GET", "/api/queue") if e["state"] == "queued"], [])
+        self.no_problems()
+
+
+    def test_queue_drawer_fits_and_traps_focus(self):
+        """UI.2: the drawer is a modal dialog right under the header at any width, nothing in it scrolls sideways,
+        the thumbnail and the «Fallidas» filter are fully visible, Tab wraps inside it, the page behind is inert and
+        Esc closes it and returns the focus to the pill."""
+        from gimg import queue
+        queue.finish(queue.claim()["id"], "failed", error="boom")
+        queue.claim()  # p1 runs; a live worker lock keeps it from being recovered as queued
+        queue.worker_lock_path().parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(str(queue.worker_lock_path()), os.O_RDWR | os.O_CREAT, 0o600)
+        self.addCleanup(os.close, fd)
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        for width in (360, 1440):
+            self.page.ws.close()
+            self.page = self.browser.new_page(width=width, height=780)
+            where = "at %d" % width
+            self.open("/", "document.querySelector('.queue-pill')")
+            self.click(".queue-pill")
+            self.page.wait("document.querySelectorAll('#queue-drawer .queue-entry').length >= 2")
+            m = self.js("""(() => { const d = document.getElementById('queue-drawer'), dr = d.getBoundingClientRect();
+                const inside = (n) => { const r = n.getBoundingClientRect();
+                    return r.width > 0 && r.height > 0 && r.left >= dr.left - 0.5 && r.right <= dr.right + 0.5 && r.top >= dr.top - 0.5 && r.bottom <= dr.bottom + 0.5; };
+                const failed = document.querySelector('[data-fid=filter-failed]'), thumb = d.querySelector('.queue-entry .thumb, .queue-entry .thumb-empty');
+                const nodes = [...d.querySelectorAll('button:not(:disabled), a[href]')].filter((n) => n.getClientRects().length);
+                return {top: dr.top, headerH: document.querySelector('.app-header').getBoundingClientRect().height,
+                    scroll: [d.scrollWidth, d.clientWidth], failedOk: Boolean(failed) && inside(failed), thumbOk: Boolean(thumb) && inside(thumb),
+                    entryScroll: [...d.querySelectorAll('.queue-entry')].map((e) => e.scrollWidth - e.clientWidth),
+                    role: d.getAttribute('role'), modal: d.getAttribute('aria-modal'), label: document.getElementById(d.getAttribute('aria-labelledby')).textContent,
+                    inert: [document.getElementById('main').inert, document.querySelector('.app-header').inert, d.inert],
+                    focus: document.activeElement.tagName + '#' + document.activeElement.id,
+                    first: nodes[0].dataset.fid, last: nodes[nodes.length - 1].dataset.fid}; })()""")
+            self.assertAlmostEqual(m["top"], m["headerH"], delta=1, msg="drawer top %s vs header %s %s" % (m["top"], m["headerH"], where))
+            self.assertLessEqual(m["scroll"][0], m["scroll"][1], "drawer scrolls sideways %s: %s" % (where, m["scroll"]))
+            self.assertTrue(all(x <= 0 for x in m["entryScroll"]), "an entry overflows %s: %s" % (where, m["entryScroll"]))
+            self.assertTrue(m["failedOk"], "the «Fallidas» filter is cut or hidden " + where)
+            self.assertTrue(m["thumbOk"], "the thumbnail is cut or hidden " + where)
+            self.assertEqual((m["role"], m["modal"]), ("dialog", "true"), where)
+            self.assertEqual(m["label"], "Cola", where)
+            self.assertEqual(m["inert"], [True, True, False], "inert main/header/drawer %s" % where)
+            self.assertEqual(m["focus"], "H2#queue-title", "the focus does not start on the title " + where)
+            focus = "document.querySelector('[data-fid=%s]').focus()"
+            active = "document.activeElement.dataset.fid"
+            self.js(focus % m["last"])
+            self.page.key("Tab")
+            self.assertEqual(self.js(active), m["first"], "Tab from the last control does not wrap " + where)
+            self.page.key("Tab", shift=True)
+            self.assertEqual(self.js(active), m["last"], "Shift+Tab from the first control does not wrap " + where)
+            self.page.key("Escape")
+            self.page.wait("document.getElementById('queue-drawer').hidden")
+            self.assertEqual(self.js("[document.activeElement.dataset.fid, document.getElementById('main').inert, document.querySelector('.app-header').inert]"),
+                             ["pill", False, False], "after Esc the focus is not on the pill or the page is still inert " + where)
         self.no_problems()
 
 

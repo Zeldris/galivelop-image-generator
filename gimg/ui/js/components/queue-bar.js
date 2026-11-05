@@ -14,6 +14,7 @@ import * as router from '../router.js';
 import { to } from '../router.js';
 import { toast, toastError } from './toast.js';
 import { confirmAction } from './confirm.js';
+import { trapFocus } from '../lib/focus-trap.js';
 
 const FILTERS = ['pending', 'done', 'failed', 'all'];
 const PENDING = ['queued', 'running'];
@@ -23,6 +24,7 @@ let hosts = null;
 
 export function initQueueBar(pillHost, drawerHost) {
   hosts = { pillHost, drawerHost };
+  trapFocus(drawerHost);
   store.subscribe('queue', render);
   render();
 }
@@ -30,7 +32,7 @@ export function initQueueBar(pillHost, drawerHost) {
 export function toggleQueue(force) {
   open = force === undefined ? !open : Boolean(force);
   render();
-  if (open) { const first = hosts.drawerHost.querySelector('button, a'); if (first) first.focus(); }
+  if (open) { const title = hosts.drawerHost.querySelector('h2'); if (title) title.focus(); }
   else { const pill = hosts.pillHost.querySelector('button'); if (pill) pill.focus(); }
 }
 
@@ -94,6 +96,8 @@ function paint(entries) {
 
   const drawer = hosts.drawerHost;
   drawer.hidden = !open;
+  // diálogo modal: lo de detrás queda inerte (ni foco ni clic) mientras está abierto
+  for (const sel of ['#main', '.app-header']) { const node = document.querySelector(sel); if (node) node.inert = open; }
   if (!open) return;
   const line = queuedOrder(entries);
   const queuedIds = line.map((e) => e.id);
@@ -103,7 +107,7 @@ function paint(entries) {
   const current = router.parse().project;
   const inProject = current ? line.filter((e) => e.project === current).length : 0;
   replace(drawer,
-    h('div.row-between', {}, h('h2', {}, t('ui.queue.label')),
+    h('div.row-between', {}, h('h2', { id: 'queue-title', tabindex: '-1', data: { fid: 'title' } }, t('ui.queue.label')),
       h('button.btn.btn-icon.btn-ghost', { type: 'button', data: { fid: 'close' }, aria: { label: t('ui.queue.close') }, onclick: () => toggleQueue(false) }, '✕')),
     h('div.row', { role: 'group', aria: { label: t('ui.queue.filterLabel') } }, FILTERS.map((f) =>
       h('button.btn.btn-toggle', { type: 'button', data: { fid: `filter-${f}` }, aria: { pressed: filter === f }, onclick: () => { filter = f; render(); } }, t(`ui.queue.filter.${f}`)))),
@@ -161,7 +165,7 @@ function entry(e, queuedPos, queuedCount) {
     h('div', {}, h('div.who', {}, who), h('div.what', {}, what.join(' · ')),
       e.state === 'running' ? progressOf(e) : null,
       e.state === 'failed' && e.errorText ? h('div.what.mono', {}, e.errorText) : null),
-    h('div.stack', {}, actions));
+    actions.length ? h('div.queue-actions', {}, actions) : null);
   return node;
 }
 
