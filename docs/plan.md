@@ -1320,7 +1320,8 @@ de `contain` se recorta a la imagen); la interfaz mide así la zona y los elemen
 
 ## F4e en detalle (piezas y edición)
 
-**Estado:** F4e.1 (Borrar) decidido por la persona el 2026-11-05 (D41). F4e.2-F4e.4 (puntos 7, 1 y 4(a)(c) de
+**Estado:** F4e.1 (Borrar) decidido por la persona el 2026-11-05 (D41) e implementado (F4e.1a, F4e.1b). F4e.2
+(punto 7) diseñado abajo con las decisiones de la persona del 2026-11-05. F4e.3-F4e.4 (puntos 1 y 4(a)(c) de
 «Piezas, edición y borrado»), por diseñar, en ese orden salvo que la persona diga otro.
 
 ### F4e.1 Borrar (punto 5, D41)
@@ -1354,12 +1355,66 @@ de `contain` se recorta a la imagen); la interfaz mide así la zona y los elemen
    `queue.json` con sus `.pending-<id>.*`; su número no se reutiliza. API `DELETE /api/queue/{id}`, CLI
    `gimg queue rm <id> [--yes]`.
 
+### F4e.2 Editar texto y tipografía (punto 7)
+
+Con las tres decisiones de la persona del 2026-11-05 (en el punto 7). Todo es SVG que pinta `rsvg-convert`; nada que
+instalar (D6).
+
+1. **Dónde vive.** En el `layout` del intento, como la posición: la entrada de un elemento de texto gana `text` y
+   `style` (`{x, y, w, h, hidden?, text?, style?}`). La imagen cruda no se toca y no se crea un intento nuevo; `{}`
+   («Volver a la plantilla») lo deshace todo. `text` es el texto de **ese** intento en ese elemento: no cambia el
+   `text` del pedido (los campos del panel siguen valiendo para los intentos siguientes y para los elementos sin `text`).
+   Cambiar de plantilla vacía el layout, como hoy.
+2. **`style`**, todas las claves opcionales: `family` (nombre de familia, `[A-Za-z0-9 ._-]{1,64}`), `size` (px enteros,
+   4-1000), `weight` (100-900 de 100 en 100), `italic` (booleano), `color` (`#rrggbb`), `align` (`left`, `center`,
+   `right`) y `lineHeight` (0,8-3, múltiplo del tamaño). Un valor fuera de rango da `compose.bad_layout` con el motivo
+   (es/en). `text`: hasta 500 caracteres; `\n` parte líneas, que se pintan como `<tspan>` con `dy = lineHeight × size`.
+   No hay ajuste automático de líneas: se parte donde la persona pone el salto.
+3. **Cómo se pinta.** Solo en elementos cuya etiqueta es `<text>` (en otro da `compose.bad_layout`, motivo «texto solo en
+   `<text>`»). Con `text` o `style`, la caja deja de escalar el elemento (la escala de F4c deformaría las letras): es
+   un marco. `apply_layout` reescribe el `<text>`: su contenido (escapado con `xml_escape`, en `<tspan>` por línea),
+   `x` según `align` (izquierda, centro o derecha de la caja, con `text-anchor` `start`/`middle`/`end`), `y` con la
+   primera línea de base en `caja.y + size` y el estilo añadido al final de su `style` (gana a los atributos y a una
+   hoja `<style>`, como `display` en F4e.1). `color` también va a `data-gimg-color`, así que el contraste del intento
+   y el chip en vivo del editor miden el color nuevo sin más cambios. Lo que el layout no trae se queda como en la
+   plantilla.
+4. **Lo que no cabe: encoger y avisar.** Al componer, cada elemento con `text` o `style` se mide pintándolo solo (un
+   SVG con ese elemento, `rsvg-convert` y la caja de los píxeles no transparentes leída con `ffmpeg`, como
+   `measure.pixels`). Si se sale de su caja, se baja el tamaño en proporción hasta un mínimo (la mitad del pedido, nunca
+   menos de 8 px) y se mide otra vez; si ni así cabe, se pinta al mínimo y el intento lo apunta en
+   `compose.overflow` (`{nombre: {"size", "min"}}`). Nunca se corta. `compose.fitted` dice el tamaño con que se pintó
+   cada uno; el layout guarda el que pidió la persona (al cambiar el texto se vuelve a partir de él). El editor marca
+   con aviso (borde ámbar y texto, es/en) cada elemento de `overflow`. Coste: hasta dos renders pequeños por elemento
+   editado; un fallo de esa medida no tumba la composición (se pinta al tamaño pedido sin aviso, como el contraste).
+5. **Añadir y quitar texto.** «Añadir texto» crea en el layout `extra<N>` con `"add": true`, `box`, `text` y `style`
+   (todas sus claves obligatorias salvo `lineHeight`): se pinta como un `<text id="gimg-extra<N>" data-gimg-box=…>`
+   antes del cierre del `<svg>`, encima del resto. Quitar uno añadido es sacarlo del layout; uno de la plantilla se
+   oculta (F4e.1 §4). Hasta 10 añadidos por intento.
+6. **Fuentes: solo el nombre.** `GET /api/fonts` y `gimg fonts [--json]` (CLI = API) dan las familias de `fc-list :
+   family` (ordenadas, sin repetir) y, por perfil, las de su `compose.fonts` con `installed`. El editor ofrece esa
+   lista; una familia que no está instalada se puede escribir igual, con aviso. Al componer, una familia que `fc-list`
+   no tiene va a `compose.missingFonts` (`rsvg` pinta con la de reserva; no es error). «Guardar como plantilla» escribe
+   las familias usadas en el `.json` de la plantilla como `fonts` (`_sidecar` lo lee, `effective` lo une a
+   `compose.fonts`), y `gimg doctor` avisa de las que faltan de `compose.fonts` y de los `fonts` de cada plantilla. No
+   se copia ningún archivo de fuente al repo, y gimg no edita la configuración del proyecto para esto.
+7. **Guardar como plantilla** (F4c): el texto editado se guarda tal cual (sin hueco `{{campo}}`); un elemento sin
+   `text` conserva su hueco. El estilo va al `style` del `<text>`, y los añadidos pasan a ser elementos de la plantilla.
+8. **Superficies.** API y CLI: los de hoy (`POST …/attempts/{id}/compose` con `layout`, `gimg compose --layout`), con las
+   claves nuevas, y `GET /api/fonts` / `gimg fonts`. Interfaz (editor de F4c): al elegir un elemento de texto, un panel
+   con el texto (varias líneas), familia (lista con búsqueda), tamaño, peso, cursiva, color, alineación e interlineado;
+   «Añadir texto» y, en los añadidos, «Quitar». La vista previa del editor es el SVG pintado por el navegador (las
+   mismas fuentes locales); la que vale es la de «Aplicar», que compone en el servidor y trae `overflow` y
+   `missingFonts`. Todo es/en, con teclado y mando como el resto del editor.
+
 ### Pasos de F4e
 
 | Paso | Qué | Comprobación |
 |---|---|---|
 | F4e.1a | Motor, API y CLI de F4e.1: `nextId`, borrar intento, composición y plantilla, `hidden` en el layout; `docs/api.md`, es/en | Tests como F3.3 (CLI = API, códigos y estados): número no reutilizado, `chosenHistory` limpio, elegida y por defecto protegidas, nada fuera de `paths.inside` |
 | F4e.1b | Interfaz de F4e.1: botones y modal, ocultar y mostrar en el editor; CHANGELOG | `tests/test_ui.py`; recorrido en navegador, de la persona |
+| F4e.2a | Motor de F4e.2: `text`, `style` y `add` en el layout (validar, pintar, guardar como plantilla), encoger y avisar (`fitted`, `overflow`), `missingFonts`, `fonts` de la plantilla y `doctor` | Tests de `apply_layout` (contenido escapado, `tspan`, `align`, estilo gana a `<style>`), de la medida (con `rsvg-convert`; sin él, salta como los de F2.8) y de cada `bad_layout` con su motivo |
+| F4e.2b | API y CLI de F4e.2: `GET /api/fonts`, `gimg fonts`, claves nuevas en `docs/api.md`, es/en | Tests como F3.3 (CLI = API); `fc-list` simulado |
+| F4e.2c | Interfaz de F4e.2: panel de texto y tipografía, añadir y quitar, avisos de `overflow` y `missingFonts`; CHANGELOG | `tests/test_ui.py` y `tests/test_ui_browser.py`; recorrido en navegador, de la persona |
 
 ## Pendiente
 
