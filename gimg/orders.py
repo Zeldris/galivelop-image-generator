@@ -7,10 +7,11 @@ This module neither enqueues (queue, F1.4) nor delivers (F1.5): `choose` and `un
 new chosen ids so delivery can hook in. Every read-modify-write holds `fsutil.lock` of ``order.json``.
 
 Public API: `submit`, `set_text`, `attempt_specs`, `add_attempt`, `set_composed`, `attempt_for_entry`, `attempt_image`,
-`raw_image`, `delete_attempt`, `delete_compose`, `compose_names`, `compose_paths`, `compose_lock_path`, `pending_image_path`, `mark`, `note`, `choose`, `undo`, `get`, `list_orders`. All raise `GimgError` with codes ``order.*`` on bad input.
+`raw_image`, `delete_attempt`, `delete_compose`, `rename`, `compose_names`, `compose_paths`, `compose_lock_path`, `pending_image_path`, `mark`, `note`, `choose`, `undo`, `get`, `list_orders`. All raise `GimgError` with codes ``order.*`` on bad input.
 """
 from __future__ import annotations
 
+import contextlib
 import copy
 import os
 import random
@@ -651,6 +652,85 @@ def delete_compose(project: str, key: str, profile: str, attempt_id: int) -> dic
     log.append(project, log.compose_delete_record(key, profile, item["seed"], attempt_id, removed, done["template"],
                                                   done["chosen"]))
     return {"attempt": attempt_id, "files": removed, "chosen": done["chosen"], "image": done["image"]}
+
+
+def _remove_empty_parents(folder: Path, stop: Path) -> None:
+    """Remove `folder` and its parents while they are empty, never `stop` itself (a key like ``a/b`` leaves ``a/``)."""
+    while folder != stop and stop in folder.parents:
+        try:
+            folder.rmdir()
+        except OSError:
+            return
+        folder = folder.parent
+
+
+def rename(project: str, key: str, profile: str, new_key: str) -> dict:
+    """Give the order (`key`, `profile`) the key `new_key` (F4e.5) and return it. Other profiles of `key` stay.
+
+    The folder moves (a rename inside the data folder), ``order.json`` gets the new ``key``, the finished entries of the
+    queue point at the new key, and what was delivered moves with it: if ``delivery.template`` gives the order another
+    file, the chosen image is delivered at the new one and the old file and manifest entry go; if not, only the manifest
+    entry changes key. Everything runs under the delivery lock and the order's; if a step fails the folder and the queue go
+    back and the error is raised. The log keeps its old lines and gets an ``order.rename`` one. A project's orders file
+    is not touched (D25).
+
+    ``order.same_key`` (400); ``order.exists`` (the new key is already an order of that profile); ``order.busy`` (queued
+    or running entries, or an attempt being composed); ``order.unknown``; the key errors of `_check_id`;
+    ``delivery.target_taken`` and the other delivery errors, before anything moves."""
+    from . import delivery, queue  # both import this module
+
+    _check_id(key, profile)
+    _check_id(new_key, profile)
+    if new_key == key:
+        raise GimgError("order.same_key", order=key, profile=profile)
+    old_dir, new_dir = _order_dir(project, key, profile), _order_dir(project, new_key, profile)
+    get(project, key, profile)  # order.unknown
+    with delivery._lock(project), contextlib.ExitStack() as stack:
+        order = get(project, key, profile)
+        for item in order["attempts"]:
+            if not stack.enter_context(fsutil.try_lock(compose_lock_path(project, key, profile, item["id"]))):
+                raise GimgError("order.busy", order=key, profile=profile)
+        stack.enter_context(fsutil.lock(old_dir / _ORDER_FILE))
+        order = _read(project, key, profile)
+        if new_dir.exists():
+            raise GimgError("order.exists", order=new_key, profile=profile)
+        plan = delivery.check_rename(project, order, new_key)
+        moved = copy.deepcopy(order)
+        moved["key"], moved["updatedAt"] = new_key, _now()
+
+        def revert():
+            if new_dir.exists() and not old_dir.exists():
+                fsutil.write_json(new_dir / _ORDER_FILE, order)
+                os.rename(str(new_dir), str(old_dir))
+                _remove_empty_parents(new_dir.parent, _orders_root(project))
+
+        def move():
+            new_dir.parent.mkdir(parents=True, exist_ok=True)
+            os.rename(str(old_dir), str(new_dir))
+            fsutil.write_json(new_dir / _ORDER_FILE, moved)
+
+        try:
+            queue.rename_order(project, key, profile, new_key, move=move)
+        except BaseException:
+            with contextlib.suppress(Exception):
+                revert()
+            raise
+        try:
+            if plan is not None:
+                delivery.apply_rename(plan)
+        except BaseException:
+            with contextlib.suppress(Exception):
+                queue.rename_order(project, new_key, profile, key, check_busy=False)
+            with contextlib.suppress(Exception):
+                revert()
+            raise
+        _remove_empty_parents(old_dir.parent, _orders_root(project))
+    log.append(project, log.order_rename_record(key, new_key, profile))
+    return get(project, new_key, profile)
+
+
+def _orders_root(project: str) -> Path:
+    return paths.inside(paths.project_data_dir(project), "orders")
 
 
 def mark(project: str, key: str, profile: str, attempt_id: int, state: str) -> dict:

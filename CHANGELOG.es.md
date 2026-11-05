@@ -11,6 +11,10 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Añadido
 
+- Renombrar un pedido (F4e.5): «Renombrar» junto al título, `POST .../orders/{profile}/{key}/rename` y `gimg order rename`.
+  La carpeta, las entradas terminadas de la cola y lo entregado siguen a la clave nueva (el archivo viejo y su entrada del
+  manifiesto se borran); se rechaza con el pedido en cola, generándose o componiéndose. El archivo de pedidos del proyecto
+  no se toca.
 - Borrar desde la interfaz (F4e.1b): «Borrar» con confirmación sí / no en cada intento, en su composición (avisa de que
   la entrega ya hecha no cambia si el intento es el elegido) y en cada plantilla (dice cuántos intentos la usan y, si es
   de proyecto, que el cambio queda en el repositorio sin commit); «Ocultar» / «Mostrar» por elemento en el editor.

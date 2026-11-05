@@ -194,6 +194,17 @@ export async function transport(method, url, body) {
         order.text = { ...body.text }; order.updatedAt = now();
         return ok(order);
       }
+      if (r5 === 'rename' && method === 'POST') {
+        const nk = body && body.key;
+        if (typeof nk !== 'string') return err(400, 'api.bad_param', 'Falta «key»', { name: 'key' });
+        if (nk === order.key) return err(400, 'order.same_key', `El pedido «${nk}» ya se llama así`, { order: nk, profile: r3 });
+        if (!/^[a-z0-9][a-z0-9._\/-]*$/.test(nk)) return err(400, 'order.invalid', `Clave no válida: ${nk}`, { key: nk });
+        if (findOrder(r1, r3, nk)) return err(409, 'order.exists', `Ya existe el pedido «${nk}» con el perfil «${r3}»`, { order: nk, profile: r3 });
+        if (queue.some((e) => e.project === r1 && e.key === order.key && e.profile === r3 && ['queued', 'running'].includes(e.state))) return err(409, 'order.busy', `El pedido «${order.key}» tiene intentos en cola o generándose`, { order: order.key, profile: r3 });
+        queue.forEach((e) => { if (e.project === r1 && e.key === order.key && e.profile === r3) e.key = nk; });
+        order.key = nk; order.updatedAt = now();
+        return ok(order);
+      }
       if (r5 === 'choose') {
         const a = order.attempts.find((x) => x.id === body.attempt);
         if (!a) return err(404, 'attempt.not_found', `No hay intento q${body.attempt}`, { id: body.attempt });

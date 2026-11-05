@@ -508,6 +508,35 @@ class F4dUi(unittest.TestCase):
         self.assertIn("deleteChosenHint", card)
         self.assertIn("attempt.compose ? h('button.btn.btn-danger'", card)
 
+    def test_rename_asks_for_the_key_and_follows_the_order_to_its_new_key(self):
+        """F4e.5: «Renombrar» junto al título abre un modal con la clave; con la aceptada llama a la API y navega."""
+        order, dialog, api = self.comp("order-view.js"), self.comp("rename-dialog.js"), read(UI / "js" / "api.js")
+        self.assertIn("renameOrder: (p, profile, key, newKey) => post(`${paths.order(p, profile, key)}/rename`, { key: newKey })", api)
+        self.assertIn("data: { fid: 'rename-order' }, onclick: () => ctx.actions.rename() }, t('ui.order.rename')", order)
+        # el modal se abre antes de llamar a la API; sin clave nueva (cancelar, Esc, la misma) no se llama
+        ask, call = order.index("renameDialog({ current: key, opener })"), order.index("api.renameOrder(")
+        self.assertLess(ask, call)
+        self.assertIn("if (!newKey) return;\n      const renamed = await api.renameOrder(project, profile, key, newKey);", order)
+        self.assertIn("navigate(to.order(project, profile, now))", order)
+        # un fallo del servidor (clave repetida, pedido ocupado) sale como aviso: la acción va con `guard`
+        self.assertIn("rename: guard(async () => {", order)
+        # el campo trae la clave actual y pasa por el patrón de «Pedido nuevo»
+        self.assertIn("value: current", dialog)
+        self.assertIn("KEY_PATTERN.test(value)", dialog)
+        self.assertIn("showModal()", dialog)
+        self.assertIn("back.focus()", dialog)
+
+    def test_rename_has_its_texts_and_a_mock_route_with_the_server_codes(self):
+        mock = read(UI / "mock" / "api-mock.js")
+        self.assertIn("r5 === 'rename' && method === 'POST'", mock)
+        for code in ("order.same_key", "order.exists", "order.busy", "order.invalid", "api.bad_param"):
+            self.assertIn("'%s'" % code, mock)
+        for lang in ("es", "en"):
+            texts = json.loads(read(UI.parent / "locales" / ("%s.json" % lang)))
+            for key in ("ui.order.rename", "ui.order.renameTitle", "ui.order.renameLabel", "ui.order.renameHint",
+                        "ui.order.renameConfirm", "ui.order.renamed"):
+                self.assertIn(key, texts, lang)
+
     def test_template_delete_asks_used_by_and_in_repo_and_protects_the_default(self):
         pieces = self.comp("pieces-tab.js")
         ask, confirm = pieces.index("api.template(project, profile, x.id)"), pieces.index("confirmAction(")

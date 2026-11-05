@@ -12,6 +12,7 @@ OP_GENERATION = "image_generation"
 OP_COMPOSITION = "image_composition"  # a recomposition: no engine ran (F2.8)
 OP_ATTEMPT_DELETE = "attempt.delete"  # an attempt deleted for good (F4e.1): not a generation, no provider
 OP_COMPOSE_DELETE = "compose.delete"  # the composition of an attempt deleted (F4e.1): the attempt stays, raw again
+OP_ORDER_RENAME = "order.rename"  # an order's key changed (F4e.5): old lines keep the old key
 OP_TEMPLATE_DELETE = "template.delete"  # a template deleted (F4e.1): its files, no attempt
 
 
@@ -71,6 +72,12 @@ def attempt_delete_record(key: str, profile: str, seed, attempt_id: int, files_r
     """The line for a deleted attempt: no provider, so `estimate` never counts it."""
     return {"ts": _now(), "gen_ai.operation.name": OP_ATTEMPT_DELETE, "app.task": profile, "app.image.key": key,
             "app.image.seed": seed, "app.attempt.id": attempt_id, "app.files_removed": files_removed}
+
+
+def order_rename_record(key: str, new_key: str, profile: str) -> dict:
+    """The line for a renamed order: no provider. ``app.image.key`` is the new key, ``app.image.oldKey`` the old one."""
+    return {"ts": _now(), "gen_ai.operation.name": OP_ORDER_RENAME, "app.task": profile, "app.image.key": new_key,
+            "app.image.oldKey": key}
 
 
 def compose_delete_record(key: str, profile: str, seed, attempt_id: int, files_removed: int, template_id,
