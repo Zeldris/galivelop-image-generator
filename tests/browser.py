@@ -227,7 +227,10 @@ _CODE = {"Enter": "Enter", "Escape": "Escape", "Tab": "Tab"}
 
 
 class Browser:
-    def __init__(self, command=None):
+    def __init__(self, command=None, lang=None):
+        # the UI takes its language from `navigator.languages`: pinned, so the run does not depend on the machine's
+        # locale (the CI runner is in English and the tests look buttons up by their Spanish text)
+        lang = lang or os.environ.get("GIMG_TEST_LANG") or "es"
         self.command = command or find_chrome()
         if not self.command:
             raise CdpError("no browser")
@@ -239,6 +242,7 @@ class Browser:
         try:
             args = self.command + ["--headless=new", "--no-sandbox", "--disable-gpu", "--no-first-run",
                                    "--disable-extensions", "--disk-cache-size=1", "--disable-gpu-shader-disk-cache",
+                                   "--lang=" + lang, "--accept-lang=" + lang,
                                    "--remote-debugging-port=0", "--user-data-dir=" + self.profile, "about:blank"]
             self.proc = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True,
                                          start_new_session=True)

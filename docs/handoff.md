@@ -13,7 +13,7 @@
 | **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | F4a-F4d hechas. Fase 1 antes de `main` hecha: 5 hallazgos medios arreglados con test (`docs/records/revision-fase1-f2-motor-2026-11-05.md`), leves en Pendiente. **Siguiente:** fase 2 (`gw-opt-tokens` y `retro`, a presentar a la persona) → fase 3 (`reviewed.sh`) → PR; luego licencia MIT y releases. Compactaciones: 4 (gastadas 4) |
+| **Tarea en curso · `f2-motor`** | F4a-F4d hechas. Fase 1 antes de `main` hecha: 5 hallazgos medios arreglados con test (`docs/records/revision-fase1-f2-motor-2026-11-05.md`), leves en Pendiente. CI rojo desde `f890f8f` por el idioma del Chrome del runner (en): fijado `--lang=es` en `tests/browser.py`. **Siguiente:** fase 2 (`gw-opt-tokens` y `retro`, a presentar a la persona) → fase 3 (`reviewed.sh`) → PR; luego licencia MIT y releases. Compactaciones: 4 (gastadas 4) |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.
