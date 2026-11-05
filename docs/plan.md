@@ -1217,6 +1217,41 @@ de `contain` se recorta a la imagen); la interfaz mide así la zona y los elemen
 | F4c.2 | Plantilla nueva: tres fuentes en `templates_of`, `POST …/templates`, `gimg template save`, `measure` con `base=1`; rutas de la API | Tests: los dos destinos, sin `templatesDir`, nombre repetido, nada sobrescrito, `paths.inside`, `source` en la lista, mismas respuestas CLI/API |
 | F4c.3 | Editor en la interfaz, docs (`docs/api.md`, `docs/interfaz/f4a.md` §8, CHANGELOG) | `tests/test_ui.py`; JS sin ejecutar: recorrido en navegador (puntero, teclado y mando), de la persona |
 
+## F4d en detalle (resto de D22)
+
+**Estado:** contrato decidido por la sesión el 2026-11-05, **pendiente de la persona**. Pedido de la persona del
+2026-11-05: F4c y F4d enteras antes de su ronda de pruebas en la interfaz.
+
+### Qué entra
+
+1. **Nuevo pedido desde la interfaz.** Panel «Nuevo pedido» (botón en Pedidos y «Pedir» en Piezas): clave, perfil,
+   prompt, textos (`compose.fields`), plantilla, modelo, semilla (vacía = al azar), borrador, N intentos; «Copiar de…»
+   rellena prompt, textos y parámetros desde un pedido existente del mismo perfil. Aviso de palabras vetadas
+   (`brand.bannedWords`) antes de enviar. Usa `POST /api/projects/{p}/orders` (F3), que gana `"template"`; al crear, abre
+   el pedido.
+2. **Piezas = perfiles.** En `gimg` una pieza es un perfil (tamaño de generación y de destino, `compose`, plantillas);
+   `piezas.json` del piloto no se lee. La pestaña lista cada perfil: tamaños, `fit`, plantillas (con miniatura del SVG
+   por `assets/template?id=`), campos, nº de pedidos; «Pedir» abre el panel con ese perfil.
+3. **Marca** (solo lectura): paleta, `textColor`, `paletteMin`, `bannedWords`, fuentes (de `compose.fonts`) y logos
+   de las plantillas, y la comprobación del proyecto: `GET /api/projects/{p}/check` → las comprobaciones de
+   `gimg doctor` que tocan a ese proyecto (fuentes, plantillas, elementos), `[{"id", "status": "ok|warn|fail",
+   "message", "fix"?}]`. `brand` gana en el esquema `textColor`, `paletteMin` (0-100) y `bannedWords` (hasta 100), que
+   la interfaz ya lee (hallazgo 16 de la revisión de F4a).
+4. **Catálogo de modelos.** `GET /api/models` → los modelos de `models.json` con `"allowed": bool` y `"reason"?` según
+   el perfil de máquina (los mismos `limit.*`). El modelo pasa a elegirse en el nuevo pedido y en el retoque:
+   `POST …/o/attempts` gana `"model"` (validado como en `order submit`).
+5. **Cola: reordenar y vaciar.** `POST /api/queue/{id}/move {"to": "up|down|top"}` (solo `queued`; las entradas tienen
+   posición propia y el trabajador toma la primera) y `POST /api/queue/clear {"project"?}` (cancela todo lo `queued`,
+   nunca lo `running`; devuelve las canceladas). CLI: `gimg queue move <id> up|down|top` y `gimg queue clear
+   [--project]`. Errores `queue.not_movable` (409).
+
+### Pasos de F4d
+
+| Paso | Qué | Comprobación |
+|---|---|---|
+| F4d.1 | Motor y API: esquema `brand`, `template` en el pedido nuevo, `model` en intentos, `GET /api/models`, `GET …/check`, mover y vaciar la cola (con la CLI), `docs/api.md` | Tests como F3.3 (CLI = API, códigos y estados); la cola respeta el orden movido con el trabajador |
+| F4d.2 | Interfaz: panel Nuevo pedido, pestañas Piezas y Marca, modelo en el retoque, subir/bajar/vaciar en el cajón de la cola; docs y CHANGELOG | `tests/test_ui.py`; recorrido en navegador, de la persona |
+
 ## Pendiente
 
 - Proponer al flujo (`gw-harvest`) una operación de imagen en `opt-ai/references/log-format.md` (D26).
