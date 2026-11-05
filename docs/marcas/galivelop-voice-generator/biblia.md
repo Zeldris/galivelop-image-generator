@@ -1,8 +1,11 @@
 # Biblia de estilo: galivelop-voice-generator
 
 Herramienta del taller, sin identidad propia: **familia del Portal** con acento frambuesa **[P]**. Molde y reglas comunes
-en [`../README.md`](../README.md). Datos de su repo (rama `claude/voces-f1`) en `ab1ff10`; de este, en `24d69c8`; del
+en [`../README.md`](../README.md). Datos de su repo (rama `claude/voces-f1`) en `ab1ff10`; de este, en `fd2ae53`; del
 Portal, en `aa76b34`.
+
+**Aprobada el 2026-11-04** (decisiones delegadas por la persona, `docs/records/decisiones-hojas-2026-11-04.md`): lo que sigue
+marcado **[P]** es propuesta del agente aprobada por delegación. Campo a campo, en [`hoja.md`](hoja.md).
 
 ## 1. Esencia
 
@@ -31,16 +34,17 @@ Portal, en `aa76b34`.
 | Blanco | `#FFFFFF` | trazo del símbolo |
 
 - **Pieza oscura (por defecto):** `#06121c` con rejilla de puntos y resplandor radial del acento (20-30 %); texto
-  `#eaf4fa`, secundario `#9fb4c4`, acento `#F6B1CA`.
+  `#eaf4fa`, secundario `#9fb4c4`, acento `#F6B1CA`. Velo `#06121c` a 0 en `og` y a 0,3 en `square`, `portrait` y `header`.
 - **Pieza clara:** `#f6fafd`, texto `#0a1a28`, acento `#A62E5A`.
-- **Sobre imagen:** texto blanco en la zona reservada; el logo siempre en su baldosa.
+- **Sobre imagen:** texto `#eaf4fa` (el de las piezas compuestas de r4-r5) en la zona reservada; el logo siempre en su baldosa.
+- **`brand.palette`** de la configuración: `#06121c`, `#F6B1CA`, `#D9467A`, `#ffffff`, `#eaf4fa` y `#A62E5A`.
 - **Prohibidos:** el celeste del Portal como acento de la herramienta; rojo puro o magenta neón; negro `#000`; acento
   sobre acento. El violeta `#8B5CF6` es del generador de imágenes: no se mezclan.
 
 ## 3. Tipografía
 
-- **Sora 700** en títulos y en el nombre del lockup, tracking −0,03 em (Portal).
-- **Inter 400/500** en texto.
+- **Sora 700** en títulos y en el nombre del lockup, tracking −0,03 em (Portal). Titular siempre a 700.
+- **Inter 400** en el subtítulo, con opacidad 0,82 (como salió en r4-r5); el 500 solo en interfaz. Misma regla en toda la familia.
 - **Monoespaciada del sistema [P]** para claves (`orcos/guerrero-1`) y órdenes.
 - Wordmark: `galivelop-voice-generator` en minúsculas, con guiones, de una pieza y un solo color.
 
@@ -80,6 +84,8 @@ Tras elegir **[P]**:
   elegida, desfasada, cadena de efectos, paquete de voces, cola, candado de la máquina. Evitar: clonar, hablante,
   timbre, embedding, clip, diálogo, «dar vida».
 - **Lema [P]:** «Una voz, su huella, todas sus frases.»
+- **Subtítulo del `og` [P]:** «Voces con IA local: un servicio por máquina, para varios proyectos.» (67 caracteres; el
+  límite orientativo es 70).
 - **Variaciones [P]:** «Suena igual en cada frase.» · «Voces sintéticas, elegidas toma a toma.» · «IA local: nada sale
   de tu equipo.»
 - **Ganchos [P]:** «Cinco tomas, una elegida.» · «La referencia manda; el motor puede cambiar.»
@@ -93,18 +99,18 @@ Tras elegir **[P]**:
 - **Motivos:** la onda que se enrosca (la huella), las barras de tomas con una encendida, los anillos concéntricos.
 - **Palabras vetadas:** microphone, mic, headphones, speaker, studio, mouth, lips, face, person, singer, voice actor,
   human, robot, brain, sparkle, magic, text, letters, logo.
-- **Zona reservada para texto:** la mitad izquierda, lisa y desenfocada (`og`, `social`); en `square` **[P]**, el
-  tercio superior.
+- **Zona reservada para texto** (una por perfil, la misma en prompt, plantilla y medida): `izquierda 1/2`, lisa y desenfocada,
+  en `og`, `social` y `header`; `arriba 1/2` en `square` y `portrait` (lo que pidieron y midieron los prompts de r5).
 
 ## 8. Prompts
 
 | Archivo | Estado |
 |---|---|
-| `examples/galivelop-voice-generator/prompts/og.txt` (este repo) | aprobado en r1 (sí en semillas 3 y 4, `docs/registros/contenido/r1-fondos.md`) |
+| `examples/galivelop-voice-generator/prompts/og.txt` (este repo) | aprobado en r1 (sí en semillas 3 y 4, `docs/records/contenido/r1-fondos.md`). **Histórico**: lleva «shaped like a sound wave» (comparación con «like»), superado por `estilo.txt` |
 | `examples/galivelop-voice-generator/prompts/r2-palabras.txt` | r2, **elegida** (ahora `estilo.txt`). Misma escena de og (sin el «shaped like»); paleta en palabras |
 | `examples/galivelop-voice-generator/prompts/r2-hex.txt` | r2, descartada. Misma escena, colores en hex |
 | `examples/galivelop-voice-generator/prompts/r2-material.txt` | r2, descartada. Misma escena, paleta en materiales y luz (terciopelo azul, cristal frambuesa, cuarzo rosa) |
-| `examples/galivelop-voice-generator/prompts/estilo.txt` | og: el estilo elegido en r2 | r3: el borrador (640×320, 4 pasos, 51 s) anticipa estilo y hueco, no el detalle; r4: og compuesto, contraste peor 16.34:1, paleta 70 % |
+| `examples/galivelop-voice-generator/prompts/estilo.txt` | og: el estilo elegido en r2. r3: el borrador (640×320, 4 pasos, 51 s) anticipa estilo y hueco, no el detalle; r4: og compuesto, contraste peor 16.34:1, paleta 70 % (sin `#eaf4fa` en `brand.palette`; ya está, falta volver a medir). 118 palabras: el mínimo de 120 de la plantilla es un aviso |
 | `examples/galivelop-voice-generator/prompts/r5-cuadrado.txt` | r5: generado y compuesto (`piloto/r5/galivelop-voice-generator/intentos/cuadrado.png`), contraste 15.46:1, peor 14.6:1, paleta 79.98 %. Misma escena en cuadrado 1080×1080 (se genera a 1024×1024): onda y anillos en la mitad inferior, mitad superior libre |
 | `examples/galivelop-voice-generator/prompts/r5-vertical.txt` | r5: generado y compuesto (`piloto/r5/galivelop-voice-generator/intentos/vertical.png`), contraste 15.89:1, peor 15.66:1, paleta 80.51 %. Misma escena en vertical 1080×1350 (896×1152): onda y anillos en la mitad inferior, mitad superior libre |
 | `examples/galivelop-voice-generator/prompts/r5-cabecera.txt` | r5: generado y compuesto (`piloto/r5/galivelop-voice-generator/intentos/cabecera.png`), contraste 15.07:1, peor 14.45:1, paleta 74.95 %. Misma escena en cabecera 1500×500 (1536×512): onda en la mitad derecha, mitad izquierda libre |
@@ -118,13 +124,18 @@ completely textless.`
 Perfiles (tabla del `README.md` de marcas): `social`, `og`, `avatar`, `icon`; `banner` solo si el Portal la presenta
 **[P]**. Primera ronda: 1) logo elegido y avatar 512; 2) `social` 1280×640; 3) `og` 1200×630.
 
+En la configuración (`examples/galivelop-voice-generator/galivelop-images.json`): `og` 1280×640 → 1200×630 (con borrador a
+la mitad y 4 pasos), `social` 1280×640, `square` 1024×1024 → 1080×1080, `portrait` 896×1152 → 1080×1350 y `header`
+1536×512 → 1500×500; los tres últimos son las piezas de r5 (`cuadrado`, `vertical`, `cabecera`). `avatar` 512 (logo
+rasterizado) lo hace `piezas.py`.
+
 ## 10. Fuentes
 
 - galivelop-voice-generator `ab1ff10` (`claude/voces-f1`): `README.md` (qué es, motor, D3), `GLOSSARY.md` (voz,
   referencia, huella, toma, cadena de efectos, paquete de voces). Allí no hay ningún dato visual.
-- Este repo `24d69c8`: `docs/plan.md` «Estilos por proyecto» (acento, familia, metáfora, vetos, formatos y primera
-  ronda), `examples/galivelop-voice-generator/prompts/og.txt`, `docs/registros/contenido/r1-fondos.md` (veredicto),
-  `docs/registros/lectura-2026-10-26-tarkor-y-marcas.md` sección 3 (límites: nada que sugiera clonar).
+- Este repo `fd2ae53`: `docs/plan.md` «Estilos por proyecto» (acento, familia, metáfora, vetos, formatos y primera
+  ronda), `examples/galivelop-voice-generator/prompts/og.txt`, `docs/records/contenido/r1-fondos.md` (veredicto),
+  `docs/records/lectura-2026-10-26-tarkor-y-marcas.md` sección 3 (límites: nada que sugiera clonar).
 - Portal-Galivelop `aa76b34`: `public/marca/gv-logo.svg` (baldosa), `Logo.tsx` (Sora 700), tema oscuro y claro, vía la
   misma lectura.
 - Sin dato en ningún repo (**[P]**): acento y sus tonos, lema y frases, monoespaciada, reglas del logo tras elegir.

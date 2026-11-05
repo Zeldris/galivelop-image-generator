@@ -1,0 +1,25 @@
+/* Avisos flotantes. Los informativos van a #toasts (role=status, aria-live=polite); los de error se anuncian además en
+   #alerts (role=alert, aria-live=assertive). Un aviso con acción (p. ej. «Ir al intento») no se cierra solo. */
+
+import { h, el } from '../dom.js';
+import { t } from '../i18n.js';
+
+const DEFAULT_MS = 6000;
+
+export function toast(message, { kind = 'info', action = null, timeout = DEFAULT_MS } = {}) {
+  const host = el('toasts');
+  const node = h('div.toast', { class: kind === 'ok' ? 'toast-ok' : kind === 'bad' ? 'toast-bad' : '' }, h('span', {}, message));
+  if (action) {
+    node.append(action.href
+      ? h('a.btn', { href: action.href, onclick: () => node.remove() }, action.label)
+      : h('button.btn', { type: 'button', onclick: () => { action.onclick(); node.remove(); } }, action.label));
+  }
+  node.append(h('button.btn.btn-ghost.btn-icon', { type: 'button', aria: { label: t('ui.actions.close') }, onclick: () => node.remove() }, '✕'));
+  host.append(node);
+  if (kind === 'bad') { const a = el('alerts'); a.textContent = ''; a.textContent = message; }
+  if (!action && timeout > 0) setTimeout(() => node.remove(), timeout);
+  return node;
+}
+
+export const toastError = (message) => toast(message, { kind: 'bad', timeout: 10000 });
+export const toastOk = (message, opts) => toast(message, { kind: 'ok', ...opts });

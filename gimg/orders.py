@@ -237,6 +237,28 @@ def submit(project: str, order: dict) -> dict:
     return copy.deepcopy(record)
 
 
+def check_order(project: str, order: dict) -> list:
+    """Everything `submit` and the first enqueue would reject, checked on the candidate order before anything is
+    stored: schema, text fields, machine limits (``limit.*``), prompt length, count and seed range. Returns the
+    candidate specs of its attempts (as `attempt_specs` would build them), for the caller to check further."""
+    errors = schema.validate(order, schema.load_schema("order"))
+    if errors:
+        raise GimgError("order.invalid", errors=errors)
+    paths.check_key(order["key"])
+    profile_cfg = _profile(projects.get(project)["config"], order["profile"])
+    _check_text(profile_cfg, order["profile"], order.get("text", {}))
+    candidate = {"prompt": order["prompt"], "references": list(order.get("references", [])),
+                 "params": copy.deepcopy(order.get("params", {})), "seed": order.get("seed"),
+                 "draft": bool(order.get("draft", False)), "initImage": order.get("initImage"),
+                 "strength": order.get("strength"), "text": dict(order.get("text", {}))}
+    specs = build_specs(candidate, profile_cfg, order.get("count", 1))
+    from . import limits
+    machine = limits.load_machine()
+    for spec in specs:
+        limits.check(spec, machine)
+    return specs
+
+
 def _check_text(profile_cfg: dict, profile: str, text: dict) -> None:
     """The keys of `text` must be fields the profile composes (``compose.fields``)."""
     allowed = list((profile_cfg.get("compose") or {}).get("fields", []))
@@ -245,9 +267,9 @@ def _check_text(profile_cfg: dict, profile: str, text: dict) -> None:
             raise GimgError("order.text_unknown_field", field=field, profile=profile, fields=", ".join(allowed) or "-")
 
 
-def set_text(project: str, key: str, profile: str, text: dict) -> dict:
-    """Merge `text` into the order's ``text`` (the fields it names are replaced, the others stay); returns the order's
-    whole ``text``. Same checks as `submit` (schema, then ``compose.fields`` of the profile)."""
+def set_text(project: str, key: str, profile: str, text: dict, replace: bool = False) -> dict:
+    """Merge `text` into the order's ``text`` (the fields it names are replaced, the others stay), or with `replace`
+    make it the order's whole ``text``; returns the order's whole ``text``. Same checks as `submit` (schema, then ``compose.fields`` of the profile)."""
     if not isinstance(text, dict):
         raise GimgError("order.invalid", errors=[{"path": "/text", "code": "type", "params": {"expected": "object"}}])
     _check_fields_of({"key": key, "profile": profile, "prompt": "x", "text": text})
@@ -255,7 +277,7 @@ def set_text(project: str, key: str, profile: str, text: dict) -> dict:
     _check_text(profile_cfg, profile, text)
 
     def change(order):
-        merged = dict(order.get("text") or {})
+        merged = {} if replace else dict(order.get("text") or {})
         merged.update(text)
         order["text"] = merged
         return dict(merged)
@@ -264,7 +286,7 @@ def set_text(project: str, key: str, profile: str, text: dict) -> dict:
 
 
 def attempt_specs(project: str, key: str, profile: str, count: int = 1, *,
-                  seed=None, prompt=None, params=None, draft=None) -> list:
+                  seed=None, prompt=None, params=None, draft=None, template=None, model=None) -> list:
     """Specs of `count` attempts to enqueue; never changes the stored order (D19-D20).
 
     Each spec is ``{"seed", "prompt", "params", "references", "draft", "initImage", "strength", "text"}`` (the last three are the order's, ``None`` or ``{}`` if absent):
@@ -275,12 +297,34 @@ def attempt_specs(project: str, key: str, profile: str, count: int = 1, *,
       by `draft_params`; a ``steps`` in `params` wins over the draft's steps.
     - draft: `draft` if given (True/False), else the order's ``draft``.
     - prompt: `prompt` (a retouched one) or the order's, plus the profile ``style`` appended as
-      ``prompt + ", " + style`` when the style is non-empty (otherwise the prompt alone)."""
-    if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= 50:
-        raise GimgError("order.count_invalid", min=1, max=50)
+      ``prompt + ", " + style`` when the style is non-empty (otherwise the prompt alone).
+    - template: the id of a composition template (F4b), kept in each spec as ``template`` when given; `queue.enqueue`
+      checks it exists (``compose.template_unknown``).
+    - model: a catalog id (F4d) that replaces the profile's (and the draft's) model in each spec; unknown is ``model.unknown``;
+      `queue.enqueue` checks it against the machine profile."""
     _check_fields(prompt, params, seed)
     order = get(project, key, profile)
     profile_cfg = _profile(projects.get(project)["config"], profile)
+    specs = build_specs(order, profile_cfg, count, seed=seed, prompt=prompt, params=params, draft=draft)
+    if template is not None:
+        for spec in specs:
+            spec["template"] = template
+    if model is not None:
+        from . import models
+        models.check_known(model)
+        for spec in specs:
+            spec["params"]["model"] = model
+    return specs
+
+
+def build_specs(order: dict, profile_cfg: dict, count: int = 1, *, seed=None, prompt=None, params=None,
+                draft=None) -> list:
+    """The pure part of `attempt_specs`: specs from an order record (stored or candidate) and its profile."""
+    if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= 50:
+        raise GimgError("order.count_invalid", min=1, max=50)
+    base_seed = order.get("seed") if seed is None else seed
+    if base_seed is not None and base_seed + count - 1 >= SEED_LIMIT:
+        raise GimgError("order.seed_range", seed=base_seed, count=count, max=SEED_LIMIT - 1)
     full = {k: profile_cfg[k] for k in _PROFILE_PARAMS if k in profile_cfg}
     full.update(order["params"])
     full.update(params or {})
@@ -296,7 +340,7 @@ def attempt_specs(project: str, key: str, profile: str, count: int = 1, *,
     max_prompt = schema.load_schema("order")["properties"]["prompt"]["maxLength"]
     if len(text) > max_prompt:
         raise GimgError("order.prompt_too_long", length=len(text), max=max_prompt)
-    base = order["seed"] if seed is None else seed
+    base = base_seed
     return [{
         "seed": _rng.randrange(SEED_LIMIT) if base is None else base + i,
         "prompt": text,
@@ -381,6 +425,10 @@ def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None)
         error = spec.get("composeError")
         if isinstance(error, dict) and isinstance(error.get("code"), str) and isinstance(error.get("params"), dict):
             record["composeError"] = {"code": error["code"], "params": copy.deepcopy(error["params"])}
+            if isinstance(error.get("templateId"), str):
+                record["composeError"]["templateId"] = error["templateId"]
+            if isinstance(error.get("layout"), dict) and error["layout"]:
+                record["composeError"]["layout"] = copy.deepcopy(error["layout"])
             if "raw" in record:  # not composed: the raw image is the one to show until it is
                 record["image"] = record["raw"]
         order["attempts"].append(record)
@@ -412,16 +460,29 @@ def set_composed(project: str, key: str, profile: str, attempt_id: int, compose:
     return _modify(project, key, profile, change)
 
 
-def set_compose_error(project: str, key: str, profile: str, attempt_id: int, error: dict) -> dict:
+def set_compose_error(project: str, key: str, profile: str, attempt_id: int, error: dict, template_id=None,
+                      layout=None) -> dict:
     """Record that the composition of attempt `attempt_id` failed (or, with ``compose.pending``, has not finished):
     ``composeError`` becomes ``{"code", "params"}`` and ``compose`` goes away; ``image`` becomes the raw image, which
-    stands in until `set_composed`. Returns the attempt (a copy). Nothing is read or written on disk."""
+    stands in until `set_composed`. Returns the attempt (a copy). Nothing is read or written on disk.
+
+    The template of the composition (F4b) is kept as ``composeError.templateId`` so that composing again does not fall
+    back to another: `template_id`, else the one of the error or of the ``compose`` being replaced. The same goes for
+    the layout of the elements (F4c): `layout` (``{}`` for none), else the one of the error or of the ``compose``."""
     if not (isinstance(error, dict) and isinstance(error.get("code"), str) and isinstance(error.get("params"), dict)):
         raise GimgError("order.spec_invalid", missing="composeError")
 
     def change(order):
         item = _attempt(order, attempt_id)
+        kept = template_id or (item.get("composeError") or {}).get("templateId") \
+            or (item.get("compose") or {}).get("templateId")
+        kept_layout = layout if layout is not None else \
+            (item.get("composeError") or {}).get("layout") or (item.get("compose") or {}).get("layout")
         item["composeError"] = {"code": error["code"], "params": copy.deepcopy(error["params"])}
+        if isinstance(kept, str):
+            item["composeError"]["templateId"] = kept
+        if kept_layout:
+            item["composeError"]["layout"] = copy.deepcopy(kept_layout)
         item.pop("compose", None)
         if isinstance(item.get("raw"), str):
             paths.inside(_order_dir(project, key, profile), item["raw"])

@@ -1,0 +1,32 @@
+<svg data-fondo="claro" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 128" role="img" aria-labelledby="toveriai-a-lockup-t">
+  <title id="toveriai-a-lockup-t">toVeriAI</title>
+  <!-- Lockup de toveriai-a: el símbolo y el nombre en Cormorant Garamond 400, tracking 0,08 em; «Veri» en verde (variante sobre fondo claro, la de la marca). Al elegirse, el texto se pasa a trazos. -->
+  <g id="toveriai-a-lockup-simbolo">
+    <g id="toveriai-a-lockup-mitad">
+      <!-- barra izquierda: arriba cortada en horizontal, borde exterior recto, borde interior cóncavo -->
+      <path fill="#2D6A4F" d="M9.8 42.5 H22 Q50.8 81.1 62.5 119.3 Z"/>
+      <!-- hoja larga -->
+      <path fill="#B5832A" d="M30.5 33 C31.5 34.2 34.1 37.9 36.3 40.5 C38.5 43.1 41.4 45.8 43.8 48.5 C46.2 51.2 48.5 53.8 50.5 56.5 C52.5 59.2 54.5 61.8 56 64.5 C57.5 67.2 58.8 69.8 59.8 72.5 C60.8 75.2 61.3 77.8 61.8 80.5 C62.3 83.2 62.5 85.3 62.6 88.5 C62.7 91.7 62.3 97.7 62.3 99.5 C62 98.3 61.2 95.7 60.3 92.5 C59.4 89.3 58.3 84.5 56.8 80.5 C55.3 76.5 53.5 72.5 51.3 68.5 C49.1 64.5 46.5 60.5 43.8 56.5 C41.1 52.5 37.2 48.4 35 44.5 C32.8 40.6 31.2 34.9 30.5 33 Z"/>
+      <!-- hoja corta -->
+      <path fill="#B5832A" d="M34 46.5 C34.8 47.5 36.8 50.2 38.5 52.5 C40.2 54.8 42.3 57.8 44 60.5 C45.7 63.2 47.3 65.8 48.8 68.5 C50.3 71.2 51.6 73.8 52.8 76.5 C54 79.2 55 81.8 56 84.5 C57 87.2 57.8 89.8 58.5 92.5 C59.2 95.2 59.9 97.8 60.5 100.5 C61.1 103.2 61.8 106.6 62 108.5 C62.2 110.4 61.8 111.4 61.8 112 C61.5 110.8 60.6 107.1 60 104.5 C59.4 101.9 58.8 99.2 58 96.5 C57.2 93.8 56.3 91.2 55.3 88.5 C54.3 85.8 53 83.2 51.8 80.5 C50.5 77.8 49.3 75.2 47.8 72.5 C46.2 69.8 44.2 67.2 42.5 64.5 C40.8 61.8 38.7 59.5 37.3 56.5 C35.9 53.5 34.5 48.2 34 46.5 Z"/>
+    </g>
+    <use href="#toveriai-a-lockup-mitad" transform="matrix(-1 0 0 1 128 0)"/>
+    <!-- constelación: 3 dorados grandes en triángulo, 1 dorado mediano, 7 verdes en filas de 2, 2, 2 y 1 -->
+    <g fill="#B5832A">
+      <circle cx="64" cy="12.3" r="3.3"/>
+      <circle cx="45.7" cy="23.1" r="3.3"/>
+      <circle cx="82.3" cy="23.1" r="3.3"/>
+      <circle cx="64" cy="35.5" r="2.2"/>
+    </g>
+    <g fill="#2D6A4F">
+      <circle cx="57.8" cy="27" r="2.2"/>
+      <circle cx="70.2" cy="27" r="2.2"/>
+      <circle cx="52.2" cy="38" r="2.2"/>
+      <circle cx="75.8" cy="38" r="2.2"/>
+      <circle cx="58.6" cy="47" r="2.6"/>
+      <circle cx="69.4" cy="47" r="2.6"/>
+      <circle cx="64" cy="57.2" r="2.2"/>
+    </g>
+  </g>
+  <text x="156" y="86" font-family="'Cormorant Garamond', serif" font-weight="400" font-size="76" letter-spacing="6" fill="#1A1A1A">to<tspan fill="#2D6A4F">Veri</tspan>AI</text>
+</svg>

@@ -191,7 +191,7 @@ Las ocho, tal como se recomendaban. Pregunta y razón:
 4. **¿El texto compuesto (título, subtítulo) se edita por pedido o por intento?** Recomiendo **por pedido** (todos los
    intentos lo heredan y se previsualiza al instante); un intento solo guarda lo que tenía al componerse, por el manifiesto.
 5. **¿«Borrador primero» (640×320, ~50 s) activado por defecto en los pedidos grandes?** Con r3 hecha
-   (`docs/registros/contenido/r3-borrador.md`): el borrador cuesta el 22 % del definitivo y anticipa estilo, paleta y
+   (`docs/records/contenido/r3-borrador.md`): el borrador cuesta el 22 % del definitivo y anticipa estilo, paleta y
    hueco en 6 de 7 proyectos, pero no el detalle (el definitivo recoloca). Recomiendo **activado por defecto desde
    1280×640**, con la nota «el definitivo puede recolocar», y el veredicto de composición solo sobre el definitivo.
 6. **¿Medidas de D31 en la tarjeta de cada intento, o solo al abrirlo?** Recomiendo **chip corto en la tarjeta** (contraste

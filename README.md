@@ -17,9 +17,11 @@ reales**: el motor real (`sd-cli`) llega en F2.
 | F0 Esqueleto | Esquemas de configuración, pedido y perfil de máquina; textos es/en; README; tests |
 | F1 Núcleo | Proyectos, pedidos, intentos, elegida, entrega, cola persistente y CLI `gimg` básica |
 | F2 Motor real | Envoltorio de `sd-cli` con el perfil de máquina e `instalar.sh` |
-| F3 API y arranque | API HTTP, arranque bajo demanda y unidad `systemd --user` opcional |
+| F3 API y arranque | API HTTP local (`gimg serve`), arranque bajo demanda y `gimg ui` (0.3.0) |
 | F4 Interfaz | Tres pantallas en el navegador, es/en |
 | F5 Piloto WMF | Configuración de ejemplo, guía de integración y medidas |
+| F6 Director local | Opcional: un LLM local (Ollama) redacta prompts y ayuda a elegir |
+| F7 Compatibilidad | Última fase: cualquier equipo, no solo Vulkan (CPU, CUDA, ROCm, Metal), otros Linux, Windows y quizá macOS |
 
 Detalle, decisiones D1-D27 y criterios de cierre en [`docs/plan.md`](docs/plan.md).
 
@@ -86,11 +88,21 @@ python3 -m gimg attempt new mi-proyecto fauna/red-howler banner --count 2 --step
 python3 -m gimg order list mi-proyecto --unchosen
 python3 -m gimg queue list                            # estado de la cola, con los errores
 python3 -m gimg queue cancel 3
+python3 -m gimg serve                                 # servicio local en 127.0.0.1:8737 (--detach, --status, --stop, --port, --idle-min)
+python3 -m gimg ui                                    # abre la interfaz en el navegador (arranca el servicio si hace falta; --no-browser)
+./arrancar.sh                                         # lo mismo, con doble clic o desde el sandbox de VS Code (fija GIMG_CONFIG_HOME y GIMG_DATA_HOME)
 python3 -m gimg project list | project remove mi-proyecto | version
 ```
 
 Los datos van a `$GIMG_DATA_HOME` (por defecto `~/.local/share/gimg`) y el registro de proyectos a
 `$GIMG_CONFIG_HOME` (`~/.config/gimg`). Los errores salen por stderr con código 1 (`GIMG_DEBUG=1` añade el traceback).
+
+## Servicio
+
+`gimg serve` levanta una API HTTP local en `127.0.0.1:8737` (la misma capa que la CLI) y la interfaz de `gimg/ui`;
+`gimg ui` la arranca si hace falta y abre el navegador. Solo escucha en local y exige `Content-Type: application/json`
+al escribir. `GIMG_PORT` cambia el puerto y `GIMG_AUTOSTART=0` apaga el arranque bajo demanda. Rutas, cuerpos, errores y
+ejemplos `curl` en [`docs/api.md`](docs/api.md).
 
 ## Instalación (prevista, **todavía no existe**)
 

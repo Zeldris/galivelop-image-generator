@@ -35,17 +35,21 @@ Tomadas con `grilling` el 2026-10-25.
 | D23 | Repo `galivelop-image-generator`, orden **`gimg`**, configuración del proyecto en `galivelop-images.json` | Corto y sin choques habituales en Linux |
 | D24 | Instalación con `git clone` + `instalar.sh` (pone `gimg` en `~/.local/bin`, descarga motor y modelos, D5); la configuración del proyecto declara la **versión mínima** del generador y `gimg` avisa si la instalada es más antigua; semver y CHANGELOG | Sin pip ni paquetes; un proyecto sabe si su configuración vale con lo instalado |
 | D25 | **Solo escribe** en su carpeta de datos y en la carpeta de entrega de proyectos registrados; **solo lee** referencias dentro del proyecto; rechaza `..` y enlaces que salgan. API solo en localhost, Content-Type JSON y mismo Origin | Las rutas de un pedido vienen del proyecto |
-| D26 | El registro es **JSONL en el formato de `opt-ai`** (`.claude/skills/opt-ai/references/log-format.md`), una línea por intento: `gen_ai.provider.name` = `stable-diffusion.cpp`, `gen_ai.request.model`, `app.task` = perfil, `app.machine_profile`, `app.duration_ms`, `app.load_ms`, `app.error`, y lo propio de la imagen bajo `app.image.*` (pasos, cfg, sampler, tamaño, semilla, referencias, commit del motor, tiempos de muestreo y decodificado, memoria mínima). Se propone al flujo, con `gw-harvest`, una operación de imagen en `log-format.md` | `medir.py` acepta cualquier operación y agrupa por perfil de máquina, tarea y modelo, así que mide imágenes sin cambios; cierra IMG-3 de WMF |
+| D26 | El registro es **JSONL en el formato de `opt-ai`** (`.claude/skills/gw-opt-ai/references/log-format.md`), una línea por intento: `gen_ai.provider.name` = `stable-diffusion.cpp`, `gen_ai.request.model`, `app.task` = perfil, `app.machine_profile`, `app.duration_ms`, `app.load_ms`, `app.error`, y lo propio de la imagen bajo `app.image.*` (pasos, cfg, sampler, tamaño, semilla, referencias, commit del motor, tiempos de muestreo y decodificado, memoria mínima). Se propone al flujo, con `gw-harvest`, una operación de imagen en `log-format.md` | `medir.py` acepta cualquier operación y agrupa por perfil de máquina, tarea y modelo, así que mide imágenes sin cambios; cierra IMG-3 de WMF |
 | D27 | **Contrato y código en inglés**: claves JSON en camelCase (esquemas, API, configuración del proyecto), identificadores y comentarios del código en inglés; los textos visibles siguen en es/en (D16) y el glosario da el nombre en código de cada término (pedido = `order`, intento = `attempt`, elegida = `chosen`…) | Decidido por la persona en F0: herramienta para publicar; la bitácora, el plan y los commits siguen en español |
 | D28 | **La composición de texto y logo la hace el generador, como paso declarado, no el modelo ni el proyecto.** El perfil declara `compose` (una plantilla SVG con huecos `{{title}}`, `{{subtitle}}`, `{{logo}}`… y el tamaño de destino) y el pedido trae `text` (los valores); el generador rasteriza la plantilla con `rsvg-convert` y la superpone con `ffmpeg` sobre la imagen generada, recortada y escalada al tamaño de destino. Se guardan las dos: `attempts/q<id>.raw.png` (lo que dio el modelo) y `attempts/q<id>.png` (la compuesta, la que ve la galería y se entrega); `gimg compose` recompone desde la cruda sin volver a generar. Alternativas: pedir el texto al modelo (FLUX no da texto legible: los prompts de Tarkor piden «completely textless»); que cada proyecto componga (repite ffmpeg y rsvg en cada repo, justo lo que D1 evita). Es compatible con D2: la plantilla es datos sin lógica, como el estilo. **Recomendación:** esta; **[P]** confirmar que ffmpeg y rsvg-convert entran como herramientas externas junto a `sd-cli` (D6: las comprueba `gimg doctor`, no se instalan con `instalar.sh` porque vienen del sistema; en la Deck ya están: ffmpeg 7.1.3 y rsvg-convert 2.63.3) | Un cambio de titular tras 49 min de generación no puede costar otros 49 |
-| D29 | **Los logos son SVG vectoriales, nunca generados.** El modelo no reproduce una marca; cada proyecto aporta su logo en SVG dentro de su repo (`{{logo}}` lo referencia por ruta relativa, guardada por D25) y la composición lo coloca. Donde no hay SVG (toVeriAI solo tiene `favicon.png` de 512 px; Galivelop-workflow y Tarkor no tienen nada) el generador sirve para **bocetar** conceptos (intentos de 1024×1024 con el prompt del símbolo) y el logo final lo escribe el agente como SVG (código, como `gv-logo.svg`), la persona lo aprueba y se propone al repo de cada proyecto. Alternativa descartada: vectorizar lo generado (no hay herramienta stdlib y el resultado no es una marca estable) | Un logo tiene que ser idéntico en todas las piezas y escalar sin pérdida |
+| D29 | ~~**Los logos son SVG vectoriales, nunca generados.**~~ **Superada por D37 (2026-11-04).** El modelo no reproduce una marca; cada proyecto aporta su logo en SVG dentro de su repo (`{{logo}}` lo referencia por ruta relativa, guardada por D25) y la composición lo coloca. Donde no hay SVG (toVeriAI solo tiene `favicon.png` de 512 px; Galivelop-workflow y Tarkor no tienen nada) el generador sirve para **bocetar** conceptos (intentos de 1024×1024 con el prompt del símbolo) y el logo final lo escribe el agente como SVG (código, como `gv-logo.svg`), la persona lo aprueba y se propone al repo de cada proyecto. Alternativa descartada: vectorizar lo generado (no hay herramienta stdlib y el resultado no es una marca estable) | Un logo tiene que ser idéntico en todas las piezas y escalar sin pérdida |
 | D30 | **Dos conjuntos de modelos heredados de Tarkor, en un catálogo, y un solo perfil de máquina que sabe correr cada uno.** `gimg/models.json` (versionado) declara cada conjunto con id, licencia, archivos (difusión, codificador de texto, VAE: nombre, URL, sha256, MB) y valores por defecto: `flux2-klein-4b-q8` (**rápido**: FLUX.2 klein 4B Q8_0 + Qwen3-4B Q4_K_M + `full_encoder_small_decoder`; cfg 1, euler, 6 pasos; banner 1280×512 en 110-150 s) y `flux3-klein-q8` (**calidad**: FLUX.3 Image Klein Q8_0 + Qwen3VL-4B-Instruct Q4_K_M + `flux2-vae`; guía 1, 16 pasos; ~49 min). El perfil de máquina añade `engine.models.<id>` con lo propio de esa máquina para ese modelo: `args` (`--backend diffusion=cpu -t 8` para FLUX.3, que con 2 GB de GPU no arranca), `timeoutS` (900 frente a 10800) y `minFreeMemoryMb`. El `model` del perfil del proyecto es un id del catálogo. Alternativa: dos perfiles de máquina (`steam-deck`, `steam-deck-calidad`): obliga a cambiar la configuración del usuario para alternar rápido y calidad en la misma sesión. **Recomendación:** catálogo + sobrescritura por modelo | Hoy son variables de entorno de `generar.sh` (`MODELO=`, `LLM=`, `VAE=`, `TOPE=`) y cada script las repite |
 | D31 | **Medida de marca primero, LUT solo si hace falta.** `gimg measure <imagen> --palette <hex,…> [--refs <imágenes>] [--zone x,y,w,h --text <hex>]` da el porcentaje de píxeles cerca de la paleta, YAVG y SATAVG (`signalstats` de ffmpeg) y, con referencias, la EMD de Cb y Cr como `medir.sh` de Tarkor; con `--zone`, la relación de contraste WCAG entre la zona reservada y el color del texto. Los umbrales se **calibran con las imágenes de marca que ya existen** en cada repo (no se inventan). Si la ronda r2 muestra que el modelo no respeta la paleta, se hornea una LUT 3D `.cube` por marca como `gradar.sh --hornear` (`compose.lut` en el perfil, aplicada con `lut3d` antes de componer); si la respeta, la LUT pasa a F5. Alternativa: LUT desde el principio (coste fijo por marca sin saber si hace falta) | Tarkor mide antes de gradar y su aceptación es numérica (mediana EMD Cb ≲ 6, Cr ≲ 7,5, YAVG 70-95, SATAVG 15-30) |
 | D32 | **Borrador antes del definitivo.** `order submit --draft` y `attempt new --draft` aplican el `draft` del perfil, que por defecto es el **mismo modelo a la mitad de lado** (redondeado a múltiplo de 64) y **8 pasos**, como el 640×256 de Tarkor (~5-9 min con FLUX.3; `[E]` en su plan); un perfil puede declarar otro (`{"model": "flux2-klein-4b-q8", "steps": 6}`: el modelo rápido a tamaño completo, ~2,5 min). El intento guarda `draft: true` y no se puede elegir. Además, todo intento escribe una vista previa por paso (`--preview proj --preview-interval 1` a `attempts/.preview-<entrada>.png`) para abortar a tiempo. **Recomendación:** por defecto el mismo modelo pequeño (misma composición *(suposición)*: lo comprueba la ronda r3, igual que IMG-19a en Tarkor, aún sin resolver); si no coincide, el borrador pasa a ser el modelo rápido y solo decide el prompt | A 49 min por definitivo, iterar sin borrador no es posible |
 | D33 | **El motor real corre `sd-cli` como proceso en su propio grupo, con las protecciones de `generar.sh` en Python y sin `timeout`:** memoria libre mínima antes de arrancar, vigilante de `MemAvailable` que mata el grupo por debajo de `watchMemoryMb`, aborto si el log dice «reported free 0.00 MB», tope de tiempo del perfil (o del modelo) y comprobación de Ollama (`engine.ollama`: `abort` por defecto, `unload` o `ignore`). Cancelar y tope matan el grupo entero (`os.killpg`): en Tarkor, matar `timeout` dejaba `sd-cli` vivo con la memoria. `LD_LIBRARY_PATH` es la carpeta del motor (las librerías de Ollama le quitan la GPU) | Las protecciones son lo único que evita que la Deck se congele; hoy valen solo para Tarkor |
 | D34 | **El registro guarda la orden completa.** Cada intento guarda `command` (argv de `sd-cli` con rutas relativas a la carpeta de modelos) y el registro añade `app.image.model_files` (difusión, texto, VAE), `app.image.backend`, `app.image.threads`, `app.image.draft` y `app.image.compose` (plantilla); `app.image.engine_version` es la release de stable-diffusion.cpp (`master-1000-95ff762`). Lo que no se registró no se reproduce (D13) | Tarkor no guardaba cfg ni modelo y hubo que rehacer pruebas |
-| D35 | **Las elegidas del piloto no van a git.** La carpeta de entrega de cada `examples/<proyecto>/` (`entrega/`) está en `.gitignore`; cada ronda deja en `docs/registros/contenido/rN-<tema>.md` su tabla y una miniatura WebP ≤ 100 KB por pieza (`ffmpeg`, 640 px de ancho) **[P]**. Las piezas definitivas se proponen a cada repo con la configuración | Un og:image PNG pesa 1-2 MB y el repo no es un almacén de imágenes (D5) |
+| D35 | **Las elegidas del piloto no van a git.** La carpeta de entrega de cada `examples/<proyecto>/` (`entrega/`) está en `.gitignore`; cada ronda deja en `docs/records/contenido/rN-<tema>.md` su tabla y una miniatura WebP ≤ 100 KB por pieza (`ffmpeg`, 640 px de ancho) **[P]**. Las piezas definitivas se proponen a cada repo con la configuración | Un og:image PNG pesa 1-2 MB y el repo no es un almacén de imágenes (D5) |
 | D36 | **El motor por defecto sigue siendo `fake` hasta que `instalar.sh` escribe `"engine": "sdcpp"` en `<config>/config.json`**; `GIMG_ENGINE` manda sobre el archivo. Los tests fijan `fake` y nunca necesitan `sd-cli`, GPU, ffmpeg ni rsvg: el envoltorio se prueba con un `sd-cli` falso (`GIMG_SD_CLI=tests/fake_sd_cli.py`) y la composición y la medida con `skipUnless(shutil.which(...))` **[P]** (el CI de GitHub los instala con `apt`; sin ellos, los tests que los usan se saltan y lo dicen) | El check tiene que pasar en cualquier máquina y en el CI |
+| D37 | **Todo elemento gráfico nace del generador, y el generador acabado no depende de agentes ni de cuotas: solo de lo local** (decisión de la persona del 2026-11-04, sustituye a D29). *Logos:* `gimg` genera el **emblema** (perfil `logo`, 1024×1024 sobre fondo plano declarado), quita el fondo en local (ffmpeg) y lo guarda como PNG con transparencia; el **nombre** lo escribe la composición con la fuente OFL de la hoja. La persona elige una vez y ese emblema queda fijo en el proyecto (misma marca en todas las piezas). Los SVG dibujados por agentes (Tarkor «La Semilla rota», workflow b) quedan **solo como referencia** del concepto (prompt y, si el modelo lo admite, `initImage`). *Prompts, plantillas y elección:* lo que hoy hace un agente pasa a un paso **local y opcional** con un LLM de Ollama, que redacta y mejora prompts desde la hoja de estilo y la biblia y propone la elegida con `gimg measure`; sin Ollama, el generador sigue funcionando con prompts escritos a mano. Los agentes desarrollan el código, pero no producen piezas gráficas finales. Alternativas descartadas: vectorizar con potrace (otra herramienta, y pierde degradados y textura) y lockup entero generado (FLUX klein no escribe texto legible) | Un generador que necesita a Claude para dar sus piezas no está terminado y depende de cuotas externas |
+| D38 | **El producto se llama «Galivelop IG» y sus siglas son «GVIG»** (decisión de la persona del 2026-11-04). Es el nombre de marca: interfaz, README, hoja de estilo, textos y piezas. El repo (`galivelop-image-generator`), el paquete y la orden `gimg` no cambian mientras la persona no lo pida | Nombre corto y reconocible; renombrar el código rompería instalaciones y rutas sin aportar nada |
+| D39 | **F3 y F4 se adelantan al cierre del piloto** (decisión de la persona del 2026-11-05): las rondas del piloto (F2.10/F2.12) las hace la persona desde la interfaz, aceptando, rechazando y ajustando sin pasar por un agente. Orden: F3 mínima (API local y `gimg serve`) → F4a pantalla de pedido (galería, sí/no y nota, otra semilla, retoque de prompt y textos, elegir) → F4b **plantillas elegibles** (varias por formato, selector por intento) → F4c **editor de elementos** (mover y redimensionar titular, subtítulo, logo y adornos sobre la imagen; se guarda como ajuste del intento o como plantilla nueva, y se vuelve a medir el contraste) → F4d resto de D22. La interfaz sigue la hoja de estilo de este proyecto (`docs/marcas/galivelop-image-generator/hoja.md`) con el nombre de D38. F2.14 y F6 entran después como acciones de la interfaz | Cada ronda a través de un agente gasta cuota y quita control a la persona (D37); el piloto es la prueba real de la interfaz |
+| D40 | **Puertas abiertas: lo que se guarda o se entrega, donde diga la persona** (decisión de la persona del 2026-11-05): quien quiera trastear tiene que poder cambiar desde la interfaz dónde van los resultados (la carpeta de entrega de cada perfil, que ya es configuración del proyecto) y las plantillas. Plantilla nueva (F4c): al guardar se elige el destino entre la carpeta de datos (`<data>/projects/<p>/templates/`, marca «local», con «Exportar» que da el SVG) y la carpeta de plantillas que el proyecto declare en su configuración (`compose.templatesDir`, relativa a la raíz y dentro de ella). Es la única ampliación de D25: `gimg` escribe ahí solo si el proyecto la declara, con `paths.inside` y sin sobrescribir sin confirmar | Cada proyecto se configura a su manera: unos quieren las plantillas en su repo y otros solo en local |
 
 Decisiones difíciles de revertir, con su ADR: [0001](adr/0001-servicio-local-independiente.md) (D1) y
 [0002](adr/0002-generador-sin-dominio.md) (D2).
@@ -69,9 +73,23 @@ Cada fase es una rama y un pull request a `main`, con las tres fases de revisió
 | F0 Esqueleto | Estructura del repo; JSON Schema de la configuración del proyecto, el pedido y el perfil de máquina; textos es/en; README es/en; `check` real (`python3 -m unittest`) | El check corre tests y los esquemas validan los ejemplos |
 | F1 Núcleo | Proyectos registrados, pedidos (clave + perfil), intentos y estados, elegida con deshacer, entrega y manifiesto, cola persistente, límites de seguridad, registro JSONL; CLI `gimg` básica; todo con un **motor de pruebas** que no genera de verdad | Tests en verde del ciclo completo con el motor de pruebas |
 | F2 Motor real | Envoltorio de `sd-cli` con el perfil de máquina (memoria, `--max-vram`, tope, cancelar, progreso); `instalar.sh` con versiones fijas y checksum; catálogo de modelos, borradores, composición de texto y logo, medida de marca; **piloto de contenido corporativo** (Portal, Tarkor, toVeriAI, Galivelop-workflow) con configuraciones de ejemplo en este repo *(aprobado 2026-10-26)* | Un pedido real generado en la Deck y la primera ronda de piezas definitivas de los cuatro proyectos elegidas por la persona (comprobación manual) |
-| F3 API y arranque | API HTTP (D17, D25) y arranque bajo demanda; unidad `systemd --user` opcional | Tests de la API; `gimg` arranca el servicio solo |
-| F4 Interfaz | Las tres pantallas de D22, es/en | Recorrido completo en el navegador |
-| F5 Piloto WMF | Configuración de ejemplo para WMF, guía de integración y propuesta de migración para su repo; medida base con `opt-ai` y comparación `sd-server` (D14); LUT por marca si F2 la deja pendiente; stable-diffusion.cpp `master-1039` o posterior con LoRA (`--lora-model-dir`, nueva versión fija en `instalar.sh`); bocetos paramétricos, planos y encuadre de Tarkor (`bocetos/plantilla.py`, `planos.sh`, `encuadre.py`); LoRA en el perfil (`style.lora`: archivo, peso, palabra disparadora y sha256; `--lora-model-dir` y la etiqueta en el prompt; todo en el registro, D34), para que WMF use su `wmf-estilo` sin código propio *(aprobado 2026-10-26: el piloto corporativo pasa a F2 y WMF sigue aquí; ampliado 2026-11-02; LoRA en el perfil aprobado 2026-11-04, `docs/registros/lectura-2026-11-04-tarkor.md`)* | WMF genera y recibe una elegida sin copia a mano |
+| F3 API y arranque | API HTTP (D17, D25) y arranque bajo demanda; unidad `systemd --user` opcional *(F3 mínima, D39: hecha en 0.3.0 con `docs/api.md`; la unidad `systemd` queda fuera; pendiente manual en la Deck: `gimg ui` abre el navegador y el servicio se para a los 15 min)* | Tests de la API; `gimg` arranca el servicio solo |
+| F4 Interfaz | Las tres pantallas de D22, es/en, más plantillas elegibles y editor de elementos (D39), con la hoja de estilo de este proyecto; se adelanta al cierre del piloto. **F4a hecha salvo la prueba en navegador** (`gimg/ui/`, `docs/interfaz/f4a.md`, `tests/test_ui.py`); pendiente de la persona: recorrido completo de F4a en el navegador de la Deck y en escritorio, con teclado y con mando | Recorrido completo en el navegador |
+| F5 Piloto WMF | Configuración de ejemplo para WMF, guía de integración y propuesta de migración para su repo; medida base con `opt-ai` y comparación `sd-server` (D14); LUT por marca si F2 la deja pendiente; stable-diffusion.cpp `master-1039` o posterior con LoRA (`--lora-model-dir`, nueva versión fija en `instalar.sh`); bocetos paramétricos, planos y encuadre de Tarkor (`bocetos/plantilla.py`, `planos.sh`, `encuadre.py`); LoRA en el perfil (`style.lora`: archivo, peso, palabra disparadora y sha256; `--lora-model-dir` y la etiqueta en el prompt; todo en el registro, D34), para que WMF use su `wmf-estilo` sin código propio *(aprobado 2026-10-26: el piloto corporativo pasa a F2 y WMF sigue aquí; ampliado 2026-11-02; LoRA en el perfil aprobado 2026-11-04, `docs/records/lectura-2026-11-04-tarkor.md`)* | WMF genera y recibe una elegida sin copia a mano |
+| F6 Director local | Paso **opcional** con un LLM local de Ollama (D37): redacta y mejora prompts desde la hoja de estilo y la biblia del proyecto, propone variantes para la plantilla y elige entre los intentos con `gimg measure` y su lectura de la imagen (modelo con visión si cabe en la máquina); sin Ollama todo sigue con prompts a mano; nada de API externas ni cuotas | Tests con un Ollama falso; una ronda del piloto hecha de principio a fin sin agentes, con la nota de la persona |
+| F7 Compatibilidad | **Última fase** (pedido de la persona del 2026-11-05; D4 deja la Deck primero): que `gimg` funcione en cualquier equipo, no solo con Vulkan. **Motor:** elegir el `sd-cli` según lo que haya (Vulkan, CUDA, ROCm/HIP, Metal o solo CPU), cada uno con versión fija y sha256, detectado por `instalar.sh`/`gimg doctor` y declarado en el perfil de máquina; perfiles de máquina genéricos (CPU, GPU pequeña, GPU grande) además de `steam-deck`. **Linux variados:** sin Vulkan ni GPU, otras distribuciones, sin `rsvg-convert` o con un ffmpeg distinto (avisos claros en `doctor`). **Windows:** instalador propio (`instalar.ps1` o similar), parada del proceso sin `os.killpg` probada de verdad, rutas y fuentes de Windows, lanzador `arrancar.cmd` (sin `.exe`: nada que instalar, D6). **macOS** si cabe (Metal). Navegador: el predeterminado del sistema, con `BROWSER` para forzar otro | **Manual persona:** en un Linux sin Vulkan (solo CPU) y en un equipo Windows: instalar, `gimg doctor` en verde, un pedido generado y elegido desde la interfaz |
+
+**Navegador de la persona: Firefox** (2026-11-05): `gimg ui` abre el navegador por defecto (`webbrowser`), que en la Deck es Firefox 159 (flatpak). Las pruebas automáticas usan Chrome headless (CDP), así que la interfaz en Firefox queda **pendiente de comprobar a mano**: la persona, en la Deck, recorre proyecto, pedido, comparar, editor y cola en Firefox.
+
+**Releases en GitHub** (pedido de la persona del 2026-11-05): cada versión que llega a `main` lleva su etiqueta
+`vX.Y.Z` y una release en GitHub con las notas de su sección del CHANGELOG (es y en), para seguir el avance del
+proyecto desde GitHub. Se empieza con **0.4.0 al cerrar F4**, y en el mismo paso se crean las atrasadas (0.1.0, 0.2.0 y
+0.3.0, sobre el commit de `main` en que entró cada una). Comprobable: un script que diga si la versión de `gimg` en
+`main` tiene su etiqueta y su release, en el cierre de cada fase.
+
+**Licencia MIT** (pedido de la persona del 2026-11-05; **lo siguiente tras llevar F4 a `main`**): `LICENSE` con el
+texto MIT en la raíz, y en los dos README la línea «Todavía no hay licencia» pasa a decir que el código es MIT y que
+los modelos (`gimg/models.json`) tienen su propia licencia. Falta que la persona diga el titular del copyright.
 
 ## F1 en detalle
 
@@ -223,7 +241,7 @@ mensaje traducido por stderr con salida 1; un error de uso de `argparse` sale co
 ## F2 en detalle
 
 **Aprobado por la persona el 2026-10-26** con las recomendaciones de cada [P] (abajo); lo marcado
-*(suposición)* no está en las fuentes y se comprueba en la primera ronda. Fuentes: `docs/registros/lectura-2026-10-26-tarkor-y-marcas.md`
+*(suposición)* no está en las fuentes y se comprueba en la primera ronda. Fuentes: `docs/records/lectura-2026-10-26-tarkor-y-marcas.md`
 (generador de Tarkor y marcas), el kit visual de toVeriAI (`VeriNews_AI/Documentacion/v1.1/kit-visual-ia.html`), el Portal
 (`public/marca/`, `src/estilos/global.css`, `src/data/proyectos/`) y, en Tarkor, `image-generator/scripts/` y
 `docs/producto/plan-imagenes/`. Las decisiones nuevas, D28-D36, están en la tabla general. F2 sigue el modelo del generador de Tarkor: sus protecciones, sus dos perfiles (rápido y de calidad), su banco de
@@ -413,7 +431,7 @@ examples/<p>` y `gimg order submit <p> examples/<p>/orders/r1-og.json` para los 
 `piloto/r1/`: **14/14 píxel a píxel iguales** (`ffmpeg -f md5`; los bytes difieren solo por el `tEXt` que añade `gimg`). Las dos columnas están en
 `r1-fondos.md`. Diferencia conocida frente a `generar.sh`: `gimg` añade `--preview proj --preview-interval 1 --preview-path …`; `-t` no aparece porque
 `steam-deck.json` no fija hilos. La imagen no cambia, que es justo lo que medía la comparación; los tiempos salen 0-7 s más lentos en cuatro proyectos por
-la caché de disco tras descargar Ollama, no por el motor. CI de GitHub sin cuota el 2026-10-27: los pasos del CI (`comprobar.yml`: check y `pre-commit` de `main` sobre el rango) reproducidos en local sobre `370cf91`, en verde; comprobado solo en local a petición de la persona.
+la caché de disco tras descargar Ollama, no por el motor. CI de GitHub sin cuota el 2026-10-27: los pasos del CI (`check.yml`: check y `pre-commit` de `main` sobre el rango) reproducidos en local sobre `370cf91`, en verde; comprobado solo en local a petición de la persona.
 
 *Hecho en F2.7 (a)* (`gimg/orders.py`, `queue.py`, `worker.py`, `engine.py`, `engine_sdcpp.py`, `delivery.py`, `projects.py`, `cli.py`, esquemas `project-config` y `order`, `locales/`, `tests/test_draft.py`): borradores (D32). **Decisiones:**
 (1) *Perfil:* `draft` `{model?, steps?, scale?}` (`scale` 0.1-1); `load_config` comprueba `draft.model` contra el catálogo. (2) *Pedido:* `draft` booleano (por defecto false), guardado en `orders.submit`.
@@ -494,7 +512,7 @@ Tres encargos en serie (E1 núcleo, E2 integración, E3 frente); cada uno deja e
 
 **5. `gimg doctor`** (E3): ffmpeg y rsvg-convert ya los comprueba `_tools()`. Añadir `_fonts()` tras `_tools` en `doctor.run`: recorre `projects.list_projects()`, `load_config` de cada uno (si falla, `warn doctor.fonts.project_error` {project, message}); junta los `compose.fonts`; una sola llamada `fc-list --format '%{family}\n'`, familias separadas por coma, comparación sin mayúsculas. Falta una → `warn doctor.fonts.missing` {font, projects} con `doctor.fix.fonts` (copiar a `~/.local/share/fonts` y `fc-cache -f`). Sin `fc-list` → `warn doctor.fonts.no_fc_list`; sin fuentes declaradas → `ok doctor.fonts.none`.
 
-**6. Tests** (cada uno por `rojo-sin-arreglo.sh`; patrón `EN_CI` + `skipUnless` de `tests/test_pilot_scripts.py`, con `color_png`):
+**6. Tests** (cada uno por `red-without-fix.sh`; patrón `EN_CI` + `skipUnless` de `tests/test_pilot_scripts.py`, con `color_png`):
 - `tests/test_compose.py` sin herramientas: `fit_geometry` (og, wide, square, contain, tamaños ≤ 0); `substitute` (escape de `<&"'`, una sola pasada, hueco desconocido con motivo, `{{logo}}` data URI); guardia de rutas de plantilla y logo (`../`, absoluta, `~`, `\n`, `\x00`, enlace que sale, no es archivo) con su código; `rsvg_argv`/`ffmpeg_argv` exactos (cover, contain, sin capa); `plan_for` (None cuando no hay nada que hacer); `tool_missing` con `PATH` vacío.
 - `tests/test_compose.py` con herramientas: plantilla mínima con un rect y `{{title}}` con `&<` → salida 1200×630; píxeles con `ffmpeg -f rawvideo -pix_fmt rgb24 -` (cover: fondo de dos colores, la franja recortada no aparece; logo de color conocido en su sitio); el chunk `gimg` sigue en la compuesta con `compose`; `tool_failed` con SVG roto, comprobando el motivo.
 - `tests/test_schema.py`, `tests/test_orders.py`: `targetWidth` sin `targetHeight`, `fit` fuera del enum, campo `logo` reservado, `text` > 200 o con control, clave fuera de `fields`, `choose_uncomposed`.
@@ -559,10 +577,10 @@ Un encargo; porta `examples/pilot/medir.py` (que se queda como está) y la EMD d
 6. *Tests* (`tests/test_measure.py`; patrón `EN_CI` + `skipUnless` de `tests/test_pilot_scripts.py`): PNG sintéticos de color
    conocido (Lab de un color puro contra su valor, ΔE en el umbral, % de paleta de una imagen mitad y mitad, EMD 0 consigo
    misma y > 0 con otra, mediana de tres, contraste blanco/negro 21:1, zona fuera, hex malo, ffmpeg ausente con `PATH`
-   vacío). Cada test con su motivo (el código del error), y los nuevos pasan por `rojo-sin-arreglo.sh`.
+   vacío). Cada test con su motivo (el código del error), y los nuevos pasan por `red-without-fix.sh`.
 7. *Calibración* (tras el código, en la Deck, sin modelo): `gimg measure --json` de las imágenes de marca de cada proyecto
    (las de «Plan de pruebas de contenido», *Objetivo*) y de las piezas de r1/r5 del piloto, en
-   `docs/registros/contenido/calibracion-measure.md`, con los rangos propuestos por proyecto.
+   `docs/records/contenido/calibracion-measure.md`, con los rangos propuestos por proyecto.
 
 *Hecho en F2.9* (`gimg/measure.py`, `gimg/cli.py`, `tests/test_measure.py`): puntos 1-6; el 7 (calibración) queda pendiente. Decisiones
 menores: `--refs` acepta una o más imágenes (`nargs="+"`, así que va después de la imagen); el JSON usa claves en minúscula
@@ -572,7 +590,7 @@ el stdout de ffmpeg): `measure._run` es su gemelo con códigos `measure.*`. El t
 `ffprobe` y se pide `scale=w:h` explícito, de modo que los bytes esperados son exactos y menos bytes es `measure.unreadable`;
 una imagen que no existe también es `measure.unreadable`, y una que ffmpeg rechaza, `measure.tool_failed`. `--zone` y `--text`
 sin pareja dan `cli.measure_zone_text` (también si se llama a `measure.measure` directamente).
-*Calibración (punto 7, 2026-11-02):* `docs/registros/contenido/calibracion-measure.md`, con umbrales orientativos por proyecto;
+*Calibración (punto 7, 2026-11-02):* `docs/records/contenido/calibracion-measure.md`, con umbrales orientativos por proyecto;
 confirma con números el «no» de Tarkor en r5 (SATAVG 5-7 frente a 25 de su portada, EMD Cr 19-22). Cierra F2.9.
 
 ### Estilos por proyecto
@@ -586,7 +604,7 @@ lleva la paleta en palabras, no en hexadecimales *(suposición: el modelo no res
 colores de acento de cada proyecto salen de `Portal-Galivelop/src/data/proyectos/*.json`: Tarkor `#E0703A`, toVeriAI `#2F7A55`,
 workflow `#3D6FD9`.
 
-Pautas añadidas el 2026-11-02, de `pautas.md` v5.2 de Tarkor (`docs/registros/lectura-2026-11-02-tarkor.md`; aprobadas por la
+Pautas añadidas el 2026-11-02, de `pautas.md` v5.2 de Tarkor (`docs/records/lectura-2026-11-02-tarkor.md`; aprobadas por la
 persona): la luz se pide por dirección y **sin nombrar la fuente** («sun» pinta el disco aunque se diga fuera de cuadro); el
 modelo tiende a escena luminosa y cálida, y una escena oscura o sobria se dice **al principio** del prompt; posiciones y tamaños
 en fracciones del encuadre y desde qué borde («a quarter of the way down from the top»), no con adjetivos; un ancla nombrada una
@@ -622,7 +640,7 @@ muy redondeadas (radios 3-6 px; píldora solo en badges). *Paleta:* fondo `#F7F5
 granate `#9B2335` solo cuando la pieza habla de un nivel de credibilidad; hero `#1c3028 → #2D6A4F`. *Tipografía (composición):*
 Cormorant Garamond 400 (nunca bold) en titulares y wordmark «to·Veri·AI» con tracking 0,08 em y «Veri» en `#2D6A4F`; DM Sans en
 eyebrows (mayúsculas, tracking 0,28-0,32 em) y cuerpo. *Logo:* el wordmark se compone como texto; el símbolo (V de trazos
-curvos verde y ámbar con constelación) solo existe en `frontend/public/favicon.png` 512×512: **falta el SVG** (D29; propuesta al
+curvos verde y ámbar con constelación) solo existe en `frontend/public/favicon.png` 512×512: **falta el SVG** (D29, superada por D37: ahora se genera; propuesta al
 repo **[P]** quién lo vectoriza). *Formatos:* `og`, `square`, `portrait`, `wide`, `header`, `icon`. *Primera ronda (huecos):* 1) og:image
 1200×630 (hoy apunta al favicon de 512): fondo «Entre dos tintas» del kit + wordmark + «La verdad no es binaria»; 2) `square`
 1080×1080 «Cita tipográfica» (papel + frase del kit compuesta); 3) banner «El espectro» como `header` o `banner`; 4) `wide`
@@ -637,7 +655,7 @@ cuaderno de bitácora; fondo oscuro `#0d1b2a` con rejilla tenue como los siete d
 luminosos, circuitos brillantes, lluvia de código, humanoides, manos de robot sobre teclados. *Paleta:* la de los diagramas:
 fondo `#0d1b2a`, texto `#eef6fb` y `#8a9bb0`, acentos `#38b6e8`, `#f2b34a` (lo de Matt Pocock va en ámbar en los diagramas) y
 `#4cc38a`; acento del Portal `#3D6FD9`. *Tipografía (composición):* Inter (800 en títulos, como los diagramas) y DejaVu Sans
-Mono para lo que es código. *Logo:* **no existe** nada en el repo. Propuesta **[P]**: monograma «gw» en Inter 800 blanco sobre
+Mono para lo que es código. *Logo:* **no existe** nada en el repo. Propuesta **[P]**: monograma «gw» en trazos blancos de la familia (sin fuente) sobre
 cuadrado rx 30 con degradado `#3D6FD9 → #0d1b2a`, de la misma familia que `gv-logo.svg` (mismo cuadrado y radio, otro acento),
 dibujado a mano como SVG. *Formatos:* `social`, `og`, `square`, `banner`, `avatar`. *Primera ronda (huecos):* 1) logo y avatar
 512×512 [P]; 2) social preview de GitHub 1280×640; 3) og:image 1200×630 de su ficha en el Portal; 4) `square` 1080×1080 con el
@@ -655,7 +673,7 @@ cero, propuesta **[P]**:* paleta a partir del acento `#E0703A` y de la roca roja
 carácter para el wordmark «Tarkor» (una serif o display de fantasía, a elegir entre las OFL de Google Fonts **[P]**; Sora sería la
 alternativa coherente con el Portal); símbolo: la silueta de los Pilares Rotos con un puente, en un trazo, dentro del mismo
 cuadrado rx 30 de la familia (fondo `#E0703A → #8a3b1e`); el generador boceta 4-6 emblemas de 1024×1024 como inspiración y el
-SVG se dibuja a mano (D29). *Formatos:* `banner`, `og`, `square`, `header` (Discord), `avatar`. *Primera ronda:* 1) bocetos del
+SVG se dibujaba a mano (D29, superada por D37: el emblema lo genera gimg). *Formatos:* `banner`, `og`, `square`, `header` (Discord), `avatar`. *Primera ronda:* 1) bocetos del
 emblema y SVG del símbolo [P]; 2) og:image 1200×630 con los Pilares Rotos + wordmark; 3) banner 1600×640 nuevo para el Portal y
 cabecera 960×540 de Discord; 4) `square` 1080×1080 con el lema; 5) avatar 512×512.
 
@@ -677,7 +695,7 @@ Portal solo si la persona decide presentarlas allí. *Metáforas* (de sus textos
 ### Plan de pruebas de contenido
 
 Como el banco de Tarkor (`banco.sh` y `resultados.md`): **semilla fija (3), una palanca por ronda, borrador y luego definitivo,
-y veredicto «sí/no a ojo» de la persona.** Cada ronda es un archivo `docs/registros/contenido/rN-<tema>.md` con la tabla
+y veredicto «sí/no a ojo» de la persona.** Cada ronda es un archivo `docs/records/contenido/rN-<tema>.md` con la tabla
 (proyecto, clave, perfil, modelo, semilla, pasos, palanca, tiempo, memoria mínima, medida, veredicto) y las miniaturas (D35); los
 pedidos de la ronda son los JSON de `examples/<proyecto>/orders/` enviados con `gimg order submit`. **Todo lo que corre en la
 Deck es comprobación manual de la persona, nunca un test**; lo que se apunta es lo medido, no lo previsto. Criterios:
@@ -721,7 +739,7 @@ cosa; una ronda que no cabe en una sesión se parte y lo hecho se apunta en el m
   - el logo elegido (`docs/marcas/README.md`), el texto y la medida, sobre los definitivos;
   - r5 con 3-4 piezas por proyecto.
 - **Revisión:** todo resultado queda en `piloto/<ronda>/` con su página, y su registro va en
-  `docs/registros/contenido/`. La persona revisa allí y, sin veredicto suyo, decide el agente y lo apunta.
+  `docs/records/contenido/`. La persona revisa allí y, sin veredicto suyo, decide el agente y lo apunta.
 
 ### F2.10 en detalle (rondas r2-r4 con gimg)
 
@@ -835,7 +853,7 @@ el chunk `gimg` de la compuesta lleva `compose`; `gimg choose` entrega a `exampl
 sigue **a ojo**. *Cierre:* «sí» por proyecto si la persona la da por publicable; la elegida y su plantilla pasan a r5 (F2.12).
 
 **Pasos** (cada uno con su commit y la bitácora al día; los de código, con el check en verde y sus tests por
-`rojo-sin-arreglo.sh`):
+`red-without-fix.sh`):
 
 | Paso | Qué | Tipo | Registro |
 |---|---|---|---|
@@ -845,7 +863,7 @@ sigue **a ojo**. *Cierre:* «sí» por proyecto si la persona la da por publicab
 | E4 | [P] 2, 3, 4 y 7: `logos/`, `plantillas/og.svg`, `compose`, `targetWidth`/`targetHeight` y `draft` en `og` de los siete; pedidos r3 con `text` y `.gitignore`; `test_examples.py`: copias idénticas, `compose.resolve_assets` resuelve, líneas que caben, pedidos r3 validan, y con herramientas (`skipUnless`) cada plantilla compone una cruda sintética a 1200×630 | Configuración y tests | — |
 | E5 | Tanda r3 en la Deck: borradores, escalado y copia a `init/`, img2img, `measure` | Manual Deck | `r3-borrador.md`, sección «Con gimg (F2.10)» |
 | E6 | Tanda r4: instalar las fuentes en `~/.local/share/fonts` (con permiso), `gimg compose`, `measure`, `choose`; los ajustes de plantilla que salgan van en commit propio | Manual Deck (+ configuración) | `r4-composicion.md`, sección «Con gimg (F2.10)» |
-| E7 | Cierre: «Hecho en F2.10» con lo decidido, fila F2.10 de «Pasos de F2», Pendiente de Tarkor en la bitácora, y lo que pasa a F2.11/F2.12 | Documentación | `docs/plan.md`, `docs/traspaso.md` |
+| E7 | Cierre: «Hecho en F2.10» con lo decidido, fila F2.10 de «Pasos de F2», Pendiente de Tarkor en la bitácora, y lo que pasa a F2.11/F2.12 | Documentación | `docs/plan.md`, `docs/handoff.md` |
 
 **Fuera de F2.10:** la LUT por marca y `compose.lut` (F2.11, solo si r2 deja a Tarkor fuera de rango); r5, avatar e icon,
 los formatos `square`, `portrait`, `header` y `banner` con composición y las propuestas a cada repo (F2.12); `compose.wrap`
@@ -858,7 +876,7 @@ posible.
 
 | Paso | Qué | Comprobación |
 |---|---|---|
-| F2.0 | **Arranque [P]:** prompts de los cuatro estilos en `examples/<proyecto>/prompts/` y rondas r0 y r1 con el `generar.sh` de Tarkor (solo ejecutado, salida en `<datos>/pilot/`) | **Manual persona:** `docs/registros/contenido/r0-humo.md` y `r1-fondos.md`, con el log real de `sd-cli` guardado para F2.2-F2.4 |
+| F2.0 | **Arranque [P]:** prompts de los cuatro estilos en `examples/<proyecto>/prompts/` y rondas r0 y r1 con el `generar.sh` de Tarkor (solo ejecutado, salida en `<datos>/pilot/`) | **Manual persona:** `docs/records/contenido/r0-humo.md` y `r1-fondos.md`, con el log real de `sd-cli` guardado para F2.2-F2.4 |
 | F2.1 | Catálogo `gimg/models.json` y su esquema; `model` del perfil validado contra el catálogo; `engine.*` nuevo en el perfil de máquina y `steam-deck.json` con FLUX.3 (D30) | Tests del esquema, del catálogo y de la resolución modelo + máquina |
 | F2.2 | `engine_sdcpp.py`: argv, `LD_LIBRARY_PATH`, proceso en su grupo, tope, cancelar, código de salida, `EngineResult` con tiempos y `command` (D33, D34); `GIMG_ENGINE=sdcpp` y `config.json` (D36); `tests/fake_sd_cli.py` | Tests con el `sd-cli` falso: argv exacto, cancelar mata el grupo, tope, fallo con el motivo |
 | F2.3 | Protecciones: memoria previa, vigilante, «reported free 0.00 MB», Ollama (`urllib`), `min_free_mb` | Tests con `/proc/meminfo` y Ollama simulados; cada fallo con su motivo |
@@ -871,6 +889,7 @@ posible.
 | F2.10 | **Rondas r2-r4 en la Deck** con `gimg` («F2.10 en detalle»); ajustes de estilo y plantillas que salgan; las rondas se revisan con **hojas de contactos** (como `hoja.sh --archivos` de Tarkor: una hoja de 6 cuesta lo que una imagen), y `gimg doctor` avisa de un `maxVram` alto o de `--offload-to-cpu` en `args` (bloquearon la Deck en Tarkor) *(aprobado 2026-11-04)* | **Manual persona:** registros `r2-estilo.md`, `r3-borrador.md`, `r4-composicion.md` |
 | F2.11 | LUT por marca solo si r2 lo pide (`compose.lut`, `gimg lut bake`), aplicada como gradación tras generar y antes de componer (el `MOMENTO=` de Tarkor: su noche gradada baja la EMD a la cuarta parte); si no, se apunta para F5. El `.cube` lleva en su `TITLE` una huella de sus curvas y, si no casa con el perfil, `gimg` avisa de rehornear (como `gradar.sh` de Tarkor). **Sin LoRA:** `wmf-estilo` no levanta la saturación con prompts grises (SATAVG 6,6 → 5,8); solo si r2 y la LUT no bastan, una ronda de prueba con él a peso 1 en escena cálida *(aprobado 2026-11-04)* | Tests del `.cube` generado; manual: `measure` antes y después |
 | F2.12 | **Hoja de estilo mínima** (pedido de la persona del 2026-11-04): plantilla única `docs/marcas/plantilla-hoja-de-estilo.md` con lo obligatorio que da cada proyecto para generar sus imágenes (y lo recomendado, que mejora el resultado), cada campo con su correspondencia en `galivelop-images.json`; borrador ya, ajustado con lo que enseñen r2-r4, y cada biblia de `docs/marcas/` pasa a ser una hoja rellena que viaja en `docs/propuestas/<proyecto>.md`; lo obligatorio que sea comprobable lo valida `gimg doctor --project <p>` antes de r5 *(decidido por la persona el 2026-11-04; plantilla con los 17 cambios de la hoja real aplicados)*. Antes de r5, `sd-cli` a `master-1039-290148d` en `instalar.sh` (release y sha256 nuevos; LoRA de FLUX.3 sobre Q8_0 en CPU, probado por Tarkor: +7-8 % de tiempo, 5,4 GB libres de mínimo) como palanca propia, con r1 repetida para ver que da lo mismo *(aprobado 2026-11-04)*; **ronda r5** y propuestas `docs/propuestas/<proyecto>.md` (configuración, plantillas, logos SVG, piezas elegidas) | **Manual persona:** `r5-piezas.md`; cada propuesta enlaza su configuración de ejemplo |
+| F2.14 | **Logos generados (D37):** perfil `logo` (cuadrado, fondo plano declarado en la hoja), recorte del fondo a transparencia en local (`compose.keyColor` o paso propio, ffmpeg), emblema elegido como recurso del proyecto (`logos/<p>-emblema.png`) y lockup compuesto (emblema + nombre con la fuente OFL); primero Tarkor (concepto «La Semilla rota») y workflow (formato Galivelop) | Tests del recorte con PNG sintéticos (`skipUnless` ffmpeg); emblemas elegidos por la persona |
 | F2.13 | README es/en (instalación, motor real, composición, medida), CHANGELOG, versión 0.2.0, tabla de fases al día | Check en verde; `minVersion` de los ejemplos = 0.2.0 |
 
 **Proceso (retro de Tarkor, aprobado 2026-11-04):** `/code-review` del paso al cerrar cada paso de F2, no solo antes de `main` (en Tarkor los medios salían días después), y `f2-motor` va a `main` por bloques (F2.0-F2.9 ya es uno) en vez de al final de F2.
@@ -901,8 +920,350 @@ posible.
   persona decida [P]; sin su decisión, su ronda r5 no empieza. El símbolo de toVeriAI necesita SVG antes de componerlo.
 - **Sumas y URLs del catálogo.** Se toman de lo descargado en la Deck y la persona las verifica; sin red o con cuota de Hugging
   Face, `instalar.sh` reintenta con `-C -`.
-- **Herramientas del CI.** ffmpeg y rsvg-convert se instalan con `apt` en `comprobar.yml`; si el CI no arranca (sin cuota), vale el
+- **Herramientas del CI.** ffmpeg y rsvg-convert se instalan con `apt` en `check.yml`; si el CI no arranca (sin cuota), vale el
   check en local con la confirmación de la persona (`AGENTS.md`, «Relevos»).
+
+## F3 en detalle
+
+**Contrato aprobado por la persona el 2026-11-05** (sus respuestas, al final). Es la **F3 mínima** de D39: la API
+HTTP local y `gimg serve`, lo justo para construir encima F4a-F4c; lo demás de F3 (unidad `systemd`, lo que pida F4d)
+queda para después. Las decisiones que no son de la persona las toma el contrato y se marcan **Decisión**.
+
+### Alcance
+
+**Entra:** `gimg serve` (servidor y estado), `gimg ui` y el arranque bajo demanda (D11); la API de la tabla de abajo marcada
+F3; la seguridad de D25; los errores en JSON con las claves de `errors.py`; una `gimg/ui/index.html` provisional (F4a la
+sustituye) para probar el servido de estáticos; `docs/api.md` (D17).
+
+**No entra:** SSE o WebSocket (la interfaz sondea cada 3 s, `docs/interfaz/propuesta.md`); token de acceso (decisión 4);
+escucha fuera de `127.0.0.1`; unidad `systemd --user` (decisión 4); registrar o quitar proyectos por la API (es de la CLI,
+D12); reordenar la cola, contadores por proyecto, pestañas Piezas y Marca y `doctor` por la API (F4d); `sd-server` (D14);
+librería cliente (D17). **La API es la misma capa que la CLI:** cada ruta llama a la función que ya llama `gimg/cli.py`
+(`projects`, `orders`, `queue`, `delivery`, `compose`, `measure`); ninguna lógica nueva del dominio vive en el servidor.
+
+### `gimg serve` y el arranque bajo demanda
+
+| Pieza | Contrato |
+|---|---|
+| Módulos nuevos | `gimg/server.py` (router, seguridad, errores, estáticos; `ThreadingHTTPServer`) y `gimg/service.py` (archivo de estado, `ensure_running()`, `stop()`, lanzar el trabajador) |
+| Dirección | Siempre `127.0.0.1` (D25), sin opción `--host`. Puerto: `--port`, si no `GIMG_PORT`, si no `"serve": {"port"}` de `<config>/config.json`, si no **8737**. Ocupado: `serve.port_busy` (no se busca otro: WMF y los marcadores necesitan uno fijo). `--port 0` (tests) toma uno libre y lo apunta |
+| Una instancia | `<data>/serve.lock` con `flock` no bloqueante durante toda la vida del proceso, como `worker.lock`; otro `gimg serve` da `serve.already_running` con la URL |
+| Archivo de estado | `<data>/serve.json` (`fsutil.write_json`, 0600): `{"pid", "port", "url", "version", "startedAt"}`. Vivo = el cerrojo está tomado **y** `GET /api/health` responde; un `serve.json` sin cerrojo es de un proceso muerto y se ignora (y se sobrescribe) |
+| Órdenes | `gimg serve` (primer plano; Ctrl-C para), `gimg serve --detach` (arranca en segundo plano, espera a `health` hasta 5 s y escribe la URL; `--json` da `serve.json`), `gimg serve --status`, `gimg serve --stop` (SIGTERM al pid de `serve.json` si el cerrojo sigue tomado), `--idle-min N` |
+| `gimg ui` (nueva) | `ensure_running()` y `webbrowser.open(url)` (stdlib); escribe la URL siempre, por si no hay navegador |
+| Arranque bajo demanda | `ensure_running()`: si no está vivo, lanza `sys.executable -m gimg serve` con `start_new_session=True`, salida a `<data>/serve.log`, y espera `health` hasta 5 s; si no, `serve.start_failed` con las últimas 5 líneas del log. Lo llaman `gimg ui` y, **si la persona lo confirma (decisión 1)**, `gimg order submit` y `gimg attempt new` tras encolar. `GIMG_AUTOSTART=0` lo apaga (los tests lo fijan). Si `health.version` ≠ la instalada y no hay trabajador vivo, se para el viejo y se arranca el nuevo; con trabajador vivo se usa el viejo y se avisa |
+| Trabajador | El servidor **no genera**: lanza `sys.executable -m gimg work --lang <lang>` como proceso aparte (`start_new_session=True`, salida a `<data>/worker.log`) cuando hay entradas `queued` (`queue.next_queued()`) y el cerrojo del trabajador está libre (`queue.worker_alive()`, nueva y pública, sobre el `_no_worker` de hoy). Se comprueba tras cada encolado por la API y en un pulso de 2 s (lo encolado por la CLI con `GIMG_AUTOSTART=0` también se coge). `worker.run` sale solo con la cola vacía, así que no queda nada residente. Un `gimg work` a mano sigue valiendo: el cerrojo hace que solo uno corra y el servidor no lanza otro; un `worker.already_running` del hijo es carrera inocua |
+| Inactividad | Se para solo tras `--idle-min` (por defecto **15**; `"serve": {"idleMinutes"}`; `0` = nunca) sin peticiones, sin trabajador vivo y sin entradas `queued`/`running`. La interfaz abierta sondea y lo mantiene vivo; cerrar la pestaña lo deja parar |
+| Parada | SIGTERM, SIGINT o inactividad: deja de aceptar, espera hasta 10 s a las peticiones en curso, borra `serve.json` y suelta el cerrojo. **Nunca toca al trabajador**: parar el servidor no corta una generación (para eso, `POST /api/queue/{id}/cancel`) |
+| `systemd --user` | Fuera de la mínima (decisión 4); `gimg serve` en primer plano ya sirve de `ExecStart=` el día que entre |
+
+**Decisión:** el trabajador va en su propio proceso y no en un hilo del servidor: `worker.run` instala manejadores de
+señales (`_exit_on_signals`, solo posible en el hilo principal), `sd-cli` puede ocupar 7 GB y un fallo del motor no debe
+tumbar la API; además reutiliza `gimg work` tal cual, con sus tests.
+
+### Rutas
+
+Prefijo `/api`; `{p}` es el proyecto, `{profile}` el perfil, `{key}` la clave del pedido en **un solo segmento codificado**
+(`fauna%2Faullador-rojo`, `encodeURIComponent` en la interfaz): el servidor parte la ruta por `/` y luego decodifica cada
+segmento; las validaciones de forma son las de siempre (`orders._check_id`, `paths.check_key`). Abreviatura:
+`…/o` = `/api/projects/{p}/orders/{profile}/{key}`, `…/a/{id}` = `…/o/attempts/{id}`. Respuestas JSON salvo imágenes,
+log y SVG. Fase: **F3** o la de la interfaz que la añade.
+
+| Fase | Método y ruta | Cuerpo | Respuesta | Llama a | Errores propios |
+|---|---|---|---|---|---|
+| F3 | `GET /api/health` | — | `{"ok", "api": 1, "version", "pid", "port", "engine", "worker": bool}` | `engine.get_engine().provider`, `queue.worker_alive` | — |
+| F3 | `GET /api/locales/{lang}` | — | el `gimg/locales/<lang>.json` (textos de errores y de la interfaz, D16) | — | `api.not_found` |
+| F3 | `GET /api/projects` | — | `[{"name", "root", "ok", "error"?}]` (`error` si su configuración no carga) | `projects.list_projects`, `projects.get` | — |
+| F3 | `GET /api/projects/{p}` | — | `{"name", "root", "config"}` (perfiles, `compose`, `brand`) | `projects.get` | `project.*` |
+| F3 | `GET /api/projects/{p}/orders?profile=&chosen=true\|false` | — | lista de pedidos, como `order list --json` | `orders.list_orders` | `order.profile_unknown` |
+| F3 | `POST /api/projects/{p}/orders` | el pedido (`order.schema.json`, con su `count`) + `"draft"?` | 201 `{"order", "entries", "estimateMs"}` | `orders.submit`, `orders.attempt_specs`, `queue.enqueue`, `queue.estimate_for` | `order.invalid`, `limit.*`, `key.*` |
+| F3 | `GET …/o` | — | el pedido con sus intentos, como `order show --json` | `orders.get` | `order.unknown` |
+| F3 | `PUT …/o/text` | `{"text": {"title": "…"}}` | el pedido | `orders.set_text` | `order.text_unknown_field` |
+| F3 | `POST …/o/attempts` (otra semilla, retoque de prompt, N seguidas, borrador) | `{"count"?, "seed"?, "prompt"?, "steps"?, "cfg"?, "sampler"?, "draft"?}` | 202 `{"entries", "estimateMs"}` | `orders.attempt_specs`, `queue.enqueue` | `order.count_invalid`, `order.prompt_too_long`, `limit.*` |
+| F3 | `POST …/a/{id}/mark` | `{"state": "new\|candidate\|discarded"}` | el intento | `orders.mark` | `order.state_invalid`, `order.discard_chosen` |
+| F3 | `POST …/a/{id}/note` | `{"text": "…"}` | el intento | `orders.note` | `order.note_invalid` |
+| F3 | `POST …/o/choose` | `{"attempt": id}` | `{"new", "old"}` | `delivery.choose` | `order.choose_*`, `delivery.*` |
+| F3 | `POST …/o/undo` | `{}` | `{"new", "old"}` | `delivery.undo` | `order.history_empty`, `order.undo_*` |
+| F3 | `POST …/a/{id}/compose` | `{"text"?}` | el intento (`delivered` si es la elegida) | `compose.recompose` | `compose.busy` (409), `compose.*` |
+| F3 | `GET …/a/{id}/image?raw=1` | — | PNG: `image` o, con `raw=1`, la cruda | `orders.attempt_image`, `orders.raw_image` | `api.not_found` |
+| F3 | `GET …/a/{id}/log` | — | `text/plain` del `attempts/q<id>.log` | — | `api.not_found` |
+| F3 | `GET …/a/{id}/measure?zone=x,y,w,h&text=%23RRGGBB&raw=1` | — | lo de `gimg measure --json`, con la paleta de `brand` | `measure.measure` | `measure.*` |
+| F3 | `GET /api/projects/{p}/profiles/{profile}/assets/{template\|logo}` | — | el SVG declarado en `compose` (para la previsualización de la interfaz) | `compose.resolve_assets` | `compose.template_missing`, `compose.logo_missing`, `path.*` |
+| F3 | `GET /api/queue?state=` | — | `[entrada + "errorText"?, "estimateMs"?]`, con `progress` y sin la ruta de `preview` | `queue.list_entries`, `queue.error_text`, `queue.estimate_for` | `queue.bad_state` |
+| F3 | `POST /api/queue/{id}/cancel` | `{}` | la entrada | `queue.cancel` | `queue.unknown`, `queue.not_cancellable` |
+| F3 | `GET /api/queue/{id}/preview` | — | PNG de la vista previa mientras corre (`Cache-Control: no-store`) | `queue.get` | `api.not_found` |
+| F4b | `GET /api/projects/{p}/profiles/{profile}/templates` | — | `[{"id", "template", "logo", "fields", "default": bool}]` | (nuevo, sobre `compose`) | — |
+| F4b | `POST …/a/{id}/compose` gana `"template": "<id>"`; `POST …/o/attempts` también (plantilla de los intentos nuevos) | | el intento guarda `compose.template` = id | `compose.recompose` con parámetro nuevo | `compose.template_unknown` (nuevo) |
+| F4b | `GET …/assets/template?id=<id>` | — | el SVG de esa plantilla | | |
+| F4c | `POST …/a/{id}/compose` gana `"layout": {"<elemento>": {"x", "y", "w", "h"}}` (píxeles del destino) | | el intento con `compose.layout` y `contrast` por elemento de texto (la medida de D31 sobre su caja y su color) | `compose.recompose`, `measure.contrast` | `compose.element_unknown`, `compose.bad_layout` (nuevos) |
+| F4c | `POST /api/projects/{p}/profiles/{profile}/templates` | `{"from": {"key", "attempt"}, "name", "dest"}` | 201 la plantilla nueva | (nuevo; destino `local` o `project`, D40) | `compose.template_exists` (nuevo) |
+
+**Decisiones:** (1) las imágenes se sirven por id del intento, nunca por ruta: el servidor resuelve la ruta con `orders` y
+comprueba con `paths.inside` que cae en la carpeta del pedido, y la vista previa con `paths.inside(paths.data_dir(), …)`.
+(2) `measure` es `GET` porque no escribe nada; F4c la llama tras mover un elemento. (3) Los elementos de F4c se nombran en
+la plantilla SVG con `id="gimg-<elemento>"` (`gimg-title`, `gimg-subtitle`, `gimg-logo`, `gimg-ornament1`…); el detalle
+(cómo se aplica `layout` al SVG) es del contrato de F4c, no de este. (4) `POST` para acciones y `PUT` solo para `text`
+(sustituye el valor); sin `DELETE` en la mínima.
+
+### Seguridad (D25)
+
+En cada petición, en este orden, antes de tocar nada:
+
+1. **Host:** exactamente `127.0.0.1:<puerto>` o `localhost:<puerto>`; si no, 403 `api.bad_host` (corta el
+   *DNS rebinding*).
+2. **Origin:** si viene, `http://127.0.0.1:<puerto>` o `http://localhost:<puerto>`; si no, 403 `api.bad_origin`. Sin
+   Origin se acepta (CLI, `curl`, WMF desde Node, D17). `Sec-Fetch-Site`, si viene, `same-origin` o `none`.
+3. **Métodos que escriben** (`POST`, `PUT`): `Content-Type: application/json` (con `charset` opcional), si no 415
+   `api.content_type`; `Content-Length` obligatorio (411 `api.length_required`) y ≤ 1 MiB (413 `api.body_too_large`); cuerpo = un objeto
+   JSON (vale `{}`), si no 400 `api.bad_json`. Así un formulario de otra web no puede escribir y nada pasa sin preflight.
+4. **Sin CORS:** no se envía ningún `Access-Control-*`; `OPTIONS` y cualquier otro método dan 405
+   `api.method_not_allowed`.
+5. **Rutas:** solo las de la tabla y los estáticos; cualquier segmento con `..`, `\`, NUL o vacío da 404 sin llegar a
+   disco. Lo que viene del proyecto pasa por `paths.inside`; lo de la carpeta de datos, también.
+
+**Cabeceras en toda respuesta:** `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`,
+`Cross-Origin-Resource-Policy: same-origin`, `Cross-Origin-Opener-Policy: same-origin`, `Cache-Control: no-store` en
+`/api` (salvo imágenes de intentos: `private, no-cache` con `ETag` de tamaño y mtime y `304` a `If-None-Match`, porque
+recomponer, F4c, cambia la imagen del mismo intento). Los SVG del proyecto se sirven con
+`Content-Security-Policy: sandbox; default-src 'none'; style-src 'unsafe-inline'`: abiertos sueltos no pueden ejecutar
+script con el origen de la API (como `<img>` nunca lo hacen).
+
+**Estáticos de la interfaz:** `GET /` sirve `gimg/ui/index.html` y `GET /ui/<ruta>` los archivos de `gimg/ui/` por
+`paths.inside(<gimg>/ui, ruta)`, solo con extensiones conocidas (`.html .css .js .svg .png .woff2 .json`, cada una con su
+tipo; otra da 404). Cabecera `Content-Security-Policy: default-src 'self'; img-src 'self' data: blob:; script-src 'self';
+style-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'` (sin JS en línea, sin CDN, D6).
+
+### Errores e idioma
+
+Toda respuesta de error es `{"error": {"code", "params", "message", "errors"?}}`: `code` y `params` de la `GimgError`
+(la misma forma que `queue.make_error`, que se reutiliza), `message` = `exc.message(lang)` y `errors` las líneas del
+esquema (`schema.format_error`). Idioma: `?lang=es|en`, si no el primero soportado de `Accept-Language`, si no
+`i18n.default_lang()`; la interfaz manda `?lang` con el idioma elegido en su selector.
+
+| Estado | Códigos |
+|---|---|
+| 400 | `*.invalid`, `*.bad_*`, `*_invalid`, `path.*`, `key.*`, `limit.*`, `order.prompt_too_long`, `order.text_unknown_field`, `compose.field_unknown`, `measure.zone_outside`, `api.bad_json`, `api.bad_param`, `api.bad_request` |
+| 403 | `api.bad_host`, `api.bad_origin` |
+| 404 | `project.unknown`, `order.unknown`, `order.profile_unknown`, `order.attempt_unknown`, `queue.unknown`, `api.not_found`, `compose.template_missing`, `compose.logo_missing` (los demás `*.unknown`, como `model.unknown`, son 400) |
+| 405 / 411 / 413 / 415 | `api.method_not_allowed` / `api.length_required` / `api.body_too_large` / `api.content_type` |
+| 409 | `compose.busy`, `measure.busy`, `compose.nothing_to_do`, `compose.no_attempts`, `order.choose_*`, `order.discard_chosen`, `order.undo_*`, `order.history_empty`, `queue.not_cancellable`, `delivery.target_taken` |
+| 500 | antes de los patrones de 400, los fallos del lado del servidor: `engine.unknown`, `engine.bad_delay`, `machine.invalid`, `machine.bad_path`, `machine.bad_name`, `model.catalog_invalid`, `png.invalid`, `png.bad_key`, `order.spec_invalid`, `queue.bad_progress`, `compose.bad_fit`, `compose.bad_size`, `project.config_invalid`; y el resto de `GimgError` (corruptos, herramientas, escritura) y cualquier otra excepción como `api.unexpected` con `{"message": "Tipo: texto"}` (traza a `serve.log` solo con `GIMG_DEBUG=1`) |
+
+La tabla vive en `server.py` como lista de prefijos y sufijos; un código sin entrada da 500 y un test recorre las claves
+`error.*` de `es.json` para que ninguna caiga en 500 sin querer. Claves nuevas (es/en): `api.bad_host`, `api.bad_origin`,
+`api.content_type`, `api.length_required`, `api.body_too_large`, `api.bad_json`, `api.bad_param`, `api.not_found`,
+`api.method_not_allowed`, `api.unexpected`, `measure.busy`, `serve.port_busy`, `serve.already_running`, `serve.start_failed`,
+`serve.not_running`.
+
+### Concurrencia
+
+`http.server.ThreadingHTTPServer` con `daemon_threads = True` y tiempo de lectura de 30 s por conexión. Lo que ya está
+serializado entre procesos sigue igual y sirve también entre hilos (cada `fsutil.lock` abre su propio descriptor y
+`flock` choca aunque sea el mismo proceso): la cola (`queue.json`), cada pedido, la entrega (`delivery._lock`) y la
+composición de un intento (`compose_lock_path`, que da `compose.busy` en vez de esperar). Lo nuevo que se serializa en el
+servidor: (a) lanzar el trabajador, con un `threading.Lock` alrededor de «¿cola con algo y trabajador libre? → lanzar»;
+(b) **una sola tarea pesada a la vez** (`compose` y `measure`, que corren ffmpeg/rsvg): `threading.BoundedSemaphore(1)`; la
+segunda espera hasta 60 s y luego da 409 `compose.busy`/`measure.busy`; (c) el reloj de inactividad, actualizado en cada
+petición bajo un `Lock`. Las lecturas (`projects.get`, `orders.get`, `queue.list_entries`) no se serializan: los archivos
+se escriben atómicos (`fsutil.write_json`).
+
+### Pasos de F3
+
+| Paso | Qué | Comprobación |
+|---|---|---|
+| F3.1 | `gimg/server.py`: router, comprobaciones de seguridad, errores JSON con idioma, cabeceras, estáticos con `gimg/ui/index.html` provisional, `GET /api/health` y `/api/locales`; claves `api.*` es/en | Tests con el servidor en un hilo y `--port 0`: Host, Origin, Content-Type, tamaño, `..` y codificados, 405 y `OPTIONS`, cabeceras, idioma por `?lang` y `Accept-Language`, test de la tabla de estados |
+| F3.2 | Rutas de lectura: proyectos, pedidos, pedido, cola, imágenes, cruda, log, vista previa, SVG de `compose` | Tests sobre datos de `tests/` con el motor falso; una imagen fuera de su carpeta da 404; el SVG con su CSP |
+| F3.3 | Rutas de escritura: pedido nuevo, intentos, `mark`, `note`, `text`, `compose`, `choose`, `undo`, `cancel`, `measure`; semáforo de pesadas | Tests: mismas respuestas que la CLI con `--json` para el mismo caso; cada error con su código y estado; `compose.busy` con el cerrojo tomado (`skipUnless` ffmpeg y rsvg donde compone) |
+| F3.4 | `gimg/service.py` y `gimg serve` (`--detach`, `--status`, `--stop`, `--idle-min`): cerrojo, `serve.json`, inactividad, lanzar el trabajador; `queue.worker_alive` | Tests en subproceso: segundo `serve` rechazado, `serve.json` borrado al parar, parada por inactividad con `--idle-min` en segundos de prueba (`GIMG_SERVE_IDLE_S`), entrada encolada por la API procesada por el `gimg work` lanzado, parar no mata al trabajador |
+| F3.5 | Arranque bajo demanda: `ensure_running`, `gimg ui`, arranque desde `order submit`/`attempt new` (decisión 1), `GIMG_AUTOSTART`, versión distinta | Tests en subproceso con `GIMG_AUTOSTART=1` y carpetas temporales; `serve.start_failed` con el log; **manual Deck:** `gimg ui` abre el navegador y el servicio se para solo a los 15 min |
+| F3.6 *(hecho; solo `docs/api.md` en es, sin `docs/en/`)* | `docs/api.md` (es; en en `docs/en/api.md` si D16 lo pide para docs técnicos), README (sección «Servicio»), CHANGELOG, versión 0.3.0, fila F3 de «Fases» al día | Check en verde; cada ruta de la tabla tiene su ejemplo `curl` en `docs/api.md` |
+
+Cada paso, un commit con la bitácora al día y `/code-review` del paso al cerrarlo (proceso de F2). F4a empieza tras F3.3:
+lo de F3.4-F3.6 no lo bloquea (la interfaz se prueba con `gimg serve` en primer plano).
+
+### Decisiones de la persona (2026-11-05)
+
+1. **Arranque al encolar:** sí. `gimg order submit` y `gimg attempt new` llaman a `ensure_running()` tras encolar;
+   `GIMG_AUTOSTART=0` lo apaga (los tests lo fijan).
+2. **Plantilla nueva de F4c:** la persona elige el destino al guardar (D40): carpeta de datos o `compose.templatesDir`
+   del proyecto, si lo declara. La ruta `POST …/templates` gana `"dest": "local|project"`; `project` sin
+   `templatesDir` da `compose.templates_dir_missing` (nuevo).
+3. **Varias plantillas (F4b):** `compose.templates: {"<id>": {"template", "logo"?, "fields"?}}`, con `compose.template`
+   como la de por defecto; `minVersion` 0.3.0 solo para quien use `templates`.
+4. **Sin `systemd --user`** en la mínima, **sin token** (Host, Origin y Content-Type bastan) y **puerto 8737** fijo y
+   configurable.
+
+## F4b en detalle (plantillas elegibles, D39)
+
+**Estado:** contrato decidido por la sesión el 2026-11-05, **pendiente de la persona** (puede cambiarse antes de `main`).
+
+### Configuración
+
+`profiles.<perfil>.compose` gana tres claves opcionales; las demás no cambian:
+
+- `templates`: `{"<id>": {"template", "logo"?, "fields"?, "zone"?, "textColor"?}}`, hasta 20; `id` con el patrón
+  `^[a-z0-9][a-z0-9-]{0,39}$` y nunca `default` (reservado para la de `compose.template`). Una entrada sin `logo` o sin
+  `fields` hereda los de `compose`; `fit` y `fonts` son del perfil y valen para todas.
+- `zone`: `{"x", "y", "w", "h"}` enteros en píxeles del destino (la zona reservada para el texto) y `textColor`
+  `#RRGGBB`, en `compose` (la de por defecto) y en cada entrada de `templates`: lo que el chip de contraste mide
+  (D31). Sin ellos, el chip mide solo la paleta, como hoy.
+- Versión: `templates`, `zone` y `textColor` llegan con 0.4.0 (cierre de F4); un proyecto que los use pide
+  `"minVersion": "0.4.0"` (corrige la decisión 3 de F3, que decía 0.3.0: F3 salió sin ellos).
+
+### Código
+
+- `compose.templates_of(profile_cfg)` → `[{"id", "template", "logo", "fields", "zone"?, "textColor"?, "default": bool}]`,
+  `default` primero y el resto por id; `[]` sin `compose`. `compose.effective(compose_cfg, template_id)` → la
+  configuración de esa plantilla con lo heredado; `None` = `default`; un id que no existe (o un perfil sin `compose`)
+  da `compose.template_unknown` (`{template, allowed}`, nuevo, 400).
+- `render(..., template=None)` compone con `effective(...)`; lo que devuelve (y el intento guarda en `compose`) gana
+  **`templateId`** (siempre que haya `compose`); `template` sigue siendo la ruta, para no romper intentos ni registro.
+- `recompose(..., template=None)`: con `template`, esa (y queda guardada en el intento); sin él, la `templateId` que el
+  intento ya tenía; si no tenía, `default`. Una `templateId` guardada que ya no existe da `compose.template_unknown`
+  (no se cambia sola a otra): la interfaz ofrece elegir otra.
+- Intentos nuevos: `attempt_specs`/`new_attempts` ganan `template=None`; se valida al encolar (`effective`) y la entrada
+  de la cola lleva `template`; el trabajador compone con ella. Si la configuración cambió y ya no existe al componer,
+  el intento queda con `composeError` `compose.template_unknown` y se arregla con `compose` y otra plantilla.
+- CLI: `gimg compose --template <id>`, `gimg attempt new --template <id>` y `gimg templates <proyecto> <perfil>
+  [--json]` (la misma lista que la API).
+- `gimg doctor`: las plantillas y logos de cada entrada de `templates` se comprueban como los de `compose` (existen,
+  dentro del proyecto, tamaño).
+
+### API
+
+| Ruta | Cambio |
+|---|---|
+| `GET /api/projects/{p}/profiles/{profile}/templates` | nueva: `templates_of`; un perfil sin `compose` da `[]` |
+| `GET …/assets/{template\|logo}?id=<id>` | el SVG de esa plantilla (sin `id`, la de por defecto); id desconocido, `compose.template_unknown` |
+| `POST …/a/{id}/compose` | gana `"template": "<id>"` |
+| `POST …/o/attempts` | gana `"template": "<id>"` (plantilla de los intentos nuevos) |
+
+### Interfaz
+
+- `slots.js#templateSlot`: un `<select>` por intento con las plantillas del perfil (solo si hay más de una), marcada la
+  `compose.templateId` del intento (o `default`); al cambiar, `POST …/compose {"template"}` y se repinta la tarjeta.
+- El panel de retoque (nuevos intentos) gana el mismo selector; por defecto, la plantilla de la elegida, si no
+  `default`.
+- La previsualización (`compose-preview.js`) y el chip de contraste usan la plantilla del intento: su SVG por
+  `assets/template?id=`, y su `zone`/`textColor` para la medida.
+- Textos nuevos `ui.*` en es y en; los huecos de F4b dejan de decir «F4b».
+
+### Pasos de F4b
+
+| Paso | Qué | Comprobación |
+|---|---|---|
+| F4b.1 | Esquema, `compose.templates_of`/`effective`, `render`/`recompose`, cola y trabajador, CLI, `doctor`, claves `error.compose.template_unknown` es/en | Tests: herencia de `logo`/`fields`, `default` reservado, intento con `templateId`, recomponer conserva la plantilla, plantilla borrada da el error, entrada de cola con plantilla (motor falso; `skipUnless` ffmpeg y rsvg donde compone) |
+| F4b.2 | Rutas de la API de la tabla | Tests como F3.3: mismas respuestas que la CLI, códigos y estados |
+| F4b.3 | Interfaz, `docs/api.md`, `docs/interfaz/f4a.md` §8, README, CHANGELOG | `tests/test_ui.py` (estáticos y claves `ui.*` es/en); JS sin ejecutar: recorrido en navegador, de la persona |
+
+## F4c en detalle (editor de elementos, D39 y D40)
+
+**Estado:** contrato decidido por la sesión el 2026-11-05, **pendiente de la persona** (puede cambiarse antes de `main`).
+
+### Elementos en la plantilla
+
+- Un elemento editable es un nodo del SVG con `id="gimg-<nombre>"` y `data-gimg-box="x y w h"` (su caja, en píxeles
+  del destino); `<nombre>` es `title`, `subtitle`, otro campo de `fields` (texto), `logo`, o `ornament<N>` (adorno).
+  Solo cuentan si el `viewBox` de la plantilla es `0 0 <targetWidth> <targetHeight>` (así caja y destino comparten
+  unidades); si no, la plantilla no tiene elementos editables y `doctor` lo avisa.
+- Opcional `data-gimg-color="#RRGGBB"` en un elemento de texto: su color para el contraste; sin él, el `textColor` de la
+  plantilla y luego el de `brand`.
+- Lectura con una expresión sobre la etiqueta de apertura (sin reescribir el SVG con `xml.etree`, que cambia prefijos):
+  `compose.elements(svg_text)` → `[{"id", "kind": "text|logo|ornament", "box": {x, y, w, h}, "color"?}]`. Un `id`
+  repetido o una caja mal escrita dan `compose.bad_element` (nuevo); sin elementos, `[]`.
+
+### Aplicar `layout`
+
+- `layout`: `{"<nombre>": {"x", "y", "w", "h"}}`, enteros, `w`,`h` ≥ 1 y la caja dentro del destino; un nombre que la
+  plantilla no tiene da `compose.element_unknown` y una caja mala `compose.bad_layout` (nuevos, 400).
+- `compose.apply_layout(svg_text, layout)`: a la etiqueta de apertura de cada elemento movido se le antepone
+  `transform="translate(x y) scale(w/w0 h/h0) translate(-x0 -y0)"` (delante del `transform` que ya tuviera) y se
+  reescribe su `data-gimg-box`. La escala puede no ser uniforme; el editor la bloquea por defecto (proporción fija) y
+  la suelta con Mayús.
+- `render(..., layout=None)` lo aplica tras sustituir los huecos; el intento guarda `compose.layout` (solo lo movido) y
+  `compose.contrast`: `{"<texto>": <resultado de la medida>}` por cada elemento de texto, medido sobre la **imagen
+  base** (la cruda llevada al destino, sin la capa) en la caja final con su color.
+- `recompose(..., layout=None)`: con `layout`, ese (`{}` vuelve a la plantilla); sin él, el `layout` que el intento
+  tenía, salvo si cambia la plantilla (sus elementos son otros: se vacía). Como `templateId`, sobrevive a un fallo
+  (`composeError.layout`).
+
+### La medida sobre la imagen base (arregla F4b)
+
+Hoy el chip mide la `zone` sobre la imagen compuesta, con el texto ya pintado encima. Desde F4c,
+`GET …/measure?zone=…&base=1` (nuevo; `raw=1` no cambia de sentido) toma la `zone` en píxeles del destino y la lleva a
+la cruda (`compose.zone_to_raw(profile_cfg, raw_w, raw_h, zone)`, la inversa de `fit_geometry`; una zona en la banda
+de `contain` se recorta a la imagen); la interfaz mide así la zona y los elementos.
+
+### Plantilla nueva (D40)
+
+- `POST /api/projects/{p}/profiles/{profile}/templates` `{"from": {"key", "attempt"}, "name", "dest": "local|project"}`
+  → 201 la entrada nueva de `templates_of`. Escribe el SVG de la plantilla del intento con su `layout` aplicado y los
+  huecos sin sustituir, y al lado `<name>.json` `{"base": <id>, "logo"?, "fields"?, "zone"?, "textColor"?}` (lo
+  heredado de la plantilla de origen).
+- Destinos: `local` = `<data>/projects/<p>/templates/<perfil>/<name>.svg`; `project` = `<templatesDir>/<perfil>/<name>.svg`,
+  con `compose.templatesDir` (nuevo en el esquema, relativo a la raíz) y `paths.inside`; sin él,
+  `compose.templates_dir_missing`. `name` con el patrón de los id y que no exista ya (en ninguna fuente):
+  `compose.template_exists` (409). Nunca se sobrescribe.
+- `templates_of` suma tres fuentes, por este orden: `compose.templates` de la configuración, `templatesDir/<perfil>/`
+  y la carpeta local; cada entrada gana `"source": "config|project|local"`. Un id repetido entre fuentes: gana el
+  primero y `doctor` avisa.
+- CLI: `gimg compose --layout '<json>'` y `gimg template save <proyecto> <perfil> <clave> <intento> <nombre>
+  [--dest local|project]`.
+
+### Interfaz
+
+- `slots.js#editorSlot` abre el editor sobre la imagen del intento: la imagen base (`raw=1`) y una caja por elemento,
+  que muestra el trozo de la imagen compuesta de su caja original (así se ve el elemento moverse sin componer).
+- Mover y redimensionar con puntero (asas en las esquinas), con teclado (flechas 1 px, con Mayús 10 px; `Alt`+flechas
+  cambia el tamaño; Tab entre elementos) y con mando (lo que Steam Input mande como teclado). Proporción fija salvo
+  con Mayús. Chip de contraste en vivo por elemento de texto (`measure` con `base=1`, con espera de 400 ms tras soltar).
+- «Aplicar» = `POST …/compose {"layout"}`; «Volver a la plantilla» = `{"layout": {}}`; «Guardar como plantilla» abre un
+  `dialog` con nombre y destino (`project` solo si el perfil declara `templatesDir`). Las plantillas `local` tienen
+  «Exportar» (descarga de `assets/template?id=`).
+- Sustituye a la previsualización HTML de `compose-preview.js`.
+
+### Pasos de F4c
+
+| Paso | Qué | Comprobación |
+|---|---|---|
+| F4c.1 | `compose.elements`, `apply_layout`, `zone_to_raw`, `render`/`recompose` con `layout` y `contrast`, `composeError.layout`, esquema (`templatesDir`), CLI `--layout`, `doctor` (viewBox, ids repetidos), claves de error es/en | Tests: lectura de elementos y errores, transform anidado, caja fuera, layout que sobrevive a recomponer y se vacía al cambiar de plantilla, `zone_to_raw` con `cover` y `contain` contra `fit_geometry`, contraste medido sin la capa (`skipUnless` ffmpeg/rsvg) |
+| F4c.2 | Plantilla nueva: tres fuentes en `templates_of`, `POST …/templates`, `gimg template save`, `measure` con `base=1`; rutas de la API | Tests: los dos destinos, sin `templatesDir`, nombre repetido, nada sobrescrito, `paths.inside`, `source` en la lista, mismas respuestas CLI/API |
+| F4c.3 | Editor en la interfaz, docs (`docs/api.md`, `docs/interfaz/f4a.md` §8, CHANGELOG) | `tests/test_ui.py`; JS sin ejecutar: recorrido en navegador (puntero, teclado y mando), de la persona |
+
+## F4d en detalle (resto de D22)
+
+**Estado:** contrato decidido por la sesión el 2026-11-05, **pendiente de la persona**. Pedido de la persona del
+2026-11-05: F4c y F4d enteras antes de su ronda de pruebas en la interfaz.
+
+### Qué entra
+
+1. **Nuevo pedido desde la interfaz.** Panel «Nuevo pedido» (botón en Pedidos y «Pedir» en Piezas): clave, perfil,
+   prompt, textos (`compose.fields`), plantilla, modelo, semilla (vacía = al azar), borrador, N intentos; «Copiar de…»
+   rellena prompt, textos y parámetros desde un pedido existente del mismo perfil. Aviso de palabras vetadas
+   (`brand.bannedWords`) antes de enviar. Usa `POST /api/projects/{p}/orders` (F3), que gana `"template"`; al crear, abre
+   el pedido.
+2. **Piezas = perfiles.** En `gimg` una pieza es un perfil (tamaño de generación y de destino, `compose`, plantillas);
+   `piezas.json` del piloto no se lee. La pestaña lista cada perfil: tamaños, `fit`, plantillas (con miniatura del SVG
+   por `assets/template?id=`), campos, nº de pedidos; «Pedir» abre el panel con ese perfil.
+3. **Marca** (solo lectura): paleta, `textColor`, `paletteMin`, `bannedWords`, fuentes (de `compose.fonts`) y logos
+   de las plantillas, y la comprobación del proyecto: `GET /api/projects/{p}/check` → las comprobaciones de
+   `gimg doctor` que tocan a ese proyecto (fuentes, plantillas, elementos), `[{"id", "status": "ok|warn|fail",
+   "message", "fix"?}]`. `brand` gana en el esquema `textColor`, `paletteMin` (0-100) y `bannedWords` (hasta 100), que
+   la interfaz ya lee (hallazgo 16 de la revisión de F4a).
+4. **Catálogo de modelos.** `GET /api/models` → los modelos de `models.json` con `"allowed": bool` y `"reason"?` según
+   el perfil de máquina (los mismos `limit.*`). El modelo pasa a elegirse en el nuevo pedido y en el retoque:
+   `POST …/o/attempts` gana `"model"` (validado como en `order submit`).
+5. **Cola: reordenar y vaciar.** `POST /api/queue/{id}/move {"to": "up|down|top"}` (solo `queued`; las entradas tienen
+   posición propia y el trabajador toma la primera) y `POST /api/queue/clear {"project"?}` (cancela todo lo `queued`,
+   nunca lo `running`; devuelve las canceladas). CLI: `gimg queue move <id> up|down|top` y `gimg queue clear
+   [--project]`. Errores `queue.not_movable` (409).
+
+### Pasos de F4d
+
+| Paso | Qué | Comprobación |
+|---|---|---|
+| F4d.1 | Motor y API: esquema `brand`, `template` en el pedido nuevo, `model` en intentos, `GET /api/models`, `GET …/check`, mover y vaciar la cola (con la CLI), `docs/api.md` | Tests como F3.3 (CLI = API, códigos y estados); la cola respeta el orden movido con el trabajador |
+| F4d.2 | Interfaz: panel Nuevo pedido, pestañas Piezas y Marca, modelo en el retoque, subir/bajar/vaciar en el cajón de la cola; docs y CHANGELOG | `tests/test_ui.py`; recorrido en navegador, de la persona |
 
 ## Pendiente
 

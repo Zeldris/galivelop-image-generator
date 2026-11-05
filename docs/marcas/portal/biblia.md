@@ -1,7 +1,8 @@
 # Portal Galivelop — biblia de estilo
 
-Marca paraguas del taller. Fuente de verdad: repo `Portal-Galivelop`, commit `aa76b34` (rutas en la sección 10). Sin marca,
-el dato sale del repo; **[P]** es propuesta pendiente de la persona; *(suposición)* se comprueba en una ronda.
+Marca paraguas del taller. Fuente de verdad: repo `Portal-Galivelop`, lo publicado en `main` (commit `7c9a704`; el `aa76b34`
+que citaba esta biblia es de la rama de trabajo y no cambia nada de lo que aquí se lee; rutas en la sección 10). Alineada el
+2026-11-04 con la hoja aprobada, [`hoja.md`](hoja.md), que manda si difieren. Sin marca, el dato sale del repo; **[P]** es propuesta pendiente de la persona; *(suposición)* se comprueba en una ronda.
 
 ## 1. Esencia
 
@@ -23,7 +24,7 @@ el dato sale del repo; **[P]** es propuesta pendiente de la persona; *(suposici�
 | Celeste (marca) | `#1aa6df` | «Gali» del wordmark, acentos, resplandor (`--celeste`) |
 | Celeste baldosa | `#2BB3EA` → `#0083c1` | degradado diagonal de la baldosa del logo; `#0083c1` es `--celeste-intenso` |
 | Enlace oscuro / claro | `#5cc8f2` / `#006c9f` | enlaces en cada tema |
-| Blanco | `#ffffff` | trazo del monograma, superficie clara |
+| Blanco | `#ffffff` | superficie clara; trazo del monograma: en las piezas el valor de referencia es `#EAF4FA`, y el Portal publica `#fff` (`Logo.tsx`, `gv-logo.svg`) |
 | Fondo oscuro | `#06121c`, alterno `#081826` | fondo por defecto de la web |
 | Superficies oscuras | `#0c1d2b`, `#11283a`; borde `#1b3447` | tarjetas y paneles |
 | Texto oscuro | `#eaf4fa`, `#9fb4c4`, `#6f8799` | texto, secundario, terciario |
@@ -47,9 +48,10 @@ baldosa o el resplandor **[P]**; celeste sobre el degradado de la baldosa (no co
 
 | Uso | Familia | Peso | Tracking |
 |---|---|---|---|
-| Títulos | Sora (`'Sora Variable', 'Sora', system-ui, sans-serif`) | 700 | -0,02 em |
+| Títulos (titular de las piezas) | Sora (`'Sora Variable', 'Sora', system-ui, sans-serif`) | 700 | -0,02 em |
 | Wordmark «Gali**velop**» | Sora | 700 | -0,03 em (`Logo.tsx`) |
 | Texto | Inter (`'Inter Variable', 'Inter', system-ui, sans-serif`) | 400 | normal |
+| Subtítulo de las piezas | Inter | 400, opacidad 0,82 | normal |
 | Etiquetas en mayúsculas | Inter | 400-600 | 0,04-0,16 em (`global.css`) |
 
 El wordmark hoy es HTML, no un archivo: «Gali» en `#1aa6df` y «velop» en el color de texto del tema.
@@ -77,8 +79,8 @@ Tras elegir **[P]**:
 - Variantes: oscura (la de la web: «velop» `#eaf4fa`) y clara («velop» `#0a1a28`); la baldosa es la misma en las dos.
 - Margen libre: un cuarto del lado de la baldosa. Tamaño mínimo: símbolo 16 px; wordmark 20 px de alto, por debajo solo
   el símbolo.
-- Símbolo y wordmark: en horizontal, símbolo a la izquierda, separación de un cuarto del lado; nunca el wordmark sobre la
-  baldosa.
+- Símbolo y wordmark: en horizontal, símbolo a la izquierda, separación de 24/128 del lado (≈ 0,19 del alto del lockup, la
+  de `portal-a-lockup.svg`); nunca el wordmark sobre la baldosa.
 - Prohibido: cambiar el degradado, quitar el radio, estirar, trazo de otro grosor, sombras o 3D, colores de proyecto en
   el monograma.
 
@@ -111,8 +113,10 @@ Tras elegir **[P]**:
 - **Motivos:** umbral que se abre, luz que entra por una puerta, ola de luz, rejilla de puntos, tres acentos.
 - **Palabras vetadas:** lighthouse, flag, handshake, rocket, robot, suit, office, chart, logo, text, letters, y cualquier
   «like …» (el modelo pinta lo que se nombra).
-- **Zona reservada:** la mitad o el tercio izquierdo «calm, smooth, nearly empty, softly out of focus» para wordmark y
-  frase; el motivo a la derecha.
+- **Zona reservada:** una sola por perfil, la del compositor (`caja_zona`), «calm, smooth, nearly empty, softly out of focus»
+  para wordmark y frase: `og` y `social` a la izquierda, `square` y `portrait` arriba, `header` a la izquierda; el motivo en el
+  resto. El prompt pide la mitad (dos tercios en `header`) y la caja del compositor llega al 55 % del ancho: desajuste anotado
+  en la hoja, sección 9.
 
 ## 8. Prompts
 
@@ -134,22 +138,29 @@ midnight navy, sky blue, cyan and white highlights. Mood: calm, honest, quietly 
 
 ## 9. Formatos y piezas
 
-Perfiles (tabla común del README): `og`, `banner`, `header` (Discord 960×540 y LinkedIn 1584×396), `avatar`, `social`.
+Perfiles en `examples/portal/galivelop-images.json`: `og` y `social` 1200×630, `square` 1080×1080, `portrait` 1080×1350,
+`header` 1500×500 y `avatar` (sin modelo). Sin `banner`. Discord 960×540 y LinkedIn 1584×396, sin hacer.
 
 Primera ronda: 1) og:image por proyecto (3 piezas: portada del proyecto + logo + wordmark); 2) avatar 512 y cabecera de
-Discord 960×540 (solo composición); 3) banners 1600×640 de las cinco líneas de trabajo; 4) logo para fondo claro y
+Discord 960×540 (solo composición); 3) (sin hacer, sin destino) banners 1600×640 de las cinco líneas de trabajo; 4) logo para fondo claro y
 wordmark exportado (sale de la elección de la sección 4); 5) cabecera de LinkedIn.
 
-Redes: Discord, LinkedIn y GitHub; no hay Instagram, X ni YouTube.
+Redes: constan Discord y GitHub (`src/data/marca.ts`); LinkedIn **no consta en el repo** y su cabecera 1584×396 no se hace
+hasta que la persona confirme el canal. No hay Instagram, X ni YouTube (las piezas `square`, `portrait` y `header` 1500×500
+de r5 son pruebas del sistema, sin destino en el Portal).
+
+El `banner` 1600×640 sale de la configuración: el Portal no tiene portada propia y la medida solo la tiene Tarkor. Las cinco
+líneas de trabajo no tienen dónde ponerse hoy. `galivelop-social.png` es pieza heredada que este sistema sustituye;
+`galivelop-portal.jpg` es una captura y solo calibra la medida.
 
 ## 10. Fuentes
 
-Repo `Portal-Galivelop`, commit `aa76b34`:
+Repo `Portal-Galivelop`, `main` `7c9a704` (publicado):
 
 - Esencia, tono y límites: textos de la web, `GLOSSARY.md`, `docs/adr/0001-encargos-por-miembro.md`.
 - Paleta, tipografías, radios y brillo: `src/estilos/global.css` (`:root`, temas oscuro y claro).
 - Logo y wordmark: `public/marca/gv-logo.svg`, `src/componentes/Logo.tsx`; imágenes existentes en `public/marca/`
   (`galivelop-social.png`, `galivelop-portal.jpg`, `gv-logo-512.png`).
 - Acentos de proyecto: `src/data/proyectos/*.json`.
-- Resumen de lectura: `docs/registros/lectura-2026-10-26-tarkor-y-marcas.md`, secciones 2 y 4; plan: `docs/plan.md`,
-  «Estilos por proyecto»; veredicto r1: `docs/registros/contenido/r1-fondos.md`.
+- Resumen de lectura: `docs/records/lectura-2026-10-26-tarkor-y-marcas.md`, secciones 2 y 4; plan: `docs/plan.md`,
+  «Estilos por proyecto»; veredicto r1: `docs/records/contenido/r1-fondos.md`.

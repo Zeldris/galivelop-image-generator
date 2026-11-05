@@ -3,7 +3,9 @@
 ``{"nextId": n, "entries": [...]}``; entry: ``id``, ``project``, ``key``, ``profile``, ``seed``, ``prompt``,
 ``params``, ``references``, ``state`` (queued|running|done|failed|cancelled), ``pid``, ``enqueuedAt``,
 ``startedAt``, ``finishedAt``, ``error``, ``attemptId``, ``cancelRequested``, ``draft`` (bool; an older entry without it is not a draft), ``initImage`` (relative path or ``None``) and ``strength`` (number or ``None``; an older entry without the keys has neither) and ``text`` (object, the values of the
-profile's ``compose.fields``; an older entry without it has none: read it with ``.get``). Entries stay in arrival order.
+profile's ``compose.fields``; an older entry without it has none: read it with ``.get``) and ``template`` (F4b: the id of the composition
+template, ``None`` for ``default``; an older entry without it has none) and ``position`` (F4d: where a ``queued`` entry
+stands; the worker takes the lowest one, ties and entries without it by id; `move` and `clear` edit it). Entries stay in arrival order in the file.
 A running entry may also have ``progress`` (``{"step", "steps", "etaS"}``, `set_progress`) and ``preview`` (the path of
 the engine's preview image, `set_preview`); both are removed when the entry finishes or goes back to ``queued``.
 
@@ -29,8 +31,10 @@ import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
+from . import compose as compose_mod
 from . import engine as engine_mod
-from . import fsutil, i18n, limits, log, orders, paths, schema
+from . import fsutil, i18n, limits, log, orders, paths, projects, schema
+from . import models as models_mod
 from .errors import GimgError
 
 KEEP_TERMINAL = 200
@@ -70,6 +74,26 @@ def _no_worker():
         yield free
     finally:
         os.close(fd)
+
+
+def worker_alive():
+    """Does a worker hold ``worker.lock`` right now? ``True`` / ``False``, or ``None`` when it cannot be known (the
+    lock exists but cannot be opened). A pure read: it creates neither the data folder nor the lock (no lock file
+    means no worker has ever run, so ``False``). Callers that start workers must treat ``None`` as "do not start"."""
+    try:
+        fd = os.open(str(worker_lock_path()), os.O_RDWR)
+    except FileNotFoundError:
+        return False
+    except OSError:
+        return None
+    try:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            return True
+        return False
+    finally:
+        os.close(fd)  # closing releases the lock
 
 
 def _load() -> dict:
@@ -151,11 +175,37 @@ def recover_orphans() -> None:
     _txn(lambda data: None, own_lock=True)
 
 
+def _pos(entry: dict):
+    """Sort key of a queued entry: its ``position`` (else its id), then its id."""
+    pos = entry.get("position")
+    return (pos if isinstance(pos, (int, float)) and not isinstance(pos, bool) else entry["id"], entry["id"])
+
+
+def _first_queued(data: dict):
+    return min((e for e in data["entries"] if e["state"] == "queued"), key=_pos, default=None)
+
+
 def _find(data: dict, entry_id) -> dict:
     for entry in data["entries"]:
         if type(entry_id) is int and entry["id"] == entry_id:
             return entry
     raise GimgError("queue.unknown", id=str(entry_id))
+
+
+def check_specs(project: str, profile: str, specs: list) -> None:
+    """What `enqueue` rejects before queueing anything: each spec against the machine profile's limits, its model
+    against the catalog and the machine (``limit.steps``...), and its template against the profile's. `submit_order`
+    runs it too, on the candidate specs, so a refused order is never stored."""
+    machine = limits.load_machine()
+    catalog = None
+    for spec in specs:
+        limits.check(spec, machine)
+        model = (spec.get("params") or {}).get("model")
+        if model is not None:
+            catalog = catalog or models_mod.load_catalog()
+            models_mod.check_allowed(model, machine, catalog, (spec.get("params") or {}).get("steps"))
+    for tid in {spec["template"] for spec in specs if spec.get("template") is not None}:
+        compose_mod.effective((compose_mod.merged_profile(projects.get(project), profile) or {}).get("compose"), tid)
 
 
 def enqueue(project: str, key: str, profile: str, specs: list) -> list:
@@ -164,9 +214,7 @@ def enqueue(project: str, key: str, profile: str, specs: list) -> list:
     The order must exist and every spec must pass the limits of the current machine profile;
     nothing is queued if any fails."""
     orders.get(project, key, profile)
-    machine = limits.load_machine()
-    for spec in specs:
-        limits.check(spec, machine)
+    check_specs(project, profile, specs)
     now = _now()
 
     def change(data):
@@ -179,6 +227,7 @@ def enqueue(project: str, key: str, profile: str, specs: list) -> list:
                      "draft": spec.get("draft") is True,
                      "initImage": spec.get("initImage"), "strength": spec.get("strength"),
                      "text": copy.deepcopy(spec.get("text") or {}),
+                     "template": spec.get("template"), "position": data["nextId"],
                      "state": "queued", "pid": None, "enqueuedAt": now, "startedAt": None,
                      "finishedAt": None, "error": None, "attemptId": None, "cancelRequested": False}
             data["nextId"] += 1
@@ -216,15 +265,58 @@ def cancel(entry_id) -> dict:
     return _txn(change)
 
 
+MOVES = ("up", "down", "top")
+
+
+def move(entry_id, to: str) -> dict:
+    """Move a ``queued`` entry in the line the worker takes from: ``up``/``down`` one place (at the end of the line
+    nothing changes), ``top`` first. Any other state is ``queue.not_movable``; another `to` is ``queue.bad_move``.
+    Only the positions of the queued entries are permuted among themselves, so a later enqueue still goes last."""
+    if to not in MOVES:
+        raise GimgError("queue.bad_move", to=str(to), allowed=", ".join(MOVES))
+
+    def change(data):
+        entry = _find(data, entry_id)
+        if entry["state"] != "queued":
+            raise GimgError("queue.not_movable", id=entry["id"], state=entry["state"])
+        line = sorted((e for e in data["entries"] if e["state"] == "queued"), key=_pos)
+        slots = [_pos(e)[0] for e in line]
+        at = line.index(entry)
+        if to == "top":
+            line.insert(0, line.pop(at))
+        elif to == "up" and at > 0:
+            line[at - 1], line[at] = line[at], line[at - 1]
+        elif to == "down" and at < len(line) - 1:
+            line[at + 1], line[at] = line[at], line[at + 1]
+        for item, slot in zip(line, slots):
+            item["position"] = slot
+        return entry
+
+    return _txn(change)
+
+
+def clear(project: str | None = None) -> list:
+    """Cancel every ``queued`` entry (of `project`, if given); a ``running`` one is never touched. Returns the cancelled."""
+    def change(data):
+        now = _now()
+        found = [e for e in data["entries"] if e["state"] == "queued" and (project is None or e["project"] == project)]
+        for entry in found:
+            entry["state"] = "cancelled"
+            entry["finishedAt"] = now
+        return found
+
+    return _txn(change)
+
+
 def next_queued():
     """The first queued entry, without taking it; ``None`` if there is none."""
-    return _txn(lambda data: next((e for e in data["entries"] if e["state"] == "queued"), None))
+    return _txn(_first_queued)
 
 
 def claim():
     """Mark the first queued entry ``running`` with this process's pid; returns it, or ``None``."""
     def change(data):
-        entry = next((e for e in data["entries"] if e["state"] == "queued"), None)
+        entry = _first_queued(data)
         if entry is not None:
             entry["state"] = "running"
             entry["pid"] = os.getpid()
@@ -337,10 +429,61 @@ def is_cancel_requested(entry_id) -> bool:
     return _txn(lambda data: bool(_find(data, entry_id).get("cancelRequested")))
 
 
-def estimate_for(entry: dict, provider: str | None = None):
-    """Median duration (ms) of similar past attempts, or ``None``. `provider` defaults to the configured engine's."""
+def entry_view(entry: dict, lang: str | None = None) -> dict:
+    """The JSON form of an entry for `gimg queue list --json` and ``GET /api/queue``: the entry plus ``errorText``."""
+    item = dict(entry)
+    text = error_text(entry, lang)
+    if text:
+        item["errorText"] = text
+    return item
+
+
+def estimate_for(entry: dict, provider: str | None = None, memo: dict | None = None):
+    """Median duration (ms) of similar past attempts, or ``None``. `provider` defaults to the configured engine's.
+    With a `memo` dict, entries that ask the same question share one read of the log."""
     if provider is None:
         provider = engine_mod.get_engine().provider
     steps = (entry.get("params") or {}).get("steps")
-    return log.estimate(entry["project"], provider, entry["profile"], steps, bool(entry.get("references")),
-                        entry.get("draft") is True, entry.get("initImage") is not None)
+    args = (entry["project"], provider, entry["profile"], steps, bool(entry.get("references")),
+            entry.get("draft") is True, entry.get("initImage") is not None)
+    if memo is None:
+        return log.estimate(*args)
+    if args not in memo:
+        memo[args] = log.estimate(*args)
+    return memo[args]
+
+
+def submit_order(project: str, order: dict, draft=None, template=None, model=None) -> tuple:
+    """`gimg order submit` and ``POST /api/projects/{p}/orders``: store the order and enqueue its attempts.
+    Returns ``(entries, provider)``; a bad engine setting fails before anything is stored or queued."""
+    provider = engine_mod.get_engine().provider
+    if draft is not None:  # the option is the order's own field, so it is stored with the order
+        order["draft"] = draft
+    candidates = orders.check_order(project, order)  # limits, prompt length and seed range, before anything is stored
+    if model is not None:  # F4d: the model of the attempts (not stored in the order); unknown fails before storing
+        models_mod.check_known(model)
+    for spec in candidates:  # the same checks as `enqueue`, on the candidates: a refused order is never stored
+        if template is not None:
+            spec["template"] = template
+        if model is not None:
+            spec["params"]["model"] = model
+    check_specs(project, order["profile"], candidates)
+    record = orders.submit(project, order)
+    specs = orders.attempt_specs(project, record["key"], record["profile"], order.get("count", 1), template=template,
+                                 model=model)
+    return enqueue(project, record["key"], record["profile"], specs), provider
+
+
+def new_attempts(project: str, key: str, profile: str, count: int = 1, *, seed=None, prompt=None, params=None,
+                 draft=None, template=None, model=None) -> tuple:
+    """`gimg attempt new` and ``POST …/attempts``: enqueue `count` more attempts. Returns ``(entries, provider)``."""
+    provider = engine_mod.get_engine().provider
+    specs = orders.attempt_specs(project, key, profile, count, seed=seed, prompt=prompt, params=params, draft=draft,
+                                 template=template, model=model)
+    return enqueue(project, key, profile, specs), provider
+
+
+def queued_view(entries: list, provider: str, lang: str | None = None) -> dict:
+    """The JSON of a fresh enqueue: ``{"entries", "estimateMs"}`` (the estimate of the first entry)."""
+    estimate = estimate_for(entries[0], provider) if entries else None
+    return {"entries": [entry_view(e, lang) for e in entries], "estimateMs": estimate}

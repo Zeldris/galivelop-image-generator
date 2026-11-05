@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../gimg/schemas/order.schema.json",
+  "key": "estilo/r7-lapiz",
+  "profile": "og",
+  "prompt": "A traditional graphite pencil illustration on a sheet of cream paper in the colour #f1e4d0, a fantasy concept sketch from a sketchbook, with the grain of the paper showing through every stroke. The left third of the sheet, from the left edge inward, stays bare paper: only a few faint construction lines and soft smudges of graphite drift in from the drawing and fade out, leaving that third calm and clean. The right two thirds hold the drawing: a field of tall, slender needles of dark magnetised rock rising from a plain, their flanks carved into fine horizontal strata, the tallest needle a quarter of the way in from the right edge with its tip a fifth of the way down from the top edge. Around the needles the wind has combed the sand into long parallel crests that curve toward the viewer, and several small chunks of black rock hang motionless in the air near the tallest needle, held up by the magnetic stone beneath. In the near foreground at the lower right, a thistle with a rigid central spine and a single flower head grows from the edge of a crest, drawn with crisp, confident lines. Rendering: dense cross-hatching in the shadow sides of the rock, blended graphite tones in the sand, sharp dark accents at the needle rims, strokes that loosen and dissolve into the paper toward the left. A faint dry wash of burnt clay colour #E0703A tints the crests of the sand and the thistle flower; everything else stays warm grey graphite on cream paper. Style: hand-drawn pencil illustration, fantasy sketchbook page, visible paper texture, matte finish. Colours: #f1e4d0, #221c16, #E0703A. Mood: wild, quiet, ancient. The image is completely textless.",
+  "seed": 1,
+  "count": 4,
+  "params": {
+    "steps": 8
+  }
+}

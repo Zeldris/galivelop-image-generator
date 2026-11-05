@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../gimg/schemas/order.schema.json",
+  "key": "estilo/r6-detalle",
+  "profile": "og",
+  "prompt": "Cinematic wide landscape photograph of a wild fantasy frontier in low raking light, rich natural colour, grounded and lived-in. The left third of the frame, from the left edge inward, is an open plain under soft morning haze in the colour #8a9aa8: smooth and even in tone, with only the faintest low texture of wind-combed dry grass dissolving into mist, kept clear for legibility. In the right two thirds, from the right edge inward, a cluster of tall slender needles of dark iron rock in #221c16 rises from long ridges of sand in #332415, their flanks carved into fine horizontal strata, the tallest needle a quarter of the way in from the right edge with its tip a fifth of the way down from the top edge. At the foot of the nearest ridge stands a palisade of weathered logs lashed with rope, a squat watchtower of planks at one corner, three tall totems of carved wood and bone with strips of rough cloth stirring in the wind, and cart tracks pressed into the sand that curve away toward the plain. A thin thread of smoke rises from a fire hidden behind the palisade, and two long banners of undyed cloth hang from a pole on the highest ridge. A warm raking light in #E0703A comes from low behind the needles, from the right, catching only their rims, the edge of every stratum and the tops of the palisade logs, while the shadow sides stay in cool steel shade in #52626f; fine dust glows where the light crosses it. The sky is a pale washed #f1e4d0 with a soft band of haze along the horizon two fifths of the way down from the top edge. Low vantage, deep depth of field, sharp detail from the foreground sand ripples to the far needles. Style: cinematic landscape photograph, rich natural colour, subtle filmic grade, fine detail in rock, wood, rope and cloth. Colours: #E0703A, #221c16, #332415, #f1e4d0, #8a9aa8, #52626f. Mood: wild, quiet, lived-in. The image is completely textless.",
+  "seed": 1,
+  "count": 4,
+  "params": {
+    "steps": 8
+  }
+}

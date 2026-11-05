@@ -1,14 +1,19 @@
 {
   "$schema": "gw/schema/gw.schema.json",
-  "version": "0.4.3",
+  "version": "0.5.0",
+  "schemaVersion": 1,
   "language": "es",
-  "visibleLanguages": ["es", "en"],
-  "log": "docs/traspaso.md",
+  "visibleLanguages": [
+    "es",
+    "en"
+  ],
   "logRows": false,
   "protectedBranch": "main",
   "pushToProtected": "pr",
   "install": [],
-  "ciInstall": ["sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg librsvg2-bin"],
+  "ciInstall": [
+    "sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg librsvg2-bin"
+  ],
   "setup": [],
   "check": [
     "for f in .githooks/pre-commit .githooks/pre-push .githooks/commit-msg; do bash -n \"$f\"; done",
@@ -20,7 +25,6 @@
     ".venv"
   ],
   "worktreeDir": "",
-  "reviewMark": "docs/registros/revisado.txt",
   "requireRetro": false,
   "content": [
     "^docs/",

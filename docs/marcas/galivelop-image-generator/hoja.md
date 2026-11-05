@@ -8,7 +8,7 @@ la sección 13); **heredado de `<marca>`** sale del repo de la marca paraguas (a
 2026-11-04 con la plantilla de los 17 cambios aprobados.
 
 Commits de referencia: este repo `2259370` (rama `f2-motor`); Portal-Galivelop `aa76b34` (lo heredado, vía
-`docs/marcas/portal/biblia.md`, que lo lee desde `docs/registros/lectura-2026-10-26-tarkor-y-marcas.md`; desde aquí no se
+`docs/marcas/portal/biblia.md`, que lo lee desde `docs/records/lectura-2026-10-26-tarkor-y-marcas.md`; desde aquí no se
 abre ese repo).
 
 ---
@@ -55,8 +55,14 @@ abre ese repo).
 | Prohibidos | Rec. | el celeste del Portal `#1aa6df` como acento de la herramienta; violeta neón o magenta puro; negro `#000`; texto de acento sobre fondo de acento; más de un acento por pieza | **[P]** (`biblia.md` §2) |
 | Degradados | Opc. | solo la baldosa del logo (`#8B5CF6 → #5B34C9`) | repo (`logos/galivelop-image-generator-b.svg`); regla de familia en `docs/marcas/README.md` |
 
+**Propuesta de la interfaz (F4a, pendiente de la persona):** la interfaz de `gimg ui` pide dos añadidos a esta paleta, sin cambiar nada de lo
+anterior. (1) **Relleno de botón primario** `#5B34C9` con texto blanco `#FFFFFF` (7,56:1); `#8B5CF6` con blanco da 4,23:1 y no llega a AA, así que
+`#8B5CF6` queda para bordes, chips y titulares grandes. (2) **Colores de estado**, solo para la interfaz (nunca en piezas): sobre oscuro ok `#5ad38a`
+(10,0:1 sobre `#06121c`), aviso `#f2c14e` (11,3:1), error `#ff7b6b` (7,5:1); sobre claro ok `#1b7a3e` (5,1:1), aviso `#8a5a00` (5,7:1), error `#b3261e`
+(6,2:1). Los pares de `gimg/ui/css/tokens.css` los comprueba `tests/test_ui.py` (texto >= 4,5:1; bordes y foco >= 3:1).
+
 **Medido:** la calibración da a este proyecto paleta ≥ 72 % (r1 y r5: 75-88 %; r4 og 72,36 %) con `brand.palette` de 4 hex (medido
-antes de añadir el texto `#eaf4fa`) y ΔE76 < 15 (`docs/registros/contenido/calibracion-measure.md`). r2 confirmó que hex, palabras o materiales dan casi la misma
+antes de añadir el texto `#eaf4fa`) y ΔE76 < 15 (`docs/records/contenido/calibracion-measure.md`). r2 confirmó que hex, palabras o materiales dan casi la misma
 imagen (69,9 / 74,8 / 76,3 %); se eligió «palabras» (`r2-estilo.md`).
 
 ## 4. Logo
@@ -90,7 +96,7 @@ lo pone al 9 % del alto de la pieza (`r4-composicion.md`).
 | Motivos Sí | Obl. | 1) fila de marcos finos de cristal flotando en azul noche, solapados y en profundidad, cada uno con un brillo difuso (la cola); 2) un marco más encendido que los demás, en violeta, que derrama luz sobre sus vecinos (la elegida); 3) rejilla tenue de puntos en el fondo (la web del Portal); 4) un punto de luz (el arranque bajo demanda), sin usar aún | repo (`prompts/estilo.txt`; `docs/plan.md` «Metáforas»; `biblia.md` §7) |
 | Motivos No | Obl. | cámaras, pinceles, paletas, caballetes, chispas, robots, cerebros, personas, cuadros reconocibles, interfaz, texto | repo (`biblia.md` §7; `docs/plan.md`) |
 | Palabras vetadas | Obl. | `camera`, `lens`, `brush`, `paint`, `palette`, `easel`, `canvas`, `sparkle`, `spark`, `magic`, `robot`, `brain`, `face`, `person`, `artist`, `gallery`, `text`, `letters`, `logo`; más `like` y cualquier lugar real (reglas comunes) | repo (`biblia.md` §7). Ningún prompt de `prompts/*.txt` las contiene (grep del 2026-11-04) |
-| Estilo de imagen | Rec. | «Style: minimal elegant digital art, smooth gradients, soft volumetric light, crisp glass reflections. Colours: deep midnight navy, violet, soft lavender and white highlights. Mood: calm, focused, quietly creative.» | repo (`prompts/estilo.txt`, elegido en r2) |
+| Estilo de imagen | Rec. | «minimal» y «nearly empty» **rechazados** (r4: ninguna publicable). Desde r6: «Style: elegant digital art, physically based rendering, soft volumetric light, crisp glass refraction and reflections, smooth gradients, fine detail. Colours: #06121c, #8B5CF6, #A78BFA, #eaf4fa and #ffffff highlights. Mood: focused, quietly creative, precise.», con los colores en hex (r6, 8/10). **r7 (2026-11-04):** sin el punto de luz suelto sobre las láminas («nothing else emits light»); el aura violeta de la lámina encendida se extiende como humo luminoso entre y detrás de las láminas, por el suelo como neblina baja, por la pared del fondo y hasta la mitad del encuadre como velo tenue (`orders/r7.json`) **r8 (veredicto de r7, 9/10, 2026-11-05):** fuera el humo blanco o gris; el humo y el aura moradas se extienden por toda la imagen (sin tapar la zona del texto con brillo: ahí, solo velado y oscuro). | repo (`prompts/estilo.txt`, elegido en r2; `orders/r6-detalle.json`, `orders/r7.json`); veredicto r6 en `../../records/contenido/r4-composicion.md` |
 | Lenguaje de forma | Opc. | marcos, celdas, filas y puntos de luz; plano, sin perspectiva ni sombra dura; una sola cosa encendida; trazo 12/128 con remates redondos; radios `rx` 30/128 en la baldosa, 16/128 en el marco interior | repo (`biblia.md` §5; `logos/…-b.svg`) |
 
 Prompts del proyecto (`examples/galivelop-image-generator/prompts/`): `estilo.txt` (= `og.txt` = `r2-palabras.txt`, aprobado
@@ -117,7 +123,7 @@ r1 en semillas 3 y 4, elegido r2), `r5-cuadrado.txt`, `r5-vertical.txt`, `r5-cab
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
 | Perfiles | Obl. | en la configuración: `og` 1280×640 → 1200×630 (`targetWidth`/`targetHeight` añadidos el 2026-11-04) y `social` 1280×640. Hechos en el piloto y sin perfil: `square` 1024×1024 → 1080×1080, `portrait` 896×1152 → 1080×1350, `header` 1536×512 → 1500×500 | repo (`galivelop-images.json`); los tres de r5 **[P]** (bitácora: «lo decide la persona» en F2.8) |
-| Zona reservada | Obl. | `og`, `social`, `header`: `izquierda 1/2` («The left half … calm, smooth, dark navy surface, nearly empty and softly out of focus»); `square`, `portrait`: `arriba 1/2`. En píxeles, por la conversión de la plantilla (sección 9): `og` entregado 1200×630 → `0,0,600,630`. La caja del piloto es 55 % del ancho menos margen (izquierda) o 48 % del alto (arriba), margen 6 %: no coincide con 1/2 y se alinea al portar a `compose` | repo (`prompts/*.txt`; `examples/pilot/componer.py` `caja_zona`). La biblia dice «tercio superior **[P]**» para `square`: r5 hizo la mitad |
+| Zona reservada | Obl. | `og`, `social`, `header`: `izquierda 1/2` («The left half … calm, smooth, dark navy surface, nearly empty and softly out of focus»); `square`, `portrait`: `arriba 1/2`. En píxeles, por la conversión de la plantilla (sección 9): `og` entregado 1200×630 → `0,0,600,630`; caja `data-caja` de la plantilla `60,60,604,510` (margen 60, columna 604; logo a 52-54 px de alto, titular en una línea a 52 px, filete corto en el acento y subtítulo en dos líneas; r7). La caja del piloto es 55 % del ancho menos margen (izquierda) o 48 % del alto (arriba), margen 6 %: no coincide con 1/2 y se alinea al portar a `compose` | repo (`prompts/*.txt`; `examples/pilot/componer.py` `caja_zona`). La biblia dice «tercio superior **[P]**» para `square`: r5 hizo la mitad |
 | Velo por perfil | Rec. | `og` `#06121c:0`; `square`, `portrait` y `header` `#06121c:0.3` | repo (`piezas.json`, `velo`) |
 | Logo en la pieza | Rec. | lockup al 9 % del alto de la pieza, margen 6 % (desde r4, que lo tuvo a ~24 px y no se leía) *(suposición: la esquina; confirmar en `componer.py`)* | repo (`r4-composicion.md`; `examples/pilot/componer.py`) |
 | Composición por perfil | Rec. | no hay plantilla SVG ni `compose` en la configuración: el piloto construye el SVG en código (`componer.construir_svg`: velo en degradado, lockup al 9 % del alto, título y subtítulo). Portar a `compose: {template, logo, fields: ["title","subtitle"], fonts: ["Sora","Inter"], fit: "cover"}` | **[P]** (F2.8/F2.12) |
@@ -150,7 +156,7 @@ r1 en semillas 3 y 4, elegido r2), `r5-cuadrado.txt`, `r5-vertical.txt`, `r5-cab
 
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
-| Veredicto | Obl. | la persona; delegado al agente desde el 2026-10-26. Apuntado en `docs/registros/contenido/r1-fondos.md` (sí, s3 y s4, «de las mejores»), `r2-estilo.md` (elegida «palabras»), `r4-composicion.md`, `r5-piezas.md` | repo |
+| Veredicto | Obl. | la persona; delegado al agente desde el 2026-10-26. Apuntado en `docs/records/contenido/r1-fondos.md` (sí, s3 y s4, «de las mejores»), `r2-estilo.md` (elegida «palabras»), `r4-composicion.md`, `r5-piezas.md` | repo |
 | Contraste del texto | Rec. | ≥ 4,5:1 (por defecto); medido: og r4 17,08 (peor 16,49) sin velo; r5 cuadrado 16,48 (15,42), vertical 16,44 (16,28), cabecera 15,49 (15,33) con velo 0,3 | repo (`r4-composicion.md`, `r5-piezas.md`) |
 | Umbrales de medida | Rec. | los de las secciones 3 y 7: paleta ≥ 72 %, YAVG 33-52, SATAVG 10-16 | repo (`calibracion-measure.md`) |
 | EMD frente a la marca | Opc. | Cb ≤ 4 / Cr ≤ 5 (medido frente a la portada del Portal: Cb 1,2-3,3, Cr 2,5-4,2) | repo (`calibracion-measure.md`) *(suposición: la referencia, sección 8)* |
@@ -174,12 +180,12 @@ r1 en semillas 3 y 4, elegido r2), `r5-cuadrado.txt`, `r5-vertical.txt`, `r5-cab
   lo sigue siendo aquí).
 - `docs/plan.md` «Estilos por proyecto» (herramientas del taller: familia del Portal, acento, *No*, formatos, metáforas),
   F2.8 dec. 2 y F2.10 dec. 6-7 (`avatar`/`icon`, `draft`), fila F2.12.
-- `docs/registros/contenido/calibracion-measure.md` (umbrales y medidas), `r1-fondos.md`, `r2-estilo.md`,
+- `docs/records/contenido/calibracion-measure.md` (umbrales y medidas), `r1-fondos.md`, `r2-estilo.md`,
   `r4-composicion.md`, `r5-piezas.md` (veredictos y medidas).
 - `examples/pilot/componer.py` (`caja_zona`, ajuste del texto), `examples/pilot/fuentes.sh` (origen y licencia de las fuentes).
 
 **Portal-Galivelop** `aa76b34` (marca paraguas, «heredado de»), leído solo a través de `docs/marcas/portal/biblia.md` y
-`docs/registros/lectura-2026-10-26-tarkor-y-marcas.md`: `src/estilos/global.css` (fondos, texto, superficies, borde),
+`docs/records/lectura-2026-10-26-tarkor-y-marcas.md`: `src/estilos/global.css` (fondos, texto, superficies, borde),
 `src/componentes/Logo.tsx` (Sora 700, −0,03 em), `public/marca/gv-logo.svg` (baldosa `rx` 30, trazo 12).
 
 Sin línea aquí y por tanto **[P]** o *(suposición)*: acento y sus dos tonos, lema y frases, logo elegido, reglas del logo
