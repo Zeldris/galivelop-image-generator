@@ -35,6 +35,7 @@ hace falta `GW_SHARED_LOG`. Aun así, cada rama toca solo su fila salvo al cerra
 
 ## Pendiente
 
+- **F4e.1b, de `hidden` (trozo 3):** el editor (`gimg/ui/js/components/layout-editor.js`, `changedLayout`) no manda `hidden`, así que «Aplicar» o «Guardar como plantilla» deshace un oculto puesto por CLI: que lo lea y lo reenvíe. Leves sin tocar: un logo oculto sigue exigiendo logo (`compose.no_logo`) y su hueco se rellena; el motivo de `bad_layout` con una clave extra no menciona `hidden`.
 - **Panel del equipo** (pedido de la persona del 2026-11-05): apuntado en `docs/plan.md` «Pendiente», por diseñar y fasear tras F4e.
 
 - **Leves de la revisión de F4e.1a trozo 2 (2026-11-05, no se tocan):** (4) un mismo id en carpeta de proyecto y local: `delete_template` borra solo el de proyecto (el primero) y el local reaparece en la lista; (8) `delete_compose` borra la imagen compuesta tras guardar el registro (un fallo del `unlink` deja el registro sin `compose` y el archivo huérfano).

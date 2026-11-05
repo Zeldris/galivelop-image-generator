@@ -74,6 +74,32 @@ class HiddenSvgTests(unittest.TestCase):
                          ("compose.bad_layout", "x, y, w, h integers"))
 
 
+class InheritedHiddenTests(unittest.TestCase):
+    """A template saved with a hidden element carries ``display="none"``; showing it must work."""
+    SAVED = compose.apply_layout(SVG, {"title": HID}, TARGET)
+
+    def test_hidden_false_on_a_tag_that_is_already_hidden_is_kept_and_removes_the_display(self):
+        found = compose._elements(self.SAVED, TARGET)
+        self.assertEqual(compose._check_layout(found, {"title": dict(TITLE, hidden=False)}, TARGET),
+                         {"title": dict(TITLE, hidden=False)})
+        out = compose.apply_layout(self.SAVED, {"title": dict(TITLE, hidden=False)}, TARGET)
+        self.assertNotIn("none", out)
+        self.assertEqual(out.replace(' display="inline"', ""), SVG)
+
+    def test_without_hidden_the_template_stays_hidden(self):
+        self.assertEqual(compose.apply_layout(self.SAVED, {}, TARGET), self.SAVED)
+
+    def test_style_display_is_written_and_removed_inside_style(self):
+        svg = SVG.replace('<rect id="gimg-ornament1"', '<rect id="gimg-ornament1" style="fill:red;display:inline"')
+        box = dict(x=0, y=600, w=1200, h=30)
+        hid = compose.apply_layout(svg, {"ornament1": dict(box, hidden=True)}, TARGET)
+        self.assertIn('style="fill:red;display:none"', hid)
+        self.assertNotIn('display="none"', hid)
+        shown = compose.apply_layout(hid, {"ornament1": dict(box, hidden=False)}, TARGET)
+        self.assertEqual(shown, svg)
+        self.assertEqual(compose.apply_layout(svg, {"ornament1": dict(box, hidden=False)}, TARGET), svg)  # not hidden: dropped
+
+
 @test_compose_worker.CON_HERRAMIENTAS
 class HiddenRenderTests(test_compose_worker.ComposeWorkerBase):
     def setUp(self):
@@ -151,3 +177,17 @@ class HiddenSaveAndApiTests(test_template_save.SaveBase):
         self.assertEqual(saved.replace(' display="none"', ""), test_template_save.SVG)
         self.assertEqual((self.root / "t.svg").read_bytes(), origin)
         self.assertNotIn("display", origin.decode())
+
+
+@test_compose_worker.CON_HERRAMIENTAS
+class ShowInheritedRenderTests(HiddenRenderTests):
+    def test_a_template_saved_with_a_hidden_element_paints_it_again_when_shown(self):
+        box = {"x": 400, "y": 200, "w": 300, "h": 100}
+        saved = compose.apply_layout((self.root / "t.svg").read_text(encoding="utf-8"), {"title": dict(box, hidden=True)},
+                                     TARGET)
+        (self.root / "t.svg").write_text(saved, encoding="utf-8")  # what save_template writes
+        info, at = self.render()
+        test_compose.near(self, at(450, 250), (128, 128, 128))  # composed with it: hidden
+        info, at = self.render(layout={"title": dict(box, hidden=False)})
+        test_compose.near(self, at(450, 250), (0, 0, 0))
+        self.assertIn("title", info["contrast"])

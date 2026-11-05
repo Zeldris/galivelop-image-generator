@@ -337,7 +337,8 @@ def elements(svg_text, target=None) -> list:
 
 def _check_layout(found, layout, target) -> dict:
     """`layout` validated against the elements `found`: ``{name: {x, y, w, h, hidden?}}`` of those that move or are
-    hidden (``"hidden": true``; a box equal to the original and not hidden is dropped; ``hidden: false`` is dropped). ``compose.element_unknown`` for a name the template lacks, ``compose.bad_layout`` otherwise."""
+    hidden (``"hidden": true``; a box equal to the original and not hidden is dropped; ``hidden: false`` is dropped
+    unless the element is hidden by the template itself, ``display="none"``: then it is kept and shows it). ``compose.element_unknown`` for a name the template lacks, ``compose.bad_layout`` otherwise."""
     if not isinstance(layout, dict):
         raise GimgError("compose.bad_layout", element="", reason="not an object")
     known = {e["id"]: e for e in found}
@@ -353,11 +354,25 @@ def _check_layout(found, layout, target) -> dict:
         if box["w"] < 1 or box["h"] < 1 or box["x"] < 0 or box["y"] < 0 \
                 or box["x"] + box["w"] > target[0] or box["y"] + box["h"] > target[1]:
             raise GimgError("compose.bad_layout", element=name, reason="outside %dx%d" % tuple(target))
+        tag = known[name].get("_tag")
         if box.get("hidden") is True:
             moved[name] = {**{k: box[k] for k in ("x", "y", "w", "h")}, "hidden": True}
+        elif box.get("hidden") is False and tag and _is_hidden_in(tag[1]):  # showing what the template hides
+            moved[name] = {**{k: box[k] for k in ("x", "y", "w", "h")}, "hidden": False}
         elif {k: box[k] for k in ("x", "y", "w", "h")} != known[name]["box"]:
             moved[name] = {k: box[k] for k in ("x", "y", "w", "h")}
     return moved
+
+
+_STYLE_DISPLAY = re.compile(r"(display\s*:\s*)([^;]*)", re.I)
+
+
+def _is_hidden_in(attrs) -> bool:
+    """Whether the tag already carries ``display="none"`` (attribute or inside ``style``): a template saved with a hidden element."""
+    if (attrs.get("display") or ("",))[0].strip() == "none":
+        return True
+    m = _STYLE_DISPLAY.search((attrs.get("style") or ("",))[0])
+    return bool(m and m.group(2).strip().lower().startswith("none"))
 
 
 def _num(value) -> str:
@@ -386,11 +401,16 @@ def _apply(svg_text, layout, target):
                 edits.append((m.end(2), m.end(2), ' transform="%s"' % move))
             _value, start, end, _quote = attrs["data-gimg-box"]
             edits.append((start, end, "%d %d %d %d" % (box["x"], box["y"], box["w"], box["h"])))
-        if box.get("hidden"):
+        if "hidden" in box:
+            word = "none" if box["hidden"] else "inline"
+            style = attrs.get("style")
+            sm = _STYLE_DISPLAY.search(style[0]) if style else None
+            if sm:  # a display inside style beats the attribute: write it there too
+                edits.append((style[1] + sm.start(2), style[1] + sm.end(2), word))
             if "display" in attrs:
                 _value, start, end, _quote = attrs["display"]
-                edits.append((start, end, "none"))
-            else:
+                edits.append((start, end, word))
+            elif box["hidden"] and not sm:
                 edits.append((m.end(2), m.end(2), ' display="none"'))
     out = svg_text
     for start, end, text in sorted(edits, key=lambda ed: (ed[0], ed[1]), reverse=True):
