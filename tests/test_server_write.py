@@ -5,6 +5,7 @@ import threading
 import unittest
 from urllib.parse import quote
 
+from gimg.errors import GimgError
 from gimg import fsutil, orders, queue, schema, server
 from tests.test_server_read import NAME, ORDER, ReadBase
 
@@ -142,6 +143,8 @@ class AttemptTests(WriteBase):
         self.make_order(key=self.key, profile="og", count=1)
         got = self.ok("PUT", url, {"text": {"title": "Hola"}})
         self.assertEqual(got["text"], {"title": "Hola"})
+        self.assertEqual(self.ok("PUT", url, {"text": {}})["text"], {})  # PUT replaces: empty clears
+        self.assertEqual(self.ok("PUT", url, {"text": {"title": "Otra"}})["text"], {"title": "Otra"})
         self.bad("PUT", url, {"text": {"nope": "x"}}, 400, "order.text_unknown_field")
         self.bad("PUT", url, {"text": "x"}, 400, "api.bad_param")
         self.bad("PUT", url, {"text": {"title": 3}}, 400, "order.invalid")
@@ -222,6 +225,7 @@ class MeasureTests(WriteBase):
         got = self.ok("GET", url + "?zone=0,0,10,10&text=%23ffffff")
         self.assertIn("contrast", got)
         self.assertIn("yavg", got)
+        self.assertEqual((got["image"], got["raw"]), (1, False))
         resp, payload = self.get(url + "?zone=0,0,99999,10&text=%23ffffff")
         self.err(resp, payload, 400, "measure.zone_outside")
 
@@ -233,8 +237,8 @@ class MeasureTests(WriteBase):
         self.assertTrue(server._HEAVY.acquire(timeout=1))
         try:
             resp, payload = self.get(url)
-            self.err(resp, payload, 409, "measure.busy")
-            self.bad("POST", self.att(self.key, self.profile, 1, "/compose"), {}, 409, "compose.busy")
+            self.err(resp, payload, 409, "api.heavy_busy")
+            self.bad("POST", self.att(self.key, self.profile, 1, "/compose"), {}, 409, "api.heavy_busy")
         finally:
             server._HEAVY.release()
 
@@ -245,7 +249,7 @@ class MeasureTests(WriteBase):
 
         def task():
             try:
-                with server._heavy("measure.busy"):
+                with server._heavy():
                     seen.append("in")
                     threading.Event().wait(0.1)
                     seen.append("out")

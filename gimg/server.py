@@ -46,9 +46,9 @@ _EXACT = {
           "api.not_found", "compose.template_missing", "compose.logo_missing"),
     405: ("api.method_not_allowed",), 411: ("api.length_required",), 413: ("api.body_too_large",),
     415: ("api.content_type",),
-    409: ("compose.busy", "measure.busy", "compose.nothing_to_do", "compose.no_attempts", "order.discard_chosen",
+    409: ("compose.busy", "measure.busy", "api.heavy_busy", "compose.nothing_to_do", "compose.no_attempts", "order.discard_chosen",
           "order.history_empty", "queue.not_cancellable", "delivery.target_taken"),
-    400: ("measure.zone_outside", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "api.bad_json",
+    400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "api.bad_json",
           "api.bad_param"),
 }
 # Server-side faults whose names match the 400 patterns below: checked first.
@@ -567,10 +567,11 @@ _HEAVY = threading.BoundedSemaphore(1)
 
 
 @contextlib.contextmanager
-def _heavy(code: str, **params):
-    """One heavy task (ffmpeg/rsvg: compose, measure) at a time; the second waits `HEAVY_WAIT_S`, then 409 `code`."""
+def _heavy():
+    """One heavy task (ffmpeg/rsvg: compose, measure) at a time; the second waits `HEAVY_WAIT_S`, then 409
+    `api.heavy_busy` (the holder may be any heavy task, so the text names none)."""
     if not _HEAVY.acquire(timeout=HEAVY_WAIT_S):
-        raise GimgError(code, **params)
+        raise GimgError("api.heavy_busy")
     try:
         yield
     finally:
@@ -620,7 +621,7 @@ def order_text(req):
     text = req.body.get("text")
     if not isinstance(_fields(req.body, ("text",)).get("text"), dict):
         raise GimgError("api.bad_param", name="text")
-    orders.set_text(q["p"], q["key"], q["profile"], text)
+    orders.set_text(q["p"], q["key"], q["profile"], text, replace=True)
     return orders.get(q["p"], q["key"], q["profile"])
 
 
@@ -673,7 +674,7 @@ def attempt_compose(req):
     if text is not None and not (isinstance(text, dict) and all(isinstance(v, str) for v in text.values())):
         raise GimgError("api.bad_param", name="text")
     attempt_id = _int_param("id", q["id"])
-    with _heavy("compose.busy", attempt=attempt_id):
+    with _heavy():
         return compose.recompose(q["p"], q["key"], q["profile"], attempt_id, text or None)
 
 
@@ -691,8 +692,11 @@ def attempt_measure(req):
     find = orders.raw_image if raw == "1" else orders.attempt_image
     path = _guarded(lambda: find(q["p"], q["key"], q["profile"], attempt))
     brand = projects.get(q["p"])["config"].get("brand") or {}
-    with _heavy("measure.busy"):
-        return measure.measure(path, brand.get("palette") or None, (), zone, text)
+    with _heavy():
+        result = measure.measure(path, brand.get("palette") or None, (), zone, text)
+    result["image"] = attempt["id"]  # by id, never by path (D25)
+    result["raw"] = raw == "1"
+    return result
 
 
 @route("POST", "/api/queue/{id}/cancel")

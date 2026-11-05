@@ -237,6 +237,26 @@ def submit(project: str, order: dict) -> dict:
     return copy.deepcopy(record)
 
 
+def check_order(project: str, order: dict) -> None:
+    """Everything `submit` and the first enqueue would reject, checked on the candidate order before anything is
+    stored: schema, text fields, machine limits (``limit.*``), prompt length, count and seed range."""
+    errors = schema.validate(order, schema.load_schema("order"))
+    if errors:
+        raise GimgError("order.invalid", errors=errors)
+    paths.check_key(order["key"])
+    profile_cfg = _profile(projects.get(project)["config"], order["profile"])
+    _check_text(profile_cfg, order["profile"], order.get("text", {}))
+    candidate = {"prompt": order["prompt"], "references": list(order.get("references", [])),
+                 "params": copy.deepcopy(order.get("params", {})), "seed": order.get("seed"),
+                 "draft": bool(order.get("draft", False)), "initImage": order.get("initImage"),
+                 "strength": order.get("strength"), "text": dict(order.get("text", {}))}
+    specs = build_specs(candidate, profile_cfg, order.get("count", 1))
+    from . import limits
+    machine = limits.load_machine()
+    for spec in specs:
+        limits.check(spec, machine)
+
+
 def _check_text(profile_cfg: dict, profile: str, text: dict) -> None:
     """The keys of `text` must be fields the profile composes (``compose.fields``)."""
     allowed = list((profile_cfg.get("compose") or {}).get("fields", []))
@@ -245,9 +265,9 @@ def _check_text(profile_cfg: dict, profile: str, text: dict) -> None:
             raise GimgError("order.text_unknown_field", field=field, profile=profile, fields=", ".join(allowed) or "-")
 
 
-def set_text(project: str, key: str, profile: str, text: dict) -> dict:
-    """Merge `text` into the order's ``text`` (the fields it names are replaced, the others stay); returns the order's
-    whole ``text``. Same checks as `submit` (schema, then ``compose.fields`` of the profile)."""
+def set_text(project: str, key: str, profile: str, text: dict, replace: bool = False) -> dict:
+    """Merge `text` into the order's ``text`` (the fields it names are replaced, the others stay), or with `replace`
+    make it the order's whole ``text``; returns the order's whole ``text``. Same checks as `submit` (schema, then ``compose.fields`` of the profile)."""
     if not isinstance(text, dict):
         raise GimgError("order.invalid", errors=[{"path": "/text", "code": "type", "params": {"expected": "object"}}])
     _check_fields_of({"key": key, "profile": profile, "prompt": "x", "text": text})
@@ -255,7 +275,7 @@ def set_text(project: str, key: str, profile: str, text: dict) -> dict:
     _check_text(profile_cfg, profile, text)
 
     def change(order):
-        merged = dict(order.get("text") or {})
+        merged = {} if replace else dict(order.get("text") or {})
         merged.update(text)
         order["text"] = merged
         return dict(merged)
@@ -276,11 +296,20 @@ def attempt_specs(project: str, key: str, profile: str, count: int = 1, *,
     - draft: `draft` if given (True/False), else the order's ``draft``.
     - prompt: `prompt` (a retouched one) or the order's, plus the profile ``style`` appended as
       ``prompt + ", " + style`` when the style is non-empty (otherwise the prompt alone)."""
-    if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= 50:
-        raise GimgError("order.count_invalid", min=1, max=50)
     _check_fields(prompt, params, seed)
     order = get(project, key, profile)
     profile_cfg = _profile(projects.get(project)["config"], profile)
+    return build_specs(order, profile_cfg, count, seed=seed, prompt=prompt, params=params, draft=draft)
+
+
+def build_specs(order: dict, profile_cfg: dict, count: int = 1, *, seed=None, prompt=None, params=None,
+                draft=None) -> list:
+    """The pure part of `attempt_specs`: specs from an order record (stored or candidate) and its profile."""
+    if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= 50:
+        raise GimgError("order.count_invalid", min=1, max=50)
+    base_seed = order.get("seed") if seed is None else seed
+    if base_seed is not None and base_seed + count - 1 >= SEED_LIMIT:
+        raise GimgError("order.seed_range", seed=base_seed, count=count, max=SEED_LIMIT - 1)
     full = {k: profile_cfg[k] for k in _PROFILE_PARAMS if k in profile_cfg}
     full.update(order["params"])
     full.update(params or {})
@@ -296,7 +325,7 @@ def attempt_specs(project: str, key: str, profile: str, count: int = 1, *,
     max_prompt = schema.load_schema("order")["properties"]["prompt"]["maxLength"]
     if len(text) > max_prompt:
         raise GimgError("order.prompt_too_long", length=len(text), max=max_prompt)
-    base = order["seed"] if seed is None else seed
+    base = base_seed
     return [{
         "seed": _rng.randrange(SEED_LIMIT) if base is None else base + i,
         "prompt": text,

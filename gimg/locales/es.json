@@ -334,6 +334,8 @@
   "error.api.not_found": "no existe «{path}»",
   "error.api.method_not_allowed": "el método {method} no está permitido en esta ruta",
   "error.api.unexpected": "error inesperado: {message}",
+  "error.order.seed_range": "la semilla {seed} con {count} intentos pasa del máximo {max}",
+  "error.api.heavy_busy": "hay otra tarea pesada (medición o composición) en curso; espera a que termine y repite",
   "error.measure.busy": "hay otra medición o composición en curso; espera a que termine y repite",
   "error.api.bad_request": "la petición no se pudo interpretar"
 }

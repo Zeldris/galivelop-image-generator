@@ -373,6 +373,7 @@ def submit_order(project: str, order: dict, draft=None) -> tuple:
     provider = engine_mod.get_engine().provider
     if draft is not None:  # the option is the order's own field, so it is stored with the order
         order["draft"] = draft
+    orders.check_order(project, order)  # limits, prompt length and seed range, before anything is stored
     record = orders.submit(project, order)
     specs = orders.attempt_specs(project, record["key"], record["profile"], order.get("count", 1))
     return enqueue(project, record["key"], record["profile"], specs), provider

@@ -32,6 +32,7 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 
 ## Pendiente
 
+- **Leve de la revisión de F3.3:** `queue.submit_order/new_attempts/queued_view` son orquestación (engine + orders + queue), no cola; si molesta, un `gimg/actions.py` fino que importe los tres.
 - **Leves de la revisión de F3.2 (no se revisan más en este PR):** (3) el log de sd-cli se sirve entero en memoria, sin tope; (4) la vista previa no es atómica (sd-cli reescribe `.pending-N.preview.png` en su sitio: un PNG truncado un sondeo); (7) `attempt_log` saca la carpeta del pedido con el truco `orders.attempt_image(..., {"image": "."})`: mejor un `orders.order_folder()` público.
 - **De la revisión de F3.1 (leves):** (el 304 sin `Content-Length`/`Content-Type` ya está, F3.2); en F3.4, `queue.worker_alive()` da True también si no puede abrir el cerrojo («no puedo saberlo») y crea `<data>/worker.lock` en cada `health`: no lanzar trabajador en ese caso.
 - **Tras r7 (pedido de la persona del 2026-11-04):** (a) y (b) hechas el 2026-11-05 (hojas r8, D39); (c) aplicar D38 («Galivelop IG», siglas «GVIG») a la hoja de estilo, el README, los textos de `examples/galivelop-image-generator` y la interfaz.
