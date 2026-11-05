@@ -49,13 +49,9 @@ Languages: es, en
 
 ## Reddit
 
-- **Subreddit:** r/PENDIENTE
-- **Rules read:** PENDIENTE
-- **Self-promotion:** pendiente de las reglas que pegue la persona
-
-### Rules of r/PENDIENTE
-
-PENDIENTE: la persona pega aquí las reglas del subreddit tal cual.
+- **Subreddit:** ninguno: publicado en el perfil de la persona, u/Alvaro-Garcia-Grana
+- **Rules read:** no aplica (sin subreddit)
+- **Self-promotion:** no aplica: es el perfil propio
 
 ## Images
 
@@ -71,10 +67,11 @@ PENDIENTE: la persona pega aquí las reglas del subreddit tal cual.
 
 - Rama `ccr-85e9d14e-zt7p8b`; fases F0-F4 en `main` (PR #2, #3, #4).
 - Las portadas son las que bajó la persona; que se hicieran con gimg sale de la bitácora: confirmarlo con la persona antes de publicar.
-- Subreddit y reglas: pendientes de la persona.
+- Publicado por la persona el 2026-11-05 en su perfil (u/Alvaro-Garcia-Grana), no en un subreddit; `check.py` no contempla perfiles y falla en «Subreddit:» y «Rules read:».
 - El repo es público (enlace en el texto: https://github.com/Zeldris/galivelop-image-generator); confirmarlo antes de publicar.
 
 ## Published
 
 | Channel | Language | Date | Link |
 |---|---|---|---|
+| reddit | en | 2026-11-05 | https://www.reddit.com/user/Alvaro-Garcia-Grana/comments/1xoxbzy/i_built_a_local_ai_image_generator_for_the_steam/ |
