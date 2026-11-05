@@ -1321,7 +1321,8 @@ de `contain` se recorta a la imagen); la interfaz mide así la zona y los elemen
 ## F4e en detalle (piezas y edición)
 
 **Estado:** F4e.1 (Borrar) decidido por la persona el 2026-11-05 (D41) e implementado (F4e.1a, F4e.1b). F4e.2
-(punto 7) diseñado abajo con las decisiones de la persona del 2026-11-05. F4e.3-F4e.4 (puntos 1 y 4(a)(c) de
+(punto 7) diseñado abajo con las decisiones de la persona del 2026-11-05; visto bueno de la persona al diseño (caja
+que no escala el texto editado, familias en el `.json` de la plantilla) el mismo día. F4e.3-F4e.4 (puntos 1 y 4(a)(c) de
 «Piezas, edición y borrado»), por diseñar, en ese orden salvo que la persona diga otro.
 
 ### F4e.1 Borrar (punto 5, D41)
