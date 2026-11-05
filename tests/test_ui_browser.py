@@ -305,6 +305,28 @@ class OrderScreen(UiBase):
         self.assertIsNone(self.data(key)["chosen"])
         self.no_problems()
 
+    def test_order_page_keeps_focus(self):
+        self.order("fondos/textos")
+        self.assertEqual(self.js("document.activeElement.tagName"), "H1")
+        self.assertIn("2", self.js("document.getElementById('alerts').textContent"))
+        sel = self.card(1) + " .btn-toggle"
+        idx = "[...document.querySelector(\"%s\").querySelectorAll('button, a, input, select, summary')].indexOf(document.activeElement)" % self.card(1)
+        self.js("document.querySelector(\"%s\").focus()" % sel)
+        before = self.js(idx)
+        self.assertGreaterEqual(before, 0)
+        self.js("document.activeElement.click()")
+        self.page.wait(self.pressed(1, ".btn-toggle"))
+        self.page.wait("document.activeElement.closest('.attempt').dataset.attempt === '1' && %s === %d" % (idx, before))
+        self.js("document.querySelector(\"%s\").focus()" % self.card(2))
+        self.page.key("t")
+        self.page.wait("document.activeElement.closest('.order-panel')")
+        inside_retouch = self.js("!!document.activeElement.closest('.order-panel > :first-child')")
+        self.assertTrue(inside_retouch)
+        self.js("document.querySelector(\"%s\").focus()" % self.card(2))
+        self.page.key("x")
+        self.page.wait("document.activeElement.closest('.order-panel > :nth-child(2)')")
+        self.no_problems()
+
     def test_keyboard_shortcuts(self):
         self.order("fondos/atajos")
         self.js("document.querySelector(\"%s\").focus()" % self.card(2))

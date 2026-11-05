@@ -23,6 +23,8 @@ export const SHORTCUTS = [
     [['F'], 'ui.shortcuts.raw'],
     [['G'], 'ui.shortcuts.another'],
     [['R'], 'ui.shortcuts.prompt'],
+    [['T'], 'ui.shortcuts.retouch'],
+    [['X'], 'ui.shortcuts.texts'],
   ]],
 ];
 
