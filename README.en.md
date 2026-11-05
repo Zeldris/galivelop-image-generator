@@ -7,22 +7,38 @@ as the engine and the Steam Deck as the reference machine (D4). No dependencies:
 
 ## Status
 
-Under development, phase **F1 (core) done**: projects, orders, attempts, chosen candidate and delivery, persistent
-queue and CLI work end to end with the **test engine** (`fake`, flat-colour images). **It does not generate real
-images yet**: the real engine (`sd-cli`) arrives in F2.
+Version **0.4.0**, phases **F0-F4 done** and on `main`: projects, orders, attempts, chosen candidate and delivery,
+persistent queue, CLI, real engine (`sd-cli`, with `instalar.sh`), composition and brand measurement, local HTTP API
+and browser interface. Still pending: manual checks on the Deck (pilot rounds, a full walk through the interface in
+the browser), the pilot with real projects (F5) and what follows (see "Next steps"). The test engine (`fake`,
+flat-colour images) stays the default until `instalar.sh` selects the real one.
 
 | Phase | What it brings |
 |---|---|
 | F0 Skeleton | Schemas for project config, order and machine profile; es/en texts; README; tests |
 | F1 Core | Projects, orders, attempts, chosen candidate, delivery, persistent queue and a basic `gimg` CLI |
-| F2 Real engine | `sd-cli` wrapper driven by the machine profile, and `instalar.sh` |
+| F2 Real engine | `sd-cli` wrapper driven by the machine profile, `instalar.sh`, model catalog, composition, brand measurement and `gimg doctor` (0.3.0) |
 | F3 API and startup | Local HTTP API (`gimg serve`), on-demand startup and `gimg ui` (0.3.0) |
-| F4 UI | Three browser screens, es/en (0.4.0) |
+| F4 UI | Three browser screens, es/en, with selectable templates and an element editor (0.4.0) |
 | F5 WMF pilot | Example config, integration guide and measurements |
 | F6 Local director | Optional: a local LLM (Ollama) drafts prompts and helps choose |
 | F7 Compatibility | Last phase: any machine, not only Vulkan (CPU, CUDA, ROCm, Metal), other Linux distros, Windows and maybe macOS |
 
-Details, decisions D1-D27 and exit criteria in [`docs/plan.md`](docs/plan.md) (in Spanish).
+Details, decisions D1-D65 and exit criteria in [`docs/plan.md`](docs/plan.md) (in Spanish).
+
+### Next steps
+
+Requested on 2026-11-05, no phase assigned yet (a new F4e or part of another); the design is in
+[`docs/plan.md`](docs/plan.md), "Piezas, edición y borrado":
+
+1. Layered composition from existing pieces (background, logo, loose elements and text), from chosen attempts or the
+   user's own files (PNG or SVG).
+2. Optional transparency when generating, and "Remove background" on a piece, installing nothing (to be researched).
+3. Reference images when generating a piece (to check what `sd-cli` accepts).
+4. Text boxes placed before generating, which the generator takes into account (prompt, initial image, contrast chip).
+5. Delete attempts, compositions, templates and elements, with confirmation.
+6. Prompt editing: a new attempt made from another one, leaving the original untouched.
+7. Edit the text and typography of the elements of a composed result.
 
 ## How a project connects
 
@@ -69,8 +85,8 @@ The Steam Deck preset is [`gimg/machine_profiles/steam-deck.json`](gimg/machine_
 
 ## Usage (CLI)
 
-Until `instalar.sh` arrives in F2, run it as `python3 -m gimg …` from the repo folder (Python 3.10+, nothing to
-install). With `GIMG_ENGINE=fake` (the only engine in F1) the images are test images. `--lang es|en` picks the
+Run it as `python3 -m gimg …` from the repo folder (Python 3.10+, nothing to install), or as `gimg` after
+`./instalar.sh`. With `GIMG_ENGINE=fake` the images are test images (`sdcpp` is the real engine). `--lang es|en` picks the
 language and `--json` gives JSON output for integrating from another program (its shape is in `docs/plan.md`).
 
 ```sh
@@ -86,6 +102,11 @@ python3 -m gimg attempt new my-project fauna/red-howler banner --count 2 --steps
 python3 -m gimg order list my-project --unchosen
 python3 -m gimg queue list                            # queue state, with errors
 python3 -m gimg queue cancel 3
+python3 -m gimg compose my-project fauna/red-howler banner 1 --template poster   # recompose without generating
+python3 -m gimg templates my-project banner           # the profile's composition templates
+python3 -m gimg measure image.png --project my-project   # palette, contrast and distance to the brand
+python3 -m gimg sheet --out sheet.png a.png b.png     # contact sheet to review a round
+python3 -m gimg doctor                                # checks the engine, models and tools (--verify)
 python3 -m gimg serve                                 # local service on 127.0.0.1:8737 (--detach, --status, --stop, --port, --idle-min)
 python3 -m gimg ui                                    # open the interface in the browser (starts the service if needed; --no-browser)
 ./arrancar.sh                                         # the same, by double click or from the VS Code sandbox (sets GIMG_CONFIG_HOME and GIMG_DATA_HOME)
@@ -102,13 +123,18 @@ starts it if needed and opens the browser. It listens on localhost only and requ
 for writes. `GIMG_PORT` changes the port and `GIMG_AUTOSTART=0` turns off on-demand start. Routes, bodies, errors and
 `curl` examples are in [`docs/api.md`](docs/api.md) (in Spanish).
 
-## Installation (planned, **does not exist yet**)
+## Installation
 
-Designed this way (D24), but none of it is available yet:
+`git clone` this repo and run `./instalar.sh` (D24):
 
-1. `git clone` this repo and run `./instalar.sh`.
-2. `gimg` would land in `~/.local/bin`.
-3. The engine and models (~7 GB) are downloaded outside the repo, into a shared per-user folder (D5).
+1. `gimg` lands in `~/.local/bin`.
+2. The engine (a pinned stable-diffusion.cpp release with Vulkan) and the catalog's default models (~7 GB) are
+   downloaded outside the repo, into a shared per-user folder (D5), with a sha256 check.
+3. `gimg doctor` tells you what is missing and how to fix it. `instalar.sh` options: `--with <id>`, `--only-cli`,
+   `--models-from <folder>` and `--dry-run`.
+
+Linux with Vulkan only (the Steam Deck is the reference machine); other machines arrive in F7. The manual checks on the
+Deck still pending are in [`docs/plan.md`](docs/plan.md).
 
 ## Development
 
