@@ -446,18 +446,21 @@ def estimate_for(entry: dict, provider: str | None = None, memo: dict | None = N
     return memo[args]
 
 
-def submit_order(project: str, order: dict, draft=None, template=None) -> tuple:
+def submit_order(project: str, order: dict, draft=None, template=None, model=None) -> tuple:
     """`gimg order submit` and ``POST /api/projects/{p}/orders``: store the order and enqueue its attempts.
     Returns ``(entries, provider)``; a bad engine setting fails before anything is stored or queued."""
     provider = engine_mod.get_engine().provider
     if draft is not None:  # the option is the order's own field, so it is stored with the order
         order["draft"] = draft
     orders.check_order(project, order)  # limits, prompt length and seed range, before anything is stored
+    if model is not None:  # F4d: the model of the attempts (not stored in the order); unknown fails before storing
+        models_mod.check_known(model)
     if template is not None:  # an unknown template must not leave a stored order behind
         compose_mod.effective((compose_mod.merged_profile(projects.get(project), order["profile"]) or {}).get("compose"),
                               template)
     record = orders.submit(project, order)
-    specs = orders.attempt_specs(project, record["key"], record["profile"], order.get("count", 1), template=template)
+    specs = orders.attempt_specs(project, record["key"], record["profile"], order.get("count", 1), template=template,
+                                 model=model)
     return enqueue(project, record["key"], record["profile"], specs), provider
 
 

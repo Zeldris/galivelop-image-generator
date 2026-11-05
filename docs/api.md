@@ -119,7 +119,10 @@ curl -s "$B/api/projects/mi-proyecto/orders?profile=banner&chosen=false"
 
 Crea un pedido (el JSON de `order.schema.json`, con su `count`) y encola los intentos; `"draft": true` los pide en
 borrador. `"template"` (opcional, no se guarda en el pedido): id de la plantilla de composición de los intentos
-(`gimg order submit --template`); se valida antes de guardar y de encolar nada. Respuesta 201: `{"order", "entries",
+(`gimg order submit --template`); se valida antes de guardar y de encolar nada. `"model"` (opcional, tampoco se guarda en el pedido): modelo de los
+intentos (`gimg order submit --model`); si no está en el catálogo, `model.unknown` y no se guarda nada; un valor que no
+es texto, `api.bad_param`. Cada entrada de la cola lleva `position` (la cola la sirve el worker de menor a mayor;
+`POST /api/queue/{id}/move` la cambia). Respuesta 201: `{"order", "entries",
 "estimateMs"}`. Errores: `order.invalid` (con `errors`), `limit.*`, `key.*`, `order.profile_unknown`,
 `compose.template_unknown` (400).
 

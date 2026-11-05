@@ -669,7 +669,10 @@ def _str_field(body: dict, name: str) -> str:
 def order_submit(req):
     order = dict(req.body)
     template = _template_param(order.pop("template", None))  # not part of the order file: it goes to the attempts
-    entries, provider = queue.submit_order(req.params["p"], order, template=template)
+    model = order.pop("model", None)  # idem: the model of the attempts (F4d)
+    if model is not None and not isinstance(model, str):
+        raise GimgError("api.bad_param", name="model")
+    entries, provider = queue.submit_order(req.params["p"], order, template=template, model=model)
     _after_enqueue()
     # the order itself is read back by its own key: `submit` normalises it (profile, params)
     record = orders.get(req.params["p"], entries[0]["key"], entries[0]["profile"]) if entries else None

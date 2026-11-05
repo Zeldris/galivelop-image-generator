@@ -67,6 +67,23 @@ class OrderTemplateTests(F4dBase):
         self.bad("POST", self.orders_url(), self.order(profile="og", template=3), 400, "api.bad_param")
 
 
+class OrderModelTests(F4dBase):
+    def test_model_goes_to_the_entries_like_the_cli(self):
+        got = self.ok("POST", self.orders_url(), self.order(profile="og", model="flux3-klein-q8", count=1), 201)
+        self.assertEqual(got["entries"][0]["params"]["model"], "flux3-klein-q8")
+        self.assertNotIn("model", got["order"])  # not part of the stored order
+        f = self.tmp / "o.json"
+        f.write_text(json.dumps(self.order(key="fauna/otro", profile="og", count=1)))
+        cli = self.cli_json("order", "submit", NAME, str(f), "--model", "flux3-klein-q8")
+        self.assertEqual(cli["entries"][0]["params"]["model"], "flux3-klein-q8")
+
+    def test_unknown_model_queues_and_stores_nothing(self):
+        self.bad("POST", self.orders_url(), self.order(profile="og", model="nope"), 400, "model.unknown")
+        self.assertEqual(queue.list_entries(), [])
+        self.bad("GET", self.order_url("fauna/lobo", "og"), None, 404, "order.unknown")
+        self.bad("POST", self.orders_url(), self.order(profile="og", model=3), 400, "api.bad_param")
+
+
 class AttemptModelTests(F4dBase):
     def setUp(self):
         super().setUp()

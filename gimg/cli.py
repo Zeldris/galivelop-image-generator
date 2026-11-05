@@ -62,7 +62,8 @@ def _build(lang: str) -> argparse.ArgumentParser:
     g = group(top, "order", "cli.cmd.order")
     leaf(g, "submit", "cli.cmd.order_submit", project, arg("file", "cli.arg.file"),
          opt("--draft", "cli.arg.draft", action=argparse.BooleanOptionalAction, default=None),
-         opt("--template", "cli.arg.template", metavar="ID"))
+         opt("--template", "cli.arg.template", metavar="ID"),
+         opt("--model", "cli.arg.model", metavar="ID"))
     lst = leaf(g, "list", "cli.cmd.order_list", project,
                opt("--profile", "cli.arg.profile_filter"))
     mutex = lst.add_mutually_exclusive_group()
@@ -428,7 +429,7 @@ def _measure(args, out: _Out) -> None:
 def _order(args, sub, out: _Out) -> None:
     if sub == "submit":
         order = _read_order(args.file)
-        entries, provider = queue.submit_order(args.project, order, args.draft, template=args.template)
+        entries, provider = queue.submit_order(args.project, order, args.draft, template=args.template, model=args.model)
         _queued(out, entries, provider)
     elif sub == "list":
         chosen = True if args.chosen else False if args.unchosen else None
