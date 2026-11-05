@@ -173,6 +173,20 @@ def _rollback(plan: dict, restore) -> None:
             _copy(restore, plan["target"])
 
 
+def _entry(attempt: dict, rel: str) -> dict:
+    """The manifest entry of a delivered `attempt` at `rel`."""
+    entry = {
+        "file": rel, "prompt": attempt["prompt"], "seed": attempt["seed"],
+        "params": attempt["params"], "references": attempt.get("references", []),
+        "engine": attempt.get("engine"), "engineVersion": attempt.get("engineVersion"),
+        "attemptId": attempt["id"], "chosenAt": _now()}
+    if isinstance(attempt.get("compose"), dict):  # composed (F2.8): the manifest says with what
+        entry["compose"] = attempt["compose"]
+    if attempt.get("initImage") is not None:  # img2img: the manifest says what it started from
+        entry.update(initImage=attempt["initImage"], strength=attempt.get("strength"))
+    return entry
+
+
 def _apply(plan: dict, restore=False) -> None:
     attempt, key, profile = plan["attempt"], plan["key"], plan["profile"]
     manifest = plan["manifest"]  # callers hold the project delivery lock
@@ -194,15 +208,7 @@ def _apply(plan: dict, restore=False) -> None:
         else:
             _copy(plan["source"], plan["target"])
             touched = True
-            images.setdefault(key, {})[profile] = {
-                "file": _relative(plan), "prompt": attempt["prompt"], "seed": attempt["seed"],
-                "params": attempt["params"], "references": attempt.get("references", []),
-                "engine": attempt.get("engine"), "engineVersion": attempt.get("engineVersion"),
-                "attemptId": attempt["id"], "chosenAt": _now()}
-            if isinstance(attempt.get("compose"), dict):  # composed (F2.8): the manifest says with what
-                images[key][profile]["compose"] = attempt["compose"]
-            if attempt.get("initImage") is not None:  # img2img: the manifest says what it started from
-                images[key][profile].update(initImage=attempt["initImage"], strength=attempt.get("strength"))
+            images.setdefault(key, {})[profile] = _entry(attempt, _relative(plan))
         fsutil.write_json(manifest, data)
     except BaseException as exc:
         if touched:
@@ -299,3 +305,76 @@ def undo(project: str, key: str, profile: str) -> dict:
                     orders.choose(project, key, profile, result["old"])
             raise
         return result
+
+
+def check_rename(project: str, order: dict, new_key: str):
+    """Before an order is renamed (F4e.5, caller holds `_lock`): nothing is changed. Returns None when nothing is delivered
+    for it (no chosen attempt), else the plan `apply_rename` takes. ``delivery.target_taken`` if the new target is the
+    ``file`` of another entry of the manifest; ``delivery.source_missing`` if the chosen image is not a file (only when
+    the target changes: it has to be copied); the target errors of `_target` (``delivery.reserved``...)."""
+    proj = projects.get(project)
+    root, config = Path(proj["root"]), proj["config"]
+    key, profile = order["key"], order["profile"]
+    attempt = _find(order, order["chosen"]) if order["chosen"] is not None else None
+    if attempt is None:
+        return None
+    old_target, new_target = _target(root, config, key, profile), _target(root, config, new_key, profile)
+    manifest = _manifest_path(root, config)
+    rel = new_target.relative_to(root.resolve()).as_posix()
+    for other_key, by_profile in _read_manifest(manifest)["images"].items():
+        for other_profile, entry in by_profile.items():
+            if (other_key, other_profile) not in ((key, profile), (new_key, profile)) and entry.get("file") == rel:
+                raise GimgError("delivery.target_taken", path=rel, otherKey=other_key, otherProfile=other_profile)
+    if old_target != new_target:
+        source = orders.attempt_image(project, key, profile, attempt)
+        if not source.is_file():
+            raise GimgError("delivery.source_missing", attempt=attempt["id"], path=attempt["image"])
+    return {"project": project, "root": root, "manifest": manifest, "key": key, "new_key": new_key, "profile": profile,
+            "attempt": attempt, "old": old_target, "new": new_target, "rel": rel}
+
+
+def apply_rename(plan: dict) -> None:
+    """Deliver a renamed order (F4e.5), after its folder moved (caller holds `_lock`). Same target: only the manifest
+    entry changes key. Else the chosen image is copied to the new target, the entry moves to the new key with the new
+    ``file`` (one manifest write) and the old file goes (only if the old entry says it is its ``file``; if not, it is left
+    alone). A failure puts the new target back as it was and raises; the old file is touched only after the manifest."""
+    key, new_key, profile, manifest = plan["key"], plan["new_key"], plan["profile"], plan["manifest"]
+    data = _read_manifest(manifest)
+    images = data["images"]
+    old_entry = images.get(key, {}).get(profile)
+    old_rel = plan["old"].relative_to(plan["root"].resolve()).as_posix()
+    if plan["old"] == plan["new"]:
+        if old_entry is None:
+            return
+        entry, remove_old = old_entry, False
+    else:
+        entry = _entry(plan["attempt"], plan["rel"])
+        remove_old = old_entry is not None and old_entry.get("file") == old_rel
+    backup, restore = None, False
+    touched = False
+    try:
+        if plan["old"] != plan["new"]:
+            source = orders.attempt_image(plan["project"], new_key, profile, plan["attempt"])
+            if not source.is_file():
+                raise GimgError("delivery.source_missing", attempt=plan["attempt"]["id"], path=plan["attempt"]["image"])
+            backup, restore = _backup_delivered(plan["new"])
+            _copy(source, plan["new"])
+            touched = True
+        images.get(key, {}).pop(profile, None)
+        if key in images and not images[key]:
+            del images[key]
+        images.setdefault(new_key, {})[profile] = entry
+        fsutil.write_json(manifest, data)
+    except BaseException as exc:
+        if touched:
+            _rollback({"target": plan["new"]}, restore)
+        if isinstance(exc, OSError):
+            raise GimgError("delivery.write_failed", path=str(plan["new"]), reason=str(exc))
+        raise
+    finally:
+        if backup is not None:
+            with contextlib.suppress(OSError):
+                os.unlink(backup)
+    if remove_old:
+        with contextlib.suppress(OSError):
+            os.unlink(plan["old"])

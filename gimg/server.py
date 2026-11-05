@@ -48,8 +48,9 @@ _EXACT = {
     405: ("api.method_not_allowed",), 411: ("api.length_required",), 413: ("api.body_too_large",),
     415: ("api.content_type",),
     409: ("compose.template_exists", "compose.busy", "measure.busy", "api.heavy_busy", "compose.nothing_to_do", "compose.no_attempts", "serve.already_running", "serve.port_busy", "serve.not_running", "order.discard_chosen",
-          "order.delete_chosen", "order.delete_busy", "order.compose_none", "order.compose_no_raw", "compose.delete_default", "compose.delete_config", "compose.delete_symlink", "order.history_empty", "queue.not_cancellable", "queue.not_movable", "queue.not_removable", "delivery.target_taken"),
-    400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "compose.template_unknown", "compose.element_unknown", "compose.bad_layout", "compose.bad_element", "compose.templates_dir_missing", "api.bad_json",
+          "order.delete_chosen", "order.delete_busy", "order.compose_none", "order.compose_no_raw", "compose.delete_default", "compose.delete_config", "compose.delete_symlink", "order.history_empty", "queue.not_cancellable", "queue.not_movable", "queue.not_removable", "delivery.target_taken",
+          "order.busy", "order.exists"),
+    400: ("order.same_key", "measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "compose.template_unknown", "compose.element_unknown", "compose.bad_layout", "compose.bad_element", "compose.templates_dir_missing", "api.bad_json",
           "api.bad_param"),
 }
 # Server-side faults whose names match the 400 patterns below: checked first.
@@ -706,6 +707,15 @@ def order_text(req):
         raise GimgError("api.bad_param", name="text")
     orders.set_text(q["p"], q["key"], q["profile"], text, replace=True)
     return orders.get(q["p"], q["key"], q["profile"])
+
+
+@route("POST", _ORD + "/rename")
+def order_rename(req):
+    q = req.params
+    new_key = _fields(req.body, ("key",)).get("key")
+    if not isinstance(new_key, str):
+        raise GimgError("api.bad_param", name="key")
+    return orders.rename(q["p"], q["key"], q["profile"], new_key)
 
 
 @route("POST", _ORD + "/attempts")

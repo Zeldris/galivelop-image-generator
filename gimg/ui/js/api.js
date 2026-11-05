@@ -129,6 +129,7 @@ export const api = {
   project: (p) => get(paths.project(p)),
   orders: (p, q) => get(paths.orders(p, q)),
   order: (p, profile, key) => get(paths.order(p, profile, key)),
+  renameOrder: (p, profile, key, newKey) => post(`${paths.order(p, profile, key)}/rename`, { key: newKey }),
   setText: (p, profile, key, text) => put(paths.text(p, profile, key), { text }),
   newAttempts: (p, profile, key, spec) => post(paths.attempts(p, profile, key), spec),
   mark: (p, profile, key, id, st) => post(paths.mark(p, profile, key, id), { state: st }),

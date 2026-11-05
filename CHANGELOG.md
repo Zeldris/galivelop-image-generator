@@ -11,6 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Rename an order (F4e.5): "Rename" next to the title, `POST .../orders/{profile}/{key}/rename` and `gimg order rename`. The
+  folder, the finished queue entries and what was delivered follow the new key (the old file and manifest entry go);
+  refused while it is queued, being generated or composed. The project's orders file is not touched.
 - Delete from the interface (F4e.1b): "Delete" with a yes/no confirmation on each attempt, on its composition (it
   warns that the delivery already made does not change if the attempt is the chosen one) and on each template (it
   says how many attempts use it and, for a project template, that the change stays in the repository without a

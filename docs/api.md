@@ -63,10 +63,10 @@ Toda respuesta de error es:
 
 `code` y `params` son los de la `GimgError`; `message` está en el idioma de la petición; `errors` (opcional) son las
 líneas del esquema cuando el pedido no valida. Idioma: `?lang=es|en`, si no el primero soportado de `Accept-Language`,
-si no el del sistema. Estados: 400 petición mal formada o valor no válido (`api.bad_json`, `api.bad_param`, `*.invalid`,
+si no el del sistema. Estados: 400 petición mal formada o valor no válido (`api.bad_json`, `api.bad_param`, `order.same_key`, `*.invalid`,
 `limit.*`, `path.*`, `key.*`); 403 Host u Origin; 404 `project.unknown`, `order.unknown`, `order.profile_unknown`,
 `order.attempt_unknown`, `queue.unknown`, `compose.delete_unknown`, `api.not_found`; 405, 411, 413, 415 de arriba; 409 estado que no lo permite
-(`compose.template_exists`, `order.choose_*`, `order.undo_*`, `order.history_empty`, `order.delete_chosen`, `order.delete_busy`, `order.compose_none`, `order.compose_no_raw`, `compose.delete_default`, `compose.delete_config`, `compose.delete_symlink`, `queue.not_cancellable`, `queue.not_movable`, `compose.busy`, `measure.busy`,
+(`compose.template_exists`, `order.choose_*`, `order.undo_*`, `order.history_empty`, `order.delete_chosen`, `order.delete_busy`, `order.busy`, `order.exists`, `order.compose_none`, `order.compose_no_raw`, `compose.delete_default`, `compose.delete_config`, `compose.delete_symlink`, `queue.not_cancellable`, `queue.not_movable`, `compose.busy`, `measure.busy`,
 `api.heavy_busy`, `delivery.target_taken`); 500 fallos del lado del servidor (`api.unexpected` lleva `"message":
 "Tipo: texto"`). Los textos de todos los códigos: `GET /api/locales/{lang}`.
 
@@ -148,6 +148,27 @@ Sustituye los textos del pedido. Cuerpo: `{"text": {"title": "…"}}` (`{}` los 
 ```sh
 curl -s -X PUT -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/orders/og/fauna%2Flobo/text \
   -d '{"text":{"title":"El lobo"}}'
+```
+
+### POST /api/projects/{p}/orders/{profile}/{key}/rename
+
+Cambia la clave del pedido (F4e.5): solo el par `(clave, perfil)` de la URL; los demás perfiles con esa clave no
+cambian. Cuerpo: `{"key": "nueva"}` (pasa por las mismas reglas que al crear: `order.invalid`, `key.*`). Respuesta: el
+pedido con la clave nueva. Mueve la carpeta del pedido, cambia `key` en `order.json` y en las entradas terminadas de la
+cola (`done`, `failed`, `cancelled`, para que «Reintentar» siga valiendo), y lo entregado lo sigue: si
+`delivery.template` da otro archivo a la clave nueva, la imagen elegida se entrega en el destino nuevo y se borran el
+archivo viejo y su entrada del manifiesto; si no, solo cambia la clave de la entrada. Si algo falla a medias, la
+carpeta y la cola vuelven a como estaban. Las líneas viejas del log conservan la clave vieja y se añade una
+`order.rename` con las dos. **El archivo de pedidos del repositorio del proyecto (el de `gimg order submit`) no se
+toca:** volver a enviarlo crea otra vez el pedido con la clave vieja. Errores: `order.unknown` (404), `order.same_key`
+(400, es la misma clave), `order.exists` (409, ya hay un pedido con esa clave y perfil), `order.busy` (409, tiene
+intentos en cola, generándose o componiéndose), `delivery.target_taken` (409, el destino nuevo es el archivo de otra
+entrada del manifiesto; no se mueve nada), `delivery.*`, `api.bad_param` (400, `key` falta o no es texto). CLI:
+`gimg order rename <proyecto> <clave> <perfil> <clave-nueva>`.
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' \
+  $B/api/projects/mi-proyecto/orders/banner/fauna%2Flobo/rename -d '{"key":"fauna/lobo-gris"}'
 ```
 
 ### POST /api/projects/{p}/orders/{profile}/{key}/attempts

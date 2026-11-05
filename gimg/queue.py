@@ -327,6 +327,26 @@ def remove(entry_id) -> dict:
     return entry
 
 
+def rename_order(project: str, key: str, profile: str, new_key: str, move=None, check_busy: bool = True) -> int:
+    """Point the finished entries (``done``, ``failed``, ``cancelled``) of order (`key`, `profile`) at `new_key` (F4e.5),
+    under the queue lock. With `check_busy`, a ``queued`` or ``running`` entry of the order is ``order.busy`` and nothing
+    changes. `move()`, if given, runs under the same lock before the entries change (the order folder moves there, so
+    no entry can be enqueued for the old key in between); if it raises, nothing changes. Returns the entries changed."""
+    def change(data):
+        mine = [e for e in data["entries"]
+                if e["project"] == project and e["key"] == key and e["profile"] == profile]
+        if check_busy and any(e["state"] not in TERMINAL for e in mine):
+            raise GimgError("order.busy", order=key, profile=profile)
+        if move is not None:
+            move()
+        done = [e for e in mine if e["state"] in TERMINAL]
+        for entry in done:
+            entry["key"] = new_key
+        return len(done)
+
+    return _txn(change, recover=True)
+
+
 def next_queued():
     """The first queued entry, without taking it; ``None`` if there is none."""
     return _txn(_first_queued)

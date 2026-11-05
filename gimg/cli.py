@@ -70,6 +70,7 @@ def _build(lang: str) -> argparse.ArgumentParser:
     mutex.add_argument("--chosen", action="store_true", help=t("cli.arg.chosen"))
     mutex.add_argument("--unchosen", action="store_true", help=t("cli.arg.unchosen"))
     leaf(g, "show", "cli.cmd.order_show", project, okey, oprofile)
+    leaf(g, "rename", "cli.cmd.order_rename", project, okey, oprofile, arg("new_key", "cli.arg.new_key"))
 
     g = group(top, "attempt", "cli.cmd.attempt")
     leaf(g, "new", "cli.cmd.attempt_new", project, okey, oprofile,
@@ -481,6 +482,10 @@ def _order(args, sub, out: _Out) -> None:
             for o in found:
                 out.line("cli.out.order_line", order=o["key"], profile=o["profile"],
                          chosen=out.none(o["chosen"]), attempts=len(o["attempts"]))
+    elif sub == "rename":
+        o = orders.rename(args.project, args.key, args.profile, args.new_key)
+        out.data(o) if out.as_json else out.line("cli.out.order_renamed", old=args.key, order=o["key"],
+                                                 profile=o["profile"])
     else:
         o = orders.get(args.project, args.key, args.profile)
         if out.as_json:

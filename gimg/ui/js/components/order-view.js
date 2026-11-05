@@ -6,7 +6,7 @@
 import { h, el, closest } from '../dom.js';
 import { t } from '../i18n.js';
 import { api, describeError, ApiError } from '../api.js';
-import { to } from '../router.js';
+import { to, navigate } from '../router.js';
 import * as store from '../store.js';
 import * as poll from '../queue-poll.js';
 import { attemptCard, queueCard, stateOf } from './attempt-card.js';
@@ -18,6 +18,7 @@ import { invalidateMeasure } from './measure-chip.js';
 import { isTyping, oneKeyEnabled } from './shortcuts.js';
 import { toast, toastError, toastOk } from './toast.js';
 import { confirmAction } from './confirm.js';
+import { renameDialog } from './rename-dialog.js';
 
 const PENDING = ['queued', 'running'];
 
@@ -54,6 +55,7 @@ export async function orderView(host, route) {
   const deliveredHost = h('div');
   const panel = h('aside.order-panel', { aria: { label: t('ui.order.panel') } });
   const title = h('div.page-head', {}, h('h1', {}, key), h('span.chip', {}, profile, profileCfg.width ? ` · ${profileCfg.width}×${profileCfg.height}` : ''),
+    h('button.btn', { type: 'button', data: { fid: 'rename-order' }, onclick: () => ctx.actions.rename() }, t('ui.order.rename')),
     h('a.btn.btn-ghost', { href: to.project(project) }, '← ', t('ui.order.backToProject')));
   host.replaceChildren(title, h('div.order-layout', {}, h('div', {}, deliveredHost, compareHost, galleryBar, gallery), panel));
 
@@ -141,6 +143,17 @@ export async function orderView(host, route) {
       paintGalleryOnly();
       return entry;
     },
+    /** F4e.5: renombrar el pedido. Con la clave nueva aceptada, el servidor lo mueve todo y se navega al pedido renombrado;
+        si falla (clave repetida, pedido ocupado...), el aviso lleva el motivo y esta pantalla queda como estaba. */
+    rename: guard(async () => {
+      const opener = () => document.querySelector('[data-fid="rename-order"]');
+      const newKey = await renameDialog({ current: key, opener });
+      if (!newKey) return;
+      const renamed = await api.renameOrder(project, profile, key, newKey);
+      const now = (renamed && renamed.key) || newKey;
+      toastOk(t('ui.order.renamed', { key: now }));
+      navigate(to.order(project, profile, now));
+    }),
     /** F4e.1: borrar un intento o su composición; siempre tras el modal «sí / no». El 409 del servidor sale en el toast. */
     deleteAttempt: guard(async (a) => {
       const opener = () => document.querySelector(`[data-attempt="${a.id}"][data-kind="attempt"]`);
