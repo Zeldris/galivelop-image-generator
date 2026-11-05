@@ -80,3 +80,6 @@ creada.
 - **Esquemas con semántica estándar.** Los esquemas los leen también otros validadores (ajv, el editor; D17): un
   `pattern` sigue ECMA-262 y un tipo sigue JSON Schema 2020-12. Que `gimg/schema.py` dé otro resultado que el
   estándar sobre el mismo dato es un hallazgo.
+- **CHANGELOG por fase.** Un PR que cierra una fase (o trae algo visible para el usuario) añade su entrada en
+  `CHANGELOG.md` y `CHANGELOG.es.md`; las notas de cada release de GitHub salen de ahí (`releases.py notes`). Que
+  falte es un hallazgo medio. (criterio)

@@ -8,15 +8,16 @@
 
 | Campo | Valor |
 |---|---|
-| **Rama** | `main` (F1 fusionada); F2 en una rama nueva `f2-motor` |
-| **Fase / tarea** | F1 Núcleo cerrada y en `main`; siguiente fase F2 Motor real (`docs/plan.md`, fila F2) |
-| **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
-| **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
+| **Rama** | `main` (F0-F4 fusionadas); trabajo abierto en `plan-piezas` |
+| **Fase / tarea** | F4 cerrada y en `main` (PR #2); `plan-piezas`: plan de «Piezas, edición y borrado», MIT y `releases.py`, camino de `main` |
+| **Último punto estable** | `main` en `624f7a9` (PR #2, F3 y F4, CI en verde); `plan-piezas` subida, ver su fila |
+| **Siguiente paso** | el de la fila de `plan-piezas` |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | F4a-F4d hechas. Fases 1 y 2 hechas (`docs/records/revision-fase1-f2-motor-2026-11-05.md`, `docs/records/retro-2026-11-05-f4.md`). Fase 3 hecha: revisión de `e42e654` sin graves ni medios, CI y check en verde (1251 tests), marca de revisión puesta. **Siguiente:** PR de `f2-motor` a `main` (skill `pr`) y fusión con el CI en verde y confirmación de la persona; luego licencia MIT y releases. Presupuesto de compactaciones: 4 (gastadas 4) |
+| **Tarea en curso · `f2-motor`** | Fusionada en `main` por el PR #2 (`624f7a9`, 2026-11-05, CI en verde); rama terminada. |
+| **Tarea en curso · `plan-piezas`** | Plan de «Piezas, edición y borrado», MIT, 0.4.0 y `releases.py`. Fases 1-3 hechas (`docs/records/revision-fase1-plan-piezas-2026-11-05.md`, `docs/records/retro-2026-11-05-plan-piezas.md`); PR #3 abierto. Después: README es/en al día con el plan y proceso de versiones de Galivelop-workflow (`release.yml`, `releases.py bump/suggest/verify-tag`, «Cómo se publica una versión» en `docs/plan.md`). **Siguiente:** `reviewed.sh`, CI verde del PR #3, fusionar, etiqueta ligera v0.4.0 en la punta de `origin/main` y `git push origin v0.4.0` (release por `release.yml`), `releases.py check`; luego decidir la fase de «Piezas, edición y borrado» |
 
-Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
-la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.
+Aquí `logRows` está apagado en `.claude/gw.json`: las filas se editan a mano (`handoff.py set-row` no escribe) y no
+hace falta `GW_SHARED_LOG`. Aun así, cada rama toca solo su fila salvo al cerrar o fusionar otra.
 
 ## Para la próxima publicación
 
@@ -32,8 +33,7 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 
 ## Pendiente
 
-- **Licencia MIT** (pedido de la persona del 2026-11-05, `docs/plan.md` tras la tabla de fases): lo siguiente tras llevar F4 a `main`; falta el titular del copyright.
-- **Releases en GitHub** (pedido de la persona del 2026-11-05, `docs/plan.md` tras la tabla de fases): etiqueta y release con notas del CHANGELOG en cada versión; empezar con 0.4.0 al cerrar F4 y crear las atrasadas 0.1.0-0.3.0.
+- **Releases en GitHub** (pedido de la persona del 2026-11-05, `docs/plan.md` tras la tabla de fases): v0.1.0 y v0.3.0 hechas; v0.4.0 al llegar `plan-piezas` a `main` (`python3 releases.py check` en cada cierre de fase).
 - **Test inestable en el CI:** `tests.test_engine_sdcpp.RunTests.test_cancel_kills_the_whole_group` falló en `1eae6d7` y `44f8987` y pasó en la subida siguiente; diagnosticarlo con `diagnosing-bugs` tras el PR de F4 (retro del 2026-11-05).
 - **Leve de la fase 3 de `f2-motor`:** el check deja dos `ResourceWarning: unclosed file` (descriptores 7 y 8), seguramente el `stderr=PIPE` del Chrome de `tests/browser.py`, que `close()` no cierra.
 - **Leves de la revisión de fase 1 de `f2-motor` (2026-11-05, no se revisan más en este PR)** (`docs/records/revision-fase1-f2-motor-2026-11-05.md`): (6) `_contrast_of` decodifica la imagen una vez por elemento de texto; (7) `save_template` puede dejar un `.json` huérfano que bloquea el nombre; (8) `_sidecar` no comprueba que `zone` quepa en `target_size`; sin verificar: `gimg queue list` quizá ordena por archivo y no por `position`.

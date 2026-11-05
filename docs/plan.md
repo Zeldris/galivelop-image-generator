@@ -74,7 +74,7 @@ Cada fase es una rama y un pull request a `main`, con las tres fases de revisió
 | F1 Núcleo | Proyectos registrados, pedidos (clave + perfil), intentos y estados, elegida con deshacer, entrega y manifiesto, cola persistente, límites de seguridad, registro JSONL; CLI `gimg` básica; todo con un **motor de pruebas** que no genera de verdad | Tests en verde del ciclo completo con el motor de pruebas |
 | F2 Motor real | Envoltorio de `sd-cli` con el perfil de máquina (memoria, `--max-vram`, tope, cancelar, progreso); `instalar.sh` con versiones fijas y checksum; catálogo de modelos, borradores, composición de texto y logo, medida de marca; **piloto de contenido corporativo** (Portal, Tarkor, toVeriAI, Galivelop-workflow) con configuraciones de ejemplo en este repo *(aprobado 2026-10-26)* | Un pedido real generado en la Deck y la primera ronda de piezas definitivas de los cuatro proyectos elegidas por la persona (comprobación manual) |
 | F3 API y arranque | API HTTP (D17, D25) y arranque bajo demanda; unidad `systemd --user` opcional *(F3 mínima, D39: hecha en 0.3.0 con `docs/api.md`; la unidad `systemd` queda fuera; pendiente manual en la Deck: `gimg ui` abre el navegador y el servicio se para a los 15 min)* | Tests de la API; `gimg` arranca el servicio solo |
-| F4 Interfaz | Las tres pantallas de D22, es/en, más plantillas elegibles y editor de elementos (D39), con la hoja de estilo de este proyecto; se adelanta al cierre del piloto. **F4a hecha salvo la prueba en navegador** (`gimg/ui/`, `docs/interfaz/f4a.md`, `tests/test_ui.py`); pendiente de la persona: recorrido completo de F4a en el navegador de la Deck y en escritorio, con teclado y con mando | Recorrido completo en el navegador |
+| F4 Interfaz | Las tres pantallas de D22, es/en, más plantillas elegibles y editor de elementos (D39), con la hoja de estilo de este proyecto; se adelanta al cierre del piloto. **F4a-F4d hechas (0.4.0) salvo la prueba en navegador** (`gimg/ui/`, `docs/interfaz/f4a.md`, `tests/test_ui.py`); pendiente de la persona: recorrido completo en el navegador de la Deck y en escritorio, con teclado y con mando | Recorrido completo en el navegador |
 | F5 Piloto WMF | Configuración de ejemplo para WMF, guía de integración y propuesta de migración para su repo; medida base con `opt-ai` y comparación `sd-server` (D14); LUT por marca si F2 la deja pendiente; stable-diffusion.cpp `master-1039` o posterior con LoRA (`--lora-model-dir`, nueva versión fija en `instalar.sh`); bocetos paramétricos, planos y encuadre de Tarkor (`bocetos/plantilla.py`, `planos.sh`, `encuadre.py`); LoRA en el perfil (`style.lora`: archivo, peso, palabra disparadora y sha256; `--lora-model-dir` y la etiqueta en el prompt; todo en el registro, D34), para que WMF use su `wmf-estilo` sin código propio *(aprobado 2026-10-26: el piloto corporativo pasa a F2 y WMF sigue aquí; ampliado 2026-11-02; LoRA en el perfil aprobado 2026-11-04, `docs/records/lectura-2026-11-04-tarkor.md`)* | WMF genera y recibe una elegida sin copia a mano |
 | F6 Director local | Paso **opcional** con un LLM local de Ollama (D37): redacta y mejora prompts desde la hoja de estilo y la biblia del proyecto, propone variantes para la plantilla y elige entre los intentos con `gimg measure` y su lectura de la imagen (modelo con visión si cabe en la máquina); sin Ollama todo sigue con prompts a mano; nada de API externas ni cuotas | Tests con un Ollama falso; una ronda del piloto hecha de principio a fin sin agentes, con la nota de la persona |
 | F7 Compatibilidad | **Última fase** (pedido de la persona del 2026-11-05; D4 deja la Deck primero): que `gimg` funcione en cualquier equipo, no solo con Vulkan. **Motor:** elegir el `sd-cli` según lo que haya (Vulkan, CUDA, ROCm/HIP, Metal o solo CPU), cada uno con versión fija y sha256, detectado por `instalar.sh`/`gimg doctor` y declarado en el perfil de máquina; perfiles de máquina genéricos (CPU, GPU pequeña, GPU grande) además de `steam-deck`. **Linux variados:** sin Vulkan ni GPU, otras distribuciones, sin `rsvg-convert` o con un ffmpeg distinto (avisos claros en `doctor`). **Windows:** instalador propio (`instalar.ps1` o similar), parada del proceso sin `os.killpg` probada de verdad, rutas y fuentes de Windows, lanzador `arrancar.cmd` (sin `.exe`: nada que instalar, D6). **macOS** si cabe (Metal). Navegador: el predeterminado del sistema, con `BROWSER` para forzar otro | **Manual persona:** en un Linux sin Vulkan (solo CPU) y en un equipo Windows: instalar, `gimg doctor` en verde, un pedido generado y elegido desde la interfaz |
@@ -85,11 +85,57 @@ Cada fase es una rama y un pull request a `main`, con las tres fases de revisió
 `vX.Y.Z` y una release en GitHub con las notas de su sección del CHANGELOG (es y en), para seguir el avance del
 proyecto desde GitHub. Se empieza con **0.4.0 al cerrar F4**, y en el mismo paso se crean las atrasadas (0.1.0, 0.2.0 y
 0.3.0, sobre el commit de `main` en que entró cada una). Comprobable: un script que diga si la versión de `gimg` en
-`main` tiene su etiqueta y su release, en el cierre de cada fase.
+`main` tiene su etiqueta y su release, en el cierre de cada fase. *(2026-11-05: `releases.py check` lo comprueba y
+`releases.py notes X.Y.Z` saca las notas de los dos CHANGELOG. La **0.2.0 no existió**: la versión pasó de 0.1.0 (F0,
+`1ae8d67`) a 0.3.0 (F3, `5d9585c`); la sección «Antes de 0.3.0» pasa a ser `[0.1.0]`. La 0.3.0 se etiqueta en
+`5d9585c`, no en la fusión `624f7a9`, que ya trae F4. v0.1.0 y v0.3.0 publicadas el 2026-11-05 por la sesión, con
+permiso de la persona; falta v0.4.0, cuando `plan-piezas` llegue a `main`.)*
 
-**Licencia MIT** (pedido de la persona del 2026-11-05; **lo siguiente tras llevar F4 a `main`**): `LICENSE` con el
+**Cómo se publica una versión (como Galivelop-workflow):** SemVer en 0.x: la menor es una fase o una capacidad nueva
+(puede romper en 0.x), el parche son arreglos y la mayor rompe el config del proyecto, el pedido o la API y obliga a
+tocar el repo que integra. Se sube con `releases.py suggest` (qué piden los commits) y `releases.py bump X.Y.Z` en la
+rama, antes de la revisión de `main`. Tras fusionar, etiqueta ligera `vX.Y.Z` en la punta de `origin/main` y
+`git push origin vX.Y.Z`; `release.yml` comprueba (commit en `main`, etiqueta == `__version__`, check en verde) y
+crea la release, y `releases.py check` lo confirma. A lo sumo una release al día; solo la última menor recibe parches.
+
+**Licencia MIT** (pedido de la persona del 2026-11-05; **hecha** el 2026-11-05 en `plan-piezas`, titular «Galivelop and Álvaro García Graña (Zeldris)»): `LICENSE` con el
 texto MIT en la raíz, y en los dos README la línea «Todavía no hay licencia» pasa a decir que el código es MIT y que
-los modelos (`gimg/models.json`) tienen su propia licencia. Falta que la persona diga el titular del copyright.
+los modelos (`gimg/models.json`) tienen su propia licencia.
+
+**Piezas, edición y borrado** (pedido de la persona del 2026-11-05; tras licencia y releases, **sin fase asignada aún**:
+la persona decide si es una F4e o va con otra). Se diseña con su «en detalle», como F4b-F4d:
+
+1. **Composición con piezas:** la og (y cualquier pieza compuesta) se monta por capas con piezas que ya existen:
+   **fondo**, **logo**, **elementos sueltos** y el texto encima, cada capa colocable, escalable y ordenable en el
+   editor. Las piezas salen de intentos elegidos de gimg (de cualquier pedido del proyecto) **o de archivos de la
+   persona** (PNG o SVG).
+2. **Transparencia opcional:** una casilla al generar para pedir la pieza con fondo transparente, y un botón «Quitar
+   fondo» sobre una pieza sin transparencia, que deja una copia y conserva la original. Por investigar antes de
+   prometerlo: cómo quitar el fondo sin instalar nada (D6): si `sd-cli` o un modelo local lo hace, o un recorte por
+   color para fondos lisos.
+3. **Imágenes de referencia al generar una pieza:** una o varias (intentos de gimg o archivos de la persona) para
+   seguir un estilo, una forma o un personaje. Comprobar qué acepta hoy `sd-cli` y qué modelos del catálogo.
+4. **Cajas de texto antes de generar:** en el pedido nuevo se colocan, al tamaño de la pieza, las cajas de titular,
+   subtítulo y logo (partiendo de las de la plantilla); el generador las tiene en cuenta: (a) frase en el prompt para
+   que esa zona quede tranquila, (b) imagen inicial o máscara con la zona lisa si el modelo lo acepta, (c) el chip de
+   contraste de esas cajas marca los intentos donde no se lee. Las cajas viajan con el pedido y la composición las
+   usa. Qué sirve de (a) y (b) con los modelos de la Deck se decide con una prueba.
+5. **Borrar:** cada intento generado, cada composición, cada plantilla (local o de proyecto) y cada elemento tiene un
+   botón «Borrar» con un modal de confirmación «sí / no». No se borra la elegida ni la plantilla `default` de un perfil
+   sin avisar de qué deja de funcionar.
+6. **Edición por prompt:** una casilla «Editar con prompt»; marcada, cada intento enseña su campo de prompt de
+   edición y un botón para lanzarlo, que encola un intento nuevo a partir de ese (el original no se toca). Por
+   investigar: un modelo de edición local que `sd-cli` acepte y quepa en la Deck, o img2img con fuerza ajustable;
+   y si además se quiere edición por zona marcada (inpainting), pregunta abierta a la persona.
+7. **Editar los elementos del resultado** (pedido de la persona del 2026-11-05): sobre un intento compuesto, el
+   editor de F4c (que ya mueve y redimensiona titular, logo y adornos) pasa a editar también **el texto** de cada
+   elemento y su **tipografía**: familia (elegida de las fuentes instaladas, `fc-list`, y las de `compose.fonts` del
+   perfil, con aviso si falta alguna como hace `gimg doctor`), tamaño, peso, cursiva, color (con el chip de contraste
+   en vivo), alineación e interlineado; y añadir o quitar elementos de texto. Es viable sin instalar nada (D6): la
+   plantilla es SVG que pinta `rsvg`, y todo eso son atributos (`font-family`, `font-size`, `font-weight`,
+   `font-style`, `fill`, `text-anchor`). Los cambios se aplican a una copia del intento (la original no se toca) y se
+   pueden guardar como plantilla nueva, como hoy la posición. Por decidir en su «en detalle»: el texto largo que no
+   cabe en la caja (encoger, cortar o avisar) y si la fuente elegida viaja con el proyecto (archivo en el repo, D25).
 
 ## F1 en detalle
 
