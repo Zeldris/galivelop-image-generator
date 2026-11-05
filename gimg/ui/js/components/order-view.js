@@ -86,7 +86,7 @@ export async function orderView(host, route) {
     vary: (a) => retouch.vary(a),
     copyParams: (a) => copy(JSON.stringify({ seed: a.seed, prompt: a.prompt, ...(a.params || {}) }, null, 2), t('ui.attempt.copied')),
     copyError: (e) => copy(e.errorText || JSON.stringify(e.error), t('ui.attempt.copied')),
-    retry: guard(async (e) => { await submit({ count: 1, seed: e.seed, draft: Boolean(e.draft), ...pick(e.params, ['steps', 'cfg', 'sampler']) }); }),
+    retry: guard(async (e) => { await submit({ count: 1, seed: e.seed, draft: Boolean(e.draft), ...(e.template ? { template: e.template } : {}), ...pick(e.params, ['steps', 'cfg', 'sampler']) }); }),
     cancel: guard(async (e) => { await api.cancel(e.id); toast(t('ui.queue.cancelled', { id: e.id })); await poll.refreshNow(); }),
     setTemplate: async (a, id) => {
       try {
