@@ -1364,4 +1364,10 @@ de `contain` se recorta a la imagen); la interfaz mide así la zona y los elemen
   paran con un botón y modal «sí / no»; los ajenos que consumen mucha RAM no se matan desde la interfaz: se listan con
   su memoria y la orden que la persona copia y lanza (`kill <pid>`, `kill -9 <pid>` si no responde). Hoy `arrancar.sh`
   solo lanza `gimg ui`; gimg limpia lo suyo (parada por inactividad, `cancel` mata el grupo de `sd-cli`).
+- **Todo desde la interfaz** (pedido de la persona del 2026-11-05; por diseñar y fasear tras F4e): ninguna tarea de uso
+  debe exigir la CLI. (a) Un botón **«Nuevo proyecto»** que abre un formulario (carpeta y los campos de `gimg project add`;
+  también quitarlo, `project remove`) y registra el proyecto como lo haría la orden. (b) **Auditoría**: recorrer cada
+  orden de `gimg` (`gimg --help` y subórdenes) y apuntar en una tabla si tiene equivalente en la interfaz; lo que falte
+  se lleva a la interfaz, o se justifica por qué se queda solo en la CLI (p. ej. `gimg ui` mismo, diagnósticos). La
+  CLI se mantiene (CLI = API, F3.3); la interfaz deja de depender de ella.
 - Proponer al flujo (`gw-harvest`) una operación de imagen en `opt-ai/references/log-format.md` (D26).
