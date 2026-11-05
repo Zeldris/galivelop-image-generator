@@ -335,6 +335,8 @@ def _generate(entry: dict, eng, machine: dict, state: dict, lang=None):
     if raw is not None:  # registered before composing: a kill in `render` keeps the raw image and this attempt
         extra["raw"] = orders.raw_image_name(entry_id)
         extra["composeError"] = dict(COMPOSE_PENDING)
+        if entry.get("template") is not None:
+            extra["composeError"]["templateId"] = entry["template"]
     attempt_id = orders.add_attempt(project_name, key, profile, {
         "seed": entry["seed"], "prompt": entry["prompt"], "params": params,
         "references": entry["references"], "engine": eng.provider,

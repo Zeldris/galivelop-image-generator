@@ -479,7 +479,8 @@ def _recompose_locked(proj, project, key, profile, profile_cfg, attempt_id, text
         _keep_raw(source, raw_path)
     try:
         if template is None:
-            template = (attempt.get("compose") or {}).get("templateId")
+            template = (attempt.get("compose") or {}).get("templateId") \
+                or (attempt.get("composeError") or {}).get("templateId")
         info = render(proj["root"], profile_cfg, raw_path, out_path, texts, profile,
                       prefix=RECOMPOSE_TMP_PREFIX % attempt_id,
                       **({} if template is None else {"template": template}))
@@ -489,7 +490,7 @@ def _recompose_locked(proj, project, key, profile, profile_cfg, attempt_id, text
             "compose.unexpected", {"reason": ("%s: %s" % (type(exc).__name__, exc))[:300]})
         error = {"code": code, "params": json.loads(json.dumps(params, default=str))}
         try:
-            failed = orders.set_compose_error(project, key, profile, attempt_id, error)
+            failed = orders.set_compose_error(project, key, profile, attempt_id, error, template)
         except Exception:
             failed = attempt
         _log_recompose(project, key, profile, failed, error=error)

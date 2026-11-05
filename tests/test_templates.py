@@ -200,6 +200,26 @@ class QueueTemplateTests(TemplateBase):
         self.assertEqual(calls, [{"template": "alt"}, {}])
         self.assertEqual([self.attempt("og", i)["compose"]["templateId"] for i in (0, 1)], ["alt", "default"])
 
+    def test_a_worker_failure_with_a_template_is_fixed_by_compose_with_the_same_one(self):
+        self.submit("og")
+        self.enqueue("og", template="alt")
+        with mock.patch.object(compose, "render", side_effect=GimgError("compose.tool_failed", tool="x", reason="y")):
+            self.run_worker()
+        att = self.attempt("og")
+        self.assertEqual((att["composeError"]["code"], att["composeError"]["templateId"]),
+                         ("compose.tool_failed", "alt"))
+        seen = []
+
+        def fake(root, cfg, raw, out, text, profile=None, prefix=None, template=None):
+            seen.append(template)
+            Path(out).write_bytes(Path(raw).read_bytes())
+            return {"fit": "cover", "targetWidth": 1200, "targetHeight": 630, "template": "alt.svg", "text": {},
+                    "templateId": template or "default"}
+
+        with mock.patch.object(compose, "render", fake):
+            done = compose.recompose("proj", "a", "og")
+        self.assertEqual((seen, done["compose"]["templateId"], "composeError" in done), (["alt"], "alt", False))
+
     @test_compose_worker.CON_HERRAMIENTAS
     def test_for_real_the_attempt_records_the_template_and_its_layer(self):
         self.submit("og")
@@ -273,6 +293,26 @@ class RecomposeTemplateTests(test_recompose.RecomposeBase):
         self.assertEqual((cm.exception.code, cm.exception.params["template"]), ("compose.template_unknown", "nope"))
         self.assertEqual(render.calls, [])
         self.assertEqual((self.attempt("og"), self.delivered().read_bytes()), before)
+
+    def test_a_failed_recompose_with_a_template_keeps_it_for_the_next_one(self):
+        self.made()
+        failing = self.Echo(fail=GimgError("compose.tool_failed", tool="rsvg-convert", reason="x"))
+        with self.assertRaises(GimgError):
+            self.recompose(template="alt", render=failing)
+        att = self.attempt("og")
+        self.assertEqual((att["composeError"]["code"], att["composeError"]["templateId"]),
+                         ("compose.tool_failed", "alt"))
+        self.assertNotIn("compose", att)
+        done, render = self.go()
+        self.assertEqual((render.calls[0]["template"], done["compose"]["templateId"]), ("alt", "alt"))
+        self.assertNotIn("composeError", done)
+
+    def test_a_failure_while_recomposing_keeps_the_template_the_attempt_already_had(self):
+        self.made()
+        self.go(template="alt")
+        with self.assertRaises(GimgError):
+            self.recompose(render=self.Echo(fail=GimgError("compose.tool_failed", tool="ffmpeg", reason="x")))
+        self.assertEqual(self.attempt("og")["composeError"]["templateId"], "alt")
 
     def test_a_stored_template_that_no_longer_exists_fails_and_is_not_replaced_by_another(self):
         self.made()

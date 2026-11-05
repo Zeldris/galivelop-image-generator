@@ -416,6 +416,8 @@ def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None)
         error = spec.get("composeError")
         if isinstance(error, dict) and isinstance(error.get("code"), str) and isinstance(error.get("params"), dict):
             record["composeError"] = {"code": error["code"], "params": copy.deepcopy(error["params"])}
+            if isinstance(error.get("templateId"), str):
+                record["composeError"]["templateId"] = error["templateId"]
             if "raw" in record:  # not composed: the raw image is the one to show until it is
                 record["image"] = record["raw"]
         order["attempts"].append(record)
@@ -447,16 +449,23 @@ def set_composed(project: str, key: str, profile: str, attempt_id: int, compose:
     return _modify(project, key, profile, change)
 
 
-def set_compose_error(project: str, key: str, profile: str, attempt_id: int, error: dict) -> dict:
+def set_compose_error(project: str, key: str, profile: str, attempt_id: int, error: dict, template_id=None) -> dict:
     """Record that the composition of attempt `attempt_id` failed (or, with ``compose.pending``, has not finished):
     ``composeError`` becomes ``{"code", "params"}`` and ``compose`` goes away; ``image`` becomes the raw image, which
-    stands in until `set_composed`. Returns the attempt (a copy). Nothing is read or written on disk."""
+    stands in until `set_composed`. Returns the attempt (a copy). Nothing is read or written on disk.
+
+    The template of the composition (F4b) is kept as ``composeError.templateId`` so that composing again does not fall
+    back to another: `template_id`, else the one of the error or of the ``compose`` being replaced."""
     if not (isinstance(error, dict) and isinstance(error.get("code"), str) and isinstance(error.get("params"), dict)):
         raise GimgError("order.spec_invalid", missing="composeError")
 
     def change(order):
         item = _attempt(order, attempt_id)
+        kept = template_id or (item.get("composeError") or {}).get("templateId") \
+            or (item.get("compose") or {}).get("templateId")
         item["composeError"] = {"code": error["code"], "params": copy.deepcopy(error["params"])}
+        if isinstance(kept, str):
+            item["composeError"]["templateId"] = kept
         item.pop("compose", None)
         if isinstance(item.get("raw"), str):
             paths.inside(_order_dir(project, key, profile), item["raw"])
