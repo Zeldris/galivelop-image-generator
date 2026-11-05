@@ -4,9 +4,9 @@ import json
 import unittest
 from unittest import mock
 
-from gimg import compose, doctor, png, projects
+from gimg import compose, png, projects
 from gimg.errors import GimgError
-from tests import test_doctor, test_elements, test_template_save
+from tests import test_elements, test_template_save
 from tests.test_compose import CON_HERRAMIENTAS, ProjectBase, striped_png
 from tests.test_elements import SVG, TARGET
 
@@ -231,6 +231,20 @@ class FitTests(ProjectBase):
         self.assertNotIn("fitted", info)
         self.assertEqual(png.size(self.out), (1200, 630))
 
+    def test_a_shrunk_text_without_its_own_size_is_painted_at_the_fitted_size(self):
+        painted = []
+        real = compose._run
+
+        def spy(argv, tool):
+            if tool == "rsvg-convert" and argv[-1].endswith("template.svg"):
+                painted.append(open(argv[-1], encoding="utf-8").read())
+            return real(argv, tool)
+
+        with mock.patch.object(compose, "_run", side_effect=spy):
+            info = self.render({"title": self.box(text="palabra " * 12)})  # no style: asked at the template's 40
+        self.assertLess(info["fitted"]["title"], 40)
+        self.assertIn("font-size:%dpx" % info["fitted"]["title"], painted[-1])
+
     def test_alpha_box(self):
         data = bytearray(4 * 4 * 3)
         data[3 + 4 * (1 * 4 + 1)] = 255
@@ -293,22 +307,6 @@ class SaveTemplateTests(test_template_save.SaveBase):
                 self.assertEqual(compose._sidecar(path).get("fonts"), want, fonts)
 
 
-class DoctorFontsTests(test_doctor.FontsTests):
-    def test_the_fonts_of_a_template_sidecar_are_checked_too(self):
-        self.fc_list(["Inter"])
-        root = self.project("p", {"og": None})
-        cfg = json.loads((root / "galivelop-images.json").read_text())
-        cfg["profiles"]["og"]["compose"] = {"template": "t.svg", "templatesDir": "templates"}
-        (root / "galivelop-images.json").write_text(json.dumps(cfg))
-        folder = root / "templates" / "og"
-        folder.mkdir(parents=True)
-        (folder / "mio.svg").write_text(SVG, encoding="utf-8")
-        (folder / "mio.json").write_text(json.dumps({"fonts": ["Sora"]}), encoding="utf-8")
-        check = self.fonts()["font:Sora"]
-        self.assertEqual((check.status, check.key), (doctor.WARN, "doctor.fonts.missing"))
-
-
-del test_doctor.FontsTests  # only the new test of the subclass runs here, not the inherited ones
 
 if __name__ == "__main__":
     unittest.main()

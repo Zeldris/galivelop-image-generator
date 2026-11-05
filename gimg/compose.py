@@ -1047,8 +1047,8 @@ def render(project_root, profile_cfg, raw_path, out_path, text, profile=None, pr
                 fitted, overflow = _fit_texts(substituted, moved, tagged, (width, height), tmp)
                 if fitted:
                     info["fitted"] = fitted
-                    if any(fitted[n] != (moved[n].get("style") or {}).get("size", fitted[n]) for n in fitted):
-                        layer_svg = _apply_tagged(substituted, layout or {}, (width, height), fitted)[0]
+                    # always repaint: an element without its own ``style.size`` was asked at the template's size
+                    layer_svg = _apply_tagged(substituted, layout or {}, (width, height), fitted)[0]
                 if overflow:
                     info["overflow"] = overflow
                 svg = tmp / "template.svg"

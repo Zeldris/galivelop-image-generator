@@ -1445,6 +1445,9 @@ tiene arreglo); la persona puede cambiarlo.
 
 ## Pendiente
 
+- **Borrar pedidos** (pedido de la persona del 2026-11-05; hoja de ruta, por diseñar y fasear tras F4e): quitar un
+  pedido entero (sus intentos, su carpeta y sus entradas terminadas de la cola) con «sí / no» y `--yes`, como D41; qué
+  pasa con su imagen entregada, por decidir con la persona.
 - **Piezas y marca editables** (pedido de la persona del 2026-11-05; hoja de ruta, por diseñar y fasear tras F4e): editar
   desde la interfaz las piezas (los perfiles del proyecto: tamaño, campos, plantilla por defecto, entrega) y la marca
   (logo, colores, tipografías), que hoy se cambian a mano en la configuración del proyecto.

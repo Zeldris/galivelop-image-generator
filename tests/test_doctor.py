@@ -13,6 +13,7 @@ from pathlib import Path
 from unittest import mock
 
 from gimg import cli, doctor, engine_sdcpp, i18n, limits, projects
+from tests import test_elements
 from tests.test_engine_protections import FakeOllama, loaded
 from tests.test_engine_sdcpp import dead_ollama_url
 
@@ -489,6 +490,19 @@ class FontsTests(DoctorBase):
 
     def fonts(self):
         return {c.id: c for c in doctor.run() if c.id.startswith(("font", "fonts"))}
+
+    def test_the_fonts_of_a_template_sidecar_are_checked_too(self):
+        self.fc_list(["Inter"])
+        root = self.project("p", {"og": None})
+        cfg = json.loads((root / "galivelop-images.json").read_text())
+        cfg["profiles"]["og"]["compose"] = {"template": "t.svg", "templatesDir": "templates"}
+        (root / "galivelop-images.json").write_text(json.dumps(cfg))
+        folder = root / "templates" / "og"
+        folder.mkdir(parents=True)
+        (folder / "mio.svg").write_text(test_elements.SVG, encoding="utf-8")
+        (folder / "mio.json").write_text(json.dumps({"fonts": ["Sora"]}), encoding="utf-8")
+        check = self.fonts()["font:Sora"]
+        self.assertEqual((check.status, check.key), (doctor.WARN, "doctor.fonts.missing"))
 
     def test_no_project_declares_fonts_is_ok_and_fc_list_is_not_needed(self):
         self.project("p", {"og": None})

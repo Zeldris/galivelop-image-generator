@@ -11,11 +11,11 @@
 | **Rama** | `f4e-piezas` (desde `main` + la bitácora de `release-install`) |
 | **Fase / tarea** | F4e (Piezas y edición): la persona partió «Piezas, edición y borrado» el 2026-11-05 (F4e: 1, 4(a)(c), 5, 7; F5: 2, 3, 4(b), 6); primero el «en detalle» de 5 (Borrar) |
 | **Último punto estable** | `main` en `71a69a3` (PR #4, CI en verde), etiqueta y release v0.4.0 |
-| **Siguiente paso** | Hay un commit `WIP:` local de F4e.2a (a medias, sin check; no subido). Dos subagentes en marcha: F4e.2a (motor de texto y tipografía, `docs/plan.md` «F4e.2») en el árbol principal, y F4e.5 (renombrar un pedido, `docs/plan.md` «F4e.5») en un worktree (rama `claude/f4e5-renombrar`, vuelve con `merge-branch.sh`). Revisar cada diff, check y subir; luego F4e.2b (API y CLI) |
+| **Siguiente paso** | F4e.2b (API y CLI de F4e.2: `GET /api/fonts`, `gimg fonts`, claves nuevas en `docs/api.md`). En paralelo, F4e.5 (renombrar un pedido) con un subagente en un worktree (rama `claude/f4e5-renombrar`): revisar su diff y traerla con `merge-branch.sh` |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 | **Tarea en curso · `f2-motor`** | Fusionada en `main` por el PR #2 (`624f7a9`, 2026-11-05, CI en verde); rama terminada. |
 | **Tarea en curso · `plan-piezas`** | Fusionada en `main` por el PR #3 (`d128106`, 2026-11-05, CI en verde); rama terminada. v0.4.0 etiquetada en `d128106`; `release.yml` falló (sin `ffmpeg`/`rsvg-convert`) y la release se creó a mano con `releases.py notes` y el mismo título (mismo árbol que el CI verde del PR); `releases.py check` en verde. |
-| **Tarea en curso · `f4e-piezas`** | Abierta el 2026-11-05. Hecho: decisión de fase y «en detalle» de 5 (F4e.1, D41); F4e.1a y F4e.1b (ver «Hecho»); borrar entradas de la cola fallidas o canceladas (F4e.1 §6); «en detalle» de F4e.2 (punto 7) con las decisiones de la persona y su visto bueno, pasos F4e.2a-c; recorrido de F4e.1b en el navegador, hecho por la persona (borrar funciona); «en detalle» de F4e.5 (renombrar un pedido, pedido de la persona). Falta: implementar F4e.2a-c y F4e.5; «en detalle» de 1 y 4(a)(c), e implementarlos. Presupuesto de compactaciones: 3 |
+| **Tarea en curso · `f4e-piezas`** | Abierta el 2026-11-05. Hecho: decisión de fase y «en detalle» de 5 (F4e.1, D41); F4e.1a y F4e.1b (ver «Hecho»); borrar entradas de la cola fallidas o canceladas (F4e.1 §6); «en detalle» de F4e.2 (punto 7) con las decisiones de la persona y su visto bueno, pasos F4e.2a-c; recorrido de F4e.1b en el navegador, hecho por la persona (borrar funciona); «en detalle» de F4e.5 (renombrar un pedido, pedido de la persona). F4e.2a (motor de texto y tipografía) hecho y revisado. Falta: F4e.2b-c y F4e.5; «en detalle» de 1 y 4(a)(c), e implementarlos. Presupuesto de compactaciones: 3 |
 | **Tarea en curso · `release-install`** | Fusionada en `main` por el PR #4 (`71a69a3`, 2026-11-05, CI en verde, confirmado por la persona); rama terminada. `release.yml` instala `ciInstall` y usa el Python de `check.yml`; un test compara sus pasos con los de `check.yml`. Retro: `docs/records/retro-2026-11-05-release-install.md`. |
 
 Aquí `logRows` está apagado en `.claude/gw.json`: las filas se editan a mano (`handoff.py set-row` no escribe) y no
@@ -35,6 +35,8 @@ hace falta `GW_SHARED_LOG`. Aun así, cada rama toca solo su fila salvo al cerra
 
 ## Pendiente
 
+- **Leves de la revisión de F4e.2a (2026-11-05, no se tocan):** la medida pinta el `<text>` solo, sin el `transform` de un `<g>` padre (una plantilla con el texto dentro de un grupo transformado mide mal); un cambio solo de estilo también encoge si el texto de la plantilla ya se salía de su caja; sin `text`, el contenido de la plantilla se aplana a una línea (se pierden sus `tspan`); poca cobertura de las ramas proporcional y mínima de `_fit_texts`.
+- **Borrar pedidos** (pedido de la persona del 2026-11-05): para la hoja de ruta; en `docs/plan.md` «Pendiente».
 - **Leves de F4e.1b, sin tocar:** «Borrar» del intento solo se deshabilita si es el elegido (en cola o generándose ya no tiene tarjeta de intento; componiéndose lo para el 409 del servidor); no hay «Borrar plantilla» en el editor, solo en Piezas.
 - **Leves de `hidden` (trozo 3), sin tocar:** un logo oculto sigue exigiendo logo (`compose.no_logo`) y su hueco se rellena; el motivo de `bad_layout` con una clave extra no menciona `hidden`.
 - **Piezas y marca editables** (pedido de la persona del 2026-11-05): para la hoja de ruta; apuntado en `docs/plan.md` «Pendiente», por diseñar y fasear tras F4e.
