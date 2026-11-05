@@ -526,6 +526,19 @@ def attempt_log(req):
     return _file_reply(req, path, "text/plain; charset=utf-8", cache="no-store", etag=False)
 
 
+def _template_param(value, allow_empty=True):
+    """A template id from a body or a query: a string (``None`` is the default template); anything else is a bad param."""
+    if value is not None and not isinstance(value, str):
+        raise GimgError("api.bad_param", name="template" if allow_empty else "id")
+    return value
+
+
+@route("GET", "/api/projects/{p}/profiles/{profile}/templates")
+def profile_templates(req):
+    q = req.params
+    return compose.templates_of(_config_profile(projects.get(q["p"])["config"], q["profile"]))
+
+
 @route("GET", "/api/projects/{p}/profiles/{profile}/assets/{kind}")
 def profile_asset(req):
     q = req.params
@@ -533,6 +546,9 @@ def profile_asset(req):
         raise GimgError("api.not_found", path=q["kind"])
     project = projects.get(q["p"])
     cfg = _config_profile(project["config"], q["profile"]).get("compose")
+    wanted = _template_param(req.query.get("id", [None])[0], allow_empty=False)
+    if wanted is not None:
+        cfg = compose.effective(cfg, wanted)  # compose.template_unknown for an id that does not exist
     if not cfg:
         raise GimgError("compose.template_missing", path="")
     template, logo = compose.resolve_assets(project["root"], cfg)
@@ -653,14 +669,14 @@ def order_text(req):
 
 @route("POST", _ORD + "/attempts")
 def attempt_new(req):
-    q, body = req.params, _fields(req.body, ("count", "seed", "prompt", "steps", "cfg", "sampler", "draft"))
+    q, body = req.params, _fields(req.body, ("count", "seed", "prompt", "steps", "cfg", "sampler", "draft", "template"))
     draft = body.get("draft")
     if draft is not None and not isinstance(draft, bool):
         raise GimgError("api.bad_param", name="draft")
     overrides = {k: body[k] for k in ("steps", "cfg", "sampler") if body.get(k) is not None}
     entries, provider = queue.new_attempts(q["p"], q["key"], q["profile"], body.get("count", 1),
                                            seed=body.get("seed"), prompt=body.get("prompt"), params=overrides,
-                                           draft=draft)
+                                           draft=draft, template=_template_param(body.get("template")))
     _after_enqueue()
     return Reply(202, queue.queued_view(entries, provider, req.lang), json=True)
 
@@ -700,12 +716,14 @@ def order_undo(req):
 @route("POST", _ATT + "/compose")
 def attempt_compose(req):
     q = req.params
-    text = _fields(req.body, ("text",)).get("text")
+    body = _fields(req.body, ("text", "template"))
+    text = body.get("text")
     if text is not None and not (isinstance(text, dict) and all(isinstance(v, str) for v in text.values())):
         raise GimgError("api.bad_param", name="text")
+    template = _template_param(body.get("template"))
     attempt_id = _int_param("id", q["id"])
     with _heavy():
-        return compose.recompose(q["p"], q["key"], q["profile"], attempt_id, text or None)
+        return compose.recompose(q["p"], q["key"], q["profile"], attempt_id, text or None, template)
 
 
 @route("GET", _ATT + "/measure")

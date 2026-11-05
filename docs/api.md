@@ -148,8 +148,10 @@ curl -s -X PUT -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/o
 ### POST /api/projects/{p}/orders/{profile}/{key}/attempts
 
 Más intentos (otra semilla, retoque del prompt, varios seguidos, borrador). Cuerpo, todo opcional: `{"count", "seed",
-"prompt", "steps", "cfg", "sampler", "draft"}`. Respuesta 202: `{"entries", "estimateMs"}`. Errores:
-`order.count_invalid`, `order.prompt_too_long`, `limit.*`, `order.unknown`.
+"prompt", "steps", "cfg", "sampler", "draft", "template"}` (`template`: id de una plantilla de
+`GET …/profiles/{profile}/templates`, la de los intentos nuevos; sin él, `default`). Respuesta 202: `{"entries",
+"estimateMs"}`; cada entrada lleva su `template`. Errores: `order.count_invalid`, `order.prompt_too_long`, `limit.*`,
+`order.unknown`, `compose.template_unknown` (400, antes de encolar nada).
 
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' \
@@ -199,8 +201,11 @@ curl -s -X POST -H 'Content-Type: application/json' \
 ### POST /api/projects/{p}/orders/{profile}/{key}/attempts/{id}/compose
 
 Recompone el texto y el logo sobre el intento (necesita ffmpeg y rsvg-convert). Cuerpo opcional: `{"text": {"campo":
-"valor"}}`. Respuesta: el intento (con `delivered` si es la elegida). Una sola tarea pesada a la vez: la segunda espera
-hasta 60 s y da 409 `api.heavy_busy`. Errores: `compose.busy` (409), `compose.*`.
+"valor"}, "template": "id"}`. Con `template` se compone con esa plantilla y el intento la conserva
+(`compose.templateId`); sin él, con la que ya tenía (si no, `default`). Respuesta: el intento (con `delivered` si es la
+elegida). Una sola tarea pesada a la vez: la segunda espera hasta 60 s y da 409 `api.heavy_busy`. Errores:
+`compose.busy` (409), `compose.template_unknown` (400; una `templateId` guardada que ya no existe también falla, sin
+cambiar a otra), `compose.*`.
 
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' \
@@ -233,13 +238,24 @@ y `text=%23RRGGBB`. Una tarea pesada a la vez (409 `api.heavy_busy`). Errores: `
 curl -s "$B/api/projects/mi-proyecto/orders/og/fauna%2Flobo/attempts/1/measure?zone=40,40,600,120&text=%23FFFFFF"
 ```
 
-### GET /api/projects/{p}/profiles/{profile}/assets/{kind}
+### GET /api/projects/{p}/profiles/{profile}/templates
 
-El SVG declarado en `compose` del perfil; `{kind}` es `template` o `logo`. Se sirve con una CSP que impide ejecutar
-script. Errores: `compose.template_missing`, `compose.logo_missing`, `api.not_found`.
+Las plantillas de composición del perfil: `[{"id", "template", "logo", "fields", "zone"?, "textColor"?, "default"}]`,
+`default` primero y el resto por id (`logo` y `zone`/`textColor` heredados como dice `compose.effective`). Un perfil sin
+`compose` da `[]`. Es la misma lista que `gimg templates`. Error: `order.profile_unknown`.
 
 ```sh
-curl -s $B/api/projects/mi-proyecto/profiles/og/assets/template
+curl -s $B/api/projects/mi-proyecto/profiles/og/templates
+```
+
+### GET /api/projects/{p}/profiles/{profile}/assets/{kind}
+
+El SVG declarado en `compose` del perfil; `{kind}` es `template` o `logo`. Con `?id=<plantilla>`, el de esa plantilla
+(sin `id`, el de `default`). Se sirve con una CSP que impide ejecutar script. Errores: `compose.template_missing`,
+`compose.logo_missing`, `compose.template_unknown` (400), `api.not_found`.
+
+```sh
+curl -s "$B/api/projects/mi-proyecto/profiles/og/assets/template?id=claro"
 ```
 
 ### GET /api/queue
