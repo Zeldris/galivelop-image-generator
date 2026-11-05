@@ -1,6 +1,6 @@
 /* Servidor fingido para el prototipo (solo con `?mock=1`): mismo contrato que la API local de F3 (docs/plan.md «F3 en
    detalle»), en memoria. Las imágenes se pintan con <canvas> (data: URL, permitido por la CSP) sustituyendo
-   `paths.image/preview/asset`; la cola avanza sola (una entrada tarda ~12 s). Los textos salen de /textos-<lang>.json.
+   `paths.image/preview/asset`; la cola avanza sola (una entrada tarda ~12 s). Los textos salen de /api/locales/<lang> (hay que servirlo con gimg serve).
    No se carga en producción: app.js solo lo importa si la URL lleva `?mock=1`. */
 
 import { paths } from '../js/api.js';
@@ -78,7 +78,7 @@ const ok = (json, status = 200) => ({ status, json });
 
 let locales = {};
 async function loadLocale(lang) {
-  if (!locales[lang]) { try { locales[lang] = await (await fetch(`/textos-${lang}.json`)).json(); } catch { locales[lang] = {}; } }
+  if (!locales[lang]) { try { locales[lang] = await (await fetch(`/api/locales/${lang}`)).json(); } catch { locales[lang] = {}; } }
   return locales[lang];
 }
 

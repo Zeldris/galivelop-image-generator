@@ -55,6 +55,12 @@ abre ese repo).
 | Prohibidos | Rec. | el celeste del Portal `#1aa6df` como acento de la herramienta; violeta neón o magenta puro; negro `#000`; texto de acento sobre fondo de acento; más de un acento por pieza | **[P]** (`biblia.md` §2) |
 | Degradados | Opc. | solo la baldosa del logo (`#8B5CF6 → #5B34C9`) | repo (`logos/galivelop-image-generator-b.svg`); regla de familia en `docs/marcas/README.md` |
 
+**Propuesta de la interfaz (F4a, pendiente de la persona):** la interfaz de `gimg ui` pide dos añadidos a esta paleta, sin cambiar nada de lo
+anterior. (1) **Relleno de botón primario** `#5B34C9` con texto blanco `#FFFFFF` (7,56:1); `#8B5CF6` con blanco da 4,23:1 y no llega a AA, así que
+`#8B5CF6` queda para bordes, chips y titulares grandes. (2) **Colores de estado**, solo para la interfaz (nunca en piezas): sobre oscuro ok `#5ad38a`
+(10,0:1 sobre `#06121c`), aviso `#f2c14e` (11,3:1), error `#ff7b6b` (7,5:1); sobre claro ok `#1b7a3e` (5,1:1), aviso `#8a5a00` (5,7:1), error `#b3261e`
+(6,2:1). Los pares de `gimg/ui/css/tokens.css` los comprueba `tests/test_ui.py` (texto >= 4,5:1; bordes y foco >= 3:1).
+
 **Medido:** la calibración da a este proyecto paleta ≥ 72 % (r1 y r5: 75-88 %; r4 og 72,36 %) con `brand.palette` de 4 hex (medido
 antes de añadir el texto `#eaf4fa`) y ΔE76 < 15 (`docs/records/contenido/calibracion-measure.md`). r2 confirmó que hex, palabras o materiales dan casi la misma
 imagen (69,9 / 74,8 / 76,3 %); se eligió «palabras» (`r2-estilo.md`).

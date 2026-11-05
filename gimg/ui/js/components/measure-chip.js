@@ -24,7 +24,7 @@ async function pump() {
   for (let i = 0; i < BUSY_TRIES; i += 1) {
     try { result = await job.fetcher(); break; } catch (e) {
       result = e;
-      if (e instanceof ApiError && e.code === 'measure.busy') { await sleep(BUSY_RETRY_MS); continue; }
+      if (e instanceof ApiError && (e.code === 'measure.busy' || e.code === 'api.heavy_busy')) { await sleep(BUSY_RETRY_MS); continue; }
       break;
     }
   }
