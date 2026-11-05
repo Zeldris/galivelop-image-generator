@@ -32,6 +32,7 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 
 ## Pendiente
 
+- **Releases en GitHub** (pedido de la persona del 2026-11-05, `docs/plan.md` tras la tabla de fases): etiqueta y release con notas del CHANGELOG en cada versión; empezar con 0.4.0 al cerrar F4 y crear las atrasadas 0.1.0-0.3.0.
 - **Leves de la revisión de F4a** (`docs/records/revision-F4a-2026-11-05.md`, 10-16): no se revisan más en este PR. Además: con algo en marcha, el cajón de la cola se repinta cada 3 s (conserva el foco por `data-fid`, no el desplazamiento).
 
 - `docs/en/api.md` (D16 pide docs en es y en).
