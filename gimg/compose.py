@@ -336,8 +336,8 @@ def elements(svg_text, target=None) -> list:
 
 
 def _check_layout(found, layout, target) -> dict:
-    """`layout` validated against the elements `found`: ``{name: {x, y, w, h}}`` of those that move (a box equal to the
-    original is dropped). ``compose.element_unknown`` for a name the template lacks, ``compose.bad_layout`` otherwise."""
+    """`layout` validated against the elements `found`: ``{name: {x, y, w, h, hidden?}}`` of those that move or are
+    hidden (``"hidden": true``; a box equal to the original and not hidden is dropped; ``hidden: false`` is dropped). ``compose.element_unknown`` for a name the template lacks, ``compose.bad_layout`` otherwise."""
     if not isinstance(layout, dict):
         raise GimgError("compose.bad_layout", element="", reason="not an object")
     known = {e["id"]: e for e in found}
@@ -345,13 +345,17 @@ def _check_layout(found, layout, target) -> dict:
     for name, box in layout.items():
         if name not in known:
             raise GimgError("compose.element_unknown", element=str(name)[:60], allowed=", ".join(known))
-        if not (isinstance(box, dict) and set(box) == {"x", "y", "w", "h"}
-                and all(type(v) is int for v in box.values())):
+        if not (isinstance(box, dict) and set(box) in ({"x", "y", "w", "h"}, {"x", "y", "w", "h", "hidden"})
+                and all(type(v) is int for k, v in box.items() if k != "hidden")):
             raise GimgError("compose.bad_layout", element=name, reason="x, y, w, h integers")
+        if "hidden" in box and type(box["hidden"]) is not bool:
+            raise GimgError("compose.bad_layout", element=name, reason="hidden boolean")
         if box["w"] < 1 or box["h"] < 1 or box["x"] < 0 or box["y"] < 0 \
                 or box["x"] + box["w"] > target[0] or box["y"] + box["h"] > target[1]:
             raise GimgError("compose.bad_layout", element=name, reason="outside %dx%d" % tuple(target))
-        if box != known[name]["box"]:
+        if box.get("hidden") is True:
+            moved[name] = {**{k: box[k] for k in ("x", "y", "w", "h")}, "hidden": True}
+        elif {k: box[k] for k in ("x", "y", "w", "h")} != known[name]["box"]:
             moved[name] = {k: box[k] for k in ("x", "y", "w", "h")}
     return moved
 
@@ -372,15 +376,22 @@ def _apply(svg_text, layout, target):
             continue
         m, attrs = e["_tag"]
         o = e["box"]
-        move = "translate(%s %s) scale(%s %s) translate(%s %s)" % (
-            box["x"], box["y"], _num(box["w"] / o["w"]), _num(box["h"] / o["h"]), -o["x"], -o["y"])
-        if "transform" in attrs:
-            value, start, end, _quote = attrs["transform"]
-            edits.append((start, end, (move + " " + value).strip()))
-        else:
-            edits.append((m.end(2), m.end(2), ' transform="%s"' % move))
-        _value, start, end, _quote = attrs["data-gimg-box"]
-        edits.append((start, end, "%d %d %d %d" % (box["x"], box["y"], box["w"], box["h"])))
+        if {k: box[k] for k in ("x", "y", "w", "h")} != o:  # hidden alone leaves the box and the transform as they were
+            move = "translate(%s %s) scale(%s %s) translate(%s %s)" % (
+                box["x"], box["y"], _num(box["w"] / o["w"]), _num(box["h"] / o["h"]), -o["x"], -o["y"])
+            if "transform" in attrs:
+                value, start, end, _quote = attrs["transform"]
+                edits.append((start, end, (move + " " + value).strip()))
+            else:
+                edits.append((m.end(2), m.end(2), ' transform="%s"' % move))
+            _value, start, end, _quote = attrs["data-gimg-box"]
+            edits.append((start, end, "%d %d %d %d" % (box["x"], box["y"], box["w"], box["h"])))
+        if box.get("hidden"):
+            if "display" in attrs:
+                _value, start, end, _quote = attrs["display"]
+                edits.append((start, end, "none"))
+            else:
+                edits.append((m.end(2), m.end(2), ' display="none"'))
     out = svg_text
     for start, end, text in sorted(edits, key=lambda ed: (ed[0], ed[1]), reverse=True):
         out = out[:start] + text + out[end:]
@@ -388,7 +399,8 @@ def _apply(svg_text, layout, target):
 
 
 def apply_layout(svg_text, layout, target) -> str:
-    """`svg_text` with the elements of `layout` (``{name: {x, y, w, h}}``, integers, the box inside `target`) moved: the
+    """`svg_text` with the elements of `layout` (``{name: {x, y, w, h, hidden?}}``, integers, the box inside `target`) moved (and, with ``"hidden": true``, given
+    ``display="none"``): the
     opening tag of each gets ``transform="translate(x y) scale(w/w0 h/h0) translate(-x0 -y0)"`` in front of the
     ``transform`` it had, and its ``data-gimg-box`` is rewritten. The rest of the SVG is not touched (it is not parsed
     as XML). ``compose.element_unknown`` / ``compose.bad_layout`` / ``compose.bad_element`` on failure."""
@@ -422,7 +434,7 @@ def _contrast_of(profile_cfg, compose_cfg, raw_path, raw_size, found, moved) -> 
     out = {}
     for e in found:
         color = e.get("color") or compose_cfg.get("textColor")
-        if e["kind"] != "text" or not color:
+        if e["kind"] != "text" or not color or moved.get(e["id"], {}).get("hidden"):
             continue
         box = moved.get(e["id"], e["box"])
         zone = (box["x"], box["y"], box["w"], box["h"])

@@ -238,7 +238,11 @@ Recompone el texto y el logo sobre el intento (necesita ffmpeg y rsvg-convert). 
 el intento la conserva (`compose.templateId`); sin él, con la que ya tenía (si no, `default`). `layout` mueve los
 elementos de la plantilla (`id="gimg-<nombre>"` con `data-gimg-box`), en píxeles enteros del destino, y el intento lo
 conserva (`compose.layout`, solo lo movido); `{}` vuelve a la plantilla, y sin `layout` se mantiene el del intento salvo
-que cambie la plantilla (entonces se vacía). `compose.contrast` guarda el contraste de cada texto sobre la imagen base.
+que cambie la plantilla (entonces se vacía). Cada elemento admite además `"hidden": true` (`{x, y, w, h, hidden?}`): se
+pinta con `display="none"`, no entra en `compose.contrast` y se guarda en `compose.layout` aunque su caja no cambie;
+«Mostrar» es mandarlo sin `hidden` o con `false`. `hidden` que no es booleano da `compose.bad_layout` (motivo «hidden
+boolean»); «Guardar como plantilla» conserva el oculto (`display="none"` en el SVG) y no toca la plantilla de origen.
+`compose.contrast` guarda el contraste de cada texto sobre la imagen base.
 Respuesta: el intento (con `delivered` si es la
 elegida). Una sola tarea pesada a la vez: la segunda espera hasta 60 s y da 409 `api.heavy_busy`. Errores:
 `compose.busy` (409), `compose.template_unknown` (400; una `templateId` guardada que ya no existe también falla, sin
