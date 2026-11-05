@@ -88,8 +88,8 @@ proyecto desde GitHub. Se empieza con **0.4.0 al cerrar F4**, y en el mismo paso
 `main` tiene su etiqueta y su release, en el cierre de cada fase. *(2026-11-05: `releases.py check` lo comprueba y
 `releases.py notes X.Y.Z` saca las notas de los dos CHANGELOG. La **0.2.0 no existió**: la versión pasó de 0.1.0 (F0,
 `1ae8d67`) a 0.3.0 (F3, `5d9585c`); la sección «Antes de 0.3.0» pasa a ser `[0.1.0]`. La 0.3.0 se etiqueta en
-`5d9585c`, no en la fusión `624f7a9`, que ya trae F4. Las etiquetas y releases las crea la persona: el modo automático
-no deja a la sesión publicarlas.)*
+`5d9585c`, no en la fusión `624f7a9`, que ya trae F4. v0.1.0 y v0.3.0 publicadas el 2026-11-05 por la sesión, con
+permiso de la persona; falta v0.4.0, cuando `plan-piezas` llegue a `main`.)*
 
 **Licencia MIT** (pedido de la persona del 2026-11-05; **hecha** el 2026-11-05 en `plan-piezas`, titular «Galivelop and Álvaro García Graña (Zeldris)»): `LICENSE` con el
 texto MIT en la raíz, y en los dos README la línea «Todavía no hay licencia» pasa a decir que el código es MIT y que
