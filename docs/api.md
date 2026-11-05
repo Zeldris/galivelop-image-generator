@@ -66,7 +66,7 @@ líneas del esquema cuando el pedido no valida. Idioma: `?lang=es|en`, si no el 
 si no el del sistema. Estados: 400 petición mal formada o valor no válido (`api.bad_json`, `api.bad_param`, `*.invalid`,
 `limit.*`, `path.*`, `key.*`); 403 Host u Origin; 404 `project.unknown`, `order.unknown`, `order.profile_unknown`,
 `order.attempt_unknown`, `queue.unknown`, `api.not_found`; 405, 411, 413, 415 de arriba; 409 estado que no lo permite
-(`compose.template_exists`, `order.choose_*`, `order.undo_*`, `order.history_empty`, `queue.not_cancellable`, `queue.not_movable`, `compose.busy`, `measure.busy`,
+(`compose.template_exists`, `order.choose_*`, `order.undo_*`, `order.history_empty`, `order.delete_chosen`, `order.delete_busy`, `queue.not_cancellable`, `queue.not_movable`, `compose.busy`, `measure.busy`,
 `api.heavy_busy`, `delivery.target_taken`); 500 fallos del lado del servidor (`api.unexpected` lleva `"message":
 "Tipo: texto"`). Los textos de todos los códigos: `GET /api/locales/{lang}`.
 
@@ -182,6 +182,18 @@ Nota del intento. Cuerpo: `{"text": "…"}`. Respuesta: el intento. Error: `orde
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' \
   $B/api/projects/mi-proyecto/orders/banner/fauna%2Flobo/attempts/1/note -d '{"text":"buenas alas"}'
+```
+
+### DELETE /api/projects/{p}/orders/{profile}/{key}/attempts/{id}
+
+Borra un intento: su imagen, la sin componer, la vista previa y su `attempts/q<id>.log`, y lo quita del pedido y de
+`chosenHistory`. El número no se reutiliza (el pedido guarda `nextId`). No toca lo ya entregado (`delivery.dir`).
+Sin cuerpo. Respuesta: `{"deleted": id, "files": n}`. Errores: `order.attempt_unknown` (404), `api.bad_param` (400,
+`id` no numérico), `order.delete_chosen` (409, es el elegido), `order.delete_busy` (409, en cola, generándose o
+componiéndose). Añade una línea `attempt.delete` al log. CLI: `gimg attempt rm <proyecto> <clave> <perfil> <id> [--yes]`.
+
+```sh
+curl -s -X DELETE $B/api/projects/mi-proyecto/orders/banner/fauna%2Flobo/attempts/2
 ```
 
 ### POST /api/projects/{p}/orders/{profile}/{key}/choose

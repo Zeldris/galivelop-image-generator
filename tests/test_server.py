@@ -28,6 +28,7 @@ INTENDED_500 = {
     "worker.already_running", "worker.reference_missing", "worker.init_image_missing", "worker.image_move",
     "worker.unexpected", "delivery.reserved", "delivery.manifest_corrupt", "delivery.source_missing",
     "delivery.write_failed", "cli.order_unreadable", "cli.measure_zone_text",
+    "cli.confirm_needed", "cli.cancelled",
     "model.not_installed", "model.required",
     "measure.tool_missing", "measure.tool_failed", "measure.timeout", "measure.unreadable",
     "measure.no_brand_palette", "sheet.no_images", "sheet.too_many", "sheet.unreadable",

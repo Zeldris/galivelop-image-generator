@@ -84,6 +84,9 @@ def _build(lang: str) -> argparse.ArgumentParser:
     leaf(g, "note", "cli.cmd.attempt_note", project, okey, oprofile, attempt,
          arg("text", "cli.arg.text"))
 
+    leaf(g, "rm", "cli.cmd.attempt_rm", project, okey, oprofile, attempt,
+         opt("--yes", "cli.arg.yes", action="store_true"))
+
     leaf(top, "choose", "cli.cmd.choose", project, okey, oprofile, attempt)
     leaf(top, "undo", "cli.cmd.undo", project, okey, oprofile)
     leaf(top, "compose", "cli.cmd.compose", project, okey, oprofile,
@@ -469,6 +472,18 @@ def _order(args, sub, out: _Out) -> None:
                 out.line("cli.out.attempt_note", note=a["note"])
 
 
+def _confirm(args, out: _Out, key: str, **params) -> None:
+    """A destructive command asks before it acts. ``--yes`` skips the question; without a terminal it cannot be asked,
+    so it fails (``cli.confirm_needed``) instead of guessing; any answer but yes cancels (``cli.cancelled``)."""
+    if args.yes:
+        return
+    if not sys.stdin.isatty():
+        raise GimgError("cli.confirm_needed")
+    print(out.t(key, **params) + " " + out.t("cli.confirm.prompt"), end="", flush=True, file=sys.stderr)
+    if sys.stdin.readline().strip().lower() not in out.t("cli.confirm.yes_words").split(","):
+        raise GimgError("cli.cancelled")
+
+
 def _attempt(args, sub, out: _Out) -> None:
     if sub == "new":
         overrides = {k: v for k, v in (("steps", args.steps), ("cfg", args.cfg),
@@ -480,6 +495,11 @@ def _attempt(args, sub, out: _Out) -> None:
     elif sub == "mark":
         item = orders.mark(args.project, args.key, args.profile, args.attempt, args.state)
         out.data(item) if out.as_json else out.line("cli.out.marked", id=item["id"], state=item["state"])
+    elif sub == "rm":
+        _confirm(args, out, "cli.confirm.attempt_rm", id=args.attempt, order=args.key, profile=args.profile)
+        result = orders.delete_attempt(args.project, args.key, args.profile, args.attempt)
+        out.data(result) if out.as_json else out.line("cli.out.attempt_deleted", id=result["deleted"],
+                                                      files=result["files"])
     else:
         item = orders.note(args.project, args.key, args.profile, args.attempt, args.text)
         out.data(item) if out.as_json else out.line("cli.out.noted", id=item["id"])

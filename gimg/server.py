@@ -48,7 +48,7 @@ _EXACT = {
     405: ("api.method_not_allowed",), 411: ("api.length_required",), 413: ("api.body_too_large",),
     415: ("api.content_type",),
     409: ("compose.template_exists", "compose.busy", "measure.busy", "api.heavy_busy", "compose.nothing_to_do", "compose.no_attempts", "serve.already_running", "serve.port_busy", "serve.not_running", "order.discard_chosen",
-          "order.history_empty", "queue.not_cancellable", "queue.not_movable", "delivery.target_taken"),
+          "order.delete_chosen", "order.delete_busy", "order.history_empty", "queue.not_cancellable", "queue.not_movable", "delivery.target_taken"),
     400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "compose.template_unknown", "compose.element_unknown", "compose.bad_layout", "compose.bad_element", "compose.templates_dir_missing", "api.bad_json",
           "api.bad_param"),
 }
@@ -307,7 +307,7 @@ class Handler(BaseHTTPRequestHandler):
         lang = pick_lang(query, self.headers.get("Accept-Language"))
         try:
             self._check_origin()
-            if self.command not in ("GET", "POST", "PUT"):
+            if self.command not in ("GET", "POST", "PUT", "DELETE"):
                 raise GimgError("api.method_not_allowed", method=self.command)
             body = self._read_body() if self.command in ("POST", "PUT") else None
             segments = split_path(raw)
@@ -708,6 +708,12 @@ def attempt_new(req):
                                            draft=draft, template=_template_param(body.get("template")), model=model)
     _after_enqueue()
     return Reply(202, queue.queued_view(entries, provider, req.lang), json=True)
+
+
+@route("DELETE", _ATT)
+def attempt_delete(req):
+    q = req.params
+    return orders.delete_attempt(q["p"], q["key"], q["profile"], _int_param("id", q["id"]))
 
 
 @route("POST", _ATT + "/mark")

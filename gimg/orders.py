@@ -7,7 +7,7 @@ This module neither enqueues (queue, F1.4) nor delivers (F1.5): `choose` and `un
 new chosen ids so delivery can hook in. Every read-modify-write holds `fsutil.lock` of ``order.json``.
 
 Public API: `submit`, `set_text`, `attempt_specs`, `add_attempt`, `set_composed`, `attempt_for_entry`, `attempt_image`,
-`raw_image`, `compose_names`, `compose_paths`, `compose_lock_path`, `pending_image_path`, `mark`, `note`, `choose`, `undo`, `get`, `list_orders`. All raise `GimgError` with codes ``order.*`` on bad input.
+`raw_image`, `delete_attempt`, `compose_names`, `compose_paths`, `compose_lock_path`, `pending_image_path`, `mark`, `note`, `choose`, `undo`, `get`, `list_orders`. All raise `GimgError` with codes ``order.*`` on bad input.
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ import random
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import fsutil, paths, projects, schema
+from . import fsutil, log, paths, projects, schema
 from .errors import GimgError
 
 STATES = ("new", "candidate", "discarded")
@@ -188,6 +188,14 @@ def _modify(project: str, key: str, profile: str, change):
     return result
 
 
+def _next_id(order: dict) -> int:
+    """The id the next attempt gets: ``nextId`` (never reused, F4e.1), else ``max(ids)+1`` for an order made before it.
+    Never below ``max(ids)+1``, so a hand-edited ``nextId`` cannot repeat an id."""
+    floor = max((a["id"] for a in order["attempts"]), default=0) + 1
+    stored = order.get("nextId")
+    return max(floor, stored) if type(stored) is int else floor
+
+
 def _attempt(order: dict, attempt_id) -> dict:
     for item in order["attempts"]:
         if type(attempt_id) is int and item["id"] == attempt_id:
@@ -230,7 +238,7 @@ def submit(project: str, order: dict) -> dict:
             if exc.code != "order.unknown":
                 raise
             record = {"key": key, "profile": profile, "createdAt": now, "attempts": [],
-                      "chosen": None, "chosenHistory": []}
+                      "chosen": None, "chosenHistory": [], "nextId": 1}
         record.update(fields)
         record["updatedAt"] = now
         fsutil.write_json(path, record)
@@ -391,7 +399,8 @@ def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None)
             for item in order["attempts"]:
                 if item.get("queueEntry") == entry_id:
                     return item["id"]
-        new_id = max((a["id"] for a in order["attempts"]), default=0) + 1
+        new_id = _next_id(order)
+        order["nextId"] = new_id + 1
         record = {
             "id": new_id,
             "state": "new",
@@ -505,6 +514,88 @@ def clear_compose_error(project: str, key: str, profile: str, attempt_id: int) -
         return copy.deepcopy(item)
 
     return _modify(project, key, profile, change)
+
+
+def _delete_paths(project: str, key: str, profile: str, item: dict) -> list:
+    """Every file an attempt owns, as paths inside its order folder (D25; raises ``path.*`` before anything is touched):
+    its image, raw and composed images, engine log and previews. Path only; nothing is read."""
+    folder = _order_dir(project, key, profile)
+    rels = [item["image"]]
+    if isinstance(item.get("raw"), str):
+        rels.append(item["raw"])
+    if "compose" in item:
+        rels.extend(compose_names(item))
+    if isinstance(item.get("log"), str):
+        rels.append(item["log"])
+    if type(item.get("queueEntry")) is int:
+        rels.append("attempts/q%d.preview.png" % item["queueEntry"])
+        rels.append("attempts/.pending-%d.preview.png" % item["queueEntry"])
+    found = []
+    for rel in rels:
+        path = paths.inside(folder, rel)
+        if path not in found:
+            found.append(path)
+    return found
+
+
+def _check_not_busy(item: dict, order: dict) -> None:
+    """``order.delete_busy`` if the queue entry that made `item` is still queued or running (its attempt exists while
+    the worker composes it)."""
+    from . import queue  # queue imports this module
+
+    entry_id = item.get("queueEntry")
+    if type(entry_id) is not int:
+        return
+    try:
+        entry = queue.get(entry_id)
+    except GimgError as exc:
+        if exc.code != "queue.unknown":
+            raise
+        return
+    if entry["state"] in ("queued", "running"):
+        raise GimgError("order.delete_busy", attempt=item["id"], order=order["key"], profile=order["profile"])
+
+
+def delete_attempt(project: str, key: str, profile: str, attempt_id: int) -> dict:
+    """Delete attempt `attempt_id` for good (F4e.1, D41): its record, its files (image, raw, composed, engine log and
+    previews; one already gone is not an error) and its appearances in ``chosenHistory``. Its number is never reused
+    (``nextId``). Returns ``{"deleted": id, "files": n}`` with the number of files removed. What was delivered
+    (``delivery.dir``) is not touched; the project log gets an ``attempt.delete`` line.
+
+    ``order.delete_chosen`` (the chosen one stays: choose another or undo first); ``order.delete_busy`` (queued, running,
+    or being composed: cancel it); ``order.attempt_unknown``."""
+    order = get(project, key, profile)
+    item = copy.deepcopy(_attempt(order, attempt_id))
+    files = _delete_paths(project, key, profile, item)
+    _check_not_busy(item, order)
+    with fsutil.try_lock(compose_lock_path(project, key, profile, attempt_id)) as taken:
+        if not taken:
+            raise GimgError("order.delete_busy", attempt=attempt_id, order=key, profile=profile)
+
+        def change(current):
+            gone = _attempt(current, attempt_id)
+            if current["chosen"] == attempt_id:
+                raise GimgError("order.delete_chosen", attempt=attempt_id, order=key, profile=profile)
+            current["nextId"] = _next_id(current)
+            current["attempts"].remove(gone)
+            current["chosenHistory"] = [h for h in current["chosenHistory"] if h != attempt_id]
+
+        _modify(project, key, profile, change)
+        removed = 0
+        for path in files:
+            try:
+                path.unlink()
+                removed += 1
+            except OSError:
+                pass  # already gone, or a leftover: the record is gone, which is what counts
+        try:
+            compose_lock_path(project, key, profile, attempt_id).with_name("compose-%d.lock" % attempt_id).unlink()
+        except OSError:
+            pass
+    log.append(project, {"ts": _now(), "gen_ai.operation.name": "attempt.delete", "app.task": profile,
+                         "app.image.key": key, "app.image.seed": item["seed"], "app.attempt.id": attempt_id,
+                         "app.files_removed": removed})
+    return {"deleted": attempt_id, "files": removed}
 
 
 def mark(project: str, key: str, profile: str, attempt_id: int, state: str) -> dict:

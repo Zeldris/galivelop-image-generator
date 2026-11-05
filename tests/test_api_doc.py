@@ -28,7 +28,7 @@ class ApiDocTests(unittest.TestCase):
     def test_every_route_has_a_curl_example(self):
         sections = DOC.split("\n### ")[1:]
         for section in sections:
-            if section.startswith(("GET /", "POST /", "PUT /")) and "/api/" in section.split("\n")[0]:
+            if section.startswith(("GET /", "POST /", "PUT /", "DELETE /")) and "/api/" in section.split("\n")[0]:
                 with self.subTest(route=section.split("\n")[0]):
                     self.assertIn("curl ", section)
                     if section.startswith(("POST", "PUT")):
