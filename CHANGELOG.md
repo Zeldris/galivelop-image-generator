@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-05
+
 ### Added
 
 - MIT license (`LICENSE`); the catalog models keep their own licenses.
@@ -38,7 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `choose`/`undo` add `deliveredTo` (path relative to the project root).
 - A test that checks every registered route appears in `docs/api.md`.
 
-## Before 0.3.0 (F0)
+## [0.1.0] - 2026-10-25
 
 ### Added
 

@@ -9,6 +9,8 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Sin publicar]
 
+## [0.4.0] - 2026-11-05
+
 ### Añadido
 
 - Licencia MIT (`LICENSE`); los modelos del catálogo conservan su propia licencia.
@@ -39,7 +41,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
   `choose`/`undo` añaden `deliveredTo` (ruta relativa a la raíz del proyecto).
 - Un test que comprueba que cada ruta registrada aparece en `docs/api.md`.
 
-## Antes de 0.3.0 (F0)
+## [0.1.0] - 2026-10-25
 
 ### Añadido
 

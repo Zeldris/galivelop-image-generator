@@ -18,7 +18,7 @@ reales**: el motor real (`sd-cli`) llega en F2.
 | F1 Núcleo | Proyectos, pedidos, intentos, elegida, entrega, cola persistente y CLI `gimg` básica |
 | F2 Motor real | Envoltorio de `sd-cli` con el perfil de máquina e `instalar.sh` |
 | F3 API y arranque | API HTTP local (`gimg serve`), arranque bajo demanda y `gimg ui` (0.3.0) |
-| F4 Interfaz | Tres pantallas en el navegador, es/en |
+| F4 Interfaz | Tres pantallas en el navegador, es/en (0.4.0) |
 | F5 Piloto WMF | Configuración de ejemplo, guía de integración y medidas |
 | F6 Director local | Opcional: un LLM local (Ollama) redacta prompts y ayuda a elegir |
 | F7 Compatibilidad | Última fase: cualquier equipo, no solo Vulkan (CPU, CUDA, ROCm, Metal), otros Linux, Windows y quizá macOS |

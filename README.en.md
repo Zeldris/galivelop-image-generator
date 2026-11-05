@@ -17,7 +17,7 @@ images yet**: the real engine (`sd-cli`) arrives in F2.
 | F1 Core | Projects, orders, attempts, chosen candidate, delivery, persistent queue and a basic `gimg` CLI |
 | F2 Real engine | `sd-cli` wrapper driven by the machine profile, and `instalar.sh` |
 | F3 API and startup | Local HTTP API (`gimg serve`), on-demand startup and `gimg ui` (0.3.0) |
-| F4 UI | Three browser screens, es/en |
+| F4 UI | Three browser screens, es/en (0.4.0) |
 | F5 WMF pilot | Example config, integration guide and measurements |
 | F6 Local director | Optional: a local LLM (Ollama) drafts prompts and helps choose |
 | F7 Compatibility | Last phase: any machine, not only Vulkan (CPU, CUDA, ROCm, Metal), other Linux distros, Windows and maybe macOS |
