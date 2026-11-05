@@ -372,11 +372,14 @@ def _template_files(only: Optional[str] = None) -> list:
                 count += 1
                 for kind in ("template", "logo"):
                     rel = item[kind]
-                    if not rel or (pname, rel) in seen:  # a logo inherited by several templates is checked once
+                    # a local template is relative to its `templateRoot`; the logo always lives in the project
+                    base = (compose_mod.effective(profile["compose"], item["id"]).get("templateRoot")
+                            if kind == "template" else None) or proj["root"]
+                    if not rel or (pname, str(base), rel) in seen:  # a logo inherited by several templates is checked once
                         continue
-                    seen.add((pname, rel))
+                    seen.add((pname, str(base), rel))
                     try:
-                        compose_mod._asset(proj["root"], rel, "compose.%s_missing" % kind)
+                        compose_mod._asset(base, rel, "compose.%s_missing" % kind)
                     except GimgError as exc:
                         out.append(Check("template:%s:%s:%s" % (name, pname, item["id"]), WARN, "doctor.templates.bad",
                                          {"project": name, "profile": pname, "id": item["id"], "path": rel,

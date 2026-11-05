@@ -138,6 +138,11 @@ class SourcesTests(SaveBase):
         text = " ".join(str(c.params["message"]) for c in doctor._template_files() if c.id.endswith(":elements"))
         self.assertIn("1200", text)
 
+    def test_a_local_template_saved_alone_does_not_warn_in_doctor(self):
+        self.ok("POST", self.url, self.body(), 201)  # lives in <data>/..., relative to its templateRoot
+        warns = [c for c in doctor._template_files() if c.status == "warn"]
+        self.assertEqual([(c.id, c.key) for c in warns], [])
+
     def test_a_clean_project_has_no_element_warnings(self):
         self.assertEqual([c for c in doctor._template_files() if c.status == "warn"], [])
 
