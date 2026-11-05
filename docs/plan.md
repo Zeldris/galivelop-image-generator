@@ -1445,6 +1445,12 @@ tiene arreglo); la persona puede cambiarlo.
 
 ## Pendiente
 
+- **Pruebas reales de la interfaz** (pedido de la persona del 2026-11-05; hoja de ruta, no ahora): sin Playwright (D6).
+  Se amplía el arnés que ya hay, `tests/browser.py` (Chrome por CDP con la biblioteca estándar) y
+  `tests/test_ui_browser.py`. Lo que hay que hacer:
+  - que cada cambio de interfaz traiga su prueba en el navegador real, empezando por renombrar un pedido (F4e.5) y
+    F4e.2c;
+  - instalar Chrome en el CI (`check.yml`, y `release.yml`, que copia sus pasos), porque sin él esas pruebas se saltan.
 - **Borrar pedidos** (pedido de la persona del 2026-11-05; hoja de ruta, por diseñar y fasear tras F4e): quitar un
   pedido entero (sus intentos, su carpeta y sus entradas terminadas de la cola) con «sí / no» y `--yes`, como D41; qué
   pasa con su imagen entregada, por decidir con la persona.
