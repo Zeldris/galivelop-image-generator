@@ -44,7 +44,7 @@ hace falta `GW_SHARED_LOG`. Aun así, cada rama toca solo su fila salvo al cerra
   si cambia, aunque la versión sea la misma (nunca con un trabajador vivo: entonces avisa con `versión+huella`). La
   interfaz ya se servía del disco sin caché. Falta que la persona lo vea al relanzar `arrancar.sh`.
 - **Pruebas reales de la interfaz** (pedido de la persona del 2026-11-05): para la hoja de ruta, no ahora. Sin
-  Playwright: se amplía `tests/test_ui_browser.py` (Chrome por CDP), con una prueba en el navegador por cada cambio de
+  Playwright: se amplía `tests/test_ui_browser.py` (el navegador predeterminado del sistema: Firefox por WebDriver BiDi, Chrome por CDP; `GIMG_TEST_BROWSER` lo fuerza), con una prueba en el navegador por cada cambio de
   interfaz y Chrome instalado en el CI. Apuntado en `docs/plan.md` «Pendiente».
 - **Piezas y marca editables** (pedido de la persona del 2026-11-05): para la hoja de ruta; apuntado en `docs/plan.md` «Pendiente», por diseñar y fasear tras F4e.
 - **Todo desde la interfaz** (pedido de la persona del 2026-11-05): botón «Nuevo proyecto» con formulario y auditoría de órdenes de la CLI sin equivalente en la interfaz; apuntado en `docs/plan.md` «Pendiente», por diseñar y fasear tras F4e.

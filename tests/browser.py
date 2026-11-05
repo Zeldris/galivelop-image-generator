@@ -1,10 +1,13 @@
-"""A minimal Chrome DevTools Protocol client on the standard library (D6): a hand-made websocket over ``socket``,
-a headless Chrome launcher and a collector of everything the page reports as wrong (exceptions, console errors, CSP
-violations and failed loads). Used by ``tests/test_ui_browser.py``; docs in ``docs/interfaz/f4a.md``.
+"""A minimal browser driver on the standard library (D6): a hand-made websocket over ``socket``, a headless launcher and
+a collector of everything the page reports as wrong (exceptions, console errors, CSP violations and failed loads).
+Two protocols behind one API (``Browser``, ``Page``): Chrome over the DevTools protocol (CDP) and Firefox over
+WebDriver BiDi. Used by ``tests/test_ui_browser.py``; docs in ``docs/interfaz/f4a.md``.
 
-Which browser: ``GIMG_TEST_CHROME`` (a full command, split with ``shlex``), else ``google-chrome``, ``chromium``,
-``chromium-browser`` or ``google-chrome-stable`` in PATH, else, inside a flatpak sandbox, the host's flatpak Chrome via
-``flatpak-spawn --host``. ``find_chrome()`` returns the command list or ``None`` (the tests then skip).
+Which browser (``find_browser()`` returns ``(kind, command)``, ``kind`` being ``"firefox"`` or ``"chrome"``, or ``None``
+and the tests then skip), in order: ``GIMG_TEST_BROWSER`` (a full command, split with ``shlex``; the kind comes from its
+text), ``GIMG_TEST_CHROME`` (legacy: a Chrome command), the system's default browser (``xdg-settings``/``xdg-mime``,
+through ``flatpak-spawn --host`` inside a flatpak sandbox) when it is Firefox or Chrome/Chromium, else whichever of
+Firefox or Chrome is installed (PATH or the host's flatpak).
 """
 import base64
 import json
@@ -22,6 +25,57 @@ import threading
 import time
 
 
+def _sandboxed():
+    return os.path.exists("/.flatpak-info") or bool(os.environ.get("FLATPAK_ID"))
+
+
+def _host(argv):
+    """``argv`` prefixed to run on the host when we live inside a flatpak sandbox."""
+    return ["flatpak-spawn", "--host"] + argv if _sandboxed() and shutil.which("flatpak-spawn") else argv
+
+
+def _run(argv):
+    try:
+        done = subprocess.run(argv, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return done.stdout.strip() if done.returncode == 0 else None
+
+
+def kind_of(text):
+    """``"firefox"`` / ``"chrome"`` for a desktop file name or a command, ``None`` when it is neither."""
+    t = text.lower()
+    if "firefox" in t:
+        return "firefox"
+    if "chrome" in t or "chromium" in t:
+        return "chrome"
+    return None
+
+
+def default_desktop():
+    """The desktop file of the system's default web browser (``org.mozilla.firefox.desktop``) or ``None``."""
+    for argv in (["xdg-settings", "get", "default-web-browser"],
+                 ["xdg-mime", "query", "default", "x-scheme-handler/http"]):
+        out = _run(_host(argv))
+        if out:
+            return out.splitlines()[0]
+    return None
+
+
+def _flatpak_has(app):
+    return bool(shutil.which("flatpak") or (_sandboxed() and shutil.which("flatpak-spawn"))) and \
+        _run(_host(["flatpak", "info", app])) is not None
+
+
+def find_firefox():
+    path = shutil.which("firefox")
+    if path:
+        return [path]
+    if _flatpak_has("org.mozilla.firefox"):
+        return _host(["flatpak", "run", "org.mozilla.firefox"])
+    return None
+
+
 def find_chrome():
     custom = os.environ.get("GIMG_TEST_CHROME", "").strip()
     if custom:
@@ -30,11 +84,23 @@ def find_chrome():
         path = shutil.which(name)
         if path:
             return [path]
-    if shutil.which("flatpak-spawn"):
-        probe = subprocess.run(["flatpak-spawn", "--host", "flatpak", "info", "com.google.Chrome"],
-                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        if probe.returncode == 0:
-            return ["flatpak-spawn", "--host", "flatpak", "run", "com.google.Chrome"]
+    if _flatpak_has("com.google.Chrome"):
+        return _host(["flatpak", "run", "com.google.Chrome"])
+    return None
+
+
+def find_browser():
+    custom = os.environ.get("GIMG_TEST_BROWSER", "").strip()
+    if custom:
+        return (kind_of(custom) or "chrome"), shlex.split(custom)
+    if os.environ.get("GIMG_TEST_CHROME", "").strip():
+        return "chrome", shlex.split(os.environ["GIMG_TEST_CHROME"])
+    finders = {"firefox": find_firefox, "chrome": find_chrome}
+    wanted = kind_of(default_desktop() or "")
+    for kind in ([wanted] if wanted else []) + ["firefox", "chrome"]:
+        command = finders[kind]()
+        if command:
+            return kind, command
     return None
 
 
@@ -138,8 +204,8 @@ def _xor(data, mask):
     return (int.from_bytes(data, "big") ^ int.from_bytes(key, "big")).to_bytes(len(data), "big") if data else b""
 
 
-class Page:
-    """One tab: ``evaluate`` runs JS (awaiting promises) and returns the value; ``problems`` lists what went wrong."""
+class CdpPage:
+    """One Chrome tab: ``evaluate`` runs JS (awaiting promises) and returns the value; ``problems`` lists what went wrong."""
 
     def __init__(self, ws, session, problems):
         self.ws, self.session, self.problems = ws, session, problems
@@ -226,7 +292,9 @@ _VK = {"ArrowLeft": 37, "ArrowUp": 38, "ArrowRight": 39, "ArrowDown": 40, "Enter
 _CODE = {"Enter": "Enter", "Escape": "Escape", "Tab": "Tab"}
 
 
-class Browser:
+class CdpBrowser:
+    """Headless Chrome over CDP."""
+
     def __init__(self, command=None, lang=None):
         # the UI takes its language from `navigator.languages`: pinned, so the run does not depend on the machine's
         # locale (the CI runner is in English and the tests look buttons up by their Spanish text)
@@ -285,11 +353,11 @@ class Browser:
 
     def new_page(self, width=1280, height=900):
         ws = WebSocket(self.ws_url)  # one connection per tab keeps events apart
-        page_probe = Page(ws, None, self.problems)
+        page_probe = CdpPage(ws, None, self.problems)
         page_probe.next_id = 0
         target = _browser_call(page_probe, "Target.createTarget", {"url": "about:blank"})["targetId"]
         session = _browser_call(page_probe, "Target.attachToTarget", {"targetId": target, "flatten": True})["sessionId"]
-        page = Page(ws, session, self.problems)
+        page = CdpPage(ws, session, self.problems)
         page.next_id = 100
         page.target = target
         for method in ("Page.enable", "Runtime.enable", "Log.enable"):
@@ -330,6 +398,250 @@ class Browser:
                 except (ProcessLookupError, PermissionError):
                     pass
         shutil.rmtree(self.profile, ignore_errors=True)
+
+
+Page = CdpPage
+
+
+def _flatpak_args(command, *extra):
+    """``flatpak run`` commands get ``extra`` options right after ``run`` (the sandboxed browser sees only some host
+    folders and has a temporary folder of its own); any other command is returned untouched."""
+    if "flatpak" in [os.path.basename(c) for c in command] and "run" in command:
+        i = command.index("run") + 1
+        return command[:i] + list(extra) + command[i:]
+    return command
+
+
+_BIDI_KEYS = {"ArrowLeft": "\ue012", "ArrowUp": "\ue013", "ArrowRight": "\ue014", "ArrowDown": "\ue015",
+              "Enter": "\ue006", "Escape": "\ue00c", "Tab": "\ue004", "Backspace": "\ue003", "Delete": "\ue017",
+              "Home": "\ue011", "End": "\ue010"}
+_BIDI_MODS = (("ctrl", "\ue009"), ("shift", "\ue008"), ("alt", "\ue00a"), ("meta", "\ue03d"))
+
+
+def _bidi_value(v):
+    """A BiDi RemoteValue as the plain Python value (what ``returnByValue`` gives in CDP)."""
+    t, val = v.get("type"), v.get("value")
+    if t in ("undefined", "null"):
+        return None
+    if t == "number":
+        return float(val) if isinstance(val, str) else val
+    if t in ("array", "set"):
+        return [_bidi_value(x) for x in val or []]
+    if t in ("object", "map"):
+        return {(k if isinstance(k, str) else _bidi_value(k)): _bidi_value(x) for k, x in val or []}
+    return val
+
+
+class BidiConn:
+    """The one WebDriver BiDi connection of a Firefox: commands by id, events handed to ``on_event``."""
+
+    def __init__(self, url, on_event):
+        self.ws, self.on_event, self.next_id = WebSocket(url), on_event, 0
+
+    def call(self, method, params=None, timeout=30):
+        self.next_id += 1
+        mid = self.next_id
+        self.ws.send(json.dumps({"id": mid, "method": method, "params": params or {}}))
+        end = time.time() + timeout
+        self.ws.sock.settimeout(timeout)
+        while time.time() < end:
+            raw = self.ws.recv()
+            if raw is None:
+                raise CdpError("browser closed")
+            msg = json.loads(raw)
+            if msg.get("id") == mid:
+                if msg.get("type") == "error" or "error" in msg:
+                    raise CdpError("%s: %s %s" % (method, msg.get("error"), msg.get("message")))
+                return msg.get("result", {})
+            self.on_event(msg)
+        raise CdpError("timeout waiting for %s" % method)
+
+    def pump(self, seconds):
+        end = time.time() + seconds
+        while time.time() < end:
+            if not self.ws.readable(end - time.time()):
+                return
+            self.ws.sock.settimeout(30)
+            raw = self.ws.recv()
+            if raw is None:
+                return
+            self.on_event(json.loads(raw))
+
+
+class _PageHandle:
+    """What ``page.ws`` is for BiDi: ``close()`` closes the tab (the connection is the browser's)."""
+
+    def __init__(self, page):
+        self.page = page
+
+    def close(self):
+        try:
+            self.page.conn.call("browsingContext.close", {"context": self.page.context}, timeout=5)
+        except Exception:
+            pass
+
+
+class BidiPage:
+    """One Firefox tab (a browsing context) over WebDriver BiDi; same API as ``CdpPage``."""
+
+    def __init__(self, conn, context, problems):
+        self.conn, self.context, self.problems = conn, context, problems
+        self.ws = _PageHandle(self)
+
+    def pump(self, seconds=0.2):
+        self.conn.pump(seconds)
+
+    def evaluate(self, expression, timeout=30):
+        res = self.conn.call("script.evaluate", {
+            "expression": expression, "target": {"context": self.context}, "awaitPromise": True,
+            "resultOwnership": "none", "userActivation": True}, timeout)
+        if res.get("type") == "exception":
+            d = res["exceptionDetails"]
+            raise CdpError("evaluate failed: %s" % d.get("text"))
+        return _bidi_value(res["result"])
+
+    def goto(self, url):
+        self.conn.call("browsingContext.navigate", {"context": self.context, "url": url, "wait": "complete"})
+        self.wait("document.readyState === 'complete'")
+
+    wait = CdpPage.wait
+
+    def key(self, key, **mods):
+        held = [code for name, code in _BIDI_MODS if mods.get(name)]
+        value = _BIDI_KEYS.get(key, key)
+        actions = ([{"type": "keyDown", "value": c} for c in held] + [{"type": "keyDown", "value": value},
+                   {"type": "keyUp", "value": value}] + [{"type": "keyUp", "value": c} for c in reversed(held)])
+        self.conn.call("input.performActions", {"context": self.context,
+                                                "actions": [{"type": "key", "id": "kbd", "actions": actions}]})
+        self.pump(0.1)
+
+
+class BidiBrowser:
+    """Headless Firefox over WebDriver BiDi, with a throwaway profile."""
+
+    def __init__(self, command=None, lang=None):
+        lang = lang or os.environ.get("GIMG_TEST_LANG") or "es"
+        self.command = command or find_firefox()
+        if not self.command:
+            raise CdpError("no browser")
+        self.profile = scratch_dir("gimg-firefox-")
+        self.problems = []
+        self.pages = []
+        self.conn = None
+        self.proc = None
+        try:
+            tmp = os.path.join(self.profile, "tmp")
+            prof = os.path.join(self.profile, "profile")
+            os.makedirs(tmp)
+            os.makedirs(prof)
+            prefs = {"intl.accept_languages": lang, "intl.locale.requested": lang,
+                     "browser.shell.checkDefaultBrowser": False, "browser.startup.homepage_override.mstone": "ignore",
+                     "startup.homepage_welcome_url": "", "startup.homepage_welcome_url.additional": "",
+                     "browser.aboutwelcome.enabled": False, "datareporting.policy.dataSubmissionEnabled": False,
+                     "toolkit.telemetry.reportingpolicy.firstRun": False, "app.update.auto": False,
+                     "app.update.enabled": False, "browser.cache.disk.enable": False,
+                     "browser.tabs.warnOnClose": False, "focusmanager.testmode": True,
+                     "browser.sessionstore.resume_from_crash": False, "network.captive-portal-service.enabled": False}
+            with open(os.path.join(prof, "user.js"), "w") as f:
+                for k, v in prefs.items():
+                    f.write("user_pref(%s, %s);\n" % (json.dumps(k), json.dumps(v)))
+            # a flatpak Firefox sees only some host folders: ours is opened to it, and its temporaries stay inside
+            args = _flatpak_args(self.command, "--filesystem=" + self.profile, "--env=TMPDIR=" + tmp) + [
+                "--headless", "--no-remote", "--profile", prof, "--remote-debugging-port=0", "about:blank"]
+            self.proc = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True,
+                                         start_new_session=True, env=dict(os.environ, TMPDIR=tmp, MOZ_HEADLESS="1"))
+            self.ws_url = self._find_ws_url() + "/session"
+            self.conn = BidiConn(self.ws_url, self._event)
+            self.conn.call("session.new", {"capabilities": {}})
+            self.conn.call("session.subscribe", {"events": ["log.entryAdded"]})
+        except BaseException:
+            self.close()
+            raise
+
+    def _find_ws_url(self):
+        found = []
+
+        def reader():
+            for line in self.proc.stderr:
+                m = re.search(r"WebDriver BiDi listening on (ws://\S+)", line)
+                if m:
+                    found.append(m.group(1))
+
+        threading.Thread(target=reader, daemon=True).start()
+        end = time.time() + 60
+        while time.time() < end:
+            if found:
+                return found[0]
+            if self.proc.poll() is not None:
+                raise CdpError("the browser exited (%s)" % self.proc.returncode)
+            time.sleep(0.1)
+        raise CdpError("the browser did not report its WebDriver BiDi address")
+
+    def _event(self, msg):
+        if msg.get("method") == "log.entryAdded":
+            e = msg["params"]
+            if e.get("level") == "error":
+                self.problems.append("%s: %s" % ("exception" if e.get("type") == "javascript" else "console.error",
+                                                 e.get("text")))
+
+    def new_page(self, width=1280, height=900):
+        context = self.conn.call("browsingContext.create", {"type": "tab"})["context"]
+        page = BidiPage(self.conn, context, self.problems)
+        try:
+            self.conn.call("browsingContext.activate", {"context": context})
+        except CdpError:
+            pass  # older Firefox: the tab is already the front one
+        self.conn.call("browsingContext.setViewport", {"context": context, "viewport": {"width": width, "height": height},
+                                                       "devicePixelRatio": 1})
+        self.pages.append(page)
+        return page
+
+    def take_problems(self):
+        self.conn.pump(0.05)
+        out, self.problems[:] = list(self.problems), []
+        return out
+
+    def close(self):
+        if self.conn:
+            try:
+                self.conn.ws.send(json.dumps({"id": 1 << 30, "method": "browser.close", "params": {}}))
+                if self.proc:
+                    self.proc.wait(timeout=10)
+            except Exception:
+                pass
+            self.conn.ws.close()
+        if self.proc:
+            try:
+                os.killpg(self.proc.pid, signal.SIGTERM)
+            except (ProcessLookupError, PermissionError):
+                pass
+            try:
+                self.proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                try:
+                    os.killpg(self.proc.pid, signal.SIGKILL)
+                except (ProcessLookupError, PermissionError):
+                    pass
+            # a flatpak Firefox outside our process group that ignored browser.close: by its profile path
+            if "flatpak" in [os.path.basename(c) for c in self.command]:
+                subprocess.run(_host(["pkill", "-f", self.profile]), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        for _ in range(3):  # Firefox may still be writing while it exits
+            shutil.rmtree(self.profile, ignore_errors=True)
+            if not os.path.exists(self.profile):
+                break
+            time.sleep(0.5)
+
+
+def Browser(command=None, lang=None):
+    """A headless browser: the given command, else ``find_browser()``'s. Raises when there is none."""
+    if command:
+        kind = kind_of(" ".join(command)) or "chrome"
+    else:
+        found = find_browser()
+        if not found:
+            raise CdpError("no browser")
+        kind, command = found
+    return (BidiBrowser if kind == "firefox" else CdpBrowser)(command, lang)
 
 
 def _browser_call(page, method, params):

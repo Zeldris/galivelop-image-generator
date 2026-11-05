@@ -341,7 +341,7 @@ export async function orderView(host, route) {
       const a = byId(ctx.order.attempts || [], Number(card.dataset.attempt));
       if (!a) return;
       const st = stateOf(ctx.order, a);
-      if (k === 'Enter' && e.target === card) card.querySelector('.open').click();
+      if (k === 'Enter' && e.target === card) { e.preventDefault(); card.querySelector('.open').click(); } // sin keypress: en Firefox caería en el botón que recibe el foco del visor y lo cerraría
       else if (k === 's' || k === 'S') ctx.actions.mark(a, st === 'candidate' ? 'new' : 'candidate');
       else if ((k === 'n' || k === 'N') && st !== 'chosen') ctx.actions.mark(a, st === 'discarded' ? 'new' : 'discarded');
       else if (k === 'e' || k === 'E') { if (st === 'chosen') ctx.actions.undo(); else if (st !== 'discarded' && !a.draft) ctx.actions.choose(a); }

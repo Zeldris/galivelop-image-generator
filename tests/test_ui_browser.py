@@ -41,7 +41,7 @@ def run_cli(*argv):
     return out.getvalue()
 
 
-@unittest.skipUnless(browser.find_chrome(), "no Chrome/Chromium found (set GIMG_TEST_CHROME)")
+@unittest.skipUnless(browser.find_browser(), "no Firefox/Chrome found (set GIMG_TEST_BROWSER)")
 class BrowserLifetime(unittest.TestCase):
     def test_close_shuts_the_browser_down_even_outside_our_process_group(self):
         # A flatpak or host Chrome is not in our process group: killpg alone left it running. After close(), its
@@ -55,7 +55,7 @@ class BrowserLifetime(unittest.TestCase):
                               "the DevTools port still answers after close(): %r" % caught.exception)
 
 
-@unittest.skipUnless(browser.find_chrome(), "no Chrome/Chromium found (set GIMG_TEST_CHROME)")
+@unittest.skipUnless(browser.find_browser(), "no Firefox/Chrome found (set GIMG_TEST_BROWSER)")
 class UiBase(unittest.TestCase):
     """One server and one browser for the whole class; each test opens a fresh tab."""
 
