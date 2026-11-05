@@ -381,12 +381,11 @@ class OrderScreen(UiBase):
         self.js("document.querySelector(\"%s\").focus()" % self.card(2))
         self.page.key("t")
         self.page.wait("document.activeElement.closest('.order-panel')")
-        inside_retouch = self.js("!!document.activeElement.closest('.order-panel > :first-child')")
+        inside_retouch = self.js("!!document.activeElement.closest('.order-panel > :nth-child(2)')")
         self.assertTrue(inside_retouch)
         self.js("document.querySelector(\"%s\").focus()" % self.card(2))
         self.page.key("x")
-        self.page.wait("document.activeElement.closest('.order-panel > :nth-child(2)')")
-        self.no_problems()
+        self.page.wait("document.activeElement.closest('.order-panel > :nth-child(3)')")
 
     def test_keyboard_shortcuts(self):
         self.order("fondos/atajos")
@@ -550,6 +549,111 @@ class OrderScreen(UiBase):
         self.open_editor("fondos/atajos")
         self.check_measure_chip("dialog.editor .measure button.chip", r"Contraste medio \d+\.\d:1 \(AA ≥ 4,5\): " + verdict,
                                 r"Contraste del peor punto \d+\.\d:1 \(ámbar ≥ 3\): " + verdict)
+        self.no_problems()
+
+    def toast(self, text="Aviso de prueba"):
+        """Raises a persistent toast through the page's own module (the same instance the app uses)."""
+        self.js("import('/ui/js/components/toast.js').then((m) => { m.toast(%s, {timeout: 0}); return true; })" % json.dumps(text))
+        self.page.wait(self.OWN_TOAST)
+
+    # the app may show its own toasts (no worker...): the test looks only at the one it raised
+    OWN_TOAST = "[...document.querySelectorAll('#toasts .toast')].find((t) => t.textContent.startsWith('Aviso de prueba'))"
+
+    def test_retouch_panel_is_reachable_and_toasts_do_not_cover(self):
+        """UI.5: at 1440 the retouch panel stays in the window and «Textos» is reached by scrolling only the panel; at
+        360 a «Retoque» button opens the same panel as a modal side dialog (focus inside, Esc closes it and returns the
+        focus to the button); a toast never overlaps the buttons of the first card (at 360 and 1440) and Esc closes it."""
+        key = "fondos/atajos"
+        footer = """(() => { const c = document.querySelector('.gallery .attempt[data-kind=attempt]');
+            const bs = [...c.querySelectorAll('.actions > button')].filter((b) => b.getClientRects().length);
+            bs[bs.length - 1].scrollIntoView({block: 'end'});
+            return bs.map((b) => { const r = b.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; }); })()"""
+        toast_rect = """(() => { const r = [...document.querySelectorAll('#toasts .toast')].find((t) => t.textContent.startsWith('Aviso de prueba')).getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; })()"""
+
+        def overlaps(a, b):
+            return a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
+
+        def check_toast(where):
+            buttons = self.js(footer)
+            self.assertTrue(buttons, "no footer buttons " + where)
+            self.toast()
+            self.page.pump(0.2)
+            rect = self.js(toast_rect)
+            for b in buttons:
+                self.assertFalse(overlaps(rect, b), "the toast %s covers a button of the first card %s: %s" % (rect, where, b))
+            # Esc with the focus inside the toast closes it
+            self.js("%s.querySelector('button').focus()" % self.OWN_TOAST)
+            self.page.key("Escape")
+            self.page.wait("!(%s)" % self.OWN_TOAST)
+            # Esc anywhere else closes the last toast when nothing else is open
+            self.toast()
+            self.js("document.activeElement.blur()")
+            self.page.key("Escape")
+            self.page.wait("!(%s)" % self.OWN_TOAST)
+
+        # 1440: the sticky column
+        self.page.ws.close()
+        self.page = self.browser.new_page(width=1440, height=780)
+        self.order(key)
+        m = self.js("""(() => { const r = document.querySelector('.order-panel').getBoundingClientRect();
+            return {top: r.top, bottom: r.bottom, vh: innerHeight, button: getComputedStyle(document.querySelector('.retouch-open')).display}; })()""")
+        self.assertGreaterEqual(m["top"], 0)
+        self.assertLessEqual(m["bottom"], m["vh"], "the panel is taller than the window at 1440: %s" % m)
+        self.assertEqual(m["button"], "none", "the «Retoque» button shows at 1440")
+        self.js("window.scrollTo(0, 200)")
+        y = self.js("scrollY")
+        after = self.js("""(() => { const p = document.querySelector('.order-panel'); p.scrollTop = p.scrollHeight;
+            const pr = p.getBoundingClientRect(), h = document.getElementById('text-h'), r = h.getBoundingClientRect();
+            return {y: scrollY, panelBottom: pr.bottom, panelTop: pr.top, hTop: r.top, hBottom: r.bottom}; })()""")
+        self.assertEqual(after["y"], y, "scrolling the panel moved the page")
+        self.assertGreaterEqual(after["hTop"], after["panelTop"] - 1, "«Textos» is above the panel: %s" % after)
+        self.assertLessEqual(after["hBottom"], after["panelBottom"] + 1, "«Textos» is below the panel: %s" % after)
+        self.assertLessEqual(after["panelBottom"], m["vh"], "the sticky panel left the window: %s" % after)
+        self.js("window.scrollTo(0, 0)")
+        check_toast("at 1440")
+
+        # 360: the same panel as a side dialog
+        self.page.ws.close()
+        self.page = self.browser.new_page(width=360, height=780)
+        self.order(key)
+        btn = ".retouch-open"
+        self.assertEqual(self.js("document.querySelector('.order-panel').getClientRects().length"), 0, "the panel shows stacked at 360")
+        r = self.js("(() => { const r = document.querySelector('%s').getBoundingClientRect(); return [r.width, r.height]; })()" % btn)
+        self.assertGreater(r[0], 0, "the «Retoque» button is not visible at 360")
+        self.assertGreaterEqual(r[1], 44)
+        self.click(btn)
+        self.page.wait("document.querySelector('.order-panel.is-open')")
+        d = self.js("""(() => { const p = document.querySelector('.order-panel'), pr = p.getBoundingClientRect(), a = document.activeElement;
+            return {role: p.getAttribute('role'), modal: p.getAttribute('aria-modal'), label: document.getElementById(p.getAttribute('aria-labelledby')).textContent,
+                inside: p.contains(a), top: pr.top, headerH: document.querySelector('.app-header').getBoundingClientRect().height, bottom: pr.bottom, vh: innerHeight,
+                inert: [document.querySelector('.app-header').inert, document.querySelector('.order-layout > div').inert, p.inert],
+                expanded: document.querySelector('%s').getAttribute('aria-expanded'),
+                prompt: Boolean(p.querySelector('#retouch-prompt')), texts: Boolean(p.querySelector('#text-h'))}; })()""" % btn)
+        self.assertEqual((d["role"], d["modal"]), ("dialog", "true"))
+        self.assertEqual(d["label"], "Retoque y textos")
+        self.assertTrue(d["inside"], "the focus did not go inside the dialog")
+        self.assertAlmostEqual(d["top"], d["headerH"], delta=1)
+        self.assertLessEqual(d["bottom"], d["vh"])
+        self.assertEqual(d["inert"], [True, True, False])
+        self.assertEqual(d["expanded"], "true")
+        self.assertTrue(d["prompt"] and d["texts"], d)
+        self.assert_tap_targets("in the retouch dialog at 360")
+        # Tab from the last control wraps inside the dialog
+        self.js("""(() => { const n = [...document.querySelectorAll('.order-panel button:not(:disabled), .order-panel a[href], .order-panel input:not(:disabled), .order-panel select:not(:disabled), .order-panel [tabindex="0"]')].filter((x) => x.getClientRects().length); n[n.length - 1].focus(); })()""")
+        self.page.key("Tab")
+        self.assertTrue(self.js("document.querySelector('.order-panel').contains(document.activeElement)"), "Tab left the dialog")
+        self.page.key("Escape")
+        self.page.wait("!document.querySelector('.order-panel.is-open')")
+        self.assertTrue(self.js("document.activeElement === document.querySelector('%s')" % btn), "the focus did not return to «Retoque»")
+        self.assertEqual(self.js("[document.querySelector('.app-header').inert, document.querySelector('.order-layout > div').inert]"), [False, False])
+        # the T shortcut opens it and focuses its first control
+        self.js("document.querySelector('.gallery .attempt[data-kind=attempt]').focus()")
+        self.page.key("t")
+        self.page.wait("document.querySelector('.order-panel.is-open')")
+        self.assertTrue(self.js("document.querySelector('.order-panel').contains(document.activeElement) && document.activeElement !== document.querySelector('.order-panel')"))
+        self.page.key("Escape")
+        self.page.wait("!document.querySelector('.order-panel.is-open')")
+        check_toast("at 360")
         self.no_problems()
 
     # the editor -------------------------------------------------------------------------------------------------

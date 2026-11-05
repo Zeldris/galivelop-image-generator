@@ -115,7 +115,8 @@ dialog.editor-save fieldset { border: 0; padding: 0; margin: 0; }
 .lightbox .bar .btn { margin-left: auto; }
 
 /* avisos flotantes (aria-live) */
-.toasts { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 40; display: grid; gap: 8px; width: min(92vw, 520px); }
+.toasts { position: fixed; right: 16px; bottom: 16px; z-index: 40; display: grid; gap: 8px; width: min(92vw, 380px); }
+@media (max-width: 640px) { .toasts { right: 50%; transform: translateX(50%); bottom: auto; top: calc(var(--header-h) + 8px); width: min(94vw, 520px); } }
 .toast { display: flex; gap: 10px; align-items: center; padding: 10px 14px; border-radius: var(--r-s); background: var(--surface-2); border: 1px solid var(--border-strong); color: var(--text); box-shadow: var(--shadow); font-size: 14px; }
 .toast-ok { border-color: var(--ok); }
 .toast-bad { border-color: var(--bad); }

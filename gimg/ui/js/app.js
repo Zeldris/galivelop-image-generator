@@ -12,10 +12,10 @@ import { initQueueBar, toggleQueue, isQueueOpen } from './components/queue-bar.j
 import { initTheme } from './components/theme.js';
 import { initLightbox } from './components/lightbox.js';
 import { initShortcuts } from './components/shortcuts.js';
-import { toast, toastError } from './components/toast.js';
+import { toast, toastError, dismissLastToast } from './components/toast.js';
 import { projectsView } from './components/projects-view.js';
 import { projectView } from './components/project-view.js';
-import { orderView } from './components/order-view.js';
+import { orderView, isPanelOpen, closePanel } from './components/order-view.js';
 
 async function boot() {
   const params = new URLSearchParams(location.search);
@@ -35,7 +35,7 @@ async function boot() {
   measureHeader();
   initLightbox();
   initQueueBar(el('queue-pill'), el('queue-drawer'));
-  initShortcuts({ toggleQueue, closeAll });
+  initShortcuts({ toggleQueue: toggleQueueGuarded, closeAll });
 
   onOffline((off) => {
     const banner = el('banner');
@@ -62,11 +62,18 @@ function measureHeader() {
 }
 
 function closeAll() {
+  // sin nada abierto (ni cola, ni retoque, ni diálogo, ni popover), Esc cierra el último aviso
+  const anyOpen = isQueueOpen() || isPanelOpen() || document.querySelector('dialog[open], :popover-open') !== null;
   for (const d of document.querySelectorAll('dialog[open]')) d.close();
   if (isQueueOpen()) toggleQueue(false);
+  if (isPanelOpen()) closePanel();
   const settings = el('settings');
   if (settings.matches(':popover-open')) settings.hidePopover();
+  if (!anyOpen) dismissLastToast();
 }
+
+/** Q con el retoque abierto no abre la cola encima (los dos son diálogos modales). */
+function toggleQueueGuarded(force) { if (!isPanelOpen()) toggleQueue(force); }
 
 let current = null;
 async function render(route) {

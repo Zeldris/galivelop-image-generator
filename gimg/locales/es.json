@@ -522,6 +522,8 @@
   "ui.order.gallery": "Intentos",
   "ui.order.galleryTools": "Herramientas de la galería",
   "ui.order.panel": "Retoque y textos",
+  "ui.order.retouchOpen": "Retoque",
+  "ui.order.panelClose": "Cerrar retoque y textos",
   "ui.order.counts": "{n} intentos · {c} candidatos · {p} pendientes",
   "ui.order.showingComposed": "Viendo compuestas",
   "ui.order.showingRaw": "Viendo fondos crudos",

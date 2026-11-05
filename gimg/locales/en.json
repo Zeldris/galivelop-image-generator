@@ -522,6 +522,8 @@
   "ui.order.gallery": "Attempts",
   "ui.order.galleryTools": "Gallery tools",
   "ui.order.panel": "Retouch and texts",
+  "ui.order.retouchOpen": "Retouch",
+  "ui.order.panelClose": "Close retouch and texts",
   "ui.order.counts": "{n} attempts · {c} candidates · {p} pending",
   "ui.order.showingComposed": "Showing composed",
   "ui.order.showingRaw": "Showing raw backgrounds",
