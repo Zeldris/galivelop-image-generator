@@ -32,6 +32,7 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 
 ## Pendiente
 
+- `docs/en/api.md` (D16 pide docs en es y en).
 - **Leve de la revisión de F3.3:** `queue.submit_order/new_attempts/queued_view` son orquestación (engine + orders + queue), no cola; si molesta, un `gimg/actions.py` fino que importe los tres.
 - **Leves de la revisión de F3.2 (no se revisan más en este PR):** (3) el log de sd-cli se sirve entero en memoria, sin tope; (4) la vista previa no es atómica (sd-cli reescribe `.pending-N.preview.png` en su sitio: un PNG truncado un sondeo); (7) `attempt_log` saca la carpeta del pedido con el truco `orders.attempt_image(..., {"image": "."})`: mejor un `orders.order_folder()` público.
 - **De la revisión de F3.4 (leves, pendientes):** `serve.json` pasa por `write_json` con el umask (0644) y el `chmod 0600` llega tras el `replace` (ventana corta, contenido no secreto: darle `mode` a `write_json`); un POST que encola entre la parada por inactividad y `shutdown()` deja la entrada `queued` hasta el próximo `serve` (hacer un último `maybe_launch_worker` tras `shutdown()`).

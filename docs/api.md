@@ -20,7 +20,7 @@ La doc se comprueba con `tests/test_api_doc.py`: cada ruta registrada en `gimg/s
 - **Una instancia:** `<data>/serve.lock`; el estado vive en `<data>/serve.json` (`pid`, `port`, `url`, `version`,
   `startedAt`) y el log en `<data>/serve.log`.
 - **Arranque bajo demanda:** `gimg ui`, `gimg order submit` y `gimg attempt new` arrancan el servicio si no corre.
-  `GIMG_AUTOSTART=0` lo apaga.
+  `GIMG_AUTOSTART=0` (también `false`, `no`, `off`, sin distinguir mayúsculas) lo apaga.
 - **Inactividad:** se para solo tras 15 min sin peticiones, sin trabajador y sin entradas `queued`/`running`
   (`--idle-min`, `"serve": {"idleMinutes"}`; `0` = nunca).
 - **Trabajador:** el servicio no genera: lanza `gimg work` como proceso aparte cuando hay entradas en cola.

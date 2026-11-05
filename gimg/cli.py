@@ -145,9 +145,13 @@ def _autostart(out: _Out) -> dict:
 
     try:
         state = service.ensure_running(out.lang, warn)
-    except GimgError as exc:
-        warn(out.t("cli.warn.service_failed", error=exc.message(out.lang)))
-        return {"running": False, "autostart": True, "error": exc.code, "message": exc.message(out.lang)}
+    except KeyboardInterrupt:
+        return {"running": False, "autostart": True, "error": "interrupted", "message": "interrupted"}
+    except Exception as exc:  # noqa: BLE001 - the entries are queued: nothing here may turn into a failure
+        message = exc.message(out.lang) if isinstance(exc, GimgError) else "%s: %s" % (type(exc).__name__, exc)
+        warn(out.t("cli.warn.service_failed", error=message))
+        return {"running": False, "autostart": True, "error": getattr(exc, "code", type(exc).__name__),
+                "message": message}
     return {"running": True, "autostart": True, "url": state["url"], "pid": state["pid"]}
 
 
@@ -283,6 +287,31 @@ def _serve(args, out: _Out) -> int:
     return 0
 
 
+def _open_browser(url: str) -> bool:
+    """Open `url` in the browser with stdout/stderr on /dev/null (the browser must not keep our pipes); never
+    raises. Without a display nothing is opened: the URL is printed anyway."""
+    if sys.platform.startswith("linux") and not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
+        return False
+    import webbrowser
+    sys.stdout.flush()
+    sys.stderr.flush()
+    saved = []
+    try:
+        null = os.open(os.devnull, os.O_RDWR)
+        try:
+            for fd in (1, 2):
+                saved.append((fd, os.dup(fd)))
+                os.dup2(null, fd)
+            return bool(webbrowser.open(url))
+        finally:
+            for fd, old in saved:
+                os.dup2(old, fd)
+                os.close(old)
+            os.close(null)
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def _ui(args, out: _Out) -> int:
     if service.autostart_enabled():
         state = service.ensure_running(out.lang, lambda text: print(text, file=sys.stderr))
@@ -292,11 +321,7 @@ def _ui(args, out: _Out) -> int:
             raise GimgError("serve.not_running")
     opened = False
     if not args.no_browser:
-        import webbrowser
-        try:
-            opened = bool(webbrowser.open(state["url"]))
-        except Exception:  # noqa: BLE001 - no browser is not an error: the URL is printed anyway
-            opened = False
+        opened = _open_browser(state["url"])
     if out.as_json:
         out.data(dict(state, opened=opened))
     else:

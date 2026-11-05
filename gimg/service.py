@@ -153,11 +153,11 @@ def status():
     return state
 
 
-def stop(wait_s: float = STOP_WAIT_S + 2.0) -> dict:
+def stop(wait_s: float = STOP_WAIT_S + 2.0, expected_pid=None) -> dict:
     """SIGTERM to the service in ``serve.json`` if its lock is still taken, and wait for it to let go.
     Raises ``serve.not_running`` otherwise. Returns the state it stopped."""
     state = read_state()
-    if state is None or not lock_held():
+    if state is None or not lock_held() or (expected_pid is not None and state["pid"] != expected_pid):
         raise GimgError("serve.not_running")
     answer = health(state["port"])
     if answer is None or answer.get("pid") != state["pid"]:  # a stale file whose pid may belong to someone else
@@ -366,8 +366,8 @@ def detach(port=None, idle_min=None, lang=None) -> dict:
 
 # --- on demand (F3.5) ---
 def autostart_enabled() -> bool:
-    """``GIMG_AUTOSTART=0`` turns the on-demand start off (the test suite sets it)."""
-    return os.environ.get("GIMG_AUTOSTART") != "0"
+    """``GIMG_AUTOSTART=0|false|no|off`` turns the on-demand start off (the test suite sets it)."""
+    return os.environ.get("GIMG_AUTOSTART", "").strip().lower() not in ("0", "false", "no", "off")
 
 
 def ensure_running(lang=None, warn=None) -> dict:
@@ -385,10 +385,26 @@ def ensure_running(lang=None, warn=None) -> dict:
             if warn:
                 warn(i18n.t("cli.warn.service_old_version", lang, running=running, installed=__version__))
             return current
-        with contextlib.suppress(GimgError):  # it may have stopped by itself meanwhile
-            stop()
-        if lock_held():
-            raise GimgError("serve.start_failed", log="")
+        # one CLI at a time replaces it (a second SIGTERM would cut the old one's requests in progress)
+        paths.data_dir().mkdir(parents=True, exist_ok=True)
+        fd = os.open(str(paths.data_dir() / "serve.replace.lock"), os.O_RDWR | os.O_CREAT, 0o600)
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX)
+            fresh = status()
+            if fresh is not None and fresh["pid"] != current["pid"]:
+                return fresh  # another CLI already replaced it
+            with contextlib.suppress(GimgError):
+                stop(expected_pid=current["pid"])
+            deadline = time.monotonic() + STOP_WAIT_S + 2.0
+            while lock_held() and time.monotonic() < deadline:
+                time.sleep(0.05)
+            return _detach_or_join(lang)
+        finally:
+            os.close(fd)
+    return _detach_or_join(lang)
+
+
+def _detach_or_join(lang) -> dict:
     try:
         return detach(lang=lang)
     except GimgError as exc:

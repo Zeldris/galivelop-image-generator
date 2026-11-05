@@ -1,5 +1,6 @@
 """F3.5: on-demand start of the service (`ensure_running`, `gimg ui`, `order submit`, `attempt new`); real subprocesses."""
 import json
+import os
 import socket
 import subprocess
 import sys
@@ -106,6 +107,35 @@ class Autostart(Env):
         self.assertEqual(old.wait(timeout=15), 0)
         self.assertEqual(service.read_state()["pid"], new["pid"])
         self.assertNotEqual(service.read_state()["version"], "0.0.0-old")
+
+    def test_two_clis_replacing_an_old_version_end_with_one_new_service(self):
+        self.use_port()
+        old = subprocess.Popen(
+            [sys.executable, "-c", "import sys, gimg; gimg.__version__ = '0.0.0-old'; from gimg.cli import main; "
+             "sys.exit(main(['serve', '--port', sys.argv[1]]))", self.env["GIMG_PORT"]],
+            cwd=ROOT, env=self.env, stdout=subprocess.PIPE, text=True)
+        self.addCleanup(old.stdout.close)
+        self.addCleanup(old.kill)
+        old.stdout.readline()
+        args = [sys.executable, "-m", "gimg", "--lang", "en", "ui", "--no-browser", "--json"]
+        procs = [subprocess.Popen(args, cwd=ROOT, env=self.env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                  text=True) for _ in range(2)]
+        results = []
+        for proc in procs:
+            out, err = proc.communicate(timeout=60)
+            self.assertEqual(proc.returncode, 0, err)
+            results.append(json.loads(out))
+        self.assertEqual(results[0]["pid"], results[1]["pid"])
+        self.assertNotEqual(results[0]["pid"], old.pid)
+        self.assertEqual(old.wait(timeout=15), 0)
+        self.assertEqual(service.read_state()["pid"], results[0]["pid"])
+        self.assertTrue(alive(results[0]["pid"]))
+
+    def test_autostart_values(self):
+        for value, expected in (("0", False), ("FALSE", False), ("no", False), (" Off ", False), ("1", True),
+                                ("", True)):
+            with mock.patch.dict(os.environ, {"GIMG_AUTOSTART": value}):
+                self.assertEqual(service.autostart_enabled(), expected, value)
 
     def test_ui_prints_the_url_and_leaves_the_service_alive(self):
         self.use_port()
