@@ -13,7 +13,7 @@
 | **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | Pedido de la persona (2026-11-05): F4c y F4d enteras antes de su ronda de pruebas en la interfaz. F4a-F4b hechas; contratos F4b, F4c y F4d en `docs/plan.md` (de la sesión, pendientes de la persona). En curso: F4c.1-2 (subagente) y revisión del flujo de la interfaz. **Siguiente:** F4c.3 editor + F4d.1 → F4d.2 → arreglos de la revisión → ronda de la persona → fases 1-2 antes de `main`. Compactaciones: 3 (gastadas 2) |
+| **Tarea en curso · `f2-motor`** | Pedido de la persona (2026-11-05): F4c y F4d enteras antes de su ronda de pruebas en la interfaz. F4a-F4b y F4c.1-2 hechas (elementos, layout, contraste sobre la base, 3 fuentes de plantillas, `template save`); contratos F4c y F4d en `docs/plan.md` (pendientes de la persona). **Siguiente:** F4c.3 editor + F4d.1 → F4d.2 → arreglos de la revisión → ronda de la persona → fases 1-2 antes de `main`. Compactaciones: 3 (gastadas 2) |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.
@@ -32,6 +32,7 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 
 ## Pendiente
 
+- **Por fusionar en `f2-motor`:** rama `claude/f4b-ui-arreglos` (`7b73bc5`, arreglos de la revisión del flujo de la interfaz: estilo duplicado al variar, versión de la imagen sin `compose.at`, recarga tras fallo, campos de todas las plantillas, zona sin color, plantilla de la elegida, foco en `select`), con `merge-branch.sh` cuando acabe F4c.1-2.
 - **Leves de la revisión de F4a** (`docs/records/revision-F4a-2026-11-05.md`, 10-16): no se revisan más en este PR. Además: con algo en marcha, el cajón de la cola se repinta cada 3 s (conserva el foco por `data-fid`, no el desplazamiento).
 
 - `docs/en/api.md` (D16 pide docs en es y en).
