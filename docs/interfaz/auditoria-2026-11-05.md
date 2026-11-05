@@ -185,6 +185,11 @@ paso 2 antes de decidir, se hace una página de prueba de esas dos piezas solas 
 
 ## 6. Decisiones para la persona
 
+**Decidido por la persona el 2026-11-05:** (1) pasos 1-5 antes de F4e.2c; (2) un botón «Ajustes» con menú (idioma, tema
+y talla de texto); (3) retoque a ≤1000 como diálogo lateral; (4) el chip de medida es un objetivo: botón de 44 px que
+abre el detalle; (5) el mando entra ya; (6) talla de texto propia. Con eso, antes de F4e.2c van los pasos 1-5, el 9
+(talla y mando) y el chip como botón del paso 4; los pasos 6-8 (sin la parte del chip) van con F4e.2c o después.
+
 1. **¿Pasos 1-5 antes de F4e.2c?** Es lo que se propone: F4e.2c añade un panel dentro del editor y conviene que el
    editor, la cabecera y el foco estén bien antes. Alternativa: F4e.2c primero y los pasos 1-5 después, aceptando
    retocar dos veces `components.css:82-106`.

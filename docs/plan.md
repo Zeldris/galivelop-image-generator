@@ -1443,6 +1443,24 @@ tiene arreglo); la persona puede cambiarlo.
 | F4e.2c | Interfaz de F4e.2: panel de texto y tipografía, añadir y quitar, avisos de `overflow` y `missingFonts`; CHANGELOG | `tests/test_ui.py` y `tests/test_ui_browser.py`; recorrido en navegador, de la persona |
 | F4e.5 | Renombrar un pedido (F4e.5): motor, API, CLI e interfaz; `docs/api.md`, es/en, CHANGELOG | Tests como F3.3 (CLI = API): cada 409 con su motivo, cola y entrega con la clave nueva, deshacer si falla la entrega; `tests/test_ui.py`; recorrido en navegador, de la persona |
 
+### Mejora de la interfaz (UI.1-UI.9)
+
+Pedido de la persona del 2026-11-05 (responsive, paneles, accesibilidad, referentes como Leonardo). Auditoría y pasos:
+`docs/interfaz/auditoria-2026-11-05.md` (§5 los pasos, §6 las decisiones de la persona). Orden decidido: UI.1-UI.5,
+UI.9 (talla de texto en «Ajustes» y mando) y el chip de medida como botón de 44 px (UI.4) **antes de F4e.2c**;
+UI.6-UI.8 con F4e.2c o después. Cada paso, un commit con su prueba en `tests/test_ui_browser.py` que falla sin el
+arreglo; el diseño con Fable. El mando lo comprueba la persona en la Deck.
+
+| Paso | Qué | Estado |
+|---|---|---|
+| UI.1 | Cabecera de una altura, botón «Ajustes» con idioma, tema y talla | pendiente |
+| UI.2 | Cajón de la cola como diálogo (trampa de foco en `lib/focus-trap.js`) | pendiente |
+| UI.3 | Foco que no se roba; atajos `T`/`X` | pendiente |
+| UI.4 | Objetivos de 44 px; chip de medida como botón con detalle | pendiente |
+| UI.5 | Retoque pegajoso a >1000 y diálogo lateral a ≤1000; avisos que no tapan | pendiente |
+| UI.9 | Talla de texto (`rem`, 1/1,15/1,3) y mando (`gamepad.js`) | pendiente |
+| UI.6-UI.8 | Editor a 360, rejillas y puntos de corte, semántica | tras F4e.2c |
+
 ## Pendiente
 
 - **Pruebas reales de la interfaz** (pedido de la persona del 2026-11-05; hoja de ruta, no ahora): sin Playwright (D6).
