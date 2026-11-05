@@ -11,6 +11,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Añadido
 
+- `arrancar.sh`: abre la interfaz con doble clic o desde el sandbox de VS Code (fija las carpetas de configuración y datos).
 - Plantillas elegibles por perfil (F4b): `compose.templates`, `zone` y `textColor`; `gimg templates`, `--template` en
   `compose` y `attempt new`, rutas de la API y un selector de plantilla por intento en la interfaz (también en el
   panel de retoque). El chip de contraste mide con la zona y el color de texto de la plantilla.

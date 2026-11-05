@@ -88,6 +88,7 @@ python3 -m gimg queue list                            # estado de la cola, con l
 python3 -m gimg queue cancel 3
 python3 -m gimg serve                                 # servicio local en 127.0.0.1:8737 (--detach, --status, --stop, --port, --idle-min)
 python3 -m gimg ui                                    # abre la interfaz en el navegador (arranca el servicio si hace falta; --no-browser)
+./arrancar.sh                                         # lo mismo, con doble clic o desde el sandbox de VS Code (fija GIMG_CONFIG_HOME y GIMG_DATA_HOME)
 python3 -m gimg project list | project remove mi-proyecto | version
 ```
 

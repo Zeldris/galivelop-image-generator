@@ -86,6 +86,7 @@ python3 -m gimg queue list                            # queue state, with errors
 python3 -m gimg queue cancel 3
 python3 -m gimg serve                                 # local service on 127.0.0.1:8737 (--detach, --status, --stop, --port, --idle-min)
 python3 -m gimg ui                                    # open the interface in the browser (starts the service if needed; --no-browser)
+./arrancar.sh                                         # the same, by double click or from the VS Code sandbox (sets GIMG_CONFIG_HOME and GIMG_DATA_HOME)
 python3 -m gimg project list | project remove my-project | version
 ```
 

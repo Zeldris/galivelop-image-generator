@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- `arrancar.sh`: opens the interface by double click or from the VS Code sandbox (sets the config and data folders).
 - Selectable templates per profile (F4b): `compose.templates`, `zone` and `textColor`; `gimg templates`,
   `--template` on `compose` and `attempt new`, API routes and a per-attempt template selector in the interface
   (also in the retouch panel). The contrast chip measures with the template's zone and text color.
