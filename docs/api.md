@@ -270,4 +270,4 @@ curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/3/cancel -d '{}
 ## Interfaz
 
 `GET /` sirve `gimg/ui/index.html` y `GET /ui/<ruta>` los archivos de `gimg/ui/` (extensiones `.html .css .js .svg
-.png .woff2 .json`), con una CSP sin JS en línea ni recursos externos.
+.png .woff2 .ttf .json`), con una CSP sin JS en línea ni recursos externos.

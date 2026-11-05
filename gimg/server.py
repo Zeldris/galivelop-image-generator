@@ -30,7 +30,7 @@ LOCALES_DIR = Path(__file__).resolve().parent / "locales"
 STATIC_TYPES = {
     ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8",
     ".js": "text/javascript; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png",
-    ".woff2": "font/woff2", ".json": "application/json; charset=utf-8",
+    ".woff2": "font/woff2", ".ttf": "font/ttf", ".json": "application/json; charset=utf-8",
 }
 STATIC_CSP = ("default-src 'self'; img-src 'self' data: blob:; script-src 'self'; style-src 'self'; "
               "frame-ancestors 'none'; base-uri 'none'; form-action 'none'")

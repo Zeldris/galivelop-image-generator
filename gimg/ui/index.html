@@ -1,11 +1,61 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="es">
 <head>
-<meta charset="utf-8">
-<title>Galivelop IG</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Galivelop IG</title>
+  <link rel="icon" href="/ui/assets/gvig.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/ui/css/tokens.css">
+  <link rel="stylesheet" href="/ui/css/base.css">
+  <link rel="stylesheet" href="/ui/css/layout.css">
+  <link rel="stylesheet" href="/ui/css/components.css">
 </head>
 <body>
-<h1>Galivelop IG</h1>
-<p>gimg local API is running. The interface arrives in F4a.</p>
+  <a class="skip" href="#main" data-i18n="ui.nav.skip">Saltar al contenido</a>
+
+  <header class="app-header">
+    <a class="brand" href="#/" data-i18n-aria-label="ui.nav.projects">
+      <img src="/ui/assets/gvig.svg" alt="" width="28" height="28">
+      <span>Galivelop <span class="sigla">IG</span></span>
+    </a>
+    <nav class="crumbs" id="crumbs" data-i18n-aria-label="ui.nav.crumbs"></nav>
+    <div class="header-tools">
+      <div id="queue-pill"></div>
+      <label class="sr-only" for="lang" data-i18n="ui.lang.label">Idioma</label>
+      <select id="lang" class="select-inline">
+        <option value="es">ES</option>
+        <option value="en">EN</option>
+      </select>
+      <label class="sr-only" for="theme" data-i18n="ui.theme.label">Tema</label>
+      <select id="theme" class="select-inline">
+        <option value="auto" data-i18n="ui.theme.auto">Automático</option>
+        <option value="dark" data-i18n="ui.theme.dark">Oscuro</option>
+        <option value="light" data-i18n="ui.theme.light">Claro</option>
+      </select>
+      <button type="button" class="btn btn-icon" id="help" data-i18n-aria-label="ui.shortcuts.title" aria-haspopup="dialog">?</button>
+    </div>
+  </header>
+
+  <div id="banner" class="banner" role="alert" hidden></div>
+  <aside id="queue-drawer" class="queue-drawer" data-i18n-aria-label="ui.queue.label" hidden></aside>
+
+  <main id="main" class="app-main" tabindex="-1"></main>
+
+  <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+  <div id="alerts" class="sr-only" role="alert" aria-live="assertive"></div>
+
+  <dialog id="lightbox" class="lightbox" data-i18n-aria-label="ui.lightbox.label">
+    <img id="lightbox-img" alt="">
+    <div class="bar"><span id="lightbox-caption"></span><button type="button" class="btn" id="lightbox-close" data-i18n="ui.actions.close">Cerrar</button></div>
+  </dialog>
+
+  <dialog id="shortcuts" class="shortcuts" data-i18n-aria-label="ui.shortcuts.title">
+    <h2 data-i18n="ui.shortcuts.title">Atajos de teclado y mando</h2>
+    <div id="shortcuts-body"></div>
+    <p class="row" id="shortcuts-foot"><button type="button" class="btn" id="shortcuts-close" data-i18n="ui.actions.close">Cerrar</button></p>
+  </dialog>
+
+  <script type="module" src="/ui/js/app.js"></script>
 </body>
 </html>
