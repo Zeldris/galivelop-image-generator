@@ -58,6 +58,7 @@ import os
 import signal
 import sys
 import threading
+import time
 from pathlib import Path
 
 from . import engine as engine_mod
@@ -66,6 +67,7 @@ from . import fsutil, i18n, limits, log, orders, paths, png, projects, queue
 from .errors import GimgError
 
 
+LOCK_RETRY_S = 0.3  # how long `_single_worker` keeps trying the lock before it says another worker is alive
 COMPOSE_PENDING = {"code": "compose.pending", "params": {}}  # the attempt is registered, its composition not finished
 
 
@@ -79,10 +81,16 @@ def _single_worker():
     path.parent.mkdir(parents=True, exist_ok=True)
     fd = os.open(str(path), os.O_RDWR | os.O_CREAT, 0o600)
     try:
-        try:
-            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            raise GimgError("worker.already_running", path=str(path))
+        # a momentary holder (`queue._no_worker` probing the lock) must not make a fresh worker give up
+        deadline = time.monotonic() + LOCK_RETRY_S
+        while True:
+            try:
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except BlockingIOError:
+                if time.monotonic() >= deadline:
+                    raise GimgError("worker.already_running", path=str(path))
+                time.sleep(0.02)
         yield
     finally:
         os.close(fd)

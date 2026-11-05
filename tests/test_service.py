@@ -1,4 +1,5 @@
 """F3.4: `gimg serve` (lock, state file, stop, idleness) and the worker it launches; real subprocesses, the fake engine."""
+import contextlib
 import copy
 import fcntl
 import json
@@ -8,13 +9,14 @@ import socket
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
 import urllib.request
 from pathlib import Path
 from unittest import mock
 
-from gimg import paths, queue, service
+from gimg import paths, queue, service, worker
 from gimg.errors import GimgError
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -58,6 +60,14 @@ class Env(unittest.TestCase):
         self.addCleanup(self.kill_service)
 
     def kill_service(self):
+        pids = []
+        with contextlib.suppress(Exception):
+            pids = [e["pid"] for e in json.loads((self.data / "queue.json").read_text())["entries"]
+                    if e["state"] == "running" and isinstance(e.get("pid"), int)]
+        for pid in pids:  # a launched `gimg work` that outlived a failing test
+            if alive(pid):
+                with contextlib.suppress(OSError):
+                    os.kill(pid, signal.SIGKILL)
         state = service.read_state()
         if state is not None and alive(state["pid"]):
             os.kill(state["pid"], signal.SIGKILL)
@@ -125,7 +135,7 @@ class ServeCommand(Env):
         stopped = self.gimg("serve", "--stop")
         self.assertEqual(stopped.returncode, 0, stopped.stderr)
         self.assertTrue(wait_until(self.stopped, 5))
-        self.assertFalse(alive(state["pid"]))
+        self.assertTrue(wait_until(lambda: not alive(state["pid"]), 3))
         # nothing left to stop or to report
         again = self.gimg("serve", "--stop")
         self.assertEqual(again.returncode, 1)
@@ -234,7 +244,9 @@ class Idle(Env):
         self.assertEqual(self.gimg("order", "submit", NAME, str(order)).returncode, 0)
         env = dict(self.env, GIMG_SERVE_IDLE_S="1")
         state = json.loads(self.gimg("serve", "--detach", "--port", "0", "--json", env=env).stdout)
-        time.sleep(3.5)  # more than one beat and the idle time
+        # well past the idle time (1 s) and two beats: it is still there because of the worker lock and the entry
+        quiet = wait_until(lambda: not alive(state["pid"]) or not service.lock_held(), 3.5)
+        self.assertFalse(quiet)
         self.assertTrue(alive(state["pid"]) and service.lock_held())
         self.assertEqual(self.states(), ["queued"])
         self.assertTrue(self.call(state, "/api/health")["worker"])
@@ -309,6 +321,22 @@ class Launching(Env):
                 t.join()
         self.assertEqual(popen.call_count, 1)
 
+    def test_a_queue_error_is_reported_once(self):
+        launcher = service._Launcher("en")
+        with mock.patch.object(queue, "list_entries", side_effect=GimgError("queue.corrupt", path="q")), \
+                mock.patch("sys.stderr") as err:
+            for _ in range(3):
+                self.assertFalse(service.maybe_launch_worker(launcher))
+        self.assertEqual(err.write.call_count, 2)  # one print = text + newline
+
+    def test_an_entry_left_running_by_a_dead_worker_is_recovered_and_launches(self):
+        data = json.loads((self.data / "queue.json").read_text())
+        data["entries"][0].update(state="running", pid=2 ** 22 + 1)
+        (self.data / "queue.json").write_text(json.dumps(data))
+        with mock.patch.object(service.subprocess, "Popen") as popen:
+            self.assertTrue(service.maybe_launch_worker(service._Launcher("en")))
+        popen.assert_called_once()
+
     def test_unknown_lock_state_launches_nothing(self):
         with mock.patch.object(service.subprocess, "Popen") as popen, \
                 mock.patch.object(queue, "worker_alive", return_value=None):
@@ -335,6 +363,54 @@ class Launching(Env):
         with mock.patch.object(service.subprocess, "Popen") as popen:
             service.kick()
         popen.assert_not_called()
+
+
+class Races(Env):
+    def test_two_detaches_at_once_both_get_the_one_service(self):
+        procs = [subprocess.Popen([sys.executable, "-m", "gimg", "--lang", "en", "serve", "--detach", "--port", "0",
+                                   "--json"], cwd=ROOT, env=self.env, stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE, text=True) for _ in range(2)]
+        outs = [p.communicate(timeout=30) for p in procs]
+        self.assertEqual([p.returncode for p in procs], [0, 0], outs)
+        states = [json.loads(out) for out, _ in outs]
+        self.assertEqual(states[0]["pid"], states[1]["pid"])
+
+    def test_worker_survives_a_momentary_lock_holder(self):
+        queue.worker_lock_path().parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(str(queue.worker_lock_path()), os.O_RDWR | os.O_CREAT, 0o600)
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        threading.Timer(0.1, os.close, args=(fd,)).start()
+        with worker._single_worker():
+            pass
+        fd2 = os.open(str(queue.worker_lock_path()), os.O_RDWR)
+        self.addCleanup(os.close, fd2)
+        fcntl.flock(fd2, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        with mock.patch.object(worker, "LOCK_RETRY_S", 0.05), self.assertRaises(GimgError) as ctx:
+            with worker._single_worker():
+                pass
+        self.assertEqual(ctx.exception.code, "worker.already_running")
+
+    def test_stop_ignores_a_state_file_whose_pid_is_not_the_service(self):
+        state = self.start()
+        stale = dict(state, pid=os.getpid())  # a live process that is not the service
+        service.state_path().write_text(json.dumps(stale))
+        with mock.patch.object(service.os, "kill") as kill, self.assertRaises(GimgError) as ctx:
+            service.stop()
+        self.assertEqual(ctx.exception.code, "serve.not_running")
+        kill.assert_not_called()
+        service.state_path().write_text(json.dumps(state))
+
+    def test_stop_with_a_foreign_pid_is_not_running(self):
+        state = self.start()
+        with mock.patch.object(service.os, "kill", side_effect=PermissionError), \
+                self.assertRaises(GimgError) as ctx:
+            service.stop()
+        self.assertEqual(ctx.exception.code, "serve.not_running")
+
+    def test_sighup_stops_like_sigterm(self):
+        state = self.start()
+        os.kill(state["pid"], signal.SIGHUP)
+        self.assertTrue(wait_until(self.stopped, 5))
 
 
 class WorkerAlive(Env):

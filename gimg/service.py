@@ -159,9 +159,12 @@ def stop(wait_s: float = STOP_WAIT_S + 2.0) -> dict:
     state = read_state()
     if state is None or not lock_held():
         raise GimgError("serve.not_running")
+    answer = health(state["port"])
+    if answer is None or answer.get("pid") != state["pid"]:  # a stale file whose pid may belong to someone else
+        raise GimgError("serve.not_running")
     try:
         os.kill(state["pid"], signal.SIGTERM)
-    except ProcessLookupError:
+    except (ProcessLookupError, PermissionError):
         raise GimgError("serve.not_running")
     deadline = time.monotonic() + wait_s
     while lock_held() and time.monotonic() < deadline:
@@ -175,6 +178,7 @@ class _Launcher:
         self.lang = lang
         self.proc = None
         self.not_before = 0.0
+        self.last_error = None
 
 
 def maybe_launch_worker(launcher: _Launcher) -> bool:
@@ -192,7 +196,7 @@ def maybe_launch_worker(launcher: _Launcher) -> bool:
                     launcher.not_before = time.monotonic() + RETRY_AFTER_FAILURE_S
             if time.monotonic() < launcher.not_before:
                 return False
-            if queue.worker_alive() is not False or queue.next_queued() is None:
+            if queue.worker_alive() is not False or not queue.list_entries(["queued"]):
                 return False
             with open(worker_log_path(), "ab") as log:
                 launcher.proc = subprocess.Popen(
@@ -200,7 +204,10 @@ def maybe_launch_worker(launcher: _Launcher) -> bool:
                     stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
             return True
         except Exception as exc:  # noqa: BLE001 - a failed launch must not fail a request or stop the service
-            print("gimg serve: %s: %s" % (type(exc).__name__, exc), file=sys.stderr, flush=True)
+            text = "%s: %s" % (type(exc).__name__, exc)
+            if text != launcher.last_error:  # the 2 s beat must not repeat the same line for ever
+                launcher.last_error = text
+                print("gimg serve: " + text, file=sys.stderr, flush=True)
             return False
 
 
@@ -257,9 +264,17 @@ def run(port=None, idle_s=None, lang=None, announce=None) -> dict:
             raise GimgError("serve.port_busy", port=port)
         stop_event = threading.Event()
         previous = {}
+
+        def on_signal(*_):
+            if stop_event.is_set():  # a second signal while stopping: leave now
+                with contextlib.suppress(OSError):
+                    os.unlink(state_path())
+                os._exit(130)
+            stop_event.set()
+
         if threading.current_thread() is threading.main_thread():
-            for sig in (signal.SIGTERM, signal.SIGINT):
-                previous[sig] = signal.signal(sig, lambda *_: stop_event.set())
+            for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
+                previous[sig] = signal.signal(sig, on_signal)
         bound = httpd.server_address[1]
         state = {"pid": os.getpid(), "port": bound, "url": "http://127.0.0.1:%d" % bound,
                  "version": __version__, "startedAt": _now()}
@@ -305,6 +320,16 @@ def _tail(path, lines: int = 5) -> str:
         return ""
 
 
+def wait_status(seconds: float):
+    """`status()` of a service that is starting, waiting up to `seconds`; ``None`` if none comes up."""
+    deadline = time.monotonic() + seconds
+    while True:
+        current = status()
+        if current is not None or time.monotonic() >= deadline:
+            return current
+        time.sleep(0.05)
+
+
 def detach(port=None, idle_min=None, lang=None) -> dict:
     """Start ``gimg serve`` in the background and wait up to 5 s for its ``/api/health``; returns its state."""
     current = status()
@@ -325,6 +350,10 @@ def detach(port=None, idle_min=None, lang=None) -> dict:
         if state is not None and state["pid"] == proc.pid and health(state["port"]) is not None:
             return state
         time.sleep(0.05)
+    if proc.poll() is not None and lock_held():  # it may have lost the lock to a service another `--detach` just started
+        alive = wait_status(HEALTH_WAIT_S)
+        if alive is not None:
+            return alive
     if proc.poll() is None:
         with contextlib.suppress(OSError):
             proc.terminate()
