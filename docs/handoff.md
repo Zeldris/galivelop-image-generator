@@ -15,7 +15,7 @@
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 | **Tarea en curso · `f2-motor`** | Fusionada en `main` por el PR #2 (`624f7a9`, 2026-11-05, CI en verde); rama terminada. |
 | **Tarea en curso · `plan-piezas`** | Fusionada en `main` por el PR #3 (`d128106`, 2026-11-05, CI en verde); rama terminada. v0.4.0 etiquetada en `d128106`; `release.yml` falló (sin `ffmpeg`/`rsvg-convert`) y la release se creó a mano con `releases.py notes` y el mismo título (mismo árbol que el CI verde del PR); `releases.py check` en verde. |
-| **Tarea en curso · `f4e-piezas`** | Abierta el 2026-11-05. Hecho: decisión de fase y «en detalle» de 5 (F4e.1, D41); F4e.1a trozo 1 (borrar intento: motor `orders.delete_attempt`, `nextId`, DELETE de la API, `gimg attempt rm`, `tests/test_attempt_delete.py`); trozo 2 (borrar composición: `orders.delete_compose`, `DELETE …/attempts/{id}/compose`, `gimg compose rm`; borrar plantilla: `compose.delete_template`/`template_usage`, `GET`/`DELETE …/templates/{id}`, `gimg template rm`; tests `test_compose_delete.py` y `test_template_delete.py`). trozo 3 (`hidden` por elemento del layout: `compose._check_layout`/`_apply`/`_contrast_of`, `docs/api.md`, `tests/test_layout_hidden.py`). **F4e.1a cerrado** (`e34977f`). F4e.1b (interfaz): «Borrar» en intento y composición (`attempt-card.js`, `order-view.js`, con aviso si es el elegido), en plantilla (`pieces-tab.js`, con `usedBy`/`inRepo`; la por defecto, deshabilitado), «Ocultar»/«Mostrar» en el editor, que lee y reenvía `hidden` (también `hidden: false` para lo que la plantilla trae oculto: `compose.elements` da `hidden`), mock y CHANGELOG; falta el recorrido en navegador de la persona. Falta: «en detalle» de 7, 1 y 4(a)(c), e implementarlos. Presupuesto de compactaciones: 3 |
+| **Tarea en curso · `f4e-piezas`** | Abierta el 2026-11-05. Hecho: decisión de fase y «en detalle» de 5 (F4e.1, D41); F4e.1a y F4e.1b (ver «Hecho»). Falta: recorrido de F4e.1b en navegador (persona); «en detalle» de 7, 1 y 4(a)(c), e implementarlos. Presupuesto de compactaciones: 3 |
 | **Tarea en curso · `release-install`** | Fusionada en `main` por el PR #4 (`71a69a3`, 2026-11-05, CI en verde, confirmado por la persona); rama terminada. `release.yml` instala `ciInstall` y usa el Python de `check.yml`; un test compara sus pasos con los de `check.yml`. Retro: `docs/records/retro-2026-11-05-release-install.md`. |
 
 Aquí `logRows` está apagado en `.claude/gw.json`: las filas se editan a mano (`handoff.py set-row` no escribe) y no
@@ -27,11 +27,11 @@ hace falta `GW_SHARED_LOG`. Aun así, cada rama toca solo su fila salvo al cerra
 
 ## Hecho (5 últimas)
 
-1. 2026-11-05 — 2026-11-05 · `release-install` (PR #4, `71a69a3`): `release.yml` con el Install y el Python de `check.yml`, y test que los compara; la próxima etiqueta ya debería crear la release sola.
-2. 2026-10-25 — F1 (`f1-nucleo`) a `main` por push directo con confirmación de la persona: CI no comprobado (sin `gh` en esta máquina; en F0, sin cuota), **comprobado solo en local** (check del `pre-push` sobre `0d02f51`). Tres fases hechas, marca en `fe7d968`.
-3. 2026-10-25 — F0 (`f0-esqueleto`) a `main` por push directo con confirmación de la persona: CI sin cuota (pagos fallidos), **comprobado solo en local** (check del `pre-push` sobre el mismo commit). Tres fases hechas, marca en `17e28eb`.
-4. 2026-10-25 — `diseno-generador` a `main` por push directo con confirmación de la persona: CI sin cuota, **comprobado solo en local** (check del `pre-push` sobre el mismo commit). Tres fases hechas, marca en `b111e4f`.
-5. 2026-10-25 — Diseño ronda 3 aprobada: clave del pedido, retoque de prompt, entrega PNG, `gimg`, seguridad, registro opt-ai.
+1. 2026-11-05 — F4e.1a (2026-11-05): borrar intento (orders.delete_attempt, nextId, gimg attempt rm), composición (orders.delete_compose, gimg compose rm) y plantilla (compose.delete_template/template_usage, GET/DELETE …/templates/{id}, gimg template rm); hidden por elemento del layout (cerrado en e34977f). F4e.1b (704bfb2): botones Borrar con modal en intento, composición y plantilla (usedBy/inRepo), Ocultar/Mostrar en el editor que reenvía hidden.
+2. 2026-11-05 — 2026-11-05 · `release-install` (PR #4, `71a69a3`): `release.yml` con el Install y el Python de `check.yml`, y test que los compara; la próxima etiqueta ya debería crear la release sola.
+3. 2026-10-25 — F1 (`f1-nucleo`) a `main` por push directo con confirmación de la persona: CI no comprobado (sin `gh` en esta máquina; en F0, sin cuota), **comprobado solo en local** (check del `pre-push` sobre `0d02f51`). Tres fases hechas, marca en `fe7d968`.
+4. 2026-10-25 — F0 (`f0-esqueleto`) a `main` por push directo con confirmación de la persona: CI sin cuota (pagos fallidos), **comprobado solo en local** (check del `pre-push` sobre el mismo commit). Tres fases hechas, marca en `17e28eb`.
+5. 2026-10-25 — `diseno-generador` a `main` por push directo con confirmación de la persona: CI sin cuota, **comprobado solo en local** (check del `pre-push` sobre el mismo commit). Tres fases hechas, marca en `b111e4f`.
 
 ## Pendiente
 
