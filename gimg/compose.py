@@ -691,20 +691,65 @@ def _contrast_of(profile_cfg, compose_cfg, raw_path, raw_size, found, moved) -> 
 
 
 # --- fonts, and fitting the text into its box (F4e.2) ---
-def installed_families():
-    """The font families ``fc-list : family`` knows, sorted and without repeats (an entry such as ``A,B`` is two), or
-    ``None`` if it is missing or fails."""
+def families_status():
+    """``(families, reason)``: the font families ``fc-list : family`` knows, sorted and without repeats (an entry such as
+    ``A,B`` is two), and ``None``; or ``None`` and why it cannot tell (``"not_found"`` when ``fc-list`` is not in PATH,
+    else what failed: the error, the time limit, the last line of its stderr or the exit code)."""
     exe = shutil.which("fc-list")
     if exe is None:
-        return None
+        return None, "not_found"
     try:
         done = subprocess.run([exe, ":", "family"], capture_output=True, text=True, errors="replace",
                               timeout=30, stdin=subprocess.DEVNULL)
-    except (OSError, subprocess.SubprocessError):
-        return None
+    except subprocess.TimeoutExpired:
+        return None, "timeout after 30s"
+    except (OSError, subprocess.SubprocessError) as exc:
+        return None, str(getattr(exc, "strerror", None) or exc)[:300]
     if done.returncode != 0:
-        return None
-    return sorted({n.strip() for line in done.stdout.splitlines() for n in line.split(",") if n.strip()})
+        err = done.stderr if isinstance(done.stderr, str) else ""
+        lines = [ln.strip() for ln in err.splitlines() if ln.strip()]
+        return None, (lines[-1][:300] if lines else "exit code %d" % done.returncode)
+    return sorted({n.strip() for line in done.stdout.splitlines() for n in line.split(",") if n.strip()}), None
+
+
+def installed_families():
+    """The font families ``fc-list`` knows (`families_status`), or ``None`` if it is missing or fails."""
+    return families_status()[0]
+
+
+def fonts_report(project=None) -> dict:
+    """What ``GET /api/fonts`` and ``gimg fonts`` answer (F4e.2b): ``{"installed": [family], "available": bool,
+    "reason": str|None, "projects": [{"project", "profiles": [{"profile", "fonts": [{"name", "installed": bool|None}]}]}]}``.
+    The fonts of a profile are its ``compose.fonts`` plus the ``fonts`` of every template saved for it, without repeats;
+    `installed` is ``None`` for all of them when ``fc-list`` cannot tell (``available`` false, ``reason`` says why:
+    ``not_found`` or the failure). `project` limits the report to that project (``project.unknown`` if it is not
+    registered); a project whose configuration does not load has ``"error"`` (the error body) instead of ``profiles``."""
+    families, reason = families_status()
+    have = None if families is None else {f.lower() for f in families}
+    names = [project] if project else list(projects.list_projects())
+    out = []
+    for name in names:
+        try:
+            proj = projects.get(name)
+        except GimgError as exc:
+            if project:
+                raise
+            out.append({"project": name, "error": {"code": exc.code, "params": exc.params}, "profiles": []})
+            continue
+        profiles = []
+        for pname, pcfg in proj["config"]["profiles"].items():
+            if not pcfg.get("compose"):
+                continue
+            wanted = list((pcfg["compose"]).get("fonts") or [])
+            try:
+                for src in template_sources(proj, pname):
+                    wanted += [f for f in (src["entry"].get("fonts") or []) if f not in wanted]
+            except (GimgError, OSError, ValueError):
+                pass
+            profiles.append({"profile": pname, "fonts": [
+                {"name": f, "installed": None if have is None else f.lower() in have} for f in dict.fromkeys(wanted)]})
+        out.append({"project": name, "profiles": profiles})
+    return {"installed": families or [], "available": families is not None, "reason": reason, "projects": out}
 
 
 def families_of(layout) -> list:

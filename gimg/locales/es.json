@@ -751,5 +751,16 @@
   "ui.queue.deleteTitle": "¿Borrar q{id}?",
   "ui.queue.deleteMessage": "La entrada q{id} sale de la cola y de este pedido; ya no se podrá reintentar desde ella. No hay imagen que borrar.",
   "ui.queue.deleteConfirm": "Borrar entrada",
-  "ui.queue.deleted": "q{id} borrada."
+  "ui.queue.deleted": "q{id} borrada.",
+  "cli.cmd.fonts": "listar las fuentes instaladas y las que piden los perfiles (compose.fonts y plantillas)",
+  "cli.arg.fonts_project": "solo este proyecto",
+  "cli.out.fonts_installed": "Familias instaladas: {count}",
+  "cli.out.fonts_family": "  {family}",
+  "cli.out.fonts_unknown": "No se pudo saber qué fuentes hay instaladas ({reason}); instala fontconfig (fc-list).",
+  "cli.out.fonts_project_error": "Proyecto «{project}»: no se pudo leer ({code}).",
+  "cli.out.fonts_profile": "{project} / {profile}:",
+  "cli.out.fonts_font": "  {name}: {state}",
+  "cli.out.fonts_yes": "instalada",
+  "cli.out.fonts_no": "NO instalada",
+  "cli.out.fonts_unknown_state": "desconocido"
 }

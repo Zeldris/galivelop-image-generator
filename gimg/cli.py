@@ -106,6 +106,8 @@ def _build(lang: str) -> argparse.ArgumentParser:
     leaf(g, "rm", "cli.cmd.template_rm", project, oprofile, arg("id", "cli.arg.template_id"),
          opt("--yes", "cli.arg.yes", action="store_true"))
 
+    leaf(top, "fonts", "cli.cmd.fonts", opt("--project", "cli.arg.fonts_project", metavar="PROJECT"))
+
     leaf(top, "measure", "cli.cmd.measure", arg("image", "cli.arg.image_path"),
          opt("--palette", "cli.arg.palette"), opt("--project", "cli.arg.measure_project", metavar="PROJECT"),
          opt("--refs", "cli.arg.refs", nargs="+", default=[], metavar="IMAGE"),
@@ -266,6 +268,8 @@ def _run(args, out: _Out) -> int:
         _templates(args, out)
     elif cmd == "template":
         _template_save(args, out) if args.sub == "save" else _template_rm(args, out)
+    elif cmd == "fonts":
+        _fonts(args, out)
     elif cmd == "measure":
         _measure(args, out)
     elif cmd == "sheet":
@@ -436,6 +440,29 @@ def _templates(args, out: _Out) -> None:
         out.line("cli.out.template_line", id=item["id"], template=item["template"], logo=out.none(item["logo"]),
                  fields=", ".join(item["fields"]) or out.t("cli.out.none"),
                  default=out.t("cli.out.template_default") if item["default"] else "")
+
+
+def _fonts(args, out: _Out) -> None:
+    report = compose.fonts_report(args.project)
+    if out.as_json:
+        out.data(report)
+        return
+    if report["available"]:
+        out.line("cli.out.fonts_installed", count=len(report["installed"]))
+        for family in report["installed"]:
+            out.line("cli.out.fonts_family", family=family)
+    else:
+        out.line("cli.out.fonts_unknown", reason=report["reason"])
+    for item in report["projects"]:
+        if "error" in item:
+            out.line("cli.out.fonts_project_error", project=item["project"], code=item["error"]["code"])
+            continue
+        for prof in item["profiles"]:
+            out.line("cli.out.fonts_profile", project=item["project"], profile=prof["profile"])
+            for font in prof["fonts"]:
+                state = "cli.out.fonts_unknown_state" if font["installed"] is None else (
+                    "cli.out.fonts_yes" if font["installed"] else "cli.out.fonts_no")
+                out.line("cli.out.fonts_font", name=font["name"], state=out.t(state))
 
 
 def _measure(args, out: _Out) -> None:

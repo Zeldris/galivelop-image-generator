@@ -861,6 +861,11 @@ def models_list(req):
     return models.listing(req.lang)
 
 
+@route("GET", "/api/fonts")
+def fonts_list(req):
+    return compose.fonts_report((req.query.get("project") or [None])[0] or None)
+
+
 @route("GET", "/api/projects/{p}/check")
 def project_check(req):
     projects.get(req.params["p"])  # project.unknown (404) before anything else
