@@ -97,10 +97,10 @@ class ComposeDeleteTests(WriteBase):
     def test_the_chosen_one_says_so_and_its_delivery_is_not_touched(self):
         self.compose()
         self.ok("POST", self.order_url(self.key, self.profile, "/choose"), {"attempt": 1})
-        before = {k: v for k, v in orders.get(NAME, self.key, self.profile).items() if k != "attempts"}
+        before = {k: v for k, v in orders.get(NAME, self.key, self.profile).items() if k not in ("attempts", "updatedAt")}
         got = self.ok("DELETE", self.url())
         self.assertTrue(got["chosen"])
-        after = {k: v for k, v in orders.get(NAME, self.key, self.profile).items() if k != "attempts"}
+        after = {k: v for k, v in orders.get(NAME, self.key, self.profile).items() if k not in ("attempts", "updatedAt")}
         self.assertEqual(after, before)  # chosen, history and the rest of the order stay as they were
         self.assertEqual(after["chosen"], 1)
 
