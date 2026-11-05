@@ -1355,4 +1355,13 @@ de `contain` se recorta a la imagen); la interfaz mide así la zona y los elemen
 
 ## Pendiente
 
+- **Panel del equipo** (pedido de la persona del 2026-11-05; por diseñar y fasear tras F4e): una vista de la interfaz
+  (y su equivalente en la CLI, p. ej. `gimg doctor --machine`) que **mide el equipo**: CPU (modelo, núcleos, uso,
+  temperatura), GPU (modelo, uso, temperatura, VRAM; en la Deck, la compartida con la RAM), RAM y swap (total y
+  libre), disco libre en la carpeta de datos de gimg, sistema y núcleo, y el perfil de máquina en uso (`maxVram`),
+  con si lo libre basta para el modelo del perfil. Solo stdlib (D6): `/proc` y `/sys`; lo que no se pueda leer en otra
+  plataforma sale como «no disponible». Y **limpia**: los procesos de gimg (`sd-cli`, worker o servicio huérfanos) se
+  paran con un botón y modal «sí / no»; los ajenos que consumen mucha RAM no se matan desde la interfaz: se listan con
+  su memoria y la orden que la persona copia y lanza (`kill <pid>`, `kill -9 <pid>` si no responde). Hoy `arrancar.sh`
+  solo lanza `gimg ui`; gimg limpia lo suyo (parada por inactividad, `cancel` mata el grupo de `sd-cli`).
 - Proponer al flujo (`gw-harvest`) una operación de imagen en `opt-ai/references/log-format.md` (D26).
