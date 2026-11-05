@@ -22,6 +22,7 @@ import copy
 import glob
 import json
 import os
+import posixpath
 import re
 import shutil
 import subprocess
@@ -931,9 +932,9 @@ def save_template(project, key, profile, attempt_id, name, dest="local") -> dict
 def _template_files(proj, profile, template_id) -> dict:
     """Where the template `template_id` of `profile` lives as files, and everything that decides if it can be deleted
     (F4e.1, D41): ``{"id", "source", "svg", "json", "usedBy", "inRepo"}``. Raises ``compose.bad_name`` (not an id),
-    ``compose.delete_default`` (the template of ``compose`` itself, ``default``, or the file ``compose.template``
-    names), ``compose.delete_config`` (declared in ``compose.templates``: there is no file of its own),
-    ``compose.delete_unknown`` (no such template in the folders), ``order.profile_unknown`` and ``path.*`` (the folder
+    ``compose.delete_default`` (``default``, or the file is the ``template`` of ``compose`` or of a ``compose.templates``
+    entry of any profile), ``compose.delete_config`` (declared in ``compose.templates``: there is no file of its own),
+    ``compose.delete_symlink`` (the .svg or .json is a link: never followed, never deleted), ``compose.delete_unknown`` (no such template in the folders), ``order.profile_unknown`` and ``path.*`` (the folder
     leaves the project: D25). Nothing is changed. ``usedBy`` counts the attempts (``compose.templateId`` or
     ``composeError.templateId``) of every order of the profile that have it."""
     if template_id == DEFAULT_TEMPLATE:
@@ -949,26 +950,33 @@ def _template_files(proj, profile, template_id) -> dict:
         raise GimgError("compose.delete_config", template=template_id)
     found = None
     folder = project_templates_dir(proj["root"], cfg, profile)  # raises path.* if templatesDir leaves the project
-    if folder is not None and paths.inside(folder, template_id + ".svg").is_file():
-        found = ("project", folder)
-    else:
-        local = local_templates_dir(proj["name"], profile)
-        if paths.inside(local, template_id + ".svg").is_file():
-            found = ("local", local)
+    for source, where in (("project", folder), ("local", local_templates_dir(proj["name"], profile))):
+        if where is None:
+            continue
+        where = Path(where).resolve()  # the folder resolved, the name added: a link is never followed to its target
+        if (where / (template_id + ".svg")).is_symlink() or (where / (template_id + ".json")).is_symlink():
+            raise GimgError("compose.delete_symlink", template=template_id)
+        if (where / (template_id + ".svg")).is_file():
+            found = (source, where)
+            break
     if found is None:
         raise GimgError("compose.delete_unknown", template=template_id, profile=profile)
     source, folder = found
     if source == "project":
-        own = paths.check_relative(cfg["templatesDir"]).rstrip("/") + "/" + profile + "/" + template_id + ".svg"
-        if cfg.get("template") and paths.check_relative(cfg["template"]) == own:
-            raise GimgError("compose.delete_default", template=template_id)
+        own = posixpath.normpath(paths.check_relative(cfg["templatesDir"]).rstrip("/") + "/" + profile + "/"
+                                 + template_id + ".svg")
+        for other in proj["config"]["profiles"].values():  # any profile may point at this file as its template
+            ccfg = other.get("compose") or {}
+            for ref in [ccfg.get("template")] + [(e or {}).get("template") for e in (ccfg.get("templates") or {}).values()]:
+                if isinstance(ref, str) and posixpath.normpath(paths.check_relative(ref)) == own:
+                    raise GimgError("compose.delete_default", template=template_id)
     used = 0
     for order in orders.list_orders(proj["name"], profile):
         for attempt in order["attempts"]:
             stored = attempt.get("compose") or attempt.get("composeError") or {}
             used += stored.get("templateId") == template_id
-    return {"id": template_id, "source": source, "svg": paths.inside(folder, template_id + ".svg"),
-            "json": paths.inside(folder, template_id + ".json"), "usedBy": used, "inRepo": source == "project"}
+    return {"id": template_id, "source": source, "svg": folder / (template_id + ".svg"),
+            "json": folder / (template_id + ".json"), "usedBy": used, "inRepo": source == "project"}
 
 
 def template_usage(project, profile, template_id) -> dict:
@@ -988,12 +996,13 @@ def delete_template(project, profile, template_id) -> dict:
     proj = projects.get(project)
     found = _template_files(proj, profile, template_id)
     removed = 0
-    for path in (found["svg"], found["json"]):
-        try:
-            path.unlink()
-            removed += 1
-        except OSError:
-            pass  # a sidecar that never existed, or a file already gone
+    try:
+        found["json"].unlink()  # the sidecar first: if the svg then fails, the template is still whole and listed
+        removed += 1
+    except FileNotFoundError:
+        pass  # it never had one
+    found["svg"].unlink()  # a failure here goes up: nothing is answered nor logged as deleted
+    removed += 1
     log.append(project, log.template_delete_record(profile, template_id, found["source"], removed, found["usedBy"]))
     return {"id": template_id, "source": found["source"], "files": removed, "usedBy": found["usedBy"],
             "inRepo": found["inRepo"]}

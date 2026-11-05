@@ -94,8 +94,10 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--text", "cli.arg.text_kv", action="append", default=[], metavar="FIELD=TEXT"),
          opt("--template", "cli.arg.template", metavar="ID"),
          opt("--layout", "cli.arg.layout", metavar="JSON"))
-    leaf(top, "compose-rm", "cli.cmd.compose_rm", project, okey, oprofile, attempt,  # `gimg compose rm` (see `main`)
-         opt("--yes", "cli.arg.yes", action="store_true"))
+    rm = leaf(top, "compose-rm", "cli.cmd.compose_rm", project, okey, oprofile, attempt,  # `gimg compose rm`
+              opt("--yes", "cli.arg.yes", action="store_true"))
+    top._choices_actions = [a for a in top._choices_actions if a.dest != "compose-rm"]  # not listed in --help
+    rm.prog = "gimg compose rm"
     leaf(top, "templates", "cli.cmd.templates", project, oprofile)
     g = group(top, "template", "cli.cmd.template")
     leaf(g, "save", "cli.cmd.template_save", project, oprofile, okey, attempt, arg("name", "cli.arg.template_name"),
@@ -593,14 +595,28 @@ def _queue(args, sub, out: _Out) -> None:
             out.line("cli.out.cancelled", id=entry["id"])
 
 
+def _rewrite_compose_rm(argv: list) -> None:
+    """`gimg compose rm …` is the command `compose-rm` (`compose` itself is a leaf with optional positionals, so it
+    cannot hold subcommands). Only when `compose` is the command (the first word that is no option, nor the value of
+    ``--lang``, the only global option with a value) and `rm` comes right after it: `gimg compose rm` wins over a
+    project named "rm", which is composed with `gimg compose -- rm <key> <profile>`."""
+    i = 0
+    while i < len(argv):
+        word = argv[i]
+        if word == "--lang":
+            i += 2
+        elif word.startswith("-"):
+            i += 1
+        else:
+            if word == "compose" and argv[i + 1:i + 2] == ["rm"]:
+                argv[i:i + 2] = ["compose-rm"]
+            return
+
+
 def main(argv=None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     lang = _prescan_lang(argv)
-    for i, word in enumerate(argv[:-1]):  # `gimg compose rm …` is the command `compose-rm` (`compose` itself is a leaf)
-        if word == "compose":
-            if argv[i + 1] == "rm":
-                argv[i:i + 2] = ["compose-rm"]
-            break
+    _rewrite_compose_rm(argv)
     parser = _build(lang)
     try:
         args = parser.parse_args(argv)

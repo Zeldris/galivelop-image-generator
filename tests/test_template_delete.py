@@ -90,11 +90,10 @@ class TemplateDeleteTests(SaveBase):
         self.save("mio")
         outside = self.tmp / "ajeno.svg"
         outside.write_text("x")
-        for bad in ("..%2F..%2Fajeno", "%2E%2E", "a%2Fb", "a%5Cb", "MIO", "x" * 41, "-a"):
-            resp, payload = self.send("DELETE", self.one(bad))
-            self.assertIn(resp.status, (400, 404), (bad, payload))
-            if resp.status == 400:
-                self.assertEqual(json.loads(payload)["error"]["code"], "compose.bad_name", bad)
+        for bad in ("..%2F..%2Fajeno", "%2E%2E", "a%2Fb", "a%5Cb"):  # a separator never reaches the id: no such route
+            self.bad("DELETE", self.one(bad), None, 404, "api.not_found")
+        for bad in ("MIO", "x" * 41, "-a"):
+            self.bad("DELETE", self.one(bad), None, 400, "compose.bad_name")
         self.assertTrue(outside.is_file())
         self.assertEqual(self.names(self.data), ["mio.json", "mio.svg"])
         with self.assertRaises(compose.GimgError) as cm:
@@ -163,6 +162,61 @@ class TemplateDeleteTests(SaveBase):
             out = self.cli("--lang", "en", "template", "rm", NAME, "og", "suyo")
         self.assertIn("Template \"suyo\" deleted", out)
         self.assertEqual(self.names(self.proj_dir), [])
+
+    def test_a_symlinked_file_is_refused_and_neither_the_link_nor_its_target_goes(self):
+        self.save("mio")
+        target = self.tmp / "real.svg"
+        target.write_text(SVG)
+        (self.data / "mio.svg").unlink()
+        (self.data / "mio.svg").symlink_to(target)
+        self.bad("DELETE", self.one("mio"), None, 409, "compose.delete_symlink")
+        self.bad("GET", self.one("mio"), None, 409, "compose.delete_symlink")
+        self.assertTrue(target.is_file())
+        self.assertTrue((self.data / "mio.svg").is_symlink())
+        self.assertTrue((self.data / "mio.json").is_file())
+
+    def test_a_symlinked_sidecar_is_refused_too(self):
+        self.save("mio")
+        target = self.tmp / "real.json"
+        target.write_text("{}")
+        (self.data / "mio.json").unlink()
+        (self.data / "mio.json").symlink_to(target)
+        self.bad("DELETE", self.one("mio"), None, 409, "compose.delete_symlink")
+        self.assertTrue(target.is_file() and (self.data / "mio.svg").is_file())
+
+    def test_a_failing_svg_is_an_error_with_no_log_line_and_the_template_stays_listed(self):
+        self.save("mio")
+        real = type(self.data / "x").unlink
+
+        def unlink(path, *a, **k):
+            if path.name == "mio.svg":
+                raise PermissionError("read-only")
+            return real(path, *a, **k)
+
+        with mock.patch("pathlib.Path.unlink", unlink):
+            with self.assertRaises(PermissionError):
+                compose.delete_template(NAME, "og", "mio")
+        self.assertTrue((self.data / "mio.svg").is_file())
+        self.assertEqual(sorted(i["id"] for i in self.ok("GET", self.url)), ["default", "mio"])
+        text = log.log_path(NAME).read_text() if log.log_path(NAME).exists() else ""
+        self.assertNotIn(log.OP_TEMPLATE_DELETE, text)
+
+    def test_a_file_that_another_profile_uses_as_its_template_is_protected(self):
+        self.save("suyo", "project")
+        path = self.root / "galivelop-images.json"
+        cfg = json.loads(path.read_text())
+        cfg["profiles"]["banner"]["compose"] = dict(cfg["profiles"]["og"]["compose"], template="templates/./og/suyo.svg")
+        path.write_text(json.dumps(cfg))
+        self.bad("DELETE", self.one("suyo"), None, 409, "compose.delete_default")
+        self.assertEqual(self.names(self.proj_dir), ["suyo.json", "suyo.svg"])
+
+    def test_a_file_that_a_templates_entry_uses_is_protected(self):
+        self.save("suyo", "project")
+        path = self.root / "galivelop-images.json"
+        cfg = json.loads(path.read_text())
+        cfg["profiles"]["og"]["compose"]["templates"] = {"alias": {"template": "templates/og/suyo.svg"}}
+        path.write_text(json.dumps(cfg))
+        self.bad("DELETE", self.one("suyo"), None, 409, "compose.delete_default")
 
 
 if __name__ == "__main__":

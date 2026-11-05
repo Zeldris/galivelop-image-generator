@@ -35,6 +35,7 @@ hace falta `GW_SHARED_LOG`. Aun así, cada rama toca solo su fila salvo al cerra
 
 ## Pendiente
 
+- **Leves de la revisión de F4e.1a trozo 2 (2026-11-05, no se tocan):** (4) un mismo id en carpeta de proyecto y local: `delete_template` borra solo el de proyecto (el primero) y el local reaparece en la lista; (8) `delete_compose` borra la imagen compuesta tras guardar el registro (un fallo del `unlink` deja el registro sin `compose` y el archivo huérfano).
 - **Leves de la revisión de F4e.1a trozo 1 (2026-11-05, no se tocan):** `gimg attempt rm` pregunta «¿Seguro?» antes de comprobar que el intento existe (luego da 404); `log.append` en `orders.delete_attempt` puede lanzar `OSError` tras haber borrado (el cliente vería 500 con el borrado hecho).
 - **Leves de la fase 1 de `release-install` (2026-11-05, no se revisan más en este PR):** `release.yml` copia a mano los pasos «Install» y «Check» de `check.yml` (un workflow reutilizable con `workflow_call` quitaría la copia: P2 de la retro, al flujo; mientras, el test de P1 vigila que no se desvíen); el test inestable de `test_engine_sdcpp` puede tumbar una release: se reintenta con `gh run rerun`.
 - **Releases en GitHub** (pedido de la persona del 2026-11-05, `docs/plan.md` tras la tabla de fases): v0.1.0, v0.3.0 y v0.4.0 hechas (v0.4.0 a mano: ver `release-install`); las siguientes, con `releases.py bump` y la etiqueta (`release.yml`) (`python3 releases.py check` en cada cierre de fase).

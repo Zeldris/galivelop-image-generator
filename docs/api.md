@@ -66,7 +66,7 @@ líneas del esquema cuando el pedido no valida. Idioma: `?lang=es|en`, si no el 
 si no el del sistema. Estados: 400 petición mal formada o valor no válido (`api.bad_json`, `api.bad_param`, `*.invalid`,
 `limit.*`, `path.*`, `key.*`); 403 Host u Origin; 404 `project.unknown`, `order.unknown`, `order.profile_unknown`,
 `order.attempt_unknown`, `queue.unknown`, `compose.delete_unknown`, `api.not_found`; 405, 411, 413, 415 de arriba; 409 estado que no lo permite
-(`compose.template_exists`, `order.choose_*`, `order.undo_*`, `order.history_empty`, `order.delete_chosen`, `order.delete_busy`, `order.compose_none`, `order.compose_no_raw`, `compose.delete_default`, `compose.delete_config`, `queue.not_cancellable`, `queue.not_movable`, `compose.busy`, `measure.busy`,
+(`compose.template_exists`, `order.choose_*`, `order.undo_*`, `order.history_empty`, `order.delete_chosen`, `order.delete_busy`, `order.compose_none`, `order.compose_no_raw`, `compose.delete_default`, `compose.delete_config`, `compose.delete_symlink`, `queue.not_cancellable`, `queue.not_movable`, `compose.busy`, `measure.busy`,
 `api.heavy_busy`, `delivery.target_taken`); 500 fallos del lado del servidor (`api.unexpected` lleva `"message":
 "Tipo: texto"`). Los textos de todos los códigos: `GET /api/locales/{lang}`.
 
@@ -323,9 +323,9 @@ curl -s $B/api/projects/mi-proyecto/profiles/og/templates/lobo-izquierda
 
 ### DELETE /api/projects/{p}/profiles/{profile}/templates/{id}
 
-Borra una plantilla local o de proyecto: su `.svg` y su `.json`. Solo dentro de `compose.templatesDir` o de la carpeta
+Borra una plantilla local o de proyecto: su `.json` primero y su `.svg` al final (si el `.svg` falla, el error sube y no hay línea en el log; un `.json` ausente se tolera). Solo dentro de `compose.templatesDir` o de la carpeta
 local (`paths.inside`). Los intentos que la usan no cambian. Respuesta: `{"id", "source", "files": n, "usedBy": n,
-"inRepo": bool}`. Errores: `compose.delete_default` (409, es la plantilla por defecto del perfil), `compose.delete_config`
+"inRepo": bool}`. Los enlaces simbólicos no se siguen: la carpeta se resuelve y se le añade el nombre. Errores: `compose.delete_default` (409, es `default`, o su archivo es la `template` de `compose` o de una entrada de `compose.templates` de cualquier perfil), `compose.delete_symlink` (409, el `.svg` o el `.json` es un enlace simbólico), `compose.delete_config`
 (409, está declarada en `compose.templates`, no es un archivo), `compose.delete_unknown` (404, no hay plantilla local ni de
 proyecto con ese id), `compose.bad_name` (400, id no válido), `path.*` (400), `order.profile_unknown` (404). Añade una
 línea `template.delete` al log. CLI: `gimg template rm <proyecto> <perfil> <id> [--yes]`.

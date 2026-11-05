@@ -138,6 +138,29 @@ class ComposeDeleteTests(WriteBase):
         self.assertIn("does not change until it is delivered again", out)
         self.assertFalse(image.is_file())
 
+    def test_through_main_compose_rm_deletes_and_only_when_compose_is_the_command(self):
+        from gimg import cli
+        raw, image = self.compose()
+        self.assertIn("Composition of attempt 1 deleted", self.cli(
+            "--lang", "en", "compose", "rm", NAME, self.key, self.profile, "1", "--yes"))
+        self.assertFalse(image.is_file())
+        for argv, want in ((["--lang", "en", "compose", "rm", "x"], ["--lang", "en", "compose-rm", "x"]),
+                           (["compose", "--", "rm", "k", "p"], None), (["order", "compose", "rm"], None),
+                           (["--json", "--lang", "rm", "compose", "rm"], ["--json", "--lang", "rm", "compose-rm"])):
+            got = list(argv)
+            cli._rewrite_compose_rm(got)
+            self.assertEqual(got, want or argv)
+
+    def test_a_project_named_rm_is_composed_with_the_double_dash_and_compose_rm_is_not_in_help(self):
+        from gimg import cli
+        args = cli._build("en").parse_args(["compose", "--", "rm", "k", "p"])
+        self.assertEqual((args.cmd, args.project, args.key, args.profile), ("compose", "rm", "k", "p"))
+        out = io.StringIO()
+        import contextlib
+        with contextlib.redirect_stdout(out), self.assertRaises(SystemExit):
+            cli._build("en").parse_args(["--help"])
+        self.assertNotIn("compose-rm", out.getvalue())
+
     def test_compose_itself_still_parses_and_a_project_is_not_confused_with_rm(self):
         from gimg import cli
         parser = cli._build("en")
