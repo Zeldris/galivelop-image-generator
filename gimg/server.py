@@ -47,9 +47,9 @@ _EXACT = {
           "api.not_found", "compose.template_missing", "compose.logo_missing"),
     405: ("api.method_not_allowed",), 411: ("api.length_required",), 413: ("api.body_too_large",),
     415: ("api.content_type",),
-    409: ("compose.busy", "measure.busy", "api.heavy_busy", "compose.nothing_to_do", "compose.no_attempts", "serve.already_running", "serve.port_busy", "serve.not_running", "order.discard_chosen",
+    409: ("compose.template_exists", "compose.busy", "measure.busy", "api.heavy_busy", "compose.nothing_to_do", "compose.no_attempts", "serve.already_running", "serve.port_busy", "serve.not_running", "order.discard_chosen",
           "order.history_empty", "queue.not_cancellable", "delivery.target_taken"),
-    400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "compose.template_unknown", "api.bad_json",
+    400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "compose.template_unknown", "compose.element_unknown", "compose.bad_layout", "compose.bad_element", "compose.templates_dir_missing", "api.bad_json",
           "api.bad_param"),
 }
 # Server-side faults whose names match the 400 patterns below: checked first.
@@ -536,7 +536,27 @@ def _template_param(value, allow_empty=True):
 @route("GET", "/api/projects/{p}/profiles/{profile}/templates")
 def profile_templates(req):
     q = req.params
-    return compose.templates_of(_config_profile(projects.get(q["p"])["config"], q["profile"]))
+    proj = projects.get(q["p"])
+    _config_profile(proj["config"], q["profile"])
+    return compose.templates_of(compose.merged_profile(proj, q["profile"]))
+
+
+@route("POST", "/api/projects/{p}/profiles/{profile}/templates")
+def profile_template_save(req):
+    q = req.params
+    body = _fields(req.body, ("from", "name", "dest"))
+    origin = body.get("from")
+    if not (isinstance(origin, dict) and set(origin) == {"key", "attempt"} and isinstance(origin["key"], str)):
+        raise GimgError("api.bad_param", name="from")
+    attempt_id = _attempt_id(origin["attempt"])
+    name = body.get("name")
+    if not isinstance(name, str):
+        raise GimgError("api.bad_param", name="name")
+    dest = body.get("dest", "local")
+    if not isinstance(dest, str):
+        raise GimgError("api.bad_param", name="dest")
+    _config_profile(projects.get(q["p"])["config"], q["profile"])
+    return Reply(201, compose.save_template(q["p"], origin["key"], q["profile"], attempt_id, name, dest), json=True)
 
 
 @route("GET", "/api/projects/{p}/profiles/{profile}/assets/{kind}")
@@ -545,7 +565,8 @@ def profile_asset(req):
     if q["kind"] not in ("template", "logo"):
         raise GimgError("api.not_found", path=q["kind"])
     project = projects.get(q["p"])
-    cfg = _config_profile(project["config"], q["profile"]).get("compose")
+    _config_profile(project["config"], q["profile"])
+    cfg = (compose.merged_profile(project, q["profile"]) or {}).get("compose")
     wanted = _template_param(req.query.get("id", [None])[0], allow_empty=False)
     if wanted is not None:
         cfg = compose.effective(cfg, wanted)  # compose.template_unknown for an id that does not exist
@@ -716,14 +737,17 @@ def order_undo(req):
 @route("POST", _ATT + "/compose")
 def attempt_compose(req):
     q = req.params
-    body = _fields(req.body, ("text", "template"))
+    body = _fields(req.body, ("text", "template", "layout"))
     text = body.get("text")
     if text is not None and not (isinstance(text, dict) and all(isinstance(v, str) for v in text.values())):
         raise GimgError("api.bad_param", name="text")
     template = _template_param(body.get("template"))
+    layout = body.get("layout")
+    if layout is not None and not isinstance(layout, dict):
+        raise GimgError("compose.bad_layout", element="", reason="not an object")
     attempt_id = _int_param("id", q["id"])
     with _heavy():
-        return compose.recompose(q["p"], q["key"], q["profile"], attempt_id, text or None, template)
+        return compose.recompose(q["p"], q["key"], q["profile"], attempt_id, text or None, template, layout)
 
 
 @route("GET", _ATT + "/measure")
@@ -733,17 +757,29 @@ def attempt_measure(req):
     raw = (req.query.get("raw") or [""])[0]
     if raw not in ("", "0", "1"):
         raise GimgError("api.bad_param", name="raw")
+    base = (req.query.get("base") or [""])[0]
+    if base not in ("", "0", "1") or (base == "1" and raw == "1"):
+        raise GimgError("api.bad_param", name="base")
     zone = (req.query.get("zone") or [None])[0]
     text = (req.query.get("text") or [None])[0]
     if (zone is None) != (text is None):
         raise GimgError("api.bad_param", name="zone" if zone is None else "text")
-    find = orders.raw_image if raw == "1" else orders.attempt_image
+    find = orders.raw_image if raw == "1" or base == "1" else orders.attempt_image
     path = _guarded(lambda: find(q["p"], q["key"], q["profile"], attempt))
-    brand = projects.get(q["p"])["config"].get("brand") or {}
+    proj = projects.get(q["p"])
+    brand = proj["config"].get("brand") or {}
+    dest_zone = measure.parse_zone(zone) if base == "1" and zone is not None else None
     with _heavy():
+        if dest_zone is not None:  # F4c: the zone is in pixels of the delivered image; the raw one is measured
+            raw_size = measure.image_size(path)
+            zone = ",".join(str(v) for v in compose.zone_to_raw(_config_profile(proj["config"], q["profile"]),
+                                                                *raw_size, dest_zone))
         result = measure.measure(path, brand.get("palette") or None, (), zone, text)
+    if dest_zone is not None:
+        result["contrast"]["zone"] = list(dest_zone)
     result["image"] = attempt["id"]  # by id, never by path (D25)
     result["raw"] = raw == "1"
+    result["base"] = base == "1"
     return result
 
 

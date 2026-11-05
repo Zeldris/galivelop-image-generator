@@ -84,6 +84,11 @@ class LocaleTests(unittest.TestCase):
         "timeout": {"tool": "ffmpeg", "seconds": 120}, "tool_failed": {"tool": "ffmpeg", "reason": "Invalid data"},
         "write_failed": {"path": "out/q1.png", "reason": "No such file or directory"},
         "no_attempts": {"order": "hero", "profile": "og"}, "busy": {"attempt": 3}, "unexpected": {"reason": "KeyError: 'x'"},
+        "element_unknown": {"element": "ghost", "allowed": "title, logo"},
+        "bad_layout": {"element": "title", "reason": "outside 1200x630"},
+        "bad_element": {"id": "gimg-title", "reason": "data-gimg-box"}, "templates_dir_missing": {"profile": "og"},
+        "template_exists": {"template": "claro"}, "bad_name": {"name": "Mal Nombre"},
+        "bad_dest": {"dest": "nube", "allowed": "local, project"},
     }
 
     def test_every_code_of_compose_py_has_a_text_in_both_languages_that_uses_its_parameters(self):

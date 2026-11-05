@@ -66,7 +66,7 @@ líneas del esquema cuando el pedido no valida. Idioma: `?lang=es|en`, si no el 
 si no el del sistema. Estados: 400 petición mal formada o valor no válido (`api.bad_json`, `api.bad_param`, `*.invalid`,
 `limit.*`, `path.*`, `key.*`); 403 Host u Origin; 404 `project.unknown`, `order.unknown`, `order.profile_unknown`,
 `order.attempt_unknown`, `queue.unknown`, `api.not_found`; 405, 411, 413, 415 de arriba; 409 estado que no lo permite
-(`order.choose_*`, `order.undo_*`, `order.history_empty`, `queue.not_cancellable`, `compose.busy`, `measure.busy`,
+(`compose.template_exists`, `order.choose_*`, `order.undo_*`, `order.history_empty`, `queue.not_cancellable`, `compose.busy`, `measure.busy`,
 `api.heavy_busy`, `delivery.target_taken`); 500 fallos del lado del servidor (`api.unexpected` lleva `"message":
 "Tipo: texto"`). Los textos de todos los códigos: `GET /api/locales/{lang}`.
 
@@ -201,11 +201,16 @@ curl -s -X POST -H 'Content-Type: application/json' \
 ### POST /api/projects/{p}/orders/{profile}/{key}/attempts/{id}/compose
 
 Recompone el texto y el logo sobre el intento (necesita ffmpeg y rsvg-convert). Cuerpo opcional: `{"text": {"campo":
-"valor"}, "template": "id"}`. Con `template` se compone con esa plantilla y el intento la conserva
-(`compose.templateId`); sin él, con la que ya tenía (si no, `default`). Respuesta: el intento (con `delivered` si es la
+"valor"}, "template": "id", "layout": {"title": {"x", "y", "w", "h"}}}`. Con `template` se compone con esa plantilla y
+el intento la conserva (`compose.templateId`); sin él, con la que ya tenía (si no, `default`). `layout` mueve los
+elementos de la plantilla (`id="gimg-<nombre>"` con `data-gimg-box`), en píxeles enteros del destino, y el intento lo
+conserva (`compose.layout`, solo lo movido); `{}` vuelve a la plantilla, y sin `layout` se mantiene el del intento salvo
+que cambie la plantilla (entonces se vacía). `compose.contrast` guarda el contraste de cada texto sobre la imagen base.
+Respuesta: el intento (con `delivered` si es la
 elegida). Una sola tarea pesada a la vez: la segunda espera hasta 60 s y da 409 `api.heavy_busy`. Errores:
 `compose.busy` (409), `compose.template_unknown` (400; una `templateId` guardada que ya no existe también falla, sin
-cambiar a otra), `compose.*`.
+cambiar a otra), `compose.element_unknown`, `compose.bad_layout`, `compose.bad_element` (400, antes de cambiar nada si
+el `layout` viene en la petición), `compose.*`.
 
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' \
@@ -231,8 +236,10 @@ curl -s $B/api/projects/mi-proyecto/orders/banner/fauna%2Flobo/attempts/1/log
 
 ### GET /api/projects/{p}/orders/{profile}/{key}/attempts/{id}/measure
 
-Mide la imagen del intento como `gimg measure --json`, con la paleta de `brand`. Query: `raw=1`, y juntas `zone=x,y,w,h`
-y `text=%23RRGGBB`. Una tarea pesada a la vez (409 `api.heavy_busy`). Errores: `measure.*`, `api.bad_param`.
+Mide la imagen del intento como `gimg measure --json`, con la paleta de `brand`. Query: `raw=1` (la cruda, tal cual) o
+`base=1` (la imagen base: la cruda llevada al destino, sin la capa; con `zone` en píxeles del destino, que se lleva a la
+cruda con `compose.zone_to_raw`, y la respuesta repite esa `zone`), y juntas `zone=x,y,w,h` y `text=%23RRGGBB`. `raw=1`
+y `base=1` no van juntos (`api.bad_param`). Una tarea pesada a la vez (409 `api.heavy_busy`). Errores: `measure.*`, `api.bad_param`.
 
 ```sh
 curl -s "$B/api/projects/mi-proyecto/orders/og/fauna%2Flobo/attempts/1/measure?zone=40,40,600,120&text=%23FFFFFF"
@@ -240,12 +247,30 @@ curl -s "$B/api/projects/mi-proyecto/orders/og/fauna%2Flobo/attempts/1/measure?z
 
 ### GET /api/projects/{p}/profiles/{profile}/templates
 
-Las plantillas de composición del perfil: `[{"id", "template", "logo", "fields", "zone"?, "textColor"?, "default"}]`,
-`default` primero y el resto por id (`logo` y `zone`/`textColor` heredados como dice `compose.effective`). Un perfil sin
+Las plantillas de composición del perfil: `[{"id", "template", "logo", "fields", "zone"?, "textColor"?, "source",
+"default"}]`, `default` primero y el resto por id (`logo` y `zone`/`textColor` heredados como dice `compose.effective`).
+`source` dice de dónde sale: `config` (`compose.templates`), `project` (`<compose.templatesDir>/<perfil>/`) o `local`
+(`<datos>/projects/<p>/templates/<perfil>/`); un id repetido entre fuentes vale el de la primera. Un perfil sin
 `compose` da `[]`. Es la misma lista que `gimg templates`. Error: `order.profile_unknown`.
 
 ```sh
 curl -s $B/api/projects/mi-proyecto/profiles/og/templates
+```
+
+### POST /api/projects/{p}/profiles/{profile}/templates
+
+Guarda como plantilla nueva la de un intento con su `layout` aplicado y los huecos sin sustituir. Cuerpo: `{"from":
+{"key": "<pedido>", "attempt": <id>}, "name": "<id nuevo>", "dest": "local|project"}` (`dest` por defecto `local`).
+`local` escribe `<datos>/projects/<p>/templates/<perfil>/<name>.svg`; `project`, `<compose.templatesDir>/<perfil>/<name>.svg`
+dentro del proyecto. Al lado va `<name>.json` con `base` (la plantilla de origen) y lo heredado (`logo`, `fields`,
+`zone`, `textColor`). Respuesta 201: la entrada nueva de la lista de plantillas. Nunca sobrescribe. Errores:
+`compose.template_exists` (409, el nombre ya existe en cualquier fuente), `compose.templates_dir_missing` (400, `project`
+sin `templatesDir`), `compose.bad_name`, `compose.bad_dest`, `compose.element_unknown`, `compose.template_unknown`
+(400), `order.unknown`, `order.attempt_unknown`, `order.profile_unknown` (404), `api.bad_param`.
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/profiles/og/templates \
+  -d '{"from":{"key":"fauna/lobo","attempt":1},"name":"lobo-izquierda","dest":"local"}'
 ```
 
 ### GET /api/projects/{p}/profiles/{profile}/assets/{kind}

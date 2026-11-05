@@ -235,6 +235,10 @@
               "$ref": "#/$defs/hexColor",
               "description": "Colour of the text over `zone`, #RRGGBB."
             },
+            "templatesDir": {
+              "$ref": "#/$defs/relativePath",
+              "description": "Folder of the project, relative to its root, where `gimg template save --dest project` writes new templates (`<templatesDir>/<profile>/<name>.svg`); the templates in it are offered too."
+            },
             "templates": {
               "type": "object",
               "maxProperties": 20,

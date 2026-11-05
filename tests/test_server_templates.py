@@ -36,7 +36,7 @@ class TemplatesRouteTests(TemplateApiBase):
         self.assertEqual([(i["id"], i["default"]) for i in got], [("default", True), ("claro", False)])
         self.assertEqual(got[1], {"id": "claro", "template": "alt.svg", "logo": "logo.svg", "fields": ["title"],
                                   "zone": {"x": 1, "y": 2, "w": 30, "h": 40}, "textColor": "#102030",
-                                  "default": False})
+                                  "source": "config", "default": False})
         self.assertNotIn("zone", got[0])
 
     def test_a_profile_without_compose_has_an_empty_list_and_an_unknown_one_is_404(self):

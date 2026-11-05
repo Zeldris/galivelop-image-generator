@@ -217,7 +217,7 @@ def _compose_locked(entry: dict, project: dict, attempt_id: int, raw: Path, fina
         if not (isinstance(error, dict) and error.get("code") == COMPOSE_PENDING["code"]):
             return None  # `gimg compose` got there first (and then it says how it went)
         info = compose_mod.render(
-            project["root"], project["config"]["profiles"][profile], raw, final, entry.get("text") or {}, profile,
+            project["root"], compose_mod.merged_profile(project, profile), raw, final, entry.get("text") or {}, profile,
             prefix=".compose-q%d-" % entry_id, **_template_kw(entry.get("template")))
         orders.set_composed(project_name, key, profile, attempt_id, info)
         state["compose"] = info

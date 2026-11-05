@@ -86,8 +86,12 @@ def _build(lang: str) -> argparse.ArgumentParser:
     leaf(top, "compose", "cli.cmd.compose", project, okey, oprofile,
          arg("attempt", "cli.arg.attempt_optional", type=int, nargs="?", default=None),
          opt("--text", "cli.arg.text_kv", action="append", default=[], metavar="FIELD=TEXT"),
-         opt("--template", "cli.arg.template", metavar="ID"))
+         opt("--template", "cli.arg.template", metavar="ID"),
+         opt("--layout", "cli.arg.layout", metavar="JSON"))
     leaf(top, "templates", "cli.cmd.templates", project, oprofile)
+    g = group(top, "template", "cli.cmd.template")
+    leaf(g, "save", "cli.cmd.template_save", project, oprofile, okey, attempt, arg("name", "cli.arg.template_name"),
+         opt("--dest", "cli.arg.template_dest", choices=("local", "project"), default="local"))
 
     leaf(top, "measure", "cli.cmd.measure", arg("image", "cli.arg.image_path"),
          opt("--palette", "cli.arg.palette"), opt("--project", "cli.arg.measure_project", metavar="PROJECT"),
@@ -240,6 +244,8 @@ def _run(args, out: _Out) -> int:
         _compose(args, out)
     elif cmd == "templates":
         _templates(args, out)
+    elif cmd == "template":
+        _template_save(args, out)
     elif cmd == "measure":
         _measure(args, out)
     elif cmd == "sheet":
@@ -347,7 +353,13 @@ def _text_pairs(pairs) -> dict:
 
 def _compose(args, out: _Out) -> None:
     text = _text_pairs(args.text)
-    item = compose.recompose(args.project, args.key, args.profile, args.attempt, text or None, args.template)
+    layout = None
+    if args.layout is not None:
+        try:
+            layout = json.loads(args.layout)
+        except ValueError as exc:
+            raise GimgError("compose.bad_layout", element="", reason=str(exc)[:100])
+    item = compose.recompose(args.project, args.key, args.profile, args.attempt, text or None, args.template, layout)
     if out.as_json:
         out.data(item)
     elif "delivered" in item:
@@ -356,11 +368,19 @@ def _compose(args, out: _Out) -> None:
         out.line("cli.out.composed", id=item["id"], image=item["image"])
 
 
+def _template_save(args, out: _Out) -> None:
+    item = compose.save_template(args.project, args.key, args.profile, args.attempt, args.name, args.dest)
+    if out.as_json:
+        out.data(item)
+    else:
+        out.line("cli.out.template_saved", id=item["id"], source=item["source"], template=item["template"])
+
+
 def _templates(args, out: _Out) -> None:
-    profile_cfg = projects.get(args.project)["config"]["profiles"].get(args.profile)
-    if profile_cfg is None:
+    proj = projects.get(args.project)
+    if proj["config"]["profiles"].get(args.profile) is None:
         raise GimgError("order.profile_unknown", profile=args.profile)
-    items = compose.templates_of(profile_cfg)
+    items = compose.templates_of(compose.merged_profile(proj, args.profile))
     if out.as_json:
         out.data(items)
         return

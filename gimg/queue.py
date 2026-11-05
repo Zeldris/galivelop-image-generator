@@ -190,7 +190,7 @@ def enqueue(project: str, key: str, profile: str, specs: list) -> list:
     for spec in specs:
         limits.check(spec, machine)
     for tid in {spec["template"] for spec in specs if spec.get("template") is not None}:  # before queueing anything
-        compose_mod.effective(projects.get(project)["config"]["profiles"][profile].get("compose"), tid)
+        compose_mod.effective((compose_mod.merged_profile(projects.get(project), profile) or {}).get("compose"), tid)
     now = _now()
 
     def change(data):

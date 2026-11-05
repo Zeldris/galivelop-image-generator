@@ -418,6 +418,8 @@ def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None)
             record["composeError"] = {"code": error["code"], "params": copy.deepcopy(error["params"])}
             if isinstance(error.get("templateId"), str):
                 record["composeError"]["templateId"] = error["templateId"]
+            if isinstance(error.get("layout"), dict) and error["layout"]:
+                record["composeError"]["layout"] = copy.deepcopy(error["layout"])
             if "raw" in record:  # not composed: the raw image is the one to show until it is
                 record["image"] = record["raw"]
         order["attempts"].append(record)
@@ -449,13 +451,15 @@ def set_composed(project: str, key: str, profile: str, attempt_id: int, compose:
     return _modify(project, key, profile, change)
 
 
-def set_compose_error(project: str, key: str, profile: str, attempt_id: int, error: dict, template_id=None) -> dict:
+def set_compose_error(project: str, key: str, profile: str, attempt_id: int, error: dict, template_id=None,
+                      layout=None) -> dict:
     """Record that the composition of attempt `attempt_id` failed (or, with ``compose.pending``, has not finished):
     ``composeError`` becomes ``{"code", "params"}`` and ``compose`` goes away; ``image`` becomes the raw image, which
     stands in until `set_composed`. Returns the attempt (a copy). Nothing is read or written on disk.
 
     The template of the composition (F4b) is kept as ``composeError.templateId`` so that composing again does not fall
-    back to another: `template_id`, else the one of the error or of the ``compose`` being replaced."""
+    back to another: `template_id`, else the one of the error or of the ``compose`` being replaced. The same goes for
+    the layout of the elements (F4c): `layout` (``{}`` for none), else the one of the error or of the ``compose``."""
     if not (isinstance(error, dict) and isinstance(error.get("code"), str) and isinstance(error.get("params"), dict)):
         raise GimgError("order.spec_invalid", missing="composeError")
 
@@ -463,9 +467,13 @@ def set_compose_error(project: str, key: str, profile: str, attempt_id: int, err
         item = _attempt(order, attempt_id)
         kept = template_id or (item.get("composeError") or {}).get("templateId") \
             or (item.get("compose") or {}).get("templateId")
+        kept_layout = layout if layout is not None else \
+            (item.get("composeError") or {}).get("layout") or (item.get("compose") or {}).get("layout")
         item["composeError"] = {"code": error["code"], "params": copy.deepcopy(error["params"])}
         if isinstance(kept, str):
             item["composeError"]["templateId"] = kept
+        if kept_layout:
+            item["composeError"]["layout"] = copy.deepcopy(kept_layout)
         item.pop("compose", None)
         if isinstance(item.get("raw"), str):
             paths.inside(_order_dir(project, key, profile), item["raw"])

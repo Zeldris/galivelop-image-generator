@@ -327,6 +327,23 @@ def _fonts() -> list:
     return out
 
 
+def _element_problem(root, profile, template_id):
+    """What is wrong with the editable elements (``id="gimg-*"``) of a template, as text, or ``None``: malformed
+    elements, or a ``viewBox`` that is not ``0 0 <targetWidth> <targetHeight>`` (then they cannot be edited)."""
+    lang = i18n.default_lang()
+    try:
+        cfg = compose_mod.effective(profile.get("compose"), template_id)
+        path = compose_mod._asset(cfg.get("templateRoot") or root, cfg["template"], "compose.template_missing")
+        svg = compose_mod._read_svg(path)
+        found = compose_mod.elements(svg)
+    except GimgError as exc:
+        return exc.message(lang)
+    width, height = compose_mod.target_size(profile)
+    if found and compose_mod.viewbox_of(svg) != (0.0, 0.0, float(width), float(height)):
+        return i18n.t("doctor.templates.viewbox", lang, width=width, height=height)
+    return None
+
+
 def _template_files() -> list:
     """The template and logo files of every ``compose`` and ``compose.templates`` entry of the registered projects:
     inside the project, a file, of a sane size. A problem is a ``warn`` (composing that template would fail)."""
@@ -341,7 +358,16 @@ def _template_files() -> list:
         except GimgError:
             continue  # `_fonts` says it
         count, seen = 0, set()
-        for pname, profile in proj["config"]["profiles"].items():
+        for pname in proj["config"]["profiles"]:
+            profile = compose_mod.merged_profile(proj, pname)
+            seen_ids = {}
+            for declared in compose_mod.template_sources(proj, pname):  # an id in two sources: the first wins (F4c)
+                if declared["id"] in seen_ids:
+                    out.append(Check("template:%s:%s:%s:dup" % (name, pname, declared["id"]), WARN,
+                                     "doctor.templates.duplicate",
+                                     {"project": name, "profile": pname, "id": declared["id"],
+                                      "used": seen_ids[declared["id"]], "ignored": declared["source"]}))
+                seen_ids.setdefault(declared["id"], declared["source"])
             for item in compose_mod.templates_of(profile):
                 count += 1
                 for kind in ("template", "logo"):
@@ -355,6 +381,13 @@ def _template_files() -> list:
                         out.append(Check("template:%s:%s:%s" % (name, pname, item["id"]), WARN, "doctor.templates.bad",
                                          {"project": name, "profile": pname, "id": item["id"], "path": rel,
                                           "message": exc.message(i18n.default_lang())}))
+                        continue
+                    if kind == "template":
+                        problem = _element_problem(proj["root"], profile, item["id"])
+                        if problem:
+                            out.append(Check("template:%s:%s:%s:elements" % (name, pname, item["id"]), WARN,
+                                             "doctor.templates.elements",
+                                             {"project": name, "profile": pname, "id": item["id"], "message": problem}))
         if count and not [c for c in out if c.id.startswith("template:%s:" % name)]:
             out.append(Check("templates:" + name, OK, "doctor.templates.ok", {"project": name, "count": count}))
     return out
