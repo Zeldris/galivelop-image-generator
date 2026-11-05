@@ -3,7 +3,7 @@
 # Uso: ./arrancar.sh  (o doble clic en el gestor de archivos, «Ejecutar en terminal»)
 # Opens the gimg UI in the browser, starting the local service if needed.
 set -euo pipefail
-cd "$(dirname "$(readlink -f "$0")")"
+cd "$(cd "$(dirname "$0")" && pwd)"
 
 # Desde el sandbox de VS Code (flatpak) XDG apunta dentro del sandbox: se fijan las carpetas de siempre.
 export GIMG_CONFIG_HOME="${GIMG_CONFIG_HOME:-$HOME/.config/gimg}"
