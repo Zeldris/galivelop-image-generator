@@ -345,8 +345,8 @@ class CliTemplateTests(test_cli.CliBase):
 
     def test_templates_json_is_the_list_of_the_api(self):
         got = self.js("templates", self.NAME, "og")
-        self.assertEqual(got, compose.templates_of(json.loads((self.root / "galivelop-images.json").read_text())
-                                                   ["profiles"]["og"]))
+        want = compose.templates_of(json.loads((self.root / "galivelop-images.json").read_text())["profiles"]["og"])
+        self.assertEqual(got, [dict(item, elements=[]) for item in want])
         self.assertEqual([(i["id"], i["default"]) for i in got], [("default", True), ("alt", False)])
 
     def test_templates_text_marks_the_default(self):

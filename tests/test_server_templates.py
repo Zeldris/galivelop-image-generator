@@ -36,13 +36,38 @@ class TemplatesRouteTests(TemplateApiBase):
         self.assertEqual([(i["id"], i["default"]) for i in got], [("default", True), ("claro", False)])
         self.assertEqual(got[1], {"id": "claro", "template": "alt.svg", "logo": "logo.svg", "fields": ["title"],
                                   "zone": {"x": 1, "y": 2, "w": 30, "h": 40}, "textColor": "#102030",
-                                  "source": "config", "default": False})
+                                  "source": "config", "default": False, "elements": []})
         self.assertNotIn("zone", got[0])
 
     def test_a_profile_without_compose_has_an_empty_list_and_an_unknown_one_is_404(self):
         self.assertEqual(self.ok_json(self.templates_url("banner")), [])
         resp, payload = self.get(self.templates_url("zzz"))
         self.err(resp, payload, 404, "order.profile_unknown")
+
+
+ELEMS = ("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 630'>"
+         "<text id='gimg-title' data-gimg-box='10 20 300 80' data-gimg-color='#FFFFFF'>{{title}}</text>"
+         "<g id='gimg-logo' data-gimg-box='10 500 120 60'/></svg>")
+
+
+class ElementsInListTests(TemplateApiBase):
+    def test_each_entry_carries_the_elements_of_its_svg(self):
+        (self.root / "alt.svg").write_text(ELEMS)
+        got = self.ok_json(self.templates_url())
+        self.assertEqual(got, self.cli_json("templates", NAME, "og"))
+        claro = got[1]
+        self.assertEqual([(e["id"], e["kind"], e["box"]) for e in claro["elements"]],
+                         [("title", "text", {"x": 10, "y": 20, "w": 300, "h": 80}),
+                          ("logo", "logo", {"x": 10, "y": 500, "w": 120, "h": 60})])
+        self.assertEqual(claro["elements"][0]["color"], "#FFFFFF")
+        self.assertEqual(got[0]["elements"], [])
+
+    def test_an_unreadable_or_wrong_viewbox_svg_gives_no_elements_and_the_list_survives(self):
+        (self.root / "alt.svg").write_text(ELEMS.replace("0 0 1200 630", "0 0 10 10"))
+        self.assertEqual(self.ok_json(self.templates_url())[1]["elements"], [])
+        (self.root / "alt.svg").write_bytes(b"\xff\xfe")
+        got = self.ok_json(self.templates_url())
+        self.assertEqual([i["elements"] for i in got], [[], []])
 
 
 class AssetIdTests(TemplateApiBase):

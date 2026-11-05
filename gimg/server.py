@@ -538,7 +538,7 @@ def profile_templates(req):
     q = req.params
     proj = projects.get(q["p"])
     _config_profile(proj["config"], q["profile"])
-    return compose.templates_of(compose.merged_profile(proj, q["profile"]))
+    return compose.templates_with_elements(proj, q["profile"])
 
 
 @route("POST", "/api/projects/{p}/profiles/{profile}/templates")

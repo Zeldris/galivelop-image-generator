@@ -380,7 +380,7 @@ def _templates(args, out: _Out) -> None:
     proj = projects.get(args.project)
     if proj["config"]["profiles"].get(args.profile) is None:
         raise GimgError("order.profile_unknown", profile=args.profile)
-    items = compose.templates_of(compose.merged_profile(proj, args.profile))
+    items = compose.templates_with_elements(proj, args.profile)
     if out.as_json:
         out.data(items)
         return

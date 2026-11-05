@@ -130,6 +130,24 @@ def templates_of(profile_cfg) -> list:
     return items
 
 
+def templates_with_elements(proj, profile) -> list:
+    """`templates_of` of the profile `profile` of the loaded project `proj`, each entry with ``"elements"``: what
+    `elements` reads on its SVG (F4c.3, for the editor). ``[]`` if the ``viewBox`` is not the target, the SVG has no
+    elements or cannot be read (the rest of the list is still given)."""
+    pcfg = merged_profile(proj, profile)
+    items = templates_of(pcfg)
+    if not items:
+        return items
+    target = target_size(pcfg)
+    for item in items:
+        try:
+            template, _logo = resolve_assets(proj["root"], effective(pcfg["compose"], item["id"]))
+            item["elements"] = elements(_read_svg(template), target)
+        except GimgError:
+            item["elements"] = []
+    return items
+
+
 # --- templates from folders (F4c.2, D40) ---
 _TEMPLATE_ID = re.compile(r"(?!default$)[a-z0-9][a-z0-9-]{0,39}")
 _FIELD_NAME = re.compile(r"(?!logo$)[a-z][a-zA-Z0-9]*")
@@ -910,6 +928,6 @@ def save_template(project, key, profile, attempt_id, name, dest="local") -> dict
     return next(item for item in fresh if item["id"] == name)
 
 
-__all__ = ["recompose", "render", "effective", "templates_of", "merged_profile", "template_sources", "save_template",
+__all__ = ["recompose", "render", "effective", "templates_of", "templates_with_elements", "merged_profile", "template_sources", "save_template",
            "elements", "apply_layout", "zone_to_raw", "viewbox_of", "DEFAULT_TEMPLATE", "plan_for", "target_size", "fit_geometry", "substitute", "xml_escape", "resolve_assets",
            "logo_data_uri", "rsvg_argv", "ffmpeg_argv", "TIMEOUT_S", "MAX_SVG_BYTES"]
