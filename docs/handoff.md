@@ -11,7 +11,7 @@
 | **Rama** | `f4e-piezas` (desde `main` + la bitácora de `release-install`) |
 | **Fase / tarea** | F4e (Piezas y edición): la persona partió «Piezas, edición y borrado» el 2026-11-05 (F4e: 1, 4(a)(c), 5, 7; F5: 2, 3, 4(b), 6); primero el «en detalle» de 5 (Borrar) |
 | **Último punto estable** | `main` en `71a69a3` (PR #4, CI en verde), etiqueta y release v0.4.0 |
-| **Siguiente paso** | Dos subagentes sin commit: F4e.2a (motor de texto y tipografía, `docs/plan.md` «F4e.2») en el árbol principal, y F4e.5 (renombrar un pedido, `docs/plan.md` «F4e.5») en un worktree (rama `claude/f4e5-renombrar`, vuelve con `merge-branch.sh`). Revisar cada diff, check y subir; luego F4e.2b (API y CLI) |
+| **Siguiente paso** | Hay un commit `WIP:` local de F4e.2a (a medias, sin check; no subido). Dos subagentes en marcha: F4e.2a (motor de texto y tipografía, `docs/plan.md` «F4e.2») en el árbol principal, y F4e.5 (renombrar un pedido, `docs/plan.md` «F4e.5») en un worktree (rama `claude/f4e5-renombrar`, vuelve con `merge-branch.sh`). Revisar cada diff, check y subir; luego F4e.2b (API y CLI) |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 | **Tarea en curso · `f2-motor`** | Fusionada en `main` por el PR #2 (`624f7a9`, 2026-11-05, CI en verde); rama terminada. |
 | **Tarea en curso · `plan-piezas`** | Fusionada en `main` por el PR #3 (`d128106`, 2026-11-05, CI en verde); rama terminada. v0.4.0 etiquetada en `d128106`; `release.yml` falló (sin `ffmpeg`/`rsvg-convert`) y la release se creó a mano con `releases.py notes` y el mismo título (mismo árbol que el CI verde del PR); `releases.py check` en verde. |

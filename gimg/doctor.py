@@ -306,8 +306,19 @@ def _fonts(only: Optional[str] = None) -> list:
             out.append(Check("fonts:" + name, WARN, "doctor.fonts.project_error",
                              {"project": name, "message": exc.message(i18n.default_lang())}))
             continue
+        try:
+            proj = projects.get(name)
+            templates = [src["entry"].get("fonts") or [] for pname in config["profiles"]
+                         for src in compose_mod.template_sources(proj, pname)]
+        except (GimgError, OSError, ValueError):
+            templates = []
         for profile in config["profiles"].values():
-            for font in (profile.get("compose") or {}).get("fonts", []):
+            fonts = list((profile.get("compose") or {}).get("fonts", []))
+            for font in fonts:
+                if name not in wanted.setdefault(font, []):
+                    wanted[font].append(name)
+        for own in templates:  # the families a saved template needs (F4e.2): its sidecar's ``fonts``
+            for font in own:
                 if name not in wanted.setdefault(font, []):
                     wanted[font].append(name)
     if not wanted:

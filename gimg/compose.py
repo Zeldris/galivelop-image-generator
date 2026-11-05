@@ -92,7 +92,8 @@ def effective(compose_cfg, template_id=None) -> dict:
 
     The result is ``compose_cfg`` without ``templates``; an entry of ``templates`` replaces ``template`` and, if it has
     them, ``logo`` and ``fields`` (otherwise inherited); ``zone`` and ``textColor`` are the entry's own (a different
-    template reserves a different zone). ``fit`` and ``fonts`` are the profile's. An id that does not exist, or a
+    template reserves a different zone). ``fit`` is the profile's; ``fonts`` is the profile's plus the ``fonts`` of the
+    entry (the families a saved template uses, F4e.2). An id that does not exist, or a
     profile without ``compose``, raises ``compose.template_unknown`` (``template``, ``allowed``)."""
     if template_id is not None and not isinstance(template_id, str):
         raise GimgError("compose.template_unknown", template=str(template_id), allowed=", ".join(_template_ids(compose_cfg)))
@@ -106,6 +107,9 @@ def effective(compose_cfg, template_id=None) -> dict:
         raise GimgError("compose.template_unknown", template=template_id, allowed=", ".join(_template_ids(compose_cfg)))
     out = {k: v for k, v in base.items() if k not in ("zone", "textColor")}
     out.update({k: v for k, v in entry.items() if k in _TEMPLATE_KEYS})
+    own = entry.get("fonts")
+    if isinstance(own, list) and own:  # F4e.2: the families the template uses join the profile's `compose.fonts`
+        out["fonts"] = list(base.get("fonts") or []) + [f for f in own if f not in (base.get("fonts") or [])]
     return out
 
 
@@ -156,6 +160,8 @@ _HEX_COLOR = re.compile(r"#[0-9a-fA-F]{6}")
 SOURCES = ("config", "project", "local")
 MAX_FOLDER_TEMPLATES = 100
 MAX_SIDECAR_BYTES = 65536
+MAX_FONTS = 20
+_FAMILY = re.compile(r"[A-Za-z0-9 ._-]{1,64}")
 
 
 def local_templates_dir(project, profile) -> Path:
@@ -172,7 +178,8 @@ def project_templates_dir(root, compose_cfg, profile):
 
 
 def _sidecar(path: Path) -> dict:
-    """The inheritable keys of ``<name>.json`` that are valid (anything else is ignored); ``{}`` if unreadable."""
+    """The inheritable keys of ``<name>.json`` that are valid (anything else is ignored); ``{}`` if unreadable.
+    ``fonts`` (F4e.2) is a list of up to 20 family names."""
     try:
         if path.stat().st_size > MAX_SIDECAR_BYTES:
             return {}
@@ -198,6 +205,9 @@ def _sidecar(path: Path) -> dict:
     color = data.get("textColor")
     if isinstance(color, str) and _HEX_COLOR.fullmatch(color):
         out["textColor"] = color
+    fonts = data.get("fonts")
+    if isinstance(fonts, list) and 0 < len(fonts) <= MAX_FONTS and all(isinstance(f, str) and _FAMILY.fullmatch(f) for f in fonts):
+        out["fonts"] = list(fonts)
     return out
 
 
@@ -338,36 +348,135 @@ def elements(svg_text, target=None) -> list:
     return [{k: v for k, v in e.items() if k != "_tag"} for e in _elements(svg_text, target)]
 
 
-def _check_layout(found, layout, target) -> dict:
-    """`layout` validated against the elements `found`: ``{name: {x, y, w, h, hidden?}}`` of those that move or are
-    hidden (``"hidden": true``; a box equal to the original and not hidden is dropped; ``hidden: false`` is dropped
-    unless the element is hidden by the template itself, ``display="none"``: then it is kept and shows it). ``compose.element_unknown`` for a name the template lacks, ``compose.bad_layout`` otherwise."""
+STYLE_KEYS = ("family", "size", "weight", "italic", "color", "align", "lineHeight")
+ALIGNS = ("left", "center", "right")
+MAX_TEXT = 500
+MAX_ADDED = 10
+ADDED_PREFIX = "extra"
+_ADDED = re.compile(r"extra[1-9][0-9]{0,2}")
+DEFAULT_SIZE = 16
+DEFAULT_LINE_HEIGHT = 1.2
+_ANCHORS = {"start": "left", "middle": "center", "end": "right"}
+
+
+def _is_number(v) -> bool:
+    return type(v) in (int, float) and v == v and v not in (float("inf"), float("-inf"))
+
+
+def _check_text(name, text) -> str:
+    if not isinstance(text, str) or len(text) > MAX_TEXT:
+        raise GimgError("compose.bad_layout", element=name, reason="text: a string of up to %d characters" % MAX_TEXT)
+    return text
+
+
+def _check_style(name, style, full=False) -> dict:
+    """`style` validated: ``{family?, size?, weight?, italic?, color?, align?, lineHeight?}``; with `full` all of them
+    but ``lineHeight`` are required (an added text has nothing to inherit)."""
+    def bad(reason):
+        return GimgError("compose.bad_layout", element=name, reason=reason)
+
+    if not isinstance(style, dict):
+        raise bad("style: an object")
+    for key in style:
+        if key not in STYLE_KEYS:
+            raise bad("style.%s: unknown key (allowed: %s)" % (str(key)[:30], ", ".join(STYLE_KEYS)))
+    if full:
+        missing = [k for k in STYLE_KEYS if k != "lineHeight" and k not in style]
+        if missing:
+            raise bad("style: %s required" % ", ".join(missing))
+    out = dict(style)
+    if "family" in out and not (isinstance(out["family"], str) and _FAMILY.fullmatch(out["family"])):
+        raise bad("style.family: 1-64 characters of A-Z a-z 0-9 space . _ -")
+    if "size" in out and not (type(out["size"]) is int and 4 <= out["size"] <= 1000):
+        raise bad("style.size: an integer from 4 to 1000")
+    if "weight" in out and not (type(out["weight"]) is int and 100 <= out["weight"] <= 900 and out["weight"] % 100 == 0):
+        raise bad("style.weight: 100 to 900 in steps of 100")
+    if "italic" in out and type(out["italic"]) is not bool:
+        raise bad("style.italic: a boolean")
+    if "color" in out and not (isinstance(out["color"], str) and _HEX_COLOR.fullmatch(out["color"])):
+        raise bad("style.color: #rrggbb")
+    if "align" in out and out["align"] not in ALIGNS:
+        raise bad("style.align: left, center or right")
+    if "lineHeight" in out and not (_is_number(out["lineHeight"]) and 0.8 <= out["lineHeight"] <= 3):
+        raise bad("style.lineHeight: a number from 0.8 to 3")
+    return out
+
+
+def _check_box(name, entry, target) -> dict:
+    box = {k: entry.get(k) for k in ("x", "y", "w", "h")}
+    if not all(type(v) is int for v in box.values()):
+        raise GimgError("compose.bad_layout", element=name, reason="x, y, w, h integers")
+    if box["w"] < 1 or box["h"] < 1 or box["x"] < 0 or box["y"] < 0 \
+            or box["x"] + box["w"] > target[0] or box["y"] + box["h"] > target[1]:
+        raise GimgError("compose.bad_layout", element=name, reason="outside %dx%d" % tuple(target))
+    return box
+
+
+def _check_added(name, entry, known, target) -> dict:
+    """An entry ``{"add": true, x, y, w, h, text, style}`` validated; the added text it describes (F4e.2)."""
+    def bad(reason):
+        return GimgError("compose.bad_layout", element=name, reason=reason)
+
+    if entry.get("add") is not True:
+        raise bad("add: true")
+    if not _ADDED.fullmatch(str(name)):
+        raise bad("an added text is called extra<N>")
+    if name in known:
+        raise bad("the template already has an element with this id")
+    if not set(entry) <= {"add", "x", "y", "w", "h", "text", "style"} \
+            or not {"x", "y", "w", "h", "text", "style"} <= set(entry):
+        raise bad("an added text needs x, y, w, h, text and style, and nothing else")
+    box = _check_box(name, entry, target)
+    return {"add": True, **box, "text": _check_text(name, entry["text"]), "style": _check_style(name, entry["style"], True)}
+
+
+def _check_layout(found, layout, target, adds=True) -> dict:
+    """`layout` validated against the elements `found`: ``{name: {x, y, w, h, hidden?, text?, style?}}`` of those that
+    move, are hidden (``"hidden": true``; a box equal to the original and not hidden is dropped; ``hidden: false`` is
+    dropped unless the element is hidden by the template itself, ``display="none"``: then it is kept and shows it) or
+    are given a ``text`` or a ``style`` (F4e.2, only an element whose tag is ``<text>``; an empty ``style`` alone does
+    nothing). With `adds`, an entry ``{"add": true, x, y, w, h, text, style}`, named ``extra<N>`` (at most
+    `MAX_ADDED`), is a text to add: it is kept as ``{"add": true, ...}``. ``compose.element_unknown`` for a name the
+    template lacks, ``compose.bad_layout`` otherwise."""
     if not isinstance(layout, dict):
         raise GimgError("compose.bad_layout", element="", reason="not an object")
     known = {e["id"]: e for e in found}
-    moved = {}
+    moved, added = {}, 0
     for name, box in layout.items():
+        if adds and isinstance(box, dict) and "add" in box:
+            added += 1
+            if added > MAX_ADDED:
+                raise GimgError("compose.bad_layout", element=str(name)[:60], reason="at most %d added texts" % MAX_ADDED)
+            moved[name] = _check_added(str(name)[:60], box, known, target)
+            continue
         if name not in known:
             raise GimgError("compose.element_unknown", element=str(name)[:60], allowed=", ".join(known))
-        if not (isinstance(box, dict) and set(box) in ({"x", "y", "w", "h"}, {"x", "y", "w", "h", "hidden"})
-                and all(type(v) is int for k, v in box.items() if k != "hidden")):
+        keys = {"x", "y", "w", "h", "hidden", "text", "style"}
+        if not (isinstance(box, dict) and {"x", "y", "w", "h"} <= set(box) and set(box) <= keys
+                and all(type(box[k]) is int for k in ("x", "y", "w", "h"))):
             raise GimgError("compose.bad_layout", element=name, reason="x, y, w, h integers")
         if "hidden" in box and type(box["hidden"]) is not bool:
             raise GimgError("compose.bad_layout", element=name, reason="hidden boolean")
-        if box["w"] < 1 or box["h"] < 1 or box["x"] < 0 or box["y"] < 0 \
-                or box["x"] + box["w"] > target[0] or box["y"] + box["h"] > target[1]:
-            raise GimgError("compose.bad_layout", element=name, reason="outside %dx%d" % tuple(target))
+        _check_box(name, box, target)
         tag = known[name].get("_tag")
+        if ("text" in box or "style" in box) and not (tag[0].group(1) == "text" if tag else known[name]["kind"] == "text"):
+            raise GimgError("compose.bad_layout", element=name, reason="text and style only in <text>")
+        text = _check_text(name, box["text"]) if "text" in box else None
+        style = _check_style(name, box["style"]) if "style" in box else {}
+        paint = {**({"text": text} if text is not None else {}), **({"style": style} if style else {})}
+        xywh = {k: box[k] for k in ("x", "y", "w", "h")}
         if box.get("hidden") is True:
-            moved[name] = {**{k: box[k] for k in ("x", "y", "w", "h")}, "hidden": True}
+            moved[name] = {**xywh, "hidden": True, **paint}
         elif box.get("hidden") is False and tag and _is_hidden_in(tag[1]):  # showing what the template hides
-            moved[name] = {**{k: box[k] for k in ("x", "y", "w", "h")}, "hidden": False}
-        elif {k: box[k] for k in ("x", "y", "w", "h")} != known[name]["box"]:
-            moved[name] = {k: box[k] for k in ("x", "y", "w", "h")}
+            moved[name] = {**xywh, "hidden": False, **paint}
+        elif xywh != known[name]["box"] or paint:
+            moved[name] = {**xywh, **paint}
     return moved
 
 
 _STYLE_DISPLAY = re.compile(r"(display\s*:\s*)([^;]*)", re.I)
+_STYLE_PROP = r"(?:^|;)\s*%s\s*:\s*([^;]*)"
+_NUMBER = re.compile(r"[0-9]*\.?[0-9]+")
 
 
 def _is_hidden_in(attrs) -> bool:
@@ -383,9 +492,67 @@ def _num(value) -> str:
     return "0" if text in ("", "-0") else text
 
 
-def _apply(svg_text, layout, target):
-    """``(svg, moved, found)``: `svg_text` with the moved elements transformed, what moved and the elements read."""
+def _css_prop(attrs, prop):
+    """The value of `prop` as the tag sets it (inside ``style`` first, else as an attribute), or ``None``."""
+    m = re.search(_STYLE_PROP % re.escape(prop), (attrs.get("style") or ("",))[0], re.I)
+    if m:
+        return m.group(1).strip()
+    return (attrs.get(prop) or (None,))[0]
+
+
+def _base_size(attrs) -> int:
+    """The ``font-size`` a text element has in the template (``DEFAULT_SIZE`` if none or not a number), 4-1000."""
+    m = _NUMBER.match(_css_prop(attrs, "font-size") or "")
+    return min(1000, max(4, int(round(float(m.group(0)))))) if m else DEFAULT_SIZE
+
+
+def _text_size(attrs, box, sizes) -> int:
+    """The size a text element is painted with: ``sizes[name]`` (what `render` fitted), else ``style.size``, else the template's."""
+    return (sizes or {}).get(box["_name"]) or (box.get("style") or {}).get("size") or _base_size(attrs)
+
+
+def _text_paint(box, name, attrs, size, inner=None):
+    """What painting a text element in `box` (an entry of the layout with ``text`` and/or ``style``) changes:
+    ``({attribute: value}, style_to_append, content)``. `attrs` are the attributes the tag has (``{}`` for an added one);
+    `inner` is its current content (already XML), used when the layout brings no ``text``."""
+    style = box.get("style") or {}
+    align = style.get("align") or _ANCHORS.get((_css_prop(attrs, "text-anchor") or "").strip(), "left")
+    x = {"left": box["x"], "center": box["x"] + box["w"] / 2, "right": box["x"] + box["w"]}[align]
+    height = style.get("lineHeight", DEFAULT_LINE_HEIGHT)
+    if "text" in box:
+        lines = [xml_escape(ln) for ln in box["text"].replace("\r\n", "\n").replace("\r", "\n").split("\n")]
+    else:
+        lines = [re.sub(r"<[^>]*>", "", inner or "").strip()]
+    content = "".join('<tspan x="%s" dy="%s">%s</tspan>' % (_num(x), "0" if i == 0 else _num(height * size), ln)
+                      for i, ln in enumerate(lines))
+    css = ["font-size:%spx" % _num(size), "text-anchor:%s" % {v: k for k, v in _ANCHORS.items()}[align]]
+    if "family" in style:
+        css.append("font-family:&quot;%s&quot;" % style["family"])
+    if "weight" in style:
+        css.append("font-weight:%d" % style["weight"])
+    if "italic" in style:
+        css.append("font-style:%s" % ("italic" if style["italic"] else "normal"))
+    if "color" in style:
+        css.append("fill:%s" % style["color"])
+    values = {"x": _num(x), "y": _num(box["y"] + size), "data-gimg-box": "%d %d %d %d" % (box["x"], box["y"], box["w"], box["h"])}
+    if "color" in style:
+        values["data-gimg-color"] = style["color"]
+    return values, ";".join(css), content
+
+
+def _added_xml(name, box, size) -> str:
+    values, css, content = _text_paint(dict(box, _name=name), name, {}, size)
+    values = {"id": ELEMENT_PREFIX + name, "data-gimg-box": values.pop("data-gimg-box"), **values}
+    return "<text %s style=\"%s\">%s</text>" % (" ".join('%s="%s"' % kv for kv in values.items()), css, content)
+
+
+def _apply_tagged(svg_text, layout, target, sizes=None):
+    """`_apply` with the ``_tag`` of each element kept in `found`. `sizes` (``{name: size}``) replaces the size an
+    element with ``text`` or ``style`` is painted with (`render` shrinks what does not fit)."""
     found = _elements(svg_text, target)
+    if isinstance(layout, dict) and any(isinstance(b, dict) and "add" in b for b in layout.values()) \
+            and viewbox_of(svg_text) != (0.0, 0.0, float(target[0]), float(target[1])):
+        raise GimgError("compose.bad_layout", element="", reason="the template viewBox is not %dx%d" % tuple(target))
     moved = _check_layout(found, layout, target)
     edits = []
     for e in found:
@@ -394,40 +561,91 @@ def _apply(svg_text, layout, target):
             continue
         m, attrs = e["_tag"]
         o = e["box"]
-        if {k: box[k] for k in ("x", "y", "w", "h")} != o:  # hidden alone leaves the box and the transform as they were
+        painting = "text" in box or bool(box.get("style"))
+        new_style = attrs["style"][0] if "style" in attrs else None
+        new_attrs = {}
+        if painting:
+            size = _text_size(attrs, dict(box, _name=e["id"]), sizes)
+            end = svg_text.find("</text>", m.end()) if not m.group(3) else -1
+            if not m.group(3) and end < 0:
+                raise GimgError("compose.bad_layout", element=e["id"], reason="the <text> is not closed")
+            inner = "" if m.group(3) else svg_text[m.end():end]
+            values, css, content = _text_paint(box, e["id"], attrs, size, inner)
+            new_attrs.update(values)
+            new_style = (new_style or "").rstrip().rstrip(";") + (";" if new_style and new_style.strip() else "") + css
+            if m.group(3):
+                edits.append((m.end(2), m.end(), ">" + content + "</text>"))
+            else:
+                edits.append((m.end(), end, content))
+        elif {k: box[k] for k in ("x", "y", "w", "h")} != o:  # hidden alone leaves the box and the transform as they were
             move = "translate(%s %s) scale(%s %s) translate(%s %s)" % (
                 box["x"], box["y"], _num(box["w"] / o["w"]), _num(box["h"] / o["h"]), -o["x"], -o["y"])
             if "transform" in attrs:
                 value, start, end, _quote = attrs["transform"]
                 edits.append((start, end, (move + " " + value).strip()))
             else:
-                edits.append((m.end(2), m.end(2), ' transform="%s"' % move))
-            _value, start, end, _quote = attrs["data-gimg-box"]
-            edits.append((start, end, "%d %d %d %d" % (box["x"], box["y"], box["w"], box["h"])))
+                new_attrs["transform"] = move
+            new_attrs["data-gimg-box"] = "%d %d %d %d" % (box["x"], box["y"], box["w"], box["h"])
         if "hidden" in box:
             word = "none" if box["hidden"] else "inline"
-            style = attrs.get("style")
-            sm = _STYLE_DISPLAY.search(style[0]) if style else None
+            sm = _STYLE_DISPLAY.search(new_style) if new_style else None
             if sm:  # a display inside style beats the attribute: write it there too
-                edits.append((style[1] + sm.start(2), style[1] + sm.end(2), word))
+                new_style = new_style[:sm.start(2)] + word + new_style[sm.end(2):]
             if "display" in attrs:
                 _value, start, end, _quote = attrs["display"]
                 edits.append((start, end, word))
             elif box["hidden"] and not sm:
-                edits.append((m.end(2), m.end(2), ' display="none"'))
+                new_attrs["display"] = "none"
+        if new_style is not None and new_style != (attrs["style"][0] if "style" in attrs else None):
+            if "style" in attrs:
+                _value, start, end, _quote = attrs["style"]
+                edits.append((start, end, new_style))
+            else:
+                new_attrs["style"] = new_style
+        inserted = ""
+        for key, value in new_attrs.items():
+            if key in attrs and key != "style":
+                _value, start, end, _quote = attrs[key]
+                edits.append((start, end, value))
+            elif key not in attrs:
+                inserted += ' %s="%s"' % (key, value)
+        if inserted:
+            edits.append((m.end(2), m.end(2), inserted))
+    adds = sorted((n for n, b in moved.items() if b.get("add")), key=lambda n: int(n[len(ADDED_PREFIX):]))
+    if adds:
+        close = svg_text.rfind("</svg>")
+        if close < 0:
+            raise GimgError("compose.bad_layout", element=adds[0], reason="the template has no </svg>")
+        edits.append((close, close, "".join(_added_xml(n, moved[n], (sizes or {}).get(n) or moved[n]["style"]["size"])
+                                            for n in adds)))
     out = svg_text
     for start, end, text in sorted(edits, key=lambda ed: (ed[0], ed[1]), reverse=True):
         out = out[:start] + text + out[end:]
+    return out, moved, found
+
+
+def _apply(svg_text, layout, target, sizes=None):
+    """``(svg, moved, found)``: `svg_text` with the moved elements transformed, what moved and the elements read."""
+    out, moved, found = _apply_tagged(svg_text, layout, target, sizes)
     return out, moved, [{k: v for k, v in e.items() if k != "_tag"} for e in found]
 
 
-def apply_layout(svg_text, layout, target) -> str:
-    """`svg_text` with the elements of `layout` (``{name: {x, y, w, h, hidden?}}``, integers, the box inside `target`) moved (and, with ``"hidden": true``, given
-    ``display="none"``): the
-    opening tag of each gets ``transform="translate(x y) scale(w/w0 h/h0) translate(-x0 -y0)"`` in front of the
-    ``transform`` it had, and its ``data-gimg-box`` is rewritten. The rest of the SVG is not touched (it is not parsed
-    as XML). ``compose.element_unknown`` / ``compose.bad_layout`` / ``compose.bad_element`` on failure."""
-    return _apply(svg_text, layout, target)[0]
+def apply_layout(svg_text, layout, target, sizes=None) -> str:
+    """`svg_text` with the elements of `layout` (``{name: {x, y, w, h, hidden?, text?, style?}}``, integers, the box inside
+    `target`) moved (and, with ``"hidden": true``, given ``display="none"``): the opening tag of each gets
+    ``transform="translate(x y) scale(w/w0 h/h0) translate(-x0 -y0)"`` in front of the ``transform`` it had, and its
+    ``data-gimg-box`` is rewritten. The rest of the SVG is not touched (it is not parsed as XML).
+
+    An element with ``text`` or ``style`` (F4e.2, a ``<text>`` only) is not scaled: its box is a frame. The tag gets the
+    ``x``, ``y`` and ``data-gimg-box`` of the frame and the style (font, size, weight, italic, ``fill``, ``text-anchor``)
+    appended to its ``style`` attribute, so it beats the attributes and a ``<style>`` sheet; ``color`` is also
+    ``data-gimg-color``. The content is rewritten as one ``<tspan>`` per line of ``text`` (escaped; without ``text`` the
+    current content, as one line) with the first baseline at ``box.y + size`` and ``dy = lineHeight x size`` (1.2 by
+    default). `size` is ``style.size``, else the ``font-size`` of the element, else 16; `sizes` (``{name: size}``)
+    overrides it. An entry ``{"add": true, x, y, w, h, text, style}`` named ``extra<N>`` inserts
+    ``<text id="gimg-extra<N>">`` before the final ``</svg>`` (up to 10). ``compose.element_unknown`` /
+    ``compose.bad_layout`` / ``compose.bad_element`` on failure."""
+    return _apply(svg_text, layout, target, sizes)[0]
 
 
 def zone_to_raw(profile_cfg, raw_w, raw_h, zone) -> tuple:
@@ -452,11 +670,13 @@ def zone_to_raw(profile_cfg, raw_w, raw_h, zone) -> tuple:
 def _contrast_of(profile_cfg, compose_cfg, raw_path, raw_size, found, moved) -> dict:
     """``{name: {"zone", "text", "mean", "p10", "p90", "worst"}}`` of the text elements, measured on the raw image
     (the base image: nothing painted over it) in their final box (zone in pixels of the delivered image). The colour is
-    the element's ``data-gimg-color``, else the template's ``textColor``; an element without colour, or whose measure
-    fails, is left out (a measure never fails a composition)."""
+    the ``style.color`` of the layout, else the element's ``data-gimg-color``, else the template's ``textColor``; an
+    added text is measured too. An element without colour, or whose measure fails, is left out (a measure never fails
+    a composition)."""
     out = {}
-    for e in found:
-        color = e.get("color") or compose_cfg.get("textColor")
+    candidates = list(found) + [{"id": n, "kind": "text", "box": b} for n, b in moved.items() if b.get("add")]
+    for e in candidates:
+        color = (moved.get(e["id"], {}).get("style") or {}).get("color") or e.get("color") or compose_cfg.get("textColor")
         if e["kind"] != "text" or not color or moved.get(e["id"], {}).get("hidden"):
             continue
         box = moved.get(e["id"], e["box"])
@@ -468,6 +688,117 @@ def _contrast_of(profile_cfg, compose_cfg, raw_path, raw_size, found, moved) -> 
         except GimgError:
             continue
     return out
+
+
+# --- fonts, and fitting the text into its box (F4e.2) ---
+def installed_families():
+    """The font families ``fc-list : family`` knows, sorted and without repeats (an entry such as ``A,B`` is two), or
+    ``None`` if it is missing or fails."""
+    exe = shutil.which("fc-list")
+    if exe is None:
+        return None
+    try:
+        done = subprocess.run([exe, ":", "family"], capture_output=True, text=True, errors="replace",
+                              timeout=30, stdin=subprocess.DEVNULL)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if done.returncode != 0:
+        return None
+    return sorted({n.strip() for line in done.stdout.splitlines() for n in line.split(",") if n.strip()})
+
+
+def families_of(layout) -> list:
+    """The ``style.family`` names a layout uses, sorted and without repeats."""
+    return sorted({b["style"]["family"] for b in (layout or {}).values()
+                   if isinstance(b, dict) and isinstance(b.get("style"), dict) and "family" in b["style"]})
+
+
+def _missing_fonts(moved) -> list:
+    used = families_of({n: b for n, b in moved.items() if not b.get("hidden")})
+    installed = installed_families() if used else None
+    if installed is None:
+        return []
+    have = {f.lower() for f in installed}
+    return [f for f in used if f.lower() not in have]
+
+
+def _solo_svg(svg, name, target):
+    """An SVG with the root tag, the ``<style>``/``<defs>`` blocks and only the text element `name` of `svg`."""
+    root = next(m for m, _attrs in _tags(svg) if m.group(1) == "svg")
+    element = next(e for e in _elements(svg, target) if e["id"] == name)
+    start = element["_tag"][0].start()
+    end = svg.index("</text>", start) + len("</text>")
+    blocks = "".join(m.group(0) for m in re.finditer(r"<(style|defs)\b.*?</\1>", svg, re.S | re.I))
+    return svg[:0] + root.group(0) + blocks + svg[start:end] + "</svg>"
+
+
+def _alpha_box(data, width, height):
+    """``(x0, y0, x1, y1)`` (end excluded) of the pixels of an RGBA buffer whose alpha is not 0, or ``None``."""
+    alpha = data[3::4]
+    x0, x1, y0, y1 = width, 0, None, 0
+    for y in range(height):
+        row = alpha[y * width:(y + 1) * width]
+        if not row.strip(b"\0"):
+            continue
+        y0 = y if y0 is None else y0
+        y1 = y + 1
+        x0 = min(x0, width - len(row.lstrip(b"\0")))
+        x1 = max(x1, len(row.rstrip(b"\0")))
+    return None if y0 is None else (x0, y0, x1, y1)
+
+
+def _text_extent(substituted, name, box, size, target, tmp):
+    """The pixel box of the text element `name` painted alone at `size` (``None`` if it paints nothing)."""
+    entry = {k: v for k, v in box.items() if k != "hidden"}
+    svg, _moved, _found = _apply_tagged(substituted, {name: entry}, target, {name: size})
+    solo, png_path = Path(tmp) / "fit.svg", Path(tmp) / "fit.png"
+    solo.write_text(_solo_svg(svg, name, target), encoding="utf-8")
+    _run(rsvg_argv(solo, png_path, target[0], target[1]), "rsvg-convert")
+    data = measure._run(["ffmpeg", "-v", "error", "-nostdin", "-i", str(png_path), "-f", "rawvideo", "-pix_fmt", "rgba", "-"],
+                        "ffmpeg")
+    if len(data) != target[0] * target[1] * 4:
+        raise GimgError("compose.tool_failed", tool="ffmpeg", reason="unexpected size")
+    return _alpha_box(data, target[0], target[1])
+
+
+def _fits(extent, box) -> bool:
+    return extent is None or (extent[0] >= box["x"] - 1 and extent[1] >= box["y"] - 1
+                              and extent[2] <= box["x"] + box["w"] + 1 and extent[3] <= box["y"] + box["h"] + 1)
+
+
+def _fit_texts(substituted, moved, tagged, target, tmp):
+    """``(fitted, overflow)`` for the elements of `moved` with ``text`` or ``style``: each is painted alone and its
+    pixels measured (`_text_extent`). One that sticks out of its box is painted again smaller, in proportion, down to
+    ``max(8, size // 2)``; a third try at that minimum if the proportional one still does not fit. ``fitted`` is
+    ``{name: size painted}``; ``overflow`` is ``{name: {"size": asked, "min": minimum}}`` for those that do not fit even
+    at the minimum. An element whose measure fails (no tool, bad SVG) is left out of both and painted as asked."""
+    fitted, overflow = {}, {}
+    for name, box in moved.items():
+        if box.get("hidden") or not ("text" in box or box.get("style")):
+            continue
+        tag = tagged.get(name)
+        asked = (box.get("style") or {}).get("size") or (_base_size(tag["_tag"][1]) if tag else DEFAULT_SIZE)
+        least = min(asked, max(8, asked // 2))
+        try:
+            extent = _text_extent(substituted, name, box, asked, target, tmp)
+            if _fits(extent, box):
+                fitted[name] = asked
+                continue
+            ratio = min(box["w"] / max(1, extent[2] - extent[0]), box["h"] / max(1, extent[3] - extent[1]))
+            size = max(least, min(asked - 1, int(asked * ratio)))
+            if asked > least and not _fits(_text_extent(substituted, name, box, size, target, tmp), box):
+                size = least
+                if size < asked and _fits(_text_extent(substituted, name, box, size, target, tmp), box):
+                    fitted[name] = size
+                    continue
+            elif asked > least:
+                fitted[name] = size
+                continue
+        except (GimgError, OSError, ValueError, StopIteration):
+            continue
+        fitted[name] = least
+        overflow[name] = {"size": asked, "min": least}
+    return fitted, overflow
 
 
 def _ceil_div(a: int, b: int) -> int:
@@ -666,7 +997,7 @@ def render(project_root, profile_cfg, raw_path, out_path, text, profile=None, pr
     compose_cfg = effective(profile_cfg.get("compose"), template_id)
     used = {}
     layer_svg = None
-    moved, found = {}, []
+    moved, found, tagged, substituted = {}, [], {}, None
     if profile_cfg.get("compose") is not None:
         template, logo = resolve_assets(project_root, compose_cfg)
         source = _read_svg(template)
@@ -681,16 +1012,18 @@ def render(project_root, profile_cfg, raw_path, out_path, text, profile=None, pr
             if logo is None:
                 raise GimgError("compose.no_logo", template=compose_cfg["template"])
             values["logo"] = logo_data_uri(logo)
-        layer_svg = substitute(source, values)
+        layer_svg = substituted = substitute(source, values)
         try:
-            layer_svg, moved, found = _apply(layer_svg, layout or {}, (width, height))
+            layer_svg, moved, found_tagged = _apply_tagged(layer_svg, layout or {}, (width, height))
+            tagged = {e["id"]: e for e in found_tagged}
+            found = [{k: v for k, v in e.items() if k != "_tag"} for e in found_tagged]
         except GimgError as exc:
             if exc.code == "compose.bad_element" and not layout:
                 found = []
             else:
                 raise
     elif layout:
-        _check_layout([], layout, (width, height))
+        _check_layout([], layout, (width, height), adds=False)
     info = dict(plan, text=used)
     if profile_cfg.get("compose") is not None:
         info["template"] = compose_cfg["template"]
@@ -703,11 +1036,21 @@ def render(project_root, profile_cfg, raw_path, out_path, text, profile=None, pr
         contrast = _contrast_of(profile_cfg, compose_cfg, raw_path, (raw_w, raw_h), found, moved)
         if contrast:
             info["contrast"] = contrast
+        missing = _missing_fonts(moved)
+        if missing:
+            info["missingFonts"] = missing
     try:
         with tempfile.TemporaryDirectory(dir=str(out_path.parent), prefix=prefix) as tmp:
             tmp = Path(tmp)
             layer = None
             if layer_svg is not None:
+                fitted, overflow = _fit_texts(substituted, moved, tagged, (width, height), tmp)
+                if fitted:
+                    info["fitted"] = fitted
+                    if any(fitted[n] != (moved[n].get("style") or {}).get("size", fitted[n]) for n in fitted):
+                        layer_svg = _apply_tagged(substituted, layout or {}, (width, height), fitted)[0]
+                if overflow:
+                    info["overflow"] = overflow
                 svg = tmp / "template.svg"
                 svg.write_text(layer_svg, encoding="utf-8")
                 layer = tmp / "layer.png"
@@ -789,6 +1132,8 @@ def recompose(project, key, profile, attempt_id=None, text=None, template=None, 
     attempt gets the error as ``composeError`` (`orders.set_compose_error`) and it is raised again; a project log line
     records either result. The chosen attempt is delivered again (manifest included; `delivery.redeliver` checks it still
     is the chosen one under the delivery lock) and the result then has ``delivered``: the file, relative to the project.
+    The attempt's ``compose`` also keeps what `render` measured of the edited texts (F4e.2): ``fitted``, ``overflow``
+    and ``missingFonts``.
 
     `template` (an id of `templates_of`) composes with that template and the attempt keeps it (``compose.templateId``); an
     unknown one raises ``compose.template_unknown`` before anything changes. Without it the attempt's own ``templateId``
@@ -831,7 +1176,7 @@ def _check_layout_for(root, profile_cfg, template_id, layout) -> None:
     """Raise what `render` would raise for `layout` on this template, without composing anything."""
     compose_cfg = profile_cfg.get("compose")
     if not compose_cfg:
-        _check_layout([], layout, (0, 0))
+        _check_layout([], layout, (0, 0), adds=False)
         return
     path, _logo = resolve_assets(root, effective(compose_cfg, template_id))
     _apply(_read_svg(path), layout, target_size(profile_cfg))
@@ -944,13 +1289,16 @@ def save_template(project, key, profile, attempt_id, name, dest="local") -> dict
     svg = _read_svg(path)
     layout = stored.get("layout")
     if layout:
-        svg = apply_layout(svg, layout, target_size(profile_cfg))
+        svg = apply_layout(svg, layout, target_size(profile_cfg), sizes=stored.get("fitted"))
     if dest == "project":
         folder = project_templates_dir(proj["root"], compose_cfg, profile)
     else:
         folder = local_templates_dir(project, profile)
     svg_path, json_path = paths.inside(folder, name + ".svg"), paths.inside(folder, name + ".json")
     sidecar = {"base": base, **{k: cfg[k] for k in ("logo", "fields", "zone", "textColor") if k in cfg}}
+    used = families_of(layout)[:MAX_FONTS]
+    if used:
+        sidecar["fonts"] = used
     _create_new(json_path, (json.dumps(sidecar, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8"))
     try:
         _create_new(svg_path, svg.encode("utf-8"))
@@ -1043,6 +1391,6 @@ def delete_template(project, profile, template_id) -> dict:
             "inRepo": found["inRepo"]}
 
 
-__all__ = ["recompose", "render", "effective", "templates_of", "templates_with_elements", "merged_profile", "template_sources", "save_template", "delete_template", "template_usage",
+__all__ = ["recompose", "render", "effective", "templates_of", "templates_with_elements", "merged_profile", "template_sources", "installed_families", "save_template", "delete_template", "template_usage",
            "elements", "apply_layout", "zone_to_raw", "viewbox_of", "DEFAULT_TEMPLATE", "plan_for", "target_size", "fit_geometry", "substitute", "xml_escape", "resolve_assets",
            "logo_data_uri", "rsvg_argv", "ffmpeg_argv", "TIMEOUT_S", "MAX_SVG_BYTES"]
