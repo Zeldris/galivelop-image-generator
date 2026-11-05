@@ -751,5 +751,16 @@
   "ui.queue.deleteTitle": "Delete q{id}?",
   "ui.queue.deleteMessage": "Entry q{id} leaves the queue and this order; it can no longer be retried from it. There is no image to delete.",
   "ui.queue.deleteConfirm": "Delete entry",
-  "ui.queue.deleted": "q{id} deleted."
+  "ui.queue.deleted": "q{id} deleted.",
+  "cli.cmd.fonts": "list the installed fonts and the ones the profiles ask for (compose.fonts and templates)",
+  "cli.arg.fonts_project": "only this project",
+  "cli.out.fonts_installed": "Installed families: {count}",
+  "cli.out.fonts_family": "  {family}",
+  "cli.out.fonts_unknown": "Cannot tell which fonts are installed ({reason}); install fontconfig (fc-list).",
+  "cli.out.fonts_project_error": "Project \"{project}\": cannot be read ({code}).",
+  "cli.out.fonts_profile": "{project} / {profile}:",
+  "cli.out.fonts_font": "  {name}: {state}",
+  "cli.out.fonts_yes": "installed",
+  "cli.out.fonts_no": "NOT installed",
+  "cli.out.fonts_unknown_state": "unknown"
 }

@@ -104,6 +104,7 @@ python3 -m gimg queue list                            # queue state, with errors
 python3 -m gimg queue cancel 3
 python3 -m gimg compose my-project fauna/red-howler banner 1 --template poster   # recompose without generating
 python3 -m gimg templates my-project banner           # the profile's composition templates
+python3 -m gimg fonts                                     # installed fonts and the ones the profiles ask for
 python3 -m gimg measure image.png --project my-project   # palette, contrast and distance to the brand
 python3 -m gimg sheet --out sheet.png a.png b.png     # contact sheet to review a round
 python3 -m gimg doctor                                # checks the engine, models and tools (--verify)

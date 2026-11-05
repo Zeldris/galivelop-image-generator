@@ -267,6 +267,23 @@ pinta con `display="none"`, no entra en `compose.contrast` y se guarda en `compo
 «Mostrar» es mandarlo sin `hidden` o con `false`. `hidden` que no es booleano da `compose.bad_layout` (motivo «hidden
 boolean»); «Guardar como plantilla» conserva el oculto (`display="none"` en el SVG) y no toca la plantilla de origen.
 `compose.contrast` guarda el contraste de cada texto sobre la imagen base.
+
+Texto y tipografía (F4e.2): la entrada de un elemento cuya etiqueta es `<text>` admite además `"text"` (hasta 500
+caracteres; `\n` parte líneas, que se pintan una por `<tspan>`; sin ajuste automático) y `"style"` (todas las claves
+opcionales): `family` (`[A-Za-z0-9 ._-]{1,64}`), `size` (px enteros, 4-1000), `weight` (100-900 de 100 en 100), `italic`
+(booleano), `color` (`#rrggbb`), `align` (`left`, `center`, `right`) y `lineHeight` (número de 0,8 a 3, múltiplo del
+tamaño). `text` es el de **ese** intento: no cambia el `text` del pedido. Con `text` o `style` la caja es un marco (el
+elemento no se escala). Para añadir un texto, una entrada `extra<N>` (`extra1`, `extra2`…; hasta 10 por intento):
+`{"add": true, "x", "y", "w", "h", "text", "style"}`, con `style` completo salvo `lineHeight` (`family`, `size`, `weight`,
+`italic`, `color`, `align`); se pinta encima del resto, y quitarlo es sacarlo del layout. Un valor fuera de rango, una
+clave desconocida, `text`/`style` en un elemento que no es `<text>` o más de 10 añadidos da `compose.bad_layout` con el
+motivo en `reason` (por ejemplo `style.size: an integer from 4 to 1000`, `text and style only in <text>`, `x, y, w, h
+integers`, `outside 1200x630`, `hidden boolean`, `an added text is called extra<N>`, `at most 10 added texts`).
+Lo que no cabe en su caja se encoge y se avisa; en la respuesta, `compose` puede traer: `fitted`
+(`{nombre: tamaño con que se pintó}`, de cada elemento con `text` o `style`), `overflow` (`{nombre: {"size": pedido,
+"min": mínimo}}`: los que no caben ni al tamaño mínimo, la mitad del pedido y nunca menos de 8 px; se pintan al mínimo,
+nunca se corta) y `missingFonts` (lista de las `style.family` que `fc-list` no tiene; `rsvg` pinta con la de reserva y
+no es error). Un fallo de la medida no tumba la composición. Familias disponibles: `GET /api/fonts`.
 Respuesta: el intento (con `delivered` si es la
 elegida). Una sola tarea pesada a la vez: la segunda espera hasta 60 s y da 409 `api.heavy_busy`. Errores:
 `compose.busy` (409), `compose.template_unknown` (400; una `templateId` guardada que ya no existe también falla, sin
@@ -435,6 +452,27 @@ El catálogo de modelos (`gimg/models.json`) frente al perfil de máquina: `[{"i
 
 ```sh
 curl -s $B/api/models
+```
+
+### GET /api/fonts
+
+Las fuentes (F4e.2b), lo mismo que `gimg fonts --json`: las familias que conoce `fc-list : family` y, por proyecto y
+perfil que compone, las que piden su `compose.fonts` y los `fonts` de sus plantillas guardadas (sin repetir, en ese
+orden), cada una con `installed` (sin distinguir mayúsculas). Consulta opcional `?project=<p>` (404 `project.unknown`).
+Sin `fc-list`, o si falla, no es un error: `installed` es `[]`, `available` es `false`, `reason` dice por qué
+(`"not_found"` o el fallo) y cada `installed` de las fuentes de los perfiles es `null` (no se sabe). Un proyecto que no
+carga sale con `error` (`{code, params}`) y sin perfiles. Los perfiles sin `compose` no salen. Una familia no instalada
+se puede usar igual en `style.family`: al componer va a `compose.missingFonts`.
+
+```json
+{"installed": ["DejaVu Sans", "Sora"], "available": true, "reason": null,
+ "projects": [{"project": "mi-proyecto", "profiles": [{"profile": "og", "fonts": [
+   {"name": "Sora", "installed": true}, {"name": "Inter", "installed": false}]}]}]}
+```
+
+```sh
+curl -s $B/api/fonts
+curl -s "$B/api/fonts?project=mi-proyecto"
 ```
 
 ### GET /api/projects/{p}/check
