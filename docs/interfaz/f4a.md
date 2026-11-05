@@ -22,6 +22,10 @@ fingida en memoria (`gimg/ui/mock/api-mock.js`, solo se importa con ese parámet
 - El mock lee los textos de la API real (antes, de un JSON suelto).
 - `tests/test_ui.py` vigila lo que aquí no se puede probar con un navegador: reglas de la CSP, imports y exports,
   claves `ui.*`, rutas y métodos contra el router, estáticos servidos y contraste de `tokens.css`.
+- `tests/test_ui_browser.py` recorre la interfaz en un Chrome headless (protocolo DevTools, `tests/browser.py`, solo
+  stdlib) contra un `gimg serve` real con el motor falso: proyectos, pedidos, filtros, nuevo pedido, galería, voto,
+  elegir, comparar, retoque, textos, editor, cola y atajos, sin errores de consola ni de CSP. Sin Chrome se salta
+  (`GIMG_TEST_CHROME` da la orden); perfil y datos van a `GIMG_TEST_TMP` o `~/.cache/gimg-tests`, nunca a `/tmp`.
 
 ## Pendiente (MISSING)
 
