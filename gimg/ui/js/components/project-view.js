@@ -46,7 +46,7 @@ async function ordersTab(panel, project, profiles, cfg) {
     list.setAttribute('aria-busy', 'true');
     list.replaceChildren(h('p.empty', {}, h('span.spin', { aria: { hidden: true } }), ' ', t('ui.loading')));
     try {
-      const res = await api.orders(project, { profile: f.profile, chosen: f.state === 'chosen' ? 1 : f.state === 'pending' ? 0 : undefined });
+      const res = await api.orders(project, { profile: f.profile, chosen: f.state === 'chosen' ? 'true' : f.state === 'pending' ? 'false' : undefined });
       const orders = Array.isArray(res) ? res : (res && res.orders) || [];
       orders.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
       count.textContent = t('ui.project.orderCount', { n: orders.length });

@@ -111,7 +111,8 @@ export async function transport(method, url, body) {
     if (r2 === 'orders') {
       if (!r3) {
         const prof = u.searchParams.get('profile'); const chosen = u.searchParams.get('chosen');
-        return ok((ordersOf[r1] || []).filter((o) => (!prof || o.profile === prof) && (chosen === null || chosen === '' || (chosen === '1') === (o.chosen !== null)))
+        if (chosen !== null && chosen !== '' && chosen !== 'true' && chosen !== 'false') return err(400, 'api.bad_param', `Parámetro «chosen» no válido: ${chosen}`, { name: 'chosen' });
+        return ok((ordersOf[r1] || []).filter((o) => (!prof || o.profile === prof) && (chosen === null || chosen === '' || (chosen === 'true') === (o.chosen !== null)))
           .map((o) => ({ key: o.key, profile: o.profile, chosen: o.chosen, attempts: o.attempts.length, lastAttempt: o.attempts.length ? o.attempts[o.attempts.length - 1].id : null, updatedAt: o.updatedAt })));
       }
       const order = findOrder(r1, r3, r4);
@@ -148,7 +149,7 @@ export async function transport(method, url, body) {
           queue.push(e); entries.push(e);
         }
         if (spec.prompt !== undefined) order.prompt = spec.prompt;
-        return ok({ entries, estimateMs: entries.reduce((s, e) => s + e.estimateMs, 0) }, 202);
+        return ok({ entries, estimateMs: entries[0].estimateMs }, 202);
       }
       if (r5 === 'attempts' && r6) {
         const a = order.attempts.find((x) => x.id === Number(r6));

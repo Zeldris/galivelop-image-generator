@@ -11,6 +11,7 @@ import { t } from '../i18n.js';
 import { api, ApiError } from '../api.js';
 
 const cache = new Map();         // cacheKey -> result | Error
+const inflight = new Map();      // cacheKey -> Promise de la medida ya encolada o en curso (sin duplicar)
 const pending = [];              // [{cacheKey, fetcher, resolve}]
 let busy = false;
 const BUSY_RETRY_MS = 5000;
@@ -38,7 +39,11 @@ function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
 function requestMeasure(cacheKey, fetcher) {
   if (cache.has(cacheKey)) return Promise.resolve(cache.get(cacheKey));
-  return new Promise((resolve) => { pending.push({ cacheKey, fetcher, resolve }); pump(); });
+  if (inflight.has(cacheKey)) return inflight.get(cacheKey);
+  const p = new Promise((resolve) => { pending.push({ cacheKey, fetcher, resolve }); pump(); });
+  inflight.set(cacheKey, p);
+  p.then(() => inflight.delete(cacheKey));
+  return p;
 }
 
 export function invalidateMeasure(prefix) { for (const k of cache.keys()) if (k.startsWith(prefix)) cache.delete(k); }

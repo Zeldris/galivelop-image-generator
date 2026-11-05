@@ -4,6 +4,7 @@
    mínima no reordena). */
 
 import { h, mmss, replace } from '../dom.js';
+import * as i18n from '../i18n.js';
 import { t } from '../i18n.js';
 import { api, paths, describeError } from '../api.js';
 import * as store from '../store.js';
@@ -49,16 +50,34 @@ export function progressOf(e) {
   return p;
 }
 
+let lastSig = null;
+
 function render() {
   if (!hosts) return;
   const entries = store.get('queue');
+  // Solo se repinta si cambia lo que se ve (cada sondeo vuelve a llamar aquí); con algo en marcha, las cuentas atrás
+  // y las barras por tiempo se refrescan en cada sondeo (cubo de 3 s).
+  const tick = entries.some((e) => e.state === 'running') ? Math.floor(Date.now() / 3000) : 0;
+  const sig = JSON.stringify([i18n.lang(), open, filter, entries, tick]);
+  if (sig === lastSig) return;
+  lastSig = sig;
+  const active = document.activeElement;
+  const fid = active && active.dataset && active.dataset.fid && (hosts.pillHost.contains(active) || hosts.drawerHost.contains(active)) ? active.dataset.fid : null;
+  paint(entries);
+  if (fid) {
+    const again = document.querySelector(`[data-fid="${fid}"]`);
+    if (again && again !== document.activeElement) again.focus();
+  }
+}
+
+function paint(entries) {
   const c = store.queueCounts();
   const running = entries.find((e) => e.state === 'running');
   const label = c.running || c.queued
     ? [c.running ? t('ui.queue.running', { n: c.running }) : null, c.queued ? t('ui.queue.queued', { n: c.queued }) : null].filter(Boolean).join(' · ')
     : t('ui.queue.empty');
   const pill = h('button.queue-pill', {
-    type: 'button', class: running ? 'is-running' : '', aria: { expanded: open, controls: 'queue-drawer', label: `${t('ui.queue.label')}: ${label}` },
+    type: 'button', class: running ? 'is-running' : '', data: { fid: 'pill' }, aria: { expanded: open, controls: 'queue-drawer', label: `${t('ui.queue.label')}: ${label}` },
     onclick: () => toggleQueue(),
   }, h('span.dot', { aria: { hidden: true } }), h('span', {}, label), running ? progressOf(running) : null);
   replace(hosts.pillHost, pill);
@@ -70,9 +89,9 @@ function render() {
   const queuedIds = entries.filter((e) => e.state === 'queued').map((e) => e.id);
   replace(drawer,
     h('div.row-between', {}, h('h2', {}, t('ui.queue.label')),
-      h('button.btn.btn-icon.btn-ghost', { type: 'button', aria: { label: t('ui.queue.close') }, onclick: () => toggleQueue(false) }, '✕')),
+      h('button.btn.btn-icon.btn-ghost', { type: 'button', data: { fid: 'close' }, aria: { label: t('ui.queue.close') }, onclick: () => toggleQueue(false) }, '✕')),
     h('div.row', { role: 'group', aria: { label: t('ui.queue.filterLabel') } }, FILTERS.map((f) =>
-      h('button.btn.btn-toggle', { type: 'button', aria: { pressed: filter === f }, onclick: () => { filter = f; render(); } }, t(`ui.queue.filter.${f}`)))),
+      h('button.btn.btn-toggle', { type: 'button', data: { fid: `filter-${f}` }, aria: { pressed: filter === f }, onclick: () => { filter = f; render(); } }, t(`ui.queue.filter.${f}`)))),
     shown.length ? h('div.stack', {}, shown.map((e) => entry(e, queuedIds.indexOf(e.id)))) : h('p.empty', {}, t(filter === 'pending' ? 'ui.queue.empty' : 'ui.queue.nothing')),
     h('p.hint', {}, t('ui.queue.idle')));
 }
@@ -103,11 +122,11 @@ function entry(e, queuedPos) {
 
   const actions = [];
   if (PENDING.includes(e.state)) {
-    actions.push(h('button.btn.btn-danger', { type: 'button', onclick: () => cancel(e) }, t('ui.queue.cancel')));
+    actions.push(h('button.btn.btn-danger', { type: 'button', data: { fid: `cancel-${e.id}` }, onclick: () => cancel(e) }, t('ui.queue.cancel')));
   } else if (e.state === 'done' && e.attemptId !== null && e.attemptId !== undefined) {
-    actions.push(h('a.btn', { href: to.order(e.project, e.profile, e.key, e.attemptId), onclick: () => toggleQueue(false) }, t('ui.queue.goToAttempt')));
+    actions.push(h('a.btn', { href: to.order(e.project, e.profile, e.key, e.attemptId), data: { fid: `go-${e.id}` }, onclick: () => toggleQueue(false) }, t('ui.queue.goToAttempt')));
   } else if (e.state === 'failed') {
-    actions.push(h('a.btn', { href: to.order(e.project, e.profile, e.key), onclick: () => toggleQueue(false) }, t('ui.queue.goToOrder')));
+    actions.push(h('a.btn', { href: to.order(e.project, e.profile, e.key), data: { fid: `go-${e.id}` }, onclick: () => toggleQueue(false) }, t('ui.queue.goToOrder')));
   }
   const node = h('div.queue-entry', { class: `is-${e.state}`, aria: { label: `${who}: ${what.join(', ')}` } },
     thumb,

@@ -149,6 +149,61 @@ def exports_of(path):
     return names
 
 
+class ReviewFixes(unittest.TestCase):
+    """Arreglos de la revisión de F4a (docs/records/revision-F4a-2026-11-05.md), comprobados en estático."""
+
+    def js(self, name):
+        return read(UI / "js" / name)
+
+    def test_chosen_filter_sends_true_false_and_mock_rejects_1_0(self):
+        text = self.js("components/project-view.js")
+        self.assertNotRegex(text, r"chosen:[^\n]*\b[01]\b")
+        self.assertIn("'true'", text)
+        self.assertIn("'false'", text)
+        mock = read(UI / "mock" / "api-mock.js")
+        self.assertIn("api.bad_param", mock)
+
+    def test_gallery_is_not_a_live_region_and_is_reconciled_by_key(self):
+        text = self.js("components/order-view.js")
+        self.assertNotRegex(text, r"live:\s*'polite'")
+        self.assertIn("cardsByKey", text)
+
+    def test_panel_signature_leaves_out_chosen_and_text(self):
+        text = self.js("components/order-view.js")
+        sig = re.search(r"const sig = JSON\.stringify\(\[([^\]]*)\]\)", text).group(1)
+        self.assertNotIn("chosen", sig)
+        self.assertNotIn("text", sig)
+        self.assertIn("setChosen", self.js("components/text-panel.js"))
+
+    def test_measure_requests_are_not_duplicated(self):
+        self.assertIn("inflight", self.js("components/measure-chip.js"))
+
+    def test_skip_link_is_handled_by_a_listener(self):
+        self.assertIn("a.skip", self.js("app.js"))
+        self.assertIn("preventDefault", self.js("app.js"))
+        self.assertRegex(read(UI / "index.html"), r'<main id="main"[^>]*tabindex="-1"')
+
+    def test_queue_bar_repaints_only_on_change_and_keeps_focus(self):
+        text = self.js("components/queue-bar.js")
+        self.assertIn("lastSig", text)
+        self.assertIn("data-fid", text)
+
+    def test_one_key_shortcuts_can_be_turned_off(self):
+        self.assertIn("oneKeyEnabled", self.js("components/shortcuts.js"))
+        self.assertIn("oneKeyEnabled", self.js("components/order-view.js"))
+        for lang in ("es", "en"):
+            d = json.loads(read(LOCALES / (lang + ".json")))
+            self.assertIn("ui.shortcuts.oneKey", d)
+
+    def test_order_view_checks_host_after_loading(self):
+        self.assertIn("host.isConnected", self.js("components/order-view.js"))
+
+    def test_estimate_is_per_entry(self):
+        text = self.js("components/order-view.js")
+        self.assertNotIn("estimateMs / Math.max", text)
+        self.assertIn("res.estimateMs * n", text)
+
+
 class Imports(unittest.TestCase):
     def resolve(self, path, spec):
         if spec.startswith("/ui/"):

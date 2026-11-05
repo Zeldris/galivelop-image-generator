@@ -26,6 +26,17 @@ export const SHORTCUTS = [
   ]],
 ];
 
+const ONE_KEY = 'gvig.oneKey';
+
+/** Interruptor «atajos de una tecla» (WCAG 2.1.4): activado por defecto, se guarda en el navegador. */
+export function oneKeyEnabled() {
+  try { return localStorage.getItem(ONE_KEY) !== 'off'; } catch { return true; }
+}
+
+function setOneKey(on) {
+  try { localStorage.setItem(ONE_KEY, on ? 'on' : 'off'); } catch { /* sin almacenamiento: vale la sesión */ }
+}
+
 export function isTyping(target) {
   return target instanceof Element && (target.closest('input, textarea, select, [contenteditable="true"]') !== null);
 }
@@ -37,6 +48,7 @@ export function initShortcuts({ toggleQueue, closeAll }) {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { closeAll(); return; }
     if (isTyping(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (!oneKeyEnabled()) return;
     if (e.key === '?') { e.preventDefault(); openHelp(); }
     else if (e.key === 'q' || e.key === 'Q') { e.preventDefault(); toggleQueue(); }
   });
@@ -47,6 +59,7 @@ export function openHelp() {
   replace(body, h('dl', {}, SHORTCUTS.map(([group, items]) => [
     h('h3', {}, t(group)),
     items.map(([keys, label]) => [h('dt', {}, keys.map((k) => h('kbd.kbd', {}, k))), h('dd', {}, t(label))]),
-  ])), h('p.hint', {}, t('ui.shortcuts.deck')));
+  ])), h('label.check', {}, h('input', { type: 'checkbox', checked: oneKeyEnabled(), onchange: (ev) => setOneKey(ev.target.checked) }), h('span', {}, t('ui.shortcuts.oneKey'))),
+  h('p.hint', {}, t('ui.shortcuts.oneKeyHint')), h('p.hint', {}, t('ui.shortcuts.deck')));
   el('shortcuts').showModal();
 }

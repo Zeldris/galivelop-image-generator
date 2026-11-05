@@ -28,6 +28,9 @@ async function boot() {
   const langSel = el('lang');
   langSel.value = i18n.lang();
   langSel.addEventListener('change', async () => { await i18n.load(langSel.value); applyStatic(); render(router.parse()); });
+  // «Saltar al contenido»: sin pasar por el router de hash (#main no es una ruta); la CSP prohíbe onclick en el HTML
+  const skip = document.querySelector('a.skip');
+  if (skip) skip.addEventListener('click', (e) => { e.preventDefault(); el('main').focus(); });
   initTheme(el('theme'));
   initLightbox();
   initQueueBar(el('queue-pill'), el('queue-drawer'));
@@ -71,6 +74,7 @@ async function render(route) {
     console.error(e);
     toastError(t('ui.error.generic', { message: e.message || String(e) }));
   }
+  if (current !== host) return;
   document.title = `${titleOf(route)} · Galivelop IG`;
 }
 

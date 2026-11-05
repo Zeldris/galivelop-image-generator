@@ -14,7 +14,7 @@ import { compareView } from './compare-view.js';
 import { retouchPanel } from './retouch-panel.js';
 import { textPanel } from './text-panel.js';
 import { invalidateMeasure } from './measure-chip.js';
-import { isTyping } from './shortcuts.js';
+import { isTyping, oneKeyEnabled } from './shortcuts.js';
 import { toast, toastError, toastOk } from './toast.js';
 
 const PENDING = ['queued', 'running'];
@@ -31,6 +31,7 @@ export async function orderView(host, route) {
       h('p', {}, h('a.btn', { href: to.project(project) }, '← ', t('ui.order.backToProject'))));
     return;
   }
+  if (!host.isConnected) return; // se navegó a otra pantalla durante la carga: nada que registrar
   const cfg = info.config || {};
   const profileCfg = (cfg.profiles || {})[profile] || {};
   const brand = cfg.brand || {};
@@ -43,7 +44,7 @@ export async function orderView(host, route) {
   };
 
   const galleryBar = h('div.gallery-bar', { role: 'toolbar', aria: { label: t('ui.order.galleryTools') } });
-  const gallery = h('div.gallery', { role: 'list', aria: { label: t('ui.order.gallery'), live: 'polite' } });
+  const gallery = h('div.gallery', { role: 'list', aria: { label: t('ui.order.gallery') } });
   const compareHost = h('div');
   const deliveredHost = h('div');
   const panel = h('aside.order-panel', { aria: { label: t('ui.order.panel') } });
@@ -91,15 +92,25 @@ export async function orderView(host, route) {
   async function submit(spec) {
     const res = await api.newAttempts(project, profile, key, spec);
     const n = (res && res.entries && res.entries.length) || spec.count || 1;
-    toastOk(t('ui.retouch.queued', { n, t: res && Number.isFinite(res.estimateMs) ? ` · ~${Math.round(res.estimateMs / 1000)} s` : '' }));
-    if (res && Number.isFinite(res.estimateMs)) ctx.estimateMs = res.estimateMs / Math.max(1, n);
+    // res.estimateMs es lo que tarda una entrada (la primera): el total del aviso es ese tiempo por n
+    toastOk(t('ui.retouch.queued', { n, t: res && Number.isFinite(res.estimateMs) ? ` · ~${Math.round((res.estimateMs * n) / 1000)} s` : '' }));
+    if (res && Number.isFinite(res.estimateMs)) ctx.estimateMs = res.estimateMs;
     await poll.refreshNow();
+  }
+
+  /** Reconstruye una zona solo si su firma cambió: un sondeo de la cola sin novedades no toca el DOM (ni el foco). */
+  function section(node, sig, build) {
+    if (node.dataset.sig === sig) return;
+    node.dataset.sig = sig;
+    const FOCUSABLE = 'button, a, input, summary';
+    const active = document.activeElement;
+    const idx = node.contains(active) ? [...node.querySelectorAll(FOCUSABLE)].indexOf(active) : -1;
+    node.replaceChildren(...[].concat(build()).filter(Boolean));
+    if (idx >= 0) { const again = node.querySelectorAll(FOCUSABLE)[idx]; if (again) again.focus(); }
   }
 
   function paint() {
     const order = ctx.order;
-    const focused = document.activeElement && closest(document.activeElement, '[data-kind]');
-    const focusKey = focused ? `${focused.dataset.kind}:${focused.dataset.attempt || focused.dataset.entry}` : null;
     const entries = store.queueOf(project, profile, key);
     ctx.queuedIds = store.get('queue').filter((e) => e.state === 'queued').map((e) => e.id);
     const knownAttempts = new Set((order.attempts || []).map((a) => a.id));
@@ -107,35 +118,35 @@ export async function orderView(host, route) {
       .sort((a, b) => b.id - a.id);
     const attempts = [...(order.attempts || [])].sort((a, b) => (order.chosen === a.id ? -1 : order.chosen === b.id ? 1 : b.id - a.id));
     ctx.compare = ctx.compare.filter((id) => knownAttempts.has(id));
+    ctx.attemptsSorted = attempts;
+    ctx.loose = loose;
 
     // barra de la galería
-    galleryBar.replaceChildren(
-      h('span.hint', {}, t('ui.order.counts', { n: attempts.length, c: attempts.filter((a) => a.state === 'candidate').length, p: loose.filter((e) => PENDING.includes(e.state)).length })),
+    const counts = { n: attempts.length, c: attempts.filter((a) => a.state === 'candidate').length, p: loose.filter((e) => PENDING.includes(e.state)).length };
+    section(galleryBar, JSON.stringify([counts, ctx.showRaw, Boolean(compose.template)]), () => [
+      h('span.hint', {}, t('ui.order.counts', counts)),
       h('span.grow'),
       compose.template ? h('button.btn.btn-toggle', { type: 'button', aria: { pressed: ctx.showRaw }, onclick: () => { ctx.showRaw = !ctx.showRaw; store.set('showRaw', ctx.showRaw); paint(); } }, t(ctx.showRaw ? 'ui.order.showingRaw' : 'ui.order.showingComposed'), h('kbd.kbd', { aria: { hidden: true } }, 'F')) : null,
-      h('button.btn.btn-ghost', { type: 'button', onclick: reload }, '⟳ ', t('ui.order.refresh')));
+      h('button.btn.btn-ghost', { type: 'button', onclick: reload }, '⟳ ', t('ui.order.refresh'))]);
 
     // entregada
     const chosen = attempts.find((a) => a.id === order.chosen);
-    deliveredHost.replaceChildren(chosen ? h('div.card.delivered', {},
+    section(deliveredHost, JSON.stringify([chosen ? chosen.id : null, order.deliveredTo]), () => chosen ? h('div.card.delivered', {},
       h('span.chip.chip-fill-ok', {}, '★ ', t('ui.state.chosen')), h('b', {}, `q${chosen.id}`),
       h('span.path', {}, order.deliveredTo || (cfg.delivery && cfg.delivery.root ? `${cfg.delivery.root}/…` : '')),
       h('span.grow'),
       h('button.btn', { type: 'button', onclick: ctx.actions.undo }, '↶ ', t('ui.order.undo'))) : null);
 
     // comparar
-    compareHost.replaceChildren(ctx.compare.length === 2 ? compareView(ctx, byId(attempts, ctx.compare[0]), byId(attempts, ctx.compare[1]), {
+    section(compareHost, JSON.stringify([ctx.compare, ctx.showRaw, ctx.compare.map((id) => byId(attempts, id)), order.chosen]), () => ctx.compare.length === 2 ? compareView(ctx, byId(attempts, ctx.compare[0]), byId(attempts, ctx.compare[1]), {
       onSwap: () => { ctx.compare.reverse(); paint(); }, onClose: () => { ctx.compare = []; paint(); },
     }) : ctx.compare.length === 1 ? h('p.hint', {}, t('ui.compare.pickAnother', { id: ctx.compare[0] })) : null);
 
-    // galería
-    const cards = [...loose.map((e) => queueCard(ctx, e)), ...attempts.map((a) => attemptCard(ctx, a))];
-    for (const c of cards) c.setAttribute('role', 'listitem');
-    gallery.replaceChildren(cards.length ? cards : h('div.empty', {}, h('p', {}, t('ui.order.noAttempts')), h('p.hint', {}, t('ui.order.noAttemptsHint'))));
-    if (focusKey) { const again = gallery.querySelector(`[data-kind="${focusKey.split(':')[0]}"][data-${focusKey.split(':')[0] === 'attempt' ? 'attempt' : 'entry'}="${focusKey.split(':')[1]}"]`); if (again) again.focus(); }
+    paintGalleryOnly();
 
-    // panel lateral (se reconstruye solo si el pedido cambió de verdad: prompt/params/text/chosen)
-    const sig = JSON.stringify([order.prompt, order.params, order.seed, order.draft, order.text, order.chosen]);
+    // panel lateral: se reconstruye solo si cambió el prompt o los parámetros del pedido (no `chosen` ni `text`:
+    // elegir, deshacer o guardar los textos no debe borrar lo que se está editando ni el foco)
+    const sig = JSON.stringify([order.prompt, order.params, order.seed, order.draft]);
     if (panel.dataset.sig !== sig) {
       panel.dataset.sig = sig;
       retouch = retouchPanel(ctx, { onSubmit: guard(submit) });
@@ -145,14 +156,60 @@ export async function orderView(host, route) {
         onPreview: (text) => { ctx.previewText = text; store.set('previewText', Boolean(text)); paintGalleryOnly(); },
       });
       panel.replaceChildren(retouch.node, texts.node);
-    }
+    } else if (texts && texts.setChosen) texts.setChosen(order.chosen);
   }
 
+  /** Concilia la galería por clave: solo se rehace la tarjeta cuya firma cambió; el resto (con su foco, su nota a
+      medio escribir y su «Más» abierto) no se toca. Una tarjeta con el foco en un campo se deja hasta que lo pierda. */
+  const cardsByKey = new Map(); // 'attempt:3' | 'entry:11' -> {sig, node}
   function paintGalleryOnly() {
-    for (const card of gallery.querySelectorAll('[data-kind="attempt"]')) {
-      const a = byId(ctx.order.attempts || [], Number(card.dataset.attempt));
-      if (a) card.replaceWith(Object.assign(attemptCard(ctx, a), { role: 'listitem' }));
+    const order = ctx.order;
+    const attempts = ctx.attemptsSorted || [];
+    const loose = ctx.loose || [];
+    const wanted = [
+      ...loose.map((e) => ({ k: `entry:${e.id}`, sig: JSON.stringify([e, ctx.queuedIds.indexOf(e.id)]), make: () => queueCard(ctx, e) })),
+      ...attempts.map((a) => {
+        const { note, ...rest } = a; // la nota la escribe la propia tarjeta: no cuenta como cambio
+        const st = stateOf(order, a);
+        const compared = ctx.compare.includes(a.id);
+        return { k: `attempt:${a.id}`, sig: JSON.stringify([rest, st, compared, ctx.showRaw, a.raw && ctx.previewText ? ctx.previewText : null]), make: () => attemptCard(ctx, a) };
+      }),
+    ];
+    if (!wanted.length) {
+      if (cardsByKey.size || !gallery.firstChild) {
+        cardsByKey.clear();
+        gallery.replaceChildren(h('div.empty', {}, h('p', {}, t('ui.order.noAttempts')), h('p.hint', {}, t('ui.order.noAttemptsHint'))));
+      }
+      return;
     }
+    const keep = new Set(wanted.map((w) => w.k));
+    for (const [k, rec] of cardsByKey) if (!keep.has(k)) { rec.node.remove(); cardsByKey.delete(k); }
+    if (!cardsByKey.size) gallery.replaceChildren();
+    const active = document.activeElement;
+    wanted.forEach((w, i) => {
+      const old = cardsByKey.get(w.k);
+      let node = old && old.node;
+      if (!old || old.sig !== w.sig) {
+        const typing = old && old.node.contains(active) && isTyping(active);
+        if (typing) { node = old.node; } else {
+          const fresh = w.make();
+          fresh.setAttribute('role', 'listitem');
+          if (old) {
+            const els = [...old.node.querySelectorAll('button, a, input, summary')];
+            const idx = old.node.contains(active) ? (active === old.node ? -1 : els.indexOf(active)) : -2;
+            const was = old.node.querySelector('details');
+            const det = fresh.querySelector('details');
+            if (was && det && was.open) det.open = true;
+            old.node.replaceWith(fresh);
+            if (idx === -1) fresh.focus();
+            else if (idx >= 0) { const again = [...fresh.querySelectorAll('button, a, input, summary')][idx]; (again || fresh).focus(); }
+          }
+          node = fresh;
+          cardsByKey.set(w.k, { sig: w.sig, node });
+        }
+      }
+      if (gallery.children[i] !== node) gallery.insertBefore(node, gallery.children[i] || null);
+    });
   }
 
   // atajos de la galería
@@ -164,6 +221,8 @@ export async function orderView(host, route) {
     const cols = Math.max(1, Math.round(gallery.clientWidth / (cards[0] ? cards[0].offsetWidth + 12 : 320)));
     const go = (j) => { const c = cards[Math.max(0, Math.min(cards.length - 1, j))]; if (c) { c.focus(); c.scrollIntoView({ block: 'nearest' }); } };
     const k = e.key;
+    const letter = k.length === 1 && /[a-z]/i.test(k);
+    if (letter && (!oneKeyEnabled() || panel.contains(e.target))) return; // atajos de una tecla: apagados, o el foco está en el panel
     if (k === 'ArrowRight') { e.preventDefault(); go(i < 0 ? 0 : i + 1); }
     else if (k === 'ArrowLeft') { e.preventDefault(); go(i < 0 ? 0 : i - 1); }
     else if (k === 'ArrowDown') { e.preventDefault(); go(i < 0 ? 0 : i + cols); }

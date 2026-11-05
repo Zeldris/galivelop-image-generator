@@ -10,7 +10,7 @@ export function textPanel(ctx, { onSave, onRecompose, onPreview }) {
   const fields = (ctx.profileCfg.compose && ctx.profileCfg.compose.fields) || [];
   const saved = { ...(ctx.order.text || {}) };
   if (!fields.length) {
-    return { node: h('section.card', {}, h('h2', {}, t('ui.text.title')), h('p.hint', {}, t('ui.text.noFields'))), values: () => ({}) };
+    return { node: h('section.card', {}, h('h2', {}, t('ui.text.title')), h('p.hint', {}, t('ui.text.noFields'))), values: () => ({}), setChosen() {} };
   }
   const inputs = new Map();
   const dirty = h('span.dirty', { hidden: true }, t('ui.text.dirty'));
@@ -31,7 +31,7 @@ export function textPanel(ctx, { onSave, onRecompose, onPreview }) {
     const v = values();
     if (await onSave(v)) { Object.assign(saved, v); dirty.hidden = true; }
   } }, t('ui.text.save'));
-  const chosen = ctx.order.chosen;
+  let chosen = ctx.order.chosen;
   const recompose = h('button.btn', { type: 'button', disabled: chosen === null || chosen === undefined, onclick: () => onRecompose(chosen) }, '⟳ ', t('ui.text.recompose'));
 
   const node = h('section.card', { aria: { labelledby: 'text-h' } },
@@ -40,5 +40,7 @@ export function textPanel(ctx, { onSave, onRecompose, onPreview }) {
     h('label.check', {}, preview, h('span', {}, t('ui.text.preview'))),
     h('div.panel-actions', {}, save, recompose),
     h('p.hint', {}, t('ui.text.hint')));
-  return { node, values, isDirty };
+  /** Elegir o deshacer cambia solo este botón: el panel (y lo escrito en él) no se reconstruye. */
+  const setChosen = (id) => { chosen = id; recompose.disabled = id === null || id === undefined; };
+  return { node, values, isDirty, setChosen };
 }
