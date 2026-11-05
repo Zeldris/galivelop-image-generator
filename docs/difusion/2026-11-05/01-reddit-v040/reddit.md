@@ -61,7 +61,12 @@ Primero, las comprobaciones manuales que faltan en la Deck. Después, en la hoja
 - Editar el texto y la tipografía de lo ya compuesto.
 - F5: piloto con proyectos reales. F6 (opcional): un LLM local con Ollama que redacte prompts y ayude a elegir. F7: más equipos (CPU, CUDA, ROCm, Metal), otros Linux, Windows y quizá macOS.
 
-Código: https://github.com/Zeldris/galivelop-image-generator
+Enlaces:
+
+- Código: https://github.com/Zeldris/galivelop-image-generator
+- Notas de la 0.4.0: https://github.com/Zeldris/galivelop-image-generator/releases/tag/v0.4.0
+- Página del proyecto en el portal de Galivelop: https://zeldris.github.io/Portal-Galivelop/proyectos/galivelop-image-generator
+- El flujo de trabajo con agentes de IA con el que lo hago (Galivelop-workflow): https://github.com/Zeldris/Galivelop-workflow
 
 Una pregunta para quien genere en local: ¿qué os falta más en vuestro flujo, quitar fondo, capas o imágenes de referencia? Y si tenéis una Deck u otro Linux con Vulkan y lo probáis, me vienen muy bien los tiempos que os dé.
 
@@ -123,6 +128,11 @@ First, the manual checks still pending on the Deck. Then, on the roadmap:
 - Editing the text and typography of something already composited.
 - F5: a pilot with real projects. F6 (optional): a local LLM via Ollama that drafts prompts and helps you choose. F7: more hardware (CPU, CUDA, ROCm, Metal), other Linux distros, Windows and maybe macOS.
 
-Code: https://github.com/Zeldris/galivelop-image-generator
+Links:
+
+- Code: https://github.com/Zeldris/galivelop-image-generator
+- 0.4.0 release notes: https://github.com/Zeldris/galivelop-image-generator/releases/tag/v0.4.0
+- Project page on the Galivelop portal: https://zeldris.github.io/Portal-Galivelop/proyectos/galivelop-image-generator
+- The AI-agent workflow I build it with (Galivelop-workflow): https://github.com/Zeldris/Galivelop-workflow
 
 A question for anyone generating locally: what's missing most from your workflow — background removal, layers or reference images? And if you have a Deck or another Linux box with Vulkan and give it a try, I'd love to hear your timings.

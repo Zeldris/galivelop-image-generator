@@ -21,6 +21,7 @@ Languages: es, en
 |---|---|
 | Versión 0.4.0 publicada el 2026-11-05 (fase F4 Interfaz); 0.3.0 el mismo día (F1-F3) | `CHANGELOG.es.md` l.12, l.34; `README.md` l.11, l.17-23 |
 | Interfaz en el navegador: tres pantallas, en español e inglés | `README.md` l.23 |
+| Enlaces: release v0.4.0 (`/releases/tag/v0.4.0`), página del portal y repo Galivelop-workflow | `docs/handoff.md` fila `plan-piezas` (release v0.4.0); los otros dos, dados por la persona el 2026-11-05 |
 | Plantillas de composición elegibles por perfil y por intento | `CHANGELOG.es.md` l.21-23 |
 | Editor de elementos: mover y redimensionar titular, logo y adornos con puntero o teclado, chip de contraste en vivo, guardar como plantilla nueva | `CHANGELOG.es.md` l.24-27 |
 | Panel de nuevo pedido (perfil, prompt, número, borrador, plantilla, modelo), pestañas Piezas y Marca, cajón de la cola con reordenar y «Vaciar cola» con confirmación | `CHANGELOG.es.md` l.28-32 |
