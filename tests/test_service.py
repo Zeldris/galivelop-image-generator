@@ -117,7 +117,7 @@ class ServeCommand(Env):
         mode = service.state_path().stat().st_mode & 0o777
         self.assertEqual(mode, 0o600)
         self.assertEqual(json.loads(service.state_path().read_text()), state)
-        self.assertEqual(sorted(state), ["pid", "port", "startedAt", "url", "version"])
+        self.assertEqual(sorted(state), ["build", "pid", "port", "startedAt", "url", "version"])
         self.assertEqual(self.call(state, "/api/health")["pid"], state["pid"])
         self.assertTrue(service.lock_held())
         # --status with a service

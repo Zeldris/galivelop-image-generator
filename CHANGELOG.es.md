@@ -23,6 +23,8 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Corregido
 
+- `arrancar.sh` (y `gimg ui`) reemplaza el servicio en marcha si su código es más viejo, aunque la versión sea la
+  misma: `/api/health` y `serve.json` llevan `build`, una huella del código. Con un trabajo en marcha, solo avisa.
 - El editor de elementos lee `hidden` del layout aplicado y lo reenvía, así que aplicar o guardar como plantilla ya no
   muestra un elemento oculto desde la línea de comandos.
 

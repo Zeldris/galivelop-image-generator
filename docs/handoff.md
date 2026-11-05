@@ -39,6 +39,10 @@ hace falta `GW_SHARED_LOG`. Aun así, cada rama toca solo su fila salvo al cerra
 - **Borrar pedidos** (pedido de la persona del 2026-11-05): para la hoja de ruta; en `docs/plan.md` «Pendiente».
 - **Leves de F4e.1b, sin tocar:** «Borrar» del intento solo se deshabilita si es el elegido (en cola o generándose ya no tiene tarjeta de intento; componiéndose lo para el 409 del servidor); no hay «Borrar plantilla» en el editor, solo en Piezas.
 - **Leves de `hidden` (trozo 3), sin tocar:** un logo oculto sigue exigiendo logo (`compose.no_logo`) y su hueco se rellena; el motivo de `bad_layout` con una clave extra no menciona `hidden`.
+- **`arrancar.sh` siempre al día** (pedido de la persona del 2026-11-05): hecho. `gimg.build_id()` es una huella del
+  código (`.py` y `.json` del paquete); `/api/health` y `serve.json` la llevan y `ensure_running` reemplaza el servicio
+  si cambia, aunque la versión sea la misma (nunca con un trabajador vivo: entonces avisa con `versión+huella`). La
+  interfaz ya se servía del disco sin caché. Falta que la persona lo vea al relanzar `arrancar.sh`.
 - **Pruebas reales de la interfaz** (pedido de la persona del 2026-11-05): para la hoja de ruta, no ahora. Sin
   Playwright: se amplía `tests/test_ui_browser.py` (Chrome por CDP), con una prueba en el navegador por cada cambio de
   interfaz y Chrome instalado en el CI. Apuntado en `docs/plan.md` «Pendiente».
@@ -50,6 +54,8 @@ hace falta `GW_SHARED_LOG`. Aun así, cada rama toca solo su fila salvo al cerra
 - **Leves de la revisión de F4e.1a trozo 1 (2026-11-05, no se tocan):** `gimg attempt rm` pregunta «¿Seguro?» antes de comprobar que el intento existe (luego da 404); `log.append` en `orders.delete_attempt` puede lanzar `OSError` tras haber borrado (el cliente vería 500 con el borrado hecho).
 - **Leves de la fase 1 de `release-install` (2026-11-05, no se revisan más en este PR):** `release.yml` copia a mano los pasos «Install» y «Check» de `check.yml` (un workflow reutilizable con `workflow_call` quitaría la copia: P2 de la retro, al flujo; mientras, el test de P1 vigila que no se desvíen); el test inestable de `test_engine_sdcpp` puede tumbar una release: se reintenta con `gh run rerun`.
 - **Releases en GitHub** (pedido de la persona del 2026-11-05, `docs/plan.md` tras la tabla de fases): v0.1.0, v0.3.0 y v0.4.0 hechas (v0.4.0 a mano: ver `release-install`); las siguientes, con `releases.py bump` y la etiqueta (`release.yml`) (`python3 releases.py check` en cada cierre de fase).
+- **Chrome inestable en `test_ui_browser` (2026-11-05):** en un check completo, Chrome cerró el websocket en mitad de
+  `OrderScreen` (5 errores, `CdpError: websocket closed` y luego `Connection refused`); repetido, 22/22 en verde.
 - **Test inestable en local (2026-11-05):** `tests.test_autostart` `test_two_clis_replacing_an_old_version…` falló una vez durante F4e.1a y pasó al repetir; mirarlo junto al de `test_engine_sdcpp`.
 - **Test inestable en el CI:** `tests.test_engine_sdcpp.RunTests.test_cancel_kills_the_whole_group` falló en `1eae6d7` y `44f8987` y pasó en la subida siguiente; diagnosticarlo con `diagnosing-bugs` tras el PR de F4 (retro del 2026-11-05).
 - **Leve de la fase 3 de `f2-motor`:** el check deja dos `ResourceWarning: unclosed file` (descriptores 7 y 8), seguramente el `stderr=PIPE` del Chrome de `tests/browser.py`, que `close()` no cierra.

@@ -18,10 +18,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote
 
-from . import __version__, compose, delivery, doctor, i18n, measure, models, orders, paths, projects, queue
+from . import __version__, build_id, compose, delivery, doctor, i18n, measure, models, orders, paths, projects, queue
 from .errors import GimgError
 
 API_VERSION = 1
+BUILD = build_id()  # the code this server runs (F4e: `arrancar.sh` replaces a server of older code)
 MAX_BODY = 1024 * 1024
 READ_TIMEOUT = 30
 UI_DIR = Path(__file__).resolve().parent / "ui"
@@ -372,7 +373,7 @@ def health(req):
         provider = engine.get_engine().provider
     except GimgError:
         provider = None
-    return {"ok": True, "api": API_VERSION, "version": __version__, "pid": os.getpid(),
+    return {"ok": True, "api": API_VERSION, "version": __version__, "build": BUILD, "pid": os.getpid(),
             "port": req.server.server_address[1], "engine": provider, "worker": queue.worker_alive() is True}
 
 

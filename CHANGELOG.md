@@ -23,6 +23,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- `arrancar.sh` (and `gimg ui`) replaces the running service when its code is older, even with the same version:
+  `/api/health` and `serve.json` carry `build`, a fingerprint of the code. With a job running, it only warns.
 - The element editor now reads `hidden` from the applied layout and sends it again, so applying or saving as a template
   no longer shows an element hidden from the command line.
 

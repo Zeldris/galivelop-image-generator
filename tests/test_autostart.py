@@ -7,6 +7,7 @@ import sys
 import unittest
 from unittest import mock
 
+import gimg
 from gimg import queue, service
 from tests.test_service import NAME, ROOT, Env, alive, wait_until
 
@@ -107,6 +108,36 @@ class Autostart(Env):
         self.assertEqual(old.wait(timeout=15), 0)
         self.assertEqual(service.read_state()["pid"], new["pid"])
         self.assertNotEqual(service.read_state()["version"], "0.0.0-old")
+
+    def test_same_version_but_older_code_is_restarted(self):
+        """`arrancar.sh` after a `git pull`: same `__version__`, other code; the old service goes (F4e)."""
+        self.use_port()
+        old = subprocess.Popen(
+            [sys.executable, "-c", "import sys, gimg; gimg.build_id = lambda: 'old-code'; from gimg.cli import main; "
+             "sys.exit(main(['serve', '--port', sys.argv[1]]))", self.env["GIMG_PORT"]],
+            cwd=ROOT, env=self.env, stdout=subprocess.PIPE, text=True)
+        self.addCleanup(old.stdout.close)
+        self.addCleanup(old.kill)
+        old.stdout.readline()
+        self.assertEqual(service.read_state()["build"], "old-code")
+        warnings = []
+        with mock.patch.object(queue, "worker_alive", return_value=True):  # a worker: the old one stays, and says why
+            state = service.ensure_running("en", warnings.append)
+        self.assertEqual(state["pid"], old.pid)
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("+old-code", warnings[0])
+        ui = self.gimg("ui", "--no-browser", "--json")
+        self.assertEqual(ui.returncode, 0, ui.stderr)
+        new = json.loads(ui.stdout)
+        self.assertNotEqual(new["pid"], old.pid)
+        self.assertEqual(old.wait(timeout=15), 0)
+        self.assertEqual(service.read_state()["build"], gimg.build_id())
+
+    def test_the_same_code_reuses_the_running_service(self):
+        self.use_port()
+        first = json.loads(self.gimg("ui", "--no-browser", "--json").stdout)
+        again = json.loads(self.gimg("ui", "--no-browser", "--json").stdout)
+        self.assertEqual(again["pid"], first["pid"])
 
     def test_two_clis_replacing_an_old_version_end_with_one_new_service(self):
         self.use_port()
