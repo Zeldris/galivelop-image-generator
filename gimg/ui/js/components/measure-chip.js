@@ -97,5 +97,32 @@ function render(node, res, ctx, retry) {
   const title = worst !== null && worst !== undefined
     ? t('ui.measure.title', { c: res.contrast.mean.toFixed(1), w: worst.toFixed(1), p: Math.round(pct ?? 0) })
     : t('ui.measure.onlyPalette', { p: Math.round(pct ?? 0) });
-  replace(node, h('span.chip', { class: `chip-${lvl}`, title, tabindex: 0, role: 'img', aria: { label: `${t('ui.measure.label')}: ${title}` } }, parts.join(' · ') || '—'));
+  const id = `measure-detail-${++detailSeq}`;
+  const lv = (l) => t(`ui.measure.level${l[0].toUpperCase()}${l.slice(1)}`);
+  const lines = [];
+  if (worst !== null && worst !== undefined) {
+    const mean = res.contrast.mean;
+    lines.push(t('ui.measure.mean', { c: mean.toFixed(1), l: lv(level(mean >= 4.5, mean >= 3)) }));
+    lines.push(t('ui.measure.worst', { w: worst.toFixed(1), l: lv(level(worst >= 4.5, worst >= 3)) }));
+  } else lines.push(t('ui.measure.noContrast'));
+  if (pct !== null && pct !== undefined) lines.push(t('ui.measure.palette', { p: Math.round(pct), m: paletteMin, l: lv(level(pct >= paletteMin, pct >= paletteMin - 12)) }));
+  const detail = h('div.measure-detail', { id, popover: 'auto', role: 'group', aria: { label: t('ui.measure.detail') } }, lines.map((l) => h('p', {}, l)));
+  const chip = h('button.chip', { type: 'button', class: `chip-${lvl}`, title, popovertarget: id, aria: { expanded: 'false', controls: id, label: `${t('ui.measure.label')}: ${title}` } }, parts.join(' · ') || '—');
+  detail.addEventListener('toggle', (ev) => {
+    const open = ev.newState === 'open';
+    chip.setAttribute('aria-expanded', String(open));
+    if (open) placeDetail(chip, detail);
+  });
+  replace(node, chip, detail);
+}
+
+let detailSeq = 0;
+
+/** Bajo el chip, dentro de la ventana (el popover está en la capa superior: posición fija). */
+function placeDetail(chip, detail) {
+  const r = chip.getBoundingClientRect();
+  const w = Math.min(detail.offsetWidth || 320, window.innerWidth - 16);
+  detail.style.left = `${Math.max(8, Math.min(r.left, window.innerWidth - w - 8))}px`;
+  const below = r.bottom + 6;
+  detail.style.top = `${below + detail.offsetHeight > window.innerHeight - 8 ? Math.max(8, r.top - 6 - detail.offsetHeight) : below}px`;
 }

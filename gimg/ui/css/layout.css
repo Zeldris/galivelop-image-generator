@@ -10,11 +10,11 @@
   background: var(--surface); border-bottom: 1px solid var(--border);
   --header-h-fixed: 56px;
 }
-.brand { grid-area: brand; display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); color: var(--text); text-decoration: none; font-family: var(--font-title); font-weight: 700; white-space: nowrap; }
+.brand { grid-area: brand; display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); min-width: var(--tap); color: var(--text); text-decoration: none; font-family: var(--font-title); font-weight: 700; white-space: nowrap; }
 .brand img { width: 28px; height: 28px; }
 .brand .sigla { color: var(--accent-text); }
 .crumbs { grid-area: crumbs; display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; min-width: 0; overflow: hidden; white-space: nowrap; font-size: 14px; }
-.crumbs > a, .crumbs > b { flex: 0 1 auto; min-width: 3ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: var(--tap); }
+.crumbs > a, .crumbs > b { flex: 0 1 auto; min-width: var(--tap); padding: 0 8px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: var(--tap); }
 .crumbs > a { color: var(--text-2); }
 .crumbs > b { font-weight: 600; flex-shrink: .4; }
 .crumbs .sep { color: var(--text-2); flex: none; }
@@ -108,9 +108,8 @@
   .order-panel { position: static; max-height: none; }
 }
 @media (max-width: 640px) {
-  .app-header { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: 52px 40px; grid-template-areas: "brand tools" "crumbs crumbs"; --header-h-fixed: 92px; }
+  .app-header { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: 48px 44px; grid-template-areas: "brand tools" "crumbs crumbs"; --header-h-fixed: 92px; }
   .brand > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .crumbs > a, .crumbs > b { line-height: 40px; }
   .queue-pill { max-width: 100%; }
   .queue-drawer { width: 100vw; border-left: 0; }
   .queue-pill > span:not(.dot) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

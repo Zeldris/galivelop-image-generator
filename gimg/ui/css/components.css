@@ -45,8 +45,11 @@
 
 /* chip de medida D31 */
 .measure { display: inline-flex; align-items: center; gap: 6px; }
-.measure .chip { cursor: help; }
-.measure .btn { min-height: 32px; padding: 2px 8px; font-size: 12.5px; }
+.measure .btn { min-height: var(--tap); padding: 2px 10px; font-size: 12.5px; }
+button.chip { appearance: none; min-height: var(--tap); padding: 2px 12px; font-family: var(--font-body); cursor: pointer; }
+button.chip:hover { border-color: var(--accent); }
+.measure-detail { position: fixed; inset: auto; margin: 0; width: min(320px, calc(100vw - 16px)); padding: 10px 14px; background: var(--surface); color: var(--text); border: 1px solid var(--border-strong); border-radius: var(--r); box-shadow: var(--shadow); font-size: 14px; }
+.measure-detail p { margin: 4px 0; }
 
 .attempt .figure { container-type: inline-size; }
 
@@ -72,7 +75,7 @@
 /* selector de plantilla (F4b) y botón del editor (F4c) */
 .slot { border: 1px dashed var(--border-strong); border-radius: var(--r-s); padding: 8px 10px; color: var(--text-2); font-size: 13px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .slot .chip { font-size: 11px; }
-.slot select { flex: 1; min-width: 0; min-height: 36px; }
+.slot select { flex: 1; min-width: 0; min-height: var(--tap); }
 
 /* editor de elementos (F4c): dialog a pantalla casi completa, imagen compuesta con una caja por elemento */
 dialog.editor { width: 98vw; max-width: 98vw; height: 96vh; max-height: 96vh; padding: 12px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
@@ -116,7 +119,7 @@ dialog.editor-save fieldset { border: 0; padding: 0; margin: 0; }
 .toast { display: flex; gap: 10px; align-items: center; padding: 10px 14px; border-radius: var(--r-s); background: var(--surface-2); border: 1px solid var(--border-strong); color: var(--text); box-shadow: var(--shadow); font-size: 14px; }
 .toast-ok { border-color: var(--ok); }
 .toast-bad { border-color: var(--bad); }
-.toast .btn { margin-left: auto; min-height: 36px; }
+.toast .btn { margin-left: auto; min-height: var(--tap); }
 
 /* atajos */
 .shortcuts dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; align-items: center; }
