@@ -54,7 +54,7 @@ export async function orderView(host, route) {
   const compareHost = h('div');
   const deliveredHost = h('div');
   const panel = h('aside.order-panel', { aria: { label: t('ui.order.panel') } });
-  const title = h('div.page-head', {}, h('h1', {}, key), h('span.chip', {}, profile, profileCfg.width ? ` · ${profileCfg.width}×${profileCfg.height}` : ''),
+  const title = h('div.page-head', {}, h('h1', { tabindex: '-1' }, key), h('span.chip', {}, profile, profileCfg.width ? ` · ${profileCfg.width}×${profileCfg.height}` : ''),
     h('button.btn', { type: 'button', data: { fid: 'rename-order' }, onclick: () => ctx.actions.rename() }, t('ui.order.rename')),
     h('a.btn.btn-ghost', { href: to.project(project) }, '← ', t('ui.order.backToProject')));
   host.replaceChildren(title, h('div.order-layout', {}, h('div', {}, deliveredHost, compareHost, galleryBar, gallery), panel));
@@ -337,6 +337,11 @@ export async function orderView(host, route) {
     else if (k === 'f' || k === 'F') { const b = galleryBar.querySelector('.btn-toggle'); if (b) b.click(); }
     else if (k === 'g' || k === 'G') { if (retouch) retouch.another(); }
     else if (k === 'r' || k === 'R') { e.preventDefault(); if (retouch) retouch.focusPrompt(); }
+    else if (k === 't' || k === 'T' || k === 'x' || k === 'X') {
+      const zone = (k === 't' || k === 'T') ? retouch && retouch.node : texts && texts.node;
+      const c = zone && zone.querySelector('button, a, input, select, textarea, summary');
+      if (c) { e.preventDefault(); c.focus(); }
+    }
     else if (card && card.dataset.kind === 'attempt') {
       const a = byId(ctx.order.attempts || [], Number(card.dataset.attempt));
       if (!a) return;
@@ -363,7 +368,12 @@ export async function orderView(host, route) {
   paint();
   const want = route.query && route.query.a;
   const first = want ? gallery.querySelector(`[data-attempt="${want}"]`) : null;
-  (first || gallery.querySelector('[data-kind]') || el('main')).focus();
+  const all = ctx.order.attempts || [];
+  const nuevos = all.filter((a) => stateOf(ctx.order, a) === 'new').length;
+  const status = document.getElementById('status'); // polite: no corta la lectura del título que recibe el foco
+  if (status) { status.textContent = ''; status.textContent = t('ui.order.loaded', { n: all.length, m: nuevos }); }
+  // el foco va al título de la vista; solo un enlace directo a un intento (?a=) lo lleva a su tarjeta
+  (first || title.querySelector('h1') || el('main')).focus();
 }
 
 function byId(list, id) { return list.find((a) => a.id === id); }

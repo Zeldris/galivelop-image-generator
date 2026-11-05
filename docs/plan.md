@@ -1455,7 +1455,7 @@ arreglo; el diseño con Fable. El mando lo comprueba la persona en la Deck.
 |---|---|---|
 | UI.1 | Cabecera de una altura, botón «Ajustes» con idioma, tema y talla | hecho: rejilla de 56 px (>640) o 92 px (≤640, migas en su fila), `--header-h` medido; «Ajustes» como popover nativo con idioma y tema (la talla entra con UI.9); `test_header_has_one_height_and_settings_menu` |
 | UI.2 | Cajón de la cola como diálogo (trampa de foco en `lib/focus-trap.js`) | hecho: `role="dialog"`, `aria-modal`, `aria-labelledby` del `h2` (foco al abrir), `inert` en `main` y cabecera, trampa de `Tab` compartida con el editor; entradas a `64px minmax(0,1fr)` con acciones en segunda fila, cajón a `100vw` a ≤640; `test_queue_drawer_fits_and_traps_focus` |
-| UI.3 | Foco que no se roba; atajos `T`/`X` | pendiente |
+| UI.3 | Foco que no se roba; atajos `T`/`X` | hecho: al cargar, foco al `h1` (`tabindex=-1`; con `?a=` a esa tarjeta); el repintado ya conservaba el foco por tarjeta e índice; «n intentos, m nuevos» en `#status` (nuevo, `role=status` polite: `#alerts` es asertivo y cortaba el título); `T`/`X` al primer control del retoque y de Textos, en la ayuda; `test_order_page_keeps_focus` |
 | UI.4 | Objetivos de 44 px; chip de medida como botón con detalle | pendiente |
 | UI.5 | Retoque pegajoso a >1000 y diálogo lateral a ≤1000; avisos que no tapan | pendiente |
 | UI.9 | Talla de texto (`rem`, 1/1,15/1,3) y mando (`gamepad.js`) | pendiente |
