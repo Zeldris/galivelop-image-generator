@@ -5,6 +5,7 @@ import { t } from '../i18n.js';
 import { paths } from '../api.js';
 import { stateOf } from './attempt-card.js';
 import { measureChip } from './measure-chip.js';
+import { measureFor } from './slots.js';
 
 export function compareView(ctx, a, b, { onSwap, onClose }) {
   const fig = (att, side) => {
@@ -15,7 +16,7 @@ export function compareView(ctx, a, b, { onSwap, onClose }) {
     setVars(f, { ar: `${p.width || ctx.profileCfg.width || 2} / ${p.height || ctx.profileCfg.height || 1}` });
     return h('figure', {}, h('figcaption', {}, h('b.mono', {}, `${t(side)}: q${att.id}`), h('span.chip', {}, t('ui.state.' + stateOf(ctx.order, att))),
       h('span', {}, `${t('ui.attempt.seed')} ${att.seed}${p.steps ? ` · ${p.steps} ${t('ui.attempt.steps')}` : ''}`),
-      measureChip({ project: ctx.project, profile: ctx.profile, key: ctx.key, ...ctx.measure }, att)), f);
+      measureChip({ project: ctx.project, profile: ctx.profile, key: ctx.key, ...measureFor(ctx, att) }, att)), f);
   };
   return h('section.card.compare', { aria: { label: t('ui.compare.title') } },
     h('div.row-between', {}, h('h2', {}, t('ui.compare.title')), h('div.row', {},

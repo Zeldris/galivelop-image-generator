@@ -1,7 +1,7 @@
 /* Textos de la composición (D28, por pedido: decisión 4 de propuesta.md): un campo por `compose.fields` del perfil,
    PUT …/o/text al guardar, «Recomponer la elegida» (POST …/a/{id}/compose sin generar) y una previsualización
    inmediata (superposición HTML sobre los intentos) mientras se escribe. Color, velo y zona no están en el esquema del
-   pedido hoy (solo `compose.fields`): llegan con la plantilla (F4b) y el editor (F4c). */
+   pedido hoy (solo `compose.fields`): llegan con el editor (F4c). */
 
 import { h } from '../dom.js';
 import { t, fieldLabel } from '../i18n.js';

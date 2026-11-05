@@ -1,5 +1,5 @@
 /* Galivelop IG · componentes: tarjeta de intento, chip de medida, comparar, previsualización de textos,
-   caja de luz, toasts, atajos, huecos F4b/F4c. */
+   caja de luz, toasts, atajos, selector de plantilla (F4b), hueco F4c. */
 
 /* tarjeta de intento */
 .attempt { display: grid; gap: 8px; padding: 10px; border-width: 2px; }
@@ -79,9 +79,10 @@
 .panel-actions .btn { justify-content: space-between; }
 .dirty { color: var(--warn); font-size: 13px; }
 
-/* huecos para F4b (plantilla) y F4c (editor) */
+/* selector de plantilla (F4b) y hueco del editor (F4c) */
 .slot { border: 1px dashed var(--border-strong); border-radius: var(--r-s); padding: 8px 10px; color: var(--text-2); font-size: 13px; display: flex; gap: 8px; align-items: center; }
 .slot .chip { font-size: 11px; }
+.slot select { flex: 1; min-width: 0; min-height: 36px; }
 
 /* caja de luz (tamaño real) */
 .lightbox { padding: 0; max-width: 96vw; max-height: 96vh; background: #000; border: 0; }

@@ -23,6 +23,15 @@ export function retouchPanel(ctx, { onSubmit }) {
   const seed = h('input', { type: 'number', min: 0, value: order.seed ?? lastSeed(order) ?? '' });
   const draft = h('input', { type: 'checkbox', checked: Boolean(order.draft) });
   const count = h('input', { type: 'number', min: 2, max: 20, value: 3, aria: { label: t('ui.retouch.batchCount') } });
+  const templates = ctx.templates || [];
+  const templateOfChosen = () => {
+    const a = (order.attempts || []).find((x) => x.id === order.chosen);
+    const id = a && ((a.compose && a.compose.templateId) || (a.composeError && a.composeError.templateId));
+    return templates.some((x) => x.id === id) ? id : (templates.find((x) => x.default) || {}).id;
+  };
+  const template = templates.length > 1
+    ? h('select', { id: 'retouch-template' }, templates.map((x) => h('option', { value: x.id, selected: x.id === templateOfChosen() }, x.default ? t('ui.attempt.templateDefault', { id: x.id }) : x.id)))
+    : null;
   const dirty = h('span.dirty', { hidden: true }, t('ui.retouch.changed'));
 
   const checkPrompt = () => {
@@ -42,6 +51,7 @@ export function retouchPanel(ctx, { onSubmit }) {
     if (num(cfgScale) !== undefined && num(cfgScale) !== params.cfg) s.cfg = num(cfgScale);
     if (sampler.value && sampler.value !== params.sampler) s.sampler = sampler.value;
     s.draft = draft.checked;
+    if (template && template.value) s.template = template.value;
     return s;
   };
 
@@ -72,6 +82,7 @@ export function retouchPanel(ctx, { onSubmit }) {
     h('div.field', {}, h('label', { for: 'retouch-seed' }, t('ui.retouch.seed')), h('div.with-button', {}, Object.assign(seed, { id: 'retouch-seed' }),
       h('button.btn.btn-icon', { type: 'button', title: t('ui.retouch.dice'), aria: { label: t('ui.retouch.dice') }, onclick: () => { seed.value = randomSeed(); } }, '⚄')),
       h('span.hint', {}, t('ui.retouch.seedHint'))),
+    template ? h('div.field', {}, h('label', { for: 'retouch-template' }, t('ui.retouch.template')), template) : null,
     h('label.check', {}, draft, h('span', {}, t('ui.retouch.draft'), ' ', h('span.hint', {}, t('ui.retouch.draftHint')))),
     h('div.panel-actions', {}, another, h('div.with-button', {}, batch, count)),
     ctx.limits ? h('p.hint', {}, ctx.limits) : null);
@@ -87,6 +98,8 @@ export function retouchPanel(ctx, { onSubmit }) {
       if (p.sampler !== undefined) sampler.value = p.sampler;
       seed.value = attempt.seed;
       draft.checked = Boolean(attempt.draft);
+      const tid = (attempt.compose && attempt.compose.templateId) || (attempt.composeError && attempt.composeError.templateId);
+      if (template && templates.some((x) => x.id === tid)) template.value = tid;
       checkPrompt();
       prompt.focus();
     },

@@ -198,6 +198,18 @@ class ReviewFixes(unittest.TestCase):
     def test_order_view_checks_host_after_loading(self):
         self.assertIn("host.isConnected", self.js("components/order-view.js"))
 
+    def test_template_selector_is_labelled_and_used_by_card_panel_and_measure(self):
+        slots = read(UI / "js" / "components" / "slots.js")
+        self.assertRegex(slots, r"h\('label', \{ for: `template-")
+        self.assertIn("composeError.templateId", slots)
+        self.assertIn("list.length < 2", slots)
+        self.assertIn("templateSlot(ctx, attempt)", read(UI / "js" / "components" / "attempt-card.js"))
+        for name in ("attempt-card.js", "compare-view.js"):
+            self.assertIn("measureFor(ctx,", read(UI / "js" / "components" / name))
+        self.assertIn("s.template = template.value", read(UI / "js" / "components" / "retouch-panel.js"))
+        self.assertIn("api.templates(project, profile)", read(UI / "js" / "components" / "order-view.js"))
+        self.assertNotIn("templateSoon", "".join(read(f) for f in JS))
+
     def test_estimate_is_per_entry(self):
         text = self.js("components/order-view.js")
         self.assertNotIn("estimateMs / Math.max", text)

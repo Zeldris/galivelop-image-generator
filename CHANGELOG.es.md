@@ -9,6 +9,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Sin publicar]
 
+### Añadido
+
+- Plantillas elegibles por perfil (F4b): `compose.templates`, `zone` y `textColor`; `gimg templates`, `--template` en
+  `compose` y `attempt new`, rutas de la API y un selector de plantilla por intento en la interfaz (también en el
+  panel de retoque). El chip de contraste mide con la zona y el color de texto de la plantilla.
+
 ## [0.3.0] - 2026-11-05
 
 ### Añadido

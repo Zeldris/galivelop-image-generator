@@ -24,8 +24,10 @@ export async function orderView(host, route) {
   host.append(h('p.empty', {}, h('span.spin', { aria: { hidden: true } }), ' ', t('ui.loading')));
   let info;
   let order;
+  let templates = [];
   try {
-    [info, order] = await Promise.all([api.project(project), api.order(project, profile, key)]);
+    // las plantillas se piden una vez por vista; si falla esa petición, el pedido sigue sin selector
+    [info, order, templates] = await Promise.all([api.project(project), api.order(project, profile, key), api.templates(project, profile).catch(() => [])]);
   } catch (e) {
     host.replaceChildren(h('h1', {}, key), h('p.notice.notice-bad', { role: 'alert' }, describeError(e, t)),
       h('p', {}, h('a.btn', { href: to.project(project) }, '← ', t('ui.order.backToProject'))));
@@ -37,7 +39,7 @@ export async function orderView(host, route) {
   const brand = cfg.brand || {};
   const compose = profileCfg.compose || {};
   const ctx = {
-    project, profile, key, order, profileCfg, brand,
+    project, profile, key, order, profileCfg, brand, templates: Array.isArray(templates) ? templates : [],
     measure: { zone: compose.zone, textColor: compose.textColor || brand.textColor, paletteMin: brand.paletteMin },
     showRaw: store.get('showRaw'), previewText: null, compare: [], queuedIds: [], estimateMs: estimateFor(profile),
     actions: {},
@@ -86,6 +88,15 @@ export async function orderView(host, route) {
     copyError: (e) => copy(e.errorText || JSON.stringify(e.error), t('ui.attempt.copied')),
     retry: guard(async (e) => { await submit({ count: 1, seed: e.seed, draft: Boolean(e.draft), ...pick(e.params, ['steps', 'cfg', 'sampler']) }); }),
     cancel: guard(async (e) => { await api.cancel(e.id); toast(t('ui.queue.cancelled', { id: e.id })); await poll.refreshNow(); }),
+    setTemplate: async (a, id) => {
+      try {
+        await api.compose(project, profile, key, a.id, { template: id });
+        invalidateMeasure(`${project}/${profile}/${key}/${a.id}@`);
+        toastOk(t('ui.attempt.templateChanged', { id: a.id, template: id }));
+        await reload();
+        return true;
+      } catch (e) { toastError(describeError(e, t)); return false; }
+    },
     recompose: guard(async (a) => { await api.compose(project, profile, key, a.id, {}); invalidateMeasure(`${project}/${profile}/${key}/${a.id}@`); toastOk(t('ui.text.recomposed', { id: a.id })); await reload(); }),
   });
 

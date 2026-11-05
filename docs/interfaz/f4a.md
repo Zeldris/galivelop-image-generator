@@ -156,9 +156,12 @@ Ajuste mínimo pedido a la hoja (ya propuesto en `hoja.md` §3, pendiente de la 
 
 ## 8. Queda para F4b / F4c / F4d
 
-- **F4b** (`slots.js#templateSlot`): selector de plantilla por intento (`GET …/profiles/{profile}/templates`,
-  `POST …/compose {"template"}`), zona reservada y color del texto declarados por plantilla; el chip de contraste los
-  tomará de ahí (hoy lee `compose.zone`/`compose.textColor` si la configuración los trae; si no, mide solo paleta).
+- **F4b** (hecha; JS sin ejecutar, recorrido en navegador pendiente de la persona): `slots.js#templateSlot` es un
+  `<select>` por intento (solo con más de una plantilla; `GET …/profiles/{profile}/templates`, una vez por vista de
+  pedido) y al cambiar hace `POST …/compose {"template"}`; el panel de retoque tiene el mismo selector y manda
+  `template` en `POST …/attempts`; el chip de contraste y la previsualización usan la `zone` (`x,y,w,h`), el
+  `textColor`, los campos y el logo de la plantilla del intento. Queda: la previsualización HTML sigue siendo una
+  aproximación (zona izquierda/arriba) hasta el editor de F4c.
 - **F4c** (`slots.js#editorSlot`): editor de elementos sobre la imagen (mover/redimensionar titular, subtítulo, logo,
   adornos; `POST …/compose {"layout"}`; guardar como plantilla local o del proyecto, D40). Sustituye a la
   previsualización HTML de `compose-preview.js`.

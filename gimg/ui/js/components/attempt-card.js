@@ -1,14 +1,14 @@
 /* Tarjeta de un intento en la galería del pedido: imagen (compuesta o fondo crudo), estado, metadatos, chip de medida,
    veredicto sí/no, elegir/deshacer, comparar, nota, y acciones secundarias (recrear, variar, copiar parámetros, registro).
    La misma tarjeta pinta una entrada de la cola todavía sin intento (en cola, generando con vista previa, fallo).
-   Huecos: selector de plantilla (F4b) y «Editar elementos» (F4c), ver slots.js. */
+   Selector de plantilla (F4b, slots.js) y hueco de «Editar elementos» (F4c). */
 
 import { h, mmss, when, setVars } from '../dom.js';
 import { t } from '../i18n.js';
 import { paths } from '../api.js';
 import { measureChip } from './measure-chip.js';
 import { composePreview } from './compose-preview.js';
-import { templateSlot, editorSlot } from './slots.js';
+import { templateSlot, editorSlot, measureFor } from './slots.js';
 import { progressOf, remainingMs } from './queue-bar.js';
 import { openLightbox } from './lightbox.js';
 
@@ -26,8 +26,8 @@ function aspect(ctx, a) {
 }
 
 /**
- * ctx: {project, profile, key, order, profileCfg, brand, measure: {zone, textColor, paletteMin}, showRaw, previewText,
- *       compare: [ids], actions: {mark, note, choose, undo, compare, recreate, vary, copyParams, openLog, retry, cancel, copyError}}
+ * ctx: {project, profile, key, order, profileCfg, brand, measure: {zone, textColor, paletteMin}, templates: [plantillas del perfil], showRaw, previewText,
+ *       compare: [ids], actions: {mark, note, choose, undo, compare, recreate, vary, copyParams, openLog, retry, cancel, copyError, recompose, setTemplate}}
  */
 export function attemptCard(ctx, attempt) {
   const st = stateOf(ctx.order, attempt);
@@ -40,7 +40,7 @@ export function attemptCard(ctx, attempt) {
 
   const figure = h('figure.figure', {}, h('img', { src, alt: '', loading: 'lazy' }));
   setVars(figure, { ar: aspect(ctx, attempt) });
-  if (ctx.previewText && attempt.raw) figure.append(composePreview(ctx, ctx.previewText));
+  if (ctx.previewText && attempt.raw) figure.append(composePreview(ctx, ctx.previewText, attempt));
   figure.append(h('button.open', { type: 'button', aria: { label: t('ui.attempt.open', { id }) }, onclick: () => openLightbox(src, `${t('ui.attempt.id', { id })} · ${t('ui.attempt.seed')} ${attempt.seed}`, alt) }));
   figure.append(badges(st, attempt));
 
@@ -52,7 +52,7 @@ export function attemptCard(ctx, attempt) {
     attempt.params && attempt.params.width ? h('span', {}, `${attempt.params.width}×${attempt.params.height}`) : null,
     Number.isFinite(attempt.durationMs) ? h('span', {}, mmss(attempt.durationMs)) : null,
     h('span.grow'),
-    attempt.raw || attempt.image ? measureChip({ project: ctx.project, profile: ctx.profile, key: ctx.key, ...ctx.measure }, attempt) : null);
+    attempt.raw || attempt.image ? measureChip({ project: ctx.project, profile: ctx.profile, key: ctx.key, ...measureFor(ctx, attempt) }, attempt) : null);
 
   const yes = h('button.btn.btn-yes', { type: 'button', aria: { pressed: st === 'candidate' || st === 'chosen' }, onclick: () => ctx.actions.mark(attempt, st === 'candidate' ? 'new' : 'candidate') }, t('ui.attempt.yes'), h('kbd.kbd', { aria: { hidden: true } }, 'S'));
   const no = h('button.btn.btn-no', { type: 'button', disabled: st === 'chosen', aria: { pressed: st === 'discarded' }, onclick: () => ctx.actions.mark(attempt, st === 'discarded' ? 'new' : 'discarded') }, t('ui.attempt.no'), h('kbd.kbd', { aria: { hidden: true } }, 'N'));
@@ -73,7 +73,7 @@ export function attemptCard(ctx, attempt) {
     h('button.btn', { type: 'button', title: t('ui.attempt.varyHint'), onclick: () => ctx.actions.vary(attempt) }, '▶ ', t('ui.attempt.vary')),
     h('button.btn', { type: 'button', onclick: () => ctx.actions.copyParams(attempt) }, '⎘ ', t('ui.attempt.copyParams')),
     attempt.log ? h('a.btn', { href: paths.log(ctx.project, ctx.profile, ctx.key, id), target: '_blank', rel: 'noopener' }, t('ui.attempt.log')) : null,
-  ), h('div.stack', {}, templateSlot(attempt), editorSlot(attempt)));
+  ), h('div.stack', {}, templateSlot(ctx, attempt), editorSlot(attempt)));
 
   const extras = [];
   if (attempt.composeError) extras.push(h('p.notice.notice-warn.small', {}, t('ui.attempt.notComposed'), ' ', h('button.btn', { type: 'button', onclick: () => ctx.actions.recompose(attempt) }, t('ui.text.recomposeThis'))));

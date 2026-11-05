@@ -13,7 +13,7 @@
 | **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | F4a hecha y revisada (1-9; 10-16 leves pendientes; JS: recorrido en navegador, de la persona). F4b: contrato en `docs/plan.md` «F4b en detalle» (pendiente de la persona); F4b.1 (motor, cola, CLI, doctor) y F4b.2 (API) hechos. **Siguiente:** F4b.3 interfaz, docs de usuario y CHANGELOG → contrato F4c → fases 1-2 antes de `main` (parar antes de `reviewed.sh`). Compactaciones: 3 (gastadas 2) |
+| **Tarea en curso · `f2-motor`** | F4a hecha y revisada (1-9; 10-16 leves pendientes). F4b hecha (motor, API e interfaz; JS sin ejecutar: recorrido en navegador, de la persona; contrato en `docs/plan.md` pendiente de la persona). **Siguiente:** contrato F4c → fases 1-2 antes de `main` (parar antes de `reviewed.sh`). Compactaciones: 3 (gastadas 2) |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.

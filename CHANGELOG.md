@@ -9,6 +9,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Selectable templates per profile (F4b): `compose.templates`, `zone` and `textColor`; `gimg templates`,
+  `--template` on `compose` and `attempt new`, API routes and a per-attempt template selector in the interface
+  (also in the retouch panel). The contrast chip measures with the template's zone and text color.
+
 ## [0.3.0] - 2026-11-05
 
 ### Added
