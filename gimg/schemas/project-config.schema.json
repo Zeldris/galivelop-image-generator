@@ -62,6 +62,27 @@
             "pattern": "^#[0-9A-Fa-f]{6}$"
           },
           "description": "Brand palette as #rrggbb colours (at most 16)."
+        },
+        "textColor": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "description": "Brand text colour as #RRGGBB."
+        },
+        "paletteMin": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Minimum percentage (0-100) of the image that should fall in the brand palette."
+        },
+        "bannedWords": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "description": "Words that must not appear in prompts (the interface warns before sending; at most 100)."
         }
       }
     },
@@ -226,6 +247,54 @@
               ],
               "default": "cover",
               "description": "cover crops the raw image to the target; contain scales it down and the template paints the bands."
+            },
+            "zone": {
+              "$ref": "#/$defs/zone",
+              "description": "Rectangle of the target, in pixels, that the default template reserves for text; the contrast chip measures it."
+            },
+            "textColor": {
+              "$ref": "#/$defs/hexColor",
+              "description": "Colour of the text over `zone`, #RRGGBB."
+            },
+            "templatesDir": {
+              "$ref": "#/$defs/relativePath",
+              "description": "Folder of the project, relative to its root, where `gimg template save --dest project` writes new templates (`<templatesDir>/<profile>/<name>.svg`); the templates in it are offered too."
+            },
+            "templates": {
+              "type": "object",
+              "maxProperties": 20,
+              "propertyNames": {
+                "pattern": "^(?!default$)[a-z0-9][a-z0-9-]{0,39}$"
+              },
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "template"
+                ],
+                "properties": {
+                  "template": {
+                    "$ref": "#/$defs/svgPath"
+                  },
+                  "logo": {
+                    "$ref": "#/$defs/svgPath"
+                  },
+                  "fields": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "items": {
+                      "$ref": "#/$defs/fieldName"
+                    }
+                  },
+                  "zone": {
+                    "$ref": "#/$defs/zone"
+                  },
+                  "textColor": {
+                    "$ref": "#/$defs/hexColor"
+                  }
+                }
+              },
+              "description": "Other templates of the profile by id (never `default`, which is `template` above); one without `logo` or `fields` takes those of `compose`."
             }
           }
         }
@@ -243,6 +312,27 @@
       "$ref": "#/$defs/relativePath",
       "pattern": "\\.svg$",
       "description": "Relative path to an .svg file, with the same limits as any relative path."
+    },
+    "zone": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "properties": {
+        "x": {"type": "integer", "minimum": 0, "maximum": 8192},
+        "y": {"type": "integer", "minimum": 0, "maximum": 8192},
+        "w": {"type": "integer", "minimum": 1, "maximum": 8192},
+        "h": {"type": "integer", "minimum": 1, "maximum": 8192}
+      },
+      "description": "Rectangle in pixels of the delivered image."
+    },
+    "hexColor": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$"
     },
     "fieldName": {
       "type": "string",

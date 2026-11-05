@@ -10,7 +10,11 @@
       "#E0703A",
       "#2F7A55",
       "#3D6FD9",
-      "#ffffff"
+      "#ffffff",
+      "#eaf4fa",
+      "#2BB3EA",
+      "#0083c1",
+      "#9fb4c4"
     ]
   },
   "delivery": {
@@ -24,7 +28,28 @@
       "steps": 6,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8"
+      "model": "flux2-klein-4b-q8",
+      "targetWidth": 1200,
+      "targetHeight": 630,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      },
+      "compose": {
+        "template": "plantillas/og.svg",
+        "fields": [
+          "title1",
+          "title2",
+          "subtitle",
+          "subtitle2"
+        ],
+        "logo": "logos/portal-a-lockup.svg",
+        "fonts": [
+          "Sora",
+          "Inter"
+        ],
+        "fit": "cover"
+      }
     },
     "social": {
       "width": 1280,
@@ -32,15 +57,29 @@
       "steps": 6,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8"
+      "model": "flux2-klein-4b-q8",
+      "targetWidth": 1200,
+      "targetHeight": 630
     },
-    "banner": {
-      "width": 1280,
-      "height": 512,
+    "square": {
+      "width": 1024,
+      "height": 1024,
       "steps": 6,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8"
+      "model": "flux2-klein-4b-q8",
+      "targetWidth": 1080,
+      "targetHeight": 1080
+    },
+    "portrait": {
+      "width": 896,
+      "height": 1152,
+      "steps": 6,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "flux2-klein-4b-q8",
+      "targetWidth": 1080,
+      "targetHeight": 1350
     },
     "header": {
       "width": 1536,
@@ -48,7 +87,9 @@
       "steps": 6,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8"
+      "model": "flux2-klein-4b-q8",
+      "targetWidth": 1500,
+      "targetHeight": 500
     }
   }
 }

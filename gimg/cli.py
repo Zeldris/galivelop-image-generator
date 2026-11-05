@@ -7,7 +7,7 @@ import os
 import sys
 import traceback
 
-from . import __version__, compose, delivery, doctor, engine, i18n, measure, orders, projects, queue, worker
+from . import __version__, compose, delivery, doctor, i18n, measure, orders, projects, queue, service, sheet, worker
 from .errors import GimgError
 
 LANGS = ("es", "en")
@@ -61,7 +61,9 @@ def _build(lang: str) -> argparse.ArgumentParser:
 
     g = group(top, "order", "cli.cmd.order")
     leaf(g, "submit", "cli.cmd.order_submit", project, arg("file", "cli.arg.file"),
-         opt("--draft", "cli.arg.draft", action=argparse.BooleanOptionalAction, default=None))
+         opt("--draft", "cli.arg.draft", action=argparse.BooleanOptionalAction, default=None),
+         opt("--template", "cli.arg.template", metavar="ID"),
+         opt("--model", "cli.arg.model", metavar="ID"))
     lst = leaf(g, "list", "cli.cmd.order_list", project,
                opt("--profile", "cli.arg.profile_filter"))
     mutex = lst.add_mutually_exclusive_group()
@@ -74,7 +76,9 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--seed", "cli.arg.seed", type=int), opt("--count", "cli.arg.count", type=int, default=1),
          opt("--prompt", "cli.arg.prompt"), opt("--steps", "cli.arg.steps", type=int),
          opt("--cfg", "cli.arg.cfg", type=float), opt("--sampler", "cli.arg.sampler"),
-         opt("--draft", "cli.arg.draft", action=argparse.BooleanOptionalAction, default=None))
+         opt("--draft", "cli.arg.draft", action=argparse.BooleanOptionalAction, default=None),
+         opt("--template", "cli.arg.template", metavar="ID"),
+         opt("--model", "cli.arg.model", metavar="ID"))
     leaf(g, "mark", "cli.cmd.attempt_mark", project, okey, oprofile, attempt,
          arg("state", "cli.arg.state", choices=orders.STATES))
     leaf(g, "note", "cli.cmd.attempt_note", project, okey, oprofile, attempt,
@@ -84,18 +88,39 @@ def _build(lang: str) -> argparse.ArgumentParser:
     leaf(top, "undo", "cli.cmd.undo", project, okey, oprofile)
     leaf(top, "compose", "cli.cmd.compose", project, okey, oprofile,
          arg("attempt", "cli.arg.attempt_optional", type=int, nargs="?", default=None),
-         opt("--text", "cli.arg.text_kv", action="append", default=[], metavar="FIELD=TEXT"))
+         opt("--text", "cli.arg.text_kv", action="append", default=[], metavar="FIELD=TEXT"),
+         opt("--template", "cli.arg.template", metavar="ID"),
+         opt("--layout", "cli.arg.layout", metavar="JSON"))
+    leaf(top, "templates", "cli.cmd.templates", project, oprofile)
+    g = group(top, "template", "cli.cmd.template")
+    leaf(g, "save", "cli.cmd.template_save", project, oprofile, okey, attempt, arg("name", "cli.arg.template_name"),
+         opt("--dest", "cli.arg.template_dest", choices=("local", "project"), default="local"))
 
     leaf(top, "measure", "cli.cmd.measure", arg("image", "cli.arg.image_path"),
          opt("--palette", "cli.arg.palette"), opt("--project", "cli.arg.measure_project", metavar="PROJECT"),
          opt("--refs", "cli.arg.refs", nargs="+", default=[], metavar="IMAGE"),
          opt("--zone", "cli.arg.zone", metavar="X,Y,W,H"), opt("--text", "cli.arg.text_color", metavar="#RRGGBB"))
 
+    leaf(top, "sheet", "cli.cmd.sheet", arg("images", "cli.arg.sheet_images", nargs="*", metavar="IMAGE"),
+         opt("--out", "cli.arg.sheet_out", required=True, metavar="PNG"),
+         opt("--columns", "cli.arg.sheet_columns", type=int, default=sheet.DEFAULT_COLUMNS),
+         opt("--width", "cli.arg.sheet_width", type=int, default=sheet.DEFAULT_WIDTH))
+
     g = group(top, "queue", "cli.cmd.queue")
     leaf(g, "list", "cli.cmd.queue_list", opt("--state", "cli.arg.queue_state", choices=queue.STATES))
     leaf(g, "cancel", "cli.cmd.queue_cancel", arg("entry", "cli.arg.entry", type=int))
+    leaf(g, "move", "cli.cmd.queue_move", arg("entry", "cli.arg.entry", type=int),
+         arg("to", "cli.arg.queue_to", choices=queue.MOVES))
+    leaf(g, "clear", "cli.cmd.queue_clear", opt("--project", "cli.arg.queue_project", metavar="P"))
 
     leaf(top, "work", "cli.cmd.work", opt("--once", "cli.arg.once", action="store_true"))
+    serve = leaf(top, "serve", "cli.cmd.serve", opt("--port", "cli.arg.serve_port", type=int),
+                 opt("--idle-min", "cli.arg.serve_idle", type=int, metavar="N"))
+    mode = serve.add_mutually_exclusive_group()
+    mode.add_argument("--detach", action="store_true", help=t("cli.arg.serve_detach"))
+    mode.add_argument("--status", action="store_true", help=t("cli.arg.serve_status"))
+    mode.add_argument("--stop", action="store_true", help=t("cli.arg.serve_stop"))
+    leaf(top, "ui", "cli.cmd.ui", opt("--no-browser", "cli.arg.no_browser", action="store_true"))
     leaf(top, "doctor", "cli.cmd.doctor", opt("--verify", "cli.arg.verify", action="store_true"))
     leaf(top, "version", "cli.cmd.version")
     return parser
@@ -119,23 +144,43 @@ class _Out:
 
 
 def _entry_json(out: _Out, entry: dict) -> dict:
-    item = dict(entry)
-    text = queue.error_text(entry, out.lang)
-    if text:
-        item["errorText"] = text
-    return item
+    return queue.entry_view(entry, out.lang)
+
+
+def _autostart(out: _Out) -> dict:
+    """After an enqueue: make sure the service runs. The entries are queued already, so a failure here is a warning
+    on stderr (exit code 0), and is reported in the ``service`` field of ``--json``."""
+    if not service.autostart_enabled():
+        return {"running": False, "autostart": False}
+
+    def warn(text):
+        print(text, file=sys.stderr)
+
+    try:
+        state = service.ensure_running(out.lang, warn)
+    except KeyboardInterrupt:
+        return {"running": False, "autostart": True, "error": "interrupted", "message": "interrupted"}
+    except Exception as exc:  # noqa: BLE001 - the entries are queued: nothing here may turn into a failure
+        message = exc.message(out.lang) if isinstance(exc, GimgError) else "%s: %s" % (type(exc).__name__, exc)
+        warn(out.t("cli.warn.service_failed", error=message))
+        return {"running": False, "autostart": True, "error": getattr(exc, "code", type(exc).__name__),
+                "message": message}
+    return {"running": True, "autostart": True, "url": state["url"], "pid": state["pid"]}
 
 
 def _queued(out: _Out, entries: list, provider: str) -> None:
-    estimate = queue.estimate_for(entries[0], provider) if entries else None
     if out.as_json:
-        out.data({"entries": [_entry_json(out, e) for e in entries], "estimateMs": estimate})
+        view = queue.queued_view(entries, provider, out.lang)
+        out.data(dict(view, service=_autostart(out)))
         return
+    estimate = queue.estimate_for(entries[0], provider) if entries else None
     out.line("cli.out.queued", count=len(entries), ids=", ".join(str(e["id"]) for e in entries))
     if estimate is None:
         out.line("cli.out.no_estimate")
     else:
         out.line("cli.out.estimate", seconds=round(estimate / 1000, 1))
+    sys.stdout.flush()
+    _autostart(out)
 
 
 def _read_order(source: str) -> dict:
@@ -203,13 +248,101 @@ def _run(args, out: _Out) -> int:
                      new=out.none(result["new"]), old=out.none(result["old"]))
     elif cmd == "compose":
         _compose(args, out)
+    elif cmd == "templates":
+        _templates(args, out)
+    elif cmd == "template":
+        _template_save(args, out)
     elif cmd == "measure":
         _measure(args, out)
+    elif cmd == "sheet":
+        res = sheet.sheet(args.images, args.out, args.columns, args.width)
+        if out.as_json:
+            out.data(res)
+        else:
+            out.line("cli.out.sheet_done", out=res["out"], width=res["size"][0], height=res["size"][1],
+                     columns=res["columns"], count=len(res["images"]))
+            for i, path in enumerate(res["images"], 1):
+                out.line("cli.out.sheet_item", index=i, path=path)
     elif cmd == "queue":
         _queue(args, sub, out)
+    elif cmd == "serve":
+        return _serve(args, out)
+    elif cmd == "ui":
+        return _ui(args, out)
     elif cmd == "work":
         handled = worker.run(once=args.once, lang=out.lang)
         out.data({"processed": handled}) if out.as_json else out.line("cli.out.processed", count=handled)
+    return 0
+
+
+def _serve(args, out: _Out) -> int:
+    def show(state):
+        if out.as_json:
+            out.data(state)
+        else:
+            out.line("cli.out.serve_running", url=state["url"], pid=state["pid"])
+        sys.stdout.flush()
+
+    if args.status:
+        state = service.status()
+        if out.as_json:
+            out.data({"running": state is not None, **(state or {})})
+        elif state is None:
+            out.line("cli.out.serve_stopped")
+        else:
+            out.line("cli.out.serve_status", url=state["url"], pid=state["pid"], since=state["startedAt"])
+        return 0 if state else 1
+    if args.stop:
+        state = service.stop()
+        out.data(state) if out.as_json else out.line("cli.out.serve_stopping", pid=state["pid"])
+        return 0
+    if args.detach:
+        show(service.detach(args.port, args.idle_min, out.lang))
+        return 0
+    idle_s = None if args.idle_min is None else service.resolve_idle_s(args.idle_min)
+    service.run(args.port, idle_s, out.lang, announce=show)
+    return 0
+
+
+def _open_browser(url: str) -> bool:
+    """Open `url` in the browser with stdout/stderr on /dev/null (the browser must not keep our pipes); never
+    raises. Without a display nothing is opened: the URL is printed anyway."""
+    if sys.platform.startswith("linux") and not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
+        return False
+    import webbrowser
+    sys.stdout.flush()
+    sys.stderr.flush()
+    saved = []
+    try:
+        null = os.open(os.devnull, os.O_RDWR)
+        try:
+            for fd in (1, 2):
+                saved.append((fd, os.dup(fd)))
+                os.dup2(null, fd)
+            return bool(webbrowser.open(url))
+        finally:
+            for fd, old in saved:
+                os.dup2(old, fd)
+                os.close(old)
+            os.close(null)
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _ui(args, out: _Out) -> int:
+    if service.autostart_enabled():
+        state = service.ensure_running(out.lang, lambda text: print(text, file=sys.stderr))
+    else:
+        state = service.status()
+        if state is None:
+            raise GimgError("serve.not_running")
+    opened = False
+    if not args.no_browser:
+        opened = _open_browser(state["url"])
+    if out.as_json:
+        out.data(dict(state, opened=opened))
+    else:
+        out.line("cli.out.ui_url", url=state["url"])
     return 0
 
 
@@ -226,13 +359,43 @@ def _text_pairs(pairs) -> dict:
 
 def _compose(args, out: _Out) -> None:
     text = _text_pairs(args.text)
-    item = compose.recompose(args.project, args.key, args.profile, args.attempt, text or None)
+    layout = None
+    if args.layout is not None:
+        try:
+            layout = json.loads(args.layout)
+        except ValueError as exc:
+            raise GimgError("compose.bad_layout", element="", reason=str(exc)[:100])
+    item = compose.recompose(args.project, args.key, args.profile, args.attempt, text or None, args.template, layout)
     if out.as_json:
         out.data(item)
     elif "delivered" in item:
         out.line("cli.out.composed_delivered", id=item["id"], path=item["delivered"])
     else:
         out.line("cli.out.composed", id=item["id"], image=item["image"])
+
+
+def _template_save(args, out: _Out) -> None:
+    item = compose.save_template(args.project, args.key, args.profile, args.attempt, args.name, args.dest)
+    if out.as_json:
+        out.data(item)
+    else:
+        out.line("cli.out.template_saved", id=item["id"], source=item["source"], template=item["template"])
+
+
+def _templates(args, out: _Out) -> None:
+    proj = projects.get(args.project)
+    if proj["config"]["profiles"].get(args.profile) is None:
+        raise GimgError("order.profile_unknown", profile=args.profile)
+    items = compose.templates_with_elements(proj, args.profile)
+    if out.as_json:
+        out.data(items)
+        return
+    if not items:
+        out.line("cli.out.templates_none", profile=args.profile)
+    for item in items:
+        out.line("cli.out.template_line", id=item["id"], template=item["template"], logo=out.none(item["logo"]),
+                 fields=", ".join(item["fields"]) or out.t("cli.out.none"),
+                 default=out.t("cli.out.template_default") if item["default"] else "")
 
 
 def _measure(args, out: _Out) -> None:
@@ -266,13 +429,7 @@ def _measure(args, out: _Out) -> None:
 def _order(args, sub, out: _Out) -> None:
     if sub == "submit":
         order = _read_order(args.file)
-        provider = engine.get_engine().provider  # a bad engine setting fails before anything is queued
-        if args.draft is not None:  # the option is the order's own field, so it is stored with the order
-            order["draft"] = args.draft
-        record = orders.submit(args.project, order)
-        count = order.get("count", 1)
-        specs = orders.attempt_specs(args.project, record["key"], record["profile"], count)
-        entries = queue.enqueue(args.project, record["key"], record["profile"], specs)
+        entries, provider = queue.submit_order(args.project, order, args.draft, template=args.template, model=args.model)
         _queued(out, entries, provider)
     elif sub == "list":
         chosen = True if args.chosen else False if args.unchosen else None
@@ -314,13 +471,12 @@ def _order(args, sub, out: _Out) -> None:
 
 def _attempt(args, sub, out: _Out) -> None:
     if sub == "new":
-        provider = engine.get_engine().provider  # a bad engine setting fails before anything is queued
         overrides = {k: v for k, v in (("steps", args.steps), ("cfg", args.cfg),
                                        ("sampler", args.sampler)) if v is not None}
-        specs = orders.attempt_specs(args.project, args.key, args.profile, args.count,
-                                     seed=args.seed, prompt=args.prompt, params=overrides,
-                                     draft=args.draft)
-        _queued(out, queue.enqueue(args.project, args.key, args.profile, specs), provider)
+        entries, provider = queue.new_attempts(args.project, args.key, args.profile, args.count,
+                                               seed=args.seed, prompt=args.prompt, params=overrides,
+                                               draft=args.draft, template=args.template, model=args.model)
+        _queued(out, entries, provider)
     elif sub == "mark":
         item = orders.mark(args.project, args.key, args.profile, args.attempt, args.state)
         out.data(item) if out.as_json else out.line("cli.out.marked", id=item["id"], state=item["state"])
@@ -366,6 +522,15 @@ def _queue(args, sub, out: _Out) -> None:
             text = queue.error_text(e, out.lang)
             if text:
                 out.line("cli.out.queue_error", error=text)
+    elif sub == "move":
+        entry = queue.move(args.entry, args.to)
+        out.data(_entry_json(out, entry)) if out.as_json else out.line("cli.out.moved", id=entry["id"], to=args.to)
+    elif sub == "clear":
+        found = queue.clear(args.project)
+        if out.as_json:
+            out.data([_entry_json(out, e) for e in found])
+        else:
+            out.line("cli.out.cleared", count=len(found), ids=", ".join(str(e["id"]) for e in found) or "-")
     else:
         entry = queue.cancel(args.entry)
         if out.as_json:

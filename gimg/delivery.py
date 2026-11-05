@@ -142,6 +142,25 @@ def _restore_source(project: dict, order: dict):
         return False
 
 
+def _backup_delivered(target: Path):
+    """``(backup file or None, restore)`` for `_apply`: a copy of the delivered file next to the file (None when there is none to
+    keep: nothing delivered, restore None; False if the copy cannot be made: no rollback, as when the source is unknown)."""
+    if not target.is_file():
+        return None, None
+    try:
+        fd, tmp = tempfile.mkstemp(dir=str(target.parent), prefix="." + target.name + ".", suffix=".bak")
+        os.close(fd)
+    except OSError:
+        return None, False
+    try:
+        shutil.copyfile(target, tmp)
+    except OSError:
+        with contextlib.suppress(OSError):
+            os.unlink(tmp)
+        return None, False
+    return tmp, Path(tmp)
+
+
 def _rollback(plan: dict, restore) -> None:
     """Best effort: put the delivered file back as it was before `_apply`."""
     if restore is False:
@@ -246,7 +265,15 @@ def redeliver(project: str, key: str, profile: str, attempt_id) -> bool:
         if attempt is None or order["chosen"] != attempt_id:
             return False
         plan = _prepare(proj, order, attempt)
-        _apply(plan, _restore_source(proj, order))
+        # the chosen attempt's image is already the new one (`orders.set_composed`, and the file itself was overwritten):
+        # the only copy of what is delivered now is the delivered file, so that is what a rollback must put back
+        backup, restore = _backup_delivered(plan["target"])
+        try:
+            _apply(plan, restore)
+        finally:
+            if backup is not None:
+                with contextlib.suppress(OSError):
+                    os.unlink(backup)
         return True
 
 

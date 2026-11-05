@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../gimg/schemas/order.schema.json",
+  "key": "estilo/r6-detalle",
+  "profile": "og",
+  "prompt": "Dark wide scene in deep midnight navy #06121c, rendered with physically based lighting, with a faint grid of tiny evenly spaced dots across the back wall and a dark polished floor that mirrors everything standing on it. In the right half, from the right edge to the middle, a queue of thin upright rectangular slabs of clear glass with softly rounded corners stands on the floor, slightly overlapping and receding into depth along a gentle curve, each holding a soft blurred inner glow in pale lavender. One slab, a quarter of the way in from the right edge, is lit from within by a clear violet light in #8B5CF6 far brighter than the rest: its light spills onto its neighbours, refracts through their bevelled edges in thin lavender #A78BFA fringes, casts soft violet caustics on the floor and rises as a volumetric haze through fine floating dust. The other slabs stay dim and translucent, with crisp white edge highlights and faint reflections of each other. At the head of the queue a single small point of white light hovers just above the floor, with a soft halo. The floor shows mirror reflections of every slab and of the glow, softened toward the edges, and the dot grid fades into darkness toward the corners. The left half, from the left edge to the middle, is the same dark navy wall and floor with only the faint dot grid, smooth and even in tone, kept clear for legibility. Style: elegant digital art, physically based rendering, soft volumetric light, crisp glass refraction and reflections, smooth gradients, fine detail. Colours: #06121c, #8B5CF6, #A78BFA, #eaf4fa and #ffffff highlights. Mood: focused, quietly creative, precise. The image is completely textless.",
+  "seed": 1,
+  "count": 4,
+  "params": {
+    "steps": 8
+  }
+}

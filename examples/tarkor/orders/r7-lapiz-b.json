@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../gimg/schemas/order.schema.json",
+  "key": "estilo/r7-lapiz-b",
+  "profile": "og",
+  "prompt": "A traditional graphite pencil and ink illustration on a sheet of cream paper in the colour #f1e4d0, a fantasy concept sketch from a sketchbook, with the grain of the paper showing through every stroke. The left third of the sheet, from the left edge inward, stays bare paper: only a few faint construction lines and soft smudges of graphite drift in from the drawing and fade out, leaving that third calm and clean. The right two thirds hold the drawing: the bleached skeleton of a colossal beast lying on a plain of cracked red clay, its enormous curved ribs rising from the ground as an arch over a path of trodden sand, the tallest rib a third of the way in from the right edge with its top a fifth of the way down from the top edge; scattered vertebrae, long bones and plates of bone lie half buried around it. Beside the arch stands a tall totem of weathered wood, carved with a face, bound with strips of hide and hung with feathers and bone beads. Far behind, low mesas of red rock dissolve into haze, and a thin thread of smoke rises from a camp hidden beyond them. Rendering: fine ink lines for the edges of bone and wood, dense cross-hatching in the shadows under the ribs, blended graphite tones in the cracked ground, strokes that loosen and dissolve into the paper toward the left. A faint dry wash of burnt clay colour #E0703A tints the ground and the strips of hide on the totem; everything else stays warm grey graphite and dark ink on cream paper. Style: hand-drawn pencil and ink illustration, fantasy sketchbook page, visible paper texture, matte finish. Colours: #f1e4d0, #221c16, #E0703A. Mood: wild, quiet, ancient. The image is completely textless.",
+  "seed": 1,
+  "count": 4,
+  "params": {
+    "steps": 8
+  }
+}

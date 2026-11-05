@@ -2,8 +2,11 @@
 
 Una biblia por proyecto: todo lo que hace falta para crear una pieza (imagen, logo, publicación) sin volver a leer su repo.
 El molde es el kit visual de toVeriAI (`VeriNews_AI/Documentacion/v1.1/kit-visual-ia.html`, resumido en
-`docs/registros/lectura-2026-10-26-tarkor-y-marcas.md`, sección 4). Pedido de la persona del 2026-10-26: «que nos sirva como
+`docs/records/lectura-2026-10-26-tarkor-y-marcas.md`, sección 4). Pedido de la persona del 2026-10-26: «que nos sirva como
 biblia», y lo primero, varias propuestas de logo por app para elegir.
+**Hoja de estilo mínima** (F2.12, borrador): [plantilla-hoja-de-estilo.md](plantilla-hoja-de-estilo.md) dice qué es
+obligatorio, recomendado y opcional en cada biblia, dónde acaba cada dato (`galivelop-images.json`, prompts, plantilla SVG)
+y la lista de comprobación de lo obligatorio.
 
 | Proyecto | Biblia | Logos | Estado |
 |---|---|---|---|

@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -33,6 +34,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
+from . import compose as compose_mod
 from . import engine, engine_sdcpp, fsutil, i18n, limits, models, paths, projects
 from .errors import GimgError
 
@@ -224,6 +226,37 @@ def _memory(machine: dict) -> list:
     return [Check("memory", WARN, "doctor.memory.low", {"free": free, "needed": needed}, "doctor.fix.memory")]
 
 
+# A Deck (16 GB shared between CPU and GPU) froze in Tarkor with --max-vram vulkan0=6 and --offload-to-cpu. The shipped
+# steam-deck profile uses vulkan0=2, so anything above 2 GB is a warning, not an error: the person may know better.
+MAX_SAFE_VRAM_GB = 2
+_RISKY_ARGS = ("--offload-to-cpu", "--max-vram")
+
+
+def _vram_gb(value) -> Optional[float]:
+    """GB in a ``maxVram`` such as ``2``, ``"vulkan0=6"`` or ``"6.5"``; ``None`` if it has no number."""
+    match = re.search(r"(\d+(?:\.\d+)?)\s*$", str(value))
+    return float(match.group(1)) if match else None
+
+
+def _vram(machine: dict) -> list:
+    """A warning for each ``maxVram`` above `MAX_SAFE_VRAM_GB` and each risky flag in a model's ``args``; else one ok."""
+    eng = machine.get("engine") or {}
+    found = []
+    value = eng.get("maxVram")
+    if value and (gb := _vram_gb(value)) is not None and gb > MAX_SAFE_VRAM_GB:
+        found.append(Check("vram:engine", WARN, "doctor.vram.high",
+                           {"where": "engine.maxVram", "value": value, "max": MAX_SAFE_VRAM_GB}, "doctor.fix.vram",
+                           {"max": MAX_SAFE_VRAM_GB}))
+    for model_id, own in sorted((eng.get("models") or {}).items()):
+        args = [str(a) for a in (own or {}).get("args", [])]
+        where = "engine.models.%s.args" % model_id
+        for arg in args:
+            if arg in _RISKY_ARGS or arg.startswith("--max-vram="):
+                found.append(Check("vram:%s:%s" % (model_id, arg.split("=")[0]), WARN, "doctor.vram.offload",
+                                   {"where": where, "arg": arg}, "doctor.fix.vram", {"max": MAX_SAFE_VRAM_GB}))
+    return found or [Check("vram", OK, "doctor.vram.ok", {"max": MAX_SAFE_VRAM_GB})]
+
+
 def _tools() -> list:
     out = []
     for name, (flag, apt, pacman) in TOOLS.items():
@@ -259,11 +292,11 @@ def _installed_families():
     return {name.strip().lower() for line in done.stdout.splitlines() for name in line.split(",") if name.strip()}, None
 
 
-def _fonts() -> list:
-    """The fonts the registered projects compose with, each ``ok`` or ``warn`` (never ``fail``)."""
+def _fonts(only: Optional[str] = None) -> list:
+    """The fonts the registered projects (or just `only`) compose with, each ``ok`` or ``warn`` (never ``fail``)."""
     out, wanted = [], {}  # font -> project names
     try:
-        names = list(projects.list_projects())
+        names = [only] if only else list(projects.list_projects())
     except (GimgError, OSError, ValueError) as exc:  # the registry itself is unreadable
         return [Check("fonts", WARN, "doctor.fonts.project_error", {"project": "-", "message": str(exc)})]
     for name in names:
@@ -291,6 +324,75 @@ def _fonts() -> list:
         else:
             out.append(Check("font:" + font, WARN, "doctor.fonts.missing", {"font": font, "projects": ", ".join(names)},
                              "doctor.fix.fonts"))
+    return out
+
+
+def _element_problem(root, profile, template_id):
+    """What is wrong with the editable elements (``id="gimg-*"``) of a template, as text, or ``None``: malformed
+    elements, or a ``viewBox`` that is not ``0 0 <targetWidth> <targetHeight>`` (then they cannot be edited)."""
+    lang = i18n.default_lang()
+    try:
+        cfg = compose_mod.effective(profile.get("compose"), template_id)
+        path = compose_mod._asset(cfg.get("templateRoot") or root, cfg["template"], "compose.template_missing")
+        svg = compose_mod._read_svg(path)
+        found = compose_mod.elements(svg)
+    except GimgError as exc:
+        return exc.message(lang)
+    width, height = compose_mod.target_size(profile)
+    if found and compose_mod.viewbox_of(svg) != (0.0, 0.0, float(width), float(height)):
+        return i18n.t("doctor.templates.viewbox", lang, width=width, height=height)
+    return None
+
+
+def _template_files(only: Optional[str] = None) -> list:
+    """The template and logo files of every ``compose`` and ``compose.templates`` entry of the registered projects (or
+    just `only`): inside the project, a file, of a sane size. A problem is a ``warn`` (composing that template would fail)."""
+    out = []
+    try:
+        names = [only] if only else list(projects.list_projects())
+    except (GimgError, OSError, ValueError):
+        return out  # `_fonts` already says the registry is unreadable
+    for name in names:
+        try:
+            proj = projects.get(name)
+        except GimgError:
+            continue  # `_fonts` says it
+        count, seen = 0, set()
+        for pname in proj["config"]["profiles"]:
+            profile = compose_mod.merged_profile(proj, pname)
+            seen_ids = {}
+            for declared in compose_mod.template_sources(proj, pname):  # an id in two sources: the first wins (F4c)
+                if declared["id"] in seen_ids:
+                    out.append(Check("template:%s:%s:%s:dup" % (name, pname, declared["id"]), WARN,
+                                     "doctor.templates.duplicate",
+                                     {"project": name, "profile": pname, "id": declared["id"],
+                                      "used": seen_ids[declared["id"]], "ignored": declared["source"]}))
+                seen_ids.setdefault(declared["id"], declared["source"])
+            for item in compose_mod.templates_of(profile):
+                count += 1
+                for kind in ("template", "logo"):
+                    rel = item[kind]
+                    # a local template is relative to its `templateRoot`; the logo always lives in the project
+                    base = (compose_mod.effective(profile["compose"], item["id"]).get("templateRoot")
+                            if kind == "template" else None) or proj["root"]
+                    if not rel or (pname, str(base), rel) in seen:  # a logo inherited by several templates is checked once
+                        continue
+                    seen.add((pname, str(base), rel))
+                    try:
+                        compose_mod._asset(base, rel, "compose.%s_missing" % kind)
+                    except GimgError as exc:
+                        out.append(Check("template:%s:%s:%s" % (name, pname, item["id"]), WARN, "doctor.templates.bad",
+                                         {"project": name, "profile": pname, "id": item["id"], "path": rel,
+                                          "message": exc.message(i18n.default_lang())}))
+                        continue
+                    if kind == "template":
+                        problem = _element_problem(proj["root"], profile, item["id"])
+                        if problem:
+                            out.append(Check("template:%s:%s:%s:elements" % (name, pname, item["id"]), WARN,
+                                             "doctor.templates.elements",
+                                             {"project": name, "profile": pname, "id": item["id"], "message": problem}))
+        if count and not [c for c in out if c.id.startswith("template:%s:" % name)]:
+            out.append(Check("templates:" + name, OK, "doctor.templates.ok", {"project": name, "count": count}))
     return out
 
 
@@ -337,6 +439,12 @@ def _ollama(machine: dict, bad: str, ollama_url: Optional[str]) -> Check:
                  "doctor.fix.ollama", {"cmds": "; ".join("ollama stop " + n for n in loaded)})
 
 
+def run_project(name: str) -> list:
+    """The checks that concern one registered project (F4d, ``GET /api/projects/{p}/check``): its fonts, its template
+    and logo files and their editable elements. The same functions as `run`, limited to `name`."""
+    return _fonts(name) + _template_files(name)
+
+
 def run(verify: bool = False, ollama_url: Optional[str] = None) -> list:
     """All the checks, in display order. `verify` sums the sha256 of every installed model file (slow: GBs)."""
     checks = [_python(), _launcher()]
@@ -347,8 +455,10 @@ def run(verify: bool = False, ollama_url: Optional[str] = None) -> list:
     checks += _binary(machine, bad)
     checks += _models(machine, verify, bad)
     checks += _memory(machine)
+    checks += _vram(machine)
     checks += _tools()
     checks += _fonts()
+    checks += _template_files()
     checks += _folders()
     checks.append(_ollama(machine, bad, ollama_url))
     return checks

@@ -82,3 +82,37 @@ def resolve(model_id, machine, catalog=None) -> dict:
 def missing_files(resolved) -> list:
     """Kinds (``diffusion``, ``text``, ``vae``) whose expected file is not a file on disk."""
     return [k for k in KINDS if not Path(resolved["files"][k]["path"]).is_file()]
+
+
+def check_allowed(model_id, machine, catalog=None, steps=None) -> str:
+    """`check_known`, plus the machine's limits for this model: its steps (`steps` if given, else the catalog default)
+    must not exceed ``maxSteps`` (``limit.steps``, as in `limits.check`). Returns `model_id`."""
+    catalog = catalog or load_catalog()
+    check_known(model_id, catalog)
+    wanted = steps if steps is not None else catalog["models"][model_id]["defaults"].get("steps")
+    max_steps = machine.get("maxSteps")
+    if wanted is not None and max_steps is not None and wanted > max_steps:
+        from . import limits
+        raise limits.LimitError("limit.steps", steps=wanted, max=max_steps)
+    return model_id
+
+
+def listing(lang=None, machine=None, catalog=None) -> list:
+    """``GET /api/models``: the catalog as ``[{"id", "license", "defaults", "installDefault", "allowed", "reason"?}]``.
+    ``allowed`` is False when the machine profile's limits stop the model (`check_allowed`); ``reason`` is then
+    ``{"code", "message"}`` of that ``limit.*`` error."""
+    from . import limits
+    catalog = catalog or load_catalog()
+    machine = machine if machine is not None else limits.load_machine()
+    out = []
+    for model_id in ids(catalog):
+        model = catalog["models"][model_id]
+        item = {"id": model_id, "license": model["license"], "defaults": dict(model["defaults"]),
+                "installDefault": model.get("installDefault") is True, "allowed": True}
+        try:
+            check_allowed(model_id, machine, catalog)
+        except GimgError as exc:
+            item["allowed"] = False
+            item["reason"] = {"code": exc.code, "message": exc.message(lang)}
+        out.append(item)
+    return out

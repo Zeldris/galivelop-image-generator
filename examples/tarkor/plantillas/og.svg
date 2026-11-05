@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" data-caja="38,38,362,554">
+<defs><linearGradient id="velo" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f1e4d0" stop-opacity="0.62"/><stop offset="0.333" stop-color="#f1e4d0" stop-opacity="0.5"/><stop offset="0.62" stop-color="#f1e4d0" stop-opacity="0"/></linearGradient></defs>
+<rect id="velo-rect" x="0" y="0" width="1200" height="630" fill="url(#velo)"/>
+<rect id="marco" x="18.5" y="18.5" width="1163" height="593" fill="none" stroke="#46311d" stroke-width="1.2" stroke-opacity="0.5"/>
+<rect id="marco2" x="24.5" y="24.5" width="1151" height="581" fill="none" stroke="#46311d" stroke-width="0.6" stroke-opacity="0.4"/>
+<image id="logo" x="38" y="38" width="256" height="70" href="{{logo}}"/>
+<text id="title1" x="38" y="292" font-family="Metamorphous, serif" font-weight="400" font-size="40" fill="#241a10">{{title1}}</text>
+<text id="title2" x="38" y="342" font-family="Metamorphous, serif" font-weight="400" font-size="40" fill="#241a10">{{title2}}</text>
+<text id="title3" x="38" y="392" font-family="Metamorphous, serif" font-weight="400" font-size="40" fill="#241a10">{{title3}}</text>
+<path id="filete" d="M38 420 H112" stroke="#5c4126" stroke-width="1.4" stroke-opacity="0.85"/>
+<path id="gema" d="M123 415 L128 420 L123 425 L118 420 Z" fill="#E0703A"/>
+<text id="subtitle" x="38" y="453" font-family="Almendra, serif" font-weight="400" font-size="21" fill="#46311d">{{subtitle}}</text>
+<text id="subtitle2" x="38" y="483" font-family="Almendra, serif" font-weight="400" font-size="21" fill="#46311d">{{subtitle2}}</text>
+</svg>

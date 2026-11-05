@@ -1,0 +1,16 @@
+<svg data-fondo="oscuro" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 128" role="img" aria-labelledby="galivelop-workflow-b-lockup-t">
+  <title id="galivelop-workflow-b-lockup-t">Galivelop-workflow</title>
+  <!-- Lockup de la propuesta b, con el formato del lockup de Galivelop (portal-a): baldosa rx 30 con degradado del acento (#3D6FD9 → #1E3E99, como el celeste → celeste intenso del Portal), monograma «GW» de un solo trazo blanco de 12 con remates redondos (la misma «G» que el símbolo de Galivelop, seguida de una «W»), y el nombre en Sora 700, 64/128, tracking −0,03 em, en dos tonos: «Galivelop» claro #EAF4FA y «-workflow» en el acento #3D6FD9 (variante sobre fondo oscuro). Al elegirse, el texto se pasa a trazos. -->
+  <g id="galivelop-workflow-b-lockup-simbolo">
+    <defs>
+      <linearGradient id="galivelop-workflow-b-lockup-fondo" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#3D6FD9"/>
+        <stop offset="1" stop-color="#1E3E99"/>
+      </linearGradient>
+    </defs>
+    <rect width="128" height="128" rx="30" fill="url(#galivelop-workflow-b-lockup-fondo)"/>
+    <path d="M46 64 H62 A24 24 0 1 1 38 40 H64 L76 88 L88 60 L100 88 L112 40"
+          fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="152" y="86" font-family="Sora, sans-serif" font-weight="700" font-size="64" letter-spacing="-1.9" fill="#EAF4FA">Galivelop<tspan fill="#3D6FD9">-workflow</tspan></text>
+</svg>

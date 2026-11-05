@@ -259,6 +259,30 @@ class AbortTests(ComposeWorkerBase):
         self.assertEqual(queue.get(1)["state"], "done")
         self.assertEqual(queue.get(1)["attemptId"], 1)
 
+    def test_an_unreadable_raw_image_path_fails_the_composition_of_the_killed_attempt_not_the_entry(self):
+        self.submit("og")
+        self.enqueue("og")
+
+        def killed(root, cfg, raw, out, text, profile=None, prefix=None):
+            raise SystemExit(143)
+
+        with mock.patch.object(compose, "render", killed):
+            with self.assertRaises(SystemExit):
+                self.run_worker()
+        # (a project that stops loading fails earlier, in `orders.get`; what can fail here is resolving the raw image)
+        with mock.patch.object(engine.FakeEngine, "generate", side_effect=AssertionError("generated again")), \
+                mock.patch.object(orders, "raw_image", side_effect=GimgError("order.corrupt", path="p")):
+            handled, err = self.run_worker()
+        self.assertEqual(handled, 1)
+        entry = queue.get(1)
+        self.assertEqual((entry["state"], entry["error"], entry["attemptId"]), ("done", None, 1))
+        att = self.attempt("og")
+        self.assertEqual(att["composeError"], {"code": "order.corrupt", "params": {"path": "p"}})  # `gimg compose` can retry
+        self.assertEqual(att["image"], att["raw"])
+        self.assertEqual(self.names("og"), ["q1.raw.png"])
+        self.assertIn("1", err)
+        self.assertEqual(len(orders.get("proj", "a", "og")["attempts"]), 1)
+
     def test_a_pending_attempt_that_fails_again_records_the_real_error(self):
         self.submit("og")
         self.enqueue("og")
@@ -519,7 +543,7 @@ class WithToolsTests(ComposeWorkerBase):
         self.assertEqual((att["image"], att["raw"]), ("attempts/q1.png", "attempts/q1.raw.png"))
         self.assertNotIn("composeError", att)
         want = {"fit": "cover", "targetWidth": 1200, "targetHeight": 630, "template": "t.svg",
-                "text": {"title": "Tom & <Jerry>", "subtitle": ""}}
+                "templateId": "default", "text": {"title": "Tom & <Jerry>", "subtitle": ""}}
         self.assertEqual(att["compose"], want)
         done, raw = orders.attempt_image("proj", "a", "og", att), orders.raw_image("proj", "a", "og", att)
         self.assertEqual((png.size(done), png.size(raw)), ((1200, 630), (1280, 640)))

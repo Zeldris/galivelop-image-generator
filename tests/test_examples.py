@@ -2,12 +2,14 @@ import copy
 import json
 import os
 import re
+import shutil
 import tempfile
+import xml.etree.ElementTree as ET
 import unittest
 from pathlib import Path
 from unittest import mock
 
-from gimg import schema as S
+from gimg import compose, png, schema as S
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -292,6 +294,79 @@ class PilotExampleTests(unittest.TestCase):
         lines = (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
         self.assertIn("/examples/*/entrega/", lines)
         self.assertIn("/examples/*/galivelop-images.manifest.json", lines)
+
+
+COMPOSE_PROJECTS = {  # proyecto -> lockup elegido (docs/marcas/README.md)
+    "tarkor": "tarkor-b-lockup.svg",
+    "toveriai": "toveriai-a-lockup.svg",
+    "portal": "portal-a-lockup.svg",
+    "galivelop-image-generator": "galivelop-image-generator-b-lockup.svg",
+    "galivelop-workflow": "galivelop-workflow-b-lockup.svg",
+}
+FACTOR_TITULO, FACTOR_SUB = 0.56, 0.5  # los de examples/pilot/componer.py (`ajustar`)
+
+
+class ComposeExampleTests(unittest.TestCase):
+    """F2.10 E4: `compose` del perfil `og` de cinco ejemplos (plantilla, logo y texto dentro de cada uno)."""
+
+    def each(self):
+        for name, logo in COMPOSE_PROJECTS.items():
+            root = ROOT / "examples" / name
+            cfg = read("examples/%s/galivelop-images.json" % name)["profiles"]["og"]
+            yield name, logo, root, cfg
+
+    def test_configs_validate_and_declare_compose(self):
+        sch = S.load_schema("project-config")
+        for name, logo, root, cfg in self.each():
+            self.assertEqual(S.validate(read("examples/%s/galivelop-images.json" % name), sch), [], name)
+            self.assertEqual((cfg["targetWidth"], cfg["targetHeight"]), (1200, 630), name)
+            self.assertEqual(cfg["draft"], {"scale": 0.5, "steps": 4}, name)
+            self.assertEqual(cfg["compose"]["template"], "plantillas/og.svg", name)
+            self.assertEqual(cfg["compose"]["logo"], "logos/" + logo, name)
+            self.assertEqual(cfg["compose"]["fit"], "cover", name)
+            # El titular va en title1, title2 (y title3 si hace falta una tercera línea, r6: Tarkor); luego el subtítulo.
+            self.assertEqual(cfg["compose"]["fields"][:2], ["title1", "title2"], name)
+            self.assertIn("subtitle", cfg["compose"]["fields"], name)
+
+    def test_logo_copies_are_identical_to_their_originals(self):
+        for name, logo, root, cfg in self.each():
+            copy_ = (root / "logos" / logo).read_bytes()
+            original = (ROOT / "docs" / "marcas" / name / "logos" / logo).read_bytes()
+            self.assertEqual(copy_, original, name)
+
+    def test_resolve_assets_finds_template_and_logo(self):
+        for name, logo, root, cfg in self.each():
+            template, found = compose.resolve_assets(root, cfg["compose"])
+            self.assertEqual(template, (root / "plantillas" / "og.svg").resolve(), name)
+            self.assertEqual(found, (root / "logos" / logo).resolve(), name)
+
+    def test_template_holes_are_the_declared_fields(self):
+        for name, logo, root, cfg in self.each():
+            source = (root / "plantillas" / "og.svg").read_text(encoding="utf-8")
+            holes = set(re.findall(r"\{\{([A-Za-z0-9]+)\}\}", source))
+            self.assertEqual(holes, set(cfg["compose"]["fields"]) | {"logo"}, name)
+
+    def test_text_lines_fit_their_column(self):
+        for name, logo, root, cfg in self.each():
+            svg = ET.parse(root / "plantillas" / "og.svg").getroot()
+            _x, _y, col, _h = (int(v) for v in svg.get("data-caja").split(","))
+            text = read("examples/%s/textos/og.json" % name)
+            self.assertEqual(set(text), set(cfg["compose"]["fields"]), name)
+            for el in svg.iter("{http://www.w3.org/2000/svg}text"):
+                field = el.get("id")
+                factor = FACTOR_TITULO if field.startswith("title") else FACTOR_SUB
+                size = float(el.get("font-size"))
+                self.assertLessEqual(len(text[field]) * size * factor, col, (name, field, text[field]))
+
+    @unittest.skipUnless(shutil.which("ffmpeg") and shutil.which("rsvg-convert"), "hacen falta ffmpeg y rsvg-convert")
+    def test_each_template_composes_a_synthetic_raw_at_1200x630(self):
+        from tests.test_compose import striped_png
+        for name, logo, root, cfg in self.each():
+            with tempfile.TemporaryDirectory() as tmp:
+                raw, out = Path(tmp) / "raw.png", Path(tmp) / "out.png"
+                striped_png(raw, 1280, 640)
+                compose.render(root, cfg, raw, out, read("examples/%s/textos/og.json" % name), profile="og")
+                self.assertEqual(png.size(out), (1200, 630), name)
 
 
 if __name__ == "__main__":

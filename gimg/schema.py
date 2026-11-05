@@ -18,14 +18,14 @@ ANNOTATIONS = frozenset(
 VALIDATING = frozenset(
     [
         "type", "properties", "required", "additionalProperties", "propertyNames",
-        "minProperties", "items", "minItems", "maxItems", "enum", "const", "pattern",
+        "minProperties", "maxProperties", "items", "minItems", "maxItems", "enum", "const", "pattern",
         "minLength", "maxLength", "minimum", "maximum", "$ref", "$defs", "dependentRequired",
     ]
 )
 # Every code format_error may be asked to render.
 CODES = (
     "required", "type", "enum", "const", "pattern", "minimum", "maximum",
-    "minLength", "maxLength", "minItems", "maxItems", "minProperties",
+    "minLength", "maxLength", "minItems", "maxItems", "minProperties", "maxProperties",
     "additionalProperties", "propertyNames", "dependentRequired", "false",
 )
 TYPES = ("object", "array", "string", "integer", "number", "boolean", "null")
@@ -227,6 +227,8 @@ def _validate(value, schema, root, path, errors):
                         add("dependentRequired", name=other, trigger=name)
         if "minProperties" in schema and len(value) < schema["minProperties"]:
             add("minProperties", limit=schema["minProperties"])
+        if "maxProperties" in schema and len(value) > schema["maxProperties"]:
+            add("maxProperties", limit=schema["maxProperties"])
         if "propertyNames" in schema:
             for key in value:
                 sub = []

@@ -77,12 +77,18 @@ class LocaleTests(unittest.TestCase):
     PARAMS = {
         "bad_size": {"source": "0x5", "target": "1200x630"}, "bad_fit": {"fit": "stretch", "allowed": "cover, contain"},
         "field_unknown": {"field": "ghost"}, "template_missing": {"path": "brand/t.svg"},
-        "logo_missing": {"path": "brand/l.svg"}, "svg_too_big": {"path": "brand/t.svg", "limit": 5000000},
+        "logo_missing": {"path": "brand/l.svg"},
+        "template_unknown": {"template": "zz", "allowed": "default, alt"}, "svg_too_big": {"path": "brand/t.svg", "limit": 5000000},
         "svg_unreadable": {"path": "brand/t.svg", "reason": "not UTF-8"}, "no_logo": {"template": "brand/t.svg"},
         "bad_text": {"field": "title"}, "nothing_to_do": {"profile": "og"}, "tool_missing": {"tool": "ffmpeg"},
         "timeout": {"tool": "ffmpeg", "seconds": 120}, "tool_failed": {"tool": "ffmpeg", "reason": "Invalid data"},
         "write_failed": {"path": "out/q1.png", "reason": "No such file or directory"},
         "no_attempts": {"order": "hero", "profile": "og"}, "busy": {"attempt": 3}, "unexpected": {"reason": "KeyError: 'x'"},
+        "element_unknown": {"element": "ghost", "allowed": "title, logo"},
+        "bad_layout": {"element": "title", "reason": "outside 1200x630"},
+        "bad_element": {"id": "gimg-title", "reason": "data-gimg-box"}, "templates_dir_missing": {"profile": "og"},
+        "template_exists": {"template": "claro"}, "bad_name": {"name": "Mal Nombre"},
+        "bad_dest": {"dest": "nube", "allowed": "local, project"},
     }
 
     def test_every_code_of_compose_py_has_a_text_in_both_languages_that_uses_its_parameters(self):
@@ -519,7 +525,7 @@ class RenderTests(ProjectBase):
         info = compose.render(self.root, profile, self.raw, self.out, {"title": "Tom & <Jerry> \"x\" 'y'"})
         self.assertEqual(png.size(self.out), (1200, 630))
         self.assertEqual(info, {"fit": "cover", "targetWidth": 1200, "targetHeight": 630, "template": "t.svg",
-                                "text": {"title": "Tom & <Jerry> \"x\" 'y'", "subtitle": ""}})
+                                "templateId": "default", "text": {"title": "Tom & <Jerry> \"x\" 'y'", "subtitle": ""}})
         self.assertEqual(self.leftovers(), [])
         at = pixels(self.out, 1200, 630)
         near(self, at(125, 125), (0, 255, 0))  # the layer is over the image

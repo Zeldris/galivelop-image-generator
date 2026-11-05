@@ -3,3 +3,6 @@ __pycache__/
 /piloto/
 /examples/*/entrega/
 /examples/*/galivelop-images.manifest.json
+.claude/worktrees/
+# galivelop-workflow: private, never committed
+.claude/gw.local.json

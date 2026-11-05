@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../gimg/schemas/order.schema.json",
+  "key": "estilo/r7",
+  "profile": "og",
+  "prompt": "Dark wide scene in deep navy #0d1b2a rendered with physically based lighting: the back wall carries a fine square grid of thin lines in #8a9bb0 at low opacity that fades out radially toward the edges and corners of the frame, and a dark polished floor mirrors everything standing on it. In the right half, from the right edge to the middle, a luminous three-dimensional tree of branches stands on the floor a quarter of the way in from the right edge, made of fine filaments of clear glass lit from within by sky blue light in #38b6e8: a single trunk of a few filaments twisted together rises from the floor, splits into two and then three branches that curve outward, run side by side for a stretch and merge back into one further up, and the pattern repeats upward so the crown is a lattice of branches that fork and rejoin, every split and every join marked by a small sphere of glass with a bright core and a soft halo. Along one branch a short bright dash of warm amber light in #f2b34a travels from the end of one segment into the start of the next, the brightest point of the image, with a faint amber trail behind it; at the topmost join the sphere glows soft green in #4cc38a and is wrapped by a thin green ring. The tree has real depth: the nearest branches are sharp and the farthest soften into bokeh, tiny specks of light drift around the crown as soft out-of-focus discs, the filaments show small refractions and highlights, each branch casts a soft bloom on the grid behind it and a trembling reflection on the floor beneath it. The left half, from the left edge to the middle, is the plain navy wall and floor with only the faint fading grid, even in tone and kept clear for legibility. Style: elegant digital art, physically based rendering, glass and light, soft volumetric glow, bokeh, crisp reflections, fine detail. Colours: #0d1b2a, #38b6e8, #f2b34a, #4cc38a, #eef6fb, #8a9bb0. Mood: precise, trustworthy, in motion. The image is completely textless.",
+  "seed": 1,
+  "count": 4,
+  "params": {
+    "steps": 8
+  }
+}

@@ -300,6 +300,39 @@ class MemoryAndToolsTests(DoctorBase):
         self.assertEqual((check.status, check.key), (doctor.FAIL, "doctor.tool.broken"))
 
 
+class VramTests(DoctorBase):
+    """`maxVram` and the risky `args` of the machine profile: a warning, never an error (Tarkor froze the Deck)."""
+
+    def vram(self, **engine):
+        self.machine_file(**engine)
+        return [c for c in doctor.run() if c.id.startswith("vram")]
+
+    def test_the_shipped_deck_profile_is_ok(self):
+        found = self.vram()
+        self.assertEqual([(c.id, c.status, c.key) for c in found], [("vram", doctor.OK, "doctor.vram.ok")])
+
+    def test_a_high_max_vram_warns_with_its_value(self):
+        (check,) = self.vram(maxVram="vulkan0=6")
+        self.assertEqual((check.status, check.key, check.params["value"]), (doctor.WARN, "doctor.vram.high", "vulkan0=6"))
+        self.assertIn("vulkan0=6", check.message("en"))
+        self.assertFalse(doctor.failed([check]))
+
+    def test_offload_to_cpu_in_model_args_warns(self):
+        (check,) = self.vram(models={"m-default": {"args": ["--offload-to-cpu"]}})
+        self.assertEqual((check.status, check.key, check.params["arg"]), (doctor.WARN, "doctor.vram.offload", "--offload-to-cpu"))
+        self.assertIn("engine.models.m-default.args", check.message("en"))
+
+    def test_an_own_max_vram_in_model_args_warns_even_if_low(self):
+        (check,) = self.vram(models={"m-default": {"args": ["--max-vram", "vulkan0=1"]}})
+        self.assertEqual((check.status, check.key), (doctor.WARN, "doctor.vram.offload"))
+        (check,) = self.vram(models={"m-default": {"args": ["--max-vram=vulkan0=1"]}})
+        self.assertEqual((check.status, check.key), (doctor.WARN, "doctor.vram.offload"))
+
+    def test_the_threshold_itself_and_harmless_args_are_ok(self):
+        found = self.vram(maxVram="vulkan0=2", models={"m-default": {"args": ["--backend", "diffusion=cpu", "-t", "8"]}})
+        self.assertEqual([c.key for c in found], ["doctor.vram.ok"])
+
+
 class FolderTests(DoctorBase):
     def test_a_data_folder_that_does_not_exist_yet_warns_with_mkdir(self):
         os.environ["GIMG_DATA_HOME"] = str(self.tmp / "later")
