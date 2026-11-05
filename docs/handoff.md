@@ -8,14 +8,14 @@
 
 | Campo | Valor |
 |---|---|
-| **Rama** | `main` (F0-F4 y `plan-piezas` fusionadas, v0.4.0); trabajo abierto en `release-install` |
-| **Fase / tarea** | F4 cerrada y publicada (v0.4.0); `release-install`: arreglo de `release.yml`; después, decidir la fase de «Piezas, edición y borrado» |
-| **Último punto estable** | `main` en `d128106` (PR #3, CI en verde), etiqueta y release v0.4.0; `release-install` subida, ver su fila |
-| **Siguiente paso** | el de la fila de `release-install` |
+| **Rama** | `main` (F0-F4, `plan-piezas` y `release-install` fusionadas, v0.4.0); sin rama de trabajo abierta |
+| **Fase / tarea** | F4 cerrada y publicada (v0.4.0); `release.yml` arreglado (PR #4). Siguiente: decidir la fase de «Piezas, edición y borrado» |
+| **Último punto estable** | `main` en `71a69a3` (PR #4, CI en verde), etiqueta y release v0.4.0 |
+| **Siguiente paso** | decidir con la persona la fase de «Piezas, edición y borrado» (`docs/plan.md`), en una rama nueva desde `main` |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 | **Tarea en curso · `f2-motor`** | Fusionada en `main` por el PR #2 (`624f7a9`, 2026-11-05, CI en verde); rama terminada. |
 | **Tarea en curso · `plan-piezas`** | Fusionada en `main` por el PR #3 (`d128106`, 2026-11-05, CI en verde); rama terminada. v0.4.0 etiquetada en `d128106`; `release.yml` falló (sin `ffmpeg`/`rsvg-convert`) y la release se creó a mano con `releases.py notes` y el mismo título (mismo árbol que el CI verde del PR); `releases.py check` en verde. |
-| **Tarea en curso · `release-install`** | `release.yml` no tenía el paso «Install» de `check.yml` (`ciInstall`: `ffmpeg`, `librsvg2-bin`) y su check falló al etiquetar v0.4.0. Hecho: el paso, y un test (`tests.test_releases.ReleaseWorkflowTests`, rojo sin el arreglo). Fase 1 hecha (2026-11-05): arreglados el Python 3.10 de `release.yml` (ahora el del runner, como `check.yml`), `</dev/null` en sus bucles y el test, que exige también el paso del check. Fase 2: `gw-opt-tokens` sin propuestas; retro en `docs/records/retro-2026-11-05-release-install.md`, aprobada (P1 aplicada: test que compara «Install» y «Check» de los dos workflows; P2 al flujo). PR a `main` confirmado por la persona el 2026-11-05. Fase 3 hecha (marca `c14bf1e`); PR #4 abierto el 2026-11-05. **Siguiente:** con el CI en verde y la confirmación de la persona, fusionar el PR #4; luego decidir la fase de «Piezas, edición y borrado» |
+| **Tarea en curso · `release-install`** | Fusionada en `main` por el PR #4 (`71a69a3`, 2026-11-05, CI en verde, confirmado por la persona); rama terminada. `release.yml` instala `ciInstall` y usa el Python de `check.yml`; un test compara sus pasos con los de `check.yml`. Retro: `docs/records/retro-2026-11-05-release-install.md`. |
 
 Aquí `logRows` está apagado en `.claude/gw.json`: las filas se editan a mano (`handoff.py set-row` no escribe) y no
 hace falta `GW_SHARED_LOG`. Aun así, cada rama toca solo su fila salvo al cerrar o fusionar otra.
@@ -26,11 +26,11 @@ hace falta `GW_SHARED_LOG`. Aun así, cada rama toca solo su fila salvo al cerra
 
 ## Hecho (5 últimas)
 
-1. 2026-10-25 — F1 (`f1-nucleo`) a `main` por push directo con confirmación de la persona: CI no comprobado (sin `gh` en esta máquina; en F0, sin cuota), **comprobado solo en local** (check del `pre-push` sobre `0d02f51`). Tres fases hechas, marca en `fe7d968`.
-2. 2026-10-25 — F0 (`f0-esqueleto`) a `main` por push directo con confirmación de la persona: CI sin cuota (pagos fallidos), **comprobado solo en local** (check del `pre-push` sobre el mismo commit). Tres fases hechas, marca en `17e28eb`.
-3. 2026-10-25 — `diseno-generador` a `main` por push directo con confirmación de la persona: CI sin cuota, **comprobado solo en local** (check del `pre-push` sobre el mismo commit). Tres fases hechas, marca en `b111e4f`.
-4. 2026-10-25 — Diseño ronda 3 aprobada: clave del pedido, retoque de prompt, entrega PNG, `gimg`, seguridad, registro opt-ai.
-5. 2026-10-25 — Diseño ronda 2 aprobada: pedido/intentos/elegida, cola, perfil de máquina, es+en, ADR 0001-0002.
+1. 2026-11-05 — 2026-11-05 · `release-install` (PR #4, `71a69a3`): `release.yml` con el Install y el Python de `check.yml`, y test que los compara; la próxima etiqueta ya debería crear la release sola.
+2. 2026-10-25 — F1 (`f1-nucleo`) a `main` por push directo con confirmación de la persona: CI no comprobado (sin `gh` en esta máquina; en F0, sin cuota), **comprobado solo en local** (check del `pre-push` sobre `0d02f51`). Tres fases hechas, marca en `fe7d968`.
+3. 2026-10-25 — F0 (`f0-esqueleto`) a `main` por push directo con confirmación de la persona: CI sin cuota (pagos fallidos), **comprobado solo en local** (check del `pre-push` sobre el mismo commit). Tres fases hechas, marca en `17e28eb`.
+4. 2026-10-25 — `diseno-generador` a `main` por push directo con confirmación de la persona: CI sin cuota, **comprobado solo en local** (check del `pre-push` sobre el mismo commit). Tres fases hechas, marca en `b111e4f`.
+5. 2026-10-25 — Diseño ronda 3 aprobada: clave del pedido, retoque de prompt, entrega PNG, `gimg`, seguridad, registro opt-ai.
 
 ## Pendiente
 
