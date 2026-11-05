@@ -8,13 +8,13 @@
 
 | Campo | Valor |
 |---|---|
-| **Rama** | `main` (F1 fusionada); F2 en una rama nueva `f2-motor` |
-| **Fase / tarea** | F1 Núcleo cerrada y en `main`; siguiente fase F2 Motor real (`docs/plan.md`, fila F2) |
-| **Último punto estable** | F1 en `main` (`0d02f51`, marca de revisión sobre `fe7d968`): F1.1-F1.6, revisión completa con 14 arreglos, retro aplicada; check en verde, 282 tests |
-| **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
+| **Rama** | `main` (F0-F4 fusionadas); trabajo abierto en `plan-piezas` |
+| **Fase / tarea** | F4 cerrada y en `main` (PR #2); `plan-piezas`: plan de «Piezas, edición y borrado», MIT y `releases.py`, camino de `main` |
+| **Último punto estable** | `main` en `624f7a9` (PR #2, F3 y F4, CI en verde); `plan-piezas` subida, ver su fila |
+| **Siguiente paso** | el de la fila de `plan-piezas` |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `f2-motor`** | F4a-F4d hechas. Fases 1 y 2 hechas (`docs/records/revision-fase1-f2-motor-2026-11-05.md`, `docs/records/retro-2026-11-05-f4.md`). Fase 3 hecha: revisión de `e42e654` sin graves ni medios, CI y check en verde (1251 tests), marca de revisión puesta. **Siguiente:** PR de `f2-motor` a `main` (skill `pr`) y fusión con el CI en verde y confirmación de la persona; luego licencia MIT y releases. Presupuesto de compactaciones: 4 (gastadas 4) |
-| **Tarea en curso · `plan-piezas`** | `f2-motor` (F3 y F4) fusionada en `main` por PR #2 (`624f7a9`, 2026-11-05, con confirmación de la persona y CI en verde). Esta rama apunta en `docs/plan.md` el pedido «Piezas, edición y borrado» (7 puntos; el 7, editar texto y tipografía de los elementos). MIT hecha. Versión 0.4.0 y `releases.py` (sin 0.2.0, que no existió). v0.1.0 y v0.3.0 publicadas. **Siguiente:** fases antes de `main` y, ya en `main`, v0.4.0 (`releases.py`); luego decidir fase de «Piezas, edición y borrado» |
+| **Tarea en curso · `f2-motor`** | Fusionada en `main` por el PR #2 (`624f7a9`, 2026-11-05, CI en verde); rama terminada. |
+| **Tarea en curso · `plan-piezas`** | Plan de «Piezas, edición y borrado» (7 puntos) en `docs/plan.md`, MIT, versión 0.4.0 y `releases.py`; v0.1.0 y v0.3.0 publicadas. Fase 1 hecha (`docs/records/revision-fase1-plan-piezas-2026-11-05.md`): arreglos en `releases.py` y F1/F2 en el CHANGELOG de 0.3.0. **Siguiente:** fase 2 (`gw-opt-tokens` y `retro`), fase 3 y a `main`; luego v0.4.0 y decidir la fase de «Piezas, edición y borrado» |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.

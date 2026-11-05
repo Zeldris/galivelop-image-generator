@@ -6,7 +6,8 @@
                                          # ¿la versión de gimg en esa rama tiene etiqueta vX.Y.Z y release?
 
 `check` sale con 0 si las dos existen, 1 si falta alguna (y dice la orden que la crea) y 2 si no lo puede saber
-(sin `git` o `gh`, sin red). Se corre al cerrar cada fase, con la rama ya en `main`.
+(sin `git` o `gh`, sin red). Se corre al cerrar cada fase, con la rama ya en `main`. Antes de leer la versión trae
+`ref` del remoto si es una rama de `origin/` (un `origin/main` viejo daría por buena la versión anterior).
 """
 import re
 import subprocess
@@ -56,6 +57,9 @@ def version_at(ref, run=subprocess.run):
 def check(ref, run=subprocess.run):
     """(código de salida, mensaje) de si la versión de `ref` tiene etiqueta y release."""
     try:
+        if ref.startswith("origin/"):
+            run(["git", "fetch", "--quiet", "origin", ref.removeprefix("origin/")], cwd=R, capture_output=True,
+                text=True, check=True)
         version = version_at(ref, run)
         tag = f"v{version}"
         tags = run(["git", "ls-remote", "--tags", "origin", f"refs/tags/{tag}"], cwd=R, capture_output=True,
@@ -67,10 +71,10 @@ def check(ref, run=subprocess.run):
     if not tags.strip():
         missing.append(f"la etiqueta: git tag -a {tag} <commit> -m 'gimg {version}' && git push origin {tag}")
     if release.returncode != 0:
-        if "not found" not in (release.stderr or "").lower():
+        if (release.stderr or "").strip().lower() != "release not found":
             return 2, f"releases: gh no responde ({(release.stderr or '').strip()})"
-        missing.append(f"la release: python3 releases.py notes {version} > notas.md && "
-                       f"gh release create {tag} --verify-tag --title '{version}' --notes-file notas.md")
+        missing.append(f"la release: python3 releases.py notes {version} | "
+                       f"gh release create {tag} --verify-tag --title '{version}' --notes-file -")
     if missing:
         return 1, f"releases: a gimg {version} ({ref}) le falta " + "; y ".join(missing)
     return 0, f"releases: gimg {version} ({ref}) tiene etiqueta y release"
@@ -84,7 +88,8 @@ def main(argv):
             print(f"releases: {exc}", file=sys.stderr)
             return 1
         return 0
-    if argv[:1] == ["check"] and argv[1:] in ([], ["--ref", argv[-1]]):
+    if argv[:1] == ["check"] and (len(argv) == 1 or len(argv) == 3 and argv[1] == "--ref"
+                                  and not argv[2].startswith("-")):
         code, message = check(argv[2] if len(argv) == 3 else "origin/main")
         print(message, file=sys.stderr if code else sys.stdout)
         return code

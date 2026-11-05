@@ -26,10 +26,15 @@ CHANGELOG = """# Changelog
 """
 
 
-def fake_run(version='"0.4.0"', tag=True, release="ok"):
+def fake_run(version='"0.4.0"', tag=True, release="ok", calls=None):
+    calls = [] if calls is None else calls
+
     def run(argv, **_):
         if argv[:2] == ["git", "show"]:
             return subprocess.CompletedProcess(argv, 0, f"__version__ = {version}\n", "")
+        if argv[:2] == ["git", "fetch"]:
+            calls.append(argv)
+            return subprocess.CompletedProcess(argv, 0, "", "")
         if argv[:2] == ["git", "ls-remote"]:
             return subprocess.CompletedProcess(argv, 0, "abc\trefs/tags/v0.4.0\n" if tag else "", "")
         if release == "ok":
@@ -71,6 +76,22 @@ class CheckTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("git tag -a v0.4.0", message)
         self.assertIn("gh release create v0.4.0", message)
+        self.assertNotIn("notas.md", message)
+
+    def test_fetches_the_remote_branch_before_reading_the_version(self):
+        calls = []
+        releases.check("origin/main", fake_run(calls=calls))
+        self.assertEqual(calls, [["git", "fetch", "--quiet", "origin", "main"]])
+        calls.clear()
+        releases.check("v0.3.0", fake_run(calls=calls))
+        self.assertEqual(calls, [])
+
+    def test_repo_not_found_is_unknown_not_missing(self):
+        code, message = releases.check("origin/main", fake_run(release="HTTP 404: Not Found"))
+        self.assertEqual((code, "gh no responde (HTTP 404: Not Found)" in message), (2, True))
+
+    def test_check_rejects_an_option_as_ref(self):
+        self.assertEqual(releases.main(["check", "--ref", "--ref"]), 2)
 
     def test_gh_failing_for_another_reason_is_unknown_not_missing(self):
         code, message = releases.check("origin/main", fake_run(release="HTTP 503"))
