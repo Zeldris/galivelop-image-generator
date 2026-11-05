@@ -14,7 +14,7 @@
 | **Siguiente paso** | F2: `git switch -c f2-motor --no-track origin/main` y `git push -u origin f2-motor`; el contrato «F2 en detalle» lo escribe un subagente `opus` y la sesión principal lo revisa y lo lleva a la persona (`.claude/gw/orchestrate-dealer.md`); apuntar el presupuesto de compactaciones |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 | **Tarea en curso · `f2-motor`** | F4a-F4d hechas. Fases 1 y 2 hechas (`docs/records/revision-fase1-f2-motor-2026-11-05.md`, `docs/records/retro-2026-11-05-f4.md`). Fase 3 hecha: revisión de `e42e654` sin graves ni medios, CI y check en verde (1251 tests), marca de revisión puesta. **Siguiente:** PR de `f2-motor` a `main` (skill `pr`) y fusión con el CI en verde y confirmación de la persona; luego licencia MIT y releases. Presupuesto de compactaciones: 4 (gastadas 4) |
-| **Tarea en curso · `plan-piezas`** | `f2-motor` (F3 y F4) fusionada en `main` por PR #2 (`624f7a9`, 2026-11-05, con confirmación de la persona y CI en verde). Esta rama apunta en `docs/plan.md` el pedido «Piezas, edición y borrado» (6 puntos). **Siguiente:** licencia MIT (falta el titular del copyright) y releases 0.1.0-0.4.0; luego decidir fase de «Piezas, edición y borrado» |
+| **Tarea en curso · `plan-piezas`** | `f2-motor` (F3 y F4) fusionada en `main` por PR #2 (`624f7a9`, 2026-11-05, con confirmación de la persona y CI en verde). Esta rama apunta en `docs/plan.md` el pedido «Piezas, edición y borrado» (7 puntos; el 7, editar texto y tipografía de los elementos). Licencia MIT hecha (`LICENSE`, README, CHANGELOG). **Siguiente:** releases 0.1.0-0.4.0 (0.4.0 con subida de versión en esta rama); luego decidir fase de «Piezas, edición y borrado» |
 
 Con `logRows` en `.claude/gw.json`, cada rama escribe solo en su fila de esta tabla, como mucho 600 caracteres, con
 la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué falta y siguiente paso |``; el push lo comprueba.
@@ -33,7 +33,6 @@ la forma ``| **Tarea en curso · `<rama>`** | tarea, fases antes de `main`, qué
 
 ## Pendiente
 
-- **Licencia MIT** (pedido de la persona del 2026-11-05, `docs/plan.md` tras la tabla de fases): lo siguiente tras llevar F4 a `main`; falta el titular del copyright.
 - **Releases en GitHub** (pedido de la persona del 2026-11-05, `docs/plan.md` tras la tabla de fases): etiqueta y release con notas del CHANGELOG en cada versión; empezar con 0.4.0 al cerrar F4 y crear las atrasadas 0.1.0-0.3.0.
 - **Test inestable en el CI:** `tests.test_engine_sdcpp.RunTests.test_cancel_kills_the_whole_group` falló en `1eae6d7` y `44f8987` y pasó en la subida siguiente; diagnosticarlo con `diagnosing-bugs` tras el PR de F4 (retro del 2026-11-05).
 - **Leve de la fase 3 de `f2-motor`:** el check deja dos `ResourceWarning: unclosed file` (descriptores 7 y 8), seguramente el `stderr=PIPE` del Chrome de `tests/browser.py`, que `close()` no cierra.

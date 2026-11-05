@@ -87,9 +87,9 @@ proyecto desde GitHub. Se empieza con **0.4.0 al cerrar F4**, y en el mismo paso
 0.3.0, sobre el commit de `main` en que entró cada una). Comprobable: un script que diga si la versión de `gimg` en
 `main` tiene su etiqueta y su release, en el cierre de cada fase.
 
-**Licencia MIT** (pedido de la persona del 2026-11-05; **lo siguiente tras llevar F4 a `main`**): `LICENSE` con el
+**Licencia MIT** (pedido de la persona del 2026-11-05; **hecha** el 2026-11-05 en `plan-piezas`, titular «Galivelop and Álvaro García Graña (Zeldris)»): `LICENSE` con el
 texto MIT en la raíz, y en los dos README la línea «Todavía no hay licencia» pasa a decir que el código es MIT y que
-los modelos (`gimg/models.json`) tienen su propia licencia. Falta que la persona diga el titular del copyright.
+los modelos (`gimg/models.json`) tienen su propia licencia.
 
 **Piezas, edición y borrado** (pedido de la persona del 2026-11-05; tras licencia y releases, **sin fase asignada aún**:
 la persona decide si es una F4e o va con otra). Se diseña con su «en detalle», como F4b-F4d:
@@ -116,6 +116,15 @@ la persona decide si es una F4e o va con otra). Se diseña con su «en detalle»
    edición y un botón para lanzarlo, que encola un intento nuevo a partir de ese (el original no se toca). Por
    investigar: un modelo de edición local que `sd-cli` acepte y quepa en la Deck, o img2img con fuerza ajustable;
    y si además se quiere edición por zona marcada (inpainting), pregunta abierta a la persona.
+7. **Editar los elementos del resultado** (pedido de la persona del 2026-11-05): sobre un intento compuesto, el
+   editor de F4c (que ya mueve y redimensiona titular, logo y adornos) pasa a editar también **el texto** de cada
+   elemento y su **tipografía**: familia (elegida de las fuentes instaladas, `fc-list`, y las de `compose.fonts` del
+   perfil, con aviso si falta alguna como hace `gimg doctor`), tamaño, peso, cursiva, color (con el chip de contraste
+   en vivo), alineación e interlineado; y añadir o quitar elementos de texto. Es viable sin instalar nada (D6): la
+   plantilla es SVG que pinta `rsvg`, y todo eso son atributos (`font-family`, `font-size`, `font-weight`,
+   `font-style`, `fill`, `text-anchor`). Los cambios se aplican a una copia del intento (la original no se toca) y se
+   pueden guardar como plantilla nueva, como hoy la posición. Por decidir en su «en detalle»: el texto largo que no
+   cabe en la caja (encoger, cortar o avisar) y si la fuente elegida viaja con el proyecto (archivo en el repo, D25).
 
 ## F1 en detalle
 

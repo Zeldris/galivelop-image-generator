@@ -119,4 +119,5 @@ python3 -m unittest discover -s tests -t .
 ```
 
 El flujo de trabajo del repo (relevos, ramas, revisión) está en [`AGENTS.md`](AGENTS.md); el vocabulario, en
-[`GLOSSARY.md`](GLOSSARY.md). Todavía no hay licencia.
+[`GLOSSARY.md`](GLOSSARY.md). El código es [MIT](LICENSE); los modelos de
+[`gimg/models.json`](gimg/models.json) tienen cada uno su propia licencia.

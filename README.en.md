@@ -117,4 +117,5 @@ python3 -m unittest discover -s tests -t .
 ```
 
 The repo workflow (handoffs, branches, review) is in [`AGENTS.md`](AGENTS.md) (in Spanish); the vocabulary is in
-[`GLOSSARY.md`](GLOSSARY.md). There is no license yet.
+[`GLOSSARY.md`](GLOSSARY.md). The code is [MIT](LICENSE); each model in
+[`gimg/models.json`](gimg/models.json) has its own license.

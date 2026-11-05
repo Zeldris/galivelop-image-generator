@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- MIT license (`LICENSE`); the catalog models keep their own licenses.
 - `arrancar.sh`: opens the interface by double click or from the VS Code sandbox (sets the config and data folders).
 - Interface tests in a headless Chrome (`tests/test_ui_browser.py`), without generating images; skipped without Chrome.
 - Selectable templates per profile (F4b): `compose.templates`, `zone` and `textColor`; `gimg templates`,

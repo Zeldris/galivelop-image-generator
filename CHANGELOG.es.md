@@ -11,6 +11,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Añadido
 
+- Licencia MIT (`LICENSE`); los modelos del catálogo conservan su propia licencia.
 - `arrancar.sh`: abre la interfaz con doble clic o desde el sandbox de VS Code (fija las carpetas de configuración y datos).
 - Pruebas de la interfaz en un Chrome headless (`tests/test_ui_browser.py`), sin generar imágenes; se saltan sin Chrome.
 - Plantillas elegibles por perfil (F4b): `compose.templates`, `zone` y `textColor`; `gimg templates`, `--template` en
