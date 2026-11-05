@@ -74,7 +74,8 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--seed", "cli.arg.seed", type=int), opt("--count", "cli.arg.count", type=int, default=1),
          opt("--prompt", "cli.arg.prompt"), opt("--steps", "cli.arg.steps", type=int),
          opt("--cfg", "cli.arg.cfg", type=float), opt("--sampler", "cli.arg.sampler"),
-         opt("--draft", "cli.arg.draft", action=argparse.BooleanOptionalAction, default=None))
+         opt("--draft", "cli.arg.draft", action=argparse.BooleanOptionalAction, default=None),
+         opt("--template", "cli.arg.template", metavar="ID"))
     leaf(g, "mark", "cli.cmd.attempt_mark", project, okey, oprofile, attempt,
          arg("state", "cli.arg.state", choices=orders.STATES))
     leaf(g, "note", "cli.cmd.attempt_note", project, okey, oprofile, attempt,
@@ -84,7 +85,9 @@ def _build(lang: str) -> argparse.ArgumentParser:
     leaf(top, "undo", "cli.cmd.undo", project, okey, oprofile)
     leaf(top, "compose", "cli.cmd.compose", project, okey, oprofile,
          arg("attempt", "cli.arg.attempt_optional", type=int, nargs="?", default=None),
-         opt("--text", "cli.arg.text_kv", action="append", default=[], metavar="FIELD=TEXT"))
+         opt("--text", "cli.arg.text_kv", action="append", default=[], metavar="FIELD=TEXT"),
+         opt("--template", "cli.arg.template", metavar="ID"))
+    leaf(top, "templates", "cli.cmd.templates", project, oprofile)
 
     leaf(top, "measure", "cli.cmd.measure", arg("image", "cli.arg.image_path"),
          opt("--palette", "cli.arg.palette"), opt("--project", "cli.arg.measure_project", metavar="PROJECT"),
@@ -235,6 +238,8 @@ def _run(args, out: _Out) -> int:
                      new=out.none(result["new"]), old=out.none(result["old"]))
     elif cmd == "compose":
         _compose(args, out)
+    elif cmd == "templates":
+        _templates(args, out)
     elif cmd == "measure":
         _measure(args, out)
     elif cmd == "sheet":
@@ -342,13 +347,29 @@ def _text_pairs(pairs) -> dict:
 
 def _compose(args, out: _Out) -> None:
     text = _text_pairs(args.text)
-    item = compose.recompose(args.project, args.key, args.profile, args.attempt, text or None)
+    item = compose.recompose(args.project, args.key, args.profile, args.attempt, text or None, args.template)
     if out.as_json:
         out.data(item)
     elif "delivered" in item:
         out.line("cli.out.composed_delivered", id=item["id"], path=item["delivered"])
     else:
         out.line("cli.out.composed", id=item["id"], image=item["image"])
+
+
+def _templates(args, out: _Out) -> None:
+    profile_cfg = projects.get(args.project)["config"]["profiles"].get(args.profile)
+    if profile_cfg is None:
+        raise GimgError("order.profile_unknown", profile=args.profile)
+    items = compose.templates_of(profile_cfg)
+    if out.as_json:
+        out.data(items)
+        return
+    if not items:
+        out.line("cli.out.templates_none", profile=args.profile)
+    for item in items:
+        out.line("cli.out.template_line", id=item["id"], template=item["template"], logo=out.none(item["logo"]),
+                 fields=", ".join(item["fields"]) or out.t("cli.out.none"),
+                 default=out.t("cli.out.template_default") if item["default"] else "")
 
 
 def _measure(args, out: _Out) -> None:
@@ -428,7 +449,7 @@ def _attempt(args, sub, out: _Out) -> None:
                                        ("sampler", args.sampler)) if v is not None}
         entries, provider = queue.new_attempts(args.project, args.key, args.profile, args.count,
                                                seed=args.seed, prompt=args.prompt, params=overrides,
-                                               draft=args.draft)
+                                               draft=args.draft, template=args.template)
         _queued(out, entries, provider)
     elif sub == "mark":
         item = orders.mark(args.project, args.key, args.profile, args.attempt, args.state)

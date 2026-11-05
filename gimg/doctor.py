@@ -34,6 +34,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
+from . import compose as compose_mod
 from . import engine, engine_sdcpp, fsutil, i18n, limits, models, paths, projects
 from .errors import GimgError
 
@@ -326,6 +327,39 @@ def _fonts() -> list:
     return out
 
 
+def _template_files() -> list:
+    """The template and logo files of every ``compose`` and ``compose.templates`` entry of the registered projects:
+    inside the project, a file, of a sane size. A problem is a ``warn`` (composing that template would fail)."""
+    out = []
+    try:
+        names = list(projects.list_projects())
+    except (GimgError, OSError, ValueError):
+        return out  # `_fonts` already says the registry is unreadable
+    for name in names:
+        try:
+            proj = projects.get(name)
+        except GimgError:
+            continue  # `_fonts` says it
+        count, seen = 0, set()
+        for pname, profile in proj["config"]["profiles"].items():
+            for item in compose_mod.templates_of(profile):
+                count += 1
+                for kind in ("template", "logo"):
+                    rel = item[kind]
+                    if not rel or (pname, rel) in seen:  # a logo inherited by several templates is checked once
+                        continue
+                    seen.add((pname, rel))
+                    try:
+                        compose_mod._asset(proj["root"], rel, "compose.%s_missing" % kind)
+                    except GimgError as exc:
+                        out.append(Check("template:%s:%s:%s" % (name, pname, item["id"]), WARN, "doctor.templates.bad",
+                                         {"project": name, "profile": pname, "id": item["id"], "path": rel,
+                                          "message": exc.message(i18n.default_lang())}))
+        if count and not [c for c in out if c.id.startswith("template:%s:" % name)]:
+            out.append(Check("templates:" + name, OK, "doctor.templates.ok", {"project": name, "count": count}))
+    return out
+
+
 def _folders() -> list:
     out = []
     data = paths.data_dir()
@@ -382,6 +416,7 @@ def run(verify: bool = False, ollama_url: Optional[str] = None) -> list:
     checks += _vram(machine)
     checks += _tools()
     checks += _fonts()
+    checks += _template_files()
     checks += _folders()
     checks.append(_ollama(machine, bad, ollama_url))
     return checks

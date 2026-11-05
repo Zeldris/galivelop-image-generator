@@ -3,7 +3,8 @@
 ``{"nextId": n, "entries": [...]}``; entry: ``id``, ``project``, ``key``, ``profile``, ``seed``, ``prompt``,
 ``params``, ``references``, ``state`` (queued|running|done|failed|cancelled), ``pid``, ``enqueuedAt``,
 ``startedAt``, ``finishedAt``, ``error``, ``attemptId``, ``cancelRequested``, ``draft`` (bool; an older entry without it is not a draft), ``initImage`` (relative path or ``None``) and ``strength`` (number or ``None``; an older entry without the keys has neither) and ``text`` (object, the values of the
-profile's ``compose.fields``; an older entry without it has none: read it with ``.get``). Entries stay in arrival order.
+profile's ``compose.fields``; an older entry without it has none: read it with ``.get``) and ``template`` (F4b: the id of the composition
+template, ``None`` for ``default``; an older entry without it has none). Entries stay in arrival order.
 A running entry may also have ``progress`` (``{"step", "steps", "etaS"}``, `set_progress`) and ``preview`` (the path of
 the engine's preview image, `set_preview`); both are removed when the entry finishes or goes back to ``queued``.
 
@@ -29,8 +30,9 @@ import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
+from . import compose as compose_mod
 from . import engine as engine_mod
-from . import fsutil, i18n, limits, log, orders, paths, schema
+from . import fsutil, i18n, limits, log, orders, paths, projects, schema
 from .errors import GimgError
 
 KEEP_TERMINAL = 200
@@ -187,6 +189,8 @@ def enqueue(project: str, key: str, profile: str, specs: list) -> list:
     machine = limits.load_machine()
     for spec in specs:
         limits.check(spec, machine)
+    for tid in {spec["template"] for spec in specs if spec.get("template") is not None}:  # before queueing anything
+        compose_mod.effective(projects.get(project)["config"]["profiles"][profile].get("compose"), tid)
     now = _now()
 
     def change(data):
@@ -199,6 +203,7 @@ def enqueue(project: str, key: str, profile: str, specs: list) -> list:
                      "draft": spec.get("draft") is True,
                      "initImage": spec.get("initImage"), "strength": spec.get("strength"),
                      "text": copy.deepcopy(spec.get("text") or {}),
+                     "template": spec.get("template"),
                      "state": "queued", "pid": None, "enqueuedAt": now, "startedAt": None,
                      "finishedAt": None, "error": None, "attemptId": None, "cancelRequested": False}
             data["nextId"] += 1
@@ -394,10 +399,11 @@ def submit_order(project: str, order: dict, draft=None) -> tuple:
 
 
 def new_attempts(project: str, key: str, profile: str, count: int = 1, *, seed=None, prompt=None, params=None,
-                 draft=None) -> tuple:
+                 draft=None, template=None) -> tuple:
     """`gimg attempt new` and ``POST …/attempts``: enqueue `count` more attempts. Returns ``(entries, provider)``."""
     provider = engine_mod.get_engine().provider
-    specs = orders.attempt_specs(project, key, profile, count, seed=seed, prompt=prompt, params=params, draft=draft)
+    specs = orders.attempt_specs(project, key, profile, count, seed=seed, prompt=prompt, params=params, draft=draft,
+                                 template=template)
     return enqueue(project, key, profile, specs), provider
 
 

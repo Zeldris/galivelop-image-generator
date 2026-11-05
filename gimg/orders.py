@@ -284,7 +284,7 @@ def set_text(project: str, key: str, profile: str, text: dict, replace: bool = F
 
 
 def attempt_specs(project: str, key: str, profile: str, count: int = 1, *,
-                  seed=None, prompt=None, params=None, draft=None) -> list:
+                  seed=None, prompt=None, params=None, draft=None, template=None) -> list:
     """Specs of `count` attempts to enqueue; never changes the stored order (D19-D20).
 
     Each spec is ``{"seed", "prompt", "params", "references", "draft", "initImage", "strength", "text"}`` (the last three are the order's, ``None`` or ``{}`` if absent):
@@ -295,11 +295,17 @@ def attempt_specs(project: str, key: str, profile: str, count: int = 1, *,
       by `draft_params`; a ``steps`` in `params` wins over the draft's steps.
     - draft: `draft` if given (True/False), else the order's ``draft``.
     - prompt: `prompt` (a retouched one) or the order's, plus the profile ``style`` appended as
-      ``prompt + ", " + style`` when the style is non-empty (otherwise the prompt alone)."""
+      ``prompt + ", " + style`` when the style is non-empty (otherwise the prompt alone).
+    - template: the id of a composition template (F4b), kept in each spec as ``template`` when given; `queue.enqueue`
+      checks it exists (``compose.template_unknown``)."""
     _check_fields(prompt, params, seed)
     order = get(project, key, profile)
     profile_cfg = _profile(projects.get(project)["config"], profile)
-    return build_specs(order, profile_cfg, count, seed=seed, prompt=prompt, params=params, draft=draft)
+    specs = build_specs(order, profile_cfg, count, seed=seed, prompt=prompt, params=params, draft=draft)
+    if template is not None:
+        for spec in specs:
+            spec["template"] = template
+    return specs
 
 
 def build_specs(order: dict, profile_cfg: dict, count: int = 1, *, seed=None, prompt=None, params=None,

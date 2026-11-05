@@ -76,6 +76,55 @@ def plan_for(profile_cfg, raw_w, raw_h):
     return plan
 
 
+DEFAULT_TEMPLATE = "default"  # reserved id: the template of ``compose`` itself
+_TEMPLATE_KEYS = ("template", "logo", "fields", "zone", "textColor")
+
+
+def _template_ids(compose_cfg) -> list:
+    """``["default"]`` plus the ids of ``compose.templates``, sorted."""
+    return [DEFAULT_TEMPLATE] + sorted(compose_cfg.get("templates") or {}) if compose_cfg else []
+
+
+def effective(compose_cfg, template_id=None) -> dict:
+    """The ``compose`` configuration of template `template_id` (``None`` or ``"default"``: the profile's own).
+
+    The result is ``compose_cfg`` without ``templates``; an entry of ``templates`` replaces ``template`` and, if it has
+    them, ``logo`` and ``fields`` (otherwise inherited); ``zone`` and ``textColor`` are the entry's own (a different
+    template reserves a different zone). ``fit`` and ``fonts`` are the profile's. An id that does not exist, or a
+    profile without ``compose``, raises ``compose.template_unknown`` (``template``, ``allowed``)."""
+    if template_id is not None and not isinstance(template_id, str):
+        raise GimgError("compose.template_unknown", template=str(template_id), allowed=", ".join(_template_ids(compose_cfg)))
+    base = {k: v for k, v in (compose_cfg or {}).items() if k != "templates"}
+    if template_id in (None, DEFAULT_TEMPLATE):
+        if compose_cfg is None and template_id is not None:
+            raise GimgError("compose.template_unknown", template=template_id, allowed="")
+        return base
+    entry = ((compose_cfg or {}).get("templates") or {}).get(template_id)
+    if entry is None:
+        raise GimgError("compose.template_unknown", template=template_id, allowed=", ".join(_template_ids(compose_cfg)))
+    out = {k: v for k, v in base.items() if k not in ("zone", "textColor")}
+    out.update({k: v for k, v in entry.items() if k in _TEMPLATE_KEYS})
+    return out
+
+
+def templates_of(profile_cfg) -> list:
+    """The templates a profile offers, ``default`` first and then by id: ``{"id", "template", "logo", "fields",
+    "zone"?, "textColor"?, "default"}`` (``logo`` is ``None`` if there is none). ``[]`` for a profile without ``compose``."""
+    compose_cfg = profile_cfg.get("compose")
+    if not compose_cfg:
+        return []
+    items = []
+    for tid in _template_ids(compose_cfg):
+        cfg = effective(compose_cfg, tid)
+        item = {"id": tid, "template": cfg["template"], "logo": cfg.get("logo"), "fields": list(cfg.get("fields", []))}
+        for key in ("zone", "textColor"):
+            if key in cfg:
+                item[key] = cfg[key]
+        item["default"] = tid == DEFAULT_TEMPLATE
+        items.append(item)
+    return items
+
+
 def _ceil_div(a: int, b: int) -> int:
     return -(-a // b)
 
@@ -241,13 +290,16 @@ def check_distinct(raw_path, out_path) -> None:
         raise GimgError("compose.write_failed", path=str(out_path), reason="it is the raw image")
 
 
-def render(project_root, profile_cfg, raw_path, out_path, text, profile=None, prefix=COMPOSE_TMP_PREFIX) -> dict:
+def render(project_root, profile_cfg, raw_path, out_path, text, profile=None, prefix=COMPOSE_TMP_PREFIX,
+           template=None) -> dict:
     """Compose the raw image `raw_path` into `out_path` for `profile_cfg` and return what was done.
 
     `project_root` is the folder of the project (the template and the logo are resolved inside it); `text` maps the
     ``compose.fields`` to their texts (a missing field is the empty string). The result is written atomically: nothing
     is left at `out_path` if a step fails. Returns ``{"fit", "targetWidth", "targetHeight", "text"}`` plus
-    ``template`` and ``logo`` when the profile has them: what the attempt records as ``compose``.
+    ``template`` and ``logo`` when the profile has them: what the attempt records as ``compose``, plus ``templateId``
+    whenever there is a ``compose``. `template` is the id of one of ``compose.templates`` (``None``: ``default``, the
+    profile's own; unknown: ``compose.template_unknown``).
 
     The temporary folder sits next to `out_path` and starts with `prefix`: each caller uses its own, so recovering one
     composition (`queue._clean_pending` removes ``.compose-q<entry>-*``) never touches another's."""
@@ -259,10 +311,11 @@ def render(project_root, profile_cfg, raw_path, out_path, text, profile=None, pr
         raise GimgError("compose.nothing_to_do", profile=profile or "")
     width, height, fit = plan["targetWidth"], plan["targetHeight"], plan["fit"]
     geom = (width, height) + fit_geometry(raw_w, raw_h, width, height, fit)
-    compose_cfg = profile_cfg.get("compose")
+    template_id = None if template == DEFAULT_TEMPLATE else template
+    compose_cfg = effective(profile_cfg.get("compose"), template_id)
     used = {}
     layer_svg = None
-    if compose_cfg is not None:
+    if profile_cfg.get("compose") is not None:
         template, logo = resolve_assets(project_root, compose_cfg)
         source = _read_svg(template)
         values = {}
@@ -278,6 +331,12 @@ def render(project_root, profile_cfg, raw_path, out_path, text, profile=None, pr
             values["logo"] = logo_data_uri(logo)
         layer_svg = substitute(source, values)
     info = dict(plan, text=used)
+    if profile_cfg.get("compose") is not None:
+        info["template"] = compose_cfg["template"]
+        info.pop("logo", None)
+        if compose_cfg.get("logo"):
+            info["logo"] = compose_cfg["logo"]
+        info["templateId"] = DEFAULT_TEMPLATE if template_id is None else template_id
     try:
         with tempfile.TemporaryDirectory(dir=str(out_path.parent), prefix=prefix) as tmp:
             tmp = Path(tmp)
@@ -347,7 +406,7 @@ def _log_recompose(project, key, profile, attempt, info=None, error=None) -> Non
         print(i18n.t("compose.log_failed", reason=str(exc)), file=sys.stderr)
 
 
-def recompose(project, key, profile, attempt_id=None, text=None) -> dict:
+def recompose(project, key, profile, attempt_id=None, text=None, template=None) -> dict:
     """Compose an attempt again from its raw image, without generating (D28); returns the attempt (a copy).
 
     The attempt is `attempt_id`, else the chosen one, else the last. `text` (``{field: value}``) is merged into the
@@ -363,17 +422,23 @@ def recompose(project, key, profile, attempt_id=None, text=None) -> dict:
     ``composeError``: then the error is dropped (`orders.clear_compose_error`) and it returns normally. If the render fails, the
     attempt gets the error as ``composeError`` (`orders.set_compose_error`) and it is raised again; a project log line
     records either result. The chosen attempt is delivered again (manifest included; `delivery.redeliver` checks it still
-    is the chosen one under the delivery lock) and the result then has ``delivered``: the file, relative to the project."""
+    is the chosen one under the delivery lock) and the result then has ``delivered``: the file, relative to the project.
+
+    `template` (an id of `templates_of`) composes with that template and the attempt keeps it (``compose.templateId``); an
+    unknown one raises ``compose.template_unknown`` before anything changes. Without it the attempt's own ``templateId``
+    is used, else ``default``; one that no longer exists fails like any other composition error, it never falls back."""
     proj = projects.get(project)
     profile_cfg = proj["config"]["profiles"].get(profile)
     order = orders.get(project, key, profile)
     if profile_cfg is None:
         raise GimgError("order.profile_unknown", profile=profile)
     attempt_id = _pick_attempt(order, attempt_id)["id"]
+    if template is not None:
+        effective(profile_cfg.get("compose"), template)
     with fsutil.try_lock(orders.compose_lock_path(project, key, profile, attempt_id)) as taken:
         if not taken:  # the worker or another `gimg compose` is composing this attempt
             raise GimgError("compose.busy", attempt=attempt_id)
-        return _recompose_locked(proj, project, key, profile, profile_cfg, attempt_id, text)
+        return _recompose_locked(proj, project, key, profile, profile_cfg, attempt_id, text, template)
 
 
 def _clean_leftovers(raw_path: Path, folder: Path, attempt_id: int) -> None:
@@ -390,7 +455,7 @@ def _clean_leftovers(raw_path: Path, folder: Path, attempt_id: int) -> None:
                 pass
 
 
-def _recompose_locked(proj, project, key, profile, profile_cfg, attempt_id, text) -> dict:
+def _recompose_locked(proj, project, key, profile, profile_cfg, attempt_id, text, template=None) -> dict:
     """`recompose` with the lock of the attempt held, from reading the attempt to delivering it."""
     order = orders.get(project, key, profile)  # again: it may have changed while the lock was not ours
     attempt = _pick_attempt(order, attempt_id)
@@ -413,8 +478,11 @@ def _recompose_locked(proj, project, key, profile, profile_cfg, attempt_id, text
     if keep:
         _keep_raw(source, raw_path)
     try:
+        if template is None:
+            template = (attempt.get("compose") or {}).get("templateId")
         info = render(proj["root"], profile_cfg, raw_path, out_path, texts, profile,
-                      prefix=RECOMPOSE_TMP_PREFIX % attempt_id)
+                      prefix=RECOMPOSE_TMP_PREFIX % attempt_id,
+                      **({} if template is None else {"template": template}))
         done = orders.set_composed(project, key, profile, attempt_id, info)
     except Exception as exc:
         code, params = (exc.code, exc.params) if isinstance(exc, GimgError) else (
@@ -432,5 +500,5 @@ def _recompose_locked(proj, project, key, profile, profile_cfg, attempt_id, text
     return done
 
 
-__all__ = ["recompose", "render", "plan_for", "target_size", "fit_geometry", "substitute", "xml_escape", "resolve_assets",
+__all__ = ["recompose", "render", "effective", "templates_of", "DEFAULT_TEMPLATE", "plan_for", "target_size", "fit_geometry", "substitute", "xml_escape", "resolve_assets",
            "logo_data_uri", "rsvg_argv", "ffmpeg_argv", "TIMEOUT_S", "MAX_SVG_BYTES"]

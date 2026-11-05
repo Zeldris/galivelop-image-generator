@@ -49,7 +49,7 @@ _EXACT = {
     415: ("api.content_type",),
     409: ("compose.busy", "measure.busy", "api.heavy_busy", "compose.nothing_to_do", "compose.no_attempts", "serve.already_running", "serve.port_busy", "serve.not_running", "order.discard_chosen",
           "order.history_empty", "queue.not_cancellable", "delivery.target_taken"),
-    400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "api.bad_json",
+    400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "compose.template_unknown", "api.bad_json",
           "api.bad_param"),
 }
 # Server-side faults whose names match the 400 patterns below: checked first.

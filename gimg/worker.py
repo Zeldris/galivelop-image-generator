@@ -197,6 +197,11 @@ def _compose_plan(project: dict, profile: str, image):
     return compose_mod.plan_for(profile_cfg, *size)
 
 
+def _template_kw(template) -> dict:
+    """``{"template": id}`` for `compose.render`, or nothing for the default template."""
+    return {} if template is None else {"template": template}
+
+
 def _unexpected_compose_error(exc: BaseException) -> dict:
     return queue.make_error("compose.unexpected", reason=("%s: %s" % (type(exc).__name__, exc))[:300])
 
@@ -213,7 +218,7 @@ def _compose_locked(entry: dict, project: dict, attempt_id: int, raw: Path, fina
             return None  # `gimg compose` got there first (and then it says how it went)
         info = compose_mod.render(
             project["root"], project["config"]["profiles"][profile], raw, final, entry.get("text") or {}, profile,
-            prefix=".compose-q%d-" % entry_id)
+            prefix=".compose-q%d-" % entry_id, **_template_kw(entry.get("template")))
         orders.set_composed(project_name, key, profile, attempt_id, info)
         state["compose"] = info
         return None

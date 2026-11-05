@@ -543,7 +543,7 @@ class WithToolsTests(ComposeWorkerBase):
         self.assertEqual((att["image"], att["raw"]), ("attempts/q1.png", "attempts/q1.raw.png"))
         self.assertNotIn("composeError", att)
         want = {"fit": "cover", "targetWidth": 1200, "targetHeight": 630, "template": "t.svg",
-                "text": {"title": "Tom & <Jerry>", "subtitle": ""}}
+                "templateId": "default", "text": {"title": "Tom & <Jerry>", "subtitle": ""}}
         self.assertEqual(att["compose"], want)
         done, raw = orders.attempt_image("proj", "a", "og", att), orders.raw_image("proj", "a", "og", att)
         self.assertEqual((png.size(done), png.size(raw)), ((1200, 630), (1280, 640)))
