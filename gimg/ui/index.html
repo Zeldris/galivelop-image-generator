@@ -22,18 +22,24 @@
     <nav class="crumbs" id="crumbs" data-i18n-aria-label="ui.nav.crumbs"></nav>
     <div class="header-tools">
       <div id="queue-pill"></div>
-      <label class="sr-only" for="lang" data-i18n="ui.lang.label">Idioma</label>
+      <button type="button" class="btn btn-icon" id="settings-btn" popovertarget="settings" data-i18n-aria-label="ui.settings.title">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+      </button>
+      <button type="button" class="btn btn-icon" id="help" data-i18n-aria-label="ui.shortcuts.title" aria-haspopup="dialog">?</button>
+    </div>
+    <div id="settings" class="settings-menu" popover role="group" aria-labelledby="settings-title">
+      <h2 id="settings-title" data-i18n="ui.settings.title">Ajustes</h2>
+      <label for="lang" data-i18n="ui.lang.label">Idioma</label>
       <select id="lang" class="select-inline">
-        <option value="es">ES</option>
-        <option value="en">EN</option>
+        <option value="es">Español</option>
+        <option value="en">English</option>
       </select>
-      <label class="sr-only" for="theme" data-i18n="ui.theme.label">Tema</label>
+      <label for="theme" data-i18n="ui.theme.label">Tema</label>
       <select id="theme" class="select-inline">
         <option value="auto" data-i18n="ui.theme.auto">Automático</option>
         <option value="dark" data-i18n="ui.theme.dark">Oscuro</option>
         <option value="light" data-i18n="ui.theme.light">Claro</option>
       </select>
-      <button type="button" class="btn btn-icon" id="help" data-i18n-aria-label="ui.shortcuts.title" aria-haspopup="dialog">?</button>
     </div>
   </header>
 

@@ -32,6 +32,7 @@ async function boot() {
   const skip = document.querySelector('a.skip');
   if (skip) skip.addEventListener('click', (e) => { e.preventDefault(); el('main').focus(); });
   initTheme(el('theme'));
+  measureHeader();
   initLightbox();
   initQueueBar(el('queue-pill'), el('queue-drawer'));
   initShortcuts({ toggleQueue, closeAll });
@@ -52,9 +53,19 @@ async function boot() {
   try { const hth = await api.health(); if (hth && hth.worker === false) toast(t('ui.offline.noWorker')); } catch { /* la banda ya lo dice */ }
 }
 
+/** `--header-h` sigue la altura real de la cabecera (fija por punto de corte, UI.1): el cajón y el retoque se colocan bajo ella. */
+function measureHeader() {
+  const header = document.querySelector('.app-header');
+  const set = () => document.documentElement.style.setProperty('--header-h', `${header.offsetHeight}px`);
+  set();
+  if (window.ResizeObserver) new ResizeObserver(set).observe(header);
+}
+
 function closeAll() {
   for (const d of document.querySelectorAll('dialog[open]')) d.close();
   if (isQueueOpen()) toggleQueue(false);
+  const settings = el('settings');
+  if (settings.matches(':popover-open')) settings.hidePopover();
 }
 
 let current = null;

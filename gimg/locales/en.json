@@ -422,6 +422,7 @@
   "ui.nav.projects": "Projects",
   "ui.nav.crumbs": "Where you are",
   "ui.nav.notFound": "That address does not exist.",
+  "ui.settings.title": "Settings",
   "ui.lang.label": "Language",
   "ui.theme.label": "Theme",
   "ui.theme.auto": "Automatic",

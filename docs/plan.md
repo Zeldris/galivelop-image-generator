@@ -1453,7 +1453,7 @@ arreglo; el diseño con Fable. El mando lo comprueba la persona en la Deck.
 
 | Paso | Qué | Estado |
 |---|---|---|
-| UI.1 | Cabecera de una altura, botón «Ajustes» con idioma, tema y talla | pendiente |
+| UI.1 | Cabecera de una altura, botón «Ajustes» con idioma, tema y talla | hecho: rejilla de 56 px (>640) o 92 px (≤640, migas en su fila), `--header-h` medido; «Ajustes» como popover nativo con idioma y tema (la talla entra con UI.9); `test_header_has_one_height_and_settings_menu` |
 | UI.2 | Cajón de la cola como diálogo (trampa de foco en `lib/focus-trap.js`) | pendiente |
 | UI.3 | Foco que no se roba; atajos `T`/`X` | pendiente |
 | UI.4 | Objetivos de 44 px; chip de medida como botón con detalle | pendiente |

@@ -1,20 +1,39 @@
 /* Galivelop IG · disposición: cabecera, barra de cola, contenido, pantallas. Pensado para 1280×800 (Deck) y escritorio. */
 
+/* Cabecera de una altura por punto de corte (UI.1): una fila a >640 (marca · migas · herramientas) y dos a ≤640
+   (marca + herramientas; migas en una línea). `--header-h` lo mide app.js (ResizeObserver) para el cajón y el retoque. */
 .app-header {
   position: sticky; top: 0; z-index: 20;
-  display: flex; align-items: center; gap: 10px;
-  min-height: var(--header-h); padding: 6px 12px;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "brand crumbs tools";
+  align-items: center; column-gap: 12px;
+  height: var(--header-h-fixed); padding: 0 12px;
   background: var(--surface); border-bottom: 1px solid var(--border);
+  --header-h-fixed: 56px;
 }
-.brand { display: inline-flex; align-items: center; gap: 8px; color: var(--text); text-decoration: none; font-family: var(--font-title); font-weight: 700; }
+.brand { grid-area: brand; display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); color: var(--text); text-decoration: none; font-family: var(--font-title); font-weight: 700; white-space: nowrap; }
 .brand img { width: 28px; height: 28px; }
 .brand .sigla { color: var(--accent-text); }
-.crumbs { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; font-size: 14px; }
-.crumbs a { color: var(--text-2); }
-.crumbs .sep { color: var(--text-2); }
-.crumbs b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40vw; }
-.header-tools { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+.crumbs { grid-area: crumbs; display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; min-width: 0; overflow: hidden; white-space: nowrap; font-size: 14px; }
+.crumbs > a, .crumbs > b { flex: 0 1 auto; min-width: 3ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: var(--tap); }
+.crumbs > a { color: var(--text-2); }
+.crumbs > b { font-weight: 600; flex-shrink: .4; }
+.crumbs .sep { color: var(--text-2); flex: none; }
+.header-tools { grid-area: tools; display: flex; gap: 6px; align-items: center; justify-content: flex-end; min-width: 0; }
+.header-tools > * { flex: none; }
+.header-tools #queue-pill { flex: 0 1 auto; min-width: 0; }
 .select-inline { min-height: var(--tap); padding: 6px 8px; border: 1px solid var(--border-strong); border-radius: var(--r-s); background: var(--surface-2); color: var(--text); font: 500 14px var(--font-body); }
+
+/* menú «Ajustes»: popover nativo (Esc y clic fuera lo cierran solos) bajo la cabecera, a la derecha */
+.settings-menu {
+  position: fixed; inset: auto; top: calc(var(--header-h) + 6px); right: 12px; margin: 0;
+  width: min(280px, calc(100vw - 24px)); padding: 14px;
+  display: none; gap: 6px; grid-template-columns: 1fr;
+  background: var(--surface); color: var(--text); border: 1px solid var(--border-strong); border-radius: var(--r); box-shadow: var(--shadow);
+}
+.settings-menu:popover-open { display: grid; }
+.settings-menu h2 { margin: 0 0 4px; font-size: 16px; }
+.settings-menu label { font-size: 14px; color: var(--text-2); margin-top: 6px; }
+.settings-menu .select-inline { width: 100%; }
 
 /* banda de «sin servicio» y errores globales */
 .banner { display: flex; gap: 10px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--bad); background: var(--surface-2); color: var(--text); }
@@ -82,9 +101,14 @@
 @media (max-width: 1000px) {
   .order-layout { grid-template-columns: 1fr; }
   .order-panel { position: static; max-height: none; }
-  .crumbs b { max-width: 60vw; }
 }
 @media (max-width: 640px) {
+  .app-header { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: 52px 40px; grid-template-areas: "brand tools" "crumbs crumbs"; --header-h-fixed: 92px; }
+  .brand > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .crumbs > a, .crumbs > b { line-height: 40px; }
+  .queue-pill { max-width: 100%; }
+  .queue-pill > span:not(.dot) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .queue-pill progress { display: none; }
   .app-main { padding: 10px 10px 60px; }
   .gallery { grid-template-columns: 1fr; }
   .order-row { grid-template-columns: 64px 1fr; }

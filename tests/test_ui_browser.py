@@ -231,6 +231,47 @@ class Browse(UiBase):
         self.no_problems()
 
 
+    def header_metrics(self):
+        return self.js("""(() => { const r = (s) => document.querySelector(s).getBoundingClientRect();
+            const header = r('.app-header'), crumbs = document.getElementById('crumbs');
+            const tops = new Set([...crumbs.children].map((c) => { const b = c.getBoundingClientRect(); return Math.round(b.top + b.height / 2); }));  // same line = same centre
+            return {headerH: header.height, token: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-h')),
+                    crumbLines: tops.size, crumbsInside: r('#crumbs').bottom <= header.bottom + 0.5,
+                    settings: [r('#settings-btn').width, r('#settings-btn').height], help: [r('#help').width, r('#help').height],
+                    hscroll: document.documentElement.scrollWidth - document.documentElement.clientWidth}; })()""")
+
+    def test_header_has_one_height_and_settings_menu(self):
+        """UI.1: the header keeps one height per breakpoint on every screen, the crumbs stay on one line, nothing
+        scrolls sideways, and language and theme live in a «Ajustes» menu with 44 px targets."""
+        for width, limit in ((360, 96), (1440, 60)):
+            self.page.ws.close()
+            self.page = self.browser.new_page(width=width, height=780)
+            heights = set()
+            for route, ready in (("/", "document.querySelector('a.project-card')"),
+                                 (order_route("fondos/uno"), "document.querySelector('.gallery .attempt')")):
+                self.open(route, ready)
+                m = self.header_metrics()
+                where = "%s at %d" % (route, width)
+                self.assertLessEqual(m["headerH"], limit, where)
+                self.assertAlmostEqual(m["token"], m["headerH"], delta=1, msg=where)
+                self.assertEqual(m["crumbLines"], 1, where)
+                self.assertTrue(m["crumbsInside"], where)
+                self.assertEqual(m["hscroll"], 0, where)
+                for size in (m["settings"], m["help"]):
+                    self.assertGreaterEqual(min(size), 44, where)
+                heights.add(round(m["headerH"]))
+            self.assertEqual(len(heights), 1, "the header changes height between screens at %d: %s" % (width, heights))
+        self.click("#settings-btn")
+        self.page.wait("document.getElementById('settings').matches(':popover-open')")
+        sizes = self.js("['lang', 'theme'].map((id) => { const r = document.getElementById(id).getBoundingClientRect(); return [r.width, r.height]; })")
+        for w, h in sizes:
+            self.assertGreaterEqual(h, 44)
+            self.assertGreaterEqual(w, 120)
+        self.assertEqual(self.js("document.getElementById('settings-btn').getAttribute('aria-label')"), "Ajustes")
+        self.page.key("Escape")
+        self.page.wait("!document.getElementById('settings').matches(':popover-open')")
+        self.no_problems()
+
 
 def order_route(key, profile=PROFILE):
     return "/p/%s/o/%s/%s" % (PROJECT, profile, quote(key, safe=""))
