@@ -25,6 +25,20 @@ jobs:
           git merge-base --is-ancestor "$GITHUB_SHA" origin/main
       - name: Tag matches __version__
         run: python3 releases.py verify-tag "$GITHUB_REF_NAME" --ref "$GITHUB_SHA"
+      - name: Install
+        # Same as check.yml: `ciInstall` (else `install`) of .claude/gw.json; the check needs ffmpeg and rsvg-convert.
+        run: |
+          python3 .claude/gw/scripts/config.py validate >/dev/null
+          if python3 .claude/gw/scripts/config.py get ciInstall --json >/dev/null 2>&1; then
+            cmds="$(python3 .claude/gw/scripts/config.py get ciInstall)"
+          else
+            cmds="$(python3 .claude/gw/scripts/config.py get install)"
+          fi
+          while IFS= read -r cmd; do
+            [ -n "$cmd" ] || continue
+            echo "== $cmd"
+            bash -c "$cmd"
+          done <<<"$cmds"
       - name: Git hooks path
         run: git config core.hooksPath .githooks
       - name: Check

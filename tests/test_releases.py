@@ -226,5 +226,14 @@ class CheckTests(unittest.TestCase):
         self.assertEqual((code, "no tiene __version__" in message), (2, True))
 
 
+class ReleaseWorkflowTests(unittest.TestCase):
+    def test_release_installs_what_the_check_needs_like_check_yml(self):
+        # Sin `ciInstall` (ffmpeg, rsvg-convert) el check de release.yml falla y no crea la release (v0.4.0).
+        wf = (R / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
+        install, check = wf.find("config.py get ciInstall)"), wf.find("config.py get check)")
+        self.assertNotEqual(install, -1, "release.yml no instala `ciInstall` de .claude/gw.json")
+        self.assertLess(install, check, "release.yml instala después de correr el check")
+
+
 if __name__ == "__main__":
     unittest.main()

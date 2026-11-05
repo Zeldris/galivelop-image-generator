@@ -8,13 +8,14 @@
 
 | Campo | Valor |
 |---|---|
-| **Rama** | `main` (F0-F4 fusionadas); trabajo abierto en `plan-piezas` |
-| **Fase / tarea** | F4 cerrada y en `main` (PR #2); `plan-piezas`: plan de «Piezas, edición y borrado», MIT y `releases.py`, camino de `main` |
-| **Último punto estable** | `main` en `624f7a9` (PR #2, F3 y F4, CI en verde); `plan-piezas` subida, ver su fila |
-| **Siguiente paso** | el de la fila de `plan-piezas` |
+| **Rama** | `main` (F0-F4 y `plan-piezas` fusionadas, v0.4.0); trabajo abierto en `release-install` |
+| **Fase / tarea** | F4 cerrada y publicada (v0.4.0); `release-install`: arreglo de `release.yml`; después, decidir la fase de «Piezas, edición y borrado» |
+| **Último punto estable** | `main` en `d128106` (PR #3, CI en verde), etiqueta y release v0.4.0; `release-install` subida, ver su fila |
+| **Siguiente paso** | el de la fila de `release-install` |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 | **Tarea en curso · `f2-motor`** | Fusionada en `main` por el PR #2 (`624f7a9`, 2026-11-05, CI en verde); rama terminada. |
-| **Tarea en curso · `plan-piezas`** | Plan de «Piezas, edición y borrado», MIT, 0.4.0 y `releases.py`. Fases 1-3 hechas (`docs/records/revision-fase1-plan-piezas-2026-11-05.md`, `docs/records/retro-2026-11-05-plan-piezas.md`); PR #3 abierto. Después: README es/en al día con el plan y proceso de versiones de Galivelop-workflow (`release.yml`, `releases.py bump/suggest/verify-tag`, «Cómo se publica una versión» en `docs/plan.md`). **Siguiente:** `reviewed.sh`, CI verde del PR #3, fusionar, etiqueta ligera v0.4.0 en la punta de `origin/main` y `git push origin v0.4.0` (release por `release.yml`), `releases.py check`; luego decidir la fase de «Piezas, edición y borrado» |
+| **Tarea en curso · `plan-piezas`** | Fusionada en `main` por el PR #3 (`d128106`, 2026-11-05, CI en verde); rama terminada. v0.4.0 etiquetada en `d128106`; `release.yml` falló (sin `ffmpeg`/`rsvg-convert`) y la release se creó a mano con `releases.py notes` y el mismo título (mismo árbol que el CI verde del PR); `releases.py check` en verde. |
+| **Tarea en curso · `release-install`** | `release.yml` no tenía el paso «Install» de `check.yml` (`ciInstall`: `ffmpeg`, `librsvg2-bin`) y su check falló al etiquetar v0.4.0. Hecho: el paso, y un test (`tests.test_releases.ReleaseWorkflowTests`, rojo sin el arreglo). **Siguiente:** con la confirmación de la persona, las tres fases y el PR a `main`; luego decidir la fase de «Piezas, edición y borrado» |
 
 Aquí `logRows` está apagado en `.claude/gw.json`: las filas se editan a mano (`handoff.py set-row` no escribe) y no
 hace falta `GW_SHARED_LOG`. Aun así, cada rama toca solo su fila salvo al cerrar o fusionar otra.
@@ -33,7 +34,7 @@ hace falta `GW_SHARED_LOG`. Aun así, cada rama toca solo su fila salvo al cerra
 
 ## Pendiente
 
-- **Releases en GitHub** (pedido de la persona del 2026-11-05, `docs/plan.md` tras la tabla de fases): v0.1.0 y v0.3.0 hechas; v0.4.0 al llegar `plan-piezas` a `main` (`python3 releases.py check` en cada cierre de fase).
+- **Releases en GitHub** (pedido de la persona del 2026-11-05, `docs/plan.md` tras la tabla de fases): v0.1.0, v0.3.0 y v0.4.0 hechas (v0.4.0 a mano: ver `release-install`); las siguientes, con `releases.py bump` y la etiqueta (`release.yml`) (`python3 releases.py check` en cada cierre de fase).
 - **Test inestable en el CI:** `tests.test_engine_sdcpp.RunTests.test_cancel_kills_the_whole_group` falló en `1eae6d7` y `44f8987` y pasó en la subida siguiente; diagnosticarlo con `diagnosing-bugs` tras el PR de F4 (retro del 2026-11-05).
 - **Leve de la fase 3 de `f2-motor`:** el check deja dos `ResourceWarning: unclosed file` (descriptores 7 y 8), seguramente el `stderr=PIPE` del Chrome de `tests/browser.py`, que `close()` no cierra.
 - **Leves de la revisión de fase 1 de `f2-motor` (2026-11-05, no se revisan más en este PR)** (`docs/records/revision-fase1-f2-motor-2026-11-05.md`): (6) `_contrast_of` decodifica la imagen una vez por elemento de texto; (7) `save_template` puede dejar un `.json` huérfano que bloquea el nombre; (8) `_sidecar` no comprueba que `zone` quepa en `target_size`; sin verificar: `gimg queue list` quizá ordena por archivo y no por `position`.
