@@ -66,7 +66,7 @@ líneas del esquema cuando el pedido no valida. Idioma: `?lang=es|en`, si no el 
 si no el del sistema. Estados: 400 petición mal formada o valor no válido (`api.bad_json`, `api.bad_param`, `*.invalid`,
 `limit.*`, `path.*`, `key.*`); 403 Host u Origin; 404 `project.unknown`, `order.unknown`, `order.profile_unknown`,
 `order.attempt_unknown`, `queue.unknown`, `api.not_found`; 405, 411, 413, 415 de arriba; 409 estado que no lo permite
-(`compose.template_exists`, `order.choose_*`, `order.undo_*`, `order.history_empty`, `queue.not_cancellable`, `compose.busy`, `measure.busy`,
+(`compose.template_exists`, `order.choose_*`, `order.undo_*`, `order.history_empty`, `queue.not_cancellable`, `queue.not_movable`, `compose.busy`, `measure.busy`,
 `api.heavy_busy`, `delivery.target_taken`); 500 fallos del lado del servidor (`api.unexpected` lleva `"message":
 "Tipo: texto"`). Los textos de todos los códigos: `GET /api/locales/{lang}`.
 
@@ -118,8 +118,10 @@ curl -s "$B/api/projects/mi-proyecto/orders?profile=banner&chosen=false"
 ### POST /api/projects/{p}/orders
 
 Crea un pedido (el JSON de `order.schema.json`, con su `count`) y encola los intentos; `"draft": true` los pide en
-borrador. Respuesta 201: `{"order", "entries", "estimateMs"}`. Errores: `order.invalid` (con `errors`), `limit.*`,
-`key.*`, `order.profile_unknown`.
+borrador. `"template"` (opcional, no se guarda en el pedido): id de la plantilla de composición de los intentos
+(`gimg order submit --template`); se valida antes de guardar y de encolar nada. Respuesta 201: `{"order", "entries",
+"estimateMs"}`. Errores: `order.invalid` (con `errors`), `limit.*`, `key.*`, `order.profile_unknown`,
+`compose.template_unknown` (400).
 
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/orders \
@@ -148,10 +150,12 @@ curl -s -X PUT -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/o
 ### POST /api/projects/{p}/orders/{profile}/{key}/attempts
 
 Más intentos (otra semilla, retoque del prompt, varios seguidos, borrador). Cuerpo, todo opcional: `{"count", "seed",
-"prompt", "steps", "cfg", "sampler", "draft", "template"}` (`template`: id de una plantilla de
-`GET …/profiles/{profile}/templates`, la de los intentos nuevos; sin él, `default`). Respuesta 202: `{"entries",
+"prompt", "steps", "cfg", "sampler", "draft", "template", "model"}` (`template`: id de una plantilla de
+`GET …/profiles/{profile}/templates`, la de los intentos nuevos; sin él, `default`; `model`: id de `GET /api/models`
+que sustituye al del perfil en estos intentos, como `gimg attempt new --model`). Respuesta 202: `{"entries",
 "estimateMs"}`; cada entrada lleva su `template`. Errores: `order.count_invalid`, `order.prompt_too_long`, `limit.*`,
-`order.unknown`, `compose.template_unknown` (400, antes de encolar nada).
+`order.unknown`, `compose.template_unknown` (400, antes de encolar nada), `model.unknown` (400), `limit.steps` si
+el modelo no cabe en el perfil de máquina.
 
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' \
@@ -306,6 +310,45 @@ Cancela una entrada. Cuerpo: `{}`. Respuesta: la entrada. Errores: `queue.unknow
 
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/3/cancel -d '{}'
+```
+
+### POST /api/queue/{id}/move
+
+Mueve una entrada que espera (`queued`) en la fila de la que toma el trabajador. Cuerpo: `{"to": "up|down|top"}`
+(`up`/`down` un puesto; `top` la primera). Respuesta: la entrada. Errores: `queue.unknown`, `queue.not_movable` (409,
+no está `queued`), `queue.bad_move` (400). CLI: `gimg queue move <id> up|down|top`.
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/5/move -d '{"to":"top"}'
+```
+
+### POST /api/queue/clear
+
+Cancela todas las entradas `queued` (solo las de `project`, si se da); nunca toca una `running`. Cuerpo:
+`{"project"?}`. Respuesta: la lista de entradas canceladas. CLI: `gimg queue clear [--project P]`.
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/clear -d '{"project":"mi-proyecto"}'
+```
+
+### GET /api/models
+
+El catálogo de modelos (`gimg/models.json`) frente al perfil de máquina: `[{"id", "license", "defaults": {"steps",
+"cfg", "sampler"}, "installDefault", "allowed", "reason"?}]`. Si `allowed` es `false`, `reason` es `{"code",
+"message"}` del `limit.*` que lo impide (hoy `limit.steps`: los pasos por defecto del modelo superan `maxSteps`).
+
+```sh
+curl -s $B/api/models
+```
+
+### GET /api/projects/{p}/check
+
+Las comprobaciones de `gimg doctor` que tocan al proyecto (fuentes de `compose.fonts`, archivos de plantillas y
+logos, elementos editables y `viewBox`): `[{"id", "status": "ok|warn|fail", "message", "fix"?}]`. Error:
+`project.unknown`.
+
+```sh
+curl -s $B/api/projects/mi-proyecto/check
 ```
 
 ## Interfaz

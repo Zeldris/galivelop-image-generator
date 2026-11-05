@@ -292,11 +292,11 @@ def _installed_families():
     return {name.strip().lower() for line in done.stdout.splitlines() for name in line.split(",") if name.strip()}, None
 
 
-def _fonts() -> list:
-    """The fonts the registered projects compose with, each ``ok`` or ``warn`` (never ``fail``)."""
+def _fonts(only: Optional[str] = None) -> list:
+    """The fonts the registered projects (or just `only`) compose with, each ``ok`` or ``warn`` (never ``fail``)."""
     out, wanted = [], {}  # font -> project names
     try:
-        names = list(projects.list_projects())
+        names = [only] if only else list(projects.list_projects())
     except (GimgError, OSError, ValueError) as exc:  # the registry itself is unreadable
         return [Check("fonts", WARN, "doctor.fonts.project_error", {"project": "-", "message": str(exc)})]
     for name in names:
@@ -344,12 +344,12 @@ def _element_problem(root, profile, template_id):
     return None
 
 
-def _template_files() -> list:
-    """The template and logo files of every ``compose`` and ``compose.templates`` entry of the registered projects:
-    inside the project, a file, of a sane size. A problem is a ``warn`` (composing that template would fail)."""
+def _template_files(only: Optional[str] = None) -> list:
+    """The template and logo files of every ``compose`` and ``compose.templates`` entry of the registered projects (or
+    just `only`): inside the project, a file, of a sane size. A problem is a ``warn`` (composing that template would fail)."""
     out = []
     try:
-        names = list(projects.list_projects())
+        names = [only] if only else list(projects.list_projects())
     except (GimgError, OSError, ValueError):
         return out  # `_fonts` already says the registry is unreadable
     for name in names:
@@ -434,6 +434,12 @@ def _ollama(machine: dict, bad: str, ollama_url: Optional[str]) -> Check:
         return Check("ollama", WARN, "doctor.ollama.loaded_unload", {"models": names})
     return Check("ollama", bad, "doctor.ollama.loaded", {"models": names},
                  "doctor.fix.ollama", {"cmds": "; ".join("ollama stop " + n for n in loaded)})
+
+
+def run_project(name: str) -> list:
+    """The checks that concern one registered project (F4d, ``GET /api/projects/{p}/check``): its fonts, its template
+    and logo files and their editable elements. The same functions as `run`, limited to `name`."""
+    return _fonts(name) + _template_files(name)
 
 
 def run(verify: bool = False, ollama_url: Optional[str] = None) -> list:

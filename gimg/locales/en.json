@@ -577,5 +577,14 @@
   "ui.text.field.title1": "Headline (line 1)",
   "ui.text.field.title2": "Headline (line 2)",
   "ui.text.field.subtitle": "Subtitle",
-  "ui.text.field.subtitle2": "Subtitle (line 2)"
+  "ui.text.field.subtitle2": "Subtitle (line 2)",
+  "error.queue.not_movable": "entry {id} is not waiting ({state}) and cannot be moved",
+  "error.queue.bad_move": "invalid move \"{to}\"; use one of: {allowed}",
+  "cli.cmd.queue_move": "move a waiting queue entry (up, down or top)",
+  "cli.cmd.queue_clear": "cancel every waiting entry (never the one running)",
+  "cli.arg.queue_to": "where to move it: up, down or top",
+  "cli.arg.queue_project": "only the entries of this project",
+  "cli.arg.model": "catalog model for these attempts (see GET /api/models in docs/api.md)",
+  "cli.out.moved": "Entry {id}: moved ({to}).",
+  "cli.out.cleared": "Cancelled {count} waiting entries: {ids}."
 }
