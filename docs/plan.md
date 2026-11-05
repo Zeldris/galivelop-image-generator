@@ -1080,6 +1080,69 @@ lo de F3.4-F3.6 no lo bloquea (la interfaz se prueba con `gimg serve` en primer 
 4. **Sin `systemd --user`** en la mínima, **sin token** (Host, Origin y Content-Type bastan) y **puerto 8737** fijo y
    configurable.
 
+## F4b en detalle (plantillas elegibles, D39)
+
+**Estado:** contrato decidido por la sesión el 2026-11-05, **pendiente de la persona** (puede cambiarse antes de `main`).
+
+### Configuración
+
+`profiles.<perfil>.compose` gana tres claves opcionales; las demás no cambian:
+
+- `templates`: `{"<id>": {"template", "logo"?, "fields"?, "zone"?, "textColor"?}}`, hasta 20; `id` con el patrón
+  `^[a-z0-9][a-z0-9-]{0,39}$` y nunca `default` (reservado para la de `compose.template`). Una entrada sin `logo` o sin
+  `fields` hereda los de `compose`; `fit` y `fonts` son del perfil y valen para todas.
+- `zone`: `{"x", "y", "w", "h"}` enteros en píxeles del destino (la zona reservada para el texto) y `textColor`
+  `#RRGGBB`, en `compose` (la de por defecto) y en cada entrada de `templates`: lo que el chip de contraste mide
+  (D31). Sin ellos, el chip mide solo la paleta, como hoy.
+- Versión: `templates`, `zone` y `textColor` llegan con 0.4.0 (cierre de F4); un proyecto que los use pide
+  `"minVersion": "0.4.0"` (corrige la decisión 3 de F3, que decía 0.3.0: F3 salió sin ellos).
+
+### Código
+
+- `compose.templates_of(profile_cfg)` → `[{"id", "template", "logo", "fields", "zone"?, "textColor"?, "default": bool}]`,
+  `default` primero y el resto por id; `[]` sin `compose`. `compose.effective(compose_cfg, template_id)` → la
+  configuración de esa plantilla con lo heredado; `None` = `default`; un id que no existe (o un perfil sin `compose`)
+  da `compose.template_unknown` (`{template, allowed}`, nuevo, 400).
+- `render(..., template=None)` compone con `effective(...)`; lo que devuelve (y el intento guarda en `compose`) gana
+  **`templateId`** (siempre que haya `compose`); `template` sigue siendo la ruta, para no romper intentos ni registro.
+- `recompose(..., template=None)`: con `template`, esa (y queda guardada en el intento); sin él, la `templateId` que el
+  intento ya tenía; si no tenía, `default`. Una `templateId` guardada que ya no existe da `compose.template_unknown`
+  (no se cambia sola a otra): la interfaz ofrece elegir otra.
+- Intentos nuevos: `attempt_specs`/`new_attempts` ganan `template=None`; se valida al encolar (`effective`) y la entrada
+  de la cola lleva `template`; el trabajador compone con ella. Si la configuración cambió y ya no existe al componer,
+  el intento queda con `composeError` `compose.template_unknown` y se arregla con `compose` y otra plantilla.
+- CLI: `gimg compose --template <id>`, `gimg attempt new --template <id>` y `gimg templates <proyecto> <perfil>
+  [--json]` (la misma lista que la API).
+- `gimg doctor`: las plantillas y logos de cada entrada de `templates` se comprueban como los de `compose` (existen,
+  dentro del proyecto, tamaño).
+
+### API
+
+| Ruta | Cambio |
+|---|---|
+| `GET /api/projects/{p}/profiles/{profile}/templates` | nueva: `templates_of`; un perfil sin `compose` da `[]` |
+| `GET …/assets/{template\|logo}?id=<id>` | el SVG de esa plantilla (sin `id`, la de por defecto); id desconocido, `compose.template_unknown` |
+| `POST …/a/{id}/compose` | gana `"template": "<id>"` |
+| `POST …/o/attempts` | gana `"template": "<id>"` (plantilla de los intentos nuevos) |
+
+### Interfaz
+
+- `slots.js#templateSlot`: un `<select>` por intento con las plantillas del perfil (solo si hay más de una), marcada la
+  `compose.templateId` del intento (o `default`); al cambiar, `POST …/compose {"template"}` y se repinta la tarjeta.
+- El panel de retoque (nuevos intentos) gana el mismo selector; por defecto, la plantilla de la elegida, si no
+  `default`.
+- La previsualización (`compose-preview.js`) y el chip de contraste usan la plantilla del intento: su SVG por
+  `assets/template?id=`, y su `zone`/`textColor` para la medida.
+- Textos nuevos `ui.*` en es y en; los huecos de F4b dejan de decir «F4b».
+
+### Pasos de F4b
+
+| Paso | Qué | Comprobación |
+|---|---|---|
+| F4b.1 | Esquema, `compose.templates_of`/`effective`, `render`/`recompose`, cola y trabajador, CLI, `doctor`, claves `error.compose.template_unknown` es/en | Tests: herencia de `logo`/`fields`, `default` reservado, intento con `templateId`, recomponer conserva la plantilla, plantilla borrada da el error, entrada de cola con plantilla (motor falso; `skipUnless` ffmpeg y rsvg donde compone) |
+| F4b.2 | Rutas de la API de la tabla | Tests como F3.3: mismas respuestas que la CLI, códigos y estados |
+| F4b.3 | Interfaz, `docs/api.md`, `docs/interfaz/f4a.md` §8, README, CHANGELOG | `tests/test_ui.py` (estáticos y claves `ui.*` es/en); JS sin ejecutar: recorrido en navegador, de la persona |
+
 ## Pendiente
 
 - Proponer al flujo (`gw-harvest`) una operación de imagen en `opt-ai/references/log-format.md` (D26).
