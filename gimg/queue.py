@@ -192,12 +192,10 @@ def _find(data: dict, entry_id) -> dict:
     raise GimgError("queue.unknown", id=str(entry_id))
 
 
-def enqueue(project: str, key: str, profile: str, specs: list) -> list:
-    """Queue one entry per spec (from ``orders.attempt_specs``); returns the new entries.
-
-    The order must exist and every spec must pass the limits of the current machine profile;
-    nothing is queued if any fails."""
-    orders.get(project, key, profile)
+def check_specs(project: str, profile: str, specs: list) -> None:
+    """What `enqueue` rejects before queueing anything: each spec against the machine profile's limits, its model
+    against the catalog and the machine (``limit.steps``...), and its template against the profile's. `submit_order`
+    runs it too, on the candidate specs, so a refused order is never stored."""
     machine = limits.load_machine()
     catalog = None
     for spec in specs:
@@ -206,8 +204,17 @@ def enqueue(project: str, key: str, profile: str, specs: list) -> list:
         if model is not None:
             catalog = catalog or models_mod.load_catalog()
             models_mod.check_allowed(model, machine, catalog, (spec.get("params") or {}).get("steps"))
-    for tid in {spec["template"] for spec in specs if spec.get("template") is not None}:  # before queueing anything
+    for tid in {spec["template"] for spec in specs if spec.get("template") is not None}:
         compose_mod.effective((compose_mod.merged_profile(projects.get(project), profile) or {}).get("compose"), tid)
+
+
+def enqueue(project: str, key: str, profile: str, specs: list) -> list:
+    """Queue one entry per spec (from ``orders.attempt_specs``); returns the new entries.
+
+    The order must exist and every spec must pass the limits of the current machine profile;
+    nothing is queued if any fails."""
+    orders.get(project, key, profile)
+    check_specs(project, profile, specs)
     now = _now()
 
     def change(data):
@@ -452,12 +459,15 @@ def submit_order(project: str, order: dict, draft=None, template=None, model=Non
     provider = engine_mod.get_engine().provider
     if draft is not None:  # the option is the order's own field, so it is stored with the order
         order["draft"] = draft
-    orders.check_order(project, order)  # limits, prompt length and seed range, before anything is stored
+    candidates = orders.check_order(project, order)  # limits, prompt length and seed range, before anything is stored
     if model is not None:  # F4d: the model of the attempts (not stored in the order); unknown fails before storing
         models_mod.check_known(model)
-    if template is not None:  # an unknown template must not leave a stored order behind
-        compose_mod.effective((compose_mod.merged_profile(projects.get(project), order["profile"]) or {}).get("compose"),
-                              template)
+    for spec in candidates:  # the same checks as `enqueue`, on the candidates: a refused order is never stored
+        if template is not None:
+            spec["template"] = template
+        if model is not None:
+            spec["params"]["model"] = model
+    check_specs(project, order["profile"], candidates)
     record = orders.submit(project, order)
     specs = orders.attempt_specs(project, record["key"], record["profile"], order.get("count", 1), template=template,
                                  model=model)

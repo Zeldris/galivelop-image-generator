@@ -237,9 +237,10 @@ def submit(project: str, order: dict) -> dict:
     return copy.deepcopy(record)
 
 
-def check_order(project: str, order: dict) -> None:
+def check_order(project: str, order: dict) -> list:
     """Everything `submit` and the first enqueue would reject, checked on the candidate order before anything is
-    stored: schema, text fields, machine limits (``limit.*``), prompt length, count and seed range."""
+    stored: schema, text fields, machine limits (``limit.*``), prompt length, count and seed range. Returns the
+    candidate specs of its attempts (as `attempt_specs` would build them), for the caller to check further."""
     errors = schema.validate(order, schema.load_schema("order"))
     if errors:
         raise GimgError("order.invalid", errors=errors)
@@ -255,6 +256,7 @@ def check_order(project: str, order: dict) -> None:
     machine = limits.load_machine()
     for spec in specs:
         limits.check(spec, machine)
+    return specs
 
 
 def _check_text(profile_cfg: dict, profile: str, text: dict) -> None:

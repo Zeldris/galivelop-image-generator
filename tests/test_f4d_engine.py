@@ -84,6 +84,17 @@ class OrderModelTests(F4dBase):
         self.bad("POST", self.orders_url(), self.order(profile="og", model=3), 400, "api.bad_param")
 
 
+    def test_a_model_over_max_steps_stores_and_queues_nothing(self):
+        cfg = json.loads((self.root / "galivelop-images.json").read_text())
+        del cfg["profiles"]["banner"]["steps"]  # then the steps are the model's (16), which the machine refuses
+        (self.root / "galivelop-images.json").write_text(json.dumps(cfg))
+        self.machine(maxSteps=10)
+        err = self.bad("POST", self.orders_url(), self.order(model="flux3-klein-q8"), 400, "limit.steps")
+        self.assertEqual((err["params"]["steps"], err["params"]["max"]), (16, 10))
+        self.assertEqual(queue.list_entries(), [])
+        self.bad("GET", self.order_url("fauna/lobo", "banner"), None, 404, "order.unknown")
+
+
 class AttemptModelTests(F4dBase):
     def setUp(self):
         super().setUp()
