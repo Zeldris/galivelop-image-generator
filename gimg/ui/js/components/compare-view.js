@@ -6,11 +6,12 @@ import { paths } from '../api.js';
 import { stateOf } from './attempt-card.js';
 import { measureChip } from './measure-chip.js';
 import { measureFor } from './slots.js';
+import { imageVersion } from './attempt-util.js';
 
 export function compareView(ctx, a, b, { onSwap, onClose }) {
   const fig = (att, side) => {
     const raw = ctx.showRaw && att.raw;
-    const src = paths.image(ctx.project, ctx.profile, ctx.key, att.id, { raw });
+    const src = paths.image(ctx.project, ctx.profile, ctx.key, att.id, { raw, v: imageVersion(att) });
     const f = h('div.figure', {}, h('img', { src, alt: t('ui.attempt.image', { id: att.id, seed: att.seed }) }));
     const p = att.params || {};
     setVars(f, { ar: `${p.width || ctx.profileCfg.width || 2} / ${p.height || ctx.profileCfg.height || 1}` });

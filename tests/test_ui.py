@@ -210,6 +210,32 @@ class ReviewFixes(unittest.TestCase):
         self.assertIn("api.templates(project, profile)", read(UI / "js" / "components" / "order-view.js"))
         self.assertNotIn("templateSoon", "".join(read(f) for f in JS))
 
+    def test_image_version_does_not_depend_on_compose_at(self):
+        comp = UI / "js" / "components"
+        for name in ("attempt-card.js", "compare-view.js", "measure-chip.js"):
+            text = read(comp / name)
+            self.assertIn("imageVersion(", text, name)
+        self.assertNotIn("compose.at", read(comp / "measure-chip.js"))
+        self.assertNotRegex(read(UI / "mock" / "api-mock.js"), r"compose[^\n]*\bat:")
+
+    def test_attempt_prompt_loses_the_profile_style_before_resending(self):
+        comp = UI / "js" / "components"
+        self.assertIn("export function stripStyle", read(comp / "attempt-util.js"))
+        for name in ("retouch-panel.js", "order-view.js"):
+            self.assertIn("stripStyle(", read(comp / name), name)
+
+    def test_text_panel_paints_the_fields_of_every_template(self):
+        self.assertIn("ctx.templates", read(UI / "js" / "components" / "text-panel.js"))
+
+    def test_measure_does_not_send_a_zone_without_colour(self):
+        self.assertIn("textColor ? zoneParam", read(UI / "js" / "components" / "slots.js"))
+        self.assertIn("ctx.zone && ctx.textColor", read(UI / "js" / "components" / "measure-chip.js"))
+
+    def test_failed_compose_reloads_the_order_and_select_keeps_focus(self):
+        text = self.js("components/order-view.js")
+        self.assertIn("finally", text)
+        self.assertNotIn("'button, a, input, summary'", text)
+
     def test_estimate_is_per_entry(self):
         text = self.js("components/order-view.js")
         self.assertNotIn("estimateMs / Math.max", text)

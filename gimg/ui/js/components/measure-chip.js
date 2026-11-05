@@ -9,6 +9,7 @@
 import { h, replace } from '../dom.js';
 import { t } from '../i18n.js';
 import { api, ApiError } from '../api.js';
+import { imageVersion } from './attempt-util.js';
 
 const cache = new Map();         // cacheKey -> result | Error
 const inflight = new Map();      // cacheKey -> Promise de la medida ya encolada o en curso (sin duplicar)
@@ -60,12 +61,12 @@ const observer = ('IntersectionObserver' in window)
  */
 export function measureChip(ctx, attempt) {
   const node = h('span.measure', { aria: { live: 'off' } });
-  const version = (attempt.compose && attempt.compose.at) || attempt.image || '';
+  const version = imageVersion(attempt);
   const cacheKey = `${ctx.project}/${ctx.profile}/${ctx.key}/${attempt.id}@${version}`;
   const run = () => {
     replace(node, h('span.chip', { title: t('ui.measure.pending') }, h('span.spin', { aria: { hidden: true } }), ' ', t('ui.measure.pending')));
     requestMeasure(cacheKey, () => api.measure(ctx.project, ctx.profile, ctx.key, attempt.id, {
-      zone: ctx.zone, text: ctx.zone ? ctx.textColor : undefined,
+      zone: ctx.zone && ctx.textColor ? ctx.zone : undefined, text: ctx.zone && ctx.textColor ? ctx.textColor : undefined,
     })).then((res) => render(node, res, ctx, run));
   };
   if (cache.has(cacheKey)) render(node, cache.get(cacheKey), ctx, run);
