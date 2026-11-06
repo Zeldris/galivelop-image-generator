@@ -966,9 +966,9 @@ class OrderScreen(UiBase):
         self.no_problems()
 
     def test_editor_boxes_follow_the_fractional_image_scale(self):
-        """UI.6: the boxes follow the image as the browser drew it, on each axis: its rendered width may be
-        fractional (browser zoom, a fractional window) and its height need not be width × H / W (Chrome snaps the
-        drawn size of an image), so a box in the bottom-right corner still ends exactly where the image does."""
+        """UI.6: the boxes scale by the rendered (fractional) width of the image, not by `clientWidth` (an integer):
+        with a fractional layout (browser zoom, a fractional window) a box in the bottom-right corner still ends
+        exactly where the image does, whatever width the browser draws."""
         key = "fondos/escala"
         probe = """(() => { const i = document.querySelector('.ed-img').getBoundingClientRect();
             const b = document.querySelector('.ed-box[data-element=logo]').getBoundingClientRect();
