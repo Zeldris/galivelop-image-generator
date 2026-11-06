@@ -960,27 +960,31 @@ class OrderScreen(UiBase):
         self.no_problems()
 
     def test_editor_boxes_follow_the_fractional_image_scale(self):
-        """UI.6: the boxes scale by the rendered (fractional) width of the image, not by `clientWidth` (an integer):
-        with a fractional layout (browser zoom, a fractional window) a box in the bottom-right corner still ends
-        exactly where the image does."""
+        """UI.6: the boxes follow the image as the browser drew it, on each axis: its rendered width may be
+        fractional (browser zoom, a fractional window) and its height need not be width × H / W (Chrome snaps the
+        drawn size of an image), so a box in the bottom-right corner still ends exactly where the image does."""
         key = "fondos/escala"
         probe = """(() => { const i = document.querySelector('.ed-img').getBoundingClientRect();
             const b = document.querySelector('.ed-box[data-element=logo]').getBoundingClientRect();
-            return [i.width, b.right - i.right, b.bottom - i.bottom]; })()"""
+            return [i.width, i.height, b.right - i.right, b.bottom - i.bottom]; })()"""
         self.page.ws.close()
         self.page = self.browser.new_page(width=360, height=780)
         self.open_editor(key)
         self.js("document.querySelector('.ed-box[data-element=logo]').focus()")
         for field, value in (("ed-x", "1000"), ("ed-y", "570")):
             self.set_field(field, value)
-        for width in (276.5, 281.4, 287.6):  # CSS px of the image: fractional, like a zoomed window
-            self.js("document.querySelector('.ed-img').style.setProperty('max-width', '%spx')" % width)  # CSSOM: the CSP bars style elements
-            self.page.wait("Math.abs(document.querySelector('.ed-img').getBoundingClientRect().width - %s) < 0.01" % width)
+        # CSS px of the image: fractional, like a zoomed window; whatever the browser draws, the box follows it
+        for width in (None, 276.5, 281.4, 287.6, 291.3):
+            before = self.js("document.querySelector('.ed-img').getBoundingClientRect().width")
+            if width is not None:
+                self.js("document.querySelector('.ed-img').style.setProperty('max-width', '%spx')" % width)  # CSSOM: the CSP bars style elements
+                self.page.wait("document.querySelector('.ed-img').getBoundingClientRect().width !== %r" % before)
             self.js("window.settled = false; requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => { window.settled = true; }, 50)))")
             self.page.wait("window.settled")  # the ResizeObserver has run
-            w, dr, db = self.js(probe)
-            self.assertAlmostEqual(dr, 0, delta=0.1, msg="right, image %s" % w)
-            self.assertAlmostEqual(db, 0, delta=0.1, msg="bottom, image %s" % w)
+            w, hh, dr, db = self.js(probe)
+            where = "image %s x %s (max-width %s)" % (w, hh, width)
+            self.assertAlmostEqual(dr, 0, delta=0.1, msg="right, " + where)
+            self.assertAlmostEqual(db, 0, delta=0.1, msg="bottom, " + where)
 
     def test_editor_goes_back_to_the_template(self):
         key = "fondos/volver"  # its own order: the tests of a class run in name order
