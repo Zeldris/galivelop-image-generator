@@ -284,13 +284,78 @@ class Browse(UiBase):
             self.assertEqual(len(heights), 1, "the header changes height between screens at %d: %s" % (width, heights))
         self.click("#settings-btn")
         self.page.wait("document.getElementById('settings').matches(':popover-open')")
-        sizes = self.js("['lang', 'theme'].map((id) => { const r = document.getElementById(id).getBoundingClientRect(); return [r.width, r.height]; })")
+        sizes = self.js("['lang', 'theme', 'font-scale'].map((id) => { const r = document.getElementById(id).getBoundingClientRect(); return [r.width, r.height]; })")
         for w, h in sizes:
             self.assertGreaterEqual(h, 44)
             self.assertGreaterEqual(w, 120)
         self.assertEqual(self.js("document.getElementById('settings-btn').getAttribute('aria-label')"), "Ajustes")
         self.page.key("Escape")
         self.page.wait("!document.getElementById('settings').matches(':popover-open')")
+        self.no_problems()
+
+    def test_gamepad_moves_focus_activates_and_closes(self):
+        """UI.9: with a (stubbed) standard gamepad connected, the d-pad moves the focus inside the open menu, A activates
+        the focused button and B closes the «Ajustes» menu and the help dialog. The real device is checked on the Deck."""
+        self.open("/", "document.querySelector('a.project-card')")
+        self.js("""(() => { const pad = {index: 0, connected: true, mapping: 'standard', buttons: Array.from({length: 17}, () => ({pressed: false, value: 0}))};
+            window.__pad = pad; navigator.getGamepads = () => [pad];
+            const ev = new Event('gamepadconnected'); Object.defineProperty(ev, 'gamepad', {value: pad}); window.dispatchEvent(ev); })()""")
+
+        def press(button):
+            self.js("window.__pad.buttons[%d].pressed = true" % button)
+            self.page.pump(0.15)
+            self.js("window.__pad.buttons[%d].pressed = false" % button)
+            self.page.pump(0.15)
+
+        popover_open = "document.getElementById('settings').matches(':popover-open')"
+        self.js("document.getElementById('settings-btn').focus()")
+        press(0)                                                    # A activates the focused button
+        self.page.wait(popover_open)
+        press(13)                                                   # d-pad down: first control of the open menu
+        self.assertEqual(self.js("document.activeElement.id"), "lang")
+        press(13)
+        self.assertEqual(self.js("document.activeElement.id"), "theme")
+        press(1)                                                    # B closes the menu
+        self.page.wait("!" + popover_open)
+        self.js("document.getElementById('help').focus()")
+        press(0)
+        self.page.wait("document.getElementById('shortcuts').open")
+        press(1)
+        self.page.wait("!document.getElementById('shortcuts').open")
+        press(3)                                                    # Y opens the help
+        self.page.wait("document.getElementById('shortcuts').open")
+        self.no_problems()
+
+    def test_font_scale_persists(self):
+        """UI.9: «Ajustes» picks the text size (Normal, Grande, Muy grande); the root font size and the body text grow,
+        the choice survives a reload and nothing scrolls sideways at 360 px with the larger size."""
+        self.page.ws.close()
+        self.page = self.browser.new_page(width=360, height=780)
+        self.open("/", "document.querySelector('a.project-card')")
+        self.addCleanup(lambda: self.page.evaluate("localStorage.removeItem('gvig.fontScale')"))  # the profile is shared with other tests
+        size = "parseFloat(getComputedStyle(%s).fontSize)"
+        root, body = size % "document.documentElement", size % "document.querySelector('.project-card .meta')"
+        base = (self.js(root), self.js(body))
+        self.assertEqual(base[0], 16)
+        self.click("#settings-btn")
+        self.page.wait("document.getElementById('settings').matches(':popover-open')")
+        self.js("(() => { const s = document.getElementById('font-scale'); s.value = 'large'; s.dispatchEvent(new Event('change', {bubbles: true})); })()")
+        self.assertAlmostEqual(self.js(root), 16 * 1.15, delta=0.01)
+        self.assertGreater(self.js(body), base[1])
+        self.page.goto("http://127.0.0.1:%d/ui/index.html#/" % self.port)
+        self.page.wait("document.querySelector('a.project-card')")
+        self.assertAlmostEqual(self.js(root), 16 * 1.15, delta=0.01)
+        self.assertGreater(self.js(body), base[1])
+        self.assertEqual(self.js("document.getElementById('font-scale').value"), "large")
+        self.js("(() => { const s = document.getElementById('font-scale'); s.value = 'xlarge'; s.dispatchEvent(new Event('change', {bubbles: true})); })()")
+        self.assertAlmostEqual(self.js(root), 16 * 1.3, delta=0.01)
+        for route, ready in (("/", "document.querySelector('a.project-card')"), (order_route("fondos/uno"), "document.querySelector('.gallery .attempt')")):
+            self.open(route, ready)
+            self.page.pump(0.3)
+            self.assertEqual(self.js("document.documentElement.scrollWidth - document.documentElement.clientWidth"), 0, route)
+            m = self.header_metrics()
+            self.assertEqual(m["hscroll"], 0, route)
+            self.assertTrue(m["crumbsInside"], route)
         self.no_problems()
 
 

@@ -10,6 +10,8 @@ import { to } from './router.js';
 import * as poll from './queue-poll.js';
 import { initQueueBar, toggleQueue, isQueueOpen } from './components/queue-bar.js';
 import { initTheme } from './components/theme.js';
+import { initGamepad } from './lib/gamepad.js';
+import { initFontScale } from './components/font-scale.js';
 import { initLightbox } from './components/lightbox.js';
 import { initShortcuts } from './components/shortcuts.js';
 import { toast, toastError, dismissLastToast } from './components/toast.js';
@@ -32,6 +34,8 @@ async function boot() {
   const skip = document.querySelector('a.skip');
   if (skip) skip.addEventListener('click', (e) => { e.preventDefault(); el('main').focus(); });
   initTheme(el('theme'));
+  initFontScale(el('font-scale'));
+  initGamepad();
   measureHeader();
   initLightbox();
   initQueueBar(el('queue-pill'), el('queue-drawer'));
