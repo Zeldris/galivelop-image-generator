@@ -948,7 +948,11 @@ class OrderScreen(UiBase):
                 self.assertGreaterEqual(left, max(stage["left"], 0) - 0.5, where)
                 self.assertGreaterEqual(top, max(stage["top"], 0) - 0.5, where)
                 self.assertLessEqual(right, min(stage["right"], inner_w) + 0.5, where)
-                self.assertLessEqual(bottom, min(stage["bottom"], inner_h) + 0.5, where)
+                self.assertLessEqual(bottom, min(stage["bottom"], inner_h) + 0.5, where + " DIAG " + repr(self.js("""(() => { const r = (q) => document.querySelector(q).getBoundingClientRect().toJSON();
+                    const sc = (q) => { const e = document.querySelector(q); return e && [e.scrollTop, e.scrollHeight, e.clientHeight]; };
+                    return { dpr: devicePixelRatio, stage: r('.ed-stage'), canvas: r('.ed-canvas'), img: r('.ed-img'), box: r('.ed-box[data-element=logo]'),
+                      nat: [document.querySelector('.ed-img').naturalWidth, document.querySelector('.ed-img').naturalHeight],
+                      main: sc('.ed-main'), body: sc('.ed-body'), dlg: sc('dialog.editor'), side: sc('.ed-side') }; })()""")) + " STALE " + repr(stage))
                 # and the pointer at its outer corner grabs that very handle
                 dl, dt, dr, db = outer[hd["corner"]]
                 px = left + step if dl else right - step
