@@ -2,7 +2,7 @@
 
 * ``<data>/serve.lock``: non-blocking ``flock`` held for the whole life of the process; a second `run` is refused
   with ``serve.already_running``. Alive = the lock is held **and** ``GET /api/health`` answers.
-* ``<data>/serve.json`` (0600, `fsutil.write_json`): ``{"pid", "port", "url", "version", "startedAt"}``. One without
+* ``<data>/serve.json`` (0600, `fsutil.write_json`): ``{"pid", "port", "url", "version", "build", "startedAt"}``. One without
   the lock is a dead process's and is ignored (and overwritten).
 * The server never generates: `maybe_launch_worker` starts ``python -m gimg work`` as a separate process (own
   session, output to ``<data>/worker.log``) when something is ``queued`` and nobody holds ``worker.lock``. It runs
@@ -26,7 +26,7 @@ import time
 import urllib.request
 from datetime import datetime, timezone
 
-from . import __version__, fsutil, i18n, paths, queue
+from . import __version__, build_id, fsutil, i18n, paths, queue
 from .errors import GimgError
 
 DEFAULT_PORT = 8737
@@ -34,6 +34,7 @@ DEFAULT_IDLE_MIN = 15
 BEAT_S = 2.0
 TICK_S = 0.2
 STOP_WAIT_S = 10.0
+LOCK_RETRY_S = 0.3  # how long a fresh service keeps trying `serve.lock` before it says another one is running
 HEALTH_WAIT_S = 5.0
 RETRY_AFTER_FAILURE_S = 30.0  # a worker that exited with an error is not relaunched sooner
 
@@ -126,8 +127,8 @@ def lock_held() -> bool:
     except OSError:
         return False
     try:
-        try:
-            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        try:  # shared, so two probes at the same moment do not see each other as the service
+            fcntl.flock(fd, fcntl.LOCK_SH | fcntl.LOCK_NB)
         except OSError:
             return True
         return False
@@ -145,12 +146,27 @@ def health(port: int, timeout: float = 1.0):
     return data if isinstance(data, dict) and data.get("ok") is True else None
 
 
+def _live():
+    """``(state, health)`` of the running service, or ``(None, None)``. The health answer must come from the pid in
+    the state: a ``serve.json`` read just before another CLI replaced the service on the same port is old (F3.5), so
+    it is read again."""
+    for attempt in range(3):
+        if attempt:
+            time.sleep(0.1)  # let the CLI that is replacing the service write its `serve.json`
+        state = read_state()
+        if state is None or not lock_held():
+            return None, None
+        answer = health(state["port"])
+        if answer is None:
+            return None, None
+        if answer.get("pid") == state["pid"]:
+            return state, answer
+    return None, None
+
+
 def status():
     """The state of the running service (``serve.json``) or ``None`` when it is not alive."""
-    state = read_state()
-    if state is None or not lock_held() or health(state["port"]) is None:
-        return None
-    return state
+    return _live()[0]
 
 
 def stop(wait_s: float = STOP_WAIT_S + 2.0, expected_pid=None) -> dict:
@@ -229,11 +245,17 @@ def _single_instance():
     path.parent.mkdir(parents=True, exist_ok=True)
     fd = os.open(str(path), os.O_RDWR | os.O_CREAT, 0o600)
     try:
-        try:
-            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except OSError:
-            state = read_state()
-            raise GimgError("serve.already_running", url=state["url"] if state else "?")
+        # a momentary probe (`lock_held`, shared) must not make a fresh service give up, as in `worker._single_worker`
+        deadline = time.monotonic() + LOCK_RETRY_S
+        while True:
+            try:
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except BlockingIOError:
+                if time.monotonic() >= deadline:
+                    state = read_state()
+                    raise GimgError("serve.already_running", url=state["url"] if state else "?")
+                time.sleep(0.02)
         yield
     finally:
         os.close(fd)
@@ -277,7 +299,7 @@ def run(port=None, idle_s=None, lang=None, announce=None) -> dict:
                 previous[sig] = signal.signal(sig, on_signal)
         bound = httpd.server_address[1]
         state = {"pid": os.getpid(), "port": bound, "url": "http://127.0.0.1:%d" % bound,
-                 "version": __version__, "startedAt": _now()}
+                 "version": __version__, "build": server_mod.BUILD, "startedAt": _now()}
         launcher = _Launcher(lang)
         thread = None
         try:
@@ -372,18 +394,24 @@ def autostart_enabled() -> bool:
 
 def ensure_running(lang=None, warn=None) -> dict:
     """The state of a live service, starting one in the background if there is none. A running service of another
-    version is stopped and replaced unless a worker is alive (or may be): then it is kept and `warn(text)` says so.
+    version, or of the same version but older code (`build_id`), is stopped and replaced unless a worker is alive (or
+    may be): then it is kept and `warn(text)` says so.
     Raises ``serve.start_failed`` / ``serve.port_busy`` when none comes up."""
     lang = lang or i18n.default_lang()
-    current = status()
+    current, answer = _live()
     if current is not None:
-        answer = health(current["port"]) or {}
         running = answer.get("version") or current.get("version")
-        if running == __version__:
+        built = answer.get("build") or current.get("build")
+        mine = build_id()
+        if running == __version__ and built == mine:
             return current
         if queue.worker_alive() is not False:
             if warn:
-                warn(i18n.t("cli.warn.service_old_version", lang, running=running, installed=__version__))
+                if running == __version__:  # same version, older code (a checkout that changed): say which build
+                    running, installed = "%s+%s" % (running, built or "?"), "%s+%s" % (__version__, mine)
+                else:
+                    installed = __version__
+                warn(i18n.t("cli.warn.service_old_version", lang, running=running, installed=installed))
             return current
         # one CLI at a time replaces it (a second SIGTERM would cut the old one's requests in progress)
         paths.data_dir().mkdir(parents=True, exist_ok=True)

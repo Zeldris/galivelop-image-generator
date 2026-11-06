@@ -57,7 +57,9 @@ def worker_lock_path() -> Path:
 @contextlib.contextmanager
 def _no_worker():
     """Yields True if the worker lock could be taken without waiting (no worker alive), else False.
-    A second open() + flock inside the worker's own process fails too, which correctly means "alive"."""
+    A second open() + flock inside the worker's own process fails too, which correctly means "alive". The lock is
+    shared, like ``worker_alive``: only the worker holds it exclusively, so a probe here never makes another probe
+    see a worker that is not there (0.4.1)."""
     path = worker_lock_path()
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -67,7 +69,7 @@ def _no_worker():
         return
     try:
         try:
-            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            fcntl.flock(fd, fcntl.LOCK_SH | fcntl.LOCK_NB)
             free = True
         except OSError:
             free = False
@@ -87,8 +89,8 @@ def worker_alive():
     except OSError:
         return None
     try:
-        try:
-            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        try:  # shared: another probe at the same moment (a CLI, `/api/health`) is not a worker (F3.5)
+            fcntl.flock(fd, fcntl.LOCK_SH | fcntl.LOCK_NB)
         except OSError:
             return True
         return False

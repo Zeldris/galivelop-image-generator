@@ -4,7 +4,8 @@
     python3 releases.py suggest          # versión que piden los commits desde la última etiqueta vX.Y.Z (solo sugiere)
     python3 releases.py bump 0.5.0 [--date 2026-11-05]
                                          # sube __version__ y pasa [Unreleased]/[Sin publicar] de los dos CHANGELOG
-                                         # a una sección ## [0.5.0] - fecha (por defecto hoy)
+                                         # a una sección ## [0.5.0] - fecha (por defecto hoy), y pone la
+                                         # versión en la línea «Versión **X**» de README.md y README.en.md
     python3 releases.py notes 0.4.0      # notas de la release: la sección de los dos CHANGELOG (es y en)
     python3 releases.py verify-tag v0.4.0 [--ref HEAD]
                                          # ¿la etiqueta es igual a __version__ en ese commit? (lo llama release.yml)
@@ -30,6 +31,8 @@ _SEMVER = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 _UNRELEASED = re.compile(r"^## \[(Unreleased|Sin publicar)\]\s*$")
 _REPO = "https://github.com/Zeldris/galivelop-image-generator"
 _HEADINGS = {"es": ("CHANGELOG.es.md", "Español"), "en": ("CHANGELOG.md", "English")}
+_README = {"README.md": re.compile(r"^(Versión \*\*)([^*]+)(\*\*)", re.M),
+           "README.en.md": re.compile(r"^(Version \*\*)([^*]+)(\*\*)", re.M)}
 
 
 def section(text, version):
@@ -96,6 +99,15 @@ def check(ref, run=subprocess.run):
     return 0, f"releases: gimg {version} ({ref}) tiene etiqueta y release"
 
 
+def readme_versions(root=R):
+    """{README: versión que dice su línea «Versión **X**»} (None si no la tiene)."""
+    out = {}
+    for name, pattern in _README.items():
+        found = pattern.search((root / name).read_text(encoding="utf-8"))
+        out[name] = found.group(2) if found else None
+    return out
+
+
 def _parse(version):
     found = _SEMVER.match(version)
     return tuple(int(n) for n in found.groups()) if found else None
@@ -117,7 +129,8 @@ def verify_tag(tag, ref="HEAD", run=subprocess.run):
 def bump(version, date=None, root=R):
     """Sube `__version__` y pasa lo sin publicar de cada CHANGELOG a `## [version] - date`; ValueError si no procede.
 
-    Valida todo antes de escribir nada: o se cambian los tres archivos o ninguno."""
+    También reescribe la línea «Versión **X**» / «Version **X**» de los dos README. Valida todo antes de escribir
+    nada: o se cambian los cinco archivos o ninguno."""
     new = _parse(version)
     if new is None:
         raise ValueError(f"{version} no es una versión semver X.Y.Z")
@@ -145,6 +158,12 @@ def bump(version, date=None, root=R):
             body.pop()
         out = lines[:start + 1] + ["", f"## [{version}] - {date}"] + body + ([""] if end < len(lines) else [])
         writes.append((root / name, "\n".join(out + lines[end:])))
+    for name, pattern in _README.items():
+        readme = (root / name).read_text(encoding="utf-8")
+        found = pattern.search(readme)
+        if not found:
+            raise ValueError(f"{name} no tiene la línea de versión (Versión **X** / Version **X**)")
+        writes.append((root / name, readme[:found.start(2)] + version + readme[found.end(2):]))
     for path, content in writes:
         path.write_text(content, encoding="utf-8")
 
