@@ -7,7 +7,7 @@ as the engine and the Steam Deck as the reference machine (D4). No dependencies:
 
 ## Status
 
-Version **0.4.0**, phases **F0-F4 done** and on `main`: projects, orders, attempts, chosen candidate and delivery,
+Version **0.4.1**, phases **F0-F4 done** and on `main`: projects, orders, attempts, chosen candidate and delivery,
 persistent queue, CLI, real engine (`sd-cli`, with `instalar.sh`), composition and brand measurement, local HTTP API
 and browser interface. Still pending: manual checks on the Deck (pilot rounds, a full walk through the interface in
 the browser), the pilot with real projects (F5) and what follows (see "Next steps"). The test engine (`fake`,
@@ -28,17 +28,17 @@ Details, decisions D1-D65 and exit criteria in [`docs/plan.md`](docs/plan.md) (i
 
 ### Next steps
 
-Requested on 2026-11-05, no phase assigned yet (a new F4e or part of another); the design is in
-[`docs/plan.md`](docs/plan.md), "Piezas, edición y borrado":
+Roadmap by version (details in [`docs/plan.md`](docs/plan.md), "Hoja de ruta por versiones hasta la 1.0.0"); fixes to
+what is published ship first, as a patch:
 
-1. Layered composition from existing pieces (background, logo, loose elements and text), from chosen attempts or the
-   user's own files (PNG or SVG).
-2. Optional transparency when generating, and "Remove background" on a piece, installing nothing (to be researched).
-3. Reference images when generating a piece (to check what `sd-cli` accepts).
-4. Text boxes placed before generating, which the generator takes into account (prompt, initial image, contrast chip).
-5. Delete attempts, compositions, templates and elements, with confirmation.
-6. Prompt editing: a new attempt made from another one, leaving the original untouched.
-7. Edit the text and typography of the elements of a composed result.
+| Version | What |
+|---|---|
+| 0.5.0 | Delete attempts, compositions, templates and elements; edit the text and typography of a composed result; rename an order; interface improvements |
+| 0.6.0 | **Montage**: a format is built in layers from the project's pieces and the user's own files (blocks and absolutes, as in CSS), and the engine "fits" it with img2img |
+| 0.7.0 | Text boxes placed before generating (a phrase in the prompt and the contrast chip) |
+| 0.8.0 | Delete orders, and everything from the interface |
+| 0.9.0 | F5: WMF pilot, LoRA, transparency and "Remove background", reference images, prompt editing |
+| later | Editable pieces and brand, team panel, F6, F7 and, last, gamepad and touch, up to 1.0.0 |
 
 ## How a project connects
 

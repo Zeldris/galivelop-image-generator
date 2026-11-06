@@ -30,10 +30,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
-- `arrancar.sh` (and `gimg ui`) replaces the running service when its code is older, even with the same version:
-  `/api/health` and `serve.json` carry `build`, a fingerprint of the code. With a job running, it only warns.
 - The element editor now reads `hidden` from the applied layout and sends it again, so applying or saving as a template
   no longer shows an element hidden from the command line.
+
+## [0.4.1] - 2026-11-06
+
+### Fixed
+
+- Two CLIs starting at once over a service of an older version sometimes kept the old one: the `worker.lock` and
+  `serve.lock` probes take the shared lock and the running service is recognised by the pid in `serve.json`.
+- `arrancar.sh` (and `gimg ui`) replaces the running service when its code is older, even with the same version:
+  `/api/health` and `serve.json` carry `build`, a fingerprint of the code. With a job running, it only warns.
 
 ## [0.4.0] - 2026-11-05
 

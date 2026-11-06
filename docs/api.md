@@ -75,8 +75,8 @@ si no el del sistema. Estados: 400 petición mal formada o valor no válido (`ap
 ### GET /api/health
 
 Estado del servicio. Respuesta: `{"ok": true, "api": 1, "version", "build", "pid", "port", "engine", "worker": bool}`.
-`build` es una huella del código que corre el servicio, sacada de las rutas, los tamaños y las fechas de los `.py` y
-`.json` de `gimg`. Con la misma versión y otro código (tras un `git pull`), `gimg ui` (`arrancar.sh`) para el servicio
+`build` es una huella del código que corre el servicio, sacada de las rutas y el contenido de los `.py` y `.json` de
+`gimg`, sin `gimg/ui/` (la interfaz se lee del disco en cada petición). Dos copias del mismo código dan la misma huella. Con la misma versión y otro código (tras un `git pull`), `gimg ui` (`arrancar.sh`) para el servicio
 viejo y arranca uno nuevo, salvo con un trabajador vivo.
 
 ```sh

@@ -8,7 +8,7 @@ la biblioteca estándar (D6).
 
 ## Estado
 
-Versión **0.4.0**, fases **F0-F4 hechas** y en `main`: proyectos, pedidos, intentos, elegida y entrega, cola
+Versión **0.4.1**, fases **F0-F4 hechas** y en `main`: proyectos, pedidos, intentos, elegida y entrega, cola
 persistente, CLI, motor real (`sd-cli`, con `instalar.sh`), composición y medida de marca, API HTTP local e interfaz en
 el navegador. Quedan comprobaciones manuales en la Deck (rondas del piloto, recorrido de la interfaz en el navegador),
 el piloto con proyectos reales (F5) y lo que sigue (ver «Próximos pasos»). El motor de pruebas (`fake`, imágenes de
@@ -29,18 +29,17 @@ Detalle, decisiones D1-D65 y criterios de cierre en [`docs/plan.md`](docs/plan.m
 
 ### Próximos pasos
 
-Pedido de la persona del 2026-11-05, sin fase asignada aún (nueva F4e o dentro de otra); el diseño está en
-[`docs/plan.md`](docs/plan.md), «Piezas, edición y borrado»:
+Hoja de ruta por versiones (detalle en [`docs/plan.md`](docs/plan.md), «Hoja de ruta por versiones hasta la 1.0.0»);
+los arreglos de lo publicado salen antes, como parche:
 
-1. Composición por capas con piezas ya existentes (fondo, logo, elementos sueltos y texto), de intentos elegidos o de
-   archivos propios (PNG o SVG).
-2. Transparencia opcional al generar y «Quitar fondo» sobre una pieza, sin instalar nada (por investigar).
-3. Imágenes de referencia al generar una pieza (por comprobar qué acepta `sd-cli`).
-4. Cajas de texto colocadas antes de generar, que el generador tiene en cuenta (prompt, imagen inicial, chip de
-   contraste).
-5. Borrar intentos, composiciones, plantillas y elementos, con confirmación.
-6. Edición por prompt: un intento nuevo a partir de otro, sin tocar el original.
-7. Editar el texto y la tipografía de los elementos de un resultado compuesto.
+| Versión | Qué |
+|---|---|
+| 0.5.0 | Borrar intentos, composiciones, plantillas y elementos; editar el texto y la tipografía de lo compuesto; renombrar un pedido; mejora de la interfaz |
+| 0.6.0 | **Montaje**: un formato se compone con piezas del proyecto y archivos propios en capas (bloques y absolutos, como en CSS) y el motor lo «encaja» con img2img |
+| 0.7.0 | Cajas de texto colocadas antes de generar (frase en el prompt y chip de contraste) |
+| 0.8.0 | Borrar pedidos y todo desde la interfaz |
+| 0.9.0 | F5: piloto WMF, LoRA, transparencia y «Quitar fondo», imágenes de referencia, edición por prompt |
+| después | Piezas y marca editables, panel del equipo, F6, F7 y, al final, mando y táctil, hasta la 1.0.0 |
 
 ## Cómo se conecta un proyecto
 

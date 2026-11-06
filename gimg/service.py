@@ -34,6 +34,7 @@ DEFAULT_IDLE_MIN = 15
 BEAT_S = 2.0
 TICK_S = 0.2
 STOP_WAIT_S = 10.0
+LOCK_RETRY_S = 0.3  # how long a fresh service keeps trying `serve.lock` before it says another one is running
 HEALTH_WAIT_S = 5.0
 RETRY_AFTER_FAILURE_S = 30.0  # a worker that exited with an error is not relaunched sooner
 
@@ -149,7 +150,9 @@ def _live():
     """``(state, health)`` of the running service, or ``(None, None)``. The health answer must come from the pid in
     the state: a ``serve.json`` read just before another CLI replaced the service on the same port is old (F3.5), so
     it is read again."""
-    for _ in range(3):
+    for attempt in range(3):
+        if attempt:
+            time.sleep(0.1)  # let the CLI that is replacing the service write its `serve.json`
         state = read_state()
         if state is None or not lock_held():
             return None, None
@@ -242,11 +245,17 @@ def _single_instance():
     path.parent.mkdir(parents=True, exist_ok=True)
     fd = os.open(str(path), os.O_RDWR | os.O_CREAT, 0o600)
     try:
-        try:
-            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except OSError:
-            state = read_state()
-            raise GimgError("serve.already_running", url=state["url"] if state else "?")
+        # a momentary probe (`lock_held`, shared) must not make a fresh service give up, as in `worker._single_worker`
+        deadline = time.monotonic() + LOCK_RETRY_S
+        while True:
+            try:
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except BlockingIOError:
+                if time.monotonic() >= deadline:
+                    state = read_state()
+                    raise GimgError("serve.already_running", url=state["url"] if state else "?")
+                time.sleep(0.02)
         yield
     finally:
         os.close(fd)

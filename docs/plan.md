@@ -99,6 +99,9 @@ tocar el repo que integra. Se sube con `releases.py suggest` (qué piden los com
 rama, antes de la revisión de `main`. Tras fusionar, etiqueta ligera `vX.Y.Z` en la punta de `origin/main` y
 `git push origin vX.Y.Z`; `release.yml` comprueba (commit en `main`, etiqueta == `__version__`, check en verde) y
 crea la release, y `releases.py check` lo confirma. A lo sumo una release al día; solo la última menor recibe parches.
+`bump` pone también la versión en la línea «Versión **X**» de los dos README (un test la compara con `__version__`).
+Antes de la revisión, en la rama, se repasan `docs/` (es y en) y la hoja de ruta del README contra lo que cambia:
+exige criterio y no lo comprueba ningún script (retro de `fix-0.4.1`, 2026-11-06).
 
 **Hoja de ruta por versiones hasta la 1.0.0** (decisión de la persona del 2026-11-06): todo lo que se diseña se reparte
 en versiones, y **los arreglos de lo publicado van primero**, como parche sobre la última versión publicada (rama desde
