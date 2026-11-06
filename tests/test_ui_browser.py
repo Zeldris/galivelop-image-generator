@@ -427,7 +427,7 @@ class OrderScreen(UiBase):
     """The order: attempts, verdicts, choosing, retouching, compare, lightbox, texts, editor. One order per scenario."""
 
     KEYS = ("fondos/voto", "fondos/elegir", "fondos/comparar", "fondos/retoque", "fondos/textos", "fondos/editor",
-            "fondos/volver", "fondos/plantilla", "fondos/guardar", "fondos/atajos", "fondos/texto", "fondos/tamano")
+            "fondos/volver", "fondos/plantilla", "fondos/guardar", "fondos/atajos", "fondos/texto", "fondos/tamano", "fondos/escala")
 
     @classmethod
     def prepare(cls):
@@ -958,6 +958,29 @@ class OrderScreen(UiBase):
                 self.assertEqual(hit, [element, hd["corner"]], where)
         self.assert_tap_targets("in the editor at 360")
         self.no_problems()
+
+    def test_editor_boxes_follow_the_fractional_image_scale(self):
+        """UI.6: the boxes scale by the rendered (fractional) width of the image, not by `clientWidth` (an integer):
+        with a fractional layout (browser zoom, a fractional window) a box in the bottom-right corner still ends
+        exactly where the image does."""
+        key = "fondos/escala"
+        probe = """(() => { const i = document.querySelector('.ed-img').getBoundingClientRect();
+            const b = document.querySelector('.ed-box[data-element=logo]').getBoundingClientRect();
+            return [i.width, b.right - i.right, b.bottom - i.bottom]; })()"""
+        self.page.ws.close()
+        self.page = self.browser.new_page(width=360, height=780)
+        self.open_editor(key)
+        self.js("document.querySelector('.ed-box[data-element=logo]').focus()")
+        for field, value in (("ed-x", "1000"), ("ed-y", "570")):
+            self.set_field(field, value)
+        for width in (276.5, 281.4, 287.6):  # CSS px of the image: fractional, like a zoomed window
+            self.js("document.querySelector('.ed-img').style.setProperty('max-width', '%spx')" % width)  # CSSOM: the CSP bars style elements
+            self.page.wait("Math.abs(document.querySelector('.ed-img').getBoundingClientRect().width - %s) < 0.01" % width)
+            self.js("window.settled = false; requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => { window.settled = true; }, 50)))")
+            self.page.wait("window.settled")  # the ResizeObserver has run
+            w, dr, db = self.js(probe)
+            self.assertAlmostEqual(dr, 0, delta=0.1, msg="right, image %s" % w)
+            self.assertAlmostEqual(db, 0, delta=0.1, msg="bottom, image %s" % w)
 
     def test_editor_goes_back_to_the_template(self):
         key = "fondos/volver"  # its own order: the tests of a class run in name order

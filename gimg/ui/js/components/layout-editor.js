@@ -4,7 +4,7 @@
      (`raw=1`) no sirve tal cual: no está llevada al destino. Aproximación: cada caja pinta como fondo el trozo de esa
      imagen que ocupaba su sitio actual al abrir, así se ve moverse el elemento; el fondo de debajo no se retoca (el
      hueco que deja se ve hasta aplicar). La composición real la hace el servidor al aplicar.
-   - Coordenadas en píxeles del destino (W×H); lo que se muestra se escala por `img.clientWidth / W`.
+   - Coordenadas en píxeles del destino (W×H); lo que se muestra se escala por `scale()` (ancho fraccionario de la imagen / W).
    - Puntero: pointer events con captura (arrastrar la caja = mover; las asas de las esquinas = redimensionar, con la
      proporción fija salvo con Mayús). Las asas (`--ed-handle`, 24 px, zona de toque de 44 por `::before`) solo las
      muestra la caja elegida (`is-selected`: la enfocada o la última enfocada): a 360 las de dos cajas vecinas se
@@ -257,8 +257,11 @@ export function openLayoutEditor(ctx, attempt, tpl, opener) {
       h('aside.ed-side', {}, h('h3', {}, t('ui.editor.elements')), list, h('div.ed-add', {}, addBtn, addHint), geomPanel, panel, warn, error,
         h('div.panel-actions', {}, apply, reset, save, exportA))));
 
+  // el ancho dibujado, fraccionario: `clientWidth` lo redondea y el error crecería hacia abajo y a la derecha
+  const scale = () => img.getBoundingClientRect().width / W;
+
   function layoutBoxes() {
-    const k = img.clientWidth / W;
+    const k = scale();
     if (!k) return;
     stage.classList.toggle('is-narrow', img.clientWidth < 480);
     for (const it of items) {
@@ -543,7 +546,7 @@ export function openLayoutEditor(ctx, attempt, tpl, opener) {
     try { target.setPointerCapture(ev.pointerId); } catch { /* sin captura el arrastre sigue mientras el puntero esté encima */ }
     const origin = { x: ev.clientX, y: ev.clientY, box: { ...it.cur } };
     const onMove = (m) => {
-      const k = img.clientWidth / W;
+      const k = scale();
       if (!k) return;
       const dx = Math.round((m.clientX - origin.x) / k);
       const dy = Math.round((m.clientY - origin.y) / k);
