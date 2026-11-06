@@ -1492,4 +1492,8 @@ arreglo; el diseño con Fable. El mando lo comprueba la persona en la Deck.
   orden de `gimg` (`gimg --help` y subórdenes) y apuntar en una tabla si tiene equivalente en la interfaz; lo que falte
   se lleva a la interfaz, o se justifica por qué se queda solo en la CLI (p. ej. `gimg ui` mismo, diagnósticos). La
   CLI se mantiene (CLI = API, F3.3); la interfaz deja de depender de ella.
+- **Mando y táctil, al final de la hoja de ruta** (decisión de la persona del 2026-11-06): por ahora la interfaz tiene que
+  usarse con facilidad con **ratón** (lo principal) y teclado, y nada más. Se aplazan al final: la prueba del mando real en
+  la Deck (UI.9), el recorrido de UI.6 a 360 con el dedo y la decisión de las zonas de 44 solapadas en cajas pequeñas
+  (UI.6). Lo ya hecho para mando y táctil se queda; no se añade más ni se exige en las pruebas de los pasos nuevos.
 - Proponer al flujo (`gw-harvest`) una operación de imagen en `opt-ai/references/log-format.md` (D26).
