@@ -76,7 +76,7 @@ Cada fase es una rama y un pull request a `main`, con las tres fases de revisió
 | F2 Motor real | Envoltorio de `sd-cli` con el perfil de máquina (memoria, `--max-vram`, tope, cancelar, progreso); `instalar.sh` con versiones fijas y checksum; catálogo de modelos, borradores, composición de texto y logo, medida de marca; **piloto de contenido corporativo** (Portal, Tarkor, toVeriAI, Galivelop-workflow) con configuraciones de ejemplo en este repo *(aprobado 2026-10-26)* | Un pedido real generado en la Deck y la primera ronda de piezas definitivas de los cuatro proyectos elegidas por la persona (comprobación manual) |
 | F3 API y arranque | API HTTP (D17, D25) y arranque bajo demanda; unidad `systemd --user` opcional *(F3 mínima, D39: hecha en 0.3.0 con `docs/api.md`; la unidad `systemd` queda fuera; pendiente manual en la Deck: `gimg ui` abre el navegador y el servicio se para a los 15 min)* | Tests de la API; `gimg` arranca el servicio solo |
 | F4 Interfaz | Las tres pantallas de D22, es/en, más plantillas elegibles y editor de elementos (D39), con la hoja de estilo de este proyecto; se adelanta al cierre del piloto. **F4a-F4d hechas (0.4.0) salvo la prueba en navegador** (`gimg/ui/`, `docs/interfaz/f4a.md`, `tests/test_ui.py`); pendiente de la persona: recorrido completo en el navegador de la Deck y en escritorio, con teclado y con mando | Recorrido completo en el navegador |
-| F4e Piezas y edición | De «Piezas, edición y borrado» (abajo), lo que no pide modelos nuevos: 5 borrar con confirmación, 7 editar texto y tipografía de los elementos, 1 composición con piezas por capas, 4(a)(c) cajas de texto antes de generar (frase en el prompt y chip de contraste) *(decidido 2026-11-05)* | Tests de cada punto y recorrido en el navegador de la persona |
+| F4e Piezas y edición | De «Piezas, edición y borrado» (abajo), lo que no pide modelos nuevos: 5 borrar con confirmación, 7 editar texto y tipografía de los elementos, 1 Montaje (piezas por capas, flujo de bloques y absolutos, encajar con img2img; rediseñado el 2026-11-06), 4(a)(c) cajas de texto antes de generar (frase en el prompt y chip de contraste) *(decidido 2026-11-05)* | Tests de cada punto y recorrido en el navegador de la persona |
 | F5 Piloto WMF | Configuración de ejemplo para WMF, guía de integración y propuesta de migración para su repo; medida base con `opt-ai` y comparación `sd-server` (D14); LUT por marca si F2 la deja pendiente; stable-diffusion.cpp `master-1039` o posterior con LoRA (`--lora-model-dir`, nueva versión fija en `instalar.sh`); bocetos paramétricos, planos y encuadre de Tarkor (`bocetos/plantilla.py`, `planos.sh`, `encuadre.py`); LoRA en el perfil (`style.lora`: archivo, peso, palabra disparadora y sha256; `--lora-model-dir` y la etiqueta en el prompt; todo en el registro, D34), para que WMF use su `wmf-estilo` sin código propio; de «Piezas, edición y borrado», 2 transparencia, 3 referencias, 4(b) imagen inicial o máscara y 6 edición por prompt, investigados con ese `sd-cli` *(aprobado 2026-10-26: el piloto corporativo pasa a F2 y WMF sigue aquí; ampliado 2026-11-02; LoRA en el perfil aprobado 2026-11-04, `docs/records/lectura-2026-11-04-tarkor.md`)* | WMF genera y recibe una elegida sin copia a mano |
 | F6 Director local | Paso **opcional** con un LLM local de Ollama (D37): redacta y mejora prompts desde la hoja de estilo y la biblia del proyecto, propone variantes para la plantilla y elige entre los intentos con `gimg measure` y su lectura de la imagen (modelo con visión si cabe en la máquina); sin Ollama todo sigue con prompts a mano; nada de API externas ni cuotas | Tests con un Ollama falso; una ronda del piloto hecha de principio a fin sin agentes, con la nota de la persona |
 | F7 Compatibilidad | **Última fase** (pedido de la persona del 2026-11-05; D4 deja la Deck primero): que `gimg` funcione en cualquier equipo, no solo con Vulkan. **Motor:** elegir el `sd-cli` según lo que haya (Vulkan, CUDA, ROCm/HIP, Metal o solo CPU), cada uno con versión fija y sha256, detectado por `instalar.sh`/`gimg doctor` y declarado en el perfil de máquina; perfiles de máquina genéricos (CPU, GPU pequeña, GPU grande) además de `steam-deck`. **Linux variados:** sin Vulkan ni GPU, otras distribuciones, sin `rsvg-convert` o con un ffmpeg distinto (avisos claros en `doctor`). **Windows:** instalador propio (`instalar.ps1` o similar), parada del proceso sin `os.killpg` probada de verdad, rutas y fuentes de Windows, lanzador `arrancar.cmd` (sin `.exe`: nada que instalar, D6). **macOS** si cabe (Metal). Navegador: el predeterminado del sistema, con `BROWSER` para forzar otro | **Manual persona:** en un Linux sin Vulkan (solo CPU) y en un equipo Windows: instalar, `gimg doctor` en verde, un pedido generado y elegido desde la interfaz |
@@ -99,6 +99,25 @@ tocar el repo que integra. Se sube con `releases.py suggest` (qué piden los com
 rama, antes de la revisión de `main`. Tras fusionar, etiqueta ligera `vX.Y.Z` en la punta de `origin/main` y
 `git push origin vX.Y.Z`; `release.yml` comprueba (commit en `main`, etiqueta == `__version__`, check en verde) y
 crea la release, y `releases.py check` lo confirma. A lo sumo una release al día; solo la última menor recibe parches.
+
+**Hoja de ruta por versiones hasta la 1.0.0** (decisión de la persona del 2026-11-06): todo lo que se diseña se reparte
+en versiones, y **los arreglos de lo publicado van primero**, como parche sobre la última versión publicada (rama desde
+`main`, *cherry-pick* de los arreglos), antes de la siguiente menor. La hoja de ruta sigue abierta: cada evolución que
+proponga la persona se encaja aquí y se le dice en qué versión ha caído, hasta que la persona declare cuál es la
+**1.0.0** estable.
+
+| Versión | Qué |
+|---|---|
+| 0.4.1 | Parche de lo publicado en 0.4.0: sondeos de `worker.lock`/`serve.lock` con cerrojo compartido y `_live()` con el pid de `serve.json` (`ec89eb0`, con su prueba `ca6cea2`); `arrancar.sh` reemplaza el servicio si cambia la huella del código (`398a7af`) |
+| 0.5.0 | Lo hecho en `f4e-piezas`: F4e.1 Borrar, F4e.2 texto y tipografía, F4e.5 Renombrar, mejora de la interfaz UI.1-UI.9 |
+| 0.6.0 | F4e.3 **Montaje** (abajo, «F4e.3 Montaje») |
+| 0.7.0 | F4e.4 cajas de texto antes de generar, (a) y (c), sobre el Montaje |
+| 0.8.0 | Borrar pedidos y Todo desde la interfaz («Pendiente») |
+| 0.9.0 | F5 (WMF, LoRA, puntos 2, 3, 4(b) y 6) |
+| después | Piezas y marca editables, Panel del equipo, F6 Director local, F7 Compatibilidad y, al final, mando y táctil; numeración por fijar al acercarse |
+| 1.0.0 | La declara la persona |
+
+A lo sumo una release al día: la 0.4.1 y la 0.5.0 salen en días distintos.
 
 **Licencia MIT** (pedido de la persona del 2026-11-05; **hecha** el 2026-11-05 en `plan-piezas`, titular «Galivelop and Álvaro García Graña (Zeldris)»): `LICENSE` con el
 texto MIT en la raíz, y en los dos README la línea «Todavía no hay licencia» pasa a decir que el código es MIT y que
@@ -1322,8 +1341,8 @@ de `contain` se recorta a la imagen); la interfaz mide así la zona y los elemen
 
 **Estado:** F4e.1 (Borrar) decidido por la persona el 2026-11-05 (D41) e implementado (F4e.1a, F4e.1b). F4e.2
 (punto 7) diseñado abajo con las decisiones de la persona del 2026-11-05; visto bueno de la persona al diseño (caja
-que no escala el texto editado, familias en el `.json` de la plantilla) el mismo día. F4e.3-F4e.4 (puntos 1 y 4(a)(c) de
-«Piezas, edición y borrado»), por diseñar, en ese orden salvo que la persona diga otro.
+que no escala el texto editado, familias en el `.json` de la plantilla) el mismo día. F4e.3 (punto 1) rediseñado como **Montaje**
+con la persona el 2026-11-06 (abajo); F4e.4 (punto 4(a)(c)) se apoya en él y se detalla al acabar F4e.3.
 
 ### F4e.1 Borrar (punto 5, D41)
 
@@ -1431,6 +1450,58 @@ tiene arreglo); la persona puede cambiarlo.
    la clave nueva; `gimg order rename <proyecto> <clave> <perfil> <clave-nueva>`; en la interfaz, «Renombrar» junto
    al título del pedido abre un modal con la clave actual en un campo de texto, y al aceptar se lleva a la persona al
    pedido renombrado. Errores con su motivo, es/en, `docs/api.md` y CHANGELOG.
+
+### F4e.3 Montaje (punto 1, decidido con la persona el 2026-11-06, versión 0.6.0)
+
+Sustituye al punto 1 tal como estaba («capas sobre el intento»). Un proyecto es un conjunto de piezas generadas; un
+formato (og, cabecera…) se **monta** con ellas como un boceto o collage y luego el **motor lo encaja** (img2img, que el
+motor ya tiene: `initImage` y `strength` del pedido): unifica luz, sombras, color, degradados y difuminado.
+
+1. **Pedido de tipo Montaje.** Nace en «Nuevo pedido» con la opción «Montaje»: formato (perfil) y clave, y se entra al
+   lienzo. Es un pedido más (lista, renombrar, borrar, cola, elegir, entrega). No genera desde cero.
+2. **Capas.** Cada elemento es su propia capa: piezas, archivos de la persona, textos y fondo (una pieza, un color o un
+   degradado). Operaciones: mover, escalar (proporción fija; Mayús la suelta), girar (asa, campo en grados, pasos de
+   15° con Mayús), opacidad, ocultar, duplicar, quitar; orden libre de todas las capas, texto incluido («Subir»,
+   «Bajar», Ctrl+[ y Ctrl+]). Recortar y voltear, después.
+3. **Bloque o absoluto (como `display` y `position` de CSS).** Cada contenedor (el lienzo o un grupo) es un flexbox:
+   dirección fila o columna, salto de línea, separación, margen interior y alineación (inicio, centro, fin, repartido);
+   por defecto el lienzo va en columna y centrado. Un **bloque** ocupa su sitio en el flujo y los demás se colocan a su
+   lado sin pisarlo; tamaño fijo (asas o campos) o «ocupar el resto» (`flex-grow`); una imagen se ajusta contenida en
+   su caja. Un **absoluto** sale del flujo, se coloca respecto a su contenedor y va por encima del flujo. Los **grupos**
+   son bloques con su propio flujo, anidables hasta 4 niveles (p. ej. lienzo en columna → cabecera en fila con logo y
+   texto del logo → cuerpo → pie). Selección múltiple con Ctrl+clic o rectángulo para agrupar. Arrastrar un bloque lo
+   recoloca en el flujo (una línea dice dónde cae); pasar a absoluto conserva dónde se ve. Teclado: Alt+flechas mueve un
+   bloque dentro del flujo; flechas mueven un absoluto 1 px (Ctrl, 10). Un bloque girado ocupa su caja sin girar.
+4. **Piezas.** Cualquier intento de cualquier pedido del proyecto, elegidos primero, con filtro por tipo (el formato del
+   pedido: logo, texto del logo, cabecera, cuerpo, pie, fondo, suelto…), en un panel de miniaturas; se arrastra al
+   lienzo o se añade con Intro. Al añadirla se **copia** al montaje: borrar el original no lo rompe («Borrar» avisa
+   «se usa en N montajes; conservan su copia»). Las fuentes no son pieza: van en las capas de texto (F4e.2).
+5. **Archivos de la persona.** PNG, JPEG, WebP y SVG autocontenido (sin referencias a archivos ni URLs: se rechaza con su
+   motivo), hasta 10 MB; se suben arrastrándolos al lienzo o con «Subir archivo» y van a la biblioteca de piezas del
+   proyecto: local (`<data>/projects/<p>/pieces/`) o `compose.piecesDir` del repo si lo declara (como D40); se borran
+   con el modal de D41.
+6. **Capas nítidas.** Texto y logo van marcados «nítida» por defecto (cualquier capa se marca o desmarca): el motor
+   encaja el montaje sin ellas (o con ellas como guía, opción por capa) y luego se repintan encima en su sitio, sin
+   deformar; siguen editables después (tipografía, color, posición, como F4e.2).
+7. **Encajar.** Encola N intentos img2img del lienzo aplanado, cada uno con su semilla, con el prompt del pedido
+   (retocable) y «Cuánto cambia»: suave, medio o fuerte, traducidos a `strength`. **Los valores de cada nivel los fija
+   una prueba en la Deck antes de prometerlos.** El chip de contraste de cada texto nítido se mide sobre la imagen
+   encajada bajo su caja (4(c)).
+8. **Plantilla de montaje.** «Guardar como plantilla de montaje»: capas, flujo, grupos y textos, en local o en el repo
+   (D40); las piezas viajan como copia o como hueco vacío («pon aquí un logo»), a elegir al guardar.
+
+**Decidido por la sesión (la persona puede cambiarlo):** el flujo lo calcula el servidor en Python (una sola fuente de
+verdad, CLI = API); la interfaz pide las cajas resueltas al servidor (con espera tras soltar) y pinta con ellas. El
+montaje vive en la carpeta del pedido (`montage.json` y `pieces/` con las copias); el aplanado es un SVG con las
+piezas incrustadas en base64 (como el logo hoy) que pinta `rsvg-convert`.
+
+| Paso | Qué | Comprobación |
+|---|---|---|
+| F4e.3a | Motor: modelo del montaje y su esquema, flujo (flexbox en Python), grupos, giro, aplanado SVG → PNG, copias de piezas, SVG autocontenido | Tests del flujo (fila, columna, salto, `flex-grow`, absolutos, anidado, tope de 4), del aplanado (`skipUnless` rsvg) y de cada rechazo con su motivo |
+| F4e.3b | Encajar: intentos img2img del aplanado, capas nítidas repintadas, contraste sobre lo encajado; niveles de «Cuánto cambia» | Tests con el motor falso; **manual persona/sesión:** ronda en la Deck para fijar los niveles |
+| F4e.3c | API y CLI: crear montaje, capas, layout resuelto, piezas y biblioteca (subir, listar, borrar), encajar; `docs/api.md`, es/en | Tests como F3.3 (CLI = API) |
+| F4e.3d | Interfaz: lienzo, panel de capas, panel de piezas, subir, flujo y absolutos con ratón y teclado; CHANGELOG | `tests/test_ui.py` y `tests/test_ui_browser.py`; recorrido de la persona con ratón y teclado |
+| F4e.3e | Plantilla de montaje (copia o hueco) | Tests de guardar y usar, los dos destinos, nada sobrescrito |
 
 ### Pasos de F4e
 
