@@ -375,7 +375,7 @@ class OrderScreen(UiBase):
     """The order: attempts, verdicts, choosing, retouching, compare, lightbox, texts, editor. One order per scenario."""
 
     KEYS = ("fondos/voto", "fondos/elegir", "fondos/comparar", "fondos/retoque", "fondos/textos", "fondos/editor",
-            "fondos/volver", "fondos/plantilla", "fondos/guardar", "fondos/atajos", "fondos/texto")
+            "fondos/volver", "fondos/plantilla", "fondos/guardar", "fondos/atajos", "fondos/texto", "fondos/tamano")
 
     @classmethod
     def prepare(cls):
@@ -744,12 +744,81 @@ class OrderScreen(UiBase):
         self.assertEqual(self.js("document.activeElement.dataset.element"), "title1")
         for _ in range(3):
             self.page.key("ArrowRight")
-        self.page.key("ArrowDown", shift=True)
+        self.page.key("ArrowDown", ctrl=True)  # UI.6: Ctrl makes the step 10 px (Shift resizes)
         self.assertEqual(self.js("document.querySelector('.ed-item output').textContent"), "43, 50 · 500×60")
         self.press("dialog.editor", "Aplicar")
         self.page.wait("!document.querySelector('dialog.editor')")
         a = [x for x in self.data(key)["attempts"] if x["id"] == 2][0]
         self.assertEqual(a["compose"]["layout"], {"title1": {"x": 43, "y": 50, "w": 500, "h": 60}})
+        self.no_problems()
+
+    # UI.6: the visible handles of the editor, grouped by box: [[element, x, y, w, h], ...]
+    VISIBLE_HANDLES = """[...document.querySelectorAll('.ed-box .ed-handle')]
+        .filter((n) => getComputedStyle(n).display !== 'none')
+        .map((n) => { const r = n.getBoundingClientRect(); return [n.closest('.ed-box').dataset.element, r.left, r.top, r.width, r.height]; })"""
+
+    def test_editor_resizes_with_the_keyboard(self):
+        """UI.6 (audit R4, A6; WCAG 2.5.7): Shift+arrows change `w`/`h` of the focused box (Ctrl makes the step 10 px,
+        plain arrows still move it) and the numeric fields x, y, w, h of the side panel move or resize it within the
+        target. At 360 the dialog fills the window, the stage is `100vw - 24px` wide and at most max(50vh, 320px)
+        high, the 24 px handles (44 px touch zone) show only on the picked box so no two boxes' handles overlap, the
+        box labels leave the stage (the names stay in the list) and nothing scrolls sideways."""
+        key = "fondos/tamano"
+        self.open_editor(key)
+        self.assertEqual(self.js("document.activeElement.dataset.element"), "title1")
+        nums = "document.querySelector('.ed-item[data-element=title1] output').textContent"
+        self.page.key("ArrowRight", shift=True)
+        self.page.key("ArrowRight", shift=True)
+        self.page.key("ArrowDown", shift=True)
+        self.page.key("ArrowLeft", shift=True)
+        self.assertEqual(self.js(nums), "40, 40 · 501×61")
+        self.page.key("ArrowRight", shift=True, ctrl=True)
+        self.assertEqual(self.js(nums), "40, 40 · 511×61")
+        self.page.key("ArrowDown", ctrl=True)
+        self.assertEqual(self.js(nums), "40, 50 · 511×61")
+        # the numeric fields follow the picked box and drive it: x moves (the size stays), w resizes (x stays) and
+        # the target clips what does not fit
+        self.assertFalse(self.js("document.querySelector('.ed-geom').hidden"))
+        self.assertEqual(self.js("['x', 'y', 'w', 'h'].map((k) => document.getElementById('ed-' + k).value)"), ["40", "50", "511", "61"])
+        self.set_field("ed-x", "100")
+        self.assertEqual(self.js(nums), "100, 50 · 511×61")
+        self.set_field("ed-w", "2000")
+        self.assertEqual(self.js(nums), "100, 50 · 1100×61")
+        self.assertEqual(self.js("document.getElementById('ed-w').value"), "1100")
+        self.set_field("ed-h", "")  # half-typed: nothing moves
+        self.assertEqual(self.js(nums), "100, 50 · 1100×61")
+        self.press("dialog.editor", "Aplicar")
+        self.page.wait("!document.querySelector('dialog.editor')")
+        a = [x for x in self.data(key)["attempts"] if x["id"] == 2][0]
+        self.assertEqual(a["compose"]["layout"], {"title1": {"x": 100, "y": 50, "w": 1100, "h": 61}})
+        self.no_problems()
+        # at 360: the stage takes the width, the handles (24 px, 44 px touch zone) show only on the picked box and
+        # never overlap between boxes, the labels leave the stage and nothing scrolls sideways
+        self.page.ws.close()
+        self.page = self.browser.new_page(width=360, height=780)
+        self.open_editor(key)
+        inner_w, inner_h = self.js("window.innerWidth"), self.js("window.innerHeight")
+        stage = self.js("document.querySelector('.ed-stage').getBoundingClientRect().toJSON()")
+        self.assertAlmostEqual(stage["width"], inner_w - 24, delta=1)
+        self.assertLessEqual(self.js("document.querySelector('.ed-img').getBoundingClientRect().height"), max(inner_h / 2, 320) + 1)
+        for sel in ("document.documentElement", "document.querySelector('dialog.editor')", "document.querySelector('.ed-main')", "document.querySelector('.ed-side')"):
+            self.assertLessEqual(self.js(sel + ".scrollWidth"), self.js(sel + ".clientWidth || window.innerWidth"), sel)
+        self.assertEqual(self.js("[...document.querySelectorAll('.ed-name')].filter((n) => getComputedStyle(n).display !== 'none').length"), 0)
+        self.assertEqual(self.js("[...document.querySelectorAll('.ed-item b')].map((n) => n.textContent)"), ["title1", "subtitle", "logo"])
+        for element in ("title1", "subtitle", "logo"):
+            self.js("document.querySelector('.ed-box[data-element=%s]').focus()" % element)
+            handles = self.js(self.VISIBLE_HANDLES)
+            for i, (e1, x1, y1, w1, h1) in enumerate(handles):  # whatever is visible: no overlap between boxes
+                for e2, x2, y2, w2, h2 in handles[i + 1:]:
+                    if e1 != e2:
+                        self.assertFalse(x1 < x2 + w2 and x2 < x1 + w1 and y1 < y2 + h2 and y2 < y1 + h1, "handles of %s and %s overlap" % (e1, e2))
+            self.assertEqual(sorted({hd[0] for hd in handles}), [element])  # only the picked box shows them
+            self.assertEqual(len(handles), 4)
+            for _, _, _, w, hgt in handles:
+                self.assertAlmostEqual(w, 24, delta=0.5)
+                self.assertAlmostEqual(hgt, 24, delta=0.5)
+            self.assertEqual(self.js("getComputedStyle(document.querySelector('.ed-box[data-element=%s] .ed-handle'), '::before').top" % element), "-10px")
+        self.assert_tap_targets("in the editor at 360")
         self.no_problems()
 
     def test_editor_goes_back_to_the_template(self):
