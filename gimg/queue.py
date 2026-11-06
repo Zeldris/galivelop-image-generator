@@ -87,8 +87,8 @@ def worker_alive():
     except OSError:
         return None
     try:
-        try:
-            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        try:  # shared: another probe at the same moment (a CLI, `/api/health`) is not a worker (F3.5)
+            fcntl.flock(fd, fcntl.LOCK_SH | fcntl.LOCK_NB)
         except OSError:
             return True
         return False
