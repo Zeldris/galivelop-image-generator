@@ -480,6 +480,10 @@ class TextPanel(unittest.TestCase):
         self.assertIn("'ui.editor.familyMissing'", self.editor)
         self.assertIn(".catch(() => { /* sin lista */ })", self.editor)
 
+    def test_an_added_text_starts_with_a_family_the_style_accepts(self):
+        # the first installed family can be a name the pattern refuses (CI: Apply stayed disabled)
+        self.assertIn("[...fonts.profile, ...fonts.installed].find((f) => FAMILY_PATTERN.test(f)) || 'sans-serif'", self.editor)
+
     def test_apply_keeps_the_editor_open_with_the_warnings_of_the_composition(self):
         order = read(UI / "js" / "components" / "order-view.js")
         self.assertIn("return composed;", order)  # setLayout gives the recomposed attempt back

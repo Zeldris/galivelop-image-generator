@@ -848,8 +848,13 @@ class OrderScreen(UiBase):
         self.set_field("ed-text", "Hola")
         self.set_field("ed-family", "")
         self.set_field("ed-size", "")
+        state = "JSON.stringify([...document.querySelectorAll('dialog.editor .field-error, dialog.editor .notice-warn')].map((e) => e.id + ': ' + e.textContent).filter((x) => !/: $/.test(x)))"
+        self.assertFalse(self.js("document.querySelector('dialog.editor button.btn-primary').disabled"), self.js(state))
         self.press("dialog.editor", "Aplicar")
-        self.page.wait("!document.querySelector('dialog.editor')")
+        try:
+            self.page.wait("!document.querySelector('dialog.editor')")
+        except browser.CdpError:
+            self.fail("the editor stays open: %s" % self.js(state))
         a = [x for x in self.data(key)["attempts"] if x["id"] == 2][0]
         self.assertEqual(a["compose"]["layout"]["title1"], {"x": 40, "y": 40, "w": 500, "h": 60, "text": "Hola"})
         self.assertEqual(a["compose"].get("overflow", {}), {})
