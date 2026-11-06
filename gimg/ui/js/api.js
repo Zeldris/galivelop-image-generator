@@ -117,6 +117,7 @@ export const paths = {
   move: (id) => `/api/queue/${enc(id)}/move`,
   clear: () => '/api/queue/clear',
   models: () => '/api/models',
+  fonts: (p) => `/api/fonts${p ? '?project=' + enc(p) : ''}`,
   check: (p) => `/api/projects/${enc(p)}/check`,
   preview: (id) => `/api/queue/${enc(id)}/preview?t=${Date.now()}`,
 };
@@ -150,6 +151,7 @@ export const api = {
   move: (id, to) => post(paths.move(id), { to }),
   clearQueue: (project) => post(paths.clear(), project ? { project } : {}),
   models: () => get(paths.models()),
+  fonts: (p) => get(paths.fonts(p)),
   check: (p) => get(paths.check(p)),
   newOrder: (p, body) => post(paths.newOrder(p), body),
 };

@@ -107,6 +107,23 @@ dialog.editor-save { width: min(92vw, 460px); }
 dialog.editor-save form { display: grid; gap: 12px; }
 dialog.editor-save fieldset { border: 0; padding: 0; margin: 0; }
 @media (max-width: 1000px) { .ed-body { grid-template-columns: 1fr; overflow: auto; } }
+/* F4e.2c: panel «Texto y tipografía», textos añadidos, vista previa en la caja y avisos de la composición */
+.ed-side h3 { margin: 0; }
+.ed-box > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; }
+.ed-box.is-preview { background-color: color-mix(in srgb, var(--surface-2) 70%, transparent); }
+.ed-box.is-overflow { outline-color: var(--warn); }
+.ed-item.is-overflow { border-color: var(--warn); }
+.ed-item.is-edited > .btn b::after { content: " ✎"; color: var(--accent-text); }
+.ed-warn { color: var(--warn); font-size: 0.8125rem; }
+.ed-add { display: grid; gap: 4px; }
+.ed-text { display: grid; gap: 10px; padding: 10px; border: 1px solid var(--border); border-radius: var(--r-s); }
+.ed-text p { margin: 0; }
+.ed-editing { font-weight: 600; }
+.ed-fields { display: grid; gap: 10px; }
+.ed-text textarea { min-height: 88px; font-family: var(--font-body); font-size: 0.9375rem; }
+.ed-color { display: grid; grid-template-columns: minmax(0, 1fr) var(--tap); gap: 8px; align-items: start; }
+.ed-color input[type="color"] { width: var(--tap); height: var(--tap); margin-top: calc(0.8125rem * 1.4 + 4px); padding: 2px; border: 1px solid var(--border-strong); border-radius: var(--r-s); background: var(--surface-2); cursor: pointer; }
+.ed-text .field-error:empty, .ed-text .field-warn:empty { display: none; }
 
 /* caja de luz (tamaño real) */
 .lightbox { padding: 0; max-width: 96vw; max-height: 96vh; background: #000; border: 0; }

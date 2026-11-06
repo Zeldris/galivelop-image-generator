@@ -177,14 +177,16 @@ export async function orderView(host, route) {
         return false;
       }
     },
-    /** El editor de elementos (layout-editor.js): `layout` = solo lo movido; `{}` vuelve a la plantilla. Si falla, recarga
-        el pedido (el servidor ya dejó el intento con su composeError) y relanza el error para que el editor lo muestre. */
+    /** El editor de elementos (layout-editor.js): `layout` = solo lo que difiere de la plantilla; `{}` vuelve a ella.
+        Devuelve el intento recompuesto (su `compose` trae `overflow`, `fitted` y `missingFonts` de F4e.2c). Si falla,
+        recarga el pedido (el servidor ya dejó el intento con su composeError) y relanza el error para que el editor lo muestre. */
     setLayout: async (a, layout) => {
       try {
-        await api.compose(project, profile, key, a.id, { layout });
+        const composed = await api.compose(project, profile, key, a.id, { layout });
         invalidateMeasure(`${project}/${profile}/${key}/${a.id}@`);
         toastOk(t(Object.keys(layout).length ? 'ui.editor.applied' : 'ui.editor.resetDone', { id: a.id }));
         await reload();
+        return composed;
       } catch (e) {
         await reload();
         throw e;
