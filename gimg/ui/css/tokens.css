@@ -37,6 +37,7 @@
   --gap: 12px;
   --tap: 44px;                /* objetivo táctil mínimo (Deck) */
   --header-h: 56px;
+  --font-scale: 1;            /* talla de texto: Normal 1, Grande 1,15, Muy grande 1,3 (UI.9) */
   --panel-w: 380px;
   --focus-w: 3px;
 
@@ -91,3 +92,7 @@
   --overlay: rgb(10 26 40 / .6);
   color-scheme: light;
 }
+
+/* talla de texto elegida en «Ajustes» (components/font-scale.js) */
+:root[data-font-scale="large"] { --font-scale: 1.15; }
+:root[data-font-scale="xlarge"] { --font-scale: 1.3; }
