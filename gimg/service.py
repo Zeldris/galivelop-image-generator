@@ -126,8 +126,8 @@ def lock_held() -> bool:
     except OSError:
         return False
     try:
-        try:
-            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        try:  # shared, so two probes at the same moment do not see each other as the service
+            fcntl.flock(fd, fcntl.LOCK_SH | fcntl.LOCK_NB)
         except OSError:
             return True
         return False
@@ -145,12 +145,25 @@ def health(port: int, timeout: float = 1.0):
     return data if isinstance(data, dict) and data.get("ok") is True else None
 
 
+def _live():
+    """``(state, health)`` of the running service, or ``(None, None)``. The health answer must come from the pid in
+    the state: a ``serve.json`` read just before another CLI replaced the service on the same port is old (F3.5), so
+    it is read again."""
+    for _ in range(3):
+        state = read_state()
+        if state is None or not lock_held():
+            return None, None
+        answer = health(state["port"])
+        if answer is None:
+            return None, None
+        if answer.get("pid") == state["pid"]:
+            return state, answer
+    return None, None
+
+
 def status():
     """The state of the running service (``serve.json``) or ``None`` when it is not alive."""
-    state = read_state()
-    if state is None or not lock_held() or health(state["port"]) is None:
-        return None
-    return state
+    return _live()[0]
 
 
 def stop(wait_s: float = STOP_WAIT_S + 2.0, expected_pid=None) -> dict:
@@ -376,9 +389,8 @@ def ensure_running(lang=None, warn=None) -> dict:
     may be): then it is kept and `warn(text)` says so.
     Raises ``serve.start_failed`` / ``serve.port_busy`` when none comes up."""
     lang = lang or i18n.default_lang()
-    current = status()
+    current, answer = _live()
     if current is not None:
-        answer = health(current["port"]) or {}
         running = answer.get("version") or current.get("version")
         built = answer.get("build") or current.get("build")
         mine = build_id()
