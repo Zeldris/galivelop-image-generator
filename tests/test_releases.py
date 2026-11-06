@@ -1,4 +1,5 @@
 """releases.py: notas de la release desde los CHANGELOG y comprobación de etiqueta y release (sin red: run falso)."""
+import re
 import subprocess
 import tempfile
 import unittest
@@ -92,6 +93,8 @@ def project(tmp, version="0.4.0", en="- New thing.\n", es="- Cosa nueva.\n"):
                                        encoding="utf-8")
     (root / "CHANGELOG.es.md").write_text(
         f"# Registro\n\n## [Sin publicar]\n\n{es}\n## [0.4.0] - 2026-11-05\n\n- Viejo.\n", encoding="utf-8")
+    (root / "README.md").write_text(f"# gimg\n\nVersión **{version}**, fases F0-F4.\n", encoding="utf-8")
+    (root / "README.en.md").write_text(f"# gimg\n\nVersion **{version}**, phases F0-F4.\n", encoding="utf-8")
     return root
 
 
@@ -108,6 +111,23 @@ class BumpTests(unittest.TestCase):
                              "# Registro\n\n## [Sin publicar]\n\n## [0.5.0] - 2026-12-01\n\n- Cosa nueva.\n\n"
                              "## [0.4.0] - 2026-11-05\n\n- Viejo.\n")
             self.assertEqual(releases.notes("0.5.0", root).count("New thing"), 1)
+            self.assertEqual((root / "README.md").read_text(), "# gimg\n\nVersión **0.5.0**, fases F0-F4.\n")
+            self.assertEqual((root / "README.en.md").read_text(), "# gimg\n\nVersion **0.5.0**, phases F0-F4.\n")
+
+    def test_bump_refuses_a_readme_without_the_version_line_and_writes_nothing(self):
+        for name in ("README.md", "README.en.md"):
+            with tempfile.TemporaryDirectory() as tmp:
+                root = project(tmp)
+                (root / name).write_text("# gimg\n", encoding="utf-8")
+                before = {p.name: p.read_text() for p in root.rglob("*") if p.is_file()}
+                with self.assertRaisesRegex(ValueError, rf"{re.escape(name)} no tiene la línea de versión"):
+                    releases.bump("0.5.0", root=root)
+                self.assertEqual(before, {p.name: p.read_text() for p in root.rglob("*") if p.is_file()})
+
+    def test_both_readmes_say_the_current_version(self):
+        version = releases._VERSION.search((releases.R / "gimg" / "__init__.py").read_text(encoding="utf-8")).group(1)
+        self.assertEqual(releases.readme_versions(), {"README.md": version, "README.en.md": version},
+                         "la línea «Versión **X**» de los README no es la __version__: python3 releases.py bump")
 
     def test_bump_defaults_to_today(self):
         with tempfile.TemporaryDirectory() as tmp:

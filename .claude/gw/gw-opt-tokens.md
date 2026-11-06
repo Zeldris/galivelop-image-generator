@@ -34,6 +34,9 @@ las crea una vez; desde entonces son del proyecto.
   lectura a un subagente.
 - `cat` de `CLAUDE.md` o `AGENTS.md`: ya están en el contexto; releerlos costó 151k arrastrados.
 - `cat docs/handoff.md` (9 veces, 80k arrastrados): usar `python3 .claude/gw/scripts/recover.py --state`.
+- «Pendiente» de la bitácora lleno de leves de ramas fusionadas (2026-11-06, `fix-0.4.1`: 7 lecturas, 247k
+  arrastrados, 5,5 % de la sesión; 28,5k caracteres): al fusionar una rama, sus leves pasan a
+  `docs/records/leves-<rama>.md` y en «Pendiente» queda un puntero de una línea (aprobado el 2026-11-06).
 - `cat docs/plan.md` entero al empezar una fase (F0: 3,7k tokens junto con la bitácora, 97k arrastrados): basta
   `grep -n '^| F0' docs/plan.md` y las decisiones que cite (`grep -n '^| D1[25] ' docs/plan.md`).
 - Escribir en la sesión principal el contrato de una fase («F1 en detalle»): leer `plan.md`, los esquemas y
