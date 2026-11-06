@@ -161,6 +161,21 @@ class UiBase(unittest.TestCase):
         small = self.js(self.SMALL_TARGETS)
         self.assertEqual(small, [], "targets under 44x44 %s" % where)
 
+    # UI.7: nothing scrolls sideways. `html`, every child of `main`, every `aside` and every open dialog fit their box.
+    OVERFLOW_WIDTHS = (360, 768, 1024, 1440)
+    OVERFLOWING = """(() => { const out = [];
+        const nodes = [document.documentElement, ...document.querySelectorAll('main > *, aside, dialog[open]')];
+        for (const n of nodes) if (n.scrollWidth > n.clientWidth) out.push((n.id ? '#' + n.id : n.tagName.toLowerCase() + '.' + n.className) + ' ' + n.scrollWidth + '>' + n.clientWidth);
+        return out; })()"""
+
+    def at_width(self, width):
+        self.page.ws.close()
+        self.page = self.browser.new_page(width=width, height=780)
+
+    def assert_no_overflow(self, where):
+        self.page.pump(0.1)
+        self.assertEqual(self.js(self.OVERFLOWING), [], "horizontal overflow " + where)
+
     def api(self, method, path, body=None):
         return self.js("fetch(%s, {method: %s, headers: {'Content-Type': 'application/json'}, body: %s}).then(r => r.json())"
                        % (json.dumps(path), json.dumps(method), json.dumps(json.dumps(body)) if body is not None else "undefined"))
@@ -182,8 +197,45 @@ class Browse(UiBase):
             const a = s[0].getBoundingClientRect(), b = s[1].getBoundingClientRect();
             return b.top >= a.bottom - 1 ? 99 : b.left - a.right; })()""")  # wrapped onto another line counts as apart
         self.assertGreaterEqual(gap, 4, "the spans of .meta touch each other")
+        # UI.7: the raw path is not the card's text: it is its tooltip and a «Carpeta» disclosure outside the link
+        root = self.js("document.querySelector('a.project-card').title")
+        self.assertTrue(root.startswith("/"), root)
+        self.assertNotIn(root, self.js("document.querySelector('a.project-card').textContent"))
+        self.assertEqual(self.js("document.querySelector('.project-item > details.project-folder > summary').textContent"), "Carpeta")
+        self.assertFalse(self.js("document.querySelector('.project-folder').open"))
+        self.assertGreaterEqual(self.js("document.querySelector('.project-folder summary').getBoundingClientRect().height"), 44)
+        self.assertEqual(self.js("document.querySelector('.project-folder code').textContent"), root)
         self.click("a.project-card")
         self.page.wait("location.hash === '#/p/tarkor/pedidos' && document.querySelector('.order-row')")
+        self.no_problems()
+
+    def test_no_horizontal_overflow_anywhere(self):
+        """UI.7: at 360, 768, 1024 and 1440 nothing scrolls sideways on the projects list, the three tabs, the help
+        dialog, the settings menu and the unknown route, plus the tabs with two extra long ones (7 screens)."""
+        for width in self.OVERFLOW_WIDTHS:
+            self.at_width(width)
+            for route, ready in (("/", "document.querySelector('a.project-card')"),
+                                 ("/p/tarkor/pedidos", "document.querySelector('.order-row')"),
+                                 ("/p/tarkor/piezas", "document.querySelectorAll('.piece-card').length === 6"),
+                                 ("/p/tarkor/marca", "document.querySelector('.check-list .check-item')"),
+                                 ("/nada/por/aqui", "document.querySelector('.empty a.btn')")):
+                self.open(route, ready)
+                self.assert_no_overflow("on %s at %d" % (route, width))
+            # a project with a fourth, long destination (the team panel, or `en` wording) must wrap its tabs, not overflow
+            self.open("/p/tarkor/pedidos", "document.querySelector('.order-row')")
+            self.js("""(() => { const nav = document.querySelector('nav.tabs');
+                for (const label of ['Panel del equipo de trabajo', 'Another long destination']) {
+                    const a = nav.firstElementChild.cloneNode(true); a.removeAttribute('aria-current'); a.textContent = label; nav.append(a); } })()""")
+            self.assert_no_overflow("with a long fourth tab at %d" % width)
+            self.open("/", "document.querySelector('a.project-card')")
+            self.click("#help")
+            self.page.wait("document.querySelector('#shortcuts[open] dt')")
+            self.assert_no_overflow("in the help dialog at %d" % width)
+            self.page.key("Escape")
+            self.page.wait("!document.querySelector('#shortcuts[open]')")
+            self.click("#settings-btn")
+            self.page.wait("document.getElementById('settings').matches(':popover-open')")
+            self.assert_no_overflow("in the settings menu at %d" % width)
         self.no_problems()
 
     def test_tabs_navigate_and_paint(self):
@@ -554,6 +606,38 @@ class OrderScreen(UiBase):
         self.page.wait("document.getElementById('template-2').value === 'claro' && !document.getElementById('template-2').disabled")
         a = [x for x in self.data(key)["attempts"] if x["id"] == 2][0]
         self.assertEqual(a["compose"]["templateId"], "claro")
+        self.no_problems()
+
+    def test_no_horizontal_overflow_anywhere(self):
+        """UI.7: at 360, 768, 1024 and 1440 nothing scrolls sideways on an order page, its retouch and texts panel
+        (open as a dialog when narrow), the compare view, the lightbox and the editor (5 screens)."""
+        key = "fondos/atajos"
+        for width in self.OVERFLOW_WIDTHS:
+            self.at_width(width)
+            where = "at %d" % width
+            self.order(key)
+            self.assert_no_overflow("on the order page " + where)
+            if width <= 1000:
+                self.click("button.retouch-open")
+                self.page.wait("document.querySelector('.order-panel.is-open')")
+            self.page.wait("document.getElementById('text-title1')")
+            self.js("for (const d of document.querySelectorAll('.attempt details, .order-panel details')) d.open = true")
+            self.assert_no_overflow("in the retouch and texts panel " + where)
+            if width <= 1000:
+                self.page.key("Escape")
+                self.page.wait("!document.querySelector('.order-panel.is-open')")
+            self.press(self.card(1), "Comparar")
+            self.press(self.card(2), "Comparar")
+            self.page.wait("document.querySelector('section.compare figure img')")
+            self.assert_no_overflow("in the compare view " + where)
+            self.press("section.compare", "Cerrar")
+            self.click(self.card(1) + " button.open")
+            self.page.wait("document.querySelector('#lightbox[open]') && document.getElementById('lightbox-img').naturalWidth > 0")
+            self.assert_no_overflow("in the lightbox " + where)
+            self.click("#lightbox-close")
+            self.page.wait("!document.querySelector('#lightbox[open]')")
+            self.open_editor(key)
+            self.assert_no_overflow("in the editor " + where)
         self.no_problems()
 
     def test_tap_targets_are_44px(self):
@@ -999,6 +1083,21 @@ class NewOrderScreen(UiBase):
         self.page.wait("document.querySelectorAll('.gallery .attempt[data-kind=attempt]').length === 2", timeout=20)
         self.no_problems()
 
+    def test_no_horizontal_overflow_anywhere(self):
+        """UI.7: at 360, 768, 1024 and 1440 nothing scrolls sideways in the new order panel, empty and filled from
+        an order with its text fields (2 screens)."""
+        for width in self.OVERFLOW_WIDTHS:
+            self.at_width(width)
+            self.open("/p/tarkor/pedidos", "document.querySelector('.order-row')")
+            self.click("button[data-slot=new-order]")
+            self.page.wait("document.querySelector('dialog.new-order[open]') && document.getElementById('no-copy')")
+            self.assert_no_overflow("in the new order panel at %d" % width)
+            self.page.wait("!document.getElementById('no-copy').closest('.field').hidden")
+            self.js("(() => { const s = document.getElementById('no-copy'); s.value = 'fondos/previo'; s.dispatchEvent(new Event('change')); })()")
+            self.page.wait("document.getElementById('no-prompt').value.includes('test scene')")
+            self.assert_no_overflow("in the new order panel, copied, at %d" % width)
+        self.no_problems()
+
     def test_copy_from_fills_the_form(self):
         self.open("/p/tarkor/pedidos", "document.querySelector('.order-row')")
         self.click("button[data-slot=new-order]")
@@ -1058,6 +1157,16 @@ class QueueDrawer(UiBase):
             self.click(".queue-pill")
             self.page.wait("document.querySelectorAll('#queue-drawer .queue-entry').length >= 3")
             self.assert_tap_targets("in the queue drawer at %d" % width)
+        self.no_problems()
+
+    def test_no_horizontal_overflow_anywhere(self):
+        """UI.7: at 360, 768, 1024 and 1440 nothing scrolls sideways with the queue drawer open (1 screen)."""
+        for width in self.OVERFLOW_WIDTHS:
+            self.at_width(width)
+            self.open("/", "document.querySelector('.queue-pill')")
+            self.click(".queue-pill")
+            self.page.wait("document.querySelectorAll('#queue-drawer .queue-entry').length >= 3")
+            self.assert_no_overflow("in the queue drawer at %d" % width)
         self.no_problems()
 
     def test_queue_drawer_fits_and_traps_focus(self):

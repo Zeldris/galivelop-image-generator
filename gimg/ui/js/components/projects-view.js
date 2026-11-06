@@ -27,14 +27,16 @@ function card(p) {
   const broken = Boolean(p.error);
   const body = [
     h('h2', {}, name),
-    h('span.path', { title: p.root || '' }, p.root || ''),
     broken ? h('span.chip.chip-bad', {}, t('ui.projects.broken')) : h('div.meta', {},
       Number.isFinite(p.orders) ? h('span', {}, t('ui.projects.orders', { n: p.orders })) : null,
       Number.isFinite(p.chosen) ? h('span', {}, t('ui.projects.chosen', { n: p.chosen })) : null,
       Array.isArray(p.profiles) ? h('span', {}, p.profiles.join(' · ')) : null),
     broken ? h('div.mono.small', {}, p.error.message || p.error.code || String(p.error)) : null,
   ];
-  return broken
-    ? h('div.card.project-card.is-broken', { aria: { label: `${name}: ${t('ui.projects.broken')}` } }, body)
-    : h('a.card.project-card', { href: to.project(name) }, body);
+  // the raw path is not the card's text: it is the tooltip and, outside the link (a link holds no controls), a «Carpeta» disclosure
+  const main = broken
+    ? h('div.card.project-card.is-broken', { aria: { label: `${name}: ${t('ui.projects.broken')}` }, title: p.root || '' }, body)
+    : h('a.card.project-card', { href: to.project(name), title: p.root || '' }, body);
+  return h('div.project-item', {}, main,
+    p.root ? h('details.project-folder', {}, h('summary', {}, t('ui.projects.folder')), h('code.path.mono', {}, p.root)) : null);
 }

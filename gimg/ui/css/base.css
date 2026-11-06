@@ -85,7 +85,6 @@ input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--accent-f
 .readonly { padding: 8px 10px; border: 1px dashed var(--border-strong); border-radius: var(--r-s); color: var(--text-2); font-size: 0.8125rem; white-space: pre-wrap; max-height: 120px; overflow: auto; }
 .with-button { display: grid; grid-template-columns: 1fr auto; gap: 6px; }
 .cols-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.cols-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 .field-error { color: var(--bad); font-size: 0.8125rem; }
 .hint { color: var(--text-2); font-size: 0.8125rem; }
 
