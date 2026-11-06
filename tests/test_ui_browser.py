@@ -933,6 +933,12 @@ class OrderScreen(UiBase):
         step = radius * (1 - 2 ** -0.5) + 1
         for element in ("title1", "subtitle", "logo"):
             self.js("document.querySelector('.ed-box[data-element=%s]').focus()" % element)
+            # the stage shows the whole image with its 22 px frame: in one column the stage (overflow: hidden, so
+            # min-height 0 in a grid) must not shrink to fit the panel, nor scroll when a box takes the focus
+            stage, canvas = self.js("['.ed-stage', '.ed-canvas'].map((q) => document.querySelector(q).getBoundingClientRect().toJSON())")
+            self.assertEqual(self.js("document.querySelector('.ed-stage').scrollTop"), 0, element)
+            for side, sign in (("left", 1), ("top", 1), ("right", -1), ("bottom", -1)):
+                self.assertAlmostEqual((canvas[side] - stage[side]) * sign, 22, delta=0.5, msg="%s: stage %s %s, canvas %s" % (element, side, stage, canvas))
             handles = self.js(self.HANDLE_ZONES)
             self.assertEqual(sorted({hd["element"] for hd in handles}), [element])  # only the picked box shows them
             self.assertEqual(sorted(hd["corner"] for hd in handles), ["ne", "nw", "se", "sw"])
@@ -948,11 +954,7 @@ class OrderScreen(UiBase):
                 self.assertGreaterEqual(left, max(stage["left"], 0) - 0.5, where)
                 self.assertGreaterEqual(top, max(stage["top"], 0) - 0.5, where)
                 self.assertLessEqual(right, min(stage["right"], inner_w) + 0.5, where)
-                self.assertLessEqual(bottom, min(stage["bottom"], inner_h) + 0.5, where + " DIAG " + repr(self.js("""(() => { const r = (q) => document.querySelector(q).getBoundingClientRect().toJSON();
-                    const sc = (q) => { const e = document.querySelector(q); return e && [e.scrollTop, e.scrollHeight, e.clientHeight]; };
-                    return { dpr: devicePixelRatio, stage: r('.ed-stage'), canvas: r('.ed-canvas'), img: r('.ed-img'), box: r('.ed-box[data-element=logo]'),
-                      nat: [document.querySelector('.ed-img').naturalWidth, document.querySelector('.ed-img').naturalHeight],
-                      main: sc('.ed-main'), body: sc('.ed-body'), dlg: sc('dialog.editor'), side: sc('.ed-side') }; })()""")) + " STALE " + repr(stage))
+                self.assertLessEqual(bottom, min(stage["bottom"], inner_h) + 0.5, where)
                 # and the pointer at its outer corner grabs that very handle
                 dl, dt, dr, db = outer[hd["corner"]]
                 px = left + step if dl else right - step
