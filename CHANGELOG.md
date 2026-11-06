@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-06
+
 ### Fixed
 
 - Two CLIs starting at once over a service of an older version sometimes kept the old one: the `worker.lock` and

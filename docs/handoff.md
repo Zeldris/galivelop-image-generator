@@ -8,14 +8,15 @@
 
 | Campo | Valor |
 |---|---|
-| **Rama** | `main` (F0-F4 y `plan-piezas` fusionadas, v0.4.0); trabajo abierto en `release-install` |
-| **Fase / tarea** | F4 cerrada y publicada (v0.4.0); `release-install`: arreglo de `release.yml`; después, decidir la fase de «Piezas, edición y borrado» |
-| **Último punto estable** | `main` en `d128106` (PR #3, CI en verde), etiqueta y release v0.4.0; `release-install` subida, ver su fila |
-| **Siguiente paso** | el de la fila de `release-install` |
+| **Rama** | `fix-0.4.1` (desde `origin/main` `71a69a3`): parche 0.4.1; el trabajo de F4e sigue en `f4e-piezas` |
+| **Fase / tarea** | 0.4.1: arreglos de lo publicado en 0.4.0, antes que la 0.5.0 (decisión de la persona del 2026-11-06: los arreglos van primero) |
+| **Último punto estable** | `main` en `71a69a3` (PR #4, CI en verde), etiqueta y release v0.4.0 |
+| **Siguiente paso** | el de la fila de `fix-0.4.1` |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 | **Tarea en curso · `f2-motor`** | Fusionada en `main` por el PR #2 (`624f7a9`, 2026-11-05, CI en verde); rama terminada. |
 | **Tarea en curso · `plan-piezas`** | Fusionada en `main` por el PR #3 (`d128106`, 2026-11-05, CI en verde); rama terminada. v0.4.0 etiquetada en `d128106`; `release.yml` falló (sin `ffmpeg`/`rsvg-convert`) y la release se creó a mano con `releases.py notes` y el mismo título (mismo árbol que el CI verde del PR); `releases.py check` en verde. |
-| **Tarea en curso · `release-install`** | `release.yml` no tenía el paso «Install» de `check.yml` (`ciInstall`: `ffmpeg`, `librsvg2-bin`) y su check falló al etiquetar v0.4.0. Hecho: el paso, y un test (`tests.test_releases.ReleaseWorkflowTests`, rojo sin el arreglo). Fase 1 hecha (2026-11-05): arreglados el Python 3.10 de `release.yml` (ahora el del runner, como `check.yml`), `</dev/null` en sus bucles y el test, que exige también el paso del check. Fase 2: `gw-opt-tokens` sin propuestas; retro en `docs/records/retro-2026-11-05-release-install.md`, aprobada (P1 aplicada: test que compara «Install» y «Check» de los dos workflows; P2 al flujo). PR a `main` confirmado por la persona el 2026-11-05. Fase 3 hecha (marca `c14bf1e`); PR #4 abierto el 2026-11-05. **Siguiente:** con el CI en verde y la confirmación de la persona, fusionar el PR #4; luego decidir la fase de «Piezas, edición y borrado» |
+| **Tarea en curso · `release-install`** | Fusionada en `main` por el PR #4 (`71a69a3`, 2026-11-05, CI en verde, confirmado por la persona); rama terminada. |
+| **Tarea en curso · `fix-0.4.1`** | Abierta el 2026-11-06. Hecho: *cherry-pick* de `ca6cea2` y `ec89eb0` (sondeos de `worker.lock`/`serve.lock` con cerrojo compartido, `_live()` con el pid de `serve.json`) y `398a7af` (huella `build` para que `arrancar.sh` reemplace el servicio viejo); CHANGELOG es/en «Corregido»; `releases.py bump 0.4.1`; README es/en con la versión y la hoja de ruta por versiones (pedido de la persona: cada versión con su release y la documentación revisada). Falta: las tres fases, confirmación de la persona, PR a `main`, etiqueta `v0.4.1` y release, `releases.py check`; luego `git merge origin/main` en `f4e-piezas`. |
 
 Aquí `logRows` está apagado en `.claude/gw.json`: las filas se editan a mano (`handoff.py set-row` no escribe) y no
 hace falta `GW_SHARED_LOG`. Aun así, cada rama toca solo su fila salvo al cerrar o fusionar otra.
