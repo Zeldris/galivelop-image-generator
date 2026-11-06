@@ -375,7 +375,7 @@ class OrderScreen(UiBase):
     """The order: attempts, verdicts, choosing, retouching, compare, lightbox, texts, editor. One order per scenario."""
 
     KEYS = ("fondos/voto", "fondos/elegir", "fondos/comparar", "fondos/retoque", "fondos/textos", "fondos/editor",
-            "fondos/volver", "fondos/plantilla", "fondos/guardar", "fondos/atajos")
+            "fondos/volver", "fondos/plantilla", "fondos/guardar", "fondos/atajos", "fondos/texto")
 
     @classmethod
     def prepare(cls):
@@ -731,11 +731,11 @@ class OrderScreen(UiBase):
         self.no_problems()
 
     # the editor -------------------------------------------------------------------------------------------------
-    def open_editor(self, key, n=2):
+    def open_editor(self, key, n=2, boxes=3):
         self.order(key)
         self.js("document.querySelector(\"%s details\").open = true" % self.card(n))
         self.press(self.card(n) + " .slot[data-slot=editor]", "Editar")
-        self.page.wait("document.querySelector('dialog.editor[open]') && document.querySelectorAll('.ed-box').length === 3")
+        self.page.wait("document.querySelector('dialog.editor[open]') && document.querySelectorAll('.ed-box').length === %d" % boxes)
         self.page.wait("document.querySelector('.ed-img').complete && document.querySelector('.ed-box').style.width")
 
     def test_editor_moves_a_box_with_the_keyboard_and_applies(self):
@@ -782,6 +782,91 @@ class OrderScreen(UiBase):
         self.page.wait("document.querySelector(\"#template-1 option[value=movida]\")")
         listed = self.api("GET", "/api/projects/%s/profiles/%s/templates" % (PROJECT, PROFILE))
         self.assertIn("movida", [t["id"] for t in listed])
+        self.no_problems()
+
+
+    def set_field(self, field_id, value):
+        """Types `value` into the editor field `field_id` (the panel listens to `input`)."""
+        self.js("""(() => { const e = document.getElementById(%s); e.value = %s;
+            e.dispatchEvent(new Event('input', { bubbles: true })); })()""" % (json.dumps(field_id), json.dumps(value)))
+
+    def test_editor_edits_text_and_style_warns_of_overflow_and_adds_texts(self):
+        """F4e.2c: the «Texto y tipografía» panel shows up for the focused text, its fields go to the layout (only what
+        differs from the template; the box preview is an inline SVG), Apply keeps the editor open with the overflow
+        of the element in its row (amber + text) and the missing font in the notice, and added texts (`extra1`,
+        `add: true`, full style) can be removed before applying or sent whole. Nothing scrolls sideways at 360."""
+        key = "fondos/texto"
+        self.open_editor(key)
+        self.assertEqual(self.js("document.activeElement.dataset.element"), "title1")
+        self.page.wait("!document.querySelector('.ed-fields').hidden && document.getElementById('ed-text').placeholder === 'Titulo'")
+        self.assertEqual(self.js("document.querySelector('.ed-editing').textContent"), "Editando title1")
+        self.assertTrue(self.js("document.querySelector('dialog.editor button.btn-primary').disabled"))
+        self.page.wait("document.querySelectorAll('#ed-fonts option').length >= 1")  # fed by GET /api/fonts
+        self.set_field("ed-text", "Hola\nMundo")
+        self.set_field("ed-family", "Fuente Inexistente")
+        self.set_field("ed-size", "400")
+        self.set_field("ed-lh", "0.5")  # out of range: Apply is held back with the reason under the field
+        self.assertEqual(self.js("document.getElementById('ed-lh-error').textContent"), "Un número de 0,8 a 3.")
+        self.assertTrue(self.js("document.querySelector('dialog.editor button.btn-primary').disabled"))
+        self.set_field("ed-lh", "")
+        self.assertEqual(self.js("document.getElementById('ed-lh-error').textContent"), "")
+        self.assertFalse(self.js("document.querySelector('dialog.editor button.btn-primary').disabled"))
+        self.assertEqual(self.js("document.querySelectorAll(\"[data-element=title1].ed-box.is-preview svg tspan\").length"), 2)
+        fonts = self.api("GET", "/api/fonts?project=%s" % PROJECT)
+        if fonts["available"]:
+            self.assertIn("Fuente Inexistente", self.js("document.getElementById('ed-family-warn').textContent"))
+        self.press("dialog.editor", "Aplicar")
+        self.page.wait("document.querySelector('dialog.editor[open] .ed-item.is-overflow[data-element=title1]')")
+        warn = self.js("document.querySelector('.ed-item[data-element=title1] .ed-warn').textContent")
+        self.assertTrue(warn.startswith("No cabe en su caja: pedido 400 px, pintado al mínimo 200 px"), warn)
+        notice = self.js("document.querySelector('dialog.editor .notice-warn').textContent")
+        self.assertIn("title1", notice)
+        if fonts["available"]:
+            self.assertIn("Fuente Inexistente", notice)
+        a = [x for x in self.data(key)["attempts"] if x["id"] == 2][0]
+        self.assertEqual(a["compose"]["layout"], {"title1": {"x": 40, "y": 40, "w": 500, "h": 60, "text": "Hola\nMundo",
+                                                             "style": {"family": "Fuente Inexistente", "size": 400}}})
+        self.assertEqual(a["compose"]["overflow"], {"title1": {"size": 400, "min": 200}})
+        self.assertTrue(self.js("document.querySelector('dialog.editor button.btn-primary').disabled"))  # nothing pending
+        # add a text, remove it, add again and apply: it goes whole
+        self.press("dialog.editor", "Añadir texto")
+        self.page.wait("document.querySelectorAll('.ed-box').length === 4 && document.activeElement.dataset.element === 'extra1'")
+        self.assertEqual(self.js("document.querySelector('.ed-editing').textContent"), "Editando extra1")
+        self.assertEqual(self.js("document.getElementById('ed-text').value"), "Texto nuevo")
+        self.press(".ed-item[data-element=extra1]", "Quitar")
+        self.page.wait("document.querySelectorAll('.ed-box').length === 3")
+        self.assertTrue(self.js("document.querySelector('dialog.editor button.btn-primary').disabled"))
+        self.press("dialog.editor", "Añadir texto")
+        self.page.wait("document.activeElement.dataset.element === 'extra1'")
+        self.set_field("ed-text", "Pie")
+        self.set_field("ed-size", "24")
+        self.set_field("ed-align", "center")
+        # title1 back to one line and the template's style: without warnings left, Apply closes the editor
+        self.js("document.querySelector('.ed-box[data-element=title1]').focus()")
+        self.page.wait("document.querySelector('.ed-editing').textContent === 'Editando title1'")
+        self.assertEqual(self.js("document.getElementById('ed-size').value"), "400")
+        self.set_field("ed-text", "Hola")
+        self.set_field("ed-family", "")
+        self.set_field("ed-size", "")
+        self.press("dialog.editor", "Aplicar")
+        self.page.wait("!document.querySelector('dialog.editor')")
+        a = [x for x in self.data(key)["attempts"] if x["id"] == 2][0]
+        self.assertEqual(a["compose"]["layout"]["title1"], {"x": 40, "y": 40, "w": 500, "h": 60, "text": "Hola"})
+        self.assertEqual(a["compose"].get("overflow", {}), {})
+        extra = a["compose"]["layout"]["extra1"]
+        self.assertEqual(extra["text"], "Pie")
+        self.assertTrue(extra["add"])
+        self.assertEqual(extra["style"]["size"], 24)
+        self.assertEqual(extra["style"]["align"], "center")
+        self.assertEqual(sorted(extra["style"]), ["align", "color", "family", "italic", "size", "weight"])
+        # at 360 the panel fits: no sideways scroll, and the added text comes back as an item
+        self.page.ws.close()
+        self.page = self.browser.new_page(width=360, height=780)
+        self.open_editor(key, boxes=4)  # the added text comes back as an item
+        self.assertEqual(self.js("document.querySelector('.ed-item[data-element=extra1] .hint').textContent"), "texto · añadido")
+        self.assertLessEqual(self.js("document.documentElement.scrollWidth"), self.js("window.innerWidth"))
+        self.assertLessEqual(self.js("document.querySelector('.ed-side').scrollWidth"), self.js("document.querySelector('.ed-side').clientWidth"))
+        self.assert_tap_targets("in the text panel at 360")
         self.no_problems()
 
 

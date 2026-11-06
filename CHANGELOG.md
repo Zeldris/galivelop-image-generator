@@ -11,6 +11,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Text and typography in the element editor (F4e.2c): with a text selected, a "Text and typography" panel edits its
+  text (several lines, up to 500 characters), font family (a searchable list from `GET /api/fonts`, profile fonts
+  first; another can be typed, with a warning when it is not installed), size, weight, italic, color, alignment and
+  line height; only what differs from the template goes into the layout. "Add text" creates up to 10 texts (`extra1`,
+  `extra2`…) with "Remove". The box shows a preview with the browser's fonts; "Apply" composes on the server and, when
+  a text does not fit its box or a font is missing, keeps the editor open with the warning on the element and in a
+  notice. Keyboard and gamepad as in the rest of the editor.
 - Rename an order (F4e.5): "Rename" next to the title, `POST .../orders/{profile}/{key}/rename` and `gimg order rename`. The
   folder, the finished queue entries and what was delivered follow the new key (the old file and manifest entry go);
   refused while it is queued, being generated or composed. The project's orders file is not touched.

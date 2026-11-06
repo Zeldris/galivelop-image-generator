@@ -11,6 +11,13 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Añadido
 
+- Texto y tipografía en el editor de elementos (F4e.2c): con un texto elegido, el panel «Texto y tipografía» cambia su
+  texto (varias líneas, hasta 500 caracteres), tipografía (lista con búsqueda de `GET /api/fonts`, primero las del
+  perfil; se puede escribir otra, con aviso si no está instalada), tamaño, peso, cursiva, color, alineación e
+  interlineado; al layout va solo lo que difiere de la plantilla. «Añadir texto» crea hasta 10 textos (`extra1`,
+  `extra2`…) con «Quitar». La caja muestra una vista previa con las fuentes del navegador; «Aplicar» compone en el
+  servidor y, si un texto no cabe en su caja o falta una fuente, deja el editor abierto con el aviso en el elemento y
+  en una nota. Teclado y mando como en el resto del editor.
 - Renombrar un pedido (F4e.5): «Renombrar» junto al título, `POST .../orders/{profile}/{key}/rename` y `gimg order rename`.
   La carpeta, las entradas terminadas de la cola y lo entregado siguen a la clave nueva (el archivo viejo y su entrada del
   manifiesto se borran); se rechaza con el pedido en cola, generándose o componiéndose. El archivo de pedidos del proyecto

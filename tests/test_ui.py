@@ -449,6 +449,61 @@ class LayoutEditor(unittest.TestCase):
         self.assertRegex(slots, r"download: `\$\{tpl\.id\}\.svg`")
 
 
+class TextPanel(unittest.TestCase):
+    """F4e.2c: the «Texto y tipografía» panel of the editor, checked statically (the browser test drives it)."""
+
+    def setUp(self):
+        self.editor = read(UI / "js" / "components" / "layout-editor.js")
+
+    def test_the_fields_cover_text_and_every_style_key_with_the_api_limits(self):
+        for needle in ("id: 'ed-text', rows: 3, maxlength: MAX_TEXT", "MAX_TEXT = 500", "id: 'ed-family', list: 'ed-fonts'",
+                       "id: 'ed-size', min: 4, max: 1000, step: 1", "selectEl('ed-weight'", "selectEl('ed-italic'", "id: 'ed-color', maxlength: 7",
+                       "type: 'color', id: 'ed-swatch'", "selectEl('ed-align'", "id: 'ed-lh', min: 0.8, max: 3, step: 0.1",
+                       "FAMILY_PATTERN = /^[A-Za-z0-9 ._-]{1,64}$/", "COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/", "MAX_ADDED = 10"):
+            self.assertIn(needle, self.editor)
+        from gimg import compose
+        self.assertEqual(compose._FAMILY.pattern, "[A-Za-z0-9 ._-]{1,64}")  # the same limits as the server
+
+    def test_only_what_differs_from_the_template_goes_to_the_layout_and_added_texts_go_whole(self):
+        self.assertIn("if (typeof it.text === 'string') entry.text = it.text", self.editor)
+        self.assertIn("if (it.style && Object.keys(it.style).length) entry.style = { ...it.style }", self.editor)
+        self.assertIn("if (!sameBox(it.cur, it.tplBox) || Object.keys(entry).length > 4) out[it.name] = entry", self.editor)
+        self.assertIn("out[it.name] = { add: true, ...it.cur, text: it.text || '', style: { ...it.style } }", self.editor)
+        self.assertIn("it.style = { ...defaultStyle(), ...style }", self.editor)  # an added text carries the full style
+        self.assertIn("while (items.some((x) => x.name === `extra${n}`)) n++", self.editor)
+        self.assertIn("entry.add === true", self.editor)  # added texts of an earlier apply come back as items
+
+    def test_fonts_come_from_the_api_once_and_a_missing_family_only_warns(self):
+        api = read(UI / "js" / "api.js")
+        self.assertIn("fonts: (p) => `/api/fonts${p ? '?project=' + enc(p) : ''}`", api)
+        self.assertIn("api.fonts(ctx.project).then(", self.editor)
+        self.assertIn("'ui.editor.familyMissing'", self.editor)
+        self.assertIn(".catch(() => { /* sin lista */ })", self.editor)
+
+    def test_apply_keeps_the_editor_open_with_the_warnings_of_the_composition(self):
+        order = read(UI / "js" / "components" / "order-view.js")
+        self.assertIn("return composed;", order)  # setLayout gives the recomposed attempt back
+        for needle in ("stay = showWarnings(composed && composed.compose)", "}, () => !stay);", "compose.overflow", "compose.missingFonts",
+                       "'is-overflow'", "'ui.editor.overflow'", "'ui.editor.missingFonts'", "showWarnings(attempt.compose)", "function settle(composed)"):
+            self.assertIn(needle, self.editor)
+        css = read(UI / "css" / "components.css")
+        self.assertIn(".ed-item.is-overflow { border-color: var(--warn); }", css)
+        self.assertIn(".ed-warn { color: var(--warn)", css)
+
+    def test_the_preview_is_an_inline_svg_without_inline_styles_or_html(self):
+        self.assertIn("document.createElementNS(SVG_NS, tag)", self.editor)
+        self.assertIn("svgEl('tspan')", self.editor)
+        self.assertNotIn("innerHTML", self.editor)
+        self.assertNotIn("setAttribute('style'", self.editor)
+        self.assertIn(".ed-box > svg { position: absolute; inset: 0;", read(UI / "css" / "components.css"))
+
+    def test_the_mock_serves_fonts_and_a_compose_report(self):
+        mock = read(UI / "mock" / "api-mock.js")
+        for needle in ("r0 === 'fonts' && method === 'GET'", "function composeReport(layout)", "out.overflow = overflow", "out.missingFonts = missing",
+                       "elements: mockElements(prof)"):
+            self.assertIn(needle, mock)
+
+
 class F4dUi(unittest.TestCase):
     """F4d.2: panel de pedido nuevo, piezas, marca, modelo y cola movible, comprobados en estático."""
 
@@ -552,8 +607,8 @@ class F4dUi(unittest.TestCase):
         editor = self.comp("layout-editor.js")
         self.assertIn("typeof (applied0[e.id] || {}).hidden === 'boolean' ? applied0[e.id].hidden : it.tplHidden", editor)
         self.assertIn("tplHidden: e.hidden === true", editor)  # the template itself may hide it: «Mostrar» sends false
-        self.assertIn("if (it.hidden !== Boolean(it.tplHidden)) out[it.name] = { ...it.cur, hidden: it.hidden }", editor)
-        self.assertIn("x.hidden === x.startHidden", editor)
+        self.assertIn("if (it.hidden !== Boolean(it.tplHidden)) entry.hidden = it.hidden", editor)  # F4e.2c: one entry per element
+        self.assertIn("x.hidden !== x.startHidden", editor)  # F4e.2c: part of dirty(): what Apply has to send
         self.assertIn("toggleHidden(it)", editor)
         self.assertIn("is-hidden", read(UI / "css" / "components.css"))
 

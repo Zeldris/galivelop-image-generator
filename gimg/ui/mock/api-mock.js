@@ -126,6 +126,12 @@ export async function transport(method, url, body) {
     const st = u.searchParams.get('state');
     return ok(queue.filter((e) => !st || e.state === st).map((e) => ({ ...e })));
   }
+  if (r0 === 'fonts' && method === 'GET') {
+    // F4e.2c: las fuentes del perfil primero (Sora instalada, Inter no, como dice doctor) y las instaladas en la máquina
+    return ok({ installed: MOCK_FONTS, available: true, reason: null, projects: [{ project: u.searchParams.get('project') || 'galivelop', profiles: [
+      { profile: 'og', fonts: [{ name: 'Sora', installed: true }, { name: 'Inter', installed: false }] },
+      { profile: 'cuadrado', fonts: [{ name: 'Sora', installed: true }] }] }] });
+  }
   if (r0 === 'models' && method === 'GET') {
     return ok([
       { id: 'flux2-klein-4b-q8', license: 'Apache-2.0', defaults: { steps: 6, cfg: 1, sampler: 'euler' }, installDefault: true, allowed: true },
@@ -158,7 +164,7 @@ export async function transport(method, url, body) {
         }
       }
       if (!prof.compose) return ok([]);
-      const base = { template: prof.compose.template, logo: prof.compose.logo || null, fields: prof.compose.fields || [], source: 'config', elements: [] };
+      const base = { template: prof.compose.template, logo: prof.compose.logo || null, fields: prof.compose.fields || [], source: 'config', elements: mockElements(prof) };
       return ok(r3 === 'og' ? [{ id: 'default', default: true, ...base }, ...(deletedTemplates.has('claro') ? [] : [{ id: 'claro', default: false, ...base, source: 'local' }])] : [{ id: 'default', default: true, ...base }]);
     }
     if (r2 === 'profiles') return err(404, 'api.not_found', 'El prototipo no sirve recursos por la API');
@@ -249,7 +255,8 @@ export async function transport(method, url, body) {
         if (r7 === 'note') { a.note = body.text; return ok(a); }
         if (r7 === 'compose') {
           if (a.composeError && a.id === 6) return err(422, 'compose.font_missing', 'Falta la fuente Sora (gimg doctor)', { font: 'Sora' });
-          a.compose = { templateId: (body && body.template) || (a.compose && a.compose.templateId) || 'default' }; a.composeError = undefined; return ok(a);
+          const layout = (body && body.layout) || (a.compose && a.compose.layout) || {};
+          a.compose = { templateId: (body && body.template) || (a.compose && a.compose.templateId) || 'default', ...composeReport(layout) }; a.composeError = undefined; return ok(a);
         }
         if (r7 === 'measure') {
           if (a.id === 3 && !measureBusyOnce.done) { measureBusyOnce.done = true; return err(409, 'measure.busy', 'Hay otra medida en marcha (espera 60 s)'); }
@@ -263,6 +270,32 @@ export async function transport(method, url, body) {
   return err(404, 'api.not_found', `Ruta desconocida: ${method} ${u.pathname}`, { path: u.pathname });
 }
 const measureBusyOnce = { done: false };
+const MOCK_FONTS = ['DejaVu Sans', 'Sora'];
+/** Las cajas de los elementos de la plantilla (F4c.3), en píxeles del destino del perfil. */
+function mockElements(prof) {
+  const W = prof.targetWidth || prof.width; const H = prof.targetHeight || prof.height;
+  const r = (v) => Math.round(v);
+  return [
+    { id: 'title1', kind: 'text', box: { x: r(W * 0.05), y: r(H * 0.12), w: r(W * 0.6), h: r(H * 0.19) }, color: '#ffffff' },
+    { id: 'subtitle', kind: 'text', box: { x: r(W * 0.05), y: r(H * 0.35), w: r(W * 0.6), h: r(H * 0.1) }, color: '#ffffff' },
+    { id: 'logo', kind: 'logo', box: { x: r(W * 0.05), y: r(H * 0.82), w: r(W * 0.2), h: r(H * 0.1) } },
+  ];
+}
+/** F4e.2c: lo que el servidor cuenta al componer con un layout: el layout aplicado (si lo hay), los textos que no caben
+    en su caja ni al mínimo (`max(8, size/2)`) y las familias pedidas que no están instaladas. */
+function composeReport(layout) {
+  const out = {};
+  const overflow = {}; const missing = [];
+  for (const [name, e] of Object.entries(layout)) {
+    const st = (e && e.style) || {};
+    if (st.size) { const min = Math.max(8, Math.floor(st.size / 2)); if (min * 1.2 > e.h) overflow[name] = { size: st.size, min }; }
+    if (st.family && !MOCK_FONTS.some((f) => f.toLowerCase() === st.family.toLowerCase()) && !missing.includes(st.family)) missing.push(st.family);
+  }
+  if (Object.keys(layout).length) out.layout = layout;
+  if (Object.keys(overflow).length) out.overflow = overflow;
+  if (missing.length) out.missingFonts = missing;
+  return out;
+}
 const deletedTemplates = new Set();
 
 /* ---- imágenes por canvas ---- */
