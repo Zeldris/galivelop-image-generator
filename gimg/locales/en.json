@@ -544,6 +544,7 @@
   "ui.order.composeFailedHint": "Not delivered. Fix the cause (gimg doctor) and choose again, or recompose the attempt.",
   "ui.attempt.id": "Attempt q{id}",
   "ui.attempt.image": "Attempt q{id}, seed {seed}",
+  "ui.attempt.imageAlt": "Attempt q{id} ({state}): {prompt}",
   "ui.attempt.open": "View q{id} at full size",
   "ui.attempt.seed": "seed",
   "ui.attempt.steps": "steps",

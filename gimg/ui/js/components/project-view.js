@@ -80,9 +80,9 @@ function row(project, o, cfg) {
   const thumbId = chosen ? o.chosen : (o.lastAttempt ?? (Array.isArray(o.attempts) && o.attempts.length ? o.attempts[o.attempts.length - 1].id : null));
   const thumb = thumbId !== null && thumbId !== undefined
     ? h('img.thumb', { src: paths.image(project, o.profile, o.key, thumbId), alt: '', loading: 'lazy' })
-    : h('div.thumb-empty', { role: 'img', aria: { label: t('ui.project.noImage') } });
+    : h('div.thumb-empty', { aria: { hidden: true } });
   const prof = (cfg.profiles || {})[o.profile] || {};
-  return h('a.card.order-row', { href: to.order(project, o.profile, o.key), aria: { label: `${o.key} @ ${o.profile}` } },
+  return h('a.card.order-row', { href: to.order(project, o.profile, o.key), aria: { label: `${o.key} @ ${o.profile}${thumbId === null || thumbId === undefined ? `, ${t('ui.project.noImage')}` : ''}` } },
     thumb,
     h('div', {}, h('div.key', {}, o.key), h('div.meta', {},
       h('span', {}, o.profile, prof.width ? ` · ${prof.width}×${prof.height}` : ''),

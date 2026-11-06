@@ -544,6 +544,7 @@
   "ui.order.composeFailedHint": "No se ha entregado. Arregla la causa (gimg doctor) y vuelve a elegir, o recompón el intento.",
   "ui.attempt.id": "Intento q{id}",
   "ui.attempt.image": "Intento q{id}, semilla {seed}",
+  "ui.attempt.imageAlt": "Intento q{id} ({state}): {prompt}",
   "ui.attempt.open": "Ver q{id} a tamaño real",
   "ui.attempt.seed": "semilla",
   "ui.attempt.steps": "pasos",

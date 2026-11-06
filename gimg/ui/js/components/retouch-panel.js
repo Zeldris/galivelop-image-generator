@@ -30,7 +30,7 @@ export function retouchPanel(ctx, { onSubmit }) {
   const sampler = h('input', { type: 'text', value: params.sampler ?? cfg.sampler ?? '' });
   const seed = h('input', { type: 'number', min: 0, value: order.seed ?? lastSeed(order) ?? '' });
   const draft = h('input', { type: 'checkbox', checked: Boolean(order.draft) });
-  const count = h('input', { type: 'number', min: 2, max: 20, value: 3, aria: { label: t('ui.retouch.batchCount') } });
+  const count = h('input', { type: 'number', min: 2, max: 20, value: 3, id: 'retouch-count' });
   const templates = ctx.templates || [];
   const templateOfChosen = () => {
     const a = (ctx.order.attempts || []).find((x) => x.id === ctx.order.chosen);
@@ -98,7 +98,7 @@ export function retouchPanel(ctx, { onSubmit }) {
       h('span.hint', {}, t('ui.retouch.seedHint'))),
     template ? h('div.field', {}, h('label', { for: 'retouch-template' }, t('ui.retouch.template')), template) : null,
     h('label.check', {}, draft, h('span', {}, t('ui.retouch.draft'), ' ', h('span.hint', {}, t('ui.retouch.draftHint')))),
-    h('div.panel-actions', {}, another, h('div.with-button', {}, batch, count)),
+    h('div.panel-actions', {}, another, h('div.field', {}, h('label', { for: 'retouch-count' }, t('ui.retouch.batchCount')), h('div.with-button', {}, batch, count))),
     ctx.limits ? h('p.hint', {}, ctx.limits) : null);
 
   return {
