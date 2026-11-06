@@ -541,7 +541,9 @@ class BidiBrowser:
                      "toolkit.telemetry.reportingpolicy.firstRun": False, "app.update.auto": False,
                      "app.update.enabled": False, "browser.cache.disk.enable": False,
                      "browser.tabs.warnOnClose": False, "focusmanager.testmode": True,
-                     "browser.sessionstore.resume_from_crash": False, "network.captive-portal-service.enabled": False}
+                     "browser.sessionstore.resume_from_crash": False,
+                     # classic scrollbars (as Chrome, Windows): overlay ones have width 0 and hide 100vw bugs
+                     "widget.gtk.overlay-scrollbars.enabled": False, "ui.useOverlayScrollbars": 0, "network.captive-portal-service.enabled": False}
             with open(os.path.join(prof, "user.js"), "w") as f:
                 for k, v in prefs.items():
                     f.write("user_pref(%s, %s);\n" % (json.dumps(k), json.dumps(v)))

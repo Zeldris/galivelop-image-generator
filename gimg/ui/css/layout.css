@@ -48,7 +48,7 @@
 
 .queue-drawer {
   position: fixed; top: var(--header-h); right: 0; bottom: 0; z-index: 30;
-  width: min(100vw, 440px); overflow: auto;
+  width: min(100%, 440px); overflow: auto;
   background: var(--surface); border-left: 1px solid var(--border); box-shadow: var(--shadow);
   padding: 12px; display: grid; gap: 10px; align-content: start;
 }
@@ -112,7 +112,7 @@
 @media (max-width: 1000px) {
   .order-layout { grid-template-columns: 1fr; }
   /* UI.5: el panel es un diálogo lateral (como el cajón de la cola) que abre el botón «Retoque» */
-  .order-panel { display: none; position: fixed; top: var(--header-h); right: 0; bottom: 0; z-index: 30; width: min(100vw, 440px); max-height: none; padding: 12px; align-content: start; background: var(--surface); border-left: 1px solid var(--border); box-shadow: var(--shadow); }
+  .order-panel { display: none; position: fixed; top: var(--header-h); right: 0; bottom: 0; z-index: 30; width: min(100%, 440px); max-height: none; padding: 12px; align-content: start; background: var(--surface); border-left: 1px solid var(--border); box-shadow: var(--shadow); }
   .order-panel.is-open { display: grid; }
   .order-panel .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .retouch-open { display: inline-flex; }
@@ -121,7 +121,7 @@
   .app-header { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: 48px 44px; grid-template-areas: "brand tools" "crumbs crumbs"; --header-h-fixed: 92px; }
   .brand > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .queue-pill { max-width: 100%; }
-  .queue-drawer, .order-panel { width: 100vw; border-left: 0; }
+  .queue-drawer, .order-panel { width: 100%; border-left: 0; }
   .queue-pill > span:not(.dot) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .queue-pill progress { display: none; }
   .app-main { padding: 10px 10px 60px; }

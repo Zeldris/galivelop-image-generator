@@ -907,7 +907,8 @@ class OrderScreen(UiBase):
         self.page.ws.close()
         self.page = self.browser.new_page(width=360, height=780)
         self.open_editor(key)
-        inner_w, inner_h = self.js("window.innerWidth"), self.js("window.innerHeight")
+        # the usable width: the window minus a classic scrollbar (Chrome, Windows); 100vw would include it
+        inner_w, inner_h = self.js("document.documentElement.clientWidth"), self.js("window.innerHeight")
         stage = self.js("document.querySelector('.ed-stage').getBoundingClientRect().toJSON()")
         self.assertAlmostEqual(stage["width"], inner_w - 24, delta=1)
         self.assertLessEqual(self.js("document.querySelector('.ed-img').getBoundingClientRect().height"), max(inner_h / 2, 320) + 1)
