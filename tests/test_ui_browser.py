@@ -458,7 +458,7 @@ class OrderScreen(UiBase):
     def test_cards_show_images_and_metadata(self):
         self.order("fondos/voto")
         self.assertEqual(self.js("document.querySelectorAll('.gallery .attempt').length"), 2)
-        self.assertEqual(self.js("document.querySelector('.gallery .attempt .meta .id').textContent"), "q2")
+        self.assertRegex(self.js("document.querySelector('.gallery .attempt .meta .id').textContent"), r"^Intento q2 · ")
         self.assertTrue(self.js("document.querySelector('.gallery img').naturalWidth > 0"))
         self.no_problems()
 
@@ -512,6 +512,30 @@ class OrderScreen(UiBase):
         self.js("document.querySelector(\"%s\").focus()" % self.card(2))
         self.page.key("x")
         self.page.wait("document.activeElement.closest('.order-panel > :nth-child(3)')")
+
+    def test_cards_and_dialogs_are_named(self):
+        self.order("fondos/atajos")
+        names = json.loads(self.js("""JSON.stringify([...document.querySelectorAll('article.card')].map((c) => {
+            const ids = (c.getAttribute('aria-labelledby') || '').split(/\\s+/).filter(Boolean);
+            return ids.map((i) => (document.getElementById(i) || {}).textContent || '').join(' ').trim(); }))"""))
+        self.assertGreaterEqual(len(names), 2)
+        for name in names:
+            self.assertTrue(name.startswith("Intento"), names)
+        alt = self.js("document.querySelector(\"%s img\").alt" % self.card(1))
+        self.assertRegex(alt, r"^Intento q1 \(.+\): ")
+        self.page.key("q")
+        self.page.wait("!document.getElementById('queue-drawer').hidden")
+        self.click("#help")
+        self.page.wait("document.querySelector('#shortcuts[open] dt')")
+        levels = json.loads(self.js("JSON.stringify([...document.querySelectorAll('h1, h2, h3, h4, h5, h6')].filter((x) => x.getClientRects().length).map((x) => [Number(x.tagName[1]), x.closest('#queue-drawer') ? 'drawer' : x.closest('#shortcuts') ? 'help' : 'page']))"))
+        self.assertEqual(levels[0][0], 1, levels)
+        for before, after in zip(levels, levels[1:]):
+            self.assertLessEqual(after[0], before[0] + 1, levels)
+        self.assertIn("drawer", [x[1] for x in levels])
+        self.assertTrue(self.js("document.querySelector('h1').compareDocumentPosition(document.querySelector('#queue-drawer h2')) & Node.DOCUMENT_POSITION_FOLLOWING"))
+        self.assertEqual(self.js("document.getElementById('retouch-count').labels.length"), 1)
+        self.assertEqual(self.js("document.querySelectorAll('dl h3').length"), 0)
+        self.assertGreaterEqual(self.js("document.querySelectorAll('#shortcuts h3').length"), 1)
 
     def test_keyboard_shortcuts(self):
         self.order("fondos/atajos")

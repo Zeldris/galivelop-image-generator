@@ -36,15 +36,18 @@ export function attemptCard(ctx, attempt) {
   const raw = ctx.showRaw && attempt.raw;
   const version = imageVersion(attempt);
   const src = paths.image(ctx.project, ctx.profile, ctx.key, id, { raw, v: version });
-  const alt = t('ui.attempt.image', { id, seed: attempt.seed });
+  const promptText = typeof attempt.prompt === 'string' ? attempt.prompt.replace(/\s+/g, ' ').trim() : '';
+  const alt = promptText
+    ? t('ui.attempt.imageAlt', { id, state: t('ui.state.' + st), prompt: promptText.length > 80 ? `${promptText.slice(0, 79)}…` : promptText })
+    : t('ui.attempt.image', { id, seed: attempt.seed });
 
-  const figure = h('figure.figure', {}, h('img', { src, alt: '', loading: 'lazy' }));
+  const figure = h('figure.figure', {}, h('img', { src, alt, loading: 'lazy' }));
   setVars(figure, { ar: aspect(ctx, attempt) });
   figure.append(h('button.open', { type: 'button', aria: { label: t('ui.attempt.open', { id }) }, onclick: () => openLightbox(src, `${t('ui.attempt.id', { id })} · ${t('ui.attempt.seed')} ${attempt.seed}`, alt) }));
   figure.append(badges(st, attempt));
 
   const meta = h('div.meta', {},
-    h('span.id', {}, `q${id}`),
+    h('span.id', { id: `attempt-title-${id}` }, `${t('ui.attempt.id', { id })} · ${t('ui.state.' + st)}`),
     h('span', {}, `${t('ui.attempt.seed')} `, h('b', {}, attempt.seed)),
     attempt.params && attempt.params.steps ? h('span', {}, `${attempt.params.steps} ${t('ui.attempt.steps')}`) : null,
     attempt.params && attempt.params.model ? h('span', { title: attempt.params.model }, shortModel(attempt.params.model)) : null,
@@ -81,14 +84,15 @@ export function attemptCard(ctx, attempt) {
   if (attempt.compose && attempt.compose.at) extras.push(h('p.hint', {}, t('ui.attempt.composedAt', { when: when(attempt.compose.at) })));
 
   return h('article.card.attempt', {
-    class: `is-${st}${compared ? ' is-compared' : ''}`, tabindex: 0, data: { attempt: id, kind: 'attempt' },
-    aria: { label: `${t('ui.attempt.id', { id })}, ${t('ui.state.' + st)}` },
+    class: `is-${st}${compared ? ' is-compared' : ''}`, tabindex: 0, role: 'group', data: { attempt: id, kind: 'attempt' },
+    aria: { labelledby: `attempt-title-${id}` },
   }, figure, meta, actions, extras, note, more);
 }
 
 /** Tarjeta de una entrada de la cola sin intento aún (queued / running / failed / cancelled). */
 export function queueCard(ctx, entry) {
   const id = `q${entry.id}`;
+  const titleId = `entry-title-${entry.id}`;
   const figure = h('figure.figure', {});
   setVars(figure, { ar: aspect(ctx, entry) });
   const block = h('div.status-block', {});
@@ -112,10 +116,10 @@ export function queueCard(ctx, entry) {
         h('button.btn.btn-danger', { type: 'button', data: { fid: `delete-entry-${entry.id}` }, title: t('ui.queue.deleteHint'), onclick: () => ctx.actions.removeEntry(entry) }, t('ui.queue.delete'))));
   }
   figure.append(block, badges(entry.state, entry));
-  const meta = h('div.meta', {}, h('span.id', {}, id), h('span', {}, `${t('ui.attempt.seed')} `, h('b', {}, entry.seed)),
+  const meta = h('div.meta', {}, h('span.id', { id: titleId }, `${t('ui.attempt.id', { id: entry.id })} · ${t('ui.state.' + entry.state)}`), h('span', {}, `${t('ui.attempt.seed')} `, h('b', {}, entry.seed)),
     entry.params && entry.params.steps ? h('span', {}, `${entry.params.steps} ${t('ui.attempt.steps')}`) : null,
     entry.params && entry.params.model ? h('span', {}, shortModel(entry.params.model)) : null);
-  return h('article.card.attempt', { class: `is-${entry.state}`, tabindex: 0, data: { entry: entry.id, kind: 'entry' }, aria: { label: `${id}, ${t('ui.state.' + entry.state)}` } }, figure, meta);
+  return h('article.card.attempt', { class: `is-${entry.state}`, tabindex: 0, role: 'group', data: { entry: entry.id, kind: 'entry' }, aria: { labelledby: titleId } }, figure, meta);
 }
 
 function badges(st, a) {
