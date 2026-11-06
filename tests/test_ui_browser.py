@@ -375,7 +375,7 @@ class OrderScreen(UiBase):
     """The order: attempts, verdicts, choosing, retouching, compare, lightbox, texts, editor. One order per scenario."""
 
     KEYS = ("fondos/voto", "fondos/elegir", "fondos/comparar", "fondos/retoque", "fondos/textos", "fondos/editor",
-            "fondos/volver", "fondos/plantilla", "fondos/guardar", "fondos/atajos", "fondos/texto")
+            "fondos/volver", "fondos/plantilla", "fondos/guardar", "fondos/atajos", "fondos/texto", "fondos/tamano")
 
     @classmethod
     def prepare(cls):
@@ -744,12 +744,110 @@ class OrderScreen(UiBase):
         self.assertEqual(self.js("document.activeElement.dataset.element"), "title1")
         for _ in range(3):
             self.page.key("ArrowRight")
-        self.page.key("ArrowDown", shift=True)
+        self.page.key("ArrowDown", ctrl=True)  # UI.6: Ctrl makes the step 10 px (Shift resizes)
         self.assertEqual(self.js("document.querySelector('.ed-item output').textContent"), "43, 50 · 500×60")
         self.press("dialog.editor", "Aplicar")
         self.page.wait("!document.querySelector('dialog.editor')")
         a = [x for x in self.data(key)["attempts"] if x["id"] == 2][0]
         self.assertEqual(a["compose"]["layout"], {"title1": {"x": 43, "y": 50, "w": 500, "h": 60}})
+        self.no_problems()
+
+    # UI.6: the visible handles of the editor, grouped by box: [[element, x, y, w, h], ...]
+    HANDLE_ZONES = """[...document.querySelectorAll('.ed-box .ed-handle')]
+        .filter((n) => getComputedStyle(n).display !== 'none')
+        .map((n) => { const r = n.getBoundingClientRect(); const pad = -parseFloat(getComputedStyle(n, '::before').top);
+            return { element: n.closest('.ed-box').dataset.element, corner: n.dataset.corner, w: r.width, h: r.height, pad,
+                zone: [r.left - pad, r.top - pad, r.right + pad, r.bottom + pad] }; })"""
+
+    def test_editor_resizes_with_the_keyboard(self):
+        """UI.6 (audit R4, A6; WCAG 2.5.7): Shift+arrows change `w`/`h` of the focused box (Ctrl makes the step 10 px,
+        plain arrows still move it) and the numeric fields x, y, w, h of the side panel move or resize it within the
+        target. At 360 the dialog fills the window, the stage is `100vw - 24px` wide and at most max(50vh, 320px)
+        high, the 24 px handles (44 px touch zone) show only on the picked box so no two boxes' handles overlap, the
+        box labels leave the stage (the names stay in the list) and nothing scrolls sideways."""
+        key = "fondos/tamano"
+        self.open_editor(key)
+        self.assertEqual(self.js("document.activeElement.dataset.element"), "title1")
+        nums = "document.querySelector('.ed-item[data-element=title1] output').textContent"
+        self.page.key("ArrowRight", shift=True)
+        self.page.key("ArrowRight", shift=True)
+        self.page.key("ArrowDown", shift=True)
+        self.page.key("ArrowLeft", shift=True)
+        self.assertEqual(self.js(nums), "40, 40 · 501×61")
+        self.page.key("ArrowRight", shift=True, ctrl=True)
+        self.assertEqual(self.js(nums), "40, 40 · 511×61")
+        self.page.key("ArrowDown", ctrl=True)
+        self.assertEqual(self.js(nums), "40, 50 · 511×61")
+        # the numeric fields follow the picked box and drive it: x moves (the size stays), w resizes (x stays) and
+        # the target clips what does not fit
+        self.assertFalse(self.js("document.querySelector('.ed-geom').hidden"))
+        self.assertEqual(self.js("['x', 'y', 'w', 'h'].map((k) => document.getElementById('ed-' + k).value)"), ["40", "50", "511", "61"])
+        self.set_field("ed-x", "100")
+        self.assertEqual(self.js(nums), "100, 50 · 511×61")
+        self.set_field("ed-w", "2000")
+        self.assertEqual(self.js(nums), "100, 50 · 1100×61")
+        self.assertEqual(self.js("document.getElementById('ed-w').value"), "1100")
+        self.set_field("ed-h", "")  # half-typed: nothing moves
+        self.assertEqual(self.js(nums), "100, 50 · 1100×61")
+        self.press("dialog.editor", "Aplicar")
+        self.page.wait("!document.querySelector('dialog.editor')")
+        a = [x for x in self.data(key)["attempts"] if x["id"] == 2][0]
+        self.assertEqual(a["compose"]["layout"], {"title1": {"x": 100, "y": 50, "w": 1100, "h": 61}})
+        self.no_problems()
+        # at 360: the stage takes the width, the handles (24 px, 44 px touch zone) show only on the picked box and
+        # never overlap between boxes, the labels leave the stage and nothing scrolls sideways
+        self.page.ws.close()
+        self.page = self.browser.new_page(width=360, height=780)
+        self.open_editor(key)
+        inner_w, inner_h = self.js("window.innerWidth"), self.js("window.innerHeight")
+        stage = self.js("document.querySelector('.ed-stage').getBoundingClientRect().toJSON()")
+        self.assertAlmostEqual(stage["width"], inner_w - 24, delta=1)
+        self.assertLessEqual(self.js("document.querySelector('.ed-img').getBoundingClientRect().height"), max(inner_h / 2, 320) + 1)
+        for sel in ("document.documentElement", "document.querySelector('dialog.editor')", "document.querySelector('.ed-main')", "document.querySelector('.ed-side')"):
+            self.assertLessEqual(self.js(sel + ".scrollWidth"), self.js(sel + ".clientWidth || window.innerWidth"), sel)
+        self.assertEqual(self.js("[...document.querySelectorAll('.ed-name')].filter((n) => getComputedStyle(n).display !== 'none').length"), 0)
+        self.assertEqual(self.js("[...document.querySelectorAll('.ed-item b')].map((n) => n.textContent)"), ["title1", "subtitle", "logo"])
+        # the stage frames the canvas (image + boxes) with 22 px: a box glued to an edge keeps its handles and their
+        # 44 px touch zones whole (title1 at 0, 0 and full width; logo in the bottom-right corner)
+        self.assertAlmostEqual(self.js("document.querySelector('.ed-img').getBoundingClientRect().width"), stage["width"] - 44, delta=1)
+        self.js("document.querySelector('.ed-box[data-element=title1]').focus()")
+        for field, value in (("ed-x", "0"), ("ed-y", "0"), ("ed-w", "1200")):
+            self.set_field(field, value)
+        self.js("document.querySelector('.ed-box[data-element=logo]').focus()")
+        for field, value in (("ed-x", "1000"), ("ed-y", "570")):
+            self.set_field(field, value)
+        self.assertEqual(self.js("[...document.querySelectorAll('.ed-item output')].map((n) => n.textContent)"),
+                         ["0, 0 · 1200×61", "40, 140 · 500×40", "1000, 570 · 200×60"])
+        outer = {"nw": (1, 1, 0, 0), "ne": (0, 1, -1, 0), "sw": (1, 0, 0, -1), "se": (0, 0, -1, -1)}  # corner away from the box
+        # the probe steps in from the corner just past the stage's rounded corner, which leaves the corner pixel itself
+        radius = self.js("parseFloat(getComputedStyle(document.querySelector('.ed-stage')).borderTopLeftRadius)")
+        step = radius * (1 - 2 ** -0.5) + 1
+        for element in ("title1", "subtitle", "logo"):
+            self.js("document.querySelector('.ed-box[data-element=%s]').focus()" % element)
+            handles = self.js(self.HANDLE_ZONES)
+            self.assertEqual(sorted({hd["element"] for hd in handles}), [element])  # only the picked box shows them
+            self.assertEqual(sorted(hd["corner"] for hd in handles), ["ne", "nw", "se", "sw"])
+            for hd in handles:
+                where = "%s handle %s" % (element, hd["corner"])
+                self.assertAlmostEqual(hd["w"], 24, delta=0.5, msg=where)
+                self.assertAlmostEqual(hd["h"], 24, delta=0.5, msg=where)
+                self.assertEqual(hd["pad"], 10, where)  # ::before at -10 px: a 44 px touch zone
+                left, top, right, bottom = hd["zone"]
+                self.assertGreaterEqual(right - left, 44 - 0.5, where)
+                self.assertGreaterEqual(bottom - top, 44 - 0.5, where)
+                # whole inside the stage (its overflow clips) and inside the window
+                self.assertGreaterEqual(left, max(stage["left"], 0) - 0.5, where)
+                self.assertGreaterEqual(top, max(stage["top"], 0) - 0.5, where)
+                self.assertLessEqual(right, min(stage["right"], inner_w) + 0.5, where)
+                self.assertLessEqual(bottom, min(stage["bottom"], inner_h) + 0.5, where)
+                # and the pointer at its outer corner grabs that very handle
+                dl, dt, dr, db = outer[hd["corner"]]
+                px = left + step if dl else right - step
+                py = top + step if dt else bottom - step
+                hit = self.js("(() => { const e = document.elementFromPoint(%s, %s); const b = e && e.closest('.ed-box');"
+                              " return [b ? b.dataset.element : e && e.className, e && e.dataset.corner]; })()" % (px, py))
+                self.assertEqual(hit, [element, hd["corner"]], where)
+        self.assert_tap_targets("in the editor at 360")
         self.no_problems()
 
     def test_editor_goes_back_to_the_template(self):

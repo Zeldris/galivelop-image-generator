@@ -6,8 +6,14 @@
      hueco que deja se ve hasta aplicar). La composición real la hace el servidor al aplicar.
    - Coordenadas en píxeles del destino (W×H); lo que se muestra se escala por `img.clientWidth / W`.
    - Puntero: pointer events con captura (arrastrar la caja = mover; las asas de las esquinas = redimensionar, con la
-     proporción fija salvo con Mayús). Teclado: Tab entre cajas, flechas 1 px, Mayús+flechas 10 px, Alt+flechas el
-     tamaño (ancho/alto por separado).
+     proporción fija salvo con Mayús). Las asas (`--ed-handle`, 24 px, zona de toque de 44 por `::before`) solo las
+     muestra la caja elegida (`is-selected`: la enfocada o la última enfocada): a 360 las de dos cajas vecinas se
+     solapaban (UI.6). Suben solo las asas (`z-index`), no la caja, y el escenario lleva un marco de 22 px alrededor
+     del lienzo (`.ed-canvas`: imagen + cajas) para que las asas de una caja pegada al borde se cojan enteras. Teclado: Tab entre cajas, flechas mueven 1 px, Mayús+flechas cambian el tamaño (ancho con
+     izquierda/derecha, alto con arriba/abajo), con Ctrl el paso es de 10 px; Alt se deja al navegador (Firefox: atrás,
+     barra de menús). Campos numéricos x, y, ancho y alto en el lateral (alternativa de un solo puntero, WCAG 2.5.7).
+   - A ≤640 el diálogo ocupa la ventana y el escenario todo el ancho (100vw − 24px) con la imagen hasta max(50vh, 320px) de alto; con el
+     escenario por debajo de 480 px las etiquetas de caja (`.ed-name`) se esconden y los nombres quedan en la lista.
    - Contraste en vivo de cada elemento de texto: `measure?zone&text&base=1`, 400 ms después de soltar o de la última
      tecla, por la cola de medidas de measure-chip.js.
    - Texto y tipografía (F4e.2c): al elegir un elemento de texto, el panel «Texto y tipografía» edita su `text` y su
@@ -142,7 +148,8 @@ export function openLayoutEditor(ctx, attempt, tpl, opener) {
   const tplColor = tpl.textColor || (ctx.measure && ctx.measure.textColor) || null;
 
   const img = h('img.ed-img', { src, alt: '', draggable: 'false' });
-  const stage = h('div.ed-stage', { role: 'group', aria: { label: t('ui.editor.stage', { id: attempt.id }), describedby: hintId } }, img);
+  const canvas = h('div.ed-canvas', {}, img);  // imagen + cajas; el escenario le pone alrededor el marco de las asas (UI.6)
+  const stage = h('div.ed-stage', { role: 'group', aria: { label: t('ui.editor.stage', { id: attempt.id }), describedby: hintId } }, canvas);
   const list = h('ul.ed-list');
   const error = h('p.notice.notice-bad', { role: 'alert', hidden: true });
   const warn = h('p.notice.notice-warn', { role: 'status', hidden: true });
@@ -170,7 +177,7 @@ export function openLayoutEditor(ctx, attempt, tpl, opener) {
       h('button.btn.btn-ghost', { type: 'button', onclick: () => it.node.focus() }, h('b', {}, it.name), ' ',
         h('span.hint', {}, t(`ui.editor.kind.${it.kind}`) + (it.added ? ` · ${t('ui.editor.added')}` : ''))),
       it.nums, it.chip, it.warn, it.toggle);
-    stage.append(it.node);
+    canvas.append(it.node);
     list.append(it.row);
     it.node.addEventListener('pointerdown', (ev) => startDrag(ev, it, null));
     for (const handle of it.node.querySelectorAll('.ed-handle')) handle.addEventListener('pointerdown', (ev) => startDrag(ev, it, handle.dataset.corner));
@@ -193,6 +200,14 @@ export function openLayoutEditor(ctx, attempt, tpl, opener) {
       makeItem({ name, kind: 'text', color: null, tplBox: entry, box: entry, tplHidden: false, hidden: false, added: true, text: entry.text || '', style: entry.style || {} });
     }
   }
+
+  // --- posición y tamaño de la caja elegida (UI.6): campos numéricos, la alternativa de un solo puntero ---
+  const numField = (key, max) => h('input', { type: 'number', id: `ed-${key}`, min: 0, max, step: 1, inputmode: 'numeric', data: { geom: key }, oninput: onGeom });
+  const geom = { x: numField('x', W), y: numField('y', H), w: numField('w', W), h: numField('h', H) };
+  const geomPanel = h('section.ed-geom', { hidden: true, aria: { labelledby: 'ed-geom-title' } },
+    h('h3', { id: 'ed-geom-title' }, t('ui.editor.geom')),
+    h('div.ed-xywh', {}, ['x', 'y', 'w', 'h'].map((k) => h('div.field', {}, h('label', { for: `ed-${k}` }, t(`ui.editor.${k}`)), geom[k]))),
+    h('p.hint', {}, t('ui.editor.geomHint', { w: W, h: H })));
 
   // --- panel «Texto y tipografía» (F4e.2c) ---
   const asTpl = t('ui.editor.asTemplate');
@@ -239,12 +254,13 @@ export function openLayoutEditor(ctx, attempt, tpl, opener) {
     h('div.ed-head', {}, h('h2', { id: 'ed-title' }, t('ui.editor.title', { id: attempt.id })), h('span.grow'), close),
     h('div.ed-body', {},
       h('div.ed-main', {}, stage, h('p.hint', { id: hintId }, t('ui.editor.hint')), h('p.hint', {}, t('ui.editor.approx'))),
-      h('aside.ed-side', {}, h('h3', {}, t('ui.editor.elements')), list, h('div.ed-add', {}, addBtn, addHint), panel, warn, error,
+      h('aside.ed-side', {}, h('h3', {}, t('ui.editor.elements')), list, h('div.ed-add', {}, addBtn, addHint), geomPanel, panel, warn, error,
         h('div.panel-actions', {}, apply, reset, save, exportA))));
 
   function layoutBoxes() {
     const k = img.clientWidth / W;
     if (!k) return;
+    stage.classList.toggle('is-narrow', img.clientWidth < 480);
     for (const it of items) {
       const { x, y, w, h: hh } = it.cur;
       const kx = w / it.start.w;
@@ -265,6 +281,7 @@ export function openLayoutEditor(ctx, attempt, tpl, opener) {
     const label = t('ui.editor.box', { name: it.name, x: it.cur.x, y: it.cur.y, w: it.cur.w, h: it.cur.h });
     it.node.setAttribute('aria-label', label);
     it.nums.textContent = `${it.cur.x}, ${it.cur.y} · ${it.cur.w}×${it.cur.h}`;
+    if (it === current) fillGeom(it);
     const changed = Object.keys(changedLayout(items)).length > 0;
     it.node.classList.toggle('is-hidden', it.hidden);
     it.row.classList.toggle('is-hidden', it.hidden);
@@ -296,12 +313,38 @@ export function openLayoutEditor(ctx, attempt, tpl, opener) {
   /** El elemento del panel: un texto muestra sus campos; otro (logo, adorno), solo la pista. */
   function select(it) {
     current = it;
+    for (const x of items) x.node.classList.toggle('is-selected', x === it);
+    geomPanel.hidden = !it;
+    if (it) fillGeom(it);
     const isText = Boolean(it && it.kind === 'text');
     form.hidden = !isText;
     noText.hidden = isText;
     editing.hidden = !it;
     editing.textContent = it ? t('ui.editor.editing', { name: it.name }) : '';
     if (isText) fill(it);
+  }
+
+  /** Los campos x, y, ancho y alto con la caja de `it` (el mismo valor no mueve el cursor de quien escribe). */
+  function fillGeom(it) {
+    for (const k of ['x', 'y', 'w', 'h']) { const v = String(it.cur[k]); if (geom[k].value !== v) geom[k].value = v; }
+  }
+
+  /** Lleva el campo numérico que cambió a la caja elegida, como las flechas: x, y la mueven (`moveBox`, el tamaño no
+      cambia), ancho y alto la redimensionan (`sizeBox`, la posición no cambia); el destino recorta lo que no cabe.
+      Un campo vacío o no entero (a medio escribir) no hace nada. */
+  function onGeom(ev) {
+    const it = current;
+    if (!it || busy) return;
+    const k = ev.target.dataset.geom;
+    const raw = ev.target.value.trim();
+    const n = Number(raw);
+    if (raw === '' || !Number.isInteger(n)) return;
+    const d = n - it.cur[k];
+    it.cur = k === 'x' || k === 'y'
+      ? moveBox(it.cur, k === 'x' ? d : 0, k === 'y' ? d : 0, W, H)
+      : sizeBox(it.cur, k === 'w' ? d : 0, k === 'h' ? d : 0, W, H);
+    refresh(it);
+    measureLater(it);
   }
 
   function fill(it) {
@@ -519,13 +562,13 @@ export function openLayoutEditor(ctx, attempt, tpl, opener) {
     target.addEventListener('pointercancel', onEnd);
   }
 
-  // --- teclado ---
+  // --- teclado: flechas mueven, con Mayús cambian el tamaño, con Ctrl el paso es de 10 px; Alt y Meta, al navegador ---
   function onBoxKey(ev, it) {
     const dir = ARROWS[ev.key];
-    if (!dir || busy || ev.ctrlKey || ev.metaKey) return;
+    if (!dir || busy || ev.altKey || ev.metaKey) return;
     ev.preventDefault();
-    const step = ev.shiftKey ? STEP_BIG : STEP;
-    it.cur = ev.altKey ? sizeBox(it.cur, dir[0] * step, dir[1] * step, W, H) : moveBox(it.cur, dir[0] * step, dir[1] * step, W, H);
+    const step = ev.ctrlKey ? STEP_BIG : STEP;
+    it.cur = ev.shiftKey ? sizeBox(it.cur, dir[0] * step, dir[1] * step, W, H) : moveBox(it.cur, dir[0] * step, dir[1] * step, W, H);
     refresh(it);
     measureLater(it);
   }
