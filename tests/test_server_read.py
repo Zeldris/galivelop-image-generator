@@ -264,6 +264,20 @@ class QueueTests(ReadBase):
         resp, payload = self.get("/api/queue/%d/preview" % entry["id"])
         self.err(resp, payload, 404, "api.not_found")
 
+    def test_list_says_if_the_preview_is_there(self):
+        """The UI asks for the preview only when the list says it is there: a 404 is a console error in Chrome."""
+        self.make_order(work=False)
+        entry = queue.list_entries()[0]
+        self.hold_worker_lock()
+        queue.claim()
+        has = lambda: [e.get("hasPreview") for e in self.ok_json("/api/queue")]
+        self.assertEqual(has(), [False, None])  # running without one yet; a queued entry has no field
+        png = paths.data_dir() / "prev.png"
+        queue.set_preview(entry["id"], str(png))
+        self.assertEqual(has(), [False, None])  # the engine said where, but has not written it
+        png.write_bytes(b"\x89PNGdata")
+        self.assertEqual(has(), [True, None])
+
 
 class QueueResilienceTests(ReadBase):
     def test_bad_engine_omits_the_estimate_instead_of_500(self):

@@ -140,7 +140,7 @@ function entry(e, queuedPos, queuedCount) {
   if (e.draft) what.push(t('ui.state.draft'));
 
   let thumb;
-  if (e.state === 'running') thumb = h('img.thumb', { src: paths.preview(e.id), alt: '', onerror: (ev) => ev.target.replaceWith(h('div.thumb-empty')) });
+  if (e.state === 'running' && e.hasPreview) thumb = h('img.thumb', { src: paths.preview(e.id), alt: '', onerror: (ev) => ev.target.replaceWith(h('div.thumb-empty')) });
   else if (e.state === 'done' && e.attemptId !== null && e.attemptId !== undefined) thumb = h('img.thumb', { src: paths.image(e.project, e.profile, e.key, e.attemptId), alt: '' });
   else thumb = h('div.thumb-empty');
 

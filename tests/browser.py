@@ -279,7 +279,7 @@ class CdpPage:
 
     def key(self, key, **mods):
         """A real keyboard event through the protocol (``key`` is a DOM key name such as ``ArrowLeft`` or ``s``)."""
-        text = key if len(key) == 1 else ""
+        text = key if len(key) == 1 else {"Enter": "\r"}.get(key, "")  # Chrome activates a button only on Enter's char
         params = {"key": key, "text": text, "windowsVirtualKeyCode": _VK.get(key, ord(key.upper()) if len(key) == 1 else 0),
                   "code": _CODE.get(key, "Key" + key.upper() if len(key) == 1 else key),
                   "modifiers": sum({"alt": 1, "ctrl": 2, "meta": 4, "shift": 8}[m] for m, v in mods.items() if v)}

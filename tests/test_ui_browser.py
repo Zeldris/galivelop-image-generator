@@ -253,9 +253,11 @@ class Browse(UiBase):
     def header_metrics(self):
         return self.js("""(() => { const r = (s) => document.querySelector(s).getBoundingClientRect();
             const header = r('.app-header'), crumbs = document.getElementById('crumbs');
-            const tops = new Set([...crumbs.children].map((c) => { const b = c.getBoundingClientRect(); return Math.round(b.top + b.height / 2); }));  // same line = same centre
+            // same line = same centre; a sub-pixel gap (Chrome centres a 44 px link and a text separator half a pixel apart) is not a new line
+            const centres = [...crumbs.children].map((c) => { const b = c.getBoundingClientRect(); return b.top + b.height / 2; }).sort((a, b) => a - b);
+            const lines = centres.filter((c, i) => i === 0 || c - centres[i - 1] > 2).length;
             return {headerH: header.height, token: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-h')),
-                    crumbLines: tops.size, crumbsInside: r('#crumbs').bottom <= header.bottom + 0.5,
+                    crumbLines: lines, crumbsInside: r('#crumbs').bottom <= header.bottom + 0.5,
                     settings: [r('#settings-btn').width, r('#settings-btn').height], help: [r('#help').width, r('#help').height],
                     hscroll: document.documentElement.scrollWidth - document.documentElement.clientWidth}; })()""")
 

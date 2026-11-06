@@ -44,7 +44,7 @@ nextAttempt = 9;
 const ordersOf = { [PROJECT]: orders, tarkor: [{ key: 'og', profile: 'og', prompt: 'desert fortress at dusk', params: { steps: 6, cfg: 1, sampler: 'euler' }, seed: 1, draft: false, text: {}, attempts: [], chosen: null, chosenHistory: [], createdAt: ago(100), updatedAt: ago(100) }] };
 
 const queue = [
-  { id: 10, project: PROJECT, key: 'portada/cuadrado', profile: 'cuadrado', seed: 41, params: { steps: 6, width: 1024, height: 1024 }, draft: false, state: 'running', startedAt: ago(4), finishedAt: null, error: null, attemptId: null, progress: { step: 2, steps: 6, etaS: 8 }, estimateMs: 12000 },
+  { id: 10, project: PROJECT, key: 'portada/cuadrado', profile: 'cuadrado', seed: 41, params: { steps: 6, width: 1024, height: 1024 }, draft: false, state: 'running', startedAt: ago(4), finishedAt: null, error: null, attemptId: null, progress: { step: 2, steps: 6, etaS: 8 }, hasPreview: true, estimateMs: 12000 },
   { id: 11, project: PROJECT, key: 'portada/cuadrado', profile: 'cuadrado', seed: 42, params: { steps: 6, width: 1024, height: 1024 }, draft: false, state: 'queued', startedAt: null, finishedAt: null, error: null, attemptId: null, estimateMs: 12000 },
   { id: 9, project: PROJECT, key: 'portada/og', profile: 'og', seed: 17, params: { steps: 6, width: 1280, height: 640 }, draft: false, state: 'failed', startedAt: ago(400), finishedAt: ago(380), error: { code: 'engine.oom' }, errorText: 'CUDA out of memory (needs 2.3 GB, 1.9 GB free)', attemptId: null },
   { id: 8, project: PROJECT, key: 'icono', profile: 'icono', seed: 7, params: { steps: 8, width: 512, height: 512 }, draft: false, state: 'done', startedAt: ago(4100), finishedAt: ago(4000), error: null, attemptId: 8 },
@@ -68,7 +68,7 @@ setInterval(() => {
     }
   } else {
     const q = queue.find((e) => e.state === 'queued');
-    if (q) { q.state = 'running'; q.startedAt = now(); q.progress = { step: 0, steps: q.params.steps || 6, etaS: (q.params.steps || 6) * 2 }; }
+    if (q) { q.state = 'running'; q.startedAt = now(); q.hasPreview = true; q.progress = { step: 0, steps: q.params.steps || 6, etaS: (q.params.steps || 6) * 2 }; }
   }
 }, 1000);
 

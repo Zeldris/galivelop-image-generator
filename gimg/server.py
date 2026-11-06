@@ -609,7 +609,9 @@ def queue_list(req):
     out = []
     for entry in entries:
         item = queue.entry_view(entry, req.lang)
-        item.pop("preview", None)
+        shown = item.pop("preview", None)
+        if entry["state"] == "running":  # the engine may not have written it yet: the UI asks only when it is there
+            item["hasPreview"] = isinstance(shown, str) and os.path.isfile(shown)
         if entry["state"] in ("queued", "running"):
             try:  # the estimate is optional: a bad engine setting must not take the whole queue down
                 if provider is None:
