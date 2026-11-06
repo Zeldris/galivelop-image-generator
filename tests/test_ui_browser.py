@@ -295,8 +295,9 @@ class Browse(UiBase):
 
     def test_gamepad_moves_focus_activates_and_closes(self):
         """UI.9: with a (stubbed) standard gamepad connected, the d-pad moves the focus inside the open menu, A activates
-        the focused button and B closes the «Ajustes» menu and the help dialog. The real device is checked on the Deck."""
-        self.open("/", "document.querySelector('a.project-card')")
+        the focused button and B closes the «Ajustes» menu, the help dialog and a dialog that stops the propagation of its
+        keys (the new-order panel), which the global Esc handler never sees. The real device is checked on the Deck."""
+        self.open("/p/tarkor/piezas", "document.querySelector('.piece-card')")
         self.js("""(() => { const pad = {index: 0, connected: true, mapping: 'standard', buttons: Array.from({length: 17}, () => ({pressed: false, value: 0}))};
             window.__pad = pad; navigator.getGamepads = () => [pad];
             const ev = new Event('gamepadconnected'); Object.defineProperty(ev, 'gamepad', {value: pad}); window.dispatchEvent(ev); })()""")
@@ -324,6 +325,12 @@ class Browse(UiBase):
         self.page.wait("!document.getElementById('shortcuts').open")
         press(3)                                                    # Y opens the help
         self.page.wait("document.getElementById('shortcuts').open")
+        press(1)
+        self.page.wait("!document.getElementById('shortcuts').open")
+        self.click(".piece-card[data-profile=square] button[data-slot=new-order]")
+        self.page.wait("document.querySelector('dialog.new-order[open]')")
+        press(1)                                                    # B cancels it like the real Esc
+        self.page.wait("!document.querySelector('dialog.new-order[open]')")
         self.no_problems()
 
     def test_font_scale_persists(self):

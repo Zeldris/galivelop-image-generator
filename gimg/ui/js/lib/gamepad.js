@@ -55,12 +55,26 @@ function tick(now) {
 /** Despacha la tecla sobre el foco y, si nadie la atendió, hace la acción por defecto del navegador. */
 export function press(key) {
   const target = document.activeElement || document.body;
+  const dialogs = document.querySelectorAll('dialog[open]');
+  const topDialog = dialogs[dialogs.length - 1];
+  const topPopover = [...document.querySelectorAll(':popover-open')].pop();
   const ev = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
   target.dispatchEvent(ev);
   if (ev.defaultPrevented) return;
-  if (key === 'Enter') activate(document.activeElement);
+  if (key === 'Escape') escape(topDialog, topPopover);
+  else if (key === 'Enter') activate(document.activeElement);
   else if (key === '?') { if (!document.querySelector('#shortcuts[open]')) openHelp(); }
   else if (key.startsWith('Arrow')) arrow(key);
+}
+
+/** Lo que hace el Esc del navegador si el manejador global no lo vio (los diálogos que cortan la propagación del
+    `keydown`) o no lo cierra (popovers que no son «Ajustes»): cancelar el diálogo de arriba, si no el popover. */
+function escape(dialog, popover) {
+  if (dialog) {
+    if (!dialog.open) return;
+    if (dialog.requestClose) dialog.requestClose();
+    else if (dialog.dispatchEvent(new Event('cancel', { cancelable: true }))) dialog.close();
+  } else if (popover && popover.matches(':popover-open')) popover.hidePopover();
 }
 
 function activate(node) {
