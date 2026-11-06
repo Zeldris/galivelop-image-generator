@@ -556,7 +556,7 @@ export function openLayoutEditor(ctx, attempt, tpl, opener) {
     fonts.installed = Array.isArray(res.installed) ? res.installed : [];
     fonts.available = res.available === true;
     const names = [...new Set([...fonts.profile, ...fonts.installed])];
-    replace(datalist, h('datalist', { id: 'ed-fonts' }, names.map((n) => option(n, n))));
+    replace(datalist, names.map((n) => option(n, n)));
     checkFamily();
   }).catch(() => { /* sin lista */ });
 
