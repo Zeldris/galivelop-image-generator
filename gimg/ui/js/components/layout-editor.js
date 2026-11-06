@@ -346,7 +346,9 @@ export function openLayoutEditor(ctx, attempt, tpl, opener) {
   }
 
   function defaultStyle() {
-    const family = [...fonts.profile, ...fonts.installed].find((f) => FAMILY_PATTERN.test(f)) || 'sans-serif';
+    // la del perfil si está instalada (si no, el aviso de fuente que falta tendría el editor abierto); luego una instalada
+    const have = (f) => !fonts.available || fonts.installed.some((i) => i.toLowerCase() === f.toLowerCase());
+    const family = [...fonts.profile.filter(have), ...fonts.installed].find((f) => FAMILY_PATTERN.test(f)) || 'sans-serif';
     const color = COLOR_PATTERN.test(tplColor || '') ? tplColor.toLowerCase() : '#ffffff';
     return { family, size: 40, weight: 400, italic: false, color, align: 'left' };
   }
