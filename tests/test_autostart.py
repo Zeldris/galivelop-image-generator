@@ -156,7 +156,10 @@ class Autostart(Env):
             out, err = proc.communicate(timeout=60)
             self.assertEqual(proc.returncode, 0, err)
             results.append(json.loads(out))
-        self.assertEqual(results[0]["pid"], results[1]["pid"])
+        # on a failure, say which pid is the old one and what the service log holds (a flake not reproduced yet)
+        log = self.data / "serve.log"
+        why = "old pid %d; results %r; serve.log:\n%s" % (old.pid, results, log.read_text() if log.exists() else "")
+        self.assertEqual(results[0]["pid"], results[1]["pid"], why)
         self.assertNotEqual(results[0]["pid"], old.pid)
         self.assertEqual(old.wait(timeout=15), 0)
         self.assertEqual(service.read_state()["pid"], results[0]["pid"])
