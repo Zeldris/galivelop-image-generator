@@ -185,4 +185,4 @@ dialog.confirm { width: min(92vw, 420px); }
 .check-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .check-item { display: grid; grid-template-columns: max-content 1fr; gap: 10px; align-items: start; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--r-s); background: var(--surface-2); }
 .queue-move { flex-wrap: nowrap; gap: 4px; }
-@media (max-width: 600px) { .cols-2 { grid-template-columns: 1fr; } .facts { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .cols-2 { grid-template-columns: 1fr; } .facts { grid-template-columns: 1fr; } }

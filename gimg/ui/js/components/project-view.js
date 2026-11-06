@@ -80,7 +80,7 @@ function row(project, o, cfg) {
   const thumbId = chosen ? o.chosen : (o.lastAttempt ?? (Array.isArray(o.attempts) && o.attempts.length ? o.attempts[o.attempts.length - 1].id : null));
   const thumb = thumbId !== null && thumbId !== undefined
     ? h('img.thumb', { src: paths.image(project, o.profile, o.key, thumbId), alt: '', loading: 'lazy' })
-    : h('div.thumb-empty', {}, '—');
+    : h('div.thumb-empty', { role: 'img', aria: { label: t('ui.project.noImage') } });
   const prof = (cfg.profiles || {})[o.profile] || {};
   return h('a.card.order-row', { href: to.order(project, o.profile, o.key), aria: { label: `${o.key} @ ${o.profile}` } },
     thumb,
