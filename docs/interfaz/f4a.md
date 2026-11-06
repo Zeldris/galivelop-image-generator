@@ -174,9 +174,10 @@ Ajuste mínimo pedido a la hoja (ya propuesto en `hoja.md` §3, pendiente de la 
     nombre; color por tipo: texto, logo, adorno) pinta como fondo el trozo de esa imagen que ocupaba, así se ve moverse
     el elemento. Es una aproximación: el hueco que deja sigue visible hasta aplicar.
   - Ratón o táctil: arrastrar la caja la mueve; las asas de las esquinas cambian el tamaño con la proporción fija
-    (**Mayús** al arrastrar la suelta). Teclado: Tab pasa de una caja a otra, flechas 1 px, Mayús+flechas 10 px,
-    Alt+flechas cambia el tamaño (ancho con izquierda/derecha, alto con arriba/abajo). Las cajas no salen del destino
-    y las coordenadas son píxeles del destino.
+    (**Mayús** al arrastrar la suelta); las asas solo se ven en la caja elegida. Teclado: Tab pasa de una caja a otra,
+    flechas mueven 1 px, **Mayús+flechas** cambian el tamaño (ancho con izquierda/derecha, alto con arriba/abajo),
+    **Ctrl** hace el paso de 10 px; Alt se deja al navegador. También los campos x, y, ancho y alto del lateral (UI.6).
+    Las cajas no salen del destino y las coordenadas son píxeles del destino.
   - Cada elemento de texto con color (`data-gimg-color`, o el `textColor` de la plantilla o de la marca) muestra un
     chip de contraste en la lista lateral: `measure?zone=…&text=…&base=1`, 400 ms después de soltar o de la última
     tecla, por la misma cola de medidas del chip de la tarjeta.

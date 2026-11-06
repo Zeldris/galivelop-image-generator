@@ -8,10 +8,11 @@
    - Puntero: pointer events con captura (arrastrar la caja = mover; las asas de las esquinas = redimensionar, con la
      proporción fija salvo con Mayús). Las asas (`--ed-handle`, 24 px, zona de toque de 44 por `::before`) solo las
      muestra la caja elegida (`is-selected`: la enfocada o la última enfocada): a 360 las de dos cajas vecinas se
-     solapaban (UI.6). Teclado: Tab entre cajas, flechas mueven 1 px, Mayús+flechas cambian el tamaño (ancho con
+     solapaban (UI.6). Suben solo las asas (`z-index`), no la caja, y el escenario lleva un marco de 22 px alrededor
+     del lienzo (`.ed-canvas`: imagen + cajas) para que las asas de una caja pegada al borde se cojan enteras. Teclado: Tab entre cajas, flechas mueven 1 px, Mayús+flechas cambian el tamaño (ancho con
      izquierda/derecha, alto con arriba/abajo), con Ctrl el paso es de 10 px; Alt se deja al navegador (Firefox: atrás,
      barra de menús). Campos numéricos x, y, ancho y alto en el lateral (alternativa de un solo puntero, WCAG 2.5.7).
-   - A ≤640 el diálogo ocupa la ventana y la imagen todo el ancho (100vw − 24px) hasta max(50vh, 320px) de alto; con el
+   - A ≤640 el diálogo ocupa la ventana y el escenario todo el ancho (100vw − 24px) con la imagen hasta max(50vh, 320px) de alto; con el
      escenario por debajo de 480 px las etiquetas de caja (`.ed-name`) se esconden y los nombres quedan en la lista.
    - Contraste en vivo de cada elemento de texto: `measure?zone&text&base=1`, 400 ms después de soltar o de la última
      tecla, por la cola de medidas de measure-chip.js.
@@ -147,7 +148,8 @@ export function openLayoutEditor(ctx, attempt, tpl, opener) {
   const tplColor = tpl.textColor || (ctx.measure && ctx.measure.textColor) || null;
 
   const img = h('img.ed-img', { src, alt: '', draggable: 'false' });
-  const stage = h('div.ed-stage', { role: 'group', aria: { label: t('ui.editor.stage', { id: attempt.id }), describedby: hintId } }, img);
+  const canvas = h('div.ed-canvas', {}, img);  // imagen + cajas; el escenario le pone alrededor el marco de las asas (UI.6)
+  const stage = h('div.ed-stage', { role: 'group', aria: { label: t('ui.editor.stage', { id: attempt.id }), describedby: hintId } }, canvas);
   const list = h('ul.ed-list');
   const error = h('p.notice.notice-bad', { role: 'alert', hidden: true });
   const warn = h('p.notice.notice-warn', { role: 'status', hidden: true });
@@ -175,7 +177,7 @@ export function openLayoutEditor(ctx, attempt, tpl, opener) {
       h('button.btn.btn-ghost', { type: 'button', onclick: () => it.node.focus() }, h('b', {}, it.name), ' ',
         h('span.hint', {}, t(`ui.editor.kind.${it.kind}`) + (it.added ? ` · ${t('ui.editor.added')}` : ''))),
       it.nums, it.chip, it.warn, it.toggle);
-    stage.append(it.node);
+    canvas.append(it.node);
     list.append(it.row);
     it.node.addEventListener('pointerdown', (ev) => startDrag(ev, it, null));
     for (const handle of it.node.querySelectorAll('.ed-handle')) handle.addEventListener('pointerdown', (ev) => startDrag(ev, it, handle.dataset.corner));
