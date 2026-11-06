@@ -1,6 +1,6 @@
 # Retro especial: CI rojo desde UI.6 y prueba inestable de autoarranque (2026-11-06)
 
-**Estado:** pendiente de la persona.
+**Estado:** aprobada por la persona el 2026-11-06: P1 aplicada en el proyecto (`.claude/gw/diagnosing-bugs.md` y regla en `REVIEW.md`) y llevada al flujo; P2-P5 aprobadas y llevadas al flujo (sección «For Galivelop-workflow»).
 
 Pedida por la persona para sacar un patrón de diagnóstico. Episodio, en `f4e-piezas`:
 

@@ -83,3 +83,7 @@ creada.
 - **CHANGELOG por fase.** Un PR que cierra una fase (o trae algo visible para el usuario) añade su entrada en
   `CHANGELOG.md` y `CHANGELOG.es.md`; las notas de cada release de GitHub salen de ahí (`releases.py notes`). Que
   falte es un hallazgo medio. (criterio)
+- **Arreglo de un fallo caro de reproducir.** El commit que arregla una prueba inestable o un fallo que solo se da
+  en el CI (u otro navegador) cita la salida que decidió la causa (el mensaje de diagnóstico o la medida en ese
+  entorno) y nombra las hipótesis descartadas. Sin esa evidencia, es un hallazgo medio: el arreglo puede ser de otra
+  causa (retro 2026-11-06). (criterio)
