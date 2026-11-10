@@ -20,7 +20,7 @@ La doc se comprueba con `tests/test_api_doc.py`: cada ruta registrada en `gimg/s
 - **Puerto:** `--port`, si no `GIMG_PORT`, si no `"serve": {"port"}` de `<config>/config.json`, si no **8737**. Si está
   ocupado, error `serve.port_busy` (no se busca otro). Escucha siempre solo en `127.0.0.1`.
 - **Una instancia:** `<data>/serve.lock`; el estado vive en `<data>/serve.json` (`pid`, `port`, `url`, `version`,
-  `startedAt`) y el log en `<data>/serve.log`.
+  `build`, `startedAt`) y el log en `<data>/serve.log`.
 - **Arranque bajo demanda:** `gimg ui`, `gimg order submit` y `gimg attempt new` arrancan el servicio si no corre.
   `GIMG_AUTOSTART=0` (también `false`, `no`, `off`, sin distinguir mayúsculas) lo apaga.
 - **Inactividad:** se para solo tras 15 min sin peticiones, sin trabajador y sin entradas `queued`/`running`

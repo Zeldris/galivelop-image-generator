@@ -21,7 +21,7 @@ The doc is checked by `tests/test_api_doc.py`: every route registered in `gimg/s
 - **Port:** `--port`, else `GIMG_PORT`, else `"serve": {"port"}` in `<config>/config.json`, else **8737**. If it is
   taken, error `serve.port_busy` (no other port is tried). It always listens on `127.0.0.1` only.
 - **One instance:** `<data>/serve.lock`; the state lives in `<data>/serve.json` (`pid`, `port`, `url`, `version`,
-  `startedAt`) and the log in `<data>/serve.log`.
+  `build`, `startedAt`) and the log in `<data>/serve.log`.
 - **On-demand start:** `gimg ui`, `gimg order submit` and `gimg attempt new` start the service if it is not running.
   `GIMG_AUTOSTART=0` (also `false`, `no`, `off`, case-insensitive) turns it off.
 - **Inactivity:** it stops by itself after 15 min with no requests, no worker and no `queued`/`running` entries
