@@ -299,8 +299,8 @@ class PilotExampleTests(unittest.TestCase):
         self.assertIn("/examples/*/galivelop-images.manifest.json", lines)
 
 
-COMPOSE_PROJECTS = {  # proyecto -> lockup elegido (docs/marcas/README.md)
-    "tarkor": "tarkor-b-lockup.svg",
+COMPOSE_PROJECTS = {  # proyecto -> lockup elegido (docs/marcas/README.md; Tarkor: hoja.md §4-5, E3)
+    "tarkor": "tarkor-lockup-v.svg",
     "toveriai": "toveriai-a-lockup.svg",
     "galivelop-image-generator": "galivelop-image-generator-b-lockup.svg",
     "galivelop-workflow": "galivelop-workflow-b-lockup.svg",
@@ -326,7 +326,10 @@ class ComposeExampleTests(unittest.TestCase):
             self.assertEqual(cfg["compose"]["template"], "plantillas/og.svg", name)
             self.assertEqual(cfg["compose"]["logo"], "logos/" + logo, name)
             self.assertEqual(cfg["compose"]["fit"], "cover", name)
-            # El titular va en title1, title2 (y title3 si hace falta una tercera línea, r6: Tarkor); luego el subtítulo.
+            if name == "tarkor":  # E3: el wordmark va dentro del lockup; el único texto es el lema (hoja.md §5)
+                self.assertEqual(cfg["compose"]["fields"], ["lema"], name)
+                continue
+            # El titular va en title1, title2 (y title3 si hace falta una tercera línea); luego el subtítulo.
             self.assertEqual(cfg["compose"]["fields"][:2], ["title1", "title2"], name)
             self.assertIn("subtitle", cfg["compose"]["fields"], name)
 
@@ -355,7 +358,7 @@ class ComposeExampleTests(unittest.TestCase):
             text = read("examples/%s/textos/og.json" % name)
             self.assertEqual(set(text), set(cfg["compose"]["fields"]), name)
             for el in svg.iter("{http://www.w3.org/2000/svg}text"):
-                field = el.get("id")
+                field = el.get("id").removeprefix(compose.ELEMENT_PREFIX)  # `gimg-<campo>`: editable (F4c)
                 factor = FACTOR_TITULO if field.startswith("title") else FACTOR_SUB
                 size = float(el.get("font-size"))
                 self.assertLessEqual(len(text[field]) * size * factor, col, (name, field, text[field]))
@@ -369,6 +372,83 @@ class ComposeExampleTests(unittest.TestCase):
                 striped_png(raw, 1280, 640)
                 compose.render(root, cfg, raw, out, read("examples/%s/textos/og.json" % name), profile="og")
                 self.assertEqual(png.size(out), (1200, 630), name)
+
+
+class TarkorOgE3Tests(unittest.TestCase):
+    """`og` de Tarkor en E3 (docs/marcas/tarkor/hoja.md §4-5 y §9): lockup vertical centrado sobre la noche generada,
+    emblema al 45 % del alto, lema en Inter hueso debajo; sin velo, sin marco, wordmark nunca como `<text>`."""
+
+    ROOT_T = ROOT / "examples" / "tarkor"
+    NS = "{http://www.w3.org/2000/svg}"
+    EMBLEMA_ALTO, LOCKUP_ALTO = 902.0, 1336.31  # viewBox de tarkor-lockup-v.svg (gimg brand lockup)
+
+    def setUp(self):
+        self.cfg = read("examples/tarkor/galivelop-images.json")["profiles"]["og"]["compose"]
+        self.source = (self.ROOT_T / "plantillas" / "og.svg").read_text(encoding="utf-8")
+        self.svg = ET.fromstring(self.source)
+
+    def test_compose_uses_the_vertical_lockup_and_the_brand_fonts(self):
+        self.assertEqual(self.cfg["logo"], "logos/tarkor-lockup-v.svg")
+        self.assertEqual(self.cfg["fonts"], ["Cinzel", "Inter"])
+        self.assertEqual(self.cfg["fields"], ["lema"])
+        self.assertEqual(read("examples/tarkor/textos/og.json"), {"lema": "El mundo sigue aunque tú te detengas."})
+
+    def test_template_has_no_veil_frame_or_old_palette(self):
+        for forbidden in ("url(#velo)", "<rect", "linearGradient", "#E0703A", "Metamorphous", "Almendra"):
+            self.assertNotIn(forbidden, self.source, forbidden)
+        self.assertEqual(self.svg.get("viewBox"), "0 0 1200 630")
+        texts = list(self.svg.iter(self.NS + "text"))
+        self.assertEqual([t.get("id") for t in texts], ["gimg-lema"])
+        self.assertNotIn("Tarkor", "".join(t.text or "" for t in texts))  # el wordmark va en el lockup
+
+    def test_lockup_is_centred_with_the_emblem_at_45_percent(self):
+        (image,) = list(self.svg.iter(self.NS + "image"))
+        self.assertEqual(image.get("id"), "gimg-logo")
+        self.assertEqual(image.get("href"), "{{logo}}")
+        x, y, w, h = (float(image.get(k)) for k in ("x", "y", "width", "height"))
+        self.assertEqual(x + w / 2, 600)
+        self.assertAlmostEqual(w / h, 1446.4 / self.LOCKUP_ALTO, places=1)
+        self.assertAlmostEqual(h * self.EMBLEMA_ALTO / self.LOCKUP_ALTO / 630, 0.45, delta=0.01)
+        t = h * (self.LOCKUP_ALTO - 1128) / self.LOCKUP_ALTO  # altura de la T del wordmark = margen libre
+        self.assertAlmostEqual(y, t, delta=8)
+
+    def test_lema_is_one_line_of_inter_bone_below_the_lockup(self):
+        (image,) = list(self.svg.iter(self.NS + "image"))
+        (lema,) = list(self.svg.iter(self.NS + "text"))
+        self.assertEqual(lema.text, "{{lema}}")
+        self.assertEqual(lema.get("text-anchor"), "middle")
+        self.assertEqual(float(lema.get("x")), 600)
+        self.assertGreater(float(lema.get("y")), float(image.get("y")) + float(image.get("height")))
+        self.assertTrue(lema.get("font-family").startswith("Inter"))
+        self.assertEqual(lema.get("font-weight"), "400")
+        self.assertEqual(lema.get("fill"), "#f1e4d0")
+        self.assertEqual(lema.get("fill-opacity"), "0.82")
+        self.assertEqual(lema.get("data-gimg-color"), "#f1e4d0")
+
+    def test_lockups_carry_the_gold_instead_of_currentcolor(self):
+        # Embebido por `<image>` (data URI), `currentColor` sale negro: el oro va dentro del SVG (hoja §4, wordmark en oro).
+        for name in ("tarkor-lockup-v.svg", "tarkor-lockup-h.svg"):
+            for folder in (self.ROOT_T / "logos", ROOT / "docs" / "marcas" / "tarkor" / "logos"):
+                source = (folder / name).read_text(encoding="utf-8")
+                self.assertNotIn("currentColor", source, folder / name)
+                self.assertIn('fill="#b8862b"', source, folder / name)
+
+    def test_piezas_follow_the_sheet(self):
+        data = read("examples/tarkor/piezas.json")
+        self.assertEqual((data["fuente"], data["fuente_texto"]), ("Cinzel", "Inter"))
+        por_id = {p["id"]: p for p in data["piezas"]}
+        self.assertEqual(set(por_id), {"og", "cabecera", "avatar"})
+        og = por_id["og"]
+        self.assertEqual(og["logo"], "examples/tarkor/logos/tarkor-lockup-v.svg")
+        self.assertEqual(og["titulo"], "El mundo sigue aunque tú te detengas.")
+        self.assertEqual(por_id["cabecera"]["logo"], "examples/tarkor/logos/tarkor-lockup-h.svg")
+        self.assertEqual(por_id["avatar"]["logo"], "examples/tarkor/logos/tarkor-emblema.svg")
+        self.assertIsNone(por_id["avatar"]["fondo"])
+        for p in data["piezas"]:
+            if p["fondo"] is not None:
+                self.assertTrue(p["velo"].endswith(":0"), p["id"])  # sin velo (hoja §9)
+                self.assertEqual(p["color_texto"], "#f1e4d0", p["id"])
+            self.assertTrue((ROOT / p["logo"]).is_file(), p["logo"])
 
 
 if __name__ == "__main__":
