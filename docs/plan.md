@@ -123,6 +123,14 @@ la persona decide si es una F4e o va con otra). Se diseña con su «en detalle»
    tolerancia y borde suavizado); (b) vectorizado de siluetas planas: contornos por *marching squares*, simplificación
    (Douglas-Peucker) y curvas, un `<path>` por color con `fill="currentColor"` para la tinta. Se prueba primero con un
    prototipo sobre los intentos reales del Portal. Versión por decidir con la persona.
+   **Proceso de marca en la interfaz** (pedido de la persona del 2026-11-10, al parar el dibujo a mano de los SVG de
+   Tarkor): todo el camino de la marca se hace desde la interfaz, no solo con órdenes: del emblema elegido, «Quitar
+   fondo» (tolerancia, vista sobre claro y oscuro); «Pasar a SVG» (colores tomados de la paleta del proyecto, número de
+   colores, tolerancia de simplificación, versiones simple y mono) con vista previa a 16, 32, 64 y 128 px lado a lado;
+   **wordmark** desde el nombre y la fuente de la hoja (peso, espaciado) pasado a trazos; **lockups** horizontal y
+   vertical colocando emblema y wordmark con las proporciones de la hoja; y guardar el sistema de logo en la carpeta
+   que diga la persona (D40), con hoja de contactos. Cada paso deja copia y conserva el original. El prototipo de
+   Tarkor (`piloto/tarkor/vector/`) fija los parámetros que la interfaz expone.
 3. **Imágenes de referencia al generar una pieza:** una o varias (intentos de gimg o archivos de la persona) para
    seguir un estilo, una forma o un personaje. Comprobar qué acepta hoy `sd-cli` y qué modelos del catálogo.
 4. **Cajas de texto antes de generar:** en el pedido nuevo se colocan, al tamaño de la pieza, las cajas de titular,
