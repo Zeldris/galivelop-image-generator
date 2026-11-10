@@ -837,6 +837,13 @@ def _number(body: dict, name: str, default):
     return value
 
 
+def _flag(body: dict, name: str, default=False):
+    value = body.get(name, default)
+    if not isinstance(value, bool):
+        raise GimgError("api.bad_param", name=name)
+    return value
+
+
 def _int(body: dict, name: str, default):
     value = body.get(name, default)
     if isinstance(value, bool) or not isinstance(value, int):
@@ -873,10 +880,10 @@ def brand_list(req):
 @route("POST", _BRAND + "/matte")
 def brand_matte(req):
     project = _brand_project(req)
-    body = _fields(req.body, ("name", "source", "tol", "soft", "border", "grow"))
+    body = _fields(req.body, ("name", "source", "tol", "soft", "border", "grow", "holes"))
     name = _str_field(body, "name")
-    opts = {"tol": _number(body, "tol", 30), "soft": _number(body, "soft", 80), "border": _int(body, "border", 6),
-            "grow": _int(body, "grow", 3)}
+    opts = {"tol": _number(body, "tol", 60), "soft": _number(body, "soft", 110), "border": _int(body, "border", 6),
+            "grow": _int(body, "grow", 3), "holes": _flag(body, "holes")}
     src = _source_image(project, body.get("source"))
     with _heavy():
         return brandshop.matte(project, name, src, **opts)
