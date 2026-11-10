@@ -19,6 +19,12 @@ def read(rel):
         return json.load(fh)
 
 
+
+def og_params(root):
+    """The generation params of a project's `og` profile, as its config declares them (any catalog model)."""
+    profile = json.loads((root / "galivelop-images.json").read_text(encoding="utf-8"))["profiles"]["og"]
+    return {k: profile[k] for k in ("width", "height", "steps", "cfg", "sampler", "model")}
+
 class ExampleTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -263,8 +269,7 @@ class PilotExampleTests(unittest.TestCase):
             self.assertEqual([s["seed"] for s in specs], list(R1_SEEDS), name)
             self.assertEqual({s["prompt"] for s in specs}, {prompt}, name)
             self.assertEqual(specs[0]["params"],
-                             {"width": 1280, "height": 640, "steps": 6, "cfg": 1.0, "sampler": "euler",
-                              "model": "flux2-klein-4b-q8"}, name)
+                             og_params(root), name)
             self.assertEqual(specs[0]["references"], [], name)
 
     def test_r2_orders_use_their_prompt_files_and_seeds(self):
@@ -288,8 +293,7 @@ class PilotExampleTests(unittest.TestCase):
             specs = orders.attempt_specs(name, order["key"], order["profile"], order["count"])
             self.assertEqual([s["seed"] for s in specs], [seed], (name, stem))
             self.assertEqual(specs[0]["params"],
-                             {"width": 1280, "height": 640, "steps": 6, "cfg": 1.0, "sampler": "euler",
-                              "model": "flux2-klein-4b-q8"}, (name, stem))
+                             og_params(root), (name, stem))
             # The second seed of R1 comes from `gimg attempt new --seed 7`, not from count.
             extra = orders.attempt_specs(name, order["key"], order["profile"], 1, seed=7)
             self.assertEqual([s["seed"] for s in extra], [7], (name, stem))
