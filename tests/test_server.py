@@ -35,7 +35,6 @@ INTENDED_500 = {
     "serve.start_failed",
     # brand.*: no HTTP route yet (the CLI only); the interface step will map them
     "brand.out_is_input", "brand.tool_missing", "brand.tool_failed", "brand.timeout", "brand.font_unreadable", "brand.empty_text", "brand.text_too_long", "brand.empty_wordmark", "brand.write_failed", "brand.wordmark_no_fit",
-    "brand.exists", "brand.no_matte",
 }
 
 
@@ -54,7 +53,7 @@ class StatusTableTests(unittest.TestCase):
                              ("limit.steps", 400), ("api.content_type", 415), ("api.length_required", 411),
                              ("api.body_too_large", 413), ("api.method_not_allowed", 405),
                              ("compose.busy", 409), ("measure.busy", 409), ("order.invalid", 400),
-                             ("queue.bad_state", 400), ("brand.nothing", 500)]:
+                             ("queue.bad_state", 400), ("brand.exists", 409), ("brand.no_matte", 400), ("brand.nothing", 500)]:
             self.assertEqual(server.status_for(code), status, code)
 
 

@@ -275,7 +275,7 @@ def wordmark(text: str, font, out=None, weight: int = 800, spacing: float = 0.12
 
 _SVG = re.compile(r"^\s*(?:<\?xml[^>]*\?>\s*)?<svg\b([^>]*)>(.*)</svg>\s*$", re.S)
 _VIEWBOX = re.compile(r'viewBox="\s*([-\d.eE]+)[ ,]+([-\d.eE]+)[ ,]+([-\d.eE]+)[ ,]+([-\d.eE]+)\s*"')
-_FORBIDDEN = re.compile(r"<(text|image|foreignObject|script|use)\b", re.I)
+_FORBIDDEN = re.compile(r"<(text|image|foreignObject|script|use|style|defs|a)\b|\s(id|href|xlink:href)\s*=|\son\w+\s*=", re.I)
 _TITLE = re.compile(r"<title>.*?</title>", re.S)
 _PATH_D = re.compile(r'<path\b[^>]*?\sd="([^"]*)"', re.S)
 _PATH_TOKEN = re.compile(r"[A-Za-z]|-?\d*\.?\d+(?:[eE][-+]?\d+)?")
@@ -286,9 +286,14 @@ LIGHT, DARK = "#f1e4d0", "#0f1428"
 INK_ON_LIGHT, INK_ON_DARK = "#221c16", "#f1e4d0"
 
 
+_TRANSLIT = {ord(k): v for k, v in {"ø": "o", "Ø": "O", "ß": "ss", "æ": "ae", "Æ": "AE", "œ": "oe", "Œ": "OE", "đ": "d", "Đ": "D",
+                                    "ł": "l", "Ł": "L"}.items()}
+
+
 def slugify(name: str) -> str:
     """``"Tarkor Ñandú"`` -> ``"tarkor-nandu"``: accents out, ASCII letters and digits, hyphens between; ``""`` if none."""
-    plain = unicodedata.normalize("NFKD", str(name)).encode("ascii", "ignore").decode("ascii").lower()
+    plain = str(name).translate(_TRANSLIT)
+    plain = unicodedata.normalize("NFKD", plain).encode("ascii", "ignore").decode("ascii").lower()
     return re.sub(r"[^a-z0-9]+", "-", plain).strip("-")
 
 
@@ -304,7 +309,7 @@ def _read_svg(path) -> dict:
     if not m or not vb:
         raise GimgError("brand.bad_svg", path=str(path), reason="not an SVG with a viewBox (the one of `brand trace` or `brand wordmark`)")
     if _FORBIDDEN.search(text):
-        raise GimgError("brand.bad_svg", path=str(path), reason="it has <text>, <image>, <use>, <script> or <foreignObject>: only paths")
+        raise GimgError("brand.bad_svg", path=str(path), reason="it has <text>, <image>, <use>, <style>, <defs>, <script>, <foreignObject>, ids, links or handlers: only paths")
     x, y, w, h = (float(v) for v in vb.groups())
     if not (w > 0 and h > 0):
         raise GimgError("brand.bad_svg", path=str(path), reason="the viewBox has no area")
@@ -312,25 +317,58 @@ def _read_svg(path) -> dict:
     return {"vb": (x, y, w, h), "inner": inner, "box": _ink_box(inner) or (x, y, x + w, y + h)}
 
 
+def _bez(p0, p1, p2, p3):
+    """Extremes of one cubic coordinate: the ends plus the roots of its derivative inside (0, 1)."""
+    vals = [p0, p3]
+    a, b, c = -p0 + 3 * p1 - 3 * p2 + p3, 2 * (p0 - 2 * p1 + p2), p1 - p0
+    roots = []
+    if abs(a) < 1e-12:
+        if abs(b) > 1e-12:
+            roots.append(-c / b)
+    else:
+        disc = b * b - 4 * a * c
+        if disc >= 0:
+            sq = disc ** 0.5
+            roots += [(-b + sq) / (2 * a), (-b - sq) / (2 * a)]
+    for t in roots:
+        if 0 < t < 1:
+            u = 1 - t
+            vals.append(u ** 3 * p0 + 3 * u * u * t * p1 + 3 * u * t * t * p2 + t ** 3 * p3)
+    return vals
+
+
 def _ink_box(inner: str):
-    """The box of the coordinates of the absolute paths in `inner`; ``None`` if there are other shapes or relative commands."""
-    if re.search(r"<(rect|circle|ellipse|polygon|polyline|line)\b", inner):
+    """The box of the absolute paths in `inner` (curve extremes, not control points); ``None`` if there are other shapes,
+    relative commands or a ``transform``."""
+    if re.search(r"<(rect|circle|ellipse|polygon|polyline|line)\b", inner) or "transform" in inner:
         return None
     xs, ys = [], []
     for d in _PATH_D.findall(inner):
-        nums = []
-        for tok in _PATH_TOKEN.findall(d):
+        cmd, nums, cur = None, [], (0.0, 0.0)
+        toks = _PATH_TOKEN.findall(d) + ["Z"]
+        for tok in toks:
             if tok.isalpha():
                 if tok not in "MLCZ":
                     return None
-                if len(nums) % 2:
+                if cmd == "C" and nums or cmd in ("M", "L") and nums:
                     return None
-            else:
-                nums.append(float(tok))
-        if len(nums) % 2:
-            return None
-        xs += nums[0::2]
-        ys += nums[1::2]
+                cmd, nums = tok, []
+                continue
+            nums.append(float(tok))
+            need = 6 if cmd == "C" else 2
+            if cmd in ("M", "L", "C") and len(nums) == need:
+                if cmd == "C":
+                    (x1, y1, x2, y2, x3, y3) = nums
+                    xs += _bez(cur[0], x1, x2, x3)
+                    ys += _bez(cur[1], y1, y2, y3)
+                    cur = (x3, y3)
+                else:
+                    xs.append(nums[0])
+                    ys.append(nums[1])
+                    cur = (nums[0], nums[1])
+                nums = []
+            elif cmd is None:
+                return None
     return (min(xs), min(ys), max(xs), max(ys)) if xs else None
 
 
@@ -422,8 +460,8 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = 0.
     """The logo system of `name` from the emblem PNG `src`, in `out_dir`: ``<slug>-emblema-alpha.png``, ``-emblema.svg``,
     ``-emblema-mono.svg``, ``-wordmark.svg``, ``-lockup-h.svg``, ``-lockup-v.svg`` and ``-contactos.png`` (see `SYSTEM_FILES`).
 
-    Everything is built in a throwaway folder and copied in at the end, so a failure leaves `out_dir` as it was; a file that
-    is already there is ``brand.exists`` unless `force`. The wordmark text is `text`, else `name` in capitals.
+    Everything is built in a throwaway folder and copied in at the end, so a failure while working leaves `out_dir` as it
+    was (only an I/O failure in the final copy can leave some files); a file already there is ``brand.exists`` unless `force`. The wordmark text is `text`, else `name` in capitals.
     """
     t0 = time.monotonic()
     slug = slugify(name)
@@ -434,6 +472,11 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = 0.
     targets = {key: os.path.join(str(out_dir), "%s-%s" % (slug, key)) for key in SYSTEM_FILES}
     for path in targets.values():
         _check_out(src, path)
+    if os.path.lexists(str(out_dir)) and not os.path.isdir(str(out_dir)):
+        raise GimgError("brand.write_failed", path=str(out_dir), reason="not a folder")
+    for path in targets.values():
+        if os.path.isdir(path):
+            raise GimgError("brand.write_failed", path=path, reason="it is a folder")
     clash = [os.path.basename(p) for p in targets.values() if os.path.lexists(p)]
     if clash and not force:
         raise GimgError("brand.exists", folder=str(out_dir), files=", ".join(clash))
@@ -441,6 +484,20 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = 0.
         raise GimgError("brand.tool_missing", tool=TOOL)
     if palette and colors is not None:
         raise GimgError("brand.bad_option", reason="--palette and --colors exclude each other")
+    line = text if text else str(name).strip().upper()
+    if not str(line).strip():
+        raise GimgError("brand.empty_text")
+    if len(line) > MAX_TEXT:
+        raise GimgError("brand.text_too_long", max=MAX_TEXT)
+    if not isinstance(weight, int) or not 1 <= weight <= 1000 or not -0.5 <= spacing <= 2:
+        raise GimgError("brand.bad_option", reason="weight 1-1000 and spacing between -0.5 and 2 em")
+    if len(os.path.basename(next(iter(targets.values()))).encode("utf-8")) > 255:
+        raise GimgError("brand.bad_name", name=str(name))
+    try:
+        with open(font, "rb"):
+            pass
+    except OSError as exc:
+        raise GimgError("brand.font_unreadable", path=str(font), reason=str(exc.strerror or exc))
     with tempfile.TemporaryDirectory(prefix="gimg-brand-") as tmp:
         t = {key: os.path.join(tmp, key) for key in SYSTEM_FILES}
         m = matte(src, t["emblema-alpha.png"])
@@ -449,7 +506,7 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = 0.
         title = str(name).strip()
         color = trace(t["emblema-alpha.png"], t["emblema.svg"], "color", palette, colors, title=title)
         mono = trace(t["emblema-alpha.png"], t["emblema-mono.svg"], "mono", title=title)
-        word = wordmark(text if text else str(name).strip().upper(), font, t["wordmark.svg"], weight, spacing, title=title)
+        word = wordmark(line, font, t["wordmark.svg"], weight, spacing, title=title)
         lh = lockup(t["emblema.svg"], t["wordmark.svg"], t["lockup-h.svg"], "h", cap, gap, width, title=title)
         lv = lockup(t["emblema.svg"], t["wordmark.svg"], t["lockup-v.svg"], "v", cap, gap, width, title=title)
         pieces = {"emblem": _read_svg(t["emblema.svg"]), "mono": _read_svg(t["emblema-mono.svg"]),

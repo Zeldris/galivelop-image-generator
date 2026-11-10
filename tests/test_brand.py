@@ -445,6 +445,21 @@ class LockupTests(BrandBase):
         self.assertIn("is the original itself", err)
         self.assertEqual(self.emblem.read_bytes(), before)
 
+    def test_styles_ids_links_and_handlers_are_refused_with_their_reason(self):
+        for body in ('<style>p{}</style><path d="M0 0L9 9Z"/>', '<path id="a" d="M0 0L9 9Z"/>',
+                     '<path onclick="x()" d="M0 0L9 9Z"/>', '<a href="u"><path d="M0 0L9 9Z"/></a>'):
+            self.word.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 9 9">%s</svg>' % body)
+            code, err, _ = self.lock()
+            self.assertEqual(code, 1, body)
+            self.assertIn("does not work for the lockup", err)
+            self.assertIn("only paths", err)
+
+    def test_a_lockup_used_as_a_piece_is_placed_by_its_viewbox_not_a_wrong_box(self):
+        code, _, out = self.lock()
+        self.assertEqual(code, 0)
+        self.assertEqual(brand._read_svg(out)["box"], tuple(float(v) for v in re.search(
+            r'viewBox="([^"]+)"', out.read_text()).group(1).split()[:2]) + (485.0, 100.0))
+
     def test_text_output_line(self):
         code, out, _ = self.run_cli("brand", "lockup", str(self.emblem), str(self.word), "-o", str(self.tmp / "t.svg"))
         self.assertEqual(code, 0)
@@ -457,6 +472,23 @@ class SlugTests(unittest.TestCase):
         self.assertEqual(brand.slugify("Ñandú  del Sur!"), "nandu-del-sur")
         self.assertEqual(brand.slugify("Café-Ünïcode 2"), "cafe-unicode-2")
         self.assertEqual(brand.slugify("日本"), "")
+
+    def test_letters_that_do_not_decompose_are_transliterated(self):
+        self.assertEqual(brand.slugify("Bjørk Straße"), "bjork-strasse")
+        self.assertEqual(brand.slugify("Æther Đuro Łódź"), "aether-duro-lodz")
+
+
+class InkBoxTests(unittest.TestCase):
+    def test_a_transform_makes_the_box_unknown(self):
+        self.assertIsNone(brand._ink_box('<g transform="translate(5 5)"><path d="M0 0L10 0L10 10Z"/></g>'))
+        self.assertEqual(brand._ink_box('<path d="M0 0L10 0L10 10Z"/>'), (0, 0, 10, 10))
+
+    def test_the_box_follows_the_curve_not_its_control_points(self):
+        # control points reach y=-40 and y=140, but a cubic with them only goes to 0.75 of that
+        box = brand._ink_box('<path d="M0 50C0 -40 100 -40 100 50C100 140 0 140 0 50Z"/>')
+        self.assertAlmostEqual(box[1], 50 - 90 * 0.75, places=3)
+        self.assertAlmostEqual(box[3], 50 + 90 * 0.75, places=3)
+        self.assertEqual((box[0], box[2]), (0, 100))
 
 
 class SystemTests(BrandBase):
@@ -525,6 +557,31 @@ class SystemTests(BrandBase):
         self.assertEqual(code, 0, err)
         self.assertEqual(json.loads(out)["slug"], "nandu")
         self.assertTrue((self.out / "nandu-lockup-h.svg").exists())
+
+    def test_an_out_dir_that_is_a_file_is_refused_before_any_work(self):
+        self.out.write_text("x")
+        code, _, err = self.system()
+        self.assertEqual(code, 1)
+        self.assertIn("not a folder", err)
+        self.assertEqual(self.out.read_text(), "x")
+
+    def test_a_target_that_is_a_folder_is_refused_even_with_force(self):
+        (self.out / "tarkor-lockup-h.svg").mkdir(parents=True)
+        code, _, err = self.system("--force")
+        self.assertEqual(code, 1)
+        self.assertIn("it is a folder", err)
+        self.assertEqual([p.name for p in self.out.iterdir()], ["tarkor-lockup-h.svg"])
+
+    def test_bad_wordmark_options_and_font_fail_before_the_long_work(self):
+        code, _, err = self.system("--weight", "0")
+        self.assertEqual(code, 1)
+        self.assertIn("weight 1-1000", err)
+        self.assertFalse(self.out.exists())
+        code, _, err = self.run_cli("brand", "system", str(self.src), "--name", "Tarkor", "--font", str(self.tmp / "nope.ttf"),
+                                    "--out-dir", str(self.out))
+        self.assertEqual(code, 1)
+        self.assertIn("nope.ttf", err)
+        self.assertFalse(self.out.exists())
 
     def test_a_name_with_no_ascii_letters_is_refused_with_its_reason(self):
         code, _, err = self.system(name="日本")
