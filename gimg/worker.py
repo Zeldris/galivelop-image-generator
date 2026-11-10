@@ -88,12 +88,23 @@ def _single_worker():
                 fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 break
             except BlockingIOError:
-                if time.monotonic() >= deadline:
+                # only an exclusive holder is a worker: shared probes may outlast the window under load
+                if time.monotonic() >= deadline and not _only_probes(fd):
                     raise GimgError("worker.already_running", path=str(path))
                 time.sleep(0.02)
         yield
     finally:
         os.close(fd)
+
+
+def _only_probes(fd: int) -> bool:
+    """Is the worker lock held only in shared mode (``queue`` probes), so no worker is alive?"""
+    try:
+        fcntl.flock(fd, fcntl.LOCK_SH | fcntl.LOCK_NB)
+    except BlockingIOError:
+        return False
+    fcntl.flock(fd, fcntl.LOCK_UN)
+    return True
 
 
 def _inside_file(project: dict, rel: str, code: str) -> str:

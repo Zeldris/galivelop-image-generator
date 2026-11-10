@@ -390,6 +390,15 @@ class Races(Env):
                 pass
         self.assertEqual(ctx.exception.code, "worker.already_running")
 
+    def test_worker_waits_out_a_probe_that_outlasts_the_retry_window(self):
+        # flaky test_second_worker_refused_other_process: a `queue.get` probe stalled past LOCK_RETRY_S under load
+        queue.worker_lock_path().parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(str(queue.worker_lock_path()), os.O_RDWR | os.O_CREAT, 0o600)
+        fcntl.flock(fd, fcntl.LOCK_SH | fcntl.LOCK_NB)  # `_no_worker` inside a slow `_txn`
+        threading.Timer(0.1, os.close, args=(fd,)).start()
+        with mock.patch.object(worker, "LOCK_RETRY_S", 0), worker._single_worker():
+            pass
+
     def test_a_queue_probe_does_not_hide_a_free_worker_lock_from_another_probe(self):
         queue.worker_lock_path().parent.mkdir(parents=True, exist_ok=True)
         fd = os.open(str(queue.worker_lock_path()), os.O_RDWR | os.O_CREAT, 0o600)
