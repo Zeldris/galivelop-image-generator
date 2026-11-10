@@ -30,10 +30,10 @@
     "og": {
       "width": 1280,
       "height": 640,
-      "steps": 6,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
       "targetWidth": 1200,
       "targetHeight": 630,
       "draft": {
@@ -150,10 +150,10 @@
     "banda": {
       "width": 1024,
       "height": 256,
-      "steps": 6,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
       "draft": {
         "scale": 0.5,
         "steps": 4
@@ -174,10 +174,10 @@
     "icono": {
       "width": 512,
       "height": 512,
-      "steps": 6,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
       "draft": {
         "scale": 0.5,
         "steps": 4
@@ -224,10 +224,10 @@
     "cabecera": {
       "width": 1536,
       "height": 512,
-      "steps": 6,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
       "targetWidth": 1500,
       "targetHeight": 500,
       "draft": {
@@ -238,10 +238,10 @@
     "carga": {
       "width": 1280,
       "height": 704,
-      "steps": 6,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
       "draft": {
         "scale": 0.5,
         "steps": 4
@@ -250,10 +250,10 @@
     "capsula": {
       "width": 1024,
       "height": 576,
-      "steps": 6,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
       "targetWidth": 616,
       "targetHeight": 353,
       "draft": {
@@ -264,10 +264,72 @@
     "marco": {
       "width": 1280,
       "height": 704,
-      "steps": 6,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "texturamapa": {
+      "width": 1024,
+      "height": 1024,
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "zimage-turbo-q6",
+      "tileable": "xy",
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "iconomapa": {
+      "width": 768,
+      "height": 768,
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "zimage-turbo-q6",
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "cartela": {
+      "width": 1024,
+      "height": 512,
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "zimage-turbo-q6",
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "bandamapa": {
+      "width": 1024,
+      "height": 256,
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "zimage-turbo-q6",
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "marcomapa": {
+      "width": 1024,
+      "height": 256,
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "zimage-turbo-q6",
+      "tileable": "x",
       "draft": {
         "scale": 0.5,
         "steps": 4

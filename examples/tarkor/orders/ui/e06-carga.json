@@ -2,8 +2,8 @@
   "$schema": "../../../../gimg/schemas/order.schema.json",
   "key": "ui/e06-carga",
   "profile": "carga",
-  "prompt": "Epic fantasy game asset. Materials: aged dark wood planks with raised grain in #332415 and #46311d, dark forged iron in #171310, old carved gold in #b8862b with dark patina #7a5a1e in the recesses and bright worn edges in #f2c45a, dark cracked stone in #3a342d. Warm raking light from the upper left, deep cool shadows in every groove. A thin dark bronze outline separates gold from background. Physically plausible materials, crisp edges, high contrast, no haze. A night view from a high ridge: deep indigo blue sky with the belt of glowing dust, dark rock spires, a long timber palisade with banners on a far hill, one campfire, the lower quarter a band of dark forged iron with a thin gold strip.",
+  "prompt": "Epic fantasy game asset. Materials: aged dark wood planks with raised grain in #332415 and #46311d, dark forged iron in #171310, old carved gold in #b8862b with dark patina #7a5a1e in the recesses and bright worn edges in #f2c45a, dark cracked stone in #3a342d. Warm raking light from the upper left, deep cool shadows in every groove. A thin dark bronze outline separates gold from background. Physically plausible materials, crisp edges, high contrast, no haze. A night view from a high ridge: deep indigo blue sky #1a2140 darkening to #0f1428 at the top, a slanted belt of pale shimmering stardust in #4aa8d8 and #a8d8f0, dark rock spires in #0e0b08, a long dark timber palisade with dark banners on a far hill, unlit, no fires and no lamps, the only warm light the gold. The lower quarter is a band of dark forged iron with a thin bevelled gold strip.",
   "seed": 1,
-  "draft": true,
-  "count": 3
+  "draft": false,
+  "count": 2
 }

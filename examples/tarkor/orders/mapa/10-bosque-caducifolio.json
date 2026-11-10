@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../../gimg/schemas/order.schema.json",
+  "key": "mapa/10-bosque-caducifolio",
+  "profile": "texturamapa",
+  "prompt": "Hand-painted fantasy map terrain, seen from directly above. Matte painterly brushwork, fine detail, restrained natural colour, soft warm light from the upper left, even exposure, calm and readable, no haze. Seamless tileable texture of a broadleaf forest canopy seen from directly above, crowns in #3f6a36 and #2c4a28, small clearings, edge to edge.",
+  "seed": 1,
+  "draft": false,
+  "count": 2
+}

@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../../gimg/schemas/order.schema.json",
+  "key": "mapa/11-selva",
+  "profile": "texturamapa",
+  "prompt": "Hand-painted fantasy map terrain, seen from directly above. Matte painterly brushwork, fine detail, restrained natural colour, soft warm light from the upper left, even exposure, calm and readable, no haze. Seamless tileable texture of a very dense jungle canopy seen from directly above, tightly packed crowns in #355a26 and #22401c, edge to edge.",
+  "seed": 1,
+  "draft": false,
+  "count": 2
+}
