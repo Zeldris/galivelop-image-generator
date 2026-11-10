@@ -709,5 +709,7 @@
   "error.brand.font_unreadable": "no se puede usar la fuente «{path}»: {reason}",
   "error.brand.empty_text": "falta el texto del nombre",
   "error.brand.text_too_long": "el nombre es demasiado largo (máximo {max} caracteres)",
-  "error.brand.empty_wordmark": "la fuente «{family}» no dibujó nada con ese texto (¿le faltan esas letras?)"
+  "error.brand.empty_wordmark": "la fuente «{family}» no dibujó nada con ese texto (¿le faltan esas letras?)",
+  "error.brand.write_failed": "no se pudo escribir «{path}»: {reason}",
+  "error.brand.wordmark_no_fit": "el nombre no cabe al dibujarlo: {reason}"
 }

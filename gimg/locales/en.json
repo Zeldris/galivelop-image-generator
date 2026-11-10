@@ -709,5 +709,7 @@
   "error.brand.font_unreadable": "the font \"{path}\" cannot be used: {reason}",
   "error.brand.empty_text": "the name text is missing",
   "error.brand.text_too_long": "the name is too long (at most {max} characters)",
-  "error.brand.empty_wordmark": "the font \"{family}\" drew nothing with that text (does it lack those letters?)"
+  "error.brand.empty_wordmark": "the font \"{family}\" drew nothing with that text (does it lack those letters?)",
+  "error.brand.write_failed": "could not write \"{path}\": {reason}",
+  "error.brand.wordmark_no_fit": "the name does not fit when drawn: {reason}"
 }

@@ -111,6 +111,28 @@ class MatteTests(BrandBase):
         self.assertIn("nope.png", err)
 
 
+class WriteTests(BrandBase):
+    def test_output_has_the_mode_of_a_plain_file(self):
+        src = self.tmp / "logo.png"
+        square_png(src)
+        brand.matte(str(src))
+        mask = os.umask(0o022)
+        os.umask(mask)
+        self.assertEqual((self.tmp / "logo-alpha.png").stat().st_mode & 0o777, 0o666 & ~mask)
+
+    def test_a_write_that_fails_is_a_gimg_error_with_its_reason(self):
+        src = self.tmp / "logo.png"
+        square_png(src)
+        (self.tmp / "afile").write_text("x")
+        with self.assertRaises(GimgError) as cm:
+            brand.matte(str(src), str(self.tmp / "afile" / "out.png"))
+        self.assertEqual(cm.exception.code, "brand.write_failed")
+        self.assertIn("afile", cm.exception.params["path"])
+        code, _, err = self.run_cli("brand", "matte", str(src), "-o", str(self.tmp / "afile" / "out.png"))
+        self.assertEqual(code, 1)
+        self.assertIn("could not write", err)
+
+
 class TraceTests(BrandBase):
     def test_trace_writes_svg_next_to_png(self):
         src = self.tmp / "logo.png"
@@ -139,7 +161,9 @@ class TraceTests(BrandBase):
                                     "-o", str(self.tmp / "m.svg"))
         self.assertEqual(code, 0)
         self.assertTrue(json.loads(out)["matted"])
-        self.assertNotEqual((self.tmp / "m.svg").read_text(), plain)  # the whole square vs only the inner one
+        # without --matte the silhouette is the whole canvas; with it, only the inner square
+        self.assertIn("M0 0L24 0L24 24L0 24", plain)
+        self.assertNotIn("L24 24", (self.tmp / "m.svg").read_text())
 
     def test_text_output_warns_about_an_opaque_png(self):
         src = self.tmp / "logo.png"
@@ -153,6 +177,13 @@ class TraceTests(BrandBase):
         code, _, err = self.run_cli("brand", "trace", str(src), "--palette", "#fff", "--colors", "2")
         self.assertEqual(code, 1)
         self.assertIn("exclude each other", err)
+
+    def test_zero_colors_with_a_palette_is_still_exclusive(self):
+        src = self.tmp / "logo.png"
+        square_png(src)
+        with self.assertRaises(GimgError) as cm:
+            brand.trace(str(src), palette="#fff", colors=0)
+        self.assertIn("exclude each other", cm.exception.params["reason"])
 
     def test_bad_palette_color_names_the_color(self):
         src = self.tmp / "logo.png"
@@ -229,6 +260,69 @@ class WordmarkTests(BrandBase):
             brand.wordmark("X", __file__, weight=5000)
         self.assertEqual(cm.exception.code, "brand.bad_option")
         self.assertIn("weight", cm.exception.params["reason"])
+
+    def _tiny_path(self):
+        font = self.tmp / "tiny.ttf"
+        font.write_bytes(self._tiny_font())
+        return str(font)
+
+    def _fake_rsvg(self, rgba_fill, size=(8, 8)):
+        """Patch the tool as present and make it write an 8x8 PNG whose every pixel is `rgba_fill`."""
+        def fake(argv, env):
+            Path(argv[-2]).write_bytes(png.rgba_bytes(size[0], size[1], bytes(rgba_fill) * (size[0] * size[1])))
+        for target in (mock.patch.object(brand.shutil, "which", return_value="/bin/rsvg-convert"),
+                       mock.patch.object(brand, "_rsvg", fake)):
+            target.start()
+            self.addCleanup(target.stop)
+
+    def test_a_font_cannot_be_overwritten_as_the_output(self):
+        font = self._tiny_path()
+        with self.assertRaises(GimgError) as cm:
+            brand.wordmark("X", font, font)
+        self.assertEqual(cm.exception.code, "brand.out_is_input")
+        self.assertEqual(Path(font).read_bytes(), self._tiny_font())
+
+    def test_text_that_cannot_fit_the_pixel_limit_is_refused(self):
+        with self.assertRaises(GimgError) as cm:
+            brand.wordmark("A" * brand.MAX_TEXT, self._tiny_path(), str(self.tmp / "o.svg"), spacing=2)
+        self.assertEqual(cm.exception.code, "brand.wordmark_no_fit")
+        self.assertFalse((self.tmp / "o.svg").exists())
+
+    def test_ink_on_the_edge_of_the_drawing_is_refused(self):
+        self._fake_rsvg((0, 0, 0, 255))  # every pixel inked, so the text was cut off
+        with self.assertRaises(GimgError) as cm:
+            brand.wordmark("X", self._tiny_path(), str(self.tmp / "o.svg"))
+        self.assertEqual(cm.exception.code, "brand.wordmark_no_fit")
+        self.assertIn("edge", cm.exception.params["reason"])
+
+    def test_a_font_without_those_letters_is_empty_wordmark(self):
+        self._fake_rsvg((0, 0, 0, 0))
+        with self.assertRaises(GimgError) as cm:
+            brand.wordmark("X", self._tiny_path(), str(self.tmp / "o.svg"))
+        self.assertEqual(cm.exception.code, "brand.empty_wordmark")
+        self.assertEqual(cm.exception.params["family"], "Tiny")
+
+    def test_a_failing_tool_reports_its_last_error_line(self):
+        done = subprocess.CompletedProcess([], 1, b"", b"warning\nCould not open the thing\n")
+        with mock.patch.object(brand.shutil, "which", return_value="/bin/rsvg-convert"), \
+                mock.patch.object(brand.subprocess, "run", return_value=done):
+            with self.assertRaises(GimgError) as cm:
+                brand.wordmark("X", self._tiny_path(), str(self.tmp / "o.svg"))
+        self.assertEqual(cm.exception.code, "brand.tool_failed")
+        self.assertEqual(cm.exception.params["reason"], "Could not open the thing")
+
+    def test_control_characters_are_dropped_from_the_text(self):
+        seen = {}
+        def fake(argv, env):
+            seen["svg"] = Path(argv[-1]).read_text()
+            Path(argv[-2]).write_bytes(png.rgba_bytes(3, 3, bytes(36)))
+        with mock.patch.object(brand.shutil, "which", return_value="/bin/rsvg-convert"), \
+                mock.patch.object(brand, "_rsvg", fake):
+            with self.assertRaises(GimgError):  # empty ink: only the text sent to the tool matters here
+                brand.wordmark("A\x00\x1bB\tC\n", self._tiny_path(), str(self.tmp / "o.svg"))
+        self.assertIn(">AB C<", seen["svg"])
+        self.assertNotIn("\x00", seen["svg"])
+        self.assertNotIn("\x1b", seen["svg"])
 
     @staticmethod
     def _tiny_font():

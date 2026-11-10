@@ -19,16 +19,18 @@ import shutil
 import struct
 import subprocess
 import tempfile
+import unicodedata
 from pathlib import Path
 from xml.sax.saxutils import escape
 
-from . import matte as _matte, png, trace as _trace
+from . import fsutil, matte as _matte, png, trace as _trace
 from .errors import GimgError
 
 TOOL = "rsvg-convert"
 TIMEOUT_S = 120
 MAX_TEXT = 60
 FONT_PX = 260
+MAX_PIXELS = 1 << 24  # the limit of `png.read_rgba`
 PAD_PX = 6
 MODES = {"color": "color", "mono": "mono", "silhouette": "silueta", "silueta": "silueta"}
 
@@ -51,18 +53,25 @@ def _check_out(src, out) -> str:
 
 
 def _write(path: str, data: bytes) -> None:
+    """Atomic write; the file gets the mode of a plain open(); any OSError is ``brand.write_failed``."""
     folder = os.path.dirname(os.path.abspath(path))
-    os.makedirs(folder, exist_ok=True)
-    fd, tmp = tempfile.mkstemp(dir=folder, prefix=".brand-", suffix=".tmp")
     try:
+        os.makedirs(folder, exist_ok=True)
+        fd, tmp = tempfile.mkstemp(dir=folder, prefix=".brand-", suffix=".tmp")
+    except OSError as exc:
+        raise GimgError("brand.write_failed", path=str(path), reason=str(exc.strerror or exc))
+    try:
+        fsutil.honour_umask(fd)
         with os.fdopen(fd, "wb") as fh:
             fh.write(data)
         os.replace(tmp, path)
-    except BaseException:
+    except BaseException as exc:
         try:
             os.unlink(tmp)
         except OSError:
             pass
+        if isinstance(exc, OSError):
+            raise GimgError("brand.write_failed", path=str(path), reason=str(exc.strerror or exc))
         raise
 
 
@@ -103,7 +112,7 @@ def trace(src, out=None, mode: str = "color", palette=None, colors=None, dp_tol:
     """Write the SVG of `src`; ``opts`` go to `trace.to_svg` (``color``, ``max_side``, ``title``...)."""
     if mode not in MODES:
         raise GimgError("brand.bad_option", reason="mode must be one of %s (got %r)" % (", ".join(MODES), mode))
-    if palette and colors:
+    if palette and colors is not None:
         raise GimgError("brand.bad_option", reason="--palette and --colors exclude each other")
     out = _check_out(src, out or default_out(src, "", ".svg"))
     width, height, rgba = png.read_rgba(src)
@@ -178,6 +187,13 @@ def _rsvg(argv, env) -> None:
         raise GimgError("brand.tool_failed", tool=TOOL, reason=(lines[-1][:300] if lines else "exit code %d" % done.returncode))
 
 
+def _touches_edge(width: int, height: int, rgba) -> bool:
+    """True if any pixel of the outer ring is not fully transparent (the text was cut off)."""
+    alpha = rgba[3::4]
+    return (any(alpha[:width]) or any(alpha[(height - 1) * width:]) or any(alpha[::width])
+            or any(alpha[width - 1::width]))
+
+
 def _crop(width: int, height: int, rgba, pad: int):
     """The box of the ink (alpha >= 128) plus `pad` transparent pixels, as ``(w, h, rgba)``; ``None`` if there is none."""
     alpha = rgba[3::4]
@@ -197,7 +213,7 @@ def _crop(width: int, height: int, rgba, pad: int):
 
 def wordmark(text: str, font, out=None, weight: int = 800, spacing: float = 0.12, title: str = "") -> dict:
     """Write the SVG of `text` in `font`, as paths (see the module docstring). ``spacing`` is in em."""
-    text = " ".join(str(text).split())
+    text = " ".join("".join(ch for ch in str(text) if ch.isspace() or unicodedata.category(ch) != "Cc").split())
     if not text:
         raise GimgError("brand.empty_text")
     if len(text) > MAX_TEXT:
@@ -210,15 +226,17 @@ def wordmark(text: str, font, out=None, weight: int = 800, spacing: float = 0.12
     except OSError as exc:
         raise GimgError("brand.font_unreadable", path=str(font), reason=str(exc.strerror or exc))
     family = _name_table(data, font)
-    out = out or "wordmark.svg"
+    out = _check_out(font, out or "wordmark.svg")
+    gap = spacing * FONT_PX
+    canvas_w = int(len(text) * (FONT_PX * 1.3 + gap)) + FONT_PX
+    canvas_h = int(FONT_PX * 1.8)
+    if canvas_w * canvas_h > MAX_PIXELS:
+        raise GimgError("brand.wordmark_no_fit", reason="too long for this spacing: use a shorter text or less spacing")
     if shutil.which(TOOL) is None:
         raise GimgError("brand.tool_missing", tool=TOOL)
-    gap = spacing * FONT_PX
-    canvas_w = int(len(text) * (FONT_PX * 0.95 + gap)) + 4 * FONT_PX // 5
-    canvas_h = int(FONT_PX * 1.6)
     svg = ('<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d"><text x="%d" y="%d" font-family="%s" '
            'font-weight="%d" font-size="%d" letter-spacing="%s" fill="#000">%s</text></svg>'
-           % (canvas_w, canvas_h, FONT_PX // 4, int(FONT_PX * 1.15), escape(family, {'"': "&quot;"}), weight, FONT_PX,
+           % (canvas_w, canvas_h, FONT_PX // 4, int(FONT_PX * 1.3), escape(family, {'"': "&quot;"}), weight, FONT_PX,
               round(gap, 2), escape(text)))
     with tempfile.TemporaryDirectory(prefix="gimg-brand-") as tmp:
         os.makedirs(os.path.join(tmp, "fonts"))
@@ -231,6 +249,8 @@ def wordmark(text: str, font, out=None, weight: int = 800, spacing: float = 0.12
         if not os.path.exists(big):
             raise GimgError("brand.tool_failed", tool=TOOL, reason="no output")
         width, height, rgba = png.read_rgba(big)
+    if _touches_edge(width, height, rgba):
+        raise GimgError("brand.wordmark_no_fit", reason="the letters reach the edge of the drawing: use a shorter text or less spacing")
     box = _crop(width, height, rgba, PAD_PX)
     if box is None:
         raise GimgError("brand.empty_wordmark", family=family)
