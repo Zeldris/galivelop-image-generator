@@ -13,7 +13,7 @@ y la lista de comprobación de lo obligatorio.
 | Portal Galivelop (paraguas) | [portal/biblia.md](portal/biblia.md) | `portal/logos/` | elegido **a** (alt. b) |
 | toVeriAI | [toveriai/biblia.md](toveriai/biblia.md) | `toveriai/logos/` | elegido **a** (b ≤ 32 px) |
 | Galivelop-workflow | [galivelop-workflow/biblia.md](galivelop-workflow/biblia.md) | `galivelop-workflow/logos/` | elegido **a** |
-| Tarkor | [tarkor/biblia.md](tarkor/biblia.md) | `tarkor/logos/` | elegido **a**, a retocar |
+| Tarkor | [tarkor/biblia.md](tarkor/biblia.md) | `tarkor/logos/` | elegido **a**, a retocar; logo vigente y paleta: [tarkor/hoja.md](tarkor/hoja.md) |
 | galivelop-image-generator | [galivelop-image-generator/biblia.md](galivelop-image-generator/biblia.md) | `galivelop-image-generator/logos/` | elegido **b** |
 | galivelop-voice-generator | [galivelop-voice-generator/biblia.md](galivelop-voice-generator/biblia.md) | `galivelop-voice-generator/logos/` | elegido **a** |
 | galivelop-developer | [galivelop-developer/biblia.md](galivelop-developer/biblia.md) | `galivelop-developer/logos/` | elegido **d** |
@@ -34,7 +34,8 @@ proponen a cada repo al cerrar F2 (`docs/propuestas/`).
   - Imágenes **b**: la más limpia a 16 px y la que cuenta «intentos y una elegida».
   - Voces **a**: la más propia; la **d** es una onda genérica.
   - Developer **d**: hace familia con «gw»; la **a** se lee como una «b».
-- **Tarkor:** acento de marca arcilla `#E0703A`; el cristal `#4aa8d8` queda dentro del juego y como secundario.
+- **Tarkor:** acento de marca arcilla `#E0703A`; el cristal `#4aa8d8` queda dentro del juego y como secundario. La
+  paleta completa y la regla vigente están en la hoja de estilo, [tarkor/hoja.md](tarkor/hoja.md) §3.
 - **Acentos de las herramientas:** imágenes `#8B5CF6`, voces `#D9467A` y developer `#2BB3A3`, como se propusieron.
 - **toVeriAI:**
   - wordmark «toVeriAI», el del código del kit;

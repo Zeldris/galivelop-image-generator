@@ -651,7 +651,8 @@ logo descrita en el prompt («the left third is calm, out of focus and nearly em
 rasterizado como `initImage` (fuerza 0,85-0,97 con `strength_as_noise_level`, como los planos de Tarkor). El `style` de cada perfil
 lleva la paleta en palabras, no en hexadecimales *(suposición: el modelo no respeta códigos hex; la ronda r2 lo mide)*. Los
 colores de acento de cada proyecto salen de `Portal-Galivelop/src/data/proyectos/*.json`: Tarkor `#E0703A`, toVeriAI `#2F7A55`,
-workflow `#3D6FD9`.
+workflow `#3D6FD9`. La paleta vigente de cada proyecto está en su hoja de estilo (`docs/marcas/<proyecto>/hoja.md`, §3; la
+de Tarkor, en [`marcas/tarkor/hoja.md`](marcas/tarkor/hoja.md)): si esta línea y la hoja no coinciden, manda la hoja.
 
 Pautas añadidas el 2026-11-02, de `pautas.md` v5.2 de Tarkor (`docs/records/lectura-2026-11-02-tarkor.md`; aprobadas por la
 persona): la luz se pide por dirección y **sin nombrar la fuente** («sun» pinta el disco aunque se diga fuera de cuadro); el
