@@ -7,7 +7,7 @@ import os
 import sys
 import traceback
 
-from . import __version__, compose, delivery, doctor, i18n, measure, orders, projects, queue, service, sheet, worker
+from . import __version__, brand, compose, delivery, doctor, i18n, measure, orders, projects, queue, service, sheet, worker
 from .errors import GimgError
 
 LANGS = ("es", "en")
@@ -100,6 +100,27 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--palette", "cli.arg.palette"), opt("--project", "cli.arg.measure_project", metavar="PROJECT"),
          opt("--refs", "cli.arg.refs", nargs="+", default=[], metavar="IMAGE"),
          opt("--zone", "cli.arg.zone", metavar="X,Y,W,H"), opt("--text", "cli.arg.text_color", metavar="#RRGGBB"))
+
+    g = group(top, "brand", "cli.cmd.brand")
+    leaf(g, "matte", "cli.cmd.brand_matte", arg("image", "cli.arg.brand_png"),
+         opt("-o", "cli.arg.brand_out_matte", dest="out", metavar="PNG"),
+         opt("--tol", "cli.arg.brand_tol", type=float, default=30),
+         opt("--soft", "cli.arg.brand_soft", type=float, default=80),
+         opt("--border", "cli.arg.brand_border", type=int, default=6),
+         opt("--grow", "cli.arg.brand_grow", type=int, default=3))
+    leaf(g, "trace", "cli.cmd.brand_trace", arg("image", "cli.arg.brand_png"),
+         opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"),
+         opt("--mode", "cli.arg.brand_mode", choices=tuple(brand.MODES), default="color"),
+         opt("--palette", "cli.arg.brand_palette", metavar="#HEX,#HEX"),
+         opt("--colors", "cli.arg.brand_colors", type=int, metavar="N"),
+         opt("--dp-tol", "cli.arg.brand_dp_tol", type=float, default=1.2),
+         opt("--min-island", "cli.arg.brand_min_island", type=float, default=12),
+         opt("--matte", "cli.arg.brand_matte", action="store_true"))
+    leaf(g, "wordmark", "cli.cmd.brand_wordmark", arg("text", "cli.arg.brand_text"),
+         opt("--font", "cli.arg.brand_font", required=True, metavar="TTF"),
+         opt("--weight", "cli.arg.brand_weight", type=int, default=800),
+         opt("--spacing", "cli.arg.brand_spacing", type=float, default=0.12),
+         opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"))
 
     leaf(top, "sheet", "cli.cmd.sheet", arg("images", "cli.arg.sheet_images", nargs="*", metavar="IMAGE"),
          opt("--out", "cli.arg.sheet_out", required=True, metavar="PNG"),
@@ -209,6 +230,25 @@ def _doctor(args, out: _Out) -> int:
     return 1 if bad else 0
 
 
+def _brand(args, sub, out: _Out) -> None:
+    if sub == "matte":
+        res = brand.matte(args.image, args.out, args.tol, args.soft, args.border, args.grow)
+        key = "cli.out.brand_matte"
+    elif sub == "trace":
+        res = brand.trace(args.image, args.out, args.mode, args.palette, args.colors, args.dp_tol, args.min_island,
+                          args.matte)
+        key = "cli.out.brand_trace"
+    else:
+        res = brand.wordmark(args.text, args.font, args.out, args.weight, args.spacing)
+        key = "cli.out.brand_wordmark"
+    if out.as_json:
+        out.data(res)
+        return
+    out.line(key, **{**res, "width": res["size"][0], "height": res["size"][1]})
+    if res.get("opaque_background"):
+        out.line("cli.out.brand_opaque")
+
+
 def _run(args, out: _Out) -> int:
     cmd, sub = args.cmd, getattr(args, "sub", None)
     if cmd == "version":
@@ -254,6 +294,8 @@ def _run(args, out: _Out) -> int:
         _template_save(args, out)
     elif cmd == "measure":
         _measure(args, out)
+    elif cmd == "brand":
+        _brand(args, sub, out)
     elif cmd == "sheet":
         res = sheet.sheet(args.images, args.out, args.columns, args.width)
         if out.as_json:
