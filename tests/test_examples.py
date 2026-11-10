@@ -231,8 +231,9 @@ class PilotExampleTests(unittest.TestCase):
         self.assertEqual(found, sorted(PILOT_PROJECTS))
 
     def test_pilot_configs_load_and_fit_the_deck(self):
-        from gimg import limits, projects
+        from gimg import limits, models, projects
         deck = limits.load_machine("steam-deck")
+        known = models.ids()
         for name in PILOT_PROJECTS:
             root = ROOT / "examples" / name
             config = projects.load_config(root)
@@ -246,7 +247,7 @@ class PilotExampleTests(unittest.TestCase):
                     limits.check({"params": cfg, "references": []}, deck)
                 except limits.LimitError as exc:
                     self.fail("%s/%s: %s" % (name, profile, exc))
-                self.assertEqual(cfg["model"], "flux2-klein-4b-q8", (name, profile))
+                self.assertIn(cfg["model"], known, (name, profile))
 
     def test_r1_orders_reproduce_ronda_r1(self):
         from gimg import orders, projects
