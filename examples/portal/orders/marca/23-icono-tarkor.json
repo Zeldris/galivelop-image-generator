@@ -3,6 +3,9 @@
   "key": "marca/23-icono-tarkor",
   "profile": "icono",
   "prompt": "a pocket world: a small round map with a crown-shaped mountain, white lines on medium cerulean blue. Flat vector illustration, nautical chart aesthetic, thin lines of even width, no gradients, no glow, no shading, no text, no letters, no watermark, full-bleed edge to edge, no border, no frame, lots of empty space, minimal, technical, serene. Palette strictly limited to medium cerulean ocean blue #0072a8, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a.",
+  "references": [
+    "referencias/03-portada-social.png"
+  ],
   "seed": 1,
   "count": 4
 }
