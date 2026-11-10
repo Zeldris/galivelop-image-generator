@@ -6,6 +6,7 @@
 import { h, mmss, when, setVars } from '../dom.js';
 import { t } from '../i18n.js';
 import { paths } from '../api.js';
+import { to } from '../router.js';
 import { measureChip } from './measure-chip.js';
 import { templateSlot, editorSlot, measureFor } from './slots.js';
 import { progressOf, remainingMs } from './queue-bar.js';
@@ -71,6 +72,7 @@ export function attemptCard(ctx, attempt) {
     h('button.btn', { type: 'button', title: t('ui.attempt.recreateHint'), onclick: () => ctx.actions.recreate(attempt) }, '↩ ', t('ui.attempt.recreate')),
     h('button.btn', { type: 'button', title: t('ui.attempt.varyHint'), onclick: () => ctx.actions.vary(attempt) }, '▶ ', t('ui.attempt.vary')),
     h('button.btn', { type: 'button', onclick: () => ctx.actions.copyParams(attempt) }, '⎘ ', t('ui.attempt.copyParams')),
+    attempt.image ? h('a.btn', { href: `${to.project(ctx.project, 'marca')}?src=${encodeURIComponent(`${ctx.profile}|${ctx.key}|${id}`)}`, title: t('ui.attempt.forBrandHint') }, '◈ ', t('ui.attempt.forBrand')) : null,
     attempt.log ? h('a.btn', { href: paths.log(ctx.project, ctx.profile, ctx.key, id), target: '_blank', rel: 'noopener' }, t('ui.attempt.log')) : null,
   ), h('div.stack', {}, templateSlot(ctx, attempt), editorSlot(ctx, attempt)));
 

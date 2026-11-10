@@ -532,5 +532,46 @@ class QueueDrawer(UiBase):
         self.no_problems()
 
 
+class BrandShop(UiBase):
+    """«Sistema de logo» in the Marca tab: steps stay disabled with their reason until the piece exists, and the origin
+    can come from the URL (`?src=profile|key|attempt`). The steps that need the tools (matte on a real flat background,
+    rsvg) are covered by tests/test_brand.py and the API tests; no step is run here."""
+
+    @classmethod
+    def prepare(cls):
+        cls.submit("fondos/marca", count=2)
+
+    def disabled(self, text):
+        return self.js("""[...document.querySelectorAll('#brand-shop .shop-action')].filter(a => a.textContent.includes(%s))
+            .every(a => a.querySelector('button').disabled)""" % json.dumps(text))
+
+    def test_steps_wait_for_their_piece_and_say_why(self):
+        self.open("/p/tarkor/marca", "document.querySelector('#brand-shop .shop-step')")
+        self.assertEqual(self.js("document.querySelectorAll('#brand-shop .shop-step').length"), 7)
+        self.assertTrue(self.js("document.getElementById('shop-name').value.toLowerCase().includes('tarkor')"))
+        for label in ("Quitar fondo", "Pasar a SVG en color", "Lockup horizontal", "Guardar sistema"):
+            self.assertTrue(self.disabled(label), label)
+        self.assertIn("intento de origen", self.js("document.querySelector('#brand-shop .shop-why').textContent"))
+        self.no_problems()
+
+    def test_the_source_comes_from_the_url_and_enables_the_matte(self):
+        src = quote("%s|%s|1" % (PROFILE, "fondos/marca"), safe="")
+        self.open("/p/tarkor/marca?src=" + src, "document.querySelector('#brand-shop input[name=shop-attempt]:checked')")
+        self.page.wait("![...document.querySelectorAll('#brand-shop .shop-action button')].find(b => b.textContent === 'Quitar fondo').disabled")
+        self.assertTrue(self.disabled("Pasar a SVG en color"))  # still needs the matte
+        self.no_problems()
+
+    def test_a_project_without_brand_dir_cannot_save_there(self):
+        self.open("/p/tarkor/marca", "document.getElementById('shop-dest')")
+        has_dir = self.js("!document.querySelector('#shop-dest option[value=project]').disabled")
+        cfg = json.loads((self.root / "galivelop-images.json").read_text(encoding="utf-8"))
+        self.assertEqual(has_dir, bool((cfg.get("brand") or {}).get("dir")))
+
+    def test_the_attempt_card_links_to_the_brand_tab(self):
+        self.open(order_route("fondos/marca"), "document.querySelector('.gallery .attempt')")
+        href = self.js("document.querySelector('.gallery .attempt details a[href*=\"/marca?src=\"]').getAttribute('href')")
+        self.assertTrue(href.startswith("#/p/tarkor/marca?src="), href)
+
+
 if __name__ == "__main__":
     unittest.main()

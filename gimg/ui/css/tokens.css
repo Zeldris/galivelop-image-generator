@@ -11,7 +11,9 @@
   --bg: #06121c;
   --surface: #0c1d2b;
   --surface-2: #11283a;
-  --border: #1b3447;          /* decorativo (1,47:1) */
+  --preview-light: #f6fafd;   /* fondos fijos de las vistas previas de logo: no cambian con el tema */
+  --preview-dark: #06121c;
+  --border: #1b3447;         /* decorativo (1,47:1) */
   --border-strong: #587891;   /* [propuesto] bordes de campos y controles, 3,68:1 sobre superficie */
   --text: #eaf4fa;            /* 16,9:1 sobre fondo, 13,6:1 sobre superficie-2 */
   --text-2: #9fb4c4;          /* 8,8:1 / 7,1:1 */
