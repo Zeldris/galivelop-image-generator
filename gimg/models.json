@@ -60,7 +60,7 @@
           "name": "z_image_turbo-Q6_K.gguf",
           "url": "https://huggingface.co/leejet/Z-Image-Turbo-GGUF/resolve/main/z_image_turbo-Q6_K.gguf",
           "sha256": "319f627beac8059b7546f36a7b4d5097b7f4ee6a1fc37585d0f75ca1d12d01af",
-          "sizeMb": 5019
+          "sizeMb": 5263
         },
         "text": {
           "name": "Qwen3-4B-Q4_K_M.gguf",
@@ -72,7 +72,7 @@
           "name": "ae.safetensors",
           "url": "https://huggingface.co/Comfy-Org/Z-Image-Turbo/resolve/main/split_files/vae/ae.safetensors",
           "sha256": "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38",
-          "sizeMb": 320
+          "sizeMb": 335
         }
       },
       "defaults": {"steps": 8, "cfg": 1, "sampler": "euler"},
