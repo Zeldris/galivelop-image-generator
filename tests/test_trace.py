@@ -37,6 +37,22 @@ def logo():
     return img
 
 
+def evenodd_area(d, size):
+    """Pixels (centers) inside the path `d` made of straight M/L/Z loops, by the even-odd rule."""
+    loops = [[tuple(map(float, pt.split())) for pt in re.findall(r"[ML]([\d. ]+)", chunk)] for chunk in d.split("Z") if chunk]
+    count = 0
+    for y in range(size):
+        for x in range(size):
+            px, py, inside = x + 0.5, y + 0.5, False
+            for lp in loops:
+                for i in range(len(lp)):
+                    (x1, y1), (x2, y2) = lp[i], lp[(i + 1) % len(lp)]
+                    if (y1 > py) != (y2 > py) and px < x1 + (py - y1) * (x2 - x1) / (y2 - y1):
+                        inside = not inside
+            count += inside
+    return count
+
+
 class PngReadTests(unittest.TestCase):
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
@@ -79,6 +95,44 @@ class PngReadTests(unittest.TestCase):
         path.write_bytes(data)
         self.assertEqual(bytes(png.read_rgba(path)[2]), b"".join(rows))
 
+    def test_filters_1_to_4_decode_in_rgb_too(self):
+        w, h, bpp = 4, 5, 3
+        rows = [bytes((11 * y + 5 * i + (i * i) % 7) & 255 for i in range(w * bpp)) for y in range(h)]
+        raw, prev = b"", bytes(w * bpp)
+        for y, line in enumerate(rows):
+            f = y % 5
+            enc = bytearray()
+            for i, v in enumerate(line):
+                a = line[i - bpp] if i >= bpp else 0
+                b = prev[i]
+                c = prev[i - bpp] if i >= bpp else 0
+                pa, pb, pc = abs(b - c), abs(a - c), abs(a + b - 2 * c)
+                pred = (0, a, b, (a + b) >> 1, a if pa <= pb and pa <= pc else (b if pb <= pc else c))[f]
+                enc.append((v - pred) & 255)
+            raw += bytes([f]) + bytes(enc)
+            prev = line
+        path = self.dir / "rgb.png"
+        path.write_bytes(png.SIGNATURE + png.chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0))
+                         + png.chunk(b"IDAT", zlib.compress(raw)) + png.chunk(b"IEND", b""))
+        got = png.read_rgba(path)[2]
+        want = bytearray()
+        for line in rows:
+            for x in range(w):
+                want += line[x * 3:x * 3 + 3] + b"\xff"
+        self.assertEqual(got, want)
+
+    def test_cut_or_missing_image_data_and_too_big_say_so(self):
+        def reason(idat, w=2, h=2):
+            path = self.dir / "c.png"
+            path.write_bytes(png.SIGNATURE + png.chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0))
+                             + idat + png.chunk(b"IEND", b""))
+            with self.assertRaises(GimgError) as cm:
+                png.read_rgba(path)
+            return cm.exception.params["reason"]
+        self.assertIn("image data is missing", reason(b""))
+        self.assertIn("image data is cut (9 of 18 bytes)", reason(png.chunk(b"IDAT", zlib.compress(b"\x00" * 9))))
+        self.assertIn("too big", reason(png.chunk(b"IDAT", zlib.compress(b"")), w=5000, h=5000))
+
     def test_unsupported_and_broken_files_say_why(self):
         def reason(data):
             path = self.dir / "x.png"
@@ -92,7 +146,7 @@ class PngReadTests(unittest.TestCase):
         end = png.chunk(b"IEND", b"")
         self.assertIn("only 8-bit RGB or RGBA", reason(png.SIGNATURE + ihdr(16, 6, 0) + idat + end))
         self.assertIn("interlace 1", reason(png.SIGNATURE + ihdr(8, 6, 1) + idat + end))
-        self.assertIn("wrong length", reason(png.SIGNATURE + ihdr(8, 6, 0) + idat + end))
+        self.assertIn("the image data is cut (2 of 5 bytes)", reason(png.SIGNATURE + ihdr(8, 6, 0) + idat + end))
         self.assertIn("unknown scanline filter 9", reason(
             png.SIGNATURE + ihdr(8, 2, 0) + png.chunk(b"IDAT", zlib.compress(b"\x09\x00\x00\x00")) + end))
         self.assertIn("not a PNG", reason(b"nope"))
@@ -201,6 +255,40 @@ class ToSvgTests(unittest.TestCase):
         w, h, px = canvas(2, 2, GOLD + (255,))
         root = ElementTree.fromstring(trace.to_svg(w, h, px, "silueta", title='a<b & "c"'))
         self.assertEqual(root.find(NS + "title").text, 'a<b & "c"')
+
+    def test_ring_with_a_hole_renders_as_a_ring_with_evenodd(self):
+        img = canvas(24, 24)
+        fill(img, 2, 2, 22, 22, GOLD + (255,))
+        fill(img, 8, 8, 16, 16, (0, 0, 0, 0))
+        d = paths(trace.to_svg(*img, "silueta", smooth_passes=0, curves=False, dp_tol=0, min_island=1))[0].get("d")
+        self.assertEqual(d.count("M"), 2)
+        self.assertEqual(evenodd_area(d, 24), 20 * 20 - 8 * 8)
+
+    def test_control_characters_are_removed_and_color_is_checked(self):
+        img = canvas(12, 12)
+        fill(img, 2, 2, 10, 10, GOLD + (255,))
+        w, h, px = img
+        for title in ("a\x0bb", "a\x00b\x1f"):
+            root = ElementTree.fromstring(trace.to_svg(w, h, px, "silueta", title=title))
+            self.assertEqual(root.find(NS + "title").text, "ab")
+        self.assertEqual(ElementTree.fromstring(trace.to_svg(w, h, px, "silueta", color="#abc")).find(NS + "path").get("fill"), "#abc")
+        for bad in ('red"/><script', "a\x0bb", "", "#12"):
+            with self.assertRaisesRegex(ValueError, "color: .* is not #rgb, #rrggbb or a color name"):
+                trace.to_svg(w, h, px, "silueta", color=bad)
+
+    def test_reduction_rounds_up_and_scales_each_axis(self):
+        img = canvas(1023, 20)
+        fill(img, 0, 0, 501, 20, GOLD + (255,))
+        svg = trace.to_svg(*img, "silueta", max_side=512, curves=False, smooth_passes=0, dp_tol=0)
+        self.assertEqual(ElementTree.fromstring(svg).get("viewBox"), "0 0 1023 20")
+        d = paths(svg)[0].get("d")
+        xs = sorted({float(m) for m in re.findall(r"[ML]([\d.]+) ", d)})
+        ys = sorted({float(m) for m in re.findall(r"[ML][\d.]+ ([\d.]+)", d)})
+        self.assertEqual(ys, [0.0, 20.0])  # y is scaled by 20/10, x by 1023/511: each axis apart
+        self.assertEqual(xs[0], 0.0)
+        # reduced by 2 (ceil of 1023/512), not left at 1:1: the edge lands on the coarse grid
+        self.assertLess(abs(xs[1] * 511 / 1023 - round(xs[1] * 511 / 1023)), 0.01)
+        self.assertNotEqual(xs[1], 501.0)
 
     def test_bad_options_say_why(self):
         w, h, px = logo()

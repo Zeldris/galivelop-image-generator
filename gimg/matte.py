@@ -6,7 +6,8 @@ than `t0` to it (so a color inside the shape that looks like the background is *
 connected to the border), grows the flood up to `grow` pixels over the soft edge (pixels closer than `t1`) and gives
 that edge a partial alpha, ``(distance - t0) / (t1 - t0)``, with the background tint taken out of its color
 (despill), so the edge has no halo of the background color. It returns a new RGBA ``bytearray``; the input is not
-touched. `border_color` gives the background color alone.
+touched. A pixel whose own alpha is under 128 is background (and ends fully transparent), and the border color
+is taken from the border pixels that are not. `border_color` gives the background color alone.
 
 Distances are Euclidean in RGB, from 0 to about 441. `t1` has to be larger than `t0`, both not negative.
 """
@@ -34,11 +35,9 @@ def _border_pixels(width: int, height: int, border: int):
 def border_color(width: int, height: int, rgba, border: int = 6) -> tuple:
     """``(r, g, b)``: the median color of the band of `border` pixels around the image."""
     _check(width, height, rgba)
-    vals = ([], [], [])
-    for x, y in _border_pixels(width, height, border):
-        i = (y * width + x) * 4
-        for c in range(3):
-            vals[c].append(rgba[i + c])
+    pixels = [(y * width + x) * 4 for x, y in _border_pixels(width, height, border)]
+    pixels = [i for i in pixels if rgba[i + 3] >= 128] or pixels  # an already transparent border has no real color
+    vals = ([rgba[i] for i in pixels], [rgba[i + 1] for i in pixels], [rgba[i + 2] for i in pixels])
     return tuple(int(median(v)) for v in vals)
 
 
@@ -52,7 +51,7 @@ def remove_bg(width: int, height: int, rgba, t0: float = 30, t1: float = 80, bor
     bg = border_color(width, height, rgba, border)
     n = width * height
     dist = [math.sqrt((rgba[k * 4] - bg[0]) ** 2 + (rgba[k * 4 + 1] - bg[1]) ** 2 + (rgba[k * 4 + 2] - bg[2]) ** 2)
-            for k in range(n)]
+            if rgba[k * 4 + 3] >= 128 else 0.0 for k in range(n)]
     seen = bytearray(n)
     stack = []
     for x in range(width):
@@ -88,6 +87,9 @@ def remove_bg(width: int, height: int, rgba, t0: float = 30, t1: float = 80, bor
             seen[k] = 1
     out = bytearray(rgba)
     for k in range(n):
+        if rgba[k * 4 + 3] < 128:
+            out[k * 4 + 3] = 0
+            continue
         if not seen[k]:
             continue
         i, d = k * 4, dist[k]

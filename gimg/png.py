@@ -263,14 +263,18 @@ def read_rgba(path) -> tuple:
     if depth != 8 or color not in (2, 6) or interlace != 0:
         raise _invalid(path, "only 8-bit RGB or RGBA without interlace is read (bit depth %d, color type %d, "
                              "interlace %d)" % (depth, color, interlace))
-    if width * height > 1 << 26:
+    if width * height > 1 << 24:
         raise _invalid(path, "the image is too big")
     bpp = 3 if color == 2 else 4
+    idat = b"".join(b for k, b in chunks if k == b"IDAT")
+    if not idat:
+        raise _invalid(path, "the image data is missing (no IDAT chunk)")
     try:
-        raw = zlib.decompressobj().decompress(b"".join(b for k, b in chunks if k == b"IDAT"),
-                                              height * (1 + width * bpp) + 1)
+        raw = zlib.decompressobj().decompress(idat, height * (1 + width * bpp) + 1)
     except zlib.error as exc:
-        raise _invalid(path, "bad image data: %s" % exc)
+        raise _invalid(path, "bad image data (cut or damaged): %s" % exc)
+    if len(raw) < height * (1 + width * bpp):
+        raise _invalid(path, "the image data is cut (%d of %d bytes)" % (len(raw), height * (1 + width * bpp)))
     pix = _unfilter(raw, width, height, bpp, path)
     if bpp == 4:
         return width, height, pix

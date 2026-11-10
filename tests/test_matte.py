@@ -74,6 +74,18 @@ class RemoveBgTests(unittest.TestCase):
         out = matte.remove_bg(10, 10, noisy, border=1)
         self.assertEqual(at(out, 10, 5, 5)[3], 255)
 
+    def test_input_alpha_under_128_is_background(self):
+        w, h, px = disc(size=30, radius=8)
+        for k in range(w * h):  # the larger part of a 3 px frame is transparent with a garbage color
+            x, y = k % w, k // w
+            if min(x, y, w - 1 - x, h - 1 - y) < 3 and x < 22:
+                px[k * 4:k * 4 + 4] = bytes((250, 0, 250, 0))
+        self.assertEqual(matte.border_color(w, h, px, border=3), BG)  # not the garbage color
+        out = matte.remove_bg(w, h, px, border=3)
+        self.assertEqual(at(out, w, 0, 0)[3], 0)
+        self.assertEqual(at(out, w, 15, 15), FG + (255,))
+        self.assertEqual(at(out, w, 5, 5)[3], 0)
+
     def test_bad_arguments_say_why(self):
         px = bytearray(4 * 4)
         with self.assertRaisesRegex(ValueError, "t0 and t1 must satisfy"):

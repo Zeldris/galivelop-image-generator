@@ -4,7 +4,7 @@
 
 1. Each pixel is classified to the nearest color of `palette` (hex strings) or, with none, of `ncolores` colors taken
    from the image (k-means). A pixel with alpha under `bg_tol` (0-255) is background and belongs to no color.
-2. The image is reduced by `max_side` (an integer factor, majority vote per cell) and each color's mask is smoothed
+2. The image is reduced to at most `max_side` pixels on its long side (an integer factor, rounded up, majority vote per cell) and each color's mask is smoothed
    with `smooth_passes` passes of a 3x3 majority filter.
 3. The mask borders are traced, simplified with Douglas-Peucker (`dp_tol`, in reduced pixels) and written as cubic
    Bezier curves (`curves`) that keep every corner sharper than `corner_deg` degrees, or as straight lines.
@@ -15,15 +15,19 @@
 
 `mode="mono"` is one path of one color (`color`, ``currentColor`` by default) over the pixels of the palette entries
 in `ink` (indexes; default every color but the darkest). `mode="silueta"` is one path over the whole opaque shape.
-A bad option raises ``ValueError``.
+`title` loses control characters. A bad option (also a `color` that is not ``#rgb``, ``#rrggbb`` or a name) raises
+``ValueError``.
 """
 from __future__ import annotations
 
 import math
+import re
 from collections import defaultdict
 from xml.sax.saxutils import escape, quoteattr
 
 MODES = ("color", "mono", "silueta")
+_CONTROL = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+_COLOR = re.compile(r"^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}|[A-Za-z]{3,20})$")  # hex, a name or currentColor
 _DIRS = [(1, 0), (0, 1), (-1, 0), (0, -1)]  # right, down, left, up (clockwise on screen)
 
 
@@ -232,7 +236,7 @@ def _smooth(p: list, corner_deg: float) -> str:
     return s + "Z"
 
 
-def _path_data(m, W: int, H: int, scale: float, dp_tol: float, min_island: float, curves: bool, corner_deg: float) -> str:
+def _path_data(m, W: int, H: int, sx: float, sy: float, dp_tol: float, min_island: float, curves: bool, corner_deg: float) -> str:
     out = []
     for loop in _loops(m, W, H):
         if abs(_area(loop)) < min_island:
@@ -240,7 +244,7 @@ def _path_data(m, W: int, H: int, scale: float, dp_tol: float, min_island: float
         q = _dp_closed(_drop_straight(loop), dp_tol)
         if len(q) < 3:
             continue
-        q = [(x * scale, y * scale) for x, y in q]
+        q = [(x * sx, y * sy) for x, y in q]
         out.append(_smooth(q, corner_deg) if curves else "M" + "L".join("%s %s" % (_num(x), _num(y)) for x, y in q) + "Z")
     return "".join(out)
 
@@ -257,6 +261,8 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
         raise ValueError("mode must be one of %s (got %r)" % (", ".join(MODES), mode))
     if ncolores < 1 or smooth_passes < 0 or dp_tol < 0 or min_island < 0 or max_side < 1 or not 0 <= corner_deg <= 180:
         raise ValueError("ncolores >= 1, smooth_passes, dp_tol and min_island >= 0, max_side >= 1 and corner_deg in 0-180")
+    if not isinstance(color, str) or not _COLOR.match(color):
+        raise ValueError("color: %r is not #rgb, #rrggbb or a color name such as currentColor" % (color,))
     pal_hex = list(palette) if palette else (extract_palette(width, height, rgba, ncolores, bg_tol) if mode != "silueta" else [])
     pal = [parse_hex(h) for h in pal_hex]
     pal_hex = [_hex(c) for c in pal]
@@ -270,8 +276,8 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
             cache[key] = min(range(len(pal)), key=lambda j: _d2(key, pal[j])) if pal else 0
         return cache[key]
 
-    W, H, grid = _reduce(width, height, rgba, max(1, max(width, height) // max_side), label)
-    scale = width / W
+    W, H, grid = _reduce(width, height, rgba, -(-max(width, height) // max_side), label)
+    sx, sy = width / W, height / H
     counts = defaultdict(int)
     for row in grid:
         for v in row:
@@ -280,7 +286,7 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
 
     def layer(fill, keep):
         m = _majority([[1 if keep(v) else 0 for v in row] for row in grid], W, H, smooth_passes)
-        d = _path_data(m, W, H, scale, dp_tol, min_island, curves, corner_deg)
+        d = _path_data(m, W, H, sx, sy, dp_tol, min_island, curves, corner_deg)
         return '<path fill=%s fill-rule="evenodd" d="%s"/>' % (quoteattr(fill), d) if d else ""
 
     layers = []
@@ -299,4 +305,4 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
             layers.append(layer(pal_hex[order[0]], lambda v: v >= 0))  # the silhouette, under the rest
             layers += [layer(pal_hex[j], lambda v, j=j: v == j) for j in order[1:]]
     head = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" role="img">' % (width, height)
-    return head + ("<title>%s</title>" % escape(title) if title else "") + "".join(layers) + "</svg>\n"
+    return head + ("<title>%s</title>" % escape(_CONTROL.sub("", title)) if title else "") + "".join(layers) + "</svg>\n"
