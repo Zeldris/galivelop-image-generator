@@ -249,7 +249,7 @@ bloque E: el perfil `og` existe en `examples/tarkor`, pero su plantilla `plantil
 1. **#1 emblema** (referencia de estilo, M8): 8-10 semillas con el prompt nuevo (`orders/ui/01-emblema.json` rehecho: repo, 2026-11-10),
    se elige por silueta a 32 px, piedra legible y cuatro puntas, y se guarda como referencia img2img. Se mide con
    `measure` que el oro quede en `#b8862b`-`#f2c45a` y la piedra en `#3a342d`, no en amarillo `quest` ni en blanco.
-2. **Sistema de logo en SVG** (a mano, desde el #1): `tarkor-emblema.svg`, `tarkor-emblema-simple.svg`,
+2. **Sistema de logo en SVG** (lo genera gimg con `gimg brand system`, desde el #1; D37): `tarkor-emblema.svg`, `tarkor-emblema-simple.svg`,
    `tarkor-wordmark.svg` (Cinzel 800 a trazos, modificada: §7 de la propuesta), `tarkor-lockup-h.svg`,
    `tarkor-lockup-v.svg`, `tarkor-glifo.svg` (E16). Con ellos, `favicon.svg` y el PNG 32/16, y E14.
 3. **Marca fuera del juego**: E1 avatar, E2 cabecera, E3 og (plantilla nueva y `compose` con Cinzel e Inter), E4 Steam
@@ -304,7 +304,7 @@ semillas por pieza, el total (48 piezas de A-D más unas 20 del bloque E) ronda 
   el bloque entero); aquí se usan en los prompts.
 - **D2:** el veto sigue: «deep indigo blue», nunca violeta. Si sale violeta, se corrige el prompt, no la regla.
 - **D3:** #1 sirve desde 128 px. La versión pequeña es `tarkor-emblema-simple.svg` (dos tintas, `gold-500` sobre
-  `wood-950`; cortes de 1 px y estrella como rombo 3×5 a 16 px), hecha aquí a mano con el #1; hasta entonces el
+  `wood-950`; cortes de 1 px y estrella como rombo 3×5 a 16 px), generada aquí con gimg desde un emblema plano (D37); hasta entonces el
   instalador sigue con su icono.
 - **D4 (resuelta el 2026-11-10 por la persona):** la dirección de los dos PNG **es la marca**; r7 («lápiz de fantasía»,
   New Rocker, arcilla, Semilla de hierro) queda archivada en `hoja.md`. `biblia.md` y `hoja.md` están rehechas con esa

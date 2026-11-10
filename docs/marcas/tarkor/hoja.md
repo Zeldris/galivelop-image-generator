@@ -84,7 +84,7 @@ luz, el criterio de la pieza de marca es la proporción 60/30/10, no el SATAVG.
 
 ## 4. Logo
 
-*Dirección del 2026-11-10 (aprobada por la persona): el emblema de la Semilla rota con la estrella, por los dos PNG de `examples/tarkor/logos/`. Los SVG de abajo son el sistema previsto y **aún no existen** (se dibujan a mano desde el #1 elegido, `peticiones.md` §5 paso 2); `tarkor-a.svg`, `tarkor-a-lockup*.svg` y `tarkor-b-lockup*.svg` quedan en `logos/` como historia.*
+*Dirección del 2026-11-10 (aprobada por la persona): el emblema de la Semilla rota con la estrella, por los dos PNG de `examples/tarkor/logos/`. Los SVG de abajo son el sistema previsto y **aún no existen** (los genera gimg desde el #1 elegido con `gimg brand system`, D37; `peticiones.md` §5 paso 2); `tarkor-a.svg`, `tarkor-a-lockup*.svg` y `tarkor-b-lockup*.svg` quedan en `logos/` como historia.*
 
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
@@ -285,7 +285,7 @@ esos repos):
 | 2 | Propósito en una frase | pasa (criterio; es la línea del juego en `tarkor-contenido-web.md`) |
 | 3 | «Nunca se muestra» no vacío | pasa (la lista más larga de los seis proyectos: el canon reserva mucho); nadie lo valida por script |
 | 4 | `brand.palette` ≥ 3 hex ≤ 16; fondo, texto y acento nombrados | pasa por forma (10 hex), **no por contenido desde el 2026-11-10**: lleva el acento viejo `#E0703A` y no lleva `#b8862b`, `#0f1428` ni `#3a342d`; se rehace con la configuración (sección 13) |
-| 5 | Símbolo SVG válido | **el nuevo no existe aún**: `tarkor-emblema.svg` está por dibujar; `tarkor-a.svg` pasa a mano (`viewBox`, `<title>`, sin `<text>`/`<image>`/`filter`) pero es historia; copia en `examples/<p>/logos/`: los dos PNG de dirección, sin SVG |
+| 5 | Símbolo SVG válido | **el nuevo no existe aún**: `tarkor-emblema.svg` está por generar (`gimg brand system`); `tarkor-a.svg` pasa a mano (`viewBox`, `<title>`, sin `<text>`/`<image>`/`filter`) pero es historia; copia en `examples/<p>/logos/`: los dos PNG de dirección, sin SVG |
 | 6 | Familia de titular instalada | **no comprobable**: sin `compose.fonts`, y `piloto/fuentes/` no existe en esta máquina (`fuentes.sh` sin correr); el lockup usa `<text>` Cinzel y saldría en la reserva `serif` |
 | 7 | Motivos Sí, No y palabras vetadas no vacíos | pasa; nadie lo valida; Motivos Sí es **[P]** entero |
 | 8 | Ningún prompt con palabra vetada, negación ni «like» | `r2-luz` y `r2-luz-r1` **pasan** la lista de esta hoja; `r2-control` no (`r2-control` conserva el «sun» histórico de `r2-hex.txt`; «muted» no es palabra vetada). Los prompts históricos con «sun» (`r2-hex.txt` y su pedido, `estilo.txt`, `r2-hex/palabras/material.txt`, `r5-*.txt`, `og.txt`) no pasan y se rehacen |

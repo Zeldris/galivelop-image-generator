@@ -8,16 +8,16 @@
 
 | Campo | Valor |
 |---|---|
-| **Rama** | `fix-0.4.1` (desde `origin/main` `71a69a3`): parche 0.4.1; el trabajo de F4e sigue en `f4e-piezas` |
-| **Fase / tarea** | 0.4.1: arreglos de lo publicado en 0.4.0, antes que la 0.5.0 (decisión de la persona del 2026-11-06: los arreglos van primero) |
-| **Último punto estable** | `main` en `71a69a3` (PR #4, CI en verde), etiqueta y release v0.4.0 |
-| **Siguiente paso** | el de la fila de `fix-0.4.1` |
+| **Rama** | `portal-marca` (desde `origin/main` `fa1076e`); el trabajo de F4e sigue en `f4e-piezas` |
+| **Fase / tarea** | marca del Portal y de Tarkor (hoja nueva, `gimg brand`) |
+| **Último punto estable** | `main` en `fa1076e` (PR #5, CI en verde), etiqueta y release v0.4.1 |
+| **Siguiente paso** | el de la fila de `portal-marca` |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
 | **Tarea en curso · `f2-motor`** | Fusionada en `main` por el PR #2 (`624f7a9`, 2026-11-05, CI en verde); rama terminada. |
 | **Tarea en curso · `plan-piezas`** | Fusionada en `main` por el PR #3 (`d128106`, 2026-11-05, CI en verde); rama terminada. v0.4.0 etiquetada en `d128106`; `release.yml` falló (sin `ffmpeg`/`rsvg-convert`) y la release se creó a mano con `releases.py notes` y el mismo título (mismo árbol que el CI verde del PR); `releases.py check` en verde. |
 | **Tarea en curso · `release-install`** | Fusionada en `main` por el PR #4 (`71a69a3`, 2026-11-05, CI en verde, confirmado por la persona); rama terminada. |
-| **Tarea en curso · `fix-0.4.1`** | Abierta el 2026-11-06. Hecho: arreglos y bump 0.4.1 (ver «Hecho»), fase 1 (arreglos con pruebas en rojo sin su arreglo; leves en «Pendiente»), fase 2: retro `docs/records/retro-2026-11-06-fix-0.4.1.md` aprobada entera (P1 `tests/test_locks.py`, P2 `releases.py bump` pone la versión de los README, P4 leves a `docs/records/leves-fusionadas.md`, P5 esta celda). Falta: fase 3, PR a `main` (con confirmación), etiqueta `v0.4.1` y release, `releases.py check`; luego `git merge origin/main` en `f4e-piezas`. |
-| **Tarea en curso · `portal-marca`** | Abierta el 2026-11-10 (desde `origin/main` `fa1076e`). Hoja nueva del Portal y de Tarkor; hecho en «Hecho» y «Pendiente». Los SVG del logo **no se dibujan a mano** (D37; la persona paró a Fable el 2026-11-10): los genera gimg. Hecho: `matte.py`, `trace.py`, `png.read_rgba`/`rgba_bytes` y `gimg/brand.py` con `gimg brand matte|trace|wordmark|lockup|system` (tests en `tests/test_brand.py`; `system` sobre el emblema Z-Image q175 de Tarkor: ~10 s, 16 trazados; la interfaz falta). Siguiente: el paso de marca en la interfaz (`docs/plan.md`, «Proceso de marca en la interfaz»), corregir `hoja.md` §4 y generar el sistema de logo de Tarkor; luego `og.compose` y `piezas.json`. Falta: 6-9, el resto y la entrega al Portal. Compactaciones: por encima del presupuesto (2): repartir a subagentes. |
+| **Tarea en curso · `fix-0.4.1`** | Fusionada en `main` por el PR #5 (`fa1076e`, 2026-11-06, CI en verde); etiqueta y release v0.4.1 publicadas; rama terminada. |
+| **Tarea en curso · `portal-marca`** | Abierta el 2026-11-10 (desde `origin/main` `fa1076e`). Hoja nueva del Portal y de Tarkor; hecho en «Hecho» y «Pendiente». Los SVG del logo **no se dibujan a mano** (D37; la persona paró a Fable el 2026-11-10): los genera gimg. Hecho: `matte.py`, `trace.py`, `png.read_rgba`/`rgba_bytes` y `gimg/brand.py` con `gimg brand matte|trace|wordmark|lockup|system` (tests en `tests/test_brand.py`; `system` sobre el emblema Z-Image q175 de Tarkor: ~10 s, 16 trazados; la interfaz falta). Siguiente: el paso de marca en la interfaz (`docs/plan.md`, «Proceso de marca en la interfaz»), generar un emblema plano con gimg y el sistema de logo de Tarkor (`hoja.md` y `peticiones.md` ya dicen que lo genera gimg); luego `og.compose` y `piezas.json`. Falta: 6-9, el resto y la entrega al Portal. Compactaciones: por encima del presupuesto (2): repartir a subagentes. |
 
 Aquí `logRows` está apagado en `.claude/gw.json`: las filas se editan a mano (`handoff.py set-row` no escribe) y no
 hace falta `GW_SHARED_LOG`. Aun así, cada rama toca solo su fila salvo al cerrar o fusionar otra.
