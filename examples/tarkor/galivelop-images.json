@@ -43,16 +43,12 @@
       "compose": {
         "template": "plantillas/og.svg",
         "fields": [
-          "title1",
-          "title2",
-          "title3",
-          "subtitle",
-          "subtitle2"
+          "lema"
         ],
-        "logo": "logos/tarkor-b-lockup.svg",
+        "logo": "logos/tarkor-lockup-v.svg",
         "fonts": [
-          "Metamorphous",
-          "Almendra"
+          "Cinzel",
+          "Inter"
         ],
         "fit": "cover"
       }

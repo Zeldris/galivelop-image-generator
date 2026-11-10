@@ -139,10 +139,10 @@ luz, el criterio de la pieza de marca es la proporción 60/30/10, no el SATAVG.
 |---|---|---|---|
 | Perfiles | Obl. | declarados hoy (6 pasos, cfg 1.0, euler, `flux2-klein-4b-q8`): `og` 1280×640 → 1200×630, `social` 1280×640, `banner` 1280×512 → 1600×640, `square` 1024² → 1080², `header` 1536×512 → 1500×500, `portrait` 896×1152 → 1080×1350 y `emblema` 1024². **Por declarar** (`peticiones.md` §3, Bloque E): `textura` 1024², `banda` 1024×256, `cielo` 1536×640, `icono` 512², `estampa` 1280×512, `tira` 1024×128, `avatar` 1024², `cabecera` 1536×512, `carga` 1280×704, `capsula` 1024×576, `marco` 1280×704; todos múltiplos de 64 y ≤ 1 048 576 px. Steam: solo cápsula, cabecera y principal (decisión 7). Discord 960×540 y LinkedIn 1584×396, aparte cuando se pidan | repo (`examples/tarkor/galivelop-images.json`, los once nuevos desde el 2026-11-10); **aprobado por la persona, 2026-11-10** (`propuesta-fable-2026-11-10.md` §6 y §9.7; `peticiones.md` §3) |
 | Zona reservada | Obl. | las piezas de marca ya no son paisajes con un hueco: `og` (E3) es el lockup vertical centrado sobre noche con el lema debajo, sin zona; `cabecera` (E2): emblema a la izquierda (1/3) y madera o noche a la derecha; `capsula` (E4): emblema centrado, 60 % del hueco; hero (E5): mitad izquierda para el titular, emblema a la derecha. Para los paisajes de fondo sigue lo de r5: `izquierda 1/3` en og/social/banner, `izquierda 1/2` en header, `abajo 1/2` en square/portrait | **aprobado por la persona, 2026-11-10** (`propuesta-fable-2026-11-10.md` §6 E2-E5); paisaje: decidido el 2026-11-04 |
-| Composición por perfil | Rec. | `og` lleva hoy `compose` con `plantillas/og.svg`, `logos/tarkor-b-lockup.svg` y fuentes Metamorphous/Almendra (r7): **se rehace** con `tarkor-lockup-v.svg`, plantilla E3 (noche, lockup vertical, lema en Inter 400 hueso) y `fonts: ["Cinzel", "Inter"]`. Las demás piezas de marca (E1, E2, E4, E5, E14) se componen en SVG sobre los PNG de `entrega/marca/`, sin velo | **aprobado por la persona, 2026-11-10** (`propuesta-fable-2026-11-10.md` §6); configuración pendiente (sección 13) |
+| Composición por perfil | Rec. | `og` lleva `compose` E3 desde el 2026-11-10: `plantillas/og.svg` (solo vector sobre la noche generada: `<image id="gimg-logo">` 456×420 centrado, emblema 283,5 px = 45 % del alto, margen libre arriba y abajo ≈ 65 px = altura de la T; `<text id="gimg-lema">` Inter 400 30 px hueso `#f1e4d0` al 0,82, centrado debajo; sin velo, sin marco, sin separador #9 porque no tiene SVG), `logo: logos/tarkor-lockup-v.svg`, `fields: ["lema"]`, `fonts: ["Cinzel", "Inter"]` (Cinzel por la familia de marca; el wordmark va en trazos dentro del lockup). Los lockups se regeneraron con `brand.lockup(color="#b8862b")`: embebidos por `<image>`, `currentColor` salía negro. Las demás piezas de marca (E1, E2, E4, E5, E14) se componen en SVG sobre los PNG de `entrega/marca/`, sin velo | **aprobado por la persona, 2026-11-10** (`propuesta-fable-2026-11-10.md` §6); **configurado el 2026-11-10** (`tests/test_examples.py` `TarkorOgE3Tests` lo ata; prueba sin modelo en `piloto/tarkor/og-e3-prueba.png`) |
 | Piezas solo de logo | Rec. | `avatar` (E1, `e01-avatar.png`) 1024² → 400²: emblema completo sobre noche, desde 64 px (decisión 8; el monograma T solo por debajo); `icon` (E14, `e14-icono-app.png`) 512² → 16/32/128/512 y `fuente.png` 1024 para el Instalador: emblema simple sobre madera 950; favicon del juego: `tarkor-emblema-simple.svg`. Sustituir el favicon de Vite y el icono b del Instalador es propuesta a esos repos (`docs/propuestas/tarkor/diseno-interfaz-2026-11-10.md`) | **aprobado por la persona, 2026-11-10** (`propuesta-fable-2026-11-10.md` §6 E1 y E14, §9.8); WMF e Instalador: pendientes |
 | Borrador | Opc. | `draft: {scale: 0.5, steps: 4}` declarado en `og`; los bocetos de las piezas nuevas se piden con el mismo borrador (así salieron los bocetos FLUX de `piloto/tarkor/`) | repo (`galivelop-images.json`, en los 18 perfiles desde el 2026-11-10; `docs/handoff.md` «Pendiente», ronda FLUX) |
-| Velo por perfil | Rec. | **ninguno**: las piezas nuevas van sobre noche o madera generadas, no sobre foto velada. Los velos de `piezas.json` (`#f1e4d0:0.55`, `#221c16:0.45`) son de r4-r5, históricos | **aprobado por la persona, 2026-11-10** (`propuesta-fable-2026-11-10.md` §4); `examples/tarkor/piezas.json` por rehacer |
+| Velo por perfil | Rec. | **ninguno**: las piezas nuevas van sobre noche o madera generadas, no sobre foto velada. Los velos de r4-r5 (`#f1e4d0:0.55`, `#221c16:0.45`) salieron de `piezas.json` el 2026-11-10: las tres piezas que quedan (`og`, `cabecera`, `avatar`) llevan `velo: "#0f1428:0"` porque `piezas.py` exige la clave cuando hay fondo | **aprobado por la persona, 2026-11-10** (`propuesta-fable-2026-11-10.md` §4); `examples/tarkor/piezas.json` rehecho el 2026-11-10 |
 | Logo en la pieza | Rec. | E3 (`og`): lockup vertical centrado, emblema ≈ 45 % del alto; E2 (`cabecera`): emblema a la izquierda, ≈ 70 % del alto; E4 (`capsula`): emblema centrado al 60 % del hueco, wordmark debajo; E5 (hero): emblema a la derecha, titular en oro a la izquierda; E1/E14: solo emblema. Margen = altura de la T. Nunca al 9 % en una esquina sobre un paisaje (r4-r5) | **aprobado por la persona, 2026-11-10** (`propuesta-fable-2026-11-10.md` §6) |
 | Palancas extra | Opc. | **img2img desde el emblema** (M8): el `01-emblema` elegido como semilla, fuerza 0,35-0,45, para que tablones, bandas y pictogramas (sobre pedestal) hereden su luz y su oro. **Referencias de sujeto** `-r`: los 304 `.webp` del Portal, solo paisajes. **LUT** `estilo/lut/` del juego y **LoRA `wmf-estilo`**: solo paisajes, F5. **Conversión final:** `.webp` del Portal y los `-alpha.png` de los recortes (fuera de `gimg`, D35) | **aprobado por la persona, 2026-11-10** (`propuesta-fable-2026-11-10.md` §2 M8-M9); resto: repo (`docs/plan.md` l.254, l.872) |
 | Prioridad | Rec. | la de `peticiones.md` §5: 1) `01-emblema` (semilla de todo, 8-10 semillas, medido); 2) los SVG del sistema de logo, favicon y E14; 3) marca fuera del juego: E1 avatar, E2 cabecera, E3 og, E4 Steam; 4) Bloque A (`02-tablon`, `03-fondo`, `05-banda`, `06-cielo`, `04-polvo`, `07-defensa`); 5) `16-medallon`, `10-ranura`, E6 carga, E7 barra; 6) Bloque C (`12-hud`, `13-fase`, `11-pestana`, `14-dado`, `15-categoria`); 7) `08-esquina`, `09-separador`, `17-estado`, E9-E13, E5, E17, E18; 8) entrega y propuesta a los repos. Hechas: bocetos FLUX de #1 (q154) y de los SVG; ninguna pieza entregada | **aprobado por la persona, 2026-11-10** (`propuesta-fable-2026-11-10.md` §8; `peticiones.md` §5) |
@@ -229,8 +229,10 @@ privado); `app/src-tauri/tauri.conf.json` (`productName` «Tarkor»); `app/src-t
 - `examples/tarkor/galivelop-images.json` (`name`, `brand.palette` de 10 hex: `#8a9aa8`, `#221c16`, `#332415`, `#E0703A`,
   `#f1e4d0` y, desde el 2026-11-04, `#241a10`, `#8a3b1e`, `#a3814f`, `#52626f`, `#4aa8d8`; `delivery`; perfiles `og`, `social`, `banner`, `square`, `header` y `portrait`, con destino salvo `social`, y `draft` en `og`;
   actualizada el 2026-11-04 con esta hoja).
-- `examples/tarkor/piezas.json` (Cinzel / Inter; `og`, `og-bajo`, `cuadrado`, `vertical`, `cabecera`, `avatar`: fondo, logo,
-  textos, zona, color de texto y velo).
+- `examples/tarkor/piezas.json` (Cinzel / Inter; desde el 2026-11-10 solo `og` E3, `cabecera` E2 y `avatar` E1, con los logos de
+  `examples/tarkor/logos/`, lema «El mundo sigue aunque tú te detengas.» y velo a 0; `og-bajo`, `cuadrado` y `vertical` eran paisajes
+  de r4-r5 y se quitaron). Límite: `piezas.py` pone el logo al 9 % en una esquina y busca los fondos en `piloto/`; la maqueta E3 real
+  es `og.compose`, y para las otras piezas hace falta un camino nuevo sobre `entrega/marca/`.
 - `examples/tarkor/prompts/`: `og.txt` (r1, «no»), `r2-palabras.txt`, `r2-hex.txt` (= `estilo.txt`, elegida), `r2-material.txt`,
   `r2-luz.txt` y `r2-luz-r1.txt` (r2 luz, sin medir), `r5-cuadrado.txt`, `r5-vertical.txt`, `r5-cabecera.txt`, `r5-og-bajo.txt`;
   `orders/r1-og.json`, `r2-control.json`, `r2-luz.json`, `r2-luz-r1.json`.
@@ -257,13 +259,14 @@ esos repos):
   la banda que sale, y `#f2b34a`, solo si r2-luz-r1 gana).
 - Falta: `social` y `banner` declarados y nunca generados; el 16:9 de 1600×900 que pide `guia-canales.md` no tiene perfil;
   Discord 960×540 y LinkedIn 1584×396 tampoco (perfiles aparte cuando se pidan).
-- `compose`: plantilla, fuentes, zona, velo y logo viven en `examples/pilot/componer.py` y `piezas.json`; sin `compose`.
+- `compose`: `og` lo declara desde el 2026-11-10 (plantilla E3, `tarkor-lockup-v.svg`, Cinzel/Inter, campo `lema`); ningún pedido de
+  `orders/` lleva todavía `text` con el lema (`textos/og.json` solo lo lee el test). Las demás piezas siguen sin `compose`.
 - `estilo.txt`, `r2-hex/palabras/material.txt`, `r5-*.txt` y `og.txt` nombran «sun» contra la pauta del 2026-11-02; `estilo.txt`
   pide «muted»; `r5-cuadrado/vertical.txt` piden «lower third»; `og.txt` lleva además «golden hour», «nearly empty» y «Shot on a
   full-frame camera with a 35mm lens». **Son históricos** (no se tocan) y se rehacen con la hoja; `r2-luz.txt` es el candidato
   a `estilo.txt` (decidido). El pedido `r2-control.json` conserva «sun» (el test del repo lo ata byte a byte a `prompts/r2-hex.txt`, histórico).
-- Copia de los logos en `examples/tarkor/logos/`: pendiente (F2.10, dec. 3); los `logo` de `piezas.json` apuntan a
-  `docs/marcas/tarkor/logos/`.
+- Copia de los logos en `examples/tarkor/logos/`: hecha el 2026-11-10 (`tarkor-emblema.svg`, `tarkor-lockup-h.svg`,
+  `tarkor-lockup-v.svg`, byte a byte con `docs/marcas/tarkor/logos/`); los `logo` de `piezas.json` apuntan a esa copia.
 - `piloto/fuentes/` no existe aquí: `fuentes.sh` no se ha corrido en esta máquina; las piezas de r4-r5 se compusieron donde sí.
 - En WMF: la nota de `gw-media-content` lleva la paleta del Portal, no la de Tarkor (ver «Contradicciones», 5); sin og:image;
   favicon de Vite. En el Instalador: icono del concepto b. Lo que les toca ahora está en `docs/propuestas/tarkor/diseno-interfaz-2026-11-10.md`;
@@ -271,9 +274,9 @@ esos repos):
 - **Desde el 2026-11-10, todo lo de arriba más esto:** en el repo ya están `brand.palette` con los 16 hex de la sección 3 y el
   logo (fuera `#E0703A`, `#8a3b1e` y `#a3814f`), `draft` en los 18 perfiles, los once perfiles del Bloque E,
   `orders/ui/01-emblema.json` con el bloque común M10 y el prompt de `peticiones.md` #1, y los pedidos E2-E4, E6, E7, E9-E12
-  (`orders/marca/`, `orders/ui/`). Siguen como en r7, a la espera de los SVG del sistema nuevo (ninguno existe): `og.compose`
-  (`plantillas/og.svg`, `logos/tarkor-b-lockup.svg`, Metamorphous/Almendra; `tests/test_examples.py` lo ata) y `piezas.json`
-  (velos y lockups a/b).
+  (`orders/marca/`, `orders/ui/`). Con los SVG del sistema nuevo ya generados, el mismo día pasaron a la hoja `og.compose`
+  (plantilla E3, `logos/tarkor-lockup-v.svg`, Cinzel/Inter; `tests/test_examples.py` lo ata) y `piezas.json` (sin velos, lockups
+  nuevos); `plantillas/og.svg` de r7 (velo de pergamino, Metamorphous/Almendra, `tarkor-b-lockup.svg`) ya no existe.
 
 ---
 
@@ -285,8 +288,8 @@ esos repos):
 | 2 | Propósito en una frase | pasa (criterio; es la línea del juego en `tarkor-contenido-web.md`) |
 | 3 | «Nunca se muestra» no vacío | pasa (la lista más larga de los seis proyectos: el canon reserva mucho); nadie lo valida por script |
 | 4 | `brand.palette` ≥ 3 hex ≤ 16; fondo, texto y acento nombrados | pasa por forma (10 hex), **no por contenido desde el 2026-11-10**: lleva el acento viejo `#E0703A` y no lleva `#b8862b`, `#0f1428` ni `#3a342d`; se rehace con la configuración (sección 13) |
-| 5 | Símbolo SVG válido | **el nuevo no existe aún**: `tarkor-emblema.svg` está por generar (`gimg brand system`); `tarkor-a.svg` pasa a mano (`viewBox`, `<title>`, sin `<text>`/`<image>`/`filter`) pero es historia; copia en `examples/<p>/logos/`: los dos PNG de dirección, sin SVG |
-| 6 | Familia de titular instalada | **no comprobable**: sin `compose.fonts`, y `piloto/fuentes/` no existe en esta máquina (`fuentes.sh` sin correr); el lockup usa `<text>` Cinzel y saldría en la reserva `serif` |
+| 5 | Símbolo SVG válido | **el nuevo no existe aún**: `tarkor-emblema.svg` está por generar (`gimg brand system`); `tarkor-a.svg` pasa a mano (`viewBox`, `<title>`, sin `<text>`/`<image>`/`filter`) pero es historia; copia en `examples/<p>/logos/`: los dos PNG de dirección y, desde el 2026-11-10, `tarkor-emblema.svg` y los dos lockups generados por gimg |
+| 6 | Familia de titular instalada | desde el 2026-11-10 `og.compose.fonts` declara Cinzel e Inter y `gimg doctor` las comprueba (`fc-list` las encuentra en esta máquina); el lockup nuevo va en trazos y no depende de ninguna fuente; el lema sí necesita Inter instalada |
 | 7 | Motivos Sí, No y palabras vetadas no vacíos | pasa; nadie lo valida; Motivos Sí es **[P]** entero |
 | 8 | Ningún prompt con palabra vetada, negación ni «like» | `r2-luz` y `r2-luz-r1` **pasan** la lista de esta hoja; `r2-control` no (`r2-control` conserva el «sun» histórico de `r2-hex.txt`; «muted» no es palabra vetada). Los prompts históricos con «sun» (`r2-hex.txt` y su pedido, `estilo.txt`, `r2-hex/palabras/material.txt`, `r5-*.txt`, `og.txt`) no pasan y se rehacen |
 | 9 | Prompt acaba en «The image is completely textless.» y tiene 120-320 palabras | pasa (129-241 palabras), los once |
@@ -396,7 +399,10 @@ Entre los repos de Tarkor y la biblia (`a50b544`), o entre la biblia y lo que ya
 14. **La configuración sigue en r7.** `examples/tarkor/galivelop-images.json` (`brand.palette`; `og.compose` con `plantillas/og.svg`,
     `tarkor-b-lockup.svg` y Metamorphous/Almendra), `piezas.json` (velos, lockups a/b) y `orders/ui/01-emblema.json` (bloque común y
     prompt viejos) contradicen las secciones 3, 4, 5 y 9. **Propuesta:** rehacerlos con `peticiones.md` cuando se generen las piezas
-    (esta tarea solo toca documentos). **Estado:** pendiente, sección 13.
+    (esta tarea solo toca documentos). **Estado:** resuelta el 2026-11-10: `brand.palette` y `01-emblema.json` ya iban con la hoja;
+    `og.compose` (plantilla E3 con `tarkor-lockup-v.svg`, Cinzel/Inter) y `piezas.json` (sin velos, lockups nuevos) se rehicieron en
+    `claude/tarkor-og-e3`, sección 13. Queda que algún pedido lleve el lema en `text` y que `piezas.py` sepa centrar un lockup (hoy
+    pone el logo en una esquina).
 
 ## Cambios que pediría a la plantilla
 

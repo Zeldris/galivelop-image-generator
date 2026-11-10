@@ -89,6 +89,7 @@ class UiBase(unittest.TestCase):
         path = cls.root / "galivelop-images.json"
         cfg = json.loads(path.read_text())
         compose = cfg["profiles"][PROFILE]["compose"]
+        compose["fields"] = ["title1", "subtitle"]  # los huecos de ELEMENTS_SVG (el ejemplo real solo lleva `lema`)
         compose["templates"] = {"claro": {"template": "plantillas/claro.svg", "fields": ["title1"]}}
         compose["templatesDir"] = "plantillas-extra"
         path.write_text(json.dumps(cfg))
