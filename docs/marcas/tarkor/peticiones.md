@@ -8,7 +8,7 @@ provisional o un archivo de relleno. Forma tomada de la hoja del Portal (`docs/m
 ## 0. Fuente
 
 | Repo | Commit | Rama | Rutas leídas |
-| --- | --- | --- | ---|
+| --- | --- | --- | --- |
 | `World-Maker-Fantasy` | `3537d84822185b5c5f04e0c70c03e4e6a1446078` | `claude/generador-mapas` | `frontend/src/index.css` (entero), `frontend/src/assets/fonts/fonts.css`, `frontend/public/favicon.svg`, `frontend/public/icons.svg`, `frontend/index.html`, `frontend/src/components/{Miniatura,PanelEmptyState,IconCard,Esqueleto,HealthBar,HungerBar,ThirstBar,EnergyBar,DiceRoll,SkillBarHud,SideNav,CollapsedRail,NavTabs,WorldCard,CharacterCard,GameHeader,ErrorBoundary,CombatPanel}.tsx`, `frontend/src/pages/Home.tsx`, `frontend/src/lib/{gamePhase,enciclopediaTargets}.ts`, `backend/src/services/imagePromptGenerator.ts` (l.49), `backend/src/routes/world.ts` (l.58-76, l.807) |
 | `WMF-imagenes` | `735f5239adbe6409ba4a349869338fb65ece35c1` | — | `image-generator/README.md`, `image-generator/fichas/` (listado), `image-generator/interfaz/adaptador_tarkor.py` (l.1-125), `docs/producto/roadmap-imagenes.md` (extractos: bloques, IMG-37) |
 | `Instalador-WMF-Tarkor` | `ce9f33aba0d2054591445ba43383678910966bc9` | — | `app/src/estilos.css` (entero), `app/src-tauri/icons/` (`icon.png` 512², `fuente.png` 1024²), `app/src-tauri/tauri.conf.json` (l.34), `docs/11-diseno-del-frontal.md` (l.135) |
@@ -31,7 +31,7 @@ la interfaz del juego**, más lo que haga falta para que todo llegue a la calida
 concreto:
 
 | Capa | De dónde viene | Qué aporta |
-| --- | --- | ---|
+| --- | --- | --- |
 | **Base: madera, hierro y cristal** | `World-Maker-Fantasy/frontend/src/index.css`, bloque `@theme` (l.1-60: `--color-wood-*`, `--color-iron-*`, `--color-accent-*`, `--color-accent2-*`) y sus clases `.wood-grain` l.129, `.plank-panel` l.167, `.iron-band` l.216, `.crystal-sky` l.269, `.rivet` l.324 | Todo fondo y toda superficie grande es **madera oscura con veta** (tablones `wood-800/700`, fondo `wood-950/900`) o **hierro forjado** (`iron-800/700`, con remaches). El cristal azul `accent-500` es el único acento frío. La luz de la interfaz es cálida y baja (ámbar sobre madera). |
 | **Ornamento: oro tallado, piedra, semilla rota, estrellas** | `examples/tarkor/logos/Tarkor_ La semilla rota.png` y `Emblema dorado y título TARKOR.png` | Marcos, cantos, remates, emblemas y pictogramas son **oro viejo tallado** con textura de piedra, biseles vivos y puntas en espina; los remates son **estrellas de cuatro puntas** que brillan; el motivo central es la **semilla de piedra partida en seis gajos** con luz dorada saliendo del centro y **anillos de energía** alrededor. |
 | **Acabado AAA (toques añadidos para llegar a la calidad del logo)** | Decisión de esta hoja | Luz rasante dorada desde arriba-izquierda sobre el oro y la madera (la del logo), sombras frías y profundas en las hendiduras, **cristal azul con facetas y luz interior** en las estrellas y gemas (une el acento `accent-500` de la interfaz con el brillo de los logos), grano fino visible en madera y piedra, bordes nítidos, sin niebla ni desenfoque, y un velo nocturno índigo (el fondo de los logos) solo en el cielo y la estampa. Nada plano, nada «flat vector»: todo con volumen y materia. |
@@ -46,7 +46,7 @@ Hex del CSS real (`frontend/src/index.css`, bloque `@theme`), más los tonos de 
 y el CSS no tiene (medidos a ojo sobre los PNG; propuestos, marcados con *).
 
 | Rol en la imagen | Token | Hex |
-| --- | --- | ---|
+| --- | --- | --- |
 | Hierro más oscuro (sombras, fondo de pictogramas sobre hierro) | `iron-900` | `#0e0b08` |
 | Hierro (fondo de cabecera/pie, riel del instalador) | `iron-800` / `iron-700` | `#171310` / `#221c16` |
 | Madera de fondo de página | `wood-950` / `wood-900` | `#1b130c` / `#241a10` |
@@ -86,7 +86,7 @@ tarjetas `lg`, paneles `xl`, ranura de habilidad 3 px (`.skill-slot`).
   > six wedges with golden light #ffd66b pouring from its core. The wood and iron carry the piece, the gold trims
   > and crowns it. Lighting: warm golden raking light from the upper left, deep cool shadows in every groove, inner
   > glow inside the crystal. Painterly realism with fine grain, crisp edges, high contrast, rich colour, volume and
-  > weight in every material, nothing flat.
+  > weight in every material, every surface solid and tactile.
 
 - **Negativo** (gimg aún no tiene campo para él; se deja aquí, como en la hoja del Portal, para cuando lo tenga o
   para pegarlo a mano en sd-cli):
@@ -123,8 +123,8 @@ Orden: la pieza de referencia primero; después bloques A-D por prioridad. «Med
 ### Referencia de estilo
 
 | # | Recurso | Medidas | Perfil | Dónde va | Prompt (tras el bloque común) | Notas |
-| --- | --- | --- | --- | --- | --- | ---|
-| 1 | **Emblema de la semilla rota** (pieza de referencia: fija el oro, la piedra y la luz para todo lo demás) | 1024×1024 PNG; de él salen 512² (icono del instalador), 192² y 32² (favicon PNG), 96² (placeholder #16) | `emblema` 1024×1024 | `frontend/public/favicon.svg` es un rayo violeta genérico sin relación con la marca (`#863bff`, `#7e14ff`, `#47bfff`): se sustituye por PNG + `<link rel="icon">` en `frontend/index.html` (hoy sin `<link>`). Instalador: `app/src-tauri/icons/icon.png` y `fuente.png` son hoy un rombo azul plano sobre disco marrón, sin relación con los logos (`tauri.conf.json` l.34). | A circular emblem seen straight on, centred on a flat solid bright green background. A thick ring of old carved gold with chiselled stone texture, sharp bevelled edges and four short spiked points at top, bottom, left and right, each point tipped with a small glowing four-pointed star. Inside the ring, a dark teal faceted crystal field. At the centre, a round stone seed split into six wedges, dark cracked rock with golden light pouring out from the core between the wedges, two thin rings of golden energy orbiting it at an angle. Symmetric, game icon, 15 percent empty margin on every side. | `[recorte]` fondo verde. **K?**: klein hace bien el oro y la luz; los seis gajos y la simetría del aro piden varias semillas (6-10) o retoque. El favicon a 32 px pierde los gajos: para 16-32 px, versión simplificada vectorial desde `tarkor-b.svg` (duda D2). |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | **Emblema de la semilla rota** (pieza de referencia: fija el oro, la piedra y la luz para todo lo demás) | 1024×1024 PNG; de él salen 512² (icono del instalador), 192² y 32² (favicon PNG), 96² (placeholder #16) | `emblema` 1024×1024 | `frontend/public/favicon.svg` es un rayo violeta genérico sin relación con la marca (`#863bff`, `#7e14ff`, `#47bfff`): se sustituye por PNG + `<link rel="icon">` en `frontend/index.html` (hoy sin `<link>`). Instalador: `app/src-tauri/icons/icon.png` y `fuente.png` son hoy un rombo azul plano sobre disco marrón, sin relación con los logos (`tauri.conf.json` l.34). | A circular emblem seen straight on, centred on a flat solid bright green background. A thick ring of old carved gold with chiselled stone texture, sharp bevelled edges and four short spiked points at top, bottom, left and right, each point tipped with a small glowing four-pointed star. Inside the ring, a dark teal faceted crystal field. At the centre, a round stone seed split into six wedges, dark cracked rock with golden light pouring out from the core between the wedges, two thin rings of golden energy orbiting it at an angle. Symmetric, game icon, 15 percent empty margin on every side. | `[recorte]` fondo verde. **K?**: klein hace bien el oro y la luz; los seis gajos y la simetría del aro piden varias semillas (6-10) o retoque. El favicon a 32 px pierde los gajos: para 16-32 px, versión simplificada vectorial desde `tarkor-b.svg` (duda D3). |
 
 ### Bloque A — fondos y texturas (hoy degradados CSS marcados como provisionales)
 
@@ -134,7 +134,7 @@ de imagen». Las clases: `.wood-grain` l.129, `.dust-road` l.152, `.plank-panel`
 `.riel` (`estilos.css` l.31-33) y `.principal` (l.49-53).
 
 | # | Recurso | Medidas | Perfil | Dónde va | Prompt (tras el bloque común) | Notas |
-| --- | --- | --- | --- | --- | --- | ---|
+| --- | --- | --- | --- | --- | --- | --- |
 | 2 | **Tablón de panel** (madera oscura con veta, para tarjetas y paneles) | 1024×1024 PNG, mosaico; se usa a 50 % (512 px CSS) | `textura` 1024×1024 | `.plank-panel` (`index.css` l.167): WorldCard, CharacterCard, botones de `Home.tsx` l.41, PanelDrawer, CombatModal; `.principal` del instalador (l.49-53) | Seamless tileable texture of aged dark wood planks seen straight on, wood colours #332415 and #46311d with lighter grain lines in #7a5934, fine straight grain, a few tight knots, soft worn surface, subtle warm light from the upper left, even exposure across the whole image, flat, edge to edge, top view. | **K**. 2-3 semillas; costura con `-virtual-pixel tile`. Los remaches (`.rivet` l.324) y el borde siguen en CSS. |
 | 3 | **Madera de fondo de página** (más oscura y sorda que el tablón) | 1024×1024 PNG, mosaico | `textura` 1024×1024 | `.wood-grain` (`index.css` l.129): fondo de `App.tsx`, `ErrorBoundary.tsx` l.32, `GamePanelCajon.tsx`, `LogPanel.tsx` | Seamless tileable texture of very dark aged wood seen straight on, nearly black brown #1b130c with faint grain in #241a10 and sparse hairline highlights in #332415, matte, low contrast, calm, even exposure, flat, edge to edge, top view. | **K**. Debe quedar por debajo del tablón en luminosidad (YAVG < 40) para que el texto `wood-100` siga en AA. |
 | 4 | **Camino de polvo** (fondo del panel de narración) | 1024×1024 PNG, mosaico | `textura` 1024×1024 | `.dust-road` (`index.css` l.152), usado en `LogPanel.tsx` y `ChatComposer.tsx` | Seamless tileable texture of packed dry earth and fine red dust seen straight on, colours #241a10 and #332415 with scattered tiny grains in #a3814f and #E0703A, faint dragged marks, matte, very low contrast, even exposure, flat, edge to edge, top view. | **K**. Es el fondo del texto largo: contraste bajísimo, sin motivos que se lean como letras. |
@@ -145,7 +145,7 @@ de imagen». Las clases: `.wood-grain` l.129, `.dust-road` l.152, `.plank-panel`
 ### Bloque B — marcos y ornamentos (hoy pseudoelementos CSS)
 
 | # | Recurso | Medidas | Perfil | Dónde va | Prompt (tras el bloque común) | Notas |
-| --- | --- | --- | --- | --- | --- | ---|
+| --- | --- | --- | --- | --- | --- | --- |
 | 8 | **Esquina ornamental** (una; las otras tres por volteo) | 512×512 generado → 128×128 PNG entregado (se usa a 32-48 px) | `icono` 512×512 | `.corner-bracket` (`index.css` l.300-322: escuadra de hierro con borde dorado hecha en CSS), usado en `ModalShell.tsx` y `DetailModal.tsx` | A single corner ornament for a frame, occupying the top left quadrant, on a flat solid bright green background: two short arms of old carved gold meeting at a right angle, chiselled stone texture, sharp bevels, each arm ending in a spiked point, a small glowing four-pointed star set in the joint, dark iron rivets along the arms, straight on, crisp edges, 15 percent empty margin. | `[recorte]` verde. **K?**: a 32 px el detalle se pierde; pedir pocas formas y gruesas. Las otras esquinas, con `transform: scaleX(-1)` etc. |
 | 9 | **Separador horizontal con estrella** (filete que se desvanece con remate central) | 1024×128 generado → 1024×64 PNG | `tira` 1024×128 | `.accent-hairline` + `.gem` (`index.css` l.226 y l.246): `Home.tsx` l.24-27 y l.31-34; `.filete` del instalador (`estilos.css` l.60) | A thin horizontal divider centred on a flat solid bright green background: a hairline of old carved gold that fades out towards both ends, and at its centre one small four-pointed star of faceted blue crystal #4aa8d8 set in a gold mount with a soft golden glow, symmetric, straight on, crisp, the band occupies only the middle fifth of the height. | `[recorte]` verde. **K**. Si no sale limpio, el filete sigue en CSS y solo se recorta la estrella (64×64) para `.gem`. |
 | 10 | **Marco de ranura de habilidad** (anillo de oro para encajar el icono de cada habilidad) | 512×512 generado → 88×88 PNG (ranura 44 px @2x) | `icono` 512×512 | `.skill-slot` (`index.css`: 44×44, radio 3 px; el icono es un emoji) y `SkillBarHud.tsx` l.63; `IconCard.tsx` l.62 | A square slot frame for a game hotbar, centred on a flat solid bright green background: a square border of old carved gold with chiselled stone texture, sharp bevelled edges, a tiny four-pointed star at each corner, the inside of the square empty and filled with the same flat bright green, straight on, symmetric, 15 percent empty margin. | `[recorte]` verde por fuera **y por dentro**. **K**. Los iconos que van dentro los hace el generador de Tarkor (habilidades, clases: §4). |
@@ -161,7 +161,7 @@ Un prompt por pictograma, misma plantilla; se generan a 512×512 y se entregan a
 > side.
 
 | # | Recurso | Medidas | Perfil | Dónde va | {motivo} de cada pieza | Notas |
-| --- | --- | --- | --- | --- | --- | ---|
+| --- | --- | --- | --- | --- | --- | --- |
 | 11 | **Pestañas del cajón** (12) | 128² y 64² PNG | `icono` 512×512 ×12 | `NavTabs.ts` l.23-41 (hoy ⚔️ 🎒 ✨ 👥 🏰 🗺️ 📖 📕 🎯 🤝 📚) y `PersonajePanel.tsx` l.22 (equipo ⚔️); se pintan en `SideNav.tsx` l.60 y `CollapsedRail.tsx` l.24; reutilizables en `PanelEmptyState.tsx` l.16 y las notificaciones (`notificaciones.ts`: 🎒 🎯) | personaje: a straight sword pointing up · inventario: a closed leather satchel with a buckle · habilidades: a four-pointed star of blue crystal · compañeros: two crossed spears over a small round shield · reino: a timber palisade with a single watchtower · mapa: a rolled parchment with a wax seal · diario: an open book · leyendas: a closed book with an iron clasp · misiones: a hanging banner on a crossbar with a four-pointed star · reputación: two interlocked iron rings · enciclopedia: a stack of three stone tablets · equipo: a horned iron helmet seen from the front | `[recorte]` verde. **K?**: klein da bien la materia; a 20 px hace falta silueta gruesa. Generar 3 semillas y elegir; si no leen a 20 px, vectorizar a mano sobre el PNG (**M**). Sin figuras humanas (vetadas): compañeros y reputación van por objetos. |
 | 12 | **Barras de estado del HUD** (3) | 64² y 32² PNG | `icono` 512×512 ×3 | `HungerBar.tsx` l.16 (🍖), `ThirstBar.tsx` l.14 (💧), `EnergyBar.tsx` l.9 (⚡) | hambre: a roasted joint of meat on a bone · sed: a single drop of water, faceted, in blue crystal · energía: a small flame rising from an iron brazier | `[recorte]` verde. **K**. Se usan a 16-20 px: una sola forma cada uno. |
 | 13 | **Fases del juego** (8) | 64² y 32² PNG | `icono` 512×512 ×8 | `gamePhase.ts` l.107-116 (`ETIQUETA_FASE`: ✒️ 🧭 ⚠️ ⚔️ 💬 ⭐ 💀 📜), mostrada en `GameHeader` / `GameFooter` | pensando: a quill pen · ocupado: a compass rose with a four-pointed needle · encuentro: a curved war horn · combate: two crossed swords · dinámico: a small campfire · elección: a four-pointed star of blue crystal in a gold mount · muerte: a cracked stone skull of a horned beast · fin: a rolled scroll with a hanging wax seal | `[recorte]` verde. **K**. «combate» puede compartir pieza con la pestaña personaje si se prefiere una sola espada; «elección» comparte con la estrella del #9. |
@@ -172,7 +172,7 @@ Un prompt por pictograma, misma plantilla; se generan a 512×512 y se entregan a
 ### Bloque D — instalador y escaparate
 
 | # | Recurso | Medidas | Perfil | Dónde va | Prompt (tras el bloque común) | Notas |
-| --- | --- | --- | --- | --- | --- | ---|
+| --- | --- | --- | --- | --- | --- | --- |
 | 17 | **Estados de las comprobaciones del instalador** (4) | 64² y 32² PNG | `icono` 512×512 ×4 | `Instalador-WMF-Tarkor/docs/11-diseno-del-frontal.md` l.135: «7 comprobaciones ... con un icono de estado cada» (sin recurso propio; `estilos.css` solo colorea `.pasos li.hecho/.actual`) | plantilla del bloque C con: hecho: a four-pointed star of blue crystal #4aa8d8 in a gold mount, glowing · aviso: a four-pointed star of amber crystal #f59e0b in a gold mount · error: a four-pointed star of red crystal #ef4444 in a gold mount, dimmed · en curso: a compass rose of old gold with a four-pointed needle | `[recorte]` verde. **K**. Una sola forma (la estrella de los logos) con cuatro colores: coherente y legible a 20 px. «hecho»/«aviso»/«error» pueden salir de una pieza recoloreada en HSL. |
 | 18 | **Estampa del mundo Helek Sirik** (cabecera de la tarjeta de mundo) | 1280×512 PNG, `object-cover` | `estampa` 1280×512 (= `banner`) | `WorldCard.tsx` l.24-25: hoy `plank-panel` + `crystal-sky` por CSS; no hay imagen de mundo. El generador de Tarkor hace banners **de entidades** (fauna, flora, NPC, lugar), no una portada del mundo | Wide panoramic view of a wild land seen from a high ridge at the last light of day: dark iron rock spires rising from red sand crests, a long timber palisade with banners on a far hill, a thin line of campfire smoke, a cold deep indigo sky with the first glowing belt of dust and a few four-pointed stars, warm raking light from low on the right, atmospheric haze, cinematic matte painting, the left third calmer and emptier. | **K?**: paisaje es lo que klein mejor hace, pero la coherencia con los banners del juego (Qwen/ChatGPT) puede pedir FLUX.3. Motivos del canon (Agujas Imán, empalizada de Telda) de `biblia.md` §7. Zona libre a la izquierda para el nombre del mundo. |
 
@@ -215,11 +215,13 @@ semillas por pieza, el total (48 piezas) ronda las 2 h de GPU. Antes de generar:
 
 ## 6. Dudas para la sesión principal
 
-- **D1 · Logos frente a interfaz.** Los logos son oro tallado sobre noche índigo; la interfaz real es madera, hierro y
-  cristal azul (`index.css`) y no tiene ningún token de oro (lo más cercano, `cost-*` ámbar y `quest-*` amarillo). Esta
-  hoja mete el oro como **marcos, remates y pictogramas** sobre los fondos de madera e hierro existentes, sin cambiar la
-  paleta de fondos. Si la persona quiere que los paneles mismos sean oro y piedra, el bloque A cambia (y el contraste
-  del texto claro empeora).
+- **D1 · Logos frente a interfaz.** La interfaz real es madera, hierro y cristal azul (`index.css`, `@theme`) y no
+  tiene ningún token de oro ni de noche índigo (lo más cercano, `cost-*` ámbar y `quest-*` amarillo); los logos son oro
+  tallado sobre noche índigo. La mezcla pedida por la persona está escrita en §1 («la madera sostiene, el oro remata»)
+  y en el bloque común. Quedan dos cosas por decidir: (a) si los seis hex de oro, bronce, noche y cristal verdoso
+  propuestos en §1 entran como tokens en `index.css` del juego (propuesta desde `docs/propuestas/`) o se quedan solo
+  en las imágenes; (b) si los paneles de madera llevan canto de oro **en la imagen** (#2, #7) o el canto va por CSS
+  (`border` con el hex de oro) y las texturas quedan sin él, que es como está en esta hoja para que el mosaico cierre.
 - **D2 · Violeta.** `biblia.md` §7 y `hoja.md` §6 vetan «purple/violet» (luz reservada del canon) y el cielo de los
   logos es azul-violeta. Los prompts piden «deep indigo blue» y el negativo lleva `purple, violet`. Confirmar que ese
   veto sigue vigente con los logos nuevos.
@@ -236,3 +238,17 @@ semillas por pieza, el total (48 piezas) ronda las 2 h de GPU. Antes de generar:
   del producto). Si eso choca con D6 («todo nace del generador»), adelantar el recorte en gimg o esperar a IMG-37.
 - **D7 · Estampa del mundo (#18).** Es la única pieza de paisaje; el juego podría preferir hacerla con su generador
   (mismo estilo que sus banners). Pedirla aquí solo si la persona la quiere en el estilo de los logos.
+
+### Decisiones (sesión principal, delegadas por la persona, 2026-11-10)
+
+- **D1:** el canto de oro va por CSS (`border`), no en la textura, para que el mosaico cierre. Los 6 hex propuestos
+  entran en la interfaz solo por una propuesta al juego en `docs/propuestas/`; aquí se usan en los prompts.
+- **D2:** el veto sigue: «deep indigo blue», nunca violeta. Si sale violeta, se corrige el prompt, no la regla.
+- **D3:** #1 sirve desde 128 px. La versión pequeña (aro + estrella) se hace aquí con el paso a SVG de `docs/plan.md`
+  cuando exista; hasta entonces el instalador sigue con su icono.
+- **D4:** los dos PNG son la referencia de estilo, no sustituyen aún a `tarkor-a/b` en `compose`: hace falta una
+  versión vectorial del logo nuevo. La biblia se rehace cuando la persona confirme el cambio de marca.
+- **D5:** pendiente: mirar en solo lectura si `backend/uploads/images/` tiene iconos de habilidad antes del bloque C.
+- **D6:** se genera con fondo verde plano igualmente; el recorte entra con la «Transparencia opcional» de gimg
+  (`docs/plan.md`). Nada de ImageMagick a mano en lo que se entrega.
+- **D7:** #18 queda fuera de esta hoja: casa mejor con los banners del generador de Tarkor; se propone allí.
