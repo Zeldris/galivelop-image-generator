@@ -7,13 +7,19 @@
       "#8a9aa8",
       "#221c16",
       "#332415",
-      "#E0703A",
       "#f1e4d0",
       "#241a10",
-      "#8a3b1e",
-      "#a3814f",
       "#52626f",
-      "#4aa8d8"
+      "#4aa8d8",
+      "#ffe9a8",
+      "#f2c45a",
+      "#b8862b",
+      "#7a5a1e",
+      "#5a3a14",
+      "#3a342d",
+      "#1f4a55",
+      "#0f1428",
+      "#1b130c"
     ]
   },
   "delivery": {
@@ -57,7 +63,11 @@
       "steps": 6,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8"
+      "model": "flux2-klein-4b-q8",
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
     },
     "banner": {
       "width": 1280,
@@ -67,7 +77,11 @@
       "sampler": "euler",
       "model": "flux2-klein-4b-q8",
       "targetWidth": 1600,
-      "targetHeight": 640
+      "targetHeight": 640,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
     },
     "square": {
       "width": 1024,
@@ -77,7 +91,11 @@
       "sampler": "euler",
       "model": "flux2-klein-4b-q8",
       "targetWidth": 1080,
-      "targetHeight": 1080
+      "targetHeight": 1080,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
     },
     "header": {
       "width": 1536,
@@ -87,7 +105,11 @@
       "sampler": "euler",
       "model": "flux2-klein-4b-q8",
       "targetWidth": 1500,
-      "targetHeight": 500
+      "targetHeight": 500,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
     },
     "portrait": {
       "width": 896,
@@ -97,7 +119,11 @@
       "sampler": "euler",
       "model": "flux2-klein-4b-q8",
       "targetWidth": 1080,
-      "targetHeight": 1350
+      "targetHeight": 1350,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
     },
     "emblema": {
       "width": 1024,
@@ -107,7 +133,149 @@
       "sampler": "euler",
       "model": "flux2-klein-4b-q8",
       "targetWidth": 1024,
-      "targetHeight": 1024
+      "targetHeight": 1024,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "textura": {
+      "width": 1024,
+      "height": 1024,
+      "steps": 6,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "flux2-klein-4b-q8",
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "banda": {
+      "width": 1024,
+      "height": 256,
+      "steps": 6,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "flux2-klein-4b-q8",
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "cielo": {
+      "width": 1536,
+      "height": 640,
+      "steps": 6,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "flux2-klein-4b-q8",
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "icono": {
+      "width": 512,
+      "height": 512,
+      "steps": 6,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "flux2-klein-4b-q8",
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "estampa": {
+      "width": 1280,
+      "height": 512,
+      "steps": 6,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "flux2-klein-4b-q8",
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "tira": {
+      "width": 1024,
+      "height": 128,
+      "steps": 6,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "flux2-klein-4b-q8",
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "avatar": {
+      "width": 1024,
+      "height": 1024,
+      "steps": 6,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "flux2-klein-4b-q8",
+      "targetWidth": 1024,
+      "targetHeight": 1024,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "cabecera": {
+      "width": 1536,
+      "height": 512,
+      "steps": 6,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "flux2-klein-4b-q8",
+      "targetWidth": 1500,
+      "targetHeight": 500,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "carga": {
+      "width": 1280,
+      "height": 704,
+      "steps": 6,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "flux2-klein-4b-q8",
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "capsula": {
+      "width": 1024,
+      "height": 576,
+      "steps": 6,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "flux2-klein-4b-q8",
+      "targetWidth": 616,
+      "targetHeight": 353,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "marco": {
+      "width": 1280,
+      "height": 704,
+      "steps": 6,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "flux2-klein-4b-q8",
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
     }
   }
 }

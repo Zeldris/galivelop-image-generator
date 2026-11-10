@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "ui/e10-insignia",
+  "profile": "banda",
+  "prompt": "Epic fantasy game asset. Materials: aged dark wood planks with raised grain in #332415 and #46311d, dark forged iron in #171310, old carved gold in #b8862b with dark patina #7a5a1e in the recesses and bright worn edges in #f2c45a, dark cracked stone in #3a342d. Warm raking light from the upper left, deep cool shadows in every groove. A thin dark bronze outline separates gold from background. Physically plausible materials, crisp edges, high contrast, no haze. A small hanging banner of aged dark wood with an iron rim and a thin gold strip, a square plate of dark iron at its centre, empty, on a flat untouched green background.",
+  "seed": 1,
+  "draft": true,
+  "count": 3
+}
