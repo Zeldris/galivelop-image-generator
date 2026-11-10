@@ -733,5 +733,9 @@
   "error.brand.bad_svg": "«{path}» no sirve para el lockup: {reason}",
   "error.brand.exists": "en «{folder}» ya están {files}: usa --force para pisarlos o elige otra carpeta",
   "error.brand.no_matte": "«{path}» no tiene un fondo plano que recortar (solo queda transparente el {transparent} %): revisa el fondo o ajusta «brand matte»",
-  "error.brand.bad_name": "el nombre «{name}» no da un prefijo de archivo (hacen falta letras o cifras ASCII una vez quitados los acentos)"
+  "error.brand.bad_name": "el nombre «{name}» no da un prefijo de archivo (hacen falta letras o cifras ASCII una vez quitados los acentos)",
+  "error.brand.missing_piece": "falta «{file}»: haz antes el paso «{step}» de la marca",
+  "error.brand.dir_missing": "el proyecto «{project}» no declara «brand.dir» en su configuración: no hay carpeta del proyecto donde guardar la marca",
+  "error.brand.no_palette": "el proyecto «{project}» no declara «brand.palette»: usa «colors» o declara la paleta",
+  "error.brand.font_unknown": "no hay ninguna tipografía instalada con la familia «{font}»"
 }

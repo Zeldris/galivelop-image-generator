@@ -83,6 +83,10 @@
             "maxLength": 80
           },
           "description": "Words that must not appear in prompts (the interface warns before sending; at most 100)."
+        },
+        "dir": {
+          "$ref": "#/$defs/relativePath",
+          "description": "Folder of the project, relative to its root, where the brand workshop saves the logo system (`POST /api/projects/{p}/brand/save` with `dest: project`)."
         }
       }
     },

@@ -733,5 +733,9 @@
   "error.brand.bad_svg": "'{path}' does not work for the lockup: {reason}",
   "error.brand.exists": "'{folder}' already has {files}: use --force to overwrite them or pick another folder",
   "error.brand.no_matte": "'{path}' has no flat background to cut out (only {transparent} % ends up transparent): check the background or tune 'brand matte'",
-  "error.brand.bad_name": "the name '{name}' gives no file prefix (it needs ASCII letters or digits once accents are removed)"
+  "error.brand.bad_name": "the name '{name}' gives no file prefix (it needs ASCII letters or digits once accents are removed)",
+  "error.brand.missing_piece": "'{file}' is missing: do the '{step}' step of the brand first",
+  "error.brand.dir_missing": "project '{project}' declares no 'brand.dir' in its configuration: there is no project folder to save the brand in",
+  "error.brand.no_palette": "project '{project}' declares no 'brand.palette': use 'colors' or declare the palette",
+  "error.brand.font_unknown": "no installed font has the family '{font}'"
 }

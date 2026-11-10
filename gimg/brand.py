@@ -455,6 +455,48 @@ def _contact_svg(pieces: dict) -> tuple:
             % (2 * col, height, 2 * col, height, "".join(parts)), (2 * col, height))
 
 
+def contact_sheet(files: dict, tmp: str) -> tuple:
+    """Draw ``files["contactos.png"]`` from the five SVGs of `files` (keys of `SYSTEM_FILES`); `tmp` is scratch space.
+    Returns the size of the sheet; ``brand.tool_missing`` / ``brand.tool_failed`` / ``brand.bad_svg`` as `system`."""
+    if shutil.which(TOOL) is None:
+        raise GimgError("brand.tool_missing", tool=TOOL)
+    pieces = {"emblem": _read_svg(files["emblema.svg"]), "mono": _read_svg(files["emblema-mono.svg"]),
+              "wordmark": _read_svg(files["wordmark.svg"]), "lockup_h": _read_svg(files["lockup-h.svg"]),
+              "lockup_v": _read_svg(files["lockup-v.svg"])}
+    sheet_svg, size = _contact_svg(pieces)
+    sheet_src = os.path.join(tmp, "contactos.svg")
+    with open(sheet_src, "w", encoding="utf-8") as fh:
+        fh.write(sheet_svg)
+    if os.path.exists(files["contactos.png"]):
+        os.unlink(files["contactos.png"])
+    _rsvg([TOOL, "-o", files["contactos.png"], sheet_src], dict(os.environ))
+    if not os.path.exists(files["contactos.png"]):
+        raise GimgError("brand.tool_failed", tool=TOOL, reason="no output")
+    return size
+
+
+def targets_of(slug: str, out_dir) -> dict:
+    """``{key: path}`` of the seven files of the system `slug` in `out_dir`."""
+    return {key: os.path.join(str(out_dir), "%s-%s" % (slug, key)) for key in SYSTEM_FILES}
+
+
+def check_targets(targets: dict, out_dir, force: bool = False, src=None) -> list:
+    """Refuse a `out_dir` that is no folder or a target that is one (``brand.write_failed``), and files already there
+    unless `force` (``brand.exists``); returns the names that will be overwritten."""
+    if src is not None:
+        for path in targets.values():
+            _check_out(src, path)
+    if os.path.lexists(str(out_dir)) and not os.path.isdir(str(out_dir)):
+        raise GimgError("brand.write_failed", path=str(out_dir), reason="not a folder")
+    for path in targets.values():
+        if os.path.isdir(path):
+            raise GimgError("brand.write_failed", path=path, reason="it is a folder")
+    clash = [os.path.basename(p) for p in targets.values() if os.path.lexists(p)]
+    if clash and not force:
+        raise GimgError("brand.exists", folder=str(out_dir), files=", ".join(clash))
+    return clash
+
+
 def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = 0.12, palette=None, colors=None, text=None,
            cap: float = 0.45, gap: float = 0.25, width: float = 1.6, force: bool = False) -> dict:
     """The logo system of `name` from the emblem PNG `src`, in `out_dir`: ``<slug>-emblema-alpha.png``, ``-emblema.svg``,
@@ -469,17 +511,8 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = 0.
         raise GimgError("brand.empty_text")
     if not slug:
         raise GimgError("brand.bad_name", name=str(name))
-    targets = {key: os.path.join(str(out_dir), "%s-%s" % (slug, key)) for key in SYSTEM_FILES}
-    for path in targets.values():
-        _check_out(src, path)
-    if os.path.lexists(str(out_dir)) and not os.path.isdir(str(out_dir)):
-        raise GimgError("brand.write_failed", path=str(out_dir), reason="not a folder")
-    for path in targets.values():
-        if os.path.isdir(path):
-            raise GimgError("brand.write_failed", path=path, reason="it is a folder")
-    clash = [os.path.basename(p) for p in targets.values() if os.path.lexists(p)]
-    if clash and not force:
-        raise GimgError("brand.exists", folder=str(out_dir), files=", ".join(clash))
+    targets = targets_of(slug, out_dir)
+    clash = check_targets(targets, out_dir, force, src)
     if shutil.which(TOOL) is None:
         raise GimgError("brand.tool_missing", tool=TOOL)
     if palette and colors is not None:
@@ -509,16 +542,7 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = 0.
         word = wordmark(line, font, t["wordmark.svg"], weight, spacing, title=title)
         lh = lockup(t["emblema.svg"], t["wordmark.svg"], t["lockup-h.svg"], "h", cap, gap, width, title=title)
         lv = lockup(t["emblema.svg"], t["wordmark.svg"], t["lockup-v.svg"], "v", cap, gap, width, title=title)
-        pieces = {"emblem": _read_svg(t["emblema.svg"]), "mono": _read_svg(t["emblema-mono.svg"]),
-                  "wordmark": _read_svg(t["wordmark.svg"]), "lockup_h": _read_svg(t["lockup-h.svg"]),
-                  "lockup_v": _read_svg(t["lockup-v.svg"])}
-        sheet_svg, sheet_size = _contact_svg(pieces)
-        sheet_src = os.path.join(tmp, "contactos.svg")
-        with open(sheet_src, "w", encoding="utf-8") as fh:
-            fh.write(sheet_svg)
-        _rsvg([TOOL, "-o", t["contactos.png"], sheet_src], dict(os.environ))
-        if not os.path.exists(t["contactos.png"]):
-            raise GimgError("brand.tool_failed", tool=TOOL, reason="no output")
+        sheet_size = contact_sheet(t, tmp)
         for key in SYSTEM_FILES:
             with open(t[key], "rb") as fh:
                 _write(targets[key], fh.read())
@@ -529,5 +553,5 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = 0.
             "contact_size": list(sheet_size), "overwritten": sorted(clash), "seconds": round(time.monotonic() - t0, 1)}
 
 
-__all__ = ["matte", "trace", "wordmark", "lockup", "system", "slugify", "parse_palette", "default_out", "MODES", "LAYOUTS",
+__all__ = ["contact_sheet", "targets_of", "check_targets", "matte", "trace", "wordmark", "lockup", "system", "slugify", "parse_palette", "default_out", "MODES", "LAYOUTS",
            "SYSTEM_FILES", "TOOL"]

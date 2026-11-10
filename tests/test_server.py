@@ -33,8 +33,8 @@ INTENDED_500 = {
     "measure.no_brand_palette", "sheet.no_images", "sheet.too_many", "sheet.unreadable",
     "sheet.out_is_input", "sheet.tool_missing", "sheet.tool_failed", "sheet.timeout", "api.unexpected",
     "serve.start_failed",
-    # brand.*: no HTTP route yet (the CLI only); the interface step will map them
-    "brand.out_is_input", "brand.tool_missing", "brand.tool_failed", "brand.timeout", "brand.font_unreadable", "brand.empty_text", "brand.text_too_long", "brand.empty_wordmark", "brand.write_failed", "brand.wordmark_no_fit",
+    # brand.*: faults of the machine, not of the request (the rest of brand.* has its 4xx)
+    "brand.out_is_input", "brand.tool_missing", "brand.tool_failed", "brand.timeout", "brand.write_failed",
 }
 
 
