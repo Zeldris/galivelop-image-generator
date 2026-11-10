@@ -1,5 +1,11 @@
 # Hoja de estilo mínima: Portal Galivelop
 
+> **Obsoleta desde el 2026-11-10.** El Portal tiene su propia hoja de estilos con la identidad nueva (paleta #0072a8 /
+> #fbfcfd / #13212b / #5d7a6a, Big Shoulders Display, Literata y JetBrains Mono) y la lista de 24 recursos que pide:
+> `docs/marca.md` de Portal-Galivelop (`main` `08c7fe5`). Esa es la fuente de verdad; el proyecto de gimg que la sigue
+> está en [`examples/portal/`](../../../examples/portal/). Esta hoja, [`biblia.md`](biblia.md) y [`logos/`](logos/) se
+> quedan como histórico de la identidad anterior (#06121c, Sora/Inter).
+
 **Aprobada el 2026-11-04** (decisiones delegadas por la persona; ver
 [`../../records/decisiones-hojas-2026-11-04.md`](../../records/decisiones-hojas-2026-11-04.md)); tercer caso de [`../plantilla-hoja-de-estilo.md`](../plantilla-hoja-de-estilo.md)
 (F2.12), rellenada tras [`../galivelop-image-generator/hoja.md`](../galivelop-image-generator/hoja.md) y

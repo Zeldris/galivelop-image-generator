@@ -252,7 +252,7 @@ class ValidarPiezaTests(unittest.TestCase):
 
     def test_ronda_sin_piezas_devuelve_2(self):
         with mock.patch("builtins.print") as imp:
-            self.assertEqual(self.piezas.main(["piezas.py", "r9", "portal"]), 2)
+            self.assertEqual(self.piezas.main(["piezas.py", "r9", "tarkor"]), 2)
         self.assertIn("ninguna pieza de la ronda 'r9'", imp.call_args[0][0])
 
     def test_proyecto_sin_piezas_json_devuelve_2(self):
@@ -335,7 +335,7 @@ class RondaTests(unittest.TestCase):
             r = subprocess.run(["bash", str(PILOTO / "ronda.sh"), "r0"], capture_output=True, text=True, timeout=60,
                                env={**os.environ, "TARKOR_GEN": str(gen), "PILOTO": str(t / "piloto")})
         self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
-        self.assertIn("FALLO: portal og-s3 (generar.sh devolvió 1)", r.stdout)
+        self.assertIn("FALLO: tarkor og-s3 (generar.sh devolvió 1)", r.stdout)
         self.assertIn("Ronda con 1 fallo(s)", r.stdout)
         self.assertIn("Página:", r.stdout)  # regeneró las páginas igual
 

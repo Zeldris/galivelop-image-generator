@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/11-fondo-para-ti",
+  "profile": "fondo",
+  "prompt": "Faint chart detail: a ría estuary coastline with soundings and a few contour lines, very light ink grey on off-white. Flat vector illustration, nautical chart aesthetic, thin lines of even width, no gradients, no glow, no shading, no text, no letters, no watermark, sharp 45-degree cut corners instead of rounded corners, lots of empty space, minimal, technical, serene. Palette strictly limited to sky blue #0072a8, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a.",
+  "seed": 1,
+  "count": 4
+}

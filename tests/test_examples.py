@@ -206,6 +206,8 @@ class ExampleTests(unittest.TestCase):
 PILOT_PROJECTS = ("galivelop-developer", "galivelop-image-generator", "galivelop-voice-generator",
                   "galivelop-workflow", "portal", "tarkor", "toveriai")
 R1_SEEDS = (3, 4)
+# `portal` se rehízo con la hoja de estilo de marca (examples/portal/README.md): sin perfil `og`, sin r1/r2 ni compose.
+OG_PROJECTS = tuple(n for n in PILOT_PROJECTS if n != "portal")
 
 
 class PilotExampleTests(unittest.TestCase):
@@ -236,7 +238,8 @@ class PilotExampleTests(unittest.TestCase):
             config = projects.load_config(root)
             self.assertEqual(config["name"], name)
             self.assertEqual(config["delivery"]["dir"], "entrega", name)
-            self.assertIn("og", config["profiles"], name)
+            if name in OG_PROJECTS:
+                self.assertIn("og", config["profiles"], name)
             for profile, cfg in config["profiles"].items():
                 self.assertEqual((cfg["width"] % 64, cfg["height"] % 64), (0, 0), (name, profile))
                 try:
@@ -247,7 +250,7 @@ class PilotExampleTests(unittest.TestCase):
 
     def test_r1_orders_reproduce_ronda_r1(self):
         from gimg import orders, projects
-        for name in PILOT_PROJECTS:
+        for name in OG_PROJECTS:
             root = ROOT / "examples" / name
             order = read("examples/%s/orders/r1-og.json" % name)
             self.assertEqual(S.validate(order, self.order_schema), [], name)
@@ -265,8 +268,8 @@ class PilotExampleTests(unittest.TestCase):
 
     def test_r2_orders_use_their_prompt_files_and_seeds(self):
         from gimg import orders, projects
-        cases = [(name, "r2-luz", "r2-luz.txt", 3) for name in PILOT_PROJECTS]
-        cases += [(name, "r2-control", "estilo.txt", 7) for name in PILOT_PROJECTS]
+        cases = [(name, "r2-luz", "r2-luz.txt", 3) for name in OG_PROJECTS]
+        cases += [(name, "r2-control", "estilo.txt", 7) for name in OG_PROJECTS]
         cases.append(("tarkor", "r2-luz-r1", "r2-luz-r1.txt", 3))
         added = set()
         for name, stem, prompt_file, seed in cases:
@@ -299,7 +302,6 @@ class PilotExampleTests(unittest.TestCase):
 COMPOSE_PROJECTS = {  # proyecto -> lockup elegido (docs/marcas/README.md)
     "tarkor": "tarkor-b-lockup.svg",
     "toveriai": "toveriai-a-lockup.svg",
-    "portal": "portal-a-lockup.svg",
     "galivelop-image-generator": "galivelop-image-generator-b-lockup.svg",
     "galivelop-workflow": "galivelop-workflow-b-lockup.svg",
 }

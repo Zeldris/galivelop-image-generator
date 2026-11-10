@@ -116,6 +116,13 @@ la persona decide si es una F4e o va con otra). Se diseña con su «en detalle»
    fondo» sobre una pieza sin transparencia, que deja una copia y conserva la original. Por investigar antes de
    prometerlo: cómo quitar el fondo sin instalar nada (D6): si `sd-cli` o un modelo local lo hace, o un recorte por
    color para fondos lisos.
+   **Y paso a SVG** (añadido el 2026-11-10 por las peticiones del Portal, `docs/marca.md` de Portal-Galivelop: logo
+   1/1b, iconos 4, 5, 7-9, 12, 14, marcos 17 y 20 se piden como PNG transparente de 1024 px que acaba en SVG con
+   `currentColor`). Hoy gimg no hace ni lo uno ni lo otro. Propuesta, solo stdlib y el `png.py` de gimg: (a)
+   transparencia por recorte de color en arte plano de pocos colores (el fondo es el color dominante del borde, con
+   tolerancia y borde suavizado); (b) vectorizado de siluetas planas: contornos por *marching squares*, simplificación
+   (Douglas-Peucker) y curvas, un `<path>` por color con `fill="currentColor"` para la tinta. Se prueba primero con un
+   prototipo sobre los intentos reales del Portal. Versión por decidir con la persona.
 3. **Imágenes de referencia al generar una pieza:** una o varias (intentos de gimg o archivos de la persona) para
    seguir un estilo, una forma o un personaje. Comprobar qué acepta hoy `sd-cli` y qué modelos del catálogo.
 4. **Cajas de texto antes de generar:** en el pedido nuevo se colocan, al tamaño de la pieza, las cajas de titular,
