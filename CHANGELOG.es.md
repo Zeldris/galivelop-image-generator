@@ -9,6 +9,15 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Sin publicar]
 
+## [0.4.1] - 2026-11-06
+
+### Corregido
+
+- Al arrancar dos CLI a la vez sobre un servicio de una versión vieja, a veces quedaba el viejo: los sondeos de
+  `worker.lock` y `serve.lock` toman el cerrojo compartido y el servicio en marcha se reconoce por el pid de `serve.json`.
+- `arrancar.sh` (y `gimg ui`) reemplaza el servicio en marcha si su código es más viejo, aunque la versión sea la
+  misma: `/api/health` y `serve.json` llevan `build`, una huella del código. Con un trabajo en marcha, solo avisa.
+
 ## [0.4.0] - 2026-11-05
 
 ### Añadido

@@ -117,7 +117,7 @@ class ServeCommand(Env):
         mode = service.state_path().stat().st_mode & 0o777
         self.assertEqual(mode, 0o600)
         self.assertEqual(json.loads(service.state_path().read_text()), state)
-        self.assertEqual(sorted(state), ["pid", "port", "startedAt", "url", "version"])
+        self.assertEqual(sorted(state), ["build", "pid", "port", "startedAt", "url", "version"])
         self.assertEqual(self.call(state, "/api/health")["pid"], state["pid"])
         self.assertTrue(service.lock_held())
         # --status with a service
@@ -389,6 +389,38 @@ class Races(Env):
             with worker._single_worker():
                 pass
         self.assertEqual(ctx.exception.code, "worker.already_running")
+
+    def test_a_queue_probe_does_not_hide_a_free_worker_lock_from_another_probe(self):
+        queue.worker_lock_path().parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(str(queue.worker_lock_path()), os.O_RDWR | os.O_CREAT, 0o600)
+        self.addCleanup(os.close, fd)
+        fcntl.flock(fd, fcntl.LOCK_SH | fcntl.LOCK_NB)  # another probe (`worker_alive`) at the same instant
+        with queue._no_worker() as free:
+            self.assertTrue(free, "a shared probe made `_no_worker` see a worker")
+            self.assertIs(queue.worker_alive(), False, "`_no_worker` made `worker_alive` see a worker")
+
+    def test_service_survives_a_momentary_lock_probe(self):
+        service.lock_path().parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(str(service.lock_path()), os.O_RDWR | os.O_CREAT, 0o600)
+        fcntl.flock(fd, fcntl.LOCK_SH | fcntl.LOCK_NB)  # `lock_held` from another CLI
+        threading.Timer(0.1, os.close, args=(fd,)).start()
+        with service._single_instance():
+            pass
+        fd2 = os.open(str(service.lock_path()), os.O_RDWR)
+        self.addCleanup(os.close, fd2)
+        fcntl.flock(fd2, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        with mock.patch.object(service, "LOCK_RETRY_S", 0.05), self.assertRaises(GimgError) as ctx:
+            with service._single_instance():
+                pass
+        self.assertEqual(ctx.exception.code, "serve.already_running")
+
+    def test_build_ignores_file_dates(self):
+        import gimg
+        target = Path(gimg.__file__)
+        before, info = gimg.build_id(), target.stat()
+        self.addCleanup(os.utime, target, ns=(info.st_atime_ns, info.st_mtime_ns))
+        os.utime(target, ns=(info.st_atime_ns, info.st_mtime_ns + 10**9))
+        self.assertEqual(gimg.build_id(), before, "touching a file without changing it changed the build")
 
     def test_stop_ignores_a_state_file_whose_pid_is_not_the_service(self):
         state = self.start()
