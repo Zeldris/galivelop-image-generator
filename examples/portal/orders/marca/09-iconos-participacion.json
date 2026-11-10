@@ -2,7 +2,7 @@
   "$schema": "../../../../gimg/schemas/order.schema.json",
   "key": "marca/09-iconos-participacion",
   "profile": "hoja3",
-  "prompt": "Contact sheet of 3 line icons in a 1x3 (one row of three) grid, each icon in its own square with one 45-degree cut corner, one icon per cell, evenly spaced. Colabora: two oars crossed; Propón: a message bottle drawn as a blueprint; Aprende: a buoy with a small lantern. line icon set, 2px even stroke, square grid. Flat vector illustration, nautical chart aesthetic, thin lines of even width, no gradients, no glow, no shading, no text, no letters, no watermark, full-bleed edge to edge, no border, no frame, lots of empty space, minimal, technical, serene. Palette strictly limited to medium cerulean ocean blue #0072a8, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a.",
+  "prompt": "Contact sheet of 3 line icons in a 1x3 (one row of three) grid, each icon in its own square with one 45-degree cut corner, one icon per cell, evenly spaced. Colabora: two oars crossed; Propón: a message bottle drawn as a blueprint; Aprende: a buoy with a small lantern. line icon set, 2px even stroke, square grid. Flat vector illustration, nautical chart aesthetic, thin lines of even width, no gradients, no glow, no shading, no text, no letters, no watermark, full-bleed edge to edge, no outer image border, lots of empty space, minimal, technical, serene. Palette strictly limited to medium cerulean ocean blue #0072a8, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a.",
   "seed": 1,
   "count": 4
 }

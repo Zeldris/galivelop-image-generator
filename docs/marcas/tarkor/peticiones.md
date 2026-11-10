@@ -248,7 +248,7 @@ semillas por pieza, el total (48 piezas) ronda las 2 h de GPU. Antes de generar:
   cuando exista; hasta entonces el instalador sigue con su icono.
 - **D4:** los dos PNG son la referencia de estilo, no sustituyen aún a `tarkor-a/b` en `compose`: hace falta una
   versión vectorial del logo nuevo. La biblia se rehace cuando la persona confirme el cambio de marca.
-- **D5:** pendiente: mirar en solo lectura si `backend/uploads/images/` tiene iconos de habilidad antes del bloque C.
+- **D5:** mirado el 2026-11-10 (solo lectura): `backend/uploads/images/` tiene 222 imágenes de contenido del mundo (fauna 61, location 62, zona 35, item 24, raza 19…) y solo 1 de `ability`; ningún icono de habilidad ni de interfaz, así que el bloque C no se solapa con lo que ya hay.
 - **D6:** se genera con fondo verde plano igualmente; el recorte entra con la «Transparencia opcional» de gimg
   (`docs/plan.md`). Nada de ImageMagick a mano en lo que se entrega.
 - **D7:** #18 queda fuera de esta hoja: casa mejor con los banners del generador de Tarkor; se propone allí.

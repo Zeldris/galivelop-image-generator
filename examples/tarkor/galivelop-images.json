@@ -98,6 +98,16 @@
       "model": "flux2-klein-4b-q8",
       "targetWidth": 1080,
       "targetHeight": 1350
+    },
+    "emblema": {
+      "width": 1024,
+      "height": 1024,
+      "steps": 6,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "flux2-klein-4b-q8",
+      "targetWidth": 1024,
+      "targetHeight": 1024
     }
   }
 }

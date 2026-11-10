@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "ui/01-emblema",
+  "profile": "emblema",
+  "prompt": "Epic fantasy game interface asset with the finish of a AAA title screen. Base materials from the game's interface: aged dark wood planks with fine visible grain in #332415 and #46311d, dark forged iron in #171310 with small rivets, faceted blue crystal in #4aa8d8. Ornament materials from the game's emblem: old carved gold in #b8862b with a chiselled stone texture, sharp bevelled edges and spiked tips, highlights in #f2c45a, deep bronze shadows in #5a3a14; glowing four-pointed stars, thin rings of golden energy, and a stone seed split into six wedges with golden light #ffd66b pouring from its core. The wood and iron carry the piece, the gold trims and crowns it. Lighting: warm golden raking light from the upper left, deep cool shadows in every groove, inner glow inside the crystal. Painterly realism with fine grain, crisp edges, high contrast, rich colour, volume and weight in every material, every surface solid and tactile. A circular emblem seen straight on, centred on a flat solid bright green background. A thick ring of old carved gold with chiselled stone texture, sharp bevelled edges and four short spiked points at top, bottom, left and right, each point tipped with a small glowing four-pointed star. Inside the ring, a dark teal faceted crystal field. At the centre, a round stone seed split into six wedges, dark cracked rock with golden light pouring out from the core between the wedges, two thin rings of golden energy orbiting it at an angle. Symmetric, game icon, 15 percent empty margin on every side.",
+  "seed": 1,
+  "count": 8
+}
