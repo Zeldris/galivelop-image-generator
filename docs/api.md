@@ -1,5 +1,7 @@
 # API local de galivelop-image-generator
 
+[English](en/api.md)
+
 API HTTP del servicio local (`gimg serve`), versión de la API **1** (`GET /api/health` → `"api": 1`). Es la misma capa
 que la CLI: cada ruta llama a la función que ya llama `gimg/cli.py`, así que las respuestas coinciden con las de
 `--json`. Texto de referencia; el diseño y las decisiones están en `docs/plan.md` (D17, D25, «F3 en detalle»).
