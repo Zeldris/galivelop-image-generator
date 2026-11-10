@@ -106,6 +106,11 @@ python3 -m gimg compose my-project fauna/red-howler banner 1 --template poster  
 python3 -m gimg templates my-project banner           # the profile's composition templates
 python3 -m gimg measure image.png --project my-project   # palette, contrast and distance to the brand
 python3 -m gimg sheet --out sheet.png a.png b.png     # contact sheet to review a round
+python3 -m gimg brand matte logo.png                  # removes the flat background: logo-alpha.png (the original is untouched)
+python3 -m gimg brand trace logo-alpha.png --mode color|mono|silhouette   # PNG to SVG (--palette, --colors, --matte)
+python3 -m gimg brand wordmark TARKOR --font Cinzel.ttf -o wordmark.svg   # the name as paths, no <text> (--weight, --spacing)
+python3 -m gimg brand lockup emblema.svg wordmark.svg --layout h|v   # emblem and wordmark in one SVG (--cap, --gap, --width, --color)
+python3 -m gimg brand system emblema.png --name Tarkor --font Cinzel.ttf --out-dir marca/   # the seven files of the logo system (--force overwrites)
 python3 -m gimg doctor                                # checks the engine, models and tools (--verify)
 python3 -m gimg serve                                 # local service on 127.0.0.1:8737 (--detach, --status, --stop, --port, --idle-min)
 python3 -m gimg ui                                    # open the interface in the browser (starts the service if needed; --no-browser)

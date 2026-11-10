@@ -121,6 +121,25 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--weight", "cli.arg.brand_weight", type=int, default=800),
          opt("--spacing", "cli.arg.brand_spacing", type=float, default=0.12),
          opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"))
+    props = (opt("--cap", "cli.arg.brand_cap", type=float, default=0.45),
+             opt("--gap", "cli.arg.brand_gap", type=float, default=0.25),
+             opt("--width", "cli.arg.brand_width", type=float, default=1.6))
+    leaf(g, "lockup", "cli.cmd.brand_lockup", arg("emblem", "cli.arg.brand_emblem_svg"),
+         arg("wordmark", "cli.arg.brand_wordmark_svg"),
+         opt("--layout", "cli.arg.brand_layout", choices=brand.LAYOUTS, default="h"),
+         opt("--margin", "cli.arg.brand_margin", type=float, default=0.0),
+         opt("--color", "cli.arg.brand_ink", metavar="COLOR"),
+         opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"), *props)
+    leaf(g, "system", "cli.cmd.brand_system", arg("image", "cli.arg.brand_png"),
+         opt("--name", "cli.arg.brand_name", required=True),
+         opt("--font", "cli.arg.brand_font", required=True, metavar="TTF"),
+         opt("--out-dir", "cli.arg.brand_out_dir", required=True, metavar="DIR"),
+         opt("--weight", "cli.arg.brand_weight", type=int, default=800),
+         opt("--spacing", "cli.arg.brand_spacing", type=float, default=0.12),
+         opt("--palette", "cli.arg.brand_palette", metavar="#HEX,#HEX"),
+         opt("--colors", "cli.arg.brand_colors", type=int, metavar="N"),
+         opt("--text", "cli.arg.brand_wordmark_text"),
+         opt("--force", "cli.arg.brand_force", action="store_true"), *props)
 
     leaf(top, "sheet", "cli.cmd.sheet", arg("images", "cli.arg.sheet_images", nargs="*", metavar="IMAGE"),
          opt("--out", "cli.arg.sheet_out", required=True, metavar="PNG"),
@@ -238,6 +257,23 @@ def _brand(args, sub, out: _Out) -> None:
         res = brand.trace(args.image, args.out, args.mode, args.palette, args.colors, args.dp_tol, args.min_island,
                           args.matte)
         key = "cli.out.brand_trace"
+    elif sub == "lockup":
+        res = brand.lockup(args.emblem, args.wordmark, args.out, args.layout, args.cap, args.gap, args.width, args.margin,
+                           args.color)
+        key = "cli.out.brand_lockup"
+    elif sub == "system":
+        res = brand.system(args.image, args.name, args.font, args.out_dir, args.weight, args.spacing, args.palette,
+                           args.colors, args.text, args.cap, args.gap, args.width, args.force)
+        if out.as_json:
+            out.data(res)
+            return
+        out.line("cli.out.brand_system", slug=res["slug"], out_dir=res["out_dir"], count=len(res["files"]),
+                 paths=sum(res["paths"].values()), seconds=res["seconds"])
+        for path in res["files"].values():
+            out.line("cli.out.brand_file", path=path)
+        if res["overwritten"]:
+            out.line("cli.out.brand_overwrote", files=", ".join(res["overwritten"]))
+        return
     else:
         res = brand.wordmark(args.text, args.font, args.out, args.weight, args.spacing)
         key = "cli.out.brand_wordmark"

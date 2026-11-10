@@ -1,9 +1,12 @@
-"""The brand process (D37), small enough for the command line and the interface to share: matte, trace, wordmark.
+"""The brand process (D37), small enough for the command line and the interface to share: matte, trace, wordmark, lockup and system.
 
 - `matte(src, out=None, **opts)`: the PNG `src` with its flat background made transparent (`matte.remove_bg`). The default
   `out` is next to `src`, with ``-alpha`` before the extension; the original is never written.
 - `trace(src, out=None, mode="color", ...)`: the PNG `src` as an SVG (`trace.to_svg`); ``matte=True`` removes the
   background first. ``mode`` is ``color``, ``mono`` or ``silhouette`` (``silueta`` also works).
+- `lockup(emblem, wordmark, out=None, layout="h"|"v")`: the emblem SVG and the wordmark SVG in one, as paths only (proportions of
+  the sheet: wordmark height 0.45 and gap 0.25 of the emblem diameter in ``h``; width 1.6 in ``v``).
+- `system(src, name, font, out_dir)`: the seven files of the logo system (matte, traces, wordmark, both lockups, contact sheet).
 - `wordmark(text, font, out=None, weight=800, spacing=0.12)`: `text` set in the font file `font` and turned into paths, with no
   ``<text>`` and no need for the font afterwards. ``rsvg-convert`` draws the text big in black; the result is cropped
   to the ink and traced in mono mode. The font reaches ``rsvg-convert`` through a throwaway fontconfig file that adds a
@@ -15,10 +18,12 @@ modules below becomes ``brand.bad_option``. Stdlib plus ``rsvg-convert`` (only f
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import struct
 import subprocess
 import tempfile
+import time
 import unicodedata
 from pathlib import Path
 from xml.sax.saxutils import escape
@@ -32,6 +37,7 @@ MAX_TEXT = 60
 FONT_PX = 260
 MAX_PIXELS = 1 << 24  # the limit of `png.read_rgba`
 PAD_PX = 6
+MIN_TRANSPARENT = 0.02  # a matte that frees less than this found no flat background
 MODES = {"color": "color", "mono": "mono", "silhouette": "silueta", "silueta": "silueta"}
 
 
@@ -265,4 +271,206 @@ def wordmark(text: str, font, out=None, weight: int = 800, spacing: float = 0.12
             "size": [w, h], "paths": res.count("<path"), "bytes": len(res.encode("utf-8"))}
 
 
-__all__ = ["matte", "trace", "wordmark", "parse_palette", "default_out", "MODES", "TOOL"]
+# ---------- lockup and system ----------
+
+_SVG = re.compile(r"^\s*(?:<\?xml[^>]*\?>\s*)?<svg\b([^>]*)>(.*)</svg>\s*$", re.S)
+_VIEWBOX = re.compile(r'viewBox="\s*([-\d.eE]+)[ ,]+([-\d.eE]+)[ ,]+([-\d.eE]+)[ ,]+([-\d.eE]+)\s*"')
+_FORBIDDEN = re.compile(r"<(text|image|foreignObject|script|use)\b", re.I)
+_TITLE = re.compile(r"<title>.*?</title>", re.S)
+_PATH_D = re.compile(r'<path\b[^>]*?\sd="([^"]*)"', re.S)
+_PATH_TOKEN = re.compile(r"[A-Za-z]|-?\d*\.?\d+(?:[eE][-+]?\d+)?")
+LAYOUTS = ("h", "v")
+SYSTEM_FILES = ("emblema-alpha.png", "emblema.svg", "emblema-mono.svg", "wordmark.svg", "lockup-h.svg", "lockup-v.svg",
+                "contactos.png")
+LIGHT, DARK = "#f1e4d0", "#0f1428"
+INK_ON_LIGHT, INK_ON_DARK = "#221c16", "#f1e4d0"
+
+
+def slugify(name: str) -> str:
+    """``"Tarkor Ñandú"`` -> ``"tarkor-nandu"``: accents out, ASCII letters and digits, hyphens between; ``""`` if none."""
+    plain = unicodedata.normalize("NFKD", str(name)).encode("ascii", "ignore").decode("ascii").lower()
+    return re.sub(r"[^a-z0-9]+", "-", plain).strip("-")
+
+
+def _read_svg(path) -> dict:
+    """``{"vb": (x, y, w, h), "inner": str, "box": (x0, y0, x1, y1)}`` of a traced SVG; ``brand.bad_svg`` if it is not one."""
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            text = fh.read(32 * 1024 * 1024)
+    except (OSError, UnicodeDecodeError) as exc:
+        raise GimgError("brand.bad_svg", path=str(path), reason=str(getattr(exc, "strerror", None) or exc))
+    m = _SVG.match(text)
+    vb = _VIEWBOX.search(m.group(1)) if m else None
+    if not m or not vb:
+        raise GimgError("brand.bad_svg", path=str(path), reason="not an SVG with a viewBox (the one of `brand trace` or `brand wordmark`)")
+    if _FORBIDDEN.search(text):
+        raise GimgError("brand.bad_svg", path=str(path), reason="it has <text>, <image>, <use>, <script> or <foreignObject>: only paths")
+    x, y, w, h = (float(v) for v in vb.groups())
+    if not (w > 0 and h > 0):
+        raise GimgError("brand.bad_svg", path=str(path), reason="the viewBox has no area")
+    inner = _TITLE.sub("", m.group(2))
+    return {"vb": (x, y, w, h), "inner": inner, "box": _ink_box(inner) or (x, y, x + w, y + h)}
+
+
+def _ink_box(inner: str):
+    """The box of the coordinates of the absolute paths in `inner`; ``None`` if there are other shapes or relative commands."""
+    if re.search(r"<(rect|circle|ellipse|polygon|polyline|line)\b", inner):
+        return None
+    xs, ys = [], []
+    for d in _PATH_D.findall(inner):
+        nums = []
+        for tok in _PATH_TOKEN.findall(d):
+            if tok.isalpha():
+                if tok not in "MLCZ":
+                    return None
+                if len(nums) % 2:
+                    return None
+            else:
+                nums.append(float(tok))
+        if len(nums) % 2:
+            return None
+        xs += nums[0::2]
+        ys += nums[1::2]
+    return (min(xs), min(ys), max(xs), max(ys)) if xs else None
+
+
+def _num(v: float) -> str:
+    return ("%.3f" % v).rstrip("0").rstrip(".")
+
+
+def _place(piece: dict, x: float, y: float, scale: float) -> str:
+    """`piece` drawn with its ink box's corner at ``(x, y)`` and scaled by `scale`."""
+    x0, y0 = piece["box"][:2]
+    return '<g transform="translate(%s %s) scale(%s)">%s</g>' % (_num(x - x0 * scale), _num(y - y0 * scale), _num(scale), piece["inner"])
+
+
+def lockup(emblem, wordmark, out=None, layout: str = "h", cap: float = 0.45, gap: float = 0.25, width: float = 1.6,
+           margin: float = 0.0, color=None, title: str = "") -> dict:
+    """Write one SVG with the `emblem` and the `wordmark` (both SVG files of this module), as paths only.
+
+    The diameter D is the longer side of the emblem's ink box. ``h``: the wordmark's height is ``cap`` x D, ``gap`` x D to the
+    right of the emblem, both centered vertically. ``v``: the wordmark's width is ``width`` x D, ``gap`` x D under the emblem,
+    both centered horizontally. ``margin`` (x D) is free space around. ``color`` replaces ``currentColor`` in the wordmark.
+    """
+    if layout not in LAYOUTS:
+        raise GimgError("brand.bad_option", reason="layout must be one of %s (got %r)" % (", ".join(LAYOUTS), layout))
+    if not (0.01 <= cap <= 5 and 0 <= gap <= 5 and 0.01 <= width <= 10 and 0 <= margin <= 2):
+        raise GimgError("brand.bad_option", reason="cap 0.01-5, gap 0-5, width 0.01-10 and margin 0-2 (in emblem diameters)")
+    out = str(out or "lockup-%s.svg" % layout)
+    for src in (emblem, wordmark):
+        _check_out(src, out)
+    em, wm = _read_svg(emblem), _read_svg(wordmark)
+    if color:
+        if not re.fullmatch(r"#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}|[A-Za-z]{3,20}", str(color)):
+            raise GimgError("brand.bad_option", reason="color %r is not #rgb, #rrggbb or a color name" % (color,))
+        wm = dict(wm, inner=wm["inner"].replace("currentColor", str(color)))
+    ew, eh = em["box"][2] - em["box"][0], em["box"][3] - em["box"][1]
+    ww, wh = wm["box"][2] - wm["box"][0], wm["box"][3] - wm["box"][1]
+    if min(ew, eh, ww, wh) <= 0:
+        raise GimgError("brand.bad_svg", path=str(emblem if min(ew, eh) <= 0 else wordmark), reason="the drawing has no ink")
+    d = max(ew, eh)
+    pad, space = margin * d, gap * d
+    if layout == "h":
+        s = cap * d / wh
+        ww2, wh2 = ww * s, wh * s
+        total_w, total_h = ew + space + ww2, max(eh, wh2)
+        parts = [_place(em, pad, pad + (total_h - eh) / 2, 1.0), _place(wm, pad + ew + space, pad + (total_h - wh2) / 2, s)]
+    else:
+        s = width * d / ww
+        ww2, wh2 = ww * s, wh * s
+        total_w, total_h = max(ew, ww2), eh + space + wh2
+        parts = [_place(em, pad + (total_w - ew) / 2, pad, 1.0), _place(wm, pad + (total_w - ww2) / 2, pad + eh + space, s)]
+    w, h = total_w + 2 * pad, total_h + 2 * pad
+    svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %s %s" role="img">%s%s</svg>\n'
+           % (_num(w), _num(h), "<title>%s</title>" % escape(title) if title else "", "".join(parts)))
+    _write(out, svg.encode("utf-8"))
+    return {"out": out, "layout": layout, "size": [round(w, 1), round(h, 1)], "paths": svg.count("<path"),
+            "bytes": len(svg.encode("utf-8"))}
+
+
+def _fit(piece: dict, x: float, y: float, w: float, h: float, ink=None) -> str:
+    """`piece` centered in the box ``x, y, w, h``, as large as fits; `ink` is the ``color`` its ``currentColor`` resolves to."""
+    vx, vy, vw, vh = piece["vb"]
+    k = min(w / vw, h / vh)
+    pw, ph = vw * k, vh * k
+    inner = '<svg x="%s" y="%s" width="%s" height="%s" viewBox="%s %s %s %s">%s</svg>' % (
+        _num(x + (w - pw) / 2), _num(y + (h - ph) / 2), _num(pw), _num(ph), _num(vx), _num(vy), _num(vw), _num(vh), piece["inner"])
+    return '<g color="%s">%s</g>' % (ink, inner) if ink else inner
+
+
+def _contact_svg(pieces: dict) -> tuple:
+    """The SVG text and ``(width, height)`` of the contact sheet: every piece on light and on dark, then the small sizes."""
+    col, row, margin, last = 640, 200, 40, 180
+    rows = ("emblem", "mono", "wordmark", "lockup_h", "lockup_v")
+    height = row * len(rows) + last
+    parts = []
+    for c, (bg, ink) in enumerate(((LIGHT, INK_ON_LIGHT), (DARK, INK_ON_DARK))):
+        x0 = c * col
+        parts.append('<rect x="%d" y="0" width="%d" height="%d" fill="%s"/>' % (x0, col, height, bg))
+        for r, key in enumerate(rows):
+            parts.append(_fit(pieces[key], x0 + margin, r * row + 20, col - 2 * margin, row - 40, ink))
+        x = x0 + margin
+        for size in (16, 32, 64, 128):
+            parts.append(_fit(pieces["emblem"], x, len(rows) * row + (last - size) / 2, size, size, ink))
+            x += size + 32
+    return ('<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" viewBox="0 0 %d %d">%s</svg>'
+            % (2 * col, height, 2 * col, height, "".join(parts)), (2 * col, height))
+
+
+def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = 0.12, palette=None, colors=None, text=None,
+           cap: float = 0.45, gap: float = 0.25, width: float = 1.6, force: bool = False) -> dict:
+    """The logo system of `name` from the emblem PNG `src`, in `out_dir`: ``<slug>-emblema-alpha.png``, ``-emblema.svg``,
+    ``-emblema-mono.svg``, ``-wordmark.svg``, ``-lockup-h.svg``, ``-lockup-v.svg`` and ``-contactos.png`` (see `SYSTEM_FILES`).
+
+    Everything is built in a throwaway folder and copied in at the end, so a failure leaves `out_dir` as it was; a file that
+    is already there is ``brand.exists`` unless `force`. The wordmark text is `text`, else `name` in capitals.
+    """
+    t0 = time.monotonic()
+    slug = slugify(name)
+    if not str(name).strip():
+        raise GimgError("brand.empty_text")
+    if not slug:
+        raise GimgError("brand.bad_name", name=str(name))
+    targets = {key: os.path.join(str(out_dir), "%s-%s" % (slug, key)) for key in SYSTEM_FILES}
+    for path in targets.values():
+        _check_out(src, path)
+    clash = [os.path.basename(p) for p in targets.values() if os.path.lexists(p)]
+    if clash and not force:
+        raise GimgError("brand.exists", folder=str(out_dir), files=", ".join(clash))
+    if shutil.which(TOOL) is None:
+        raise GimgError("brand.tool_missing", tool=TOOL)
+    if palette and colors is not None:
+        raise GimgError("brand.bad_option", reason="--palette and --colors exclude each other")
+    with tempfile.TemporaryDirectory(prefix="gimg-brand-") as tmp:
+        t = {key: os.path.join(tmp, key) for key in SYSTEM_FILES}
+        m = matte(src, t["emblema-alpha.png"])
+        if m["transparent"] < MIN_TRANSPARENT:
+            raise GimgError("brand.no_matte", path=str(src), transparent=round(m["transparent"] * 100, 1))
+        title = str(name).strip()
+        color = trace(t["emblema-alpha.png"], t["emblema.svg"], "color", palette, colors, title=title)
+        mono = trace(t["emblema-alpha.png"], t["emblema-mono.svg"], "mono", title=title)
+        word = wordmark(text if text else str(name).strip().upper(), font, t["wordmark.svg"], weight, spacing, title=title)
+        lh = lockup(t["emblema.svg"], t["wordmark.svg"], t["lockup-h.svg"], "h", cap, gap, width, title=title)
+        lv = lockup(t["emblema.svg"], t["wordmark.svg"], t["lockup-v.svg"], "v", cap, gap, width, title=title)
+        pieces = {"emblem": _read_svg(t["emblema.svg"]), "mono": _read_svg(t["emblema-mono.svg"]),
+                  "wordmark": _read_svg(t["wordmark.svg"]), "lockup_h": _read_svg(t["lockup-h.svg"]),
+                  "lockup_v": _read_svg(t["lockup-v.svg"])}
+        sheet_svg, sheet_size = _contact_svg(pieces)
+        sheet_src = os.path.join(tmp, "contactos.svg")
+        with open(sheet_src, "w", encoding="utf-8") as fh:
+            fh.write(sheet_svg)
+        _rsvg([TOOL, "-o", t["contactos.png"], sheet_src], dict(os.environ))
+        if not os.path.exists(t["contactos.png"]):
+            raise GimgError("brand.tool_failed", tool=TOOL, reason="no output")
+        for key in SYSTEM_FILES:
+            with open(t[key], "rb") as fh:
+                _write(targets[key], fh.read())
+    files = {key: targets[key] for key in SYSTEM_FILES}
+    return {"src": str(src), "name": str(name).strip(), "slug": slug, "out_dir": str(out_dir), "files": files,
+            "paths": {"emblem": color["paths"], "mono": mono["paths"], "wordmark": word["paths"], "lockup_h": lh["paths"],
+                      "lockup_v": lv["paths"]},
+            "contact_size": list(sheet_size), "overwritten": sorted(clash), "seconds": round(time.monotonic() - t0, 1)}
+
+
+__all__ = ["matte", "trace", "wordmark", "lockup", "system", "slugify", "parse_palette", "default_out", "MODES", "LAYOUTS",
+           "SYSTEM_FILES", "TOOL"]

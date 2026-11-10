@@ -334,5 +334,240 @@ class WordmarkTests(BrandBase):
         return head + struct.pack(">4sIII", b"name", 0, 28, len(table)) + table
 
 
+def path_svg(w, h, color="currentColor", title=""):
+    """An SVG like the ones of `brand trace` and `brand wordmark`: one rectangle path filling a ``w`` x ``h`` viewBox."""
+    return ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" role="img">%s<path fill="%s" fill-rule="evenodd" '
+            'd="M0 0L%d 0L%d %dL0 %dZ"/></svg>\n' % (w, h, "<title>%s</title>" % title if title else "", color, w, w, h, h))
+
+
+def box_of(svg_text):
+    """``[(x, y, w, h)]`` of the scaled groups of a lockup: where each rectangle ends up (all start at 0, 0)."""
+    out = []
+    for m in re.finditer(r'<g transform="translate\(([-\d.]+) ([-\d.]+)\) scale\(([-\d.]+)\)">.*?d="M0 0L(\d+) 0L\d+ (\d+)', svg_text, re.S):
+        x, y, k, w, h = (float(v) for v in m.groups())
+        out.append((x, y, w * k, h * k))
+    return out
+
+
+class LockupTests(BrandBase):
+    def setUp(self):
+        super().setUp()
+        self.emblem, self.word = self.tmp / "e.svg", self.tmp / "w.svg"
+        self.emblem.write_text(path_svg(100, 100, "#b8862b", "emblem"))
+        self.word.write_text(path_svg(400, 50, title="word"))
+
+    def lock(self, *extra):
+        out = self.tmp / "l.svg"
+        code, text, err = self.run_cli("brand", "lockup", str(self.emblem), str(self.word), "-o", str(out), "--json", *extra)
+        return code, (json.loads(text) if code == 0 else err), out
+
+    def test_h_puts_the_wordmark_right_and_centered_with_the_sheet_proportions(self):
+        code, data, out = self.lock()
+        self.assertEqual(code, 0)
+        (ex, ey, ew, eh), (wx, wy, ww, wh) = box_of(out.read_text())
+        self.assertAlmostEqual(wh, 45, places=2)  # cap 0.45 of the diameter
+        self.assertAlmostEqual(wx - (ex + ew), 25, places=2)  # gap 0.25 of the diameter
+        self.assertAlmostEqual(wy + wh / 2, ey + eh / 2, places=2)
+        self.assertEqual(data["layout"], "h")
+        self.assertEqual(data["size"], [485.0, 100.0])
+        self.assertEqual(data["paths"], 2)
+
+    def test_v_puts_the_wordmark_below_and_centered(self):
+        code, data, out = self.lock("--layout", "v")
+        self.assertEqual(code, 0)
+        (ex, ey, ew, eh), (wx, wy, ww, wh) = box_of(out.read_text())
+        self.assertAlmostEqual(ww, 160, places=2)  # width 1.6 diameters
+        self.assertAlmostEqual(wy - (ey + eh), 25, places=2)
+        self.assertAlmostEqual(wx + ww / 2, ex + ew / 2, places=2)
+        self.assertEqual(data["size"], [160.0, 100 + 25 + 20.0])
+
+    def test_a_wordmark_wider_than_the_emblem_makes_the_canvas_as_wide_as_it_is(self):
+        code, data, out = self.lock("--layout", "v")
+        (ex, _, ew, _), (wx, _, ww, _) = box_of(out.read_text())
+        self.assertGreater(ww, ew)
+        self.assertAlmostEqual(ex, 30, places=2)  # the emblem is the one centered in the wider canvas
+        self.assertAlmostEqual(wx, 0, places=2)
+
+    def test_an_emblem_wider_than_the_wordmark_keeps_the_wordmark_centered(self):
+        code, data, out = self.lock("--layout", "v", "--width", "0.5")
+        (ex, _, ew, _), (wx, _, ww, _) = box_of(out.read_text())
+        self.assertLess(ww, ew)
+        self.assertAlmostEqual(ex, 0, places=2)
+        self.assertAlmostEqual(wx, 25, places=2)
+        self.assertEqual(data["size"][0], 100.0)
+
+    def test_a_taller_wordmark_in_h_centers_the_emblem_vertically(self):
+        code, data, out = self.lock("--cap", "2")
+        (ex, ey, ew, eh), (wx, wy, ww, wh) = box_of(out.read_text())
+        self.assertAlmostEqual(wh, 200, places=2)
+        self.assertAlmostEqual(ey, 50, places=2)
+        self.assertEqual(data["size"][1], 200.0)
+
+    def test_no_text_no_image_and_currentcolor_survives(self):
+        code, _, out = self.lock()
+        svg = out.read_text()
+        self.assertNotIn("<text", svg)
+        self.assertNotIn("<image", svg)
+        self.assertIn('fill="currentColor"', svg)
+        self.assertIn('fill="#b8862b"', svg)
+        self.assertNotIn("<title>emblem", svg)  # the inner titles are not duplicated
+
+    def test_color_replaces_currentcolor_in_the_wordmark_only(self):
+        _, _, out = self.lock("--color", "#f1e4d0")
+        svg = out.read_text()
+        self.assertNotIn("currentColor", svg)
+        self.assertIn('fill="#f1e4d0"', svg)
+
+    def test_a_svg_with_text_is_refused_with_its_reason(self):
+        self.word.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 9 9"><text>X</text></svg>')
+        code, err, _ = self.lock()
+        self.assertEqual(code, 1)
+        self.assertIn("does not work for the lockup", err)
+        self.assertIn("only paths", err)
+        self.assertFalse((self.tmp / "l.svg").exists())
+
+    def test_a_file_that_is_no_svg_is_refused(self):
+        self.emblem.write_text("nope")
+        code, err, _ = self.lock()
+        self.assertEqual(code, 1)
+        self.assertIn("with a viewBox", err)
+
+    def test_bad_options_and_inputs_are_not_overwritten(self):
+        code, err, _ = self.lock("--cap", "0")
+        self.assertEqual(code, 1)
+        self.assertIn("cap 0.01-5", err)
+        code, err, _ = self.lock("--color", "red;x")
+        self.assertEqual(code, 1)
+        self.assertIn("is not #rgb", err)
+        before = self.emblem.read_bytes()
+        code, _, err = self.run_cli("brand", "lockup", str(self.emblem), str(self.word), "-o", str(self.emblem))
+        self.assertEqual(code, 1)
+        self.assertIn("is the original itself", err)
+        self.assertEqual(self.emblem.read_bytes(), before)
+
+    def test_text_output_line(self):
+        code, out, _ = self.run_cli("brand", "lockup", str(self.emblem), str(self.word), "-o", str(self.tmp / "t.svg"))
+        self.assertEqual(code, 0)
+        self.assertIn("layout h, 485.0x100.0, 2 paths", out)
+
+
+class SlugTests(unittest.TestCase):
+    def test_accents_and_symbols(self):
+        self.assertEqual(brand.slugify("Tarkor"), "tarkor")
+        self.assertEqual(brand.slugify("Ñandú  del Sur!"), "nandu-del-sur")
+        self.assertEqual(brand.slugify("Café-Ünïcode 2"), "cafe-unicode-2")
+        self.assertEqual(brand.slugify("日本"), "")
+
+
+class SystemTests(BrandBase):
+    def setUp(self):
+        super().setUp()
+        self.src = self.tmp / "emb.png"
+        square_png(self.src, size=48)
+        self.out = self.tmp / "out"
+
+    def system(self, *extra, name="Tarkor"):
+        return self.run_cli("brand", "system", str(self.src), "--name", name, "--font", FONT or "x", "--out-dir", str(self.out),
+                            *extra)
+
+    @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
+    def test_writes_the_seven_files_and_leaves_the_original_alone(self):
+        before = hashlib.sha256(self.src.read_bytes()).hexdigest()
+        code, out, err = self.system("--json")
+        self.assertEqual(code, 0, err)
+        data = json.loads(out)
+        names = sorted(p.name for p in self.out.iterdir())
+        self.assertEqual(names, sorted("tarkor-" + n for n in brand.SYSTEM_FILES))
+        self.assertEqual(data["slug"], "tarkor")
+        self.assertEqual(data["files"]["lockup-v.svg"], str(self.out / "tarkor-lockup-v.svg"))
+        self.assertEqual(hashlib.sha256(self.src.read_bytes()).hexdigest(), before)
+        for n in ("emblema.svg", "emblema-mono.svg", "wordmark.svg", "lockup-h.svg", "lockup-v.svg"):
+            svg = (self.out / ("tarkor-" + n)).read_text()
+            self.assertNotIn("<text", svg)
+            self.assertNotIn("<image", svg)
+        self.assertIn("currentColor", (self.out / "tarkor-emblema-mono.svg").read_text())
+        w, h, rgba = png.read_rgba(self.out / "tarkor-contactos.png")
+        self.assertEqual((w, h), tuple(data["contact_size"]))
+        self.assertEqual(rgba[:3], bytes((0xf1, 0xe4, 0xd0)))  # light on the left
+        self.assertEqual(rgba[(w - 1) * 4:(w - 1) * 4 + 3], bytes((0x0f, 0x14, 0x28)))  # dark on the right
+        _, _, alpha = png.read_rgba(self.out / "tarkor-emblema-alpha.png")
+        self.assertEqual(alpha[3], 0)
+
+    @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
+    def test_text_output_lists_the_files(self):
+        code, out, _ = self.system()
+        self.assertEqual(code, 0)
+        self.assertIn("system 'tarkor'", out)
+        self.assertIn("7 files", out)
+        self.assertIn(str(self.out / "tarkor-lockup-v.svg"), out)
+
+    @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
+    def test_a_folder_that_already_has_the_files_is_not_overwritten_without_force(self):
+        self.out.mkdir()
+        mine = self.out / "tarkor-lockup-v.svg"
+        mine.write_text("mine")
+        (self.out / "other.txt").write_text("keep")
+        code, _, err = self.system()
+        self.assertEqual(code, 1)
+        self.assertIn("already has tarkor-lockup-v.svg", err)
+        self.assertIn("--force", err)
+        self.assertEqual(mine.read_text(), "mine")
+        self.assertEqual(sorted(p.name for p in self.out.iterdir()), ["other.txt", "tarkor-lockup-v.svg"])  # nothing else written
+        code, out, _ = self.system("--force")
+        self.assertEqual(code, 0)
+        self.assertNotEqual(mine.read_text(), "mine")
+        self.assertEqual((self.out / "other.txt").read_text(), "keep")
+        self.assertIn("overwritten: tarkor-lockup-v.svg", out)
+
+    @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
+    def test_accents_in_the_name_give_an_ascii_slug_and_the_name_in_capitals(self):
+        code, out, err = self.system("--json", name="Ñandú")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(json.loads(out)["slug"], "nandu")
+        self.assertTrue((self.out / "nandu-lockup-h.svg").exists())
+
+    def test_a_name_with_no_ascii_letters_is_refused_with_its_reason(self):
+        code, _, err = self.system(name="日本")
+        self.assertEqual(code, 1)
+        self.assertIn("gives no file prefix", err)
+        self.assertFalse(self.out.exists())
+
+    def test_an_emblem_with_no_flat_background_is_refused_with_its_reason(self):
+        rgba = bytearray()
+        for y in range(32):
+            for x in range(32):
+                rgba += bytes(((x * 8) % 256, (y * 8) % 256, (x * y) % 256, 255))
+        self.src.write_bytes(png.rgba_bytes(32, 32, rgba))
+        with mock.patch("gimg.brand.shutil.which", return_value="/usr/bin/rsvg-convert"):
+            code, _, err = self.system()
+        self.assertEqual(code, 1)
+        self.assertIn("no flat background to cut out", err)
+        self.assertFalse(self.out.exists())
+
+    def test_missing_tool_writes_nothing(self):
+        with mock.patch.dict(os.environ, {"PATH": ""}):
+            code, _, err = self.system()
+        self.assertEqual(code, 1)
+        self.assertIn('the tool "rsvg-convert" is missing', err)
+        self.assertFalse(self.out.exists())
+
+    def test_the_original_cannot_be_a_target(self):
+        target = self.tmp / "tarkor-emblema-alpha.png"
+        target.write_bytes(self.src.read_bytes())
+        before = target.read_bytes()
+        code, _, err = self.run_cli("brand", "system", str(target), "--name", "Tarkor", "--font", FONT or "x", "--out-dir",
+                                    str(self.tmp), "--force")
+        self.assertEqual(code, 1)
+        self.assertIn("is the original itself", err)
+        self.assertEqual(target.read_bytes(), before)
+
+    def test_palette_and_colors_exclude_each_other(self):
+        with mock.patch("gimg.brand.shutil.which", return_value="/usr/bin/rsvg-convert"):
+            code, _, err = self.system("--palette", "#fac81e", "--colors", "3")
+        self.assertEqual(code, 1)
+        self.assertIn("exclude each other", err)
+        self.assertFalse(self.out.exists())
+
+
 if __name__ == "__main__":
     unittest.main()
