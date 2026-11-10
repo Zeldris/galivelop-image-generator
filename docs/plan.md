@@ -154,6 +154,7 @@ la persona decide si es una F4e o va con otra). Se diseña con su «en detalle»
    `font-style`, `fill`, `text-anchor`). Los cambios se aplican a una copia del intento (la original no se toca) y se
    pueden guardar como plantilla nueva, como hoy la posición. Por decidir en su «en detalle»: el texto largo que no
    cabe en la caja (encoger, cortar o avisar) y si la fuente elegida viaja con el proyecto (archivo en el repo, D25).
+8. **Piezas de mapa: sin costura y recortes** (pedido de WMF del 2026-11-10, `docs/marcas/tarkor/pedido-mapa.md`): (a) una orden que hace repetible una textura (desplazar media pieza y fundir la costura, solo stdlib) y una vista 4×4 para comprobarla, sin escala ni marca visible; (b) `gimg brand matte` con fondo croma verde o magenta (el color dominante del borde ya lo cubre: se prueba con los dos); (c) perfiles `cartela` 1024×512 y `banda` 1024×256; (d) img2img desde una pieza base con fuerza 0,35-0,45 (comprobar qué acepta `sd-cli`). Pasa si una textura en 4×4 no enseña costura y un icono se lee a 24 px en gris.
 
 ## F1 en detalle
 
