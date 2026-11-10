@@ -2,7 +2,7 @@
   "$schema": "../../../../gimg/schemas/order.schema.json",
   "key": "marca/19-enviado",
   "profile": "formulario",
-  "prompt": "A paper boat leaving a quay, its wake drawn as three thin lines, ink grey on off-white. Flat vector illustration, nautical chart aesthetic, thin lines of even width, no gradients, no glow, no shading, no text, no letters, no watermark, sharp 45-degree cut corners instead of rounded corners, lots of empty space, minimal, technical, serene. Palette strictly limited to sky blue #0072a8, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a.",
+  "prompt": "A paper boat leaving a quay, its wake drawn as three thin lines, ink grey on off-white. Flat vector illustration, nautical chart aesthetic, thin lines of even width, no gradients, no glow, no shading, no text, no letters, no watermark, full-bleed edge to edge, no border, no frame, lots of empty space, minimal, technical, serene. Palette strictly limited to deep ocean blue #0072a8, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a.",
   "seed": 1,
   "count": 4
 }

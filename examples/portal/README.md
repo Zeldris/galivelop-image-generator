@@ -57,3 +57,4 @@ Sustituye a la identidad anterior (fondo oscuro, Sora/Inter, `og` con títulos c
 - **#24 `og` por proyecto**: sin pedidos hasta saber el motivo de cada proyecto (mismo prompt que #3, con el motivo en vez de la rosa de los vientos; perfil `social`).
 - #1/#1b piden chaflán de 28/128 y trazo de 12/128 exactos: se afinan al vectorizar.
 - Referencia: la hoja pide pasar la portada social (#3) como referencia al resto; falta elegir la imagen aprobada.
+- **Desvío del bloque común de la hoja (2026-11-10):** en la tanda 1, «sky blue #0072a8» dio `#1aa6df` (70 % de los píxeles, 0 % de `#0072a8`) y «45-degree cut corners» puso marcos y esquinas blancas en 3 de 4. Aquí se pide «deep ocean blue #0072a8» y «full-bleed edge to edge, no border, no frame»; el chaflán de iconos y tarjetas va por CSS o al vectorizar.
