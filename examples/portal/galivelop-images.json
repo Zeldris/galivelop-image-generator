@@ -21,10 +21,10 @@
     "cuadrado": {
       "width": 1024,
       "height": 1024,
-      "steps": 6,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
       "targetWidth": 1024,
       "targetHeight": 1024,
       "draft": {
@@ -63,10 +63,10 @@
     "social": {
       "width": 1344,
       "height": 704,
-      "steps": 6,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
       "targetWidth": 1200,
       "targetHeight": 630,
       "draft": {
@@ -77,10 +77,10 @@
     "portada": {
       "width": 1344,
       "height": 768,
-      "steps": 6,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
       "targetWidth": 1600,
       "targetHeight": 900,
       "draft": {
