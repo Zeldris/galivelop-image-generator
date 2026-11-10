@@ -35,10 +35,10 @@
     "icono": {
       "width": 1024,
       "height": 1024,
-      "steps": 6,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
       "targetWidth": 512,
       "targetHeight": 512,
       "draft": {
@@ -49,10 +49,10 @@
     "fondo": {
       "width": 1024,
       "height": 1024,
-      "steps": 6,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
       "targetWidth": 1200,
       "targetHeight": 1200,
       "draft": {
@@ -91,10 +91,10 @@
     "tarjeta": {
       "width": 1344,
       "height": 768,
-      "steps": 6,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
       "targetWidth": 1200,
       "targetHeight": 675,
       "draft": {
@@ -105,10 +105,10 @@
     "cabecera": {
       "width": 1664,
       "height": 512,
-      "steps": 6,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
       "targetWidth": 1600,
       "targetHeight": 500,
       "draft": {
@@ -119,10 +119,10 @@
     "muro": {
       "width": 1792,
       "height": 448,
-      "steps": 6,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
       "targetWidth": 1600,
       "targetHeight": 400,
       "draft": {
@@ -133,10 +133,10 @@
     "panoramica": {
       "width": 1536,
       "height": 576,
-      "steps": 6,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
       "targetWidth": 1600,
       "targetHeight": 600,
       "draft": {
@@ -147,10 +147,10 @@
     "ilustracion": {
       "width": 1152,
       "height": 768,
-      "steps": 6,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
       "targetWidth": 1200,
       "targetHeight": 800,
       "draft": {
@@ -161,10 +161,10 @@
     "formulario": {
       "width": 1024,
       "height": 768,
-      "steps": 6,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
       "targetWidth": 800,
       "targetHeight": 600,
       "draft": {
@@ -175,10 +175,10 @@
     "patron": {
       "width": 1792,
       "height": 448,
-      "steps": 6,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
       "targetWidth": 1200,
       "targetHeight": 300,
       "draft": {
@@ -189,10 +189,10 @@
     "hoja3": {
       "width": 1536,
       "height": 512,
-      "steps": 6,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
       "targetWidth": 1536,
       "targetHeight": 512,
       "draft": {
