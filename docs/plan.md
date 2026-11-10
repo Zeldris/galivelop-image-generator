@@ -131,6 +131,13 @@ la persona decide si es una F4e o va con otra). Se diseña con su «en detalle»
    vertical colocando emblema y wordmark con las proporciones de la hoja; y guardar el sistema de logo en la carpeta
    que diga la persona (D40), con hoja de contactos. Cada paso deja copia y conserva el original. El prototipo de
    Tarkor (`piloto/tarkor/vector/`) fija los parámetros que la interfaz expone.
+   En detalle (2026-11-10): la API local ya expone el camino (`gimg/brandshop.py`, `docs/api.md`, «Marca»). El borrador de
+   cada marca vive en `<datos>/projects/<p>/brand/<slug>/` con los nombres fijos de `SYSTEM_FILES`; cada llamada lo pisa y
+   el original del intento no se toca. La fuente es un intento del proyecto (`{profile, key, attempt}`, con la guarda D25).
+   La tipografía se manda como familia y se resuelve con `fc-match`, nunca como ruta. `save` copia el sistema y la hoja de
+   contactos a `brand-out/<slug>/` (`data`) o a `brand.dir` de la configuración (`project`, dentro de la raíz, como
+   `compose.templatesDir`); sin `force`, lo que ya esté da `brand.exists`. `matte`, `trace`, `wordmark` y `save` pasan
+   por `_heavy()` (CPU larga o `rsvg-convert`, y una escritura a la vez sobre el mismo borrador); `lockup` es solo texto y no.
 3. **Imágenes de referencia al generar una pieza:** una o varias (intentos de gimg o archivos de la persona) para
    seguir un estilo, una forma o un personaje. Comprobar qué acepta hoy `sd-cli` y qué modelos del catálogo.
 4. **Cajas de texto antes de generar:** en el pedido nuevo se colocan, al tamaño de la pieza, las cajas de titular,
