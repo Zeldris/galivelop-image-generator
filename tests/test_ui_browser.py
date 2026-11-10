@@ -170,7 +170,8 @@ class Browse(UiBase):
     def test_tabs_navigate_and_paint(self):
         self.open("/p/tarkor/pedidos", "document.querySelector('.order-row')")
         self.click("nav.tabs a[href='#/p/tarkor/piezas']")
-        self.page.wait("document.querySelectorAll('.piece-card').length === 6")
+        perfiles = len(json.loads((self.root / "galivelop-images.json").read_text(encoding="utf-8"))["profiles"])
+        self.page.wait("document.querySelectorAll('.piece-card').length === %d" % perfiles)  # one card per profile
         self.assertEqual(self.js("document.querySelector('nav.tabs a[aria-current=page]').textContent"), "Piezas")
         self.click("nav.tabs a[href='#/p/tarkor/marca']")
         self.page.wait("document.querySelector('.check-list .check-item')")
