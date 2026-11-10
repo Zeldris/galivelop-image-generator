@@ -2,7 +2,7 @@
   "$schema": "../../../../gimg/schemas/order.schema.json",
   "key": "marca/17-marco-retrato",
   "profile": "cuadrado",
-  "prompt": "Square picture frame drawn like the border of a nautical chart: tick marks with degrees along the edges, top-right corner cut at 45 degrees, ink grey on transparent, empty inside. Flat vector illustration, nautical chart aesthetic, thin lines of even width, no gradients, no glow, no shading, no text, no letters, no watermark, full-bleed edge to edge, no border, no frame, lots of empty space, minimal, technical, serene. Palette strictly limited to medium cerulean ocean blue #0072a8, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a.",
+  "prompt": "Square picture frame drawn like the border of a nautical chart: tick marks with degrees along the edges, top-right corner cut at 45 degrees, ink grey on transparent, empty inside. Every object drawn only as thin outline line art in the palette colours, no solid fills, no realistic or coloured objects. Flat vector illustration, nautical chart aesthetic, thin lines of even width, no gradients, no glow, no shading, no text, no letters, no watermark, full-bleed edge to edge, no border, no frame, lots of empty space, minimal, technical, serene. Palette strictly limited to medium cerulean ocean blue #0072a8, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a.",
   "references": [
     "referencias/03-portada-social.png"
   ],
