@@ -285,20 +285,22 @@ Clases que se benefician:
 ## 9. Decisiones para la persona
 
 1. **Escenario de marca (M7):** ¿noche índigo con cinturón de polvo como fondo de todo lo que está fuera del juego?
-   Recomendación: sí; dentro del juego sigue la madera.
+   Recomendación: sí; dentro del juego sigue la madera. **Aprobada por la persona, 2026-11-10.**
 2. **Cuatro puntas o cuatro más cuatro (M4):** recomendación: cuatro cardinales en todo; las diagonales solo en el
-   emblema de 256 px en adelante, y más cortas.
+   emblema de 256 px en adelante, y más cortas. **Aprobada por la persona, 2026-11-10.**
 3. **Campo del emblema:** cristal oscuro `#1f4a55` (logo) o el azul `accent-500` de la interfaz. Recomendación: el
-   oscuro; el azul vivo queda como gema y destello dentro del juego.
+   oscuro; el azul vivo queda como gema y destello dentro del juego. **Aprobada por la persona, 2026-11-10.**
 4. **Luz de la semilla (M2):** horneada en el boceto o en dos capas (mate + luz). Recomendación: dos capas; la luz se
-   controla en el SVG y el boceto se elige por piedra y oro.
+   controla en el SVG y el boceto se elige por piedra y oro. **Aprobada por la persona, 2026-11-10.**
 5. **Base del wordmark (§7):** Cinzel 800 modificada o dibujo a mano desde la referencia. Recomendación: Cinzel 800
-   modificada; coherencia con el juego y la mitad de trabajo.
-6. **Arcilla fuera de la marca:** recomendación: sí; queda como tierra de Berig en texturas y paisajes.
+   modificada; coherencia con el juego y la mitad de trabajo. **Aprobada por la persona, 2026-11-10.**
+6. **Arcilla fuera de la marca:** recomendación: sí; queda como tierra de Berig en texturas y paisajes. **Aprobada por la
+   persona, 2026-11-10.**
 7. **Steam (E4-E5) ahora o cuando haya ficha:** recomendación: solo el `capsule header` y `main` ahora (salen de E2);
-   el resto cuando exista la ficha.
+   el resto cuando exista la ficha. **Aprobada por la persona, 2026-11-10.**
 8. **Avatar (E1):** emblema sobre noche o monograma T. Recomendación: emblema completo de 64 px en adelante y el
-   simplificado por debajo; la T solo como viñeta y sello.
-9. **Cursor (E15):** recomendación: no ahora.
+   simplificado por debajo; la T solo como viñeta y sello. **Aprobada por la persona, 2026-11-10.**
+9. **Cursor (E15):** recomendación: no ahora. **Aprobada por la persona, 2026-11-10.**
 10. **Tokens al juego (§8):** ¿se propone el bloque entero de `gold`/`stone`/`night` o solo `gold-500/700/900`?
     Recomendación: el bloque entero, una sola propuesta, para que `.crystal-sky` y el título puedan cambiar a la vez.
+    **Aprobada por la persona, 2026-11-10.**
