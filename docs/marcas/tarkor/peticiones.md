@@ -285,7 +285,7 @@ semillas por pieza, el total (48 piezas de A-D más unas 20 del bloque E) ronda 
   veto sigue vigente con los logos nuevos.
 - **D3 · Favicon e icono del instalador.** A 16-32 px el emblema de seis gajos no se lee. Propuesta: #1 para 128 px en
   adelante (instalador `icon.png`, `128x128` a doble densidad, `apple-touch`), y una versión vectorial simplificada (aro + estrella
-  de cuatro puntas) desde `tarkor-b.svg` para 16-64 px. ¿Se hace aquí o se pide al instalador?
+  de cuatro puntas) desde `tarkor-emblema-simple.svg` para 16-64 px. ¿Se hace aquí o se pide al instalador?
 - **D4 · Los logos como marca.** ¿Los dos PNG sustituyen a los lockups SVG `tarkor-a/b` de `examples/tarkor/logos/` en
   `compose` (og) y en la biblia? Si sí, `biblia.md` §4 y §7 («lápiz de fantasía» r7) quedan obsoletas y hay que
   rehacer `estilo.txt`.
