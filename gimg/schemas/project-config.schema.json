@@ -175,6 +175,15 @@
           "type": "string",
           "description": "Fixed text appended to every prompt of this profile."
         },
+        "tileable": {
+          "type": "string",
+          "enum": [
+            "xy",
+            "x",
+            "y"
+          ],
+          "description": "Seamless texture: circular padding on both axes (xy), only horizontal (x) or only vertical (y); sd-cli --circular, --circularx, --circulary. Without it, no tiling."
+        },
         "draft": {
           "type": "object",
           "additionalProperties": false,

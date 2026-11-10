@@ -62,7 +62,7 @@ Cada proyecto lleva en su repo un archivo `galivelop-images.json` (D12):
 - `name`: nombre del proyecto.
 - `delivery.dir`: carpeta de entrega, relativa al repo del proyecto.
 - `delivery.template`: nombre del archivo entregado; `{key}` es la clave del pedido y `{profile}` el perfil.
-- `profiles`: perfiles de generación con nombre (tamaño, pasos, `cfg`, muestreador y modelo).
+- `profiles`: perfiles de generación con nombre (tamaño, pasos, `cfg`, muestreador y modelo; `tileable`: `"xy"`, `"x"` o `"y"` pide textura sin costura, `--circular`/`--circularx`/`--circulary` de sd-cli).
 
 Un pedido pide una imagen con una clave y un perfil:
 

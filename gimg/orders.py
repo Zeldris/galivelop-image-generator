@@ -22,7 +22,7 @@ from .errors import GimgError
 
 STATES = ("new", "candidate", "discarded")
 SEED_LIMIT = 2 ** 32
-_PROFILE_PARAMS = ("width", "height", "steps", "cfg", "sampler", "model")
+_PROFILE_PARAMS = ("width", "height", "steps", "cfg", "sampler", "model", "tileable")
 _ORDER_FILE = "order.json"
 _FULL_PARAMS = {"type": "object", "properties": {
     "width": {"type": "integer", "minimum": 1}, "height": {"type": "integer", "minimum": 1},

@@ -69,6 +69,25 @@ class ProjectTests(unittest.TestCase):
         self.assertIn("/profiles", err.message("en"))
         self.assertIn("no es válido", err.message("es"))
 
+    def test_profile_tileable_accepted_and_reaches_the_specs(self):
+        from gimg import orders
+        for value in ("xy", "x", "y"):
+            cfg = copy.deepcopy(EXAMPLE)
+            name = next(iter(cfg["profiles"]))
+            cfg["profiles"][name]["tileable"] = value
+            self.assertEqual(schema.validate(cfg, schema.load_schema("project-config")), [])
+            order = {"prompt": "p", "params": {}, "references": []}
+            self.assertEqual(orders.build_specs(order, cfg["profiles"][name])[0]["params"]["tileable"], value)
+
+    def test_profile_tileable_invalid_value_is_rejected_with_message(self):
+        name = next(iter(EXAMPLE["profiles"]))
+        err = self.code(projects.load_config, self.make(profiles={
+            **EXAMPLE["profiles"], name: {**EXAMPLE["profiles"][name], "tileable": "z"}}))
+        self.assertEqual(err.code, "project.config_invalid")
+        self.assertEqual([(e.path, e.code) for e in err.errors], [("/profiles/%s/tileable" % name, "enum")])
+        self.assertIn("must be one of", err.message("en"))
+        self.assertIn("debe ser uno de", err.message("es"))
+
     def test_min_version(self):
         err = self.code(projects.load_config, self.make(minVersion="99.0.0"))
         self.assertEqual(err.code, "project.version_too_new")

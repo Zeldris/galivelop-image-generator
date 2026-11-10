@@ -35,6 +35,7 @@ class EngineJob:
     references: list = field(default_factory=list)  # absolute paths
     init_image: Optional[str] = None  # absolute path (img2img)
     strength: Optional[float] = None
+    tileable: Optional[str] = None  # "xy", "x" or "y": seamless texture (--circular, --circularx, --circulary)
     machine: dict = field(default_factory=dict)
     timeout_s: Optional[float] = None
     on_progress: Optional[Callable[[dict], None]] = None  # called with ``{"step", "steps", "etaS"}`` when the step changes (F2.4)

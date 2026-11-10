@@ -144,6 +144,20 @@ class ArgvTests(Base):
         _, job, _ = self.run_job(machine={"timeoutS": 60})
         self.assertEqual(self.argv()[1:], self.expected(job.output, machine_part=()))
 
+    def test_tileable_adds_the_matching_flag(self):
+        for value, flag in (("xy", "--circular"), ("x", "--circularx"), ("y", "--circulary")):
+            with self.subTest(tileable=value):
+                _, job, _ = self.run_job(tileable=value)
+                argv = self.argv()
+                self.assertEqual(argv.count(flag), 1)
+                self.assertEqual([a for a in argv if a.startswith("--circular")], [flag])
+                argv.remove(flag)
+                self.assertEqual(argv[1:], self.expected(job.output))
+
+    def test_no_tileable_no_circular_flag(self):
+        self.run_job()
+        self.assertEqual([a for a in self.argv() if a.startswith("--circular")], [])
+
     def test_threads_and_references_and_job_values(self):
         machine = {"timeoutS": 60, "engine": {"threads": 4, "maxVram": "vulkan0=1"}}
         refs = [str(self.tmp / "my refs" / "a.png"), str(self.tmp / "b.png")]
