@@ -2,10 +2,10 @@
   "$schema": "../../../../gimg/schemas/order.schema.json",
   "key": "marca/06-portada-desarrollo",
   "profile": "portada",
-  "prompt": "A workbench seen from above on a chart: calipers, a pencil, a half-drawn blueprint, white lines on medium cerulean blue. Every object drawn only as thin outline line art in the palette colours, no solid fills, no realistic or coloured objects. Flat vector illustration, nautical chart aesthetic, thin lines of even width, no gradients, no glow, no shading, no text, no letters, no watermark, full-bleed edge to edge, no border, no frame, lots of empty space, minimal, technical, serene. Palette strictly limited to medium cerulean ocean blue #0072a8, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a.",
+  "prompt": "A small folded paper boat sailing on the open sea, seen from slightly above, drawn as thin off-white outline line art, its wake drawn as a few fine lines. The sea fills the whole frame: layered bands of gentle waves in tints and shades of the cerulean blue only, deeper blue at the bottom, lighter blue near the top, fine wave crests and small foam strokes in off-white, a few sparkles of light on the water, faint nautical chart contour lines under the surface. Every object drawn only as thin outline line art in the palette colours, no solid fills, no realistic objects. Flat vector illustration with flat tonal bands, nautical chart aesthetic, thin lines of even width, no glow, no text, no letters, no watermark, full-bleed edge to edge, no border, no frame, the boat small on the left third, lots of open water, calm, technical, serene. Palette strictly limited to medium cerulean ocean blue #0072a8 and its tints and shades, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a.",
   "references": [
     "referencias/03-portada-social.png"
   ],
   "seed": 1,
-  "count": 4
+  "count": 1
 }
