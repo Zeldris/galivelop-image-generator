@@ -175,16 +175,18 @@ export function brandWorkshop(project, cfg) {
 
   /* ---- 2 · quitar fondo ---- */
   const matteOut = live();
-  const tol = num('shop-tol', 30, { min: 0, max: 255, step: 1 });
-  const soft = num('shop-soft', 80, { min: 0, max: 255, step: 1 });
+  const tol = num('shop-tol', 60, { min: 0, max: 255, step: 1 });
+  const soft = num('shop-soft', 110, { min: 0, max: 255, step: 1 });
   const border = num('shop-border', 6, { min: 0, max: 64, step: 1 });
   const grow = num('shop-grow', 3, { min: 0, max: 32, step: 1 });
+  const holes = h('input', { id: 'shop-holes', type: 'checkbox' });
   const matteView = h('div.stack');
   const step2 = h('div.stack', {},
     h('div.cols-4', {}, field('shop-tol', k('tol'), tol, k('tolHint')), field('shop-soft', k('soft'), soft, k('softHint')),
       field('shop-border', k('border'), border, k('borderHint')), field('shop-grow', k('grow'), grow, k('growHint'))),
+    h('label.check', {}, holes, h('span', {}, k('holes'))),
     action(k('matteGo'), () => (!validName() ? k('needName') : !state.source ? k('needSource') : null), async () => {
-      const r = await api.brandMatte(project, { name: nameInput.value, source: state.source, tol: numOf(tol, 30), soft: numOf(soft, 80), border: numOf(border, 6), grow: numOf(grow, 3) });
+      const r = await api.brandMatte(project, { name: nameInput.value, source: state.source, tol: numOf(tol, 60), soft: numOf(soft, 110), border: numOf(border, 6), grow: numOf(grow, 3), holes: holes.checked });
       state.transparent = r && Number.isFinite(r.transparent) ? r.transparent : null;
       await reload();
       done(matteOut, state.transparent === null ? k('matteDone') : k('matteDoneAt', { pct: (state.transparent * 100).toFixed(1) }));

@@ -1,15 +1,20 @@
 """Remove a flat background from an image, stdlib only (D37: every graphic is born in gimg, locally; D6).
 
-`remove_bg(width, height, rgba, t0=30, t1=80, border=6, grow=3)` takes the background color from the border of the
+`remove_bg(width, height, rgba, t0=60, t1=110, border=6, grow=3, holes=False)` takes the background color from the border of the
 image (the median of each channel over a band of `border` pixels), floods from the border over every pixel closer
 than `t0` to it (so a color inside the shape that looks like the background is **not** background: it is not
 connected to the border), grows the flood up to `grow` pixels over the soft edge (pixels closer than `t1`) and gives
 that edge a partial alpha, ``(distance - t0) / (t1 - t0)``, with the background tint taken out of its color
-(despill), so the edge has no halo of the background color. It returns a new RGBA ``bytearray``; the input is not
+(despill), so the edge has no halo of the background color. With ``holes=True`` every region **not connected to the
+border** whose pixels are closer than `t0` to the background color is background too (a ring of background enclosed
+by the shape, as in an emblem with an open ring), with the same grow and despill; by default such a region is kept. It returns a new RGBA ``bytearray``; the input is not
 touched. A pixel whose own alpha is under 128 is background (and ends fully transparent), and the border color
 is taken from the border pixels that are not. `border_color` gives the background color alone.
 
-Distances are Euclidean in RGB, from 0 to about 441. `t1` has to be larger than `t0`, both not negative.
+Distances are Euclidean in RGB, from 0 to about 441. `t1` has to be larger than `t0`, both not negative. The defaults
+(`t0=60`, `t1=110`) are for the background of FLUX, which is green but not flat: it has a gradient, and next to the
+subject it drifts 32-35 away from the border color, so a smaller `t0` cuts the flood short and leaves opaque green
+patches; the shapes that matter (gold, brown) are far beyond 110.
 """
 from __future__ import annotations
 
@@ -41,7 +46,8 @@ def border_color(width: int, height: int, rgba, border: int = 6) -> tuple:
     return tuple(int(median(v)) for v in vals)
 
 
-def remove_bg(width: int, height: int, rgba, t0: float = 30, t1: float = 80, border: int = 6, grow: int = 3) -> bytearray:
+def remove_bg(width: int, height: int, rgba, t0: float = 60, t1: float = 110, border: int = 6, grow: int = 3,
+              holes: bool = False) -> bytearray:
     """RGBA copy of `rgba` with the flat background made transparent (see the module docstring)."""
     _check(width, height, rgba)
     if not 0 <= t0 < t1:
@@ -72,6 +78,10 @@ def remove_bg(width: int, height: int, rgba, t0: float = 30, t1: float = 80, bor
             stack.append(k - width)
         if k < n - width:
             stack.append(k + width)
+    if holes:  # a flood seeded from every background-like pixel: the regions closed off from the border too
+        for k in range(n):
+            if dist[k] < t0:
+                seen[k] = 1
     for _ in range(grow):  # the soft edge: grows only over what still looks like background
         add = []
         for k in range(n):

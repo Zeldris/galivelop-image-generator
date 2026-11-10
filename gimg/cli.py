@@ -104,10 +104,11 @@ def _build(lang: str) -> argparse.ArgumentParser:
     g = group(top, "brand", "cli.cmd.brand")
     leaf(g, "matte", "cli.cmd.brand_matte", arg("image", "cli.arg.brand_png"),
          opt("-o", "cli.arg.brand_out_matte", dest="out", metavar="PNG"),
-         opt("--tol", "cli.arg.brand_tol", type=float, default=30),
-         opt("--soft", "cli.arg.brand_soft", type=float, default=80),
+         opt("--tol", "cli.arg.brand_tol", type=float, default=60),
+         opt("--soft", "cli.arg.brand_soft", type=float, default=110),
          opt("--border", "cli.arg.brand_border", type=int, default=6),
-         opt("--grow", "cli.arg.brand_grow", type=int, default=3))
+         opt("--grow", "cli.arg.brand_grow", type=int, default=3),
+         opt("--holes", "cli.arg.brand_holes", action="store_true"))
     leaf(g, "trace", "cli.cmd.brand_trace", arg("image", "cli.arg.brand_png"),
          opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"),
          opt("--mode", "cli.arg.brand_mode", choices=tuple(brand.MODES), default="color"),
@@ -139,6 +140,7 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--palette", "cli.arg.brand_palette", metavar="#HEX,#HEX"),
          opt("--colors", "cli.arg.brand_colors", type=int, metavar="N"),
          opt("--text", "cli.arg.brand_wordmark_text"),
+         opt("--holes", "cli.arg.brand_holes", action="store_true"),
          opt("--force", "cli.arg.brand_force", action="store_true"), *props)
 
     leaf(top, "sheet", "cli.cmd.sheet", arg("images", "cli.arg.sheet_images", nargs="*", metavar="IMAGE"),
@@ -251,7 +253,7 @@ def _doctor(args, out: _Out) -> int:
 
 def _brand(args, sub, out: _Out) -> None:
     if sub == "matte":
-        res = brand.matte(args.image, args.out, args.tol, args.soft, args.border, args.grow)
+        res = brand.matte(args.image, args.out, args.tol, args.soft, args.border, args.grow, args.holes)
         key = "cli.out.brand_matte"
     elif sub == "trace":
         res = brand.trace(args.image, args.out, args.mode, args.palette, args.colors, args.dp_tol, args.min_island,
@@ -263,7 +265,7 @@ def _brand(args, sub, out: _Out) -> None:
         key = "cli.out.brand_lockup"
     elif sub == "system":
         res = brand.system(args.image, args.name, args.font, args.out_dir, args.weight, args.spacing, args.palette,
-                           args.colors, args.text, args.cap, args.gap, args.width, args.force)
+                           args.colors, args.text, args.cap, args.gap, args.width, args.force, args.holes)
         if out.as_json:
             out.data(res)
             return

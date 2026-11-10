@@ -48,6 +48,41 @@ class RemoveBgTests(unittest.TestCase):
         self.assertEqual(at(out, w, 30, 8), FG + (255,))
         self.assertEqual(at(out, w, 1, 1)[3], 0)
 
+    def test_holes_empties_an_enclosed_background_region_and_default_keeps_it(self):
+        w, h, px = disc(size=60, radius=26, hole=10)
+        kept = matte.remove_bg(w, h, px)
+        self.assertEqual(at(kept, w, 30, 30), BG + (255,))
+        out = matte.remove_bg(w, h, px, holes=True)
+        self.assertEqual(at(out, w, 30, 30)[3], 0)  # the enclosed region goes like the outside
+        self.assertEqual(at(out, w, 30, 8), FG + (255,))
+        self.assertEqual(at(out, w, 1, 1)[3], 0)
+        self.assertEqual(at(px, w, 30, 30), BG + (255,), "the input must not be touched")
+
+    def test_holes_with_a_tinted_ring_leaves_no_background_color(self):
+        tint = (BG[0] + 25, BG[1] - 20, BG[2] + 10)  # distance ~33 from the background, enclosed by the disc
+        w, h, px = disc(size=60, radius=26, hole=10, bg=tint)
+        for k in range(w * h):  # outside: the flat background, so the enclosed ring is the only tinted part
+            x, y = k % w, k // w
+            if math.hypot(x - 29.5, y - 29.5) > 26.5:
+                px[k * 4:k * 4 + 3] = bytes(BG)
+        self.assertEqual(at(matte.remove_bg(w, h, px), w, 30, 30)[3], 255)
+        self.assertEqual(at(matte.remove_bg(w, h, px, holes=True), w, 30, 30)[3], 0)
+
+    def test_gradient_background_comes_out_clean_with_the_defaults(self):
+        w, h, px = disc(size=60, radius=14)
+        c = (w - 1) / 2
+        for k in range(w * h):  # the background drifts up to 35 away from the border color near the subject
+            x, y = k % w, k // w
+            r = math.hypot(x - c, y - c)
+            if r > 14.5:
+                near = max(0.0, 1 - (r - 14.5) / 12)
+                px[k * 4:k * 4 + 3] = bytes((BG[0] + int(30 * near), BG[1] - int(18 * near), BG[2] + int(5 * near)))
+        out = matte.remove_bg(w, h, px)
+        left = [at(out, w, x, y) for y in range(h) for x in range(w)
+                if math.hypot(x - c, y - c) > 15.0 and at(out, w, x, y)[3] != 0]
+        self.assertEqual(left, [])  # nothing of the background stays
+        self.assertEqual(at(out, w, 30, 30), FG + (255,))
+
     def test_edge_has_no_halo_of_the_background_color(self):
         w, h, px = disc(size=60, radius=22)
         out = matte.remove_bg(w, h, px, t0=20, t1=200)

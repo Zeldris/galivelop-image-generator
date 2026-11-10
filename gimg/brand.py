@@ -85,12 +85,13 @@ def _opaque(rgba) -> bool:
     return all(a >= 250 for a in rgba[3::4])
 
 
-def matte(src, out=None, tol: float = 30, soft: float = 80, border: int = 6, grow: int = 3) -> dict:
-    """Write the transparent copy of `src` (see the module docstring); ``tol``/``soft`` are ``t0``/``t1`` of `remove_bg`."""
+def matte(src, out=None, tol: float = 60, soft: float = 110, border: int = 6, grow: int = 3,
+          holes: bool = False) -> dict:
+    """Write the transparent copy of `src` (see the module docstring); ``tol``/``soft``/``holes`` are ``t0``/``t1``/``holes`` of `remove_bg`."""
     out = _check_out(src, out or default_out(src, "-alpha", ".png"))
     width, height, rgba = png.read_rgba(src)
     try:
-        res = _matte.remove_bg(width, height, rgba, t0=tol, t1=soft, border=border, grow=grow)
+        res = _matte.remove_bg(width, height, rgba, t0=tol, t1=soft, border=border, grow=grow, holes=holes)
         bg = _matte.border_color(width, height, rgba, border)
         data = png.rgba_bytes(width, height, res)
     except ValueError as exc:
@@ -498,7 +499,7 @@ def check_targets(targets: dict, out_dir, force: bool = False, src=None) -> list
 
 
 def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = 0.12, palette=None, colors=None, text=None,
-           cap: float = 0.45, gap: float = 0.25, width: float = 1.6, force: bool = False) -> dict:
+           cap: float = 0.45, gap: float = 0.25, width: float = 1.6, force: bool = False, holes: bool = False) -> dict:
     """The logo system of `name` from the emblem PNG `src`, in `out_dir`: ``<slug>-emblema-alpha.png``, ``-emblema.svg``,
     ``-emblema-mono.svg``, ``-wordmark.svg``, ``-lockup-h.svg``, ``-lockup-v.svg`` and ``-contactos.png`` (see `SYSTEM_FILES`).
 
@@ -533,7 +534,7 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = 0.
         raise GimgError("brand.font_unreadable", path=str(font), reason=str(exc.strerror or exc))
     with tempfile.TemporaryDirectory(prefix="gimg-brand-") as tmp:
         t = {key: os.path.join(tmp, key) for key in SYSTEM_FILES}
-        m = matte(src, t["emblema-alpha.png"])
+        m = matte(src, t["emblema-alpha.png"], holes=holes)
         if m["transparent"] < MIN_TRANSPARENT:
             raise GimgError("brand.no_matte", path=str(src), transparent=round(m["transparent"] * 100, 1))
         title = str(name).strip()
