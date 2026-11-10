@@ -138,6 +138,11 @@ la persona decide si es una F4e o va con otra). Se diseña con su «en detalle»
    contactos a `brand-out/<slug>/` (`data`) o a `brand.dir` de la configuración (`project`, dentro de la raíz, como
    `compose.templatesDir`); sin `force`, lo que ya esté da `brand.exists`. `matte`, `trace`, `wordmark` y `save` pasan
    por `_heavy()` (CPU larga o `rsvg-convert`, y una escritura a la vez sobre el mismo borrador); `lockup` es solo texto y no.
+   **Hecho en la interfaz (2026-11-10):** la pestaña Marca lleva el taller «Sistema de logo» (`brand-workshop.js`) con los
+   siete pasos sobre esa API (nombre y talleres, origen, quitar fondo, SVG color y mono a 16-128 px, wordmark, lockups y
+   guardar con confirmación de `brand.exists`), cada paso deshabilitado con su motivo hasta que exista la pieza, y el
+   botón «Usar para marca» en la tarjeta del intento (`?src=perfil|clave|intento`); sus pruebas en el navegador (`BrandShop`)
+   pasan; el camino feliz (quitar fondo, trazar) **no se ha probado en navegador** (pide una imagen de fondo plano y `rsvg-convert`).
 3. **Imágenes de referencia al generar una pieza:** una o varias (intentos de gimg o archivos de la persona) para
    seguir un estilo, una forma o un personaje. Comprobar qué acepta hoy `sd-cli` y qué modelos del catálogo.
 4. **Cajas de texto antes de generar:** en el pedido nuevo se colocan, al tamaño de la pieza, las cajas de titular,
