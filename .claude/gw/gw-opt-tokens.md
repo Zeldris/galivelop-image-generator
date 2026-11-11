@@ -53,9 +53,10 @@ las crea una vez; desde entonces son del proyecto.
 
 ## Ajustes en vigor
 
-- Ventana de compactación automática: `CLAUDE_CODE_AUTO_COMPACT_WINDOW` en `.claude/settings.json`, 140000 desde el
-  2026-11-05 (antes 200000; la regla de `/clear` a los 120k se incumplió en F4: 229 llamadas a 105k de media y techos
-  de 168k).
+- Ventana de compactación automática: `CLAUDE_CODE_AUTO_COMPACT_WINDOW` en `.claude/settings.json`, 200000 desde el
+  2026-11-11 por decisión de la persona (140000 se quedaba corto: 5 compactaciones en `claude/marca-r9`, con
+  presupuesto de 3). Del 2026-11-05 al 2026-11-11 fue 140000 (la regla de `/clear` a los 120k se incumplió en F4: 229
+  llamadas a 105k de media y techos de 168k).
 - Un paso del plan por subagente implementador (no «F4b.1-F4b.2»): los de dos pasos hicieron 60-66 llamadas a
   96-105k de media, ~6,3 M cada uno (aprobado el 2026-11-05).
 - `/clear` entre tareas: al cerrar cada PR y cada fase (F0…F5), con la bitácora escrita y subida (aprobado el
