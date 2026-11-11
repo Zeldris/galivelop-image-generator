@@ -1,6 +1,8 @@
 # Retro — `claude/marca-r9` (hoja r9 aplicada), 2026-11-11
 
-**Estado:** pendiente de la decisión de la persona.
+**Estado:** aprobada entera por la persona (2026-11-11). Aplicadas en `claude/marca-r9`: P1 (`tests/test_changelog.py`), P2
+(`docs/records/leves-claude-marca-r9.md`, nota en `.claude/gw/gw-opt-tokens.md`), P3 (filas fusionadas fuera de la tabla) y P4
+(`<title>` de los símbolos y su test). W1 y W2 van al flujo.
 
 Sesión: hoja r9 de Galivelop IG aplicada a la interfaz (tokens, claro por defecto, fuentes), a los logos y al nombre
 visible (D38), en dos ramas de subagente (`agent/r9a-tokens`, `agent/r9b-logos`) y commits de documentación. La fase 1
