@@ -35,7 +35,7 @@ class Symbols(unittest.TestCase):
         for path in SYMBOLS:
             root = tree(path)
             self.assertEqual(root.get("viewBox"), "0 0 128 128", path)
-            self.assertTrue((root.findtext(SVG + "title") or "").strip(), path)
+            self.assertTrue((root.findtext(SVG + "title") or "").strip().startswith("Galivelop IG"), path)  # D38
             self.assertEqual(list(root.iter(SVG + "text")), [], path)
             raw = path.read_text(encoding="utf-8")
             for banned in ("linearGradient", "radialGradient", "<filter", "<image"):
