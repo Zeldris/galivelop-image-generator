@@ -2,7 +2,7 @@
   "$schema": "../../../../gimg/schemas/order.schema.json",
   "key": "marca/12-separador",
   "profile": "separador",
-  "prompt": "A single thin horizontal line drawn across the whole width, perfectly straight at both ends, that only in a short stretch in the middle bends into a small stylised coastline with two or three narrow inlets, then runs straight again. Simple line style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background, everything else empty. No sea, no water, no land colour, no blue, no brown, no green, no photographic rendering, no text, no letters, no numbers, no watermark, no border, no frame.",
+  "prompt": "A single thin horizontal line drawn across the whole width at mid height, perfectly straight, with one small eight-pointed compass star sitting exactly at its centre and the line pausing briefly on each side of the star. Simple line style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background, everything else empty. No sea, no water, no land colour, no blue, no brown, no green, no photographic rendering, no text, no letters, no numbers, no watermark, no border, no frame.",
   "seed": 1,
   "count": 2
 }

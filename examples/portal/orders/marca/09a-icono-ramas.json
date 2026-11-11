@@ -2,7 +2,7 @@
   "$schema": "../../../../gimg/schemas/order.schema.json",
   "key": "marca/09a-icono-ramas",
   "profile": "cuadrado",
-  "prompt": "A single simple line icon, centred: two smooth curved lines starting apart at the left and flowing together into one single line on the right, like two git branches merging, a small round node at each of the three ends. Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, bold and clear enough to read at 24 pixels, generous empty margin around each icon, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background. Flat vector pictogram, minimal, geometric. No photographic rendering, no gradients, no glow, no text, no letters, no numbers, no watermark, no border, no frame.",
+  "prompt": "A single simple line icon, centred: the classic git branch icon, one straight vertical line with a round node at its top end and a round node at its bottom end, and a second line that leaves the vertical line halfway up and curves smoothly up and to the right to end in a third round node. Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, bold and clear enough to read at 24 pixels, generous empty margin around each icon, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background. Flat vector pictogram, minimal, geometric. No photographic rendering, no gradients, no glow, no text, no letters, no numbers, no watermark, no border, no frame.",
   "seed": 1,
   "count": 2
 }
