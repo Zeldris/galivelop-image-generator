@@ -519,6 +519,19 @@ class Served(ServerBase):
             if path.is_file() and path.name != "OFL.txt":  # the licence travels with the fonts and is not served
                 self.assertIn(path.suffix, server.STATIC_TYPES, rel(path))
 
+    def test_r9_fonts_are_declared_and_served(self):
+        css = read(UI / "css" / "tokens.css")
+        for family, name in (("Big Shoulders Display", "BigShouldersDisplay"), ("Literata", "Literata"),
+                             ("JetBrains Mono", "JetBrainsMono")):
+            self.assertIn('font-family: "%s"' % family, css)
+            self.assertIn("/ui/fonts/%s.ttf" % name, css)
+            resp, payload = self.call(path="/ui/fonts/%s.ttf" % name)
+            self.assertEqual(resp.status, 200, name)
+            self.assertEqual(resp.getheader("Content-Type").split(";")[0], "font/ttf", name)
+            self.assertEqual(payload[:4], b"\x00\x01\x00\x00", name)
+        for old in ("Sora", "Inter"):
+            self.assertFalse((UI / "fonts" / (old + ".ttf")).exists(), old)
+
     def test_locale_has_the_interface_texts(self):
         resp, payload = self.call(path="/api/locales/es")
         self.assertIn("ui.loading", json.loads(payload))
@@ -539,20 +552,20 @@ def ratio(a, b):
 def theme_blocks():
     css = read(UI / "css" / "tokens.css")
     css = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
-    dark = re.search(r"^:root \{(.*?)\n\}", css, re.S | re.M).group(1)
-    auto = re.search(r"@media \(prefers-color-scheme: light\) \{\s*:root:not\(\[data-theme=\"dark\"\]\) \{(.*?)\n  \}", css, re.S).group(1)
-    light = re.search(r":root\[data-theme=\"light\"\] \{(.*?)\n\}", css, re.S).group(1)
+    light = re.search(r"^:root \{(.*?)\n\}", css, re.S | re.M).group(1)
+    auto = re.search(r"@media \(prefers-color-scheme: dark\) \{\s*:root:not\(\[data-theme=\"light\"\]\) \{(.*?)\n  \}", css, re.S).group(1)
+    dark = re.search(r":root\[data-theme=\"dark\"\] \{(.*?)\n\}", css, re.S).group(1)
     var = lambda block: dict(re.findall(r"--([\w-]+):\s*(#[0-9a-fA-F]{6})\b", block))
-    base = var(dark)
-    return {"dark": base, "light(auto)": {**base, **var(auto)}, "light(selector)": {**base, **var(light)}}
+    base = var(light)
+    return {"light": base, "dark(auto)": {**base, **var(auto)}, "dark(selector)": {**base, **var(dark)}}
 
 
 TEXT_PAIRS = [("text", "bg"), ("text", "surface"), ("text", "surface-2"), ("text-2", "bg"), ("text-2", "surface"),
               ("text-2", "surface-2"), ("accent-text", "bg"), ("accent-text", "surface"), ("accent-text", "surface-2"),
               ("on-accent", "accent-fill"), ("ok", "bg"), ("ok", "surface"), ("warn", "bg"), ("warn", "surface"),
               ("bad", "bg"), ("bad", "surface"), ("text", "accent-soft"), ("text-2", "accent-soft"),
-              ("on-status", "ok"), ("on-status", "warn"), ("on-status", "bad")]
-NONTEXT_PAIRS = [("border-strong", "bg"), ("border-strong", "surface"), ("focus", "bg"), ("focus", "surface"),
+              ("family", "bg"), ("family", "surface"), ("on-status", "ok"), ("on-status", "warn"), ("on-status", "bad")]
+NONTEXT_PAIRS = [("border", "bg"), ("border", "surface"), ("border", "surface-2"), ("focus", "bg"), ("focus", "surface"),
                  ("focus", "surface-2")]
 
 
@@ -568,8 +581,55 @@ class Contrast(unittest.TestCase):
                 self.assertGreaterEqual(ratio(tokens[fg], tokens[bg]), 3.0, "%s: --%s on --%s" % (theme, fg, bg))
 
     def test_primary_button_fill_is_the_declared_one(self):
-        self.assertEqual(theme_blocks()["dark"]["accent-fill"].lower(), "#5b34c9")
+        for theme, tokens in theme_blocks().items():
+            self.assertEqual(tokens["accent-fill"].lower(), "#5b34c9", theme)
+            self.assertEqual(tokens["on-accent"].lower(), "#ffffff", theme)
         self.assertGreaterEqual(ratio("#ffffff", "#5B34C9"), 7.5)
+
+    def test_r9_values_and_new_tokens_in_both_themes(self):
+        blocks = theme_blocks()
+        for theme, tokens in blocks.items():
+            for name in ("family", "rule", "brand"):
+                self.assertIn(name, tokens, "%s: falta --%s" % (theme, name))
+            self.assertEqual(tokens["brand"].lower(), "#8b5cf6", theme)
+        light, dark = blocks["light"], blocks["dark(selector)"]
+        self.assertEqual((light["bg"].lower(), light["family"].lower()), ("#fbfcfd", "#0072a8"))
+        self.assertEqual((dark["bg"].lower(), dark["family"].lower()), ("#0d171e", "#1aa6df"))
+        self.assertEqual(blocks["dark(auto)"], dark)  # the media query and the selector agree
+
+    def test_border_and_rule_are_the_sheets(self):
+        blocks = theme_blocks()
+        for theme, tokens in blocks.items():
+            self.assertEqual(tokens["border"].lower(), "#6f8493", theme)
+            self.assertNotIn("border-strong", tokens, theme)
+        self.assertEqual(blocks["light"]["rule"].lower(), "#c9d5dd")
+        self.assertEqual(blocks["dark(selector)"]["rule"].lower(), "#2b3d4a")
+        self.assertEqual(blocks["dark(auto)"]["rule"].lower(), "#2b3d4a")
+        for theme, tokens in blocks.items():  # controls sit on these three fills
+            for bg in ("bg", "surface", "surface-2"):
+                self.assertGreaterEqual(ratio(tokens["border"], tokens[bg]), 3.0, "%s: --border on --%s" % (theme, bg))
+
+    def test_controls_use_border_and_dividers_use_rule(self):
+        css = "".join(read(UI / "css" / n) for n in ("base.css", "components.css", "layout.css"))
+        self.assertNotIn("border-strong", css)
+        for sel in (r"\.btn \{", r"input\[type=\"text\"\][^{]*\{", r"\.chip \{"):
+            self.assertIn("var(--border)", re.search(sel + r"[^}]*\}", css, re.S).group(0), sel)
+        for sel in (r"\.card \{", r"\.tabs \{"):
+            self.assertIn("var(--rule)", re.search(sel + r"[^}]*\}", css, re.S).group(0), sel)
+
+    def test_chip_status_text_reaches_aa_on_its_fill(self):
+        css = read(UI / "css" / "base.css")
+        fill = re.search(r"\.chip \{[^}]*?background: var\(--([\w-]+)\)", css, re.S).group(1)
+        self.assertIn(fill, ("bg", "surface"))
+        for theme, tokens in theme_blocks().items():
+            for status in ("ok", "warn", "bad", "family"):
+                self.assertGreaterEqual(ratio(tokens[status], tokens[fill]), 4.5, "%s: --%s on chip --%s" % (theme, status, fill))
+
+    def test_light_is_the_default_theme(self):
+        css = re.sub(r"/\*.*?\*/", "", read(UI / "css" / "tokens.css"), flags=re.S)
+        self.assertIn("color-scheme: light;", re.search(r"^:root \{(.*?)\n\}", css, re.S | re.M).group(1))
+        self.assertIn("prefers-color-scheme: dark", css)
+        self.assertNotIn("gradient", css)
 
 
 if __name__ == "__main__":
