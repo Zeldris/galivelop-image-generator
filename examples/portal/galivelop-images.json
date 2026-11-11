@@ -179,6 +179,7 @@
       "cfg": 1.0,
       "sampler": "euler",
       "model": "zimage-turbo-q6",
+      "tileable": "xy",
       "targetWidth": 1200,
       "targetHeight": 300,
       "draft": {
@@ -203,10 +204,10 @@
     "separador": {
       "width": 1536,
       "height": 128,
-      "steps": 6,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
       "targetWidth": 1200,
       "targetHeight": 100,
       "draft": {
@@ -217,10 +218,10 @@
     "legal": {
       "width": 1920,
       "height": 128,
-      "steps": 6,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
       "targetWidth": 1200,
       "targetHeight": 80,
       "draft": {

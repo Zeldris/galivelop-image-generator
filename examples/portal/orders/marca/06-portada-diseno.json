@@ -2,10 +2,7 @@
   "$schema": "../../../../gimg/schemas/order.schema.json",
   "key": "marca/06-portada-diseno",
   "profile": "portada",
-  "prompt": "An empty sea chart with only the coordinate grid, a ruler and a drafting compass. Every object drawn only as thin outline line art in the palette colours, no solid fills, no realistic or coloured objects. Flat vector illustration, nautical chart aesthetic, thin lines of even width, no gradients, no glow, no shading, no text, no letters, no watermark, full-bleed edge to edge, no border, no frame, lots of empty space, minimal, technical, serene. Palette strictly limited to medium cerulean ocean blue #0072a8, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a.",
-  "references": [
-    "referencias/03-portada-social.png"
-  ],
+  "prompt": "A code editor window set over the open sea of a nautical chart, seen from slightly above, the window drawn in crisp off-white line art with a title bar and three small dots, inside it a layout grid with column guides, dashed alignment guides crossing the window, small square handles at its corners and a few empty rectangles snapped to the grid. Richly detailed engraved nautical chart style, like a fine antique sea chart printed in two inks: the sea built from many layers of fine wave lines and hatching, line density increasing towards the deep water to give depth, tonal bands from deep cerulean at the bottom to lighter cerulean at the top, bathymetric contour lines with small depth soundings drawn as tiny dots, a delicate compass rose with fine tick marks in a corner. Crisp sharp lines of several weights, intricate but calm, premium print quality, high detail, elegant. No realistic objects, no photographic rendering, no glow, no text, no letters, no numbers, no watermark, full-bleed edge to edge, no border, no frame, the window on the left third, open charted water on the right. Palette strictly limited to medium cerulean ocean blue #0072a8 and its tints and shades, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a.",
   "seed": 1,
   "count": 4
 }
