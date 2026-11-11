@@ -1,6 +1,8 @@
 # Retro — relevo de `portal-marca` a `main` (`ccr-85e9d14e-zt7p8b`, 2026-11-11)
 
-**Estado:** pendiente de la decisión de la persona.
+**Estado:** aprobada entera por la persona el 2026-11-11. P1 aplicada (nota en `.claude/gw/gw-opt-tokens.md`, con la
+forma corregida: `per_page` no recorta `actions_list`); P2 aplicada como entorno personal propio del repo con script
+de arranque (`apt-get update` e instalar `librsvg2-bin`), no en el Default; P3 aprobada sin cambio.
 
 Alcance: solo el relevo (fusión de `portal-marca`, revisión de fase 1 y sus arreglos). `portal-marca` ya hizo sus
 propias retros y su `gw-opt-ai`; aquí no hubo medidas con un modelo local.

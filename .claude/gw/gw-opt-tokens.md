@@ -54,6 +54,11 @@ las crea una vez; desde entonces son del proyecto.
 - Iterar scripts del piloto en la principal (F2.0: `ronda.sh` 24 lecturas y `componer.py` 17, ~200k arrastrados): va
   a un subagente sonnet con su check, como los arreglos de la revisión de `bb7719a` (aprobado el 2026-10-27).
 
+- Listados de GitHub en la principal (2026-11-11, relevo de `portal-marca`: `actions_list` 12k tokens y 170k
+  arrastrados; `list_pull_requests` con `state: all` 5,7k y 91k; `per_page` no recorta `actions_list`): el estado del
+  CI de un commit lo mira un subagente barato que devuelve una línea, o se espera al aviso del pull request suscrito;
+  los pull requests, con `state: open` (aprobado el 2026-11-11).
+
 ## Ajustes en vigor
 
 - Ventana de compactación automática: `CLAUDE_CODE_AUTO_COMPACT_WINDOW` en `.claude/settings.json`, 200000 desde el
