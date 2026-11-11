@@ -519,6 +519,19 @@ class Served(ServerBase):
             if path.is_file() and path.name != "OFL.txt":  # the licence travels with the fonts and is not served
                 self.assertIn(path.suffix, server.STATIC_TYPES, rel(path))
 
+    def test_r9_fonts_are_declared_and_served(self):
+        css = read(UI / "css" / "tokens.css")
+        for family, name in (("Big Shoulders Display", "BigShouldersDisplay"), ("Literata", "Literata"),
+                             ("JetBrains Mono", "JetBrainsMono")):
+            self.assertIn('font-family: "%s"' % family, css)
+            self.assertIn("/ui/fonts/%s.ttf" % name, css)
+            resp, payload = self.call(path="/ui/fonts/%s.ttf" % name)
+            self.assertEqual(resp.status, 200, name)
+            self.assertEqual(resp.getheader("Content-Type").split(";")[0], "font/ttf", name)
+            self.assertEqual(payload[:4], b"\x00\x01\x00\x00", name)
+        for old in ("Sora", "Inter"):
+            self.assertFalse((UI / "fonts" / (old + ".ttf")).exists(), old)
+
     def test_locale_has_the_interface_texts(self):
         resp, payload = self.call(path="/api/locales/es")
         self.assertIn("ui.loading", json.loads(payload))
@@ -539,12 +552,12 @@ def ratio(a, b):
 def theme_blocks():
     css = read(UI / "css" / "tokens.css")
     css = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
-    dark = re.search(r"^:root \{(.*?)\n\}", css, re.S | re.M).group(1)
-    auto = re.search(r"@media \(prefers-color-scheme: light\) \{\s*:root:not\(\[data-theme=\"dark\"\]\) \{(.*?)\n  \}", css, re.S).group(1)
-    light = re.search(r":root\[data-theme=\"light\"\] \{(.*?)\n\}", css, re.S).group(1)
+    light = re.search(r"^:root \{(.*?)\n\}", css, re.S | re.M).group(1)
+    auto = re.search(r"@media \(prefers-color-scheme: dark\) \{\s*:root:not\(\[data-theme=\"light\"\]\) \{(.*?)\n  \}", css, re.S).group(1)
+    dark = re.search(r":root\[data-theme=\"dark\"\] \{(.*?)\n\}", css, re.S).group(1)
     var = lambda block: dict(re.findall(r"--([\w-]+):\s*(#[0-9a-fA-F]{6})\b", block))
-    base = var(dark)
-    return {"dark": base, "light(auto)": {**base, **var(auto)}, "light(selector)": {**base, **var(light)}}
+    base = var(light)
+    return {"light": base, "dark(auto)": {**base, **var(auto)}, "dark(selector)": {**base, **var(dark)}}
 
 
 TEXT_PAIRS = [("text", "bg"), ("text", "surface"), ("text", "surface-2"), ("text-2", "bg"), ("text-2", "surface"),
@@ -568,8 +581,28 @@ class Contrast(unittest.TestCase):
                 self.assertGreaterEqual(ratio(tokens[fg], tokens[bg]), 3.0, "%s: --%s on --%s" % (theme, fg, bg))
 
     def test_primary_button_fill_is_the_declared_one(self):
-        self.assertEqual(theme_blocks()["dark"]["accent-fill"].lower(), "#5b34c9")
+        for theme, tokens in theme_blocks().items():
+            self.assertEqual(tokens["accent-fill"].lower(), "#5b34c9", theme)
+            self.assertEqual(tokens["on-accent"].lower(), "#ffffff", theme)
         self.assertGreaterEqual(ratio("#ffffff", "#5B34C9"), 7.5)
+
+    def test_r9_values_and_new_tokens_in_both_themes(self):
+        blocks = theme_blocks()
+        for theme, tokens in blocks.items():
+            for name in ("family", "rule", "brand"):
+                self.assertIn(name, tokens, "%s: falta --%s" % (theme, name))
+            self.assertEqual(tokens["brand"].lower(), "#8b5cf6", theme)
+            self.assertEqual(tokens["border"].lower(), tokens["rule"].lower(), theme)
+        light, dark = blocks["light"], blocks["dark(selector)"]
+        self.assertEqual((light["bg"].lower(), light["family"].lower()), ("#fbfcfd", "#0072a8"))
+        self.assertEqual((dark["bg"].lower(), dark["family"].lower()), ("#0d171e", "#1aa6df"))
+        self.assertEqual(blocks["dark(auto)"], dark)  # the media query and the selector agree
+
+    def test_light_is_the_default_theme(self):
+        css = re.sub(r"/\*.*?\*/", "", read(UI / "css" / "tokens.css"), flags=re.S)
+        self.assertIn("color-scheme: light;", re.search(r"^:root \{(.*?)\n\}", css, re.S | re.M).group(1))
+        self.assertIn("prefers-color-scheme: dark", css)
+        self.assertNotIn("gradient", css)
 
 
 if __name__ == "__main__":

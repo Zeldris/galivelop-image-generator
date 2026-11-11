@@ -244,7 +244,7 @@ function picture(seed, w, h, label, raw) {
   }
   if (!raw && label) {
     g.fillStyle = 'rgb(6 18 28 / .45)'; g.fillRect(0, 0, w > h ? c.width / 2 : c.width, w > h ? c.height : c.height / 2);
-    g.fillStyle = '#eaf4fa'; g.font = `700 ${Math.round(c.width / 16)}px Sora, Inter, sans-serif`; g.fillText(label, c.width * 0.06, c.height * 0.5);
+    g.fillStyle = '#eaf4fa'; g.font = `700 ${Math.round(c.width / 16)}px "Big Shoulders Display", sans-serif`; g.fillText(label, c.width * 0.06, c.height * 0.5);
   }
   g.fillStyle = '#9fb4c4'; g.font = '12px monospace'; g.fillText(`seed ${seed}`, 8, c.height - 8);
   const url = c.toDataURL('image/png');
