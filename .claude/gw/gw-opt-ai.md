@@ -59,9 +59,16 @@ residente). Es el comportamiento esperado, no un hallazgo, mientras gimg no teng
 
 ## Banco de pruebas
 
-Pendiente de montar (propuesta, 2026-11-11): un pedido fijo por modelo con 3 semillas, mismo prompt y mismo
-tamaño (1024×1024), con el juego y Ollama parados: `examples/portal/orders/marca/14-icono-implantacion.json` en
-FLUX definitivo, FLUX borrador y Z-Image. Unos 30 min en total.
+Aprobado el 2026-11-11 (P2), sin lanzar: necesita la GPU libre (ni el juego ni el narrador cargado en Ollama). Un
+pedido fijo, `examples/portal/orders/marca/14-icono-implantacion.json`, con 3 semillas y a 1024×1024 en el perfil
+**`steam-deck-libre`**: FLUX definitivo, FLUX borrador y Z-Image (unos 30-35 min). Su registro va a
+`piloto/opt-ai/base-<fecha>.jsonl` y pasa a `previous` en los ajustes. Segunda pasada, la de P1: Z-Image con
+`--vae-tile-size 512 --vae-tile-overlap 0.25`, mismas semillas, comparada con
+`measure.py <después> --previous <base> --profile steam-deck-libre` y mirando las imágenes a tamaño real por si hay
+costuras en cuadrícula de 512.
+
+Desglose por tamaño, pasos y fase (carga, muestreo, VAE), que `measure.py` no da:
+`python3 .claude/gw/gw-opt-ai-desglose.py <registro> [--profile P]`.
 
 ## Casos de calidad
 
@@ -71,10 +78,18 @@ cada ronda quedan en `docs/handoff.md` (sección «Pendiente») y en `piloto/por
 
 ## Tiempos aceptables
 
-Sin fijar. Referencia medida a mano (2026-11-10, `steam-deck-libre`): Z-Image 8 pasos a 1024 ≈ 10 min por
-imagen; FLUX definitivo ≈ 4 min; FLUX borrador (512, 4 pasos) ≈ 1 min.
+Propuestos el 2026-11-11 (P3), se fijan con los números del banco: en `steam-deck-libre`, Z-Image 1024² p95 ≤ 9,5
+min; FLUX borrador ≤ 1,2 min; FLUX definitivo 1024² ≤ 4,5 min. Ronda del 2026-11-11 (desglose): Z-Image 1024² p50
+536 s (carga 5,6, muestreo 461, VAE 71); FLUX con imagen de referencia 1344×768, 551 s (81 s/paso, n=2). Sin FLUX
+1024² ni borrador medidos aún en este perfil.
 
 ## Ya en marcha
 
 - Perfil `steam-deck-libre` a 7 GB de VRAM (2026-11-10).
 - FLUX solo para bocetos; calidad con Z-Image a 8 pasos (2026-11-10).
+- Desglose por tamaño y fase, `.claude/gw/gw-opt-ai-desglose.py` (P5, 2026-11-11).
+- Aprobadas el 2026-11-11, pendientes de GPU libre: banco de pruebas (P2), VAE en trozos de 512 con solape 0,25 (P1,
+  solo si el banco no muestra costuras ni fallos de memoria) y tiempos aceptables (P3).
+- No se propone: bajar Z-Image a menos de 8 pasos ni `--taesd` en la imagen final (calidad).
+- `flux3-klein-q8` sigue con ajustes en `steam-deck-libre.json` sin estar instalado (1 llamada fallida el 2026-11-10);
+  se deja: es una configuración puesta a propósito y no estorba.
