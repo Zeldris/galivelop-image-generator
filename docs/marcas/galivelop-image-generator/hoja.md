@@ -1,10 +1,11 @@
 # Hoja de estilo: Galivelop IG
 
-**r9 (2026-11-11), propuesta pendiente de la persona.** Rehace la hoja del 2026-11-04 (identidad oscura con violeta, en
-«Historia») como **variante de la identidad nueva del Portal** (Portal-Galivelop `08c7fe5`, `docs/marca.md`): comparte con
-ella papel, tinta, tipografías y lenguaje de línea, y conserva lo propio (el violeta, la rejilla de intentos, los marcos).
-Nada de lo marcado **[P]** está aplicado: la interfaz, los logos y las piezas siguen con la identidad anterior hasta el
-«sí» de la persona (ver «Contradicciones»).
+**r9 (2026-11-11), aprobada por la persona el 2026-11-11** (decisiones en «Contradicciones»). Rehace la hoja del
+2026-11-04 (identidad oscura con violeta, en «Historia») como **variante de la identidad nueva del Portal**
+(Portal-Galivelop `08c7fe5`, `docs/marca.md`): comparte con ella papel, tinta, tipografías y lenguaje de línea, y conserva
+lo propio (el violeta, la rejilla de intentos, los marcos). Lo marcado **[P]** de interfaz, logos y nombre (D38) se aplica
+en la rama `claude/marca-r9`; hasta que esa rama llegue a `main` siguen la interfaz y los logos anteriores. Las piezas
+`og`/`social`, `og.txt` y `brand.palette` **no cambian** hasta medir una ronda plana.
 
 Sigue [`../plantilla-hoja-de-estilo.md`](../plantilla-hoja-de-estilo.md) (F2.12) y complementa a [`biblia.md`](biblia.md).
 Estados como en [`../README.md`](../README.md): sin marca sale del repo (ruta en la sección 13); **heredado de
@@ -297,27 +298,25 @@ oscuro), `compose.lut` (no hace falta), `style.lora`, idiomas (solo `es`).
 
 ## Contradicciones
 
-Entre esta hoja (r9) y lo que hay en el repo. Ninguna se resuelve sin la persona; cada una lleva su propuesta.
+Entre esta hoja (r9) y lo que había en el repo. **Resueltas por la persona el 2026-11-11**; cada una lleva su decisión.
 
-1. **La interfaz usa la identidad anterior.** `gimg/ui/css/tokens.css` (D39) tiene fondo oscuro, Sora e Inter; la hoja
-   propone papel claro por defecto y las tipografías del Portal. **Propuesta:** aplicar r9 a `tokens.css` en una tarea
-   propia, con tema claro por defecto y el oscuro (`#0d171e`) como alternativa; hasta entonces manda `tokens.css`.
-2. **Claro u oscuro por defecto.** La identidad anterior y las piezas medidas (YAVG 33-52) son oscuras; el Portal nuevo
-   es claro. **Propuesta:** claro por defecto en interfaz y documentación; las piezas `og`/`social` siguen oscuras hasta
-   una ronda plana.
+1. **La interfaz usaba la identidad anterior.** `gimg/ui/css/tokens.css` (D39) tenía fondo oscuro, Sora e Inter.
+   **Decisión:** aplicar r9 a `tokens.css` en tarea propia (rama `claude/marca-r9`), con tema claro por defecto y el
+   oscuro (`#0d171e`) como alternativa; hasta que llegue a `main` manda el `tokens.css` de `main`.
+2. **Claro u oscuro por defecto.** **Decisión: claro** (papel `#fbfcfd`) por defecto en interfaz y documentación, oscuro
+   (`#0d171e`) como alternativa; las piezas `og`/`social` siguen oscuras hasta una ronda plana.
 3. **Vidrio o plano.** r6-r8 (vidrio, luz volumétrica; r7 con 9/10) contradice «sin degradados ni brillo» del Portal.
-   **Propuesta:** la de «Dos estilos, un motivo» (sección 6): no se tira lo medido; el plano entra por los recursos de
-   marca y se mide en una ronda antes de tocar `og.txt`.
-4. **Logo con degradado y `rx` 30/128** frente a baldosa plana con chaflán 28/128. **Propuesta:** redibujar símbolo,
-   lockup y favicon según la tabla de la sección 4, en la misma tarea que la interfaz; los SVG actuales pasan a historia.
-5. **El azul del Portal.** `biblia.md` prohíbe el celeste `#1aa6df` como acento de la herramienta; r9 lo admite como
-   `--family` (≤ 2 %: el enlace «parte de Galivelop» y nada más). **Propuesta:** mantener la prohibición como acento y
-   permitir solo ese uso; si confunde, se quita `--family` y no cambia nada más.
-6. **D38 sin aplicar.** El producto se llama «Galivelop IG» (siglas «GVIG») desde el 2026-11-04, pero el README y los
-   textos de `examples/galivelop-image-generator` dicen aún el nombre largo. **Propuesta:** aplicarlo junto con r9
-   («Pendiente» de la bitácora, punto (c) de «Tras r7»).
+   **Decisión: dos estilos, medir antes** («Dos estilos, un motivo», sección 6): no se tira lo medido; el plano entra
+   por los recursos de marca y se mide en una ronda antes de tocar `og.txt`.
+4. **Logo con degradado y `rx` 30/128** frente a baldosa plana con chaflán 28/128. **Decisión:** redibujar símbolo,
+   lockup y favicon según la tabla de la sección 4, en la misma tarea que la interfaz; los SVG anteriores pasan a
+   historia.
+5. **El azul del Portal.** **Decisión: solo ese uso.** El celeste `#1aa6df` sigue prohibido como acento de la
+   herramienta; se admite únicamente como `--family` (≤ 2 %) en el enlace «parte de Galivelop». `biblia.md` lo recoge.
+6. **D38 sin aplicar.** **Decisión:** «Galivelop IG» (siglas «GVIG») se aplica al README, a los textos de
+   `examples/galivelop-image-generator` y a la interfaz en la misma tarea que r9.
 7. **`brand.palette` de la configuración** tiene los 4 hex de la identidad anterior, con los que se midió el 72-88 %.
-   **Propuesta:** no tocarla hasta la ronda plana; entonces, los 6 hex de la sección 3.
+   **Decisión:** no se toca hasta la ronda plana; entonces, los 6 hex de la sección 3.
 
 ## Cambios que pediría a la plantilla
 

@@ -39,7 +39,8 @@ Herramienta del taller, sin identidad propia: **familia del Portal** con acento 
   texto `#eaf4fa`, secundario `#9fb4c4`, acento `#A78BFA`.
 - **Pieza clara:** `#f6fafd`, texto `#0a1a28`, acento `#5B34C9` (más contraste que `#8B5CF6` sobre blanco).
 - **Sobre imagen:** texto blanco en la zona reservada; el logo siempre en su baldosa.
-- **Prohibidos:** el celeste del Portal (`#1aa6df`) como acento de la herramienta (confunde con el paraguas); violeta
+- **Prohibidos:** el celeste del Portal (`#1aa6df`) como acento de la herramienta (confunde con el paraguas; única excepción,
+  aprobada el 2026-11-11: `--family` en el enlace «parte de Galivelop», ≤ 2 %, `hoja.md` sección 3); violeta
   neón o magenta puro; negro `#000`; texto de acento sobre fondo de acento.
 
 ## 3. Tipografía
