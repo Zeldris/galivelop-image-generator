@@ -564,8 +564,8 @@ TEXT_PAIRS = [("text", "bg"), ("text", "surface"), ("text", "surface-2"), ("text
               ("text-2", "surface-2"), ("accent-text", "bg"), ("accent-text", "surface"), ("accent-text", "surface-2"),
               ("on-accent", "accent-fill"), ("ok", "bg"), ("ok", "surface"), ("warn", "bg"), ("warn", "surface"),
               ("bad", "bg"), ("bad", "surface"), ("text", "accent-soft"), ("text-2", "accent-soft"),
-              ("on-status", "ok"), ("on-status", "warn"), ("on-status", "bad")]
-NONTEXT_PAIRS = [("border-strong", "bg"), ("border-strong", "surface"), ("focus", "bg"), ("focus", "surface"),
+              ("family", "bg"), ("family", "surface"), ("on-status", "ok"), ("on-status", "warn"), ("on-status", "bad")]
+NONTEXT_PAIRS = [("border", "bg"), ("border", "surface"), ("border", "surface-2"), ("focus", "bg"), ("focus", "surface"),
                  ("focus", "surface-2")]
 
 
@@ -592,11 +592,38 @@ class Contrast(unittest.TestCase):
             for name in ("family", "rule", "brand"):
                 self.assertIn(name, tokens, "%s: falta --%s" % (theme, name))
             self.assertEqual(tokens["brand"].lower(), "#8b5cf6", theme)
-            self.assertEqual(tokens["border"].lower(), tokens["rule"].lower(), theme)
         light, dark = blocks["light"], blocks["dark(selector)"]
         self.assertEqual((light["bg"].lower(), light["family"].lower()), ("#fbfcfd", "#0072a8"))
         self.assertEqual((dark["bg"].lower(), dark["family"].lower()), ("#0d171e", "#1aa6df"))
         self.assertEqual(blocks["dark(auto)"], dark)  # the media query and the selector agree
+
+    def test_border_and_rule_are_the_sheets(self):
+        blocks = theme_blocks()
+        for theme, tokens in blocks.items():
+            self.assertEqual(tokens["border"].lower(), "#6f8493", theme)
+            self.assertNotIn("border-strong", tokens, theme)
+        self.assertEqual(blocks["light"]["rule"].lower(), "#c9d5dd")
+        self.assertEqual(blocks["dark(selector)"]["rule"].lower(), "#2b3d4a")
+        self.assertEqual(blocks["dark(auto)"]["rule"].lower(), "#2b3d4a")
+        for theme, tokens in blocks.items():  # controls sit on these three fills
+            for bg in ("bg", "surface", "surface-2"):
+                self.assertGreaterEqual(ratio(tokens["border"], tokens[bg]), 3.0, "%s: --border on --%s" % (theme, bg))
+
+    def test_controls_use_border_and_dividers_use_rule(self):
+        css = "".join(read(UI / "css" / n) for n in ("base.css", "components.css", "layout.css"))
+        self.assertNotIn("border-strong", css)
+        for sel in (r"\.btn \{", r"input\[type=\"text\"\][^{]*\{", r"\.chip \{"):
+            self.assertIn("var(--border)", re.search(sel + r"[^}]*\}", css, re.S).group(0), sel)
+        for sel in (r"\.card \{", r"\.tabs \{"):
+            self.assertIn("var(--rule)", re.search(sel + r"[^}]*\}", css, re.S).group(0), sel)
+
+    def test_chip_status_text_reaches_aa_on_its_fill(self):
+        css = read(UI / "css" / "base.css")
+        fill = re.search(r"\.chip \{[^}]*?background: var\(--([\w-]+)\)", css, re.S).group(1)
+        self.assertIn(fill, ("bg", "surface"))
+        for theme, tokens in theme_blocks().items():
+            for status in ("ok", "warn", "bad", "family"):
+                self.assertGreaterEqual(ratio(tokens[status], tokens[fill]), 4.5, "%s: --%s on chip --%s" % (theme, status, fill))
 
     def test_light_is_the_default_theme(self):
         css = re.sub(r"/\*.*?\*/", "", read(UI / "css" / "tokens.css"), flags=re.S)
