@@ -9,6 +9,26 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Sin publicar]
 
+### Cambiado
+
+- La interfaz es clara por defecto (antes oscura); el tema oscuro sigue disponible. Paleta por roles de la hoja de
+  marca r9.
+- Fuentes nuevas de la interfaz: Big Shoulders Display, Literata y JetBrains Mono sustituyen a Inter y Sora.
+- Logo y favicon redibujados (hoja de marca r9): baldosa plana, lockups claro y oscuro y versiones en línea.
+- El nombre visible del producto es «Galivelop IG» (GVIG) en el README y en `cli.description` (D38); el repositorio,
+  el paquete y la orden siguen siendo `galivelop-image-generator` y `gimg`.
+
+### Añadido
+
+- Traducción al inglés de la API local: `docs/en/api.md`; el test de la documentación de la API comprueba los dos idiomas.
+
+### Corregido
+
+- `gimg work` ya no se rinde cuando solo encuentra sondeos compartidos de `worker.lock` (`_single_worker` sigue
+  esperando); si un sondeo no se suelta nunca, falla a los pocos segundos con `worker.already_running` en vez de girar
+  para siempre.
+- La barra de progreso indeterminada usa `--accent`, con contraste suficiente sobre su pista en el tema oscuro.
+
 ## [0.4.1] - 2026-11-06
 
 ### Corregido

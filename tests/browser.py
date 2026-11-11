@@ -263,12 +263,15 @@ class Browser:
         found = []
 
         def reader():
-            for line in self.proc.stderr:
-                m = re.search(r"DevTools listening on (ws://\S+)", line)
-                if m:
-                    found.append(m.group(1))
+            # the thread owns the pipe and closes it when Chrome (and its children) close their end
+            with self.proc.stderr:
+                for line in self.proc.stderr:
+                    m = re.search(r"DevTools listening on (ws://\S+)", line)
+                    if m:
+                        found.append(m.group(1))
 
-        threading.Thread(target=reader, daemon=True).start()
+        self.reader = threading.Thread(target=reader, daemon=True)
+        self.reader.start()
         end = time.time() + 30
         active = os.path.join(self.profile, "DevToolsActivePort")
         while time.time() < end:
@@ -329,6 +332,8 @@ class Browser:
                     os.killpg(self.proc.pid, signal.SIGKILL)
                 except (ProcessLookupError, PermissionError):
                     pass
+        if getattr(self, "reader", None):
+            self.reader.join(timeout=5)
         shutil.rmtree(self.profile, ignore_errors=True)
 
 

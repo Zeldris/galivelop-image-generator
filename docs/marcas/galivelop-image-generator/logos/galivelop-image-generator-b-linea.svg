@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="galivelop-image-generator-b-linea-t">
+  <title id="galivelop-image-generator-b-linea-t">Galivelop IG: rejilla de intentos (línea)</title>
+  <!-- Símbolo de línea, sin baldosa; la celda encendida va rellena #8B5CF6 -->
+  <rect x="70" y="16" width="42" height="42" fill="#8B5CF6"/>
+  <g fill="none" stroke="#13212b" stroke-width="12" stroke-linecap="round" stroke-linejoin="miter">
+    <rect x="22" y="22" width="30" height="30"/>
+    <rect x="22" y="76" width="30" height="30"/>
+    <rect x="76" y="76" width="30" height="30"/>
+  </g>
+</svg>

@@ -1,6 +1,8 @@
-# galivelop-image-generator
+# Galivelop IG
 
 [Español](README.md)
+
+**Galivelop IG** (short name **GVIG**) is the product name; the repository, the package and the command are still `galivelop-image-generator` and `gimg` (D38).
 
 A local AI image generator: one service per machine, shared by several projects (D1, D2). It uses stable-diffusion.cpp
 as the engine and the Steam Deck as the reference machine (D4). No dependencies: Python 3 standard library only (D6).
@@ -121,7 +123,7 @@ Data goes to `$GIMG_DATA_HOME` (default `~/.local/share/gimg`) and the project r
 `gimg serve` starts a local HTTP API on `127.0.0.1:8737` (the same layer as the CLI) and the UI in `gimg/ui`; `gimg ui`
 starts it if needed and opens the browser. It listens on localhost only and requires `Content-Type: application/json`
 for writes. `GIMG_PORT` changes the port and `GIMG_AUTOSTART=0` turns off on-demand start. Routes, bodies, errors and
-`curl` examples are in [`docs/api.md`](docs/api.md) (in Spanish).
+`curl` examples are in [`docs/en/api.md`](docs/en/api.md).
 
 ## Installation
 
