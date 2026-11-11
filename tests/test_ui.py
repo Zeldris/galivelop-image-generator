@@ -566,7 +566,7 @@ TEXT_PAIRS = [("text", "bg"), ("text", "surface"), ("text", "surface-2"), ("text
               ("bad", "bg"), ("bad", "surface"), ("text", "accent-soft"), ("text-2", "accent-soft"),
               ("family", "bg"), ("family", "surface"), ("on-status", "ok"), ("on-status", "warn"), ("on-status", "bad")]
 NONTEXT_PAIRS = [("border", "bg"), ("border", "surface"), ("border", "surface-2"), ("focus", "bg"), ("focus", "surface"),
-                 ("focus", "surface-2")]
+                 ("focus", "surface-2"), ("accent", "rule")]  # progress bar fill on its track
 
 
 class Contrast(unittest.TestCase):

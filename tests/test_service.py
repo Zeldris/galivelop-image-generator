@@ -399,6 +399,17 @@ class Races(Env):
         with mock.patch.object(worker, "LOCK_RETRY_S", 0), worker._single_worker():
             pass
 
+    def test_worker_gives_up_on_a_shared_probe_that_never_lets_go(self):
+        queue.worker_lock_path().parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(str(queue.worker_lock_path()), os.O_RDWR | os.O_CREAT, 0o600)
+        self.addCleanup(os.close, fd)
+        fcntl.flock(fd, fcntl.LOCK_SH | fcntl.LOCK_NB)  # a stopped process holding the shared lock for good
+        with mock.patch.object(worker, "LOCK_RETRY_S", 0), mock.patch.object(worker, "PROBE_GIVE_UP_S", 0.2), \
+                self.assertRaises(GimgError) as ctx:
+            with worker._single_worker():
+                pass
+        self.assertEqual(ctx.exception.code, "worker.already_running")
+
     def test_a_queue_probe_does_not_hide_a_free_worker_lock_from_another_probe(self):
         queue.worker_lock_path().parent.mkdir(parents=True, exist_ok=True)
         fd = os.open(str(queue.worker_lock_path()), os.O_RDWR | os.O_CREAT, 0o600)
