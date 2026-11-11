@@ -68,6 +68,7 @@ from .errors import GimgError
 
 
 LOCK_RETRY_S = 0.3  # how long `_single_worker` keeps trying the lock before it says another worker is alive
+PROBE_GIVE_UP_S = 5.0  # a shared probe that outlasts this is a stuck process, not a probe: fail instead of spinning forever
 COMPOSE_PENDING = {"code": "compose.pending", "params": {}}  # the attempt is registered, its composition not finished
 
 
@@ -82,18 +83,31 @@ def _single_worker():
     fd = os.open(str(path), os.O_RDWR | os.O_CREAT, 0o600)
     try:
         # a momentary holder (`queue._no_worker` probing the lock) must not make a fresh worker give up
-        deadline = time.monotonic() + LOCK_RETRY_S
+        start = time.monotonic()
+        deadline = start + LOCK_RETRY_S
         while True:
             try:
                 fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 break
             except BlockingIOError:
-                if time.monotonic() >= deadline:
+                # only an exclusive holder is a worker: shared probes may outlast the window under load
+                now = time.monotonic()
+                if now >= start + PROBE_GIVE_UP_S or (now >= deadline and not _only_probes(fd)):
                     raise GimgError("worker.already_running", path=str(path))
                 time.sleep(0.02)
         yield
     finally:
         os.close(fd)
+
+
+def _only_probes(fd: int) -> bool:
+    """Is the worker lock held only in shared mode (``queue`` probes), so no worker is alive?"""
+    try:
+        fcntl.flock(fd, fcntl.LOCK_SH | fcntl.LOCK_NB)
+    except BlockingIOError:
+        return False
+    fcntl.flock(fd, fcntl.LOCK_UN)
+    return True
 
 
 def _inside_file(project: dict, rel: str, code: str) -> str:

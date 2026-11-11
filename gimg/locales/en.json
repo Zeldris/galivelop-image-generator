@@ -142,7 +142,7 @@
   "error.delivery.target_taken": "the target \"{path}\" already belongs to {otherKey} / {otherProfile}; change the template or the keys",
   "error.project.bad_name": "invalid project name: \"{project}\"",
   "error.delivery.write_failed": "could not deliver \"{path}\": {reason}",
-  "cli.description": "Local AI image generator (queue, attempts, chosen candidate and delivery).",
+  "cli.description": "Galivelop IG: local AI image generator (queue, attempts, chosen candidate and delivery).",
   "cli.help.lang": "language of the messages (default: the system's)",
   "cli.help.json": "machine-readable JSON output",
   "cli.cmd.project": "manage registered projects",

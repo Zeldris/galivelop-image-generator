@@ -9,6 +9,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- The interface is light by default (it was dark); the dark theme stays available. Palette by roles from the r9 brand
+  sheet.
+- New interface fonts: Big Shoulders Display, Literata and JetBrains Mono replace Inter and Sora.
+- Logo and favicon redrawn (r9 brand sheet): flat tile, light and dark lockups and line versions.
+- The product's visible name is "Galivelop IG" (GVIG) in the README and in `cli.description` (D38); the repository,
+  the package and the command stay `galivelop-image-generator` and `gimg`.
+
+### Added
+
+- English translation of the local API: `docs/en/api.md`; the API doc test now checks both languages.
+
+### Fixed
+
+- `gimg work` no longer gives up when it only finds shared probes of `worker.lock` (`_single_worker` keeps waiting);
+  if a probe never lets go, it fails after a few seconds with `worker.already_running` instead of spinning forever.
+- The indeterminate progress bar uses `--accent`, with enough contrast on its track in the dark theme.
+
 ## [0.4.1] - 2026-11-06
 
 ### Fixed

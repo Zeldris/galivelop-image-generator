@@ -1,4 +1,5 @@
 import copy
+import hashlib
 import json
 import os
 import re
@@ -310,6 +311,9 @@ COMPOSE_PROJECTS = {  # proyecto -> lockup elegido (docs/marcas/README.md; Tarko
     "galivelop-image-generator": "galivelop-image-generator-b-lockup.svg",
     "galivelop-workflow": "galivelop-workflow-b-lockup.svg",
 }
+# r9 redibujó el logo de Galivelop IG; su copia de `examples/` queda congelada con el dibujo medido de las piezas og
+# hasta que se vuelvan a medir con el nuevo (pendiente en la bitácora): se fija su huella en vez de exigir la identidad.
+REDRAWN_COPY_SHA256 = {"galivelop-image-generator": "3fc7178dff3d93a01e37862d2b65106950a0aae3d5ce177ab10ccad017116187"}
 FACTOR_TITULO, FACTOR_SUB = 0.56, 0.5  # los de examples/pilot/componer.py (`ajustar`)
 
 
@@ -342,7 +346,18 @@ class ComposeExampleTests(unittest.TestCase):
         for name, logo, root, cfg in self.each():
             copy_ = (root / "logos" / logo).read_bytes()
             original = (ROOT / "docs" / "marcas" / name / "logos" / logo).read_bytes()
-            self.assertEqual(copy_, original, name)
+            if name in REDRAWN_COPY_SHA256:
+                self.assertEqual(hashlib.sha256(copy_).hexdigest(), REDRAWN_COPY_SHA256[name], name)
+                self.assertNotEqual(copy_, original, name)  # avisa cuando se quite la exención
+            else:
+                self.assertEqual(copy_, original, name)
+
+    def test_frozen_logo_is_what_the_og_social_pieces_use(self):
+        pieces = read("examples/galivelop-image-generator/piezas.json")
+        logos = [str(v) for v in json.dumps(pieces).split('"') if v.endswith("-b-lockup.svg")]
+        self.assertEqual(len(logos), 4)
+        for logo in logos:
+            self.assertEqual(logo, "examples/galivelop-image-generator/logos/galivelop-image-generator-b-lockup.svg")
 
     def test_resolve_assets_finds_template_and_logo(self):
         for name, logo, root, cfg in self.each():

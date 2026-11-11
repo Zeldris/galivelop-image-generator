@@ -3,6 +3,12 @@
 Herramienta del taller, sin identidad propia: **familia del Portal** con acento violeta **[P]**. Molde y reglas comunes en
 [`../README.md`](../README.md). Datos de este repo en `24d69c8`; del Portal, en `aa76b34`.
 
+> **r9 (2026-11-11), propuesta sin aprobar:** [`hoja.md`](hoja.md) redefine la marca como **variante de la identidad
+> nueva del Portal** (papel, tinta, línea y tipografías compartidos; violeta, símbolo y motivos propios). Esta biblia
+> describe la identidad anterior, que es la aplicada hoy (`gimg/ui/css/tokens.css`, logos, piezas r6-r8). Donde las dos
+> difieren, lo dice la sección «Contradicciones» de la hoja; el celeste `#1aa6df` sigue prohibido como acento y r9 solo
+> lo propone como enlace de familia (≤ 2 %).
+
 ## 1. Esencia
 
 - **Qué es:** «Generador de imágenes con IA local: un servicio por máquina que comparten varios proyectos» (`README.md`).
@@ -33,7 +39,8 @@ Herramienta del taller, sin identidad propia: **familia del Portal** con acento 
   texto `#eaf4fa`, secundario `#9fb4c4`, acento `#A78BFA`.
 - **Pieza clara:** `#f6fafd`, texto `#0a1a28`, acento `#5B34C9` (más contraste que `#8B5CF6` sobre blanco).
 - **Sobre imagen:** texto blanco en la zona reservada; el logo siempre en su baldosa.
-- **Prohibidos:** el celeste del Portal (`#1aa6df`) como acento de la herramienta (confunde con el paraguas); violeta
+- **Prohibidos:** el celeste del Portal (`#1aa6df`) como acento de la herramienta (confunde con el paraguas; única excepción,
+  aprobada el 2026-11-11: `--family` en el enlace «parte de Galivelop», ≤ 2 %, `hoja.md` sección 3); violeta
   neón o magenta puro; negro `#000`; texto de acento sobre fondo de acento.
 
 ## 3. Tipografía

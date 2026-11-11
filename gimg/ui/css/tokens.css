@@ -1,38 +1,41 @@
-/* Galivelop IG (GVIG) · tokens de diseño.
-   Colores de docs/marcas/galivelop-image-generator/hoja.md §3 (familia Galivelop).
-   Contrastes medidos en diseno.md; lo que no está en la hoja se marca [propuesto]. */
+/* Galivelop IG (GVIG) · tokens de diseño, hoja de estilo r9.
+   Tema claro por defecto; oscuro por prefers-color-scheme o por data-theme="dark" en <html>.
+   Contrastes comprobados por tests/test_ui.py; lo que la hoja no nombra se deriva de su paleta [derivado]. */
 
-/* Fuentes de la hoja sin red (D6): TTF variables de piloto/fuentes (OFL, ver fonts/OFL.txt). */
-@font-face { font-family: "Sora"; src: url("/ui/fonts/Sora.ttf") format("truetype"); font-weight: 100 900; font-display: swap; }
-@font-face { font-family: "Inter"; src: url("/ui/fonts/Inter.ttf") format("truetype"); font-weight: 100 900; font-display: swap; }
+/* Fuentes sin red (D6): TTF variables en gimg/ui/fonts/ (OFL, ver fonts/OFL.txt). */
+@font-face { font-family: "Big Shoulders Display"; src: url("/ui/fonts/BigShouldersDisplay.ttf") format("truetype"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Literata"; src: url("/ui/fonts/Literata.ttf") format("truetype"); font-weight: 200 900; font-display: swap; }
+@font-face { font-family: "JetBrains Mono"; src: url("/ui/fonts/JetBrainsMono.ttf") format("truetype"); font-weight: 100 800; font-display: swap; }
 
 :root {
-  /* tema oscuro (por defecto en la hoja) */
-  --bg: #06121c;
-  --surface: #0c1d2b;
-  --surface-2: #11283a;
-  --preview-light: #f6fafd;   /* fondos fijos de las vistas previas de logo: no cambian con el tema */
-  --preview-dark: #06121c;
-  --border: #1b3447;         /* decorativo (1,47:1) */
-  --border-strong: #587891;   /* [propuesto] bordes de campos y controles, 3,68:1 sobre superficie */
-  --text: #eaf4fa;            /* 16,9:1 sobre fondo, 13,6:1 sobre superficie-2 */
-  --text-2: #9fb4c4;          /* 8,8:1 / 7,1:1 */
-  --accent: #8B5CF6;          /* bordes, chips, titulares grandes (4,46:1: solo ≥ 18,66 px negrita o no texto) */
-  --accent-text: #A78BFA;     /* texto de acento sobre oscuro, 6,95:1 */
-  --accent-fill: #5B34C9;     /* relleno del botón primario; blanco encima 7,56:1 */
+  /* tema claro (por defecto) */
+  --bg: #fbfcfd;
+  --surface: #e6eef3;
+  --surface-2: #d9e4eb;       /* [derivado] */
+  --preview-light: #fbfcfd;   /* fondos fijos de las vistas previas de logo (papel y oscuro de la identidad vigente): no cambian con el tema */
+  --preview-dark: #0d171e;
+  --border: #6f8493;          /* bordes de campos y controles (≥ 3:1) */
+  --rule: #c9d5dd;            /* filetes y separadores (decorativos) */
+  --text: #13212b;
+  --text-2: #4a5b66;
+  --accent: #5B34C9;
+  --accent-text: #5B34C9;
+  --accent-fill: #5B34C9;     /* relleno del botón primario; blanco encima ≥ 7,5:1 */
   --on-accent: #ffffff;
-  --accent-soft: #241a4a;     /* [propuesto] fondo de candidata/selección; texto-2 encima 7,4:1 */
-  --ok: #5ad38a;              /* [propuesto] 10,0:1 sobre fondo, 8,0:1 sobre superficie-2 */
-  --warn: #f2c14e;            /* [propuesto] 11,3:1 / 9,0:1 */
-  --bad: #ff7b6b;             /* [propuesto] 7,5:1 / 6,0:1 */
-  --on-status: #06121c;       /* texto sobre ok/warn/bad rellenos: ≥ 7,5:1 */
-  --focus: #A78BFA;           /* anillo de foco, 6,95:1 sobre fondo, 5,56:1 sobre superficie-2 */
-  --shadow: 0 1px 2px rgb(0 0 0 / .5), 0 10px 30px rgb(0 0 0 / .4);
-  --overlay: rgb(6 18 28 / .78);
+  --accent-soft: #e8e0fa;     /* [derivado] fondo de candidata/selección */
+  --brand: #8B5CF6;           /* color de marca: nunca texto de cuerpo */
+  --family: #0072a8;          /* solo el enlace «parte de Galivelop» */
+  --ok: #1b7a3e;
+  --warn: #8a5a00;
+  --bad: #b3261e;
+  --on-status: #ffffff;
+  --focus: #5B34C9;
+  --shadow: 0 1px 2px rgb(19 33 43 / .08), 0 8px 24px rgb(19 33 43 / .08);
+  --overlay: rgb(13 23 30 / .72);
 
-  --font-title: "Sora", "Inter", system-ui, sans-serif;
-  --font-body: "Inter", system-ui, sans-serif;
-  --font-mono: "Adwaita Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+  --font-title: "Big Shoulders Display", "Arial Narrow", sans-serif;
+  --font-body: "Literata", Georgia, serif;
+  --font-mono: "JetBrains Mono", "Adwaita Mono", "DejaVu Sans Mono", ui-monospace, monospace;
 
   --r: 12px;
   --r-s: 8px;
@@ -42,54 +45,58 @@
   --panel-w: 380px;
   --focus-w: 3px;
 
-  color-scheme: dark;
+  color-scheme: light;
 }
 
-/* tema claro: por prefers-color-scheme o por selector (data-theme en <html>) */
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) {
-    --bg: #f6fafd;
-    --surface: #ffffff;
-    --surface-2: #e6edf3;
-    --border: #c9d6e0;
-    --border-strong: #5f7689;   /* [propuesto] 4,5:1 sobre fondo claro */
-    --text: #0a1a28;            /* 16,8:1 */
-    --text-2: #4b5f70;          /* [propuesto] 6,3:1; la hoja no da texto-2 claro */
-    --accent: #8B5CF6;
-    --accent-text: #5B34C9;     /* 7,2:1 */
+/* tema oscuro: por prefers-color-scheme o por selector (data-theme en <html>) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d171e;
+    --surface: #13212b;
+    --surface-2: #1b2e3b;       /* [derivado] */
+    --border: #6f8493;
+    --rule: #2b3d4a;
+    --text: #e6eef3;
+    --text-2: #9fb4c4;
+    --accent: #A78BFA;
+    --accent-text: #A78BFA;
     --accent-fill: #5B34C9;
     --on-accent: #ffffff;
-    --accent-soft: #ece6fb;
-    --ok: #1b7a3e;              /* [propuesto] 5,1:1 */
-    --warn: #8a5a00;            /* [propuesto] 5,7:1 */
-    --bad: #b3261e;             /* [propuesto] 6,2:1 */
-    --on-status: #ffffff;
-    --focus: #5B34C9;
-    --shadow: 0 1px 2px rgb(16 20 30 / .08), 0 8px 24px rgb(16 20 30 / .08);
-    --overlay: rgb(10 26 40 / .6);
-    color-scheme: light;
+    --accent-soft: #241a4a;     /* [derivado] */
+    --brand: #8B5CF6;
+    --family: #1aa6df;
+    --ok: #5ad38a;
+    --warn: #f2c14e;
+    --bad: #ff7b6b;
+    --on-status: #0d171e;
+    --focus: #A78BFA;
+    --shadow: 0 1px 2px rgb(0 0 0 / .5), 0 10px 30px rgb(0 0 0 / .4);
+    --overlay: rgb(13 23 30 / .78);
+    color-scheme: dark;
   }
 }
 
-:root[data-theme="light"] {
-  --bg: #f6fafd;
-  --surface: #ffffff;
-  --surface-2: #e6edf3;
-  --border: #c9d6e0;
-  --border-strong: #5f7689;
-  --text: #0a1a28;
-  --text-2: #4b5f70;
-  --accent: #8B5CF6;
-  --accent-text: #5B34C9;
+:root[data-theme="dark"] {
+  --bg: #0d171e;
+  --surface: #13212b;
+  --surface-2: #1b2e3b;
+  --border: #6f8493;
+  --rule: #2b3d4a;
+  --text: #e6eef3;
+  --text-2: #9fb4c4;
+  --accent: #A78BFA;
+  --accent-text: #A78BFA;
   --accent-fill: #5B34C9;
   --on-accent: #ffffff;
-  --accent-soft: #ece6fb;
-  --ok: #1b7a3e;
-  --warn: #8a5a00;
-  --bad: #b3261e;
-  --on-status: #ffffff;
-  --focus: #5B34C9;
-  --shadow: 0 1px 2px rgb(16 20 30 / .08), 0 8px 24px rgb(16 20 30 / .08);
-  --overlay: rgb(10 26 40 / .6);
-  color-scheme: light;
+  --accent-soft: #241a4a;
+  --brand: #8B5CF6;
+  --family: #1aa6df;
+  --ok: #5ad38a;
+  --warn: #f2c14e;
+  --bad: #ff7b6b;
+  --on-status: #0d171e;
+  --focus: #A78BFA;
+  --shadow: 0 1px 2px rgb(0 0 0 / .5), 0 10px 30px rgb(0 0 0 / .4);
+  --overlay: rgb(13 23 30 / .78);
+  color-scheme: dark;
 }
