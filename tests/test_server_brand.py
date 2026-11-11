@@ -123,6 +123,14 @@ class MatteTraceTests(BrandApiBase):
         self.bad("POST", BASE + "/trace", {"name": "Mi Marca", "mode": "color", "usePalette": "yes"}, 400, "api.bad_param")
         self.bad("POST", BASE + "/trace", {"name": "Mi Marca", "mode": "color", "colors": True}, 400, "api.bad_param")
 
+    def test_colors_and_grow_have_a_cap(self):
+        self.matte()
+        for n in (65, 0):
+            err = self.bad("POST", BASE + "/trace", {"name": "Mi Marca", "mode": "color", "colors": n}, 400, "brand.bad_option")
+            self.assertIn("ncolores must be between 1 and 64", json.dumps(err))
+        err = self.bad("POST", BASE + "/matte", {"name": "Mi Marca", "source": self.source, "grow": 33}, 400, "brand.bad_option")
+        self.assertIn("grow between 0 and 32", json.dumps(err))
+
 
 @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
 class WordmarkLockupTests(BrandApiBase):

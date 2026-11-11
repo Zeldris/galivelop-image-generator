@@ -9,6 +9,8 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+from xml.etree import ElementTree
+from xml.sax.saxutils import escape
 from pathlib import Path
 from unittest import mock
 
@@ -425,6 +427,32 @@ class LockupTests(BrandBase):
         self.assertIn("does not work for the lockup", err)
         self.assertIn("only paths", err)
         self.assertFalse((self.tmp / "l.svg").exists())
+
+    def test_a_title_with_markup_looking_text_is_not_refused(self):
+        ns = "{http://www.w3.org/2000/svg}"
+        for name in ("A one = b", "x id = y", "R&D onload = 1 <text>"):
+            for piece in (self.emblem, self.word):
+                piece.write_text(path_svg(100, 50, title=escape(name)))  # as gimg writes a title
+            brand.lockup(self.emblem, self.word, self.tmp / "l.svg", title=name)
+            self.assertEqual(ElementTree.fromstring((self.tmp / "l.svg").read_text()).find(ns + "title").text, name)
+
+    def test_a_forbidden_attribute_is_still_refused_next_to_a_title(self):
+        self.word.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 9 9"><title>t</title><path id="a" d="M0 0L9 9Z"/></svg>')
+        code, err, _ = self.lock()
+        self.assertEqual(code, 1)
+        self.assertIn("only paths", err)
+
+    def test_a_viewbox_float_cannot_read_is_bad_svg(self):
+        for vb in ("0 0 1e - 5", "0 0 1e 5", "0 0 1e999 1", "0 0 -- 5"):
+            self.word.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="%s"><path d="M0 0L9 9Z"/></svg>' % vb)
+            code, err, _ = self.lock()
+            self.assertEqual(code, 1, vb)
+            self.assertIn("with a viewBox" if "e999" not in vb else "no area", err)
+
+    def test_control_characters_are_dropped_from_the_lockup_title(self):
+        brand.lockup(self.emblem, self.word, self.tmp / "l.svg", title="Tar\u0001kor")
+        root = ElementTree.fromstring((self.tmp / "l.svg").read_text())  # a raw control character is not XML
+        self.assertEqual(root.find("{http://www.w3.org/2000/svg}title").text, "Tarkor")
 
     def test_a_file_that_is_no_svg_is_refused(self):
         self.emblem.write_text("nope")

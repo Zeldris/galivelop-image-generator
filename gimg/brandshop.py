@@ -19,6 +19,22 @@ DESTS = ("data", "project")
 PIECES = tuple(k for k in brand.SYSTEM_FILES if k != "contactos.png")
 STEP_OF = {"emblema-alpha.png": "matte", "emblema.svg": "trace", "emblema-mono.svg": "trace", "wordmark.svg": "wordmark",
            "lockup-h.svg": "lockup", "lockup-v.svg": "lockup"}
+# What each piece feeds: redoing a step deletes these, so `save` cannot mix pieces drawn from different inputs.
+DERIVED = {"emblema-alpha.png": ("emblema.svg", "emblema-mono.svg", "lockup-h.svg", "lockup-v.svg", "contactos.png"),
+           "emblema.svg": ("lockup-h.svg", "lockup-v.svg", "contactos.png"),
+           "emblema-mono.svg": ("contactos.png",),
+           "wordmark.svg": ("lockup-h.svg", "lockup-v.svg", "contactos.png")}
+
+
+def _stale(project: str, slug: str, key: str) -> None:
+    """Delete the pieces of the workshop that derive from the freshly redone `key`."""
+    for dep in DERIVED.get(key, ()):
+        try:
+            os.unlink(piece(project, slug, dep))
+        except FileNotFoundError:
+            pass
+        except OSError as exc:
+            raise GimgError("brand.write_failed", path=piece(project, slug, dep), reason=str(exc.strerror or exc)[:300])
 
 
 def slug_of(name) -> str:
@@ -56,7 +72,9 @@ def _need(project: str, slug: str, key: str) -> str:
 
 def matte(project: str, name: str, src, **opts) -> dict:
     slug = slug_of(name)
-    return brand.matte(src, piece(project, slug, "emblema-alpha.png"), **opts)
+    result = brand.matte(src, piece(project, slug, "emblema-alpha.png"), **opts)
+    _stale(project, slug, "emblema-alpha.png")
+    return result
 
 
 def trace(project: str, name: str, mode: str, palette=None, **opts) -> dict:
@@ -65,7 +83,9 @@ def trace(project: str, name: str, mode: str, palette=None, **opts) -> dict:
         raise GimgError("brand.bad_option", reason="mode must be color or mono (got %r)" % (mode,))
     alpha = _need(project, slug, "emblema-alpha.png")
     out = piece(project, slug, "emblema.svg" if mode == "color" else "emblema-mono.svg")
-    return brand.trace(alpha, out, mode, palette, title=name.strip(), **opts)
+    result = brand.trace(alpha, out, mode, palette, title=name.strip(), **opts)
+    _stale(project, slug, "emblema.svg" if mode == "color" else "emblema-mono.svg")
+    return result
 
 
 def _escape(text: str) -> str:
@@ -99,7 +119,9 @@ def resolve_font(family) -> str:
 def wordmark(project: str, name: str, font: str, text=None, **opts) -> dict:
     slug = slug_of(name)
     line = text if text else name.strip().upper()
-    return brand.wordmark(line, resolve_font(font), piece(project, slug, "wordmark.svg"), title=name.strip(), **opts)
+    result = brand.wordmark(line, resolve_font(font), piece(project, slug, "wordmark.svg"), title=name.strip(), **opts)
+    _stale(project, slug, "wordmark.svg")
+    return result
 
 
 def lockup(project: str, name: str, layout: str, **opts) -> dict:

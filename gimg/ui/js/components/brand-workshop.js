@@ -18,9 +18,11 @@ const PIECES = ['emblema-alpha.png', 'emblema.svg', 'emblema-mono.svg', 'wordmar
 const SIZES = [16, 32, 64, 128];
 const RANK = { candidate: 1, new: 2, discarded: 3 };
 
-/** El slug que la API saca del nombre (acentos fuera, ASCII y guiones). La lista de talleres corrige lo que difiera. */
-export const slugOf = (name) => String(name || '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase()
-  .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const TRANSLIT = { ø: 'o', Ø: 'O', ß: 'ss', æ: 'ae', Æ: 'AE', œ: 'oe', Œ: 'OE', đ: 'd', Đ: 'D', ł: 'l', Ł: 'L' };
+
+/** El slug que la API saca del nombre (`brand.slugify`: transliteración, acentos fuera, lo no ASCII se descarta, guiones). */
+export const slugOf = (name) => String(name || '').replace(/[øØßæÆœŒđĐłŁ]/g, (c) => TRANSLIT[c]).normalize('NFKD')
+  .replace(/[^\x00-\x7f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
 const k = (key, params) => t(`ui.brand.shop.${key}`, params);
 
@@ -86,10 +88,8 @@ export function brandWorkshop(project, cfg) {
     let list = [];
     try { list = await api.brandList(project); } catch { list = state.shops; }
     state.shops = Array.isArray(list) ? list : [];
-    if (state.slug && !state.shops.some((s) => s.slug === state.slug) && state.shops.length) {
-      const newest = state.shops.slice().sort((a, b) => b.modified - a.modified)[0]; // el nombre dio otro slug que el de aquí
-      state.slug = newest.slug;
-    }
+    // Never adopt another workshop in silence: the name field and the API calls keep the slug of the name; a name without
+    // a workshop is an empty one (the others stay in the list to pick).
     const shop = state.shops.find((s) => s.slug === state.slug);
     state.files = new Set(shop ? shop.files : []);
     paintShops();
@@ -107,6 +107,7 @@ export function brandWorkshop(project, cfg) {
     const shop = state.shops.find((s) => s.slug === state.slug);
     state.files = new Set(shop ? shop.files : []);
     state.transparent = null;
+    paintShops();
     paintAll();
     refresh();
   });
@@ -119,7 +120,11 @@ export function brandWorkshop(project, cfg) {
     replace(shopsHost, state.shops.length ? state.shops.map((s) => h('button.btn.btn-toggle', {
       type: 'button', aria: { pressed: s.slug === state.slug ? 'true' : 'false' },
       title: s.modified ? when(new Date(s.modified * 1000).toISOString()) : null,
-      onclick: () => { nameInput.value = s.slug; nameInput.dispatchEvent(new Event('change')); },
+      onclick: () => {
+        nameInput.value = s.slug;
+        if (!(textEdited && editedSlug === s.slug)) { textEdited = false; syncText(); } // keep a text typed by hand for this very name
+        nameInput.dispatchEvent(new Event('change'));
+      },
     }, `${s.slug} · ${k('pieces', { n: PIECES.filter((x) => s.files.includes(x)).length, total: PIECES.length })}`)) : h('span.hint', {}, k('noShops')));
   }
 
@@ -240,8 +245,9 @@ export function brandWorkshop(project, cfg) {
   /* ---- 4 · wordmark ---- */
   const wordOut = live();
   let textEdited = false;
+  let editedSlug = '';
   const wText = h('input', { id: 'shop-wtext', type: 'text', maxlength: 100, autocomplete: 'off', value: nameInput.value.toUpperCase() });
-  wText.addEventListener('input', () => { textEdited = true; });
+  wText.addEventListener('input', () => { textEdited = true; editedSlug = slugOf(nameInput.value); });
   const syncText = () => { if (!textEdited) wText.value = nameInput.value.toUpperCase(); };
   const wFont = h('input', { id: 'shop-wfont', type: 'text', list: 'shop-fonts', value: fonts[0] || '', autocomplete: 'off', aria: { describedby: 'shop-wfont-hint' } });
   wFont.addEventListener('input', refresh);

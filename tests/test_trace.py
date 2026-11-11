@@ -298,8 +298,21 @@ class ToSvgTests(unittest.TestCase):
             trace.to_svg(w, h, px, palette=["rojo"])
         with self.assertRaisesRegex(ValueError, "do not fit a 5x5"):
             trace.to_svg(5, 5, px)
-        with self.assertRaisesRegex(ValueError, "ncolores >= 1"):
+        with self.assertRaisesRegex(ValueError, "ncolores must be between 1 and 64"):
             trace.to_svg(w, h, px, ncolores=0)
+
+    def test_colors_have_a_cap(self):
+        w, h, px = logo()
+        with self.assertRaisesRegex(ValueError, "ncolores must be between 1 and 64 .got 65"):
+            trace.to_svg(w, h, px, ncolores=trace.MAX_COLORS + 1)
+        trace.to_svg(w, h, px, ncolores=trace.MAX_COLORS)
+
+    def test_a_side_shorter_than_the_reduction_factor_still_traces(self):
+        for w, h in ((3, 2000), (1, 600), (2000, 2)):
+            img = canvas(w, h, (10, 20, 30, 255))
+            svg = trace.to_svg(w, h, img[2], max_side=100)
+            self.assertIn('viewBox="0 0 %d %d"' % (w, h), svg)
+            ElementTree.fromstring(svg)  # well-formed, and no IndexError on the way
 
 
 if __name__ == "__main__":

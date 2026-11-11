@@ -377,7 +377,7 @@ curl -s $B/api/projects/mi-proyecto/brand
 ### POST /api/projects/{p}/brand/matte
 
 Quita el fondo plano de un intento del proyecto. Campos: `name` (nombre de la marca), `source`
-(`{"profile", "key", "attempt"}`, resuelto como `attempt_image`), `tol` (60), `soft` (110), `border` (6), `grow` (3), `holes` (false: con `true` también se vacían las regiones de color de fondo no conectadas al borde, como un anillo encerrado).
+(`{"profile", "key", "attempt"}`, resuelto como `attempt_image`), `tol` (60), `soft` (110), `border` (6), `grow` (3, de 0 a 32), `holes` (false: con `true` también se vacían las regiones de color de fondo no conectadas al borde, como un anillo encerrado).
 Escribe `emblema-alpha.png` y devuelve lo que `gimg brand matte`. Errores: `api.bad_param`, `brand.bad_name`,
 `brand.empty_text`, `brand.no_matte`, `order.attempt_unknown` (404), `api.not_found` (404), `project.unknown`.
 
@@ -388,7 +388,7 @@ curl -s -X POST $B/api/projects/mi-proyecto/brand/matte -H 'Content-Type: applic
 
 ### POST /api/projects/{p}/brand/trace
 
-Pasa el emblema recortado a SVG. Campos: `name`, `mode` (`color` o `mono`), `colors` (solo `color`), `usePalette`
+Pasa el emblema recortado a SVG. Campos: `name`, `mode` (`color` o `mono`), `colors` (solo `color`, de 1 a 64), `usePalette`
 (solo `color`; toma `brand.palette` del proyecto y excluye a `colors`), `dp_tol` (1,2), `min_island` (12). Escribe
 `emblema.svg` o `emblema-mono.svg`. Errores: `brand.missing_piece` (409, falta el recorte), `brand.no_palette`,
 `brand.bad_option`, `api.bad_param`.

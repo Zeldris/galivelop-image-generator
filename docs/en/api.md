@@ -386,7 +386,7 @@ curl -s $B/api/projects/mi-proyecto/brand
 ### POST /api/projects/{p}/brand/matte
 
 Removes the flat background of one of the project's attempts. Fields: `name` (the brand name), `source`
-(`{"profile", "key", "attempt"}`, resolved like `attempt_image`), `tol` (60), `soft` (110), `border` (6), `grow` (3),
+(`{"profile", "key", "attempt"}`, resolved like `attempt_image`), `tol` (60), `soft` (110), `border` (6), `grow` (3, 0 to 32),
 `holes` (false: with `true`, background-coloured regions not connected to the edge are emptied too, such as an enclosed
 ring). Writes `emblema-alpha.png` and returns what `gimg brand matte` returns. Errors: `api.bad_param`,
 `brand.bad_name`, `brand.empty_text`, `brand.no_matte`, `order.attempt_unknown` (404), `api.not_found` (404),
@@ -399,7 +399,7 @@ curl -s -X POST $B/api/projects/mi-proyecto/brand/matte -H 'Content-Type: applic
 
 ### POST /api/projects/{p}/brand/trace
 
-Turns the cut-out emblem into SVG. Fields: `name`, `mode` (`color` or `mono`), `colors` (`color` only), `usePalette`
+Turns the cut-out emblem into SVG. Fields: `name`, `mode` (`color` or `mono`), `colors` (`color` only, 1 to 64), `usePalette`
 (`color` only; takes the project's `brand.palette` and excludes `colors`), `dp_tol` (1.2), `min_island` (12). Writes
 `emblema.svg` or `emblema-mono.svg`. Errors: `brand.missing_piece` (409, the cut-out is missing), `brand.no_palette`,
 `brand.bad_option`, `api.bad_param`.

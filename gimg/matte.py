@@ -21,6 +21,8 @@ from __future__ import annotations
 import math
 from statistics import median
 
+MAX_GROW = 32  # pixels the flood may grow over the soft edge; each pass walks the whole image
+
 
 def _check(width: int, height: int, rgba) -> None:
     if width < 1 or height < 1 or len(rgba) != width * height * 4:
@@ -52,8 +54,8 @@ def remove_bg(width: int, height: int, rgba, t0: float = 60, t1: float = 110, bo
     _check(width, height, rgba)
     if not 0 <= t0 < t1:
         raise ValueError("remove_bg: t0 and t1 must satisfy 0 <= t0 < t1 (got %s and %s)" % (t0, t1))
-    if border < 1 or grow < 0:
-        raise ValueError("remove_bg: border must be at least 1 and grow not negative")
+    if border < 1 or not 0 <= grow <= MAX_GROW:
+        raise ValueError("remove_bg: border must be at least 1 and grow between 0 and %d" % MAX_GROW)
     bg = border_color(width, height, rgba, border)
     n = width * height
     dist = [math.sqrt((rgba[k * 4] - bg[0]) ** 2 + (rgba[k * 4 + 1] - bg[1]) ** 2 + (rgba[k * 4 + 2] - bg[2]) ** 2)

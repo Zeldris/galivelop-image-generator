@@ -13,7 +13,7 @@ from pathlib import Path
 from unittest import mock
 from urllib.parse import quote
 
-from gimg import cli, server
+from gimg import cli, paths, png, server
 from tests import browser
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -560,6 +560,45 @@ class BrandShop(UiBase):
         self.open("/p/tarkor/marca?src=" + src, "document.querySelector('#brand-shop input[name=shop-attempt]:checked')")
         self.page.wait("![...document.querySelectorAll('#brand-shop .shop-action button')].find(b => b.textContent === 'Quitar fondo').disabled")
         self.assertTrue(self.disabled("Pasar a SVG en color"))  # still needs the matte
+        self.no_problems()
+
+    def seed_shop(self, slug):
+        """A workshop of another brand on disk, with its matte piece; removed when the test ends."""
+        shop = paths.project_data_dir(PROJECT) / "brand" / slug
+        shop.mkdir(parents=True)
+        self.addCleanup(shutil.rmtree, shop, ignore_errors=True)
+        (shop / ("%s-emblema-alpha.png" % slug)).write_bytes(png.rgba_bytes(2, 2, bytes([20, 90, 40, 255]) * 4))
+
+    def open_with_shops(self):
+        self.open("/p/tarkor/marca", "document.querySelector('#brand-shop .btn-toggle')")
+
+    def test_a_name_without_workshop_does_not_adopt_another_brand(self):
+        self.seed_shop("portal")
+        self.open_with_shops()
+        self.assertTrue(self.js("document.getElementById('shop-name').value.toLowerCase().includes('tarkor')"))
+        self.assertEqual(self.js("document.querySelectorAll('#brand-shop .shop-img').length"), 0)  # no piece of `portal`
+        self.assertTrue(self.disabled("Pasar a SVG en color"))
+        self.assertEqual(self.js("document.querySelector('#brand-shop .btn-toggle').getAttribute('aria-pressed')"), "false")
+        self.no_problems()
+
+    def test_picking_a_workshop_syncs_the_wordmark_text(self):
+        self.seed_shop("portal")
+        self.open_with_shops()
+        self.assertEqual(self.js("document.getElementById('shop-wtext').value"), self.js("document.getElementById('shop-name').value.toUpperCase()"))
+        self.click("#brand-shop .btn-toggle")
+        self.page.wait("document.getElementById('shop-name').value === 'portal'")
+        self.assertEqual(self.js("document.getElementById('shop-wtext').value"), "PORTAL")
+        self.assertEqual(self.js("document.querySelectorAll('#brand-shop .shop-img').length > 0"), True)  # its piece is shown
+        self.no_problems()
+
+    def test_picking_a_workshop_keeps_a_text_typed_for_that_name(self):
+        self.seed_shop("portal")
+        self.open_with_shops()
+        self.js("""(() => { const n = document.getElementById('shop-name'); n.value = 'portal'; n.dispatchEvent(new Event('input'));
+            const w = document.getElementById('shop-wtext'); w.value = 'EL PORTAL'; w.dispatchEvent(new Event('input')); })()""")
+        self.click("#brand-shop .btn-toggle")
+        self.page.wait("document.querySelector('#brand-shop .btn-toggle').getAttribute('aria-pressed') === 'true'")
+        self.assertEqual(self.js("document.getElementById('shop-wtext').value"), "EL PORTAL")
         self.no_problems()
 
     def test_a_project_without_brand_dir_cannot_save_there(self):

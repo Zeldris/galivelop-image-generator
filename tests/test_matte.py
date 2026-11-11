@@ -98,6 +98,12 @@ class RemoveBgTests(unittest.TestCase):
         soft = lambda o: sum(1 for k in range(w * h) if 0 < o[k * 4 + 3] < 255)
         self.assertGreater(soft(with_grow), soft(without))
 
+    def test_grow_has_a_cap(self):
+        w, h, px = disc(size=20, radius=6)
+        with self.assertRaisesRegex(ValueError, "grow between 0 and %d" % matte.MAX_GROW):
+            matte.remove_bg(w, h, px, grow=matte.MAX_GROW + 1)
+        matte.remove_bg(w, h, px, grow=matte.MAX_GROW)
+
     def test_edge_cases(self):
         out = matte.remove_bg(1, 1, bytearray([9, 9, 9, 255]))
         self.assertEqual(tuple(out), (9, 9, 9, 0))  # one pixel: it is the border, so it is background

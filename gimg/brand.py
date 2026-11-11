@@ -17,6 +17,7 @@ modules below becomes ``brand.bad_option``. Stdlib plus ``rsvg-convert`` (only f
 """
 from __future__ import annotations
 
+import math
 import os
 import re
 import shutil
@@ -307,12 +308,18 @@ def _read_svg(path) -> dict:
         raise GimgError("brand.bad_svg", path=str(path), reason=str(getattr(exc, "strerror", None) or exc))
     m = _SVG.match(text)
     vb = _VIEWBOX.search(m.group(1)) if m else None
+    nums = None
+    if vb:
+        try:
+            nums = [float(v) for v in vb.groups()]
+        except ValueError:
+            vb = None
     if not m or not vb:
         raise GimgError("brand.bad_svg", path=str(path), reason="not an SVG with a viewBox (the one of `brand trace` or `brand wordmark`)")
-    if _FORBIDDEN.search(text):
+    if _FORBIDDEN.search(_TITLE.sub("<title></title>", text)):  # the text of a title is a name, not markup
         raise GimgError("brand.bad_svg", path=str(path), reason="it has <text>, <image>, <use>, <style>, <defs>, <script>, <foreignObject>, ids, links or handlers: only paths")
-    x, y, w, h = (float(v) for v in vb.groups())
-    if not (w > 0 and h > 0):
+    x, y, w, h = nums
+    if not all(math.isfinite(v) for v in nums) or not (w > 0 and h > 0):
         raise GimgError("brand.bad_svg", path=str(path), reason="the viewBox has no area")
     inner = _TITLE.sub("", m.group(2))
     return {"vb": (x, y, w, h), "inner": inner, "box": _ink_box(inner) or (x, y, x + w, y + h)}
@@ -421,7 +428,7 @@ def lockup(emblem, wordmark, out=None, layout: str = "h", cap: float = 0.45, gap
         parts = [_place(em, pad + (total_w - ew) / 2, pad, 1.0), _place(wm, pad + (total_w - ww2) / 2, pad + eh + space, s)]
     w, h = total_w + 2 * pad, total_h + 2 * pad
     svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %s %s" role="img">%s%s</svg>\n'
-           % (_num(w), _num(h), "<title>%s</title>" % escape(title) if title else "", "".join(parts)))
+           % (_num(w), _num(h), "<title>%s</title>" % _trace.clean_title(title) if title else "", "".join(parts)))
     _write(out, svg.encode("utf-8"))
     return {"out": out, "layout": layout, "size": [round(w, 1), round(h, 1)], "paths": svg.count("<path"),
             "bytes": len(svg.encode("utf-8"))}

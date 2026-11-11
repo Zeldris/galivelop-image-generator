@@ -26,12 +26,18 @@ from collections import defaultdict
 from xml.sax.saxutils import escape, quoteattr
 
 MODES = ("color", "mono", "silueta")
+MAX_COLORS = 64  # `ncolores` cap: the palette pick costs O(k^2 * points)
 _CONTROL = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 _COLOR = re.compile(r"^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}|[A-Za-z]{3,20})$")  # hex, a name or currentColor
 _DIRS = [(1, 0), (0, 1), (-1, 0), (0, -1)]  # right, down, left, up (clockwise on screen)
 
 
 # ---------- palette ----------
+
+def clean_title(title: str) -> str:
+    """`title` as XML text: control characters dropped, markup escaped (the one way to write a ``<title>``)."""
+    return escape(_CONTROL.sub("", str(title)))
+
 
 def parse_hex(text: str) -> tuple:
     s = text.strip().lstrip("#") if isinstance(text, str) else ""
@@ -92,8 +98,8 @@ def _reduce(width: int, height: int, rgba, factor: int, label):
                 row.append(label((gy * width + gx) * 4))
                 continue
             cnt = {}
-            for dy in range(factor):
-                for dx in range(factor):
+            for dy in range(min(factor, height - gy * factor)):  # a side shorter than the factor has a short block
+                for dx in range(min(factor, width - gx * factor)):
                     lab = label(((gy * factor + dy) * width + gx * factor + dx) * 4)
                     cnt[lab] = cnt.get(lab, 0) + 1
             row.append(max(cnt, key=cnt.get))
@@ -259,8 +265,10 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
         raise ValueError("%d bytes do not fit a %dx%d RGBA image" % (len(rgba), width, height))
     if mode not in MODES:
         raise ValueError("mode must be one of %s (got %r)" % (", ".join(MODES), mode))
-    if ncolores < 1 or smooth_passes < 0 or dp_tol < 0 or min_island < 0 or max_side < 1 or not 0 <= corner_deg <= 180:
-        raise ValueError("ncolores >= 1, smooth_passes, dp_tol and min_island >= 0, max_side >= 1 and corner_deg in 0-180")
+    if not 1 <= ncolores <= MAX_COLORS:
+        raise ValueError("ncolores must be between 1 and %d (got %s)" % (MAX_COLORS, ncolores))
+    if smooth_passes < 0 or dp_tol < 0 or min_island < 0 or max_side < 1 or not 0 <= corner_deg <= 180:
+        raise ValueError("smooth_passes, dp_tol and min_island >= 0, max_side >= 1 and corner_deg in 0-180")
     if not isinstance(color, str) or not _COLOR.match(color):
         raise ValueError("color: %r is not #rgb, #rrggbb or a color name such as currentColor" % (color,))
     pal_hex = list(palette) if palette else (extract_palette(width, height, rgba, ncolores, bg_tol) if mode != "silueta" else [])
@@ -305,4 +313,4 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
             layers.append(layer(pal_hex[order[0]], lambda v: v >= 0))  # the silhouette, under the rest
             layers += [layer(pal_hex[j], lambda v, j=j: v == j) for j in order[1:]]
     head = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" role="img">' % (width, height)
-    return head + ("<title>%s</title>" % escape(_CONTROL.sub("", title)) if title else "") + "".join(layers) + "</svg>\n"
+    return head + ("<title>%s</title>" % clean_title(title) if title else "") + "".join(layers) + "</svg>\n"
