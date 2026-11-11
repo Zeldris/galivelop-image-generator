@@ -4,17 +4,13 @@
   "name": "portal",
   "brand": {
     "palette": [
-      "#06121c",
+      "#0072a8",
       "#1aa6df",
-      "#5cc8f2",
-      "#E0703A",
-      "#2F7A55",
-      "#3D6FD9",
-      "#ffffff",
-      "#eaf4fa",
-      "#2BB3EA",
-      "#0083c1",
-      "#9fb4c4"
+      "#fbfcfd",
+      "#13212b",
+      "#5d7a6a",
+      "#e6eef3",
+      "#0d171e"
     ]
   },
   "delivery": {
@@ -22,74 +18,216 @@
     "template": "{key}-{profile}.png"
   },
   "profiles": {
-    "og": {
-      "width": 1280,
-      "height": 640,
-      "steps": 6,
+    "cuadrado": {
+      "width": 1024,
+      "height": 1024,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
+      "targetWidth": 1024,
+      "targetHeight": 1024,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "icono": {
+      "width": 1024,
+      "height": 1024,
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "zimage-turbo-q6",
+      "targetWidth": 512,
+      "targetHeight": 512,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "fondo": {
+      "width": 1024,
+      "height": 1024,
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "zimage-turbo-q6",
+      "targetWidth": 1200,
+      "targetHeight": 1200,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "social": {
+      "width": 1344,
+      "height": 704,
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "zimage-turbo-q6",
       "targetWidth": 1200,
       "targetHeight": 630,
       "draft": {
         "scale": 0.5,
         "steps": 4
-      },
-      "compose": {
-        "template": "plantillas/og.svg",
-        "fields": [
-          "title1",
-          "title2",
-          "subtitle",
-          "subtitle2"
-        ],
-        "logo": "logos/portal-a-lockup.svg",
-        "fonts": [
-          "Sora",
-          "Inter"
-        ],
-        "fit": "cover"
       }
     },
-    "social": {
-      "width": 1280,
-      "height": 640,
-      "steps": 6,
+    "portada": {
+      "width": 1344,
+      "height": 768,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
+      "model": "zimage-turbo-q6",
+      "targetWidth": 1600,
+      "targetHeight": 900,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "tarjeta": {
+      "width": 1344,
+      "height": 768,
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "zimage-turbo-q6",
       "targetWidth": 1200,
-      "targetHeight": 630
+      "targetHeight": 675,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
     },
-    "square": {
+    "cabecera": {
+      "width": 1664,
+      "height": 512,
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "zimage-turbo-q6",
+      "targetWidth": 1600,
+      "targetHeight": 500,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "muro": {
+      "width": 1792,
+      "height": 448,
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "zimage-turbo-q6",
+      "targetWidth": 1600,
+      "targetHeight": 400,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "panoramica": {
+      "width": 1536,
+      "height": 576,
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "zimage-turbo-q6",
+      "targetWidth": 1600,
+      "targetHeight": 600,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "ilustracion": {
+      "width": 1152,
+      "height": 768,
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "zimage-turbo-q6",
+      "targetWidth": 1200,
+      "targetHeight": 800,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "formulario": {
       "width": 1024,
-      "height": 1024,
-      "steps": 6,
+      "height": 768,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
-      "targetWidth": 1080,
-      "targetHeight": 1080
+      "model": "zimage-turbo-q6",
+      "targetWidth": 800,
+      "targetHeight": 600,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
     },
-    "portrait": {
-      "width": 896,
-      "height": 1152,
-      "steps": 6,
+    "patron": {
+      "width": 1792,
+      "height": 448,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
-      "targetWidth": 1080,
-      "targetHeight": 1350
+      "model": "zimage-turbo-q6",
+      "tileable": "xy",
+      "targetWidth": 1200,
+      "targetHeight": 300,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
     },
-    "header": {
+    "hoja3": {
       "width": 1536,
       "height": 512,
-      "steps": 6,
+      "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
-      "model": "flux2-klein-4b-q8",
-      "targetWidth": 1500,
-      "targetHeight": 500
+      "model": "zimage-turbo-q6",
+      "targetWidth": 1536,
+      "targetHeight": 512,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "separador": {
+      "width": 1536,
+      "height": 128,
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "zimage-turbo-q6",
+      "targetWidth": 1200,
+      "targetHeight": 100,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "legal": {
+      "width": 1920,
+      "height": 128,
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "zimage-turbo-q6",
+      "targetWidth": 1200,
+      "targetHeight": 80,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
     }
   }
 }

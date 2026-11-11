@@ -6,7 +6,7 @@
 # r0: humo, el og del Portal con semilla 3. r1: el og de cada proyecto con semillas 3 y 4, y una hoja de contacto.
 # r2: las tres variantes de estilo de cada proyecto (prompts/r2-{palabras,hex,material}.txt) con semilla 3, y su hoja.
 # r3: borrador (640×320, 4 pasos) contra definitivo (1280×640, 8 pasos) del estilo elegido (prompts/estilo.txt) con
-# FLUX.2 klein; en R3_FLUX3 (por defecto portal), además FLUX.3 a 640×320/8 y 1280×640/16 pasos (tope R3_TOPE, 7200 s).
+# FLUX.2 klein; en R3_FLUX3 (por defecto tarkor), además FLUX.3 a 640×320/8 y 1280×640/16 pasos (tope R3_TOPE, 7200 s).
 # TARKOR_GEN=<ruta de generar.sh> para otra copia; salta lo que ya existe, así que una ronda cortada se relanza igual.
 # sin pipefail: generar.sh devuelve 3 si aborta antes de arrancar (memoria, Ollama) y entonces se para la ronda entera;
 # cualquier otro fallo se cuenta, la ronda sigue con el resto y el script acaba en 1
@@ -15,7 +15,7 @@ R=$(cd "$(dirname "$0")/../.." && pwd)
 GEN=${TARKOR_GEN:-$R/../WMF-imagenes/image-generator/scripts/generar.sh}
 PILOTO=${PILOTO:-$R/piloto}
 RONDA=${1:-}
-PROYECTOS="portal toveriai galivelop-workflow tarkor galivelop-image-generator galivelop-voice-generator galivelop-developer"
+PROYECTOS="toveriai galivelop-workflow tarkor galivelop-image-generator galivelop-voice-generator galivelop-developer"
 N=$(echo $PROYECTOS | wc -w | tr -d ' ')
 FALLOS=0
 # r5: los fondos de las piezas de r5 (prompts/r5-{cuadrado,vertical,cabecera}.txt, más r5-og-bajo en Tarkor) en
@@ -24,10 +24,10 @@ FALLOS=0
 # defecto 1280×640, 6 pasos y el modelo de generar.sh. La imagen, <prompt>-s<semilla>, o <prompt>-<ancho>x<alto>-p<pasos>
 # [-<modelo>]-s<semilla> si la pieza da tamaño.
 case $RONDA in
-  r0) PIEZAS="portal:og:3"; COLS=1 ;;
+  r0) PIEZAS="tarkor:og:3"; COLS=1 ;;
   r1) PIEZAS=""; for q in $PROYECTOS; do PIEZAS="$PIEZAS $q:og:3 $q:og:4"; done; COLS=2 ;;
   r2) PIEZAS=""; for q in $PROYECTOS; do for v in palabras hex material; do PIEZAS="$PIEZAS $q:r2-$v:3"; done; done; COLS=3 ;;
-  r3) PIEZAS=""; F3=${R3_FLUX3:-portal}; for q in $PROYECTOS; do PIEZAS="$PIEZAS $q:estilo:3:640:320:4 $q:estilo:3:1280:640:8"
+  r3) PIEZAS=""; F3=${R3_FLUX3:-tarkor}; for q in $PROYECTOS; do PIEZAS="$PIEZAS $q:estilo:3:640:320:4 $q:estilo:3:1280:640:8"
         [ "$q" = "$F3" ] && PIEZAS="$PIEZAS $q:estilo:3:640:320:8:flux3 $q:estilo:3:1280:640:16:flux3"; done; COLS=0 ;;
   r5) PIEZAS="tarkor:r5-og-bajo:3:1280:640:6"; for q in $PROYECTOS; do
         PIEZAS="$PIEZAS $q:r5-cuadrado:3:1024:1024:6 $q:r5-vertical:3:896:1152:6 $q:r5-cabecera:3:1536:512:6"; done; COLS=0 ;;

@@ -116,6 +116,33 @@ la persona decide si es una F4e o va con otra). Se diseña con su «en detalle»
    fondo» sobre una pieza sin transparencia, que deja una copia y conserva la original. Por investigar antes de
    prometerlo: cómo quitar el fondo sin instalar nada (D6): si `sd-cli` o un modelo local lo hace, o un recorte por
    color para fondos lisos.
+   **Y paso a SVG** (añadido el 2026-11-10 por las peticiones del Portal, `docs/marca.md` de Portal-Galivelop: logo
+   1/1b, iconos 4, 5, 7-9, 12, 14, marcos 17 y 20 se piden como PNG transparente de 1024 px que acaba en SVG con
+   `currentColor`). Hoy gimg no hace ni lo uno ni lo otro. Propuesta, solo stdlib y el `png.py` de gimg: (a)
+   transparencia por recorte de color en arte plano de pocos colores (el fondo es el color dominante del borde, con
+   tolerancia y borde suavizado); (b) vectorizado de siluetas planas: contornos por *marching squares*, simplificación
+   (Douglas-Peucker) y curvas, un `<path>` por color con `fill="currentColor"` para la tinta. Se prueba primero con un
+   prototipo sobre los intentos reales del Portal. Versión por decidir con la persona.
+   **Proceso de marca en la interfaz** (pedido de la persona del 2026-11-10, al parar el dibujo a mano de los SVG de
+   Tarkor): todo el camino de la marca se hace desde la interfaz, no solo con órdenes: del emblema elegido, «Quitar
+   fondo» (tolerancia, vista sobre claro y oscuro); «Pasar a SVG» (colores tomados de la paleta del proyecto, número de
+   colores, tolerancia de simplificación, versiones simple y mono) con vista previa a 16, 32, 64 y 128 px lado a lado;
+   **wordmark** desde el nombre y la fuente de la hoja (peso, espaciado) pasado a trazos; **lockups** horizontal y
+   vertical colocando emblema y wordmark con las proporciones de la hoja; y guardar el sistema de logo en la carpeta
+   que diga la persona (D40), con hoja de contactos. Cada paso deja copia y conserva el original. El prototipo de
+   Tarkor (`piloto/tarkor/vector/`) fija los parámetros que la interfaz expone.
+   En detalle (2026-11-10): la API local ya expone el camino (`gimg/brandshop.py`, `docs/api.md`, «Marca»). El borrador de
+   cada marca vive en `<datos>/projects/<p>/brand/<slug>/` con los nombres fijos de `SYSTEM_FILES`; cada llamada lo pisa y
+   el original del intento no se toca. La fuente es un intento del proyecto (`{profile, key, attempt}`, con la guarda D25).
+   La tipografía se manda como familia y se resuelve con `fc-match`, nunca como ruta. `save` copia el sistema y la hoja de
+   contactos a `brand-out/<slug>/` (`data`) o a `brand.dir` de la configuración (`project`, dentro de la raíz, como
+   `compose.templatesDir`); sin `force`, lo que ya esté da `brand.exists`. `matte`, `trace`, `wordmark` y `save` pasan
+   por `_heavy()` (CPU larga o `rsvg-convert`, y una escritura a la vez sobre el mismo borrador); `lockup` es solo texto y no.
+   **Hecho en la interfaz (2026-11-10):** la pestaña Marca lleva el taller «Sistema de logo» (`brand-workshop.js`) con los
+   siete pasos sobre esa API (nombre y talleres, origen, quitar fondo, SVG color y mono a 16-128 px, wordmark, lockups y
+   guardar con confirmación de `brand.exists`), cada paso deshabilitado con su motivo hasta que exista la pieza, y el
+   botón «Usar para marca» en la tarjeta del intento (`?src=perfil|clave|intento`); sus pruebas en el navegador (`BrandShop`)
+   pasan; el camino feliz (quitar fondo, trazar) **no se ha probado en navegador** (pide una imagen de fondo plano y `rsvg-convert`).
 3. **Imágenes de referencia al generar una pieza:** una o varias (intentos de gimg o archivos de la persona) para
    seguir un estilo, una forma o un personaje. Comprobar qué acepta hoy `sd-cli` y qué modelos del catálogo.
 4. **Cajas de texto antes de generar:** en el pedido nuevo se colocan, al tamaño de la pieza, las cajas de titular,
@@ -139,6 +166,7 @@ la persona decide si es una F4e o va con otra). Se diseña con su «en detalle»
    `font-style`, `fill`, `text-anchor`). Los cambios se aplican a una copia del intento (la original no se toca) y se
    pueden guardar como plantilla nueva, como hoy la posición. Por decidir en su «en detalle»: el texto largo que no
    cabe en la caja (encoger, cortar o avisar) y si la fuente elegida viaja con el proyecto (archivo en el repo, D25).
+8. **Piezas de mapa: sin costura y recortes** (pedido de WMF del 2026-11-10, `docs/marcas/tarkor/pedido-mapa.md`): (a) una orden que hace repetible una textura (desplazar media pieza y fundir la costura, solo stdlib) y una vista 4×4 para comprobarla, sin escala ni marca visible; (b) `gimg brand matte` con fondo croma verde o magenta (el color dominante del borde ya lo cubre: se prueba con los dos); (c) perfiles `cartela` 1024×512 y `banda` 1024×256; (d) img2img desde una pieza base con fuerza 0,35-0,45 (comprobar qué acepta `sd-cli`). Pasa si una textura en 4×4 no enseña costura y un icono se lee a 24 px en gris.
 
 ## F1 en detalle
 

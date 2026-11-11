@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/08-iconos-valores",
+  "profile": "cuadrado",
+  "prompt": "Contact sheet of 4 simple line icons in a 2x2 grid, one icon per cell, evenly spaced, all drawn with the same stroke, no captions, no labels under the icons. an open padlock; a small crosshair cursor at the edge of a square grid that continues outward as dots; a commit history drawn as one vertical line with four round nodes; two branches that merge into one line, with a round node at each end. Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, bold and clear enough to read at 24 pixels, generous empty margin around each icon, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background. Flat vector pictogram, minimal, geometric. No photographic rendering, no gradients, no glow, no text, no letters, no numbers, no watermark, no border, no frame.",
+  "seed": 1,
+  "count": 2
+}

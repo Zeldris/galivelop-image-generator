@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "ui/01b-emblema-plano",
+  "profile": "emblema",
+  "prompt": "Flat two-colour emblem icon, a seal stamp pictogram seen straight on, centred on a perfectly flat untouched bright green background. Pure flat graphic design in only two inks: solid matte gold #b8862b and solid very dark brown #1b130c; every shape is a flat filled silhouette with thick, clean, smooth edges and uniform colour throughout, zero shading, zero gradient, zero relief, zero texture, zero outline, zero shadow, favicon style. Design: a thick circular ring of solid gold with exactly four long pointed gold spikes at top, bottom, left and right only; inside the ring the green background shows through; at the centre a solid round disc of dark brown, split by three thin straight gold lines through its centre at 0, 60 and 120 degrees into six equal dark wedges; a small solid gold four-pointed star sits on the exact centre of the disc. Perfectly symmetric, frontal, crisp geometric, 15 percent empty margin on every side.",
+  "seed": 1,
+  "draft": false,
+  "count": 8
+}

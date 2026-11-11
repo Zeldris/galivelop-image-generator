@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/17-marco-retrato",
+  "profile": "cuadrado",
+  "prompt": "Square picture frame made only of the degree tick marks of a nautical chart border: short and long ticks along the four edges, the top-right corner cut straight at 45 degrees as a flat chamfer, no folded corner, no seaweed, no plants, no ornaments, ink grey on transparent, the whole centre left smooth and empty. Richly detailed engraved antique nautical chart style, like a fine sea chart printed in two inks: many layers of fine lines and hatching, line density increasing in the darker areas to give depth and tone, lines of several weights, crisp and sharp, intricate but calm, premium print quality, high detail, elegant. No photographic rendering, no glow, no text, no letters, no numbers, no watermark. Palette strictly limited to medium cerulean ocean blue #0072a8 and its tints and shades, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a.",
+  "seed": 1,
+  "count": 2
+}

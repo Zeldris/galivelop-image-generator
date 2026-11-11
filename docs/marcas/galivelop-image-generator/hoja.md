@@ -4,9 +4,17 @@
 2026-11-04 (identidad oscura con violeta, en «Historia») como **variante de la identidad nueva del Portal**
 (Portal-Galivelop `08c7fe5`, `docs/marca.md`): comparte con ella papel, tinta, tipografías y lenguaje de línea, y conserva
 lo propio (el violeta, la rejilla de intentos, los marcos). Interfaz, logos y nombre (D38) están **aplicados
-el 2026-11-11** en la rama `claude/marca-r9` (`de53727`, `1b211f6`, `e4b5db0`); hasta que esa rama llegue a `main`, en `main`
-siguen la interfaz y los logos anteriores. Lo que sigue marcado **[P]** no está aplicado. Las piezas `og`/`social`,
+el 2026-11-11** en la rama `claude/marca-r9` (`de53727`, `1b211f6`, `e4b5db0`), fusionada en `main` por el PR #6
+(`2509674`). Lo que sigue marcado **[P]** no está aplicado. Las piezas `og`/`social`,
 `og.txt` y `brand.palette` **no cambian** hasta medir una ronda plana.
+
+> **Para imagen generada nueva manda además la identidad vigente del Portal (2026-11-11).** r9 leyó el Portal en
+> `08c7fe5`; después, el bloque «Identidad vigente» de [`../portal/hoja.md`](../portal/hoja.md) fijó lo que enseñó generar
+> con gimg: Z-Image-Turbo q6 a 8 pasos (FLUX solo bocetos), «el mar pone el dónde, la tecnología pone el qué», dos
+> registros de dibujo (grabado y línea simple), zonas limpias, croma para recortar, versión oscura y «Cómo se escribe el
+> prompt» (negaciones solo en el cierre, `like` como comparación de estilo, ningún color fuera de tinta). Esta hoja añade
+> lo propio: la fila «Motivo propio» de la sección 6 y el violeta para logo e interfaz (en imagen generada, ver la duda 2
+> del Portal). La interfaz y los logos de r9 ya casan con esa identidad (papel, tinta, oscuro y tipografías).
 
 Sigue [`../plantilla-hoja-de-estilo.md`](../plantilla-hoja-de-estilo.md) (F2.12) y complementa a [`biblia.md`](biblia.md).
 Estados como en [`../README.md`](../README.md): sin marca sale del repo (ruta en la sección 13); **heredado de
@@ -147,10 +155,11 @@ encendidas ya no dicen eso; por eso es un uso prohibido y no una variante.
 
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
+| Motivo propio (identidad vigente, 2026-11-11) | Obl. | **La cola y la elegida, en informática:** una ventana de aplicación con una fila de miniaturas (celdas de una retícula), una de ellas marcada con un visto; variantes: la ventana sobre el mar de carta (grabado, portadas) o sola (icono, línea simple). Nada de cámaras, pinceles ni marcos de cristal con brillo. Icono: «an application window holding a row of small thumbnails, one of them marked with a tick» (sin número exacto de miniaturas). Violeta solo en logo, baldosa e interfaz; en la imagen generada, las cuatro tintas del Portal salvo que la persona decida la duda 2 de su hoja | **propuesta del agente, 2026-11-11**, según la fila «Mar y tecnología» de `../portal/hoja.md`; pendiente de pieza (`#24 og por proyecto` del Portal) |
 | Motivos: sí | Obl. | fila o rejilla de marcos finos (la cola de intentos); un solo marco relleno de violeta (el elegido); rejilla tenue de puntos; un punto de luz | repo (`prompts/estilo.txt`, `biblia.md`) |
 | Motivos r9 | Rec. | los mismos, dibujados como la carta del Portal: marcos de línea de tinta de grosor uniforme, la celda elegida como único relleno, la rejilla de puntos como retícula de carta, mucho papel vacío | **[P]** |
 | Motivos: no | Obl. | cámaras, pinceles, paletas, lienzos, caballetes, chispas y varitas, robots, cerebros, caras y personas, galerías con cuadros reconocibles | repo |
-| Palabras vetadas en prompts | Obl. | `camera`, `lens`, `brush`, `paint`, `palette`, `easel`, `canvas`, `sparkle`, `spark`, `magic`, `robot`, `brain`, `face`, `person`, `artist`, `gallery`, `text`, `letters`, `logo`; además `like` y nombres de lugares reales | repo |
+| Palabras vetadas en prompts | Obl. | `camera`, `lens`, `brush`, `paint`, `palette`, `easel`, `canvas`, `sparkle`, `spark`, `magic`, `robot`, `brain`, `face`, `person`, `artist`, `gallery`, `text`, `letters`, `logo`; además `like` y nombres de lugares reales. **Para piezas nuevas (2026-11-11):** las palabras propias siguen vetadas por ética y motivo; el veto a `no`/`not`/`without`/`like` no se aplica: rige «Cómo se escribe el prompt» de `../portal/hoja.md` | repo |
 | Estilo de imagen, medido | Obl. | r6-r8: marcos de vidrio, PBR, luz volumétrica, humo violeta sobre fondo oscuro (r7: 9/10 de la persona) | repo (`examples/galivelop-image-generator/prompts/`) |
 | Estilo de imagen r9 | Rec. | para los recursos de marca (símbolo, cabeceras de documentación, ilustraciones de la interfaz): plano, el del Portal («flat vector illustration… thin lines of even width, no gradients, no glow, no shading… lots of empty space»), con el motivo de los marcos en vez de la carta. Las piezas `og`/`social` ya medidas siguen en vidrio hasta que una ronda mida el plano | **[P]** *(suposición: sin ronda)* |
 | Lenguaje de formas | Rec. | trazo 12/128 con extremos redondos; esquinas: hoy `rx` 30/128 en la baldosa y 16/128 en el marco interior; r9: chaflán 28/128 en la baldosa, marcos interiores de esquina viva (aplicado al logo) | repo |

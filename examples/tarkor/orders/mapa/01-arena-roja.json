@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../../gimg/schemas/order.schema.json",
+  "key": "mapa/01-arena-roja",
+  "profile": "texturamapa",
+  "prompt": "Hand-painted fantasy map terrain, seen from directly above. Matte painterly brushwork, fine detail, restrained natural colour, soft warm light from the upper left, even exposure, calm and readable, no haze. Seamless tileable texture of wind-rippled red sand dunes seen from directly above, colours #b0643a and #6e3a22 with crests catching light in #E0703A, long parallel ripples, scattered dark pebbles, edge to edge.",
+  "seed": 1,
+  "draft": false,
+  "count": 2
+}

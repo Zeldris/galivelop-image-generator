@@ -12,6 +12,8 @@
   --bg: #fbfcfd;
   --surface: #e6eef3;
   --surface-2: #d9e4eb;       /* [derivado] */
+  --preview-light: #fbfcfd;   /* fondos fijos de las vistas previas de logo (papel y oscuro de la identidad vigente): no cambian con el tema */
+  --preview-dark: #0d171e;
   --border: #6f8493;          /* bordes de campos y controles (≥ 3:1) */
   --rule: #c9d5dd;            /* filetes y separadores (decorativos) */
   --text: #13212b;

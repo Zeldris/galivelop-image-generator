@@ -6,6 +6,7 @@
 import { h, replace } from '../dom.js';
 import { t } from '../i18n.js';
 import { api, paths, describeError } from '../api.js';
+import { brandWorkshop } from './brand-workshop.js';
 
 const STATUS_CHIP = { ok: 'chip-ok', warn: 'chip-warn', fail: 'chip-bad' };
 
@@ -41,7 +42,8 @@ export async function brandTab(panel, project, cfg) {
     h('section.card', { aria: { labelledby: 'check-h' } },
       h('div.row-between', {}, h('h2', { id: 'check-h' }, t('ui.check.title')),
         h('button.btn', { type: 'button', onclick: () => runCheck() }, '↻ ', t('ui.check.run'))),
-      checkHost)));
+      checkHost),
+    brandWorkshop(project, cfg)));
 
   async function loadLogos() {
     const seen = new Set();

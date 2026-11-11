@@ -183,6 +183,15 @@ class OrderTests(unittest.TestCase):
         self.assertEqual(self.code(orders.add_attempt, "proj", "a", "banner", {"seed": 1}), "order.spec_invalid")
         self.assertEqual(self.code(orders.add_attempt, "proj", "zz", "banner", self.spec()), "order.unknown")
 
+    def test_add_attempt_keeps_tileable_and_rejects_a_bad_value(self):
+        self.new_order()
+        spec = {"seed": 1, "prompt": "p", "params": {"width": 64, "height": 64, "steps": 8, "tileable": "xy"}}
+        orders.add_attempt("proj", "a", "banner", spec)
+        self.assertEqual(orders.get("proj", "a", "banner")["attempts"][0]["params"]["tileable"], "xy")
+        with self.assertRaises(GimgError) as cm:
+            orders.add_attempt("proj", "a", "banner", dict(spec, params={"tileable": "z"}))
+        self.assertEqual((cm.exception.code, cm.exception.errors[0].path), ("order.invalid", "/tileable"))
+
     def test_mark_and_note(self):
         self.new_order(attempts=2)
         self.assertEqual(orders.mark("proj", "a", "banner", 1, "candidate")["state"], "candidate")

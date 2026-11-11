@@ -9,6 +9,10 @@ for every ``tEXt``, ``zTXt`` and ``iTXt`` chunk (a repeated key keeps the last o
 other (a prompt with an emoji or a CJK character) as an uncompressed ``iTXt`` in UTF-8, with the same key. A key is
 1-79 Latin-1 characters without NUL, newline or leading/trailing space (PNG spec).
 
+`read_rgba(path)` decodes an 8-bit RGB or RGBA PNG (not interlaced, filters 0-4) to ``(width, height, rgba)``, with
+`rgba` a ``bytearray`` of ``width * height * 4`` bytes (alpha 255 for an RGB file); `rgba_bytes(width, height, rgba)`
+is the reverse, an 8-bit RGBA PNG. Anything else (16 bits, palette, interlace) raises ``png.invalid`` with the reason.
+
 `size(path)` reads just the width and height of the IHDR chunk.
 
 A file that is not a PNG, is cut, or has a chunk with a bad CRC raises ``GimgError("png.invalid", path, reason)``; the
@@ -42,6 +46,18 @@ def png_bytes(width: int, height: int, color: tuple) -> bytes:
     return (SIGNATURE
             + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
             + chunk(b"IDAT", zlib.compress(row * height))
+            + chunk(b"IEND", b""))
+
+
+def rgba_bytes(width: int, height: int, rgba) -> bytes:
+    """A valid 8-bit RGBA PNG of `rgba` (``width * height * 4`` bytes, row by row)."""
+    if width < 1 or height < 1 or len(rgba) != width * height * 4:
+        raise ValueError("rgba_bytes: %d bytes do not fit a %dx%d image" % (len(rgba), width, height))
+    stride = width * 4
+    rows = b"".join(b"\x00" + bytes(rgba[y * stride:(y + 1) * stride]) for y in range(height))
+    return (SIGNATURE
+            + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0))
+            + chunk(b"IDAT", zlib.compress(rows, 6))
             + chunk(b"IEND", b""))
 
 
@@ -197,3 +213,72 @@ def add_text_chunk(path, key: str, text: str) -> None:
         with contextlib.suppress(OSError):
             os.unlink(tmp)
         raise
+
+
+def _unfilter(raw: bytes, width: int, height: int, bpp: int, path) -> bytearray:
+    """The scanlines of `raw` (a filter byte + ``width * bpp`` bytes each) with their filters 0-4 undone."""
+    stride = width * bpp
+    if len(raw) != height * (1 + stride):
+        raise _invalid(path, "the image data has the wrong length")
+    out = bytearray(height * stride)
+    prev = bytearray(stride)
+    pos = 0
+    for y in range(height):
+        kind = raw[pos]
+        line = bytearray(raw[pos + 1:pos + 1 + stride])
+        pos += 1 + stride
+        if kind == 1:
+            for i in range(bpp, stride):
+                line[i] = (line[i] + line[i - bpp]) & 255
+        elif kind == 2:
+            for i in range(stride):
+                line[i] = (line[i] + prev[i]) & 255
+        elif kind == 3:
+            for i in range(stride):
+                left = line[i - bpp] if i >= bpp else 0
+                line[i] = (line[i] + ((left + prev[i]) >> 1)) & 255
+        elif kind == 4:
+            for i in range(stride):
+                a = line[i - bpp] if i >= bpp else 0
+                b = prev[i]
+                c = prev[i - bpp] if i >= bpp else 0
+                pa, pb, pc = abs(b - c), abs(a - c), abs(a + b - 2 * c)
+                line[i] = (line[i] + (a if pa <= pb and pa <= pc else (b if pb <= pc else c))) & 255
+        elif kind != 0:
+            raise _invalid(path, "unknown scanline filter %d" % kind)
+        out[y * stride:(y + 1) * stride] = line
+        prev = line
+    return out
+
+
+def read_rgba(path) -> tuple:
+    """``(width, height, rgba)`` of the 8-bit RGB or RGBA PNG at `path` (see the module docstring)."""
+    chunks = _chunks(_read(path), path)
+    head = chunks[0][1]
+    if len(head) != 13:
+        raise _invalid(path, "bad IHDR chunk")
+    width, height, depth, color, _comp, _filt, interlace = struct.unpack(">IIBBBBB", head)
+    if width == 0 or height == 0:
+        raise _invalid(path, "the image has a zero side")
+    if depth != 8 or color not in (2, 6) or interlace != 0:
+        raise _invalid(path, "only 8-bit RGB or RGBA without interlace is read (bit depth %d, color type %d, "
+                             "interlace %d)" % (depth, color, interlace))
+    if width * height > 1 << 24:
+        raise _invalid(path, "the image is too big")
+    bpp = 3 if color == 2 else 4
+    idat = b"".join(b for k, b in chunks if k == b"IDAT")
+    if not idat:
+        raise _invalid(path, "the image data is missing (no IDAT chunk)")
+    try:
+        raw = zlib.decompressobj().decompress(idat, height * (1 + width * bpp) + 1)
+    except zlib.error as exc:
+        raise _invalid(path, "bad image data (cut or damaged): %s" % exc)
+    if len(raw) < height * (1 + width * bpp):
+        raise _invalid(path, "the image data is cut (%d of %d bytes)" % (len(raw), height * (1 + width * bpp)))
+    pix = _unfilter(raw, width, height, bpp, path)
+    if bpp == 4:
+        return width, height, pix
+    rgba = bytearray(width * height * 4)
+    rgba[0::4], rgba[1::4], rgba[2::4] = pix[0::3], pix[1::3], pix[2::3]
+    rgba[3::4] = b"\xff" * (width * height)
+    return width, height, rgba

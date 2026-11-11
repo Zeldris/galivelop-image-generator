@@ -91,16 +91,18 @@ class RealCatalogTests(unittest.TestCase):
         cls.catalog = models.load_catalog()
 
     def test_ids_and_licenses(self):
-        self.assertEqual(models.ids(self.catalog), ["flux2-klein-4b-q8", "flux3-klein-q8"])
+        self.assertEqual(models.ids(self.catalog), ["flux2-klein-4b-q8", "flux3-klein-q8", "zimage-turbo-q6"])
         self.assertEqual(self.catalog["models"]["flux2-klein-4b-q8"]["license"], "Apache-2.0")
         self.assertEqual(self.catalog["models"]["flux3-klein-q8"]["license"], "unconfirmed")
+        self.assertEqual(self.catalog["models"]["zimage-turbo-q6"]["license"], "Apache-2.0")
 
     def test_files(self):
         expect = {
             "flux2-klein-4b-q8": ("flux-2-klein-4b-Q8_0.gguf", "Qwen3-4B-Q4_K_M.gguf",
                                   "full_encoder_small_decoder.safetensors"),
             "flux3-klein-q8": ("flux3-image-klein-Q8_0.gguf", "Qwen3VL-4B-Instruct-Q4_K_M.gguf",
-                               "flux2-vae.safetensors")}
+                               "flux2-vae.safetensors"),
+            "zimage-turbo-q6": ("z_image_turbo-Q6_K.gguf", "Qwen3-4B-Q4_K_M.gguf", "ae.safetensors")}
         for model_id, names in expect.items():
             files = self.catalog["models"][model_id]["files"]
             self.assertEqual(tuple(files[k]["name"] for k in models.KINDS), names)
@@ -185,7 +187,7 @@ class ResolveTests(unittest.TestCase):
             models.resolve("nope", self.deck)
         self.assertEqual(cm.exception.code, "model.unknown")
         self.assertEqual(cm.exception.params["model"], "nope")
-        self.assertEqual(cm.exception.params["known"], "flux2-klein-4b-q8, flux3-klein-q8")
+        self.assertEqual(cm.exception.params["known"], "flux2-klein-4b-q8, flux3-klein-q8, zimage-turbo-q6")
         self.assertIn("nope", cm.exception.message("es"))
         self.assertIn("flux3-klein-q8", cm.exception.message("en"))
 
@@ -268,7 +270,8 @@ class MachineProfileTests(unittest.TestCase):
         self.assertEqual(deck["engine"], {
             "maxVram": "vulkan0=2", "paramsBackend": "disk", "ollama": "abort",
             "models": {"flux3-klein-q8": {"args": ["--backend", "diffusion=cpu", "-t", "8"],
-                                          "timeoutS": 10800, "minFreeMemoryMb": 5000}}})
+                                          "timeoutS": 10800, "minFreeMemoryMb": 5000},
+                       "zimage-turbo-q6": {"timeoutS": 3600}}})
 
     def test_engine_schema(self):
         sch = schema.load_schema("machine-profile")
@@ -346,7 +349,7 @@ class InstallDefaultTests(unittest.TestCase):
             other.write_text(json.dumps(small_catalog()), encoding="utf-8")
             with mock.patch.dict(os.environ, {"GIMG_CATALOG": str(other)}):
                 self.assertEqual(models.ids(), ["m-one"])
-                self.assertEqual(models.ids(models.load_catalog(models.CATALOG)), ["flux2-klein-4b-q8", "flux3-klein-q8"])
+                self.assertEqual(models.ids(models.load_catalog(models.CATALOG)), ["flux2-klein-4b-q8", "flux3-klein-q8", "zimage-turbo-q6"])
 
 
 if __name__ == "__main__":

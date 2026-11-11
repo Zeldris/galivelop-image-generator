@@ -243,6 +243,9 @@ class _Run:
         self.min_free_mb = free if self.min_free_mb is None else min(self.min_free_mb, free)
 
 
+_TILEABLE_FLAGS = {"xy": "--circular", "x": "--circularx", "y": "--circulary"}
+
+
 class SdCppEngine(Engine):
     provider = PROVIDER
 
@@ -296,6 +299,8 @@ class SdCppEngine(Engine):
         if eng.get("threads"):  # before the model's args, so those can override it
             argv += ["-t", str(eng["threads"])]
         argv += resolved["args"]
+        if job.tileable:
+            argv.append(_TILEABLE_FLAGS[job.tileable])
         for ref in job.references or []:
             argv += ["-r", str(ref)]
         if job.init_image:

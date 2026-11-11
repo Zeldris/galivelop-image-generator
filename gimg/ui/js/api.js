@@ -115,6 +115,13 @@ export const paths = {
   clear: () => '/api/queue/clear',
   models: () => '/api/models',
   check: (p) => `/api/projects/${enc(p)}/check`,
+  brand: (p) => `/api/projects/${enc(p)}/brand`,
+  brandMatte: (p) => `/api/projects/${enc(p)}/brand/matte`,
+  brandTrace: (p) => `/api/projects/${enc(p)}/brand/trace`,
+  brandWordmark: (p) => `/api/projects/${enc(p)}/brand/wordmark`,
+  brandLockup: (p) => `/api/projects/${enc(p)}/brand/lockup`,
+  brandSave: (p) => `/api/projects/${enc(p)}/brand/save`,
+  brandFile: (p, slug, file, v = '') => `/api/projects/${enc(p)}/brand/files/${enc(slug)}/${enc(file)}${v ? '?v=' + enc(v) : ''}`,
   preview: (id) => `/api/queue/${enc(id)}/preview?t=${Date.now()}`,
 };
 
@@ -143,6 +150,12 @@ export const api = {
   models: () => get(paths.models()),
   check: (p) => get(paths.check(p)),
   newOrder: (p, body) => post(paths.newOrder(p), body),
+  brandList: (p) => get(paths.brand(p)),
+  brandMatte: (p, body) => post(paths.brandMatte(p), body),
+  brandTrace: (p, body) => post(paths.brandTrace(p), body),
+  brandWordmark: (p, body) => post(paths.brandWordmark(p), body),
+  brandLockup: (p, body) => post(paths.brandLockup(p), body),
+  brandSave: (p, body) => post(paths.brandSave(p), body),
 };
 
 /** Texto legible de cualquier fallo, para los avisos (el mensaje de la API ya viene en el idioma pedido). */

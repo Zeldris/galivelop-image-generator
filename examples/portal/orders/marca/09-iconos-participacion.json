@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/09-iconos-participacion",
+  "profile": "hoja3",
+  "prompt": "Contact sheet of 3 simple line icons in a 1x3 (one row of three) grid, one icon per cell, evenly spaced, all drawn with the same stroke, no captions, no labels under the icons. two curved branches flowing together into one line; a light bulb inside an application window; a terminal window with a prompt chevron and a block caret waiting. Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, bold and clear enough to read at 24 pixels, generous empty margin around each icon, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background. Flat vector pictogram, minimal, geometric. No photographic rendering, no gradients, no glow, no text, no letters, no numbers, no watermark, no border, no frame.",
+  "seed": 1,
+  "count": 2
+}

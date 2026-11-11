@@ -33,6 +33,8 @@ INTENDED_500 = {
     "measure.no_brand_palette", "sheet.no_images", "sheet.too_many", "sheet.unreadable",
     "sheet.out_is_input", "sheet.tool_missing", "sheet.tool_failed", "sheet.timeout", "api.unexpected",
     "serve.start_failed",
+    # brand.*: faults of the machine, not of the request (the rest of brand.* has its 4xx)
+    "brand.out_is_input", "brand.tool_missing", "brand.tool_failed", "brand.timeout", "brand.write_failed",
 }
 
 
@@ -51,7 +53,7 @@ class StatusTableTests(unittest.TestCase):
                              ("limit.steps", 400), ("api.content_type", 415), ("api.length_required", 411),
                              ("api.body_too_large", 413), ("api.method_not_allowed", 405),
                              ("compose.busy", 409), ("measure.busy", 409), ("order.invalid", 400),
-                             ("queue.bad_state", 400), ("brand.nothing", 500)]:
+                             ("queue.bad_state", 400), ("brand.exists", 409), ("brand.no_matte", 400), ("brand.nothing", 500)]:
             self.assertEqual(server.status_for(code), status, code)
 
 
