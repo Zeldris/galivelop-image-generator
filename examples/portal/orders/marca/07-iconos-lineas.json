@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/07-iconos-lineas",
+  "profile": "cuadrado",
+  "prompt": "Contact sheet of 4 simple line icons in a 2x2 grid, one icon per cell, evenly spaced, all drawn with the same stroke, no captions, no labels under the icons. an application window holding a pair of angle code brackets; a magnifying lens over a list of short lines with a checkmark tick; a sheet of paper whose right half turns into an application window; a drafting compass standing on a square grid. Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, bold and clear enough to read at 24 pixels, generous empty margin around each icon, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background. Flat vector pictogram, minimal, geometric. No photographic rendering, no gradients, no glow, no text, no letters, no numbers, no watermark, no border, no frame.",
+  "seed": 1,
+  "count": 2
+}

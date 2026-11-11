@@ -7,7 +7,7 @@ import os
 import sys
 import traceback
 
-from . import __version__, compose, delivery, doctor, i18n, measure, orders, projects, queue, service, sheet, worker
+from . import __version__, brand, compose, delivery, doctor, i18n, measure, orders, projects, queue, service, sheet, worker
 from .errors import GimgError
 
 LANGS = ("es", "en")
@@ -100,6 +100,48 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--palette", "cli.arg.palette"), opt("--project", "cli.arg.measure_project", metavar="PROJECT"),
          opt("--refs", "cli.arg.refs", nargs="+", default=[], metavar="IMAGE"),
          opt("--zone", "cli.arg.zone", metavar="X,Y,W,H"), opt("--text", "cli.arg.text_color", metavar="#RRGGBB"))
+
+    g = group(top, "brand", "cli.cmd.brand")
+    leaf(g, "matte", "cli.cmd.brand_matte", arg("image", "cli.arg.brand_png"),
+         opt("-o", "cli.arg.brand_out_matte", dest="out", metavar="PNG"),
+         opt("--tol", "cli.arg.brand_tol", type=float, default=60),
+         opt("--soft", "cli.arg.brand_soft", type=float, default=110),
+         opt("--border", "cli.arg.brand_border", type=int, default=6),
+         opt("--grow", "cli.arg.brand_grow", type=int, default=3),
+         opt("--holes", "cli.arg.brand_holes", action="store_true"))
+    leaf(g, "trace", "cli.cmd.brand_trace", arg("image", "cli.arg.brand_png"),
+         opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"),
+         opt("--mode", "cli.arg.brand_mode", choices=tuple(brand.MODES), default="color"),
+         opt("--palette", "cli.arg.brand_palette", metavar="#HEX,#HEX"),
+         opt("--colors", "cli.arg.brand_colors", type=int, metavar="N"),
+         opt("--dp-tol", "cli.arg.brand_dp_tol", type=float, default=1.2),
+         opt("--min-island", "cli.arg.brand_min_island", type=float, default=12),
+         opt("--matte", "cli.arg.brand_matte", action="store_true"))
+    leaf(g, "wordmark", "cli.cmd.brand_wordmark", arg("text", "cli.arg.brand_text"),
+         opt("--font", "cli.arg.brand_font", required=True, metavar="TTF"),
+         opt("--weight", "cli.arg.brand_weight", type=int, default=800),
+         opt("--spacing", "cli.arg.brand_spacing", type=float, default=0.12),
+         opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"))
+    props = (opt("--cap", "cli.arg.brand_cap", type=float, default=0.45),
+             opt("--gap", "cli.arg.brand_gap", type=float, default=0.25),
+             opt("--width", "cli.arg.brand_width", type=float, default=1.6))
+    leaf(g, "lockup", "cli.cmd.brand_lockup", arg("emblem", "cli.arg.brand_emblem_svg"),
+         arg("wordmark", "cli.arg.brand_wordmark_svg"),
+         opt("--layout", "cli.arg.brand_layout", choices=brand.LAYOUTS, default="h"),
+         opt("--margin", "cli.arg.brand_margin", type=float, default=0.0),
+         opt("--color", "cli.arg.brand_ink", metavar="COLOR"),
+         opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"), *props)
+    leaf(g, "system", "cli.cmd.brand_system", arg("image", "cli.arg.brand_png"),
+         opt("--name", "cli.arg.brand_name", required=True),
+         opt("--font", "cli.arg.brand_font", required=True, metavar="TTF"),
+         opt("--out-dir", "cli.arg.brand_out_dir", required=True, metavar="DIR"),
+         opt("--weight", "cli.arg.brand_weight", type=int, default=800),
+         opt("--spacing", "cli.arg.brand_spacing", type=float, default=0.12),
+         opt("--palette", "cli.arg.brand_palette", metavar="#HEX,#HEX"),
+         opt("--colors", "cli.arg.brand_colors", type=int, metavar="N"),
+         opt("--text", "cli.arg.brand_wordmark_text"),
+         opt("--holes", "cli.arg.brand_holes", action="store_true"),
+         opt("--force", "cli.arg.brand_force", action="store_true"), *props)
 
     leaf(top, "sheet", "cli.cmd.sheet", arg("images", "cli.arg.sheet_images", nargs="*", metavar="IMAGE"),
          opt("--out", "cli.arg.sheet_out", required=True, metavar="PNG"),
@@ -209,6 +251,42 @@ def _doctor(args, out: _Out) -> int:
     return 1 if bad else 0
 
 
+def _brand(args, sub, out: _Out) -> None:
+    if sub == "matte":
+        res = brand.matte(args.image, args.out, args.tol, args.soft, args.border, args.grow, args.holes)
+        key = "cli.out.brand_matte"
+    elif sub == "trace":
+        res = brand.trace(args.image, args.out, args.mode, args.palette, args.colors, args.dp_tol, args.min_island,
+                          args.matte)
+        key = "cli.out.brand_trace"
+    elif sub == "lockup":
+        res = brand.lockup(args.emblem, args.wordmark, args.out, args.layout, args.cap, args.gap, args.width, args.margin,
+                           args.color)
+        key = "cli.out.brand_lockup"
+    elif sub == "system":
+        res = brand.system(args.image, args.name, args.font, args.out_dir, args.weight, args.spacing, args.palette,
+                           args.colors, args.text, args.cap, args.gap, args.width, args.force, args.holes)
+        if out.as_json:
+            out.data(res)
+            return
+        out.line("cli.out.brand_system", slug=res["slug"], out_dir=res["out_dir"], count=len(res["files"]),
+                 paths=sum(res["paths"].values()), seconds=res["seconds"])
+        for path in res["files"].values():
+            out.line("cli.out.brand_file", path=path)
+        if res["overwritten"]:
+            out.line("cli.out.brand_overwrote", files=", ".join(res["overwritten"]))
+        return
+    else:
+        res = brand.wordmark(args.text, args.font, args.out, args.weight, args.spacing)
+        key = "cli.out.brand_wordmark"
+    if out.as_json:
+        out.data(res)
+        return
+    out.line(key, **{**res, "width": res["size"][0], "height": res["size"][1]})
+    if res.get("opaque_background"):
+        out.line("cli.out.brand_opaque")
+
+
 def _run(args, out: _Out) -> int:
     cmd, sub = args.cmd, getattr(args, "sub", None)
     if cmd == "version":
@@ -254,6 +332,8 @@ def _run(args, out: _Out) -> int:
         _template_save(args, out)
     elif cmd == "measure":
         _measure(args, out)
+    elif cmd == "brand":
+        _brand(args, sub, out)
     elif cmd == "sheet":
         res = sheet.sheet(args.images, args.out, args.columns, args.width)
         if out.as_json:

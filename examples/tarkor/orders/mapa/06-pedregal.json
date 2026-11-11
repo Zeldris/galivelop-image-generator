@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../../gimg/schemas/order.schema.json",
+  "key": "mapa/06-pedregal",
+  "profile": "texturamapa",
+  "prompt": "Hand-painted fantasy map terrain, seen from directly above. Matte painterly brushwork, fine detail, restrained natural colour, soft warm light from the upper left, even exposure, calm and readable, no haze. Seamless tileable texture of a dry stony plateau seen from directly above, grey brown gravel #8a8068 and #6b6257 with flat cracked rock plates #a39a80, sparse dry tufts, edge to edge.",
+  "seed": 1,
+  "draft": false,
+  "count": 2
+}

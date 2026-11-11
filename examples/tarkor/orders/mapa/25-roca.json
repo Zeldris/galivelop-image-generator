@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../../gimg/schemas/order.schema.json",
+  "key": "mapa/25-roca",
+  "profile": "iconomapa",
+  "prompt": "Hand-painted fantasy map icon, matte painterly brushwork, fine detail, restrained natural colour, soft warm light from the upper left. A small group of weathered standing rocks as a painted map icon, seen slightly from above, dark stone #3a342d, lit left faces. Centred on a perfectly flat background of pure #00ff00 green, 15 percent empty margin on every side.",
+  "seed": 1,
+  "draft": false,
+  "count": 2
+}

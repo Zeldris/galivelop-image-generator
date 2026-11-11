@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/03-portada-social",
+  "profile": "social",
+  "prompt": "Wide banner: bathymetric chart of the Galician Atlantic coast, white depth contours on solid medium cerulean blue, a small ink-grey compass rose in the bottom-left corner, the centre left empty. Flat vector illustration, nautical chart aesthetic, thin lines of even width, no gradients, no glow, no shading, no text, no letters, no watermark, full-bleed edge to edge, no border, no frame, lots of empty space, minimal, technical, serene. Palette strictly limited to medium cerulean ocean blue #0072a8, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a.",
+  "seed": 1,
+  "count": 4
+}

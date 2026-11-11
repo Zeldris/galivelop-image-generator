@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../../gimg/schemas/order.schema.json",
+  "key": "mapa/05-mar-costero",
+  "profile": "texturamapa",
+  "prompt": "Hand-painted fantasy map terrain, seen from directly above. Matte painterly brushwork, fine detail, restrained natural colour, soft warm light from the upper left, even exposure, calm and readable, no haze. Seamless tileable texture of shallow coastal water seen from directly above, blue green #2f5a70 with lighter sandy shallows #5a7a7a and fine wave lines, edge to edge.",
+  "seed": 1,
+  "draft": false,
+  "count": 2
+}

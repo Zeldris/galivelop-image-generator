@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../../gimg/schemas/order.schema.json",
+  "key": "mapa/09-bosque-tropical",
+  "profile": "texturamapa",
+  "prompt": "Hand-painted fantasy map terrain, seen from directly above. Matte painterly brushwork, fine detail, restrained natural colour, soft warm light from the upper left, even exposure, calm and readable, no haze. Seamless tileable texture of a dense forest canopy seen from directly above, rounded tree crowns in #5e7a34 and #3f5a26 with a few yellowing crowns, edge to edge.",
+  "seed": 1,
+  "draft": false,
+  "count": 2
+}

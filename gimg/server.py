@@ -18,7 +18,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote
 
-from . import __version__, build_id, compose, delivery, doctor, i18n, measure, models, orders, paths, projects, queue
+from . import __version__, brandshop, build_id, compose, delivery, doctor, i18n, measure, models, orders, paths, projects, queue
 from .errors import GimgError
 
 API_VERSION = 1
@@ -49,9 +49,9 @@ _EXACT = {
     405: ("api.method_not_allowed",), 411: ("api.length_required",), 413: ("api.body_too_large",),
     415: ("api.content_type",),
     409: ("compose.template_exists", "compose.busy", "measure.busy", "api.heavy_busy", "compose.nothing_to_do", "compose.no_attempts", "serve.already_running", "serve.port_busy", "serve.not_running", "order.discard_chosen",
-          "order.history_empty", "queue.not_cancellable", "queue.not_movable", "delivery.target_taken"),
+          "order.history_empty", "queue.not_cancellable", "queue.not_movable", "delivery.target_taken", "brand.exists", "brand.missing_piece"),
     400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "compose.template_unknown", "compose.element_unknown", "compose.bad_layout", "compose.bad_element", "compose.templates_dir_missing", "api.bad_json",
-          "api.bad_param"),
+          "api.bad_param", "brand.no_matte", "brand.dir_missing", "brand.no_palette", "brand.font_unknown", "brand.empty_text", "brand.text_too_long", "brand.empty_wordmark", "brand.wordmark_no_fit", "brand.font_unreadable"),
 }
 # Server-side faults whose names match the 400 patterns below: checked first.
 _SERVER_FAULTS = ("compose.svg_too_big", "engine.unknown", "engine.bad_delay", "machine.invalid", "machine.bad_path", "machine.bad_name",
@@ -823,6 +823,142 @@ def models_list(req):
 def project_check(req):
     projects.get(req.params["p"])  # project.unknown (404) before anything else
     return [{k: v for k, v in c.as_dict(req.lang).items() if v is not None} for c in doctor.run_project(req.params["p"])]
+
+
+# --- brand workshop (D25, D40): the steps of `gimg brand`, on a draft folder of the project (gimg/brandshop.py) ---
+_BRAND = "/api/projects/{p}/brand"
+
+
+def _number(body: dict, name: str, default):
+    """A JSON number (not a bool) of the body, else `default`; the range is the brand function's business."""
+    value = body.get(name, default)
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise GimgError("api.bad_param", name=name)
+    return value
+
+
+def _flag(body: dict, name: str, default=False):
+    value = body.get(name, default)
+    if not isinstance(value, bool):
+        raise GimgError("api.bad_param", name=name)
+    return value
+
+
+def _int(body: dict, name: str, default):
+    value = body.get(name, default)
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise GimgError("api.bad_param", name=name)
+    return value
+
+
+def _brand_project(req) -> str:
+    projects.get(req.params["p"])  # project.unknown (404) before anything else
+    return req.params["p"]
+
+
+def _source_image(project: str, source) -> Path:
+    """The PNG of the attempt ``{"profile", "key", "attempt"}``, resolved as `attempt_image` does (D25): not found is 404."""
+    if not (isinstance(source, dict) and set(source) == {"profile", "key", "attempt"}
+            and isinstance(source["profile"], str) and isinstance(source["key"], str)):
+        raise GimgError("api.bad_param", name="source")
+    attempt_id = _attempt_id(source["attempt"])
+    order = orders.get(project, source["key"], source["profile"])
+    for item in order["attempts"]:
+        if item["id"] == attempt_id:
+            path = _guarded(lambda: orders.attempt_image(project, source["key"], source["profile"], item))
+            if not path.is_file():
+                raise GimgError("api.not_found", path=path.name)
+            return path
+    raise GimgError("order.attempt_unknown", attempt=attempt_id, order=order["key"], profile=order["profile"])
+
+
+@route("GET", _BRAND)
+def brand_list(req):
+    return brandshop.listing(_brand_project(req))
+
+
+@route("POST", _BRAND + "/matte")
+def brand_matte(req):
+    project = _brand_project(req)
+    body = _fields(req.body, ("name", "source", "tol", "soft", "border", "grow", "holes"))
+    name = _str_field(body, "name")
+    opts = {"tol": _number(body, "tol", 60), "soft": _number(body, "soft", 110), "border": _int(body, "border", 6),
+            "grow": _int(body, "grow", 3), "holes": _flag(body, "holes")}
+    src = _source_image(project, body.get("source"))
+    with _heavy():
+        return brandshop.matte(project, name, src, **opts)
+
+
+@route("POST", _BRAND + "/trace")
+def brand_trace(req):
+    project = _brand_project(req)
+    body = _fields(req.body, ("name", "mode", "colors", "usePalette", "dp_tol", "min_island"))
+    name = _str_field(body, "name")
+    mode = _str_field(body, "mode")
+    use_palette = body.get("usePalette", False)
+    if not isinstance(use_palette, bool):
+        raise GimgError("api.bad_param", name="usePalette")
+    colors = _int(body, "colors", None) if "colors" in body else None
+    opts = {"dp_tol": _number(body, "dp_tol", 1.2), "min_island": _number(body, "min_island", 12)}
+    if mode == "mono" and (use_palette or colors is not None):
+        raise GimgError("brand.bad_option", reason="colors and usePalette are for the color mode")
+    palette = None
+    if use_palette:
+        if colors is not None:
+            raise GimgError("brand.bad_option", reason="colors and usePalette exclude each other")
+        palette = (projects.get(project)["config"].get("brand") or {}).get("palette")
+        if not palette:
+            raise GimgError("brand.no_palette", project=project)
+    with _heavy():
+        return brandshop.trace(project, name, mode, palette, colors=colors, **opts)
+
+
+@route("POST", _BRAND + "/wordmark")
+def brand_wordmark(req):
+    project = _brand_project(req)
+    body = _fields(req.body, ("name", "text", "font", "weight", "spacing"))
+    name = _str_field(body, "name")
+    text = body.get("text")
+    if text is not None and not isinstance(text, str):
+        raise GimgError("api.bad_param", name="text")
+    font = _str_field(body, "font")
+    opts = {"weight": _int(body, "weight", 800), "spacing": _number(body, "spacing", 0.12)}
+    with _heavy():  # rsvg-convert
+        return brandshop.wordmark(project, name, font, text, **opts)
+
+
+@route("POST", _BRAND + "/lockup")
+def brand_lockup(req):
+    project = _brand_project(req)
+    body = _fields(req.body, ("name", "layout", "cap", "gap", "width"))
+    name = _str_field(body, "name")
+    layout = _str_field(body, "layout")
+    opts = {"cap": _number(body, "cap", 0.45), "gap": _number(body, "gap", 0.25), "width": _number(body, "width", 1.6)}
+    return brandshop.lockup(project, name, layout, **opts)  # text only: no need to queue behind the heavy ones
+
+
+@route("POST", _BRAND + "/save")
+def brand_save(req):
+    project = _brand_project(req)
+    body = _fields(req.body, ("name", "dest", "force"))
+    name = _str_field(body, "name")
+    dest = _str_field(body, "dest")
+    force = body.get("force", False)
+    if not isinstance(force, bool):
+        raise GimgError("api.bad_param", name="force")
+    with _heavy():  # the contact sheet: rsvg-convert
+        return brandshop.save(project, name, dest, force)
+
+
+@route("GET", _BRAND + "/files/{name}/{file}")
+def brand_file(req):
+    project = _brand_project(req)
+    path = _guarded(lambda: brandshop.file_path(project, req.params["name"], req.params["file"]))
+    ctype = "image/svg+xml" if path.suffix == ".svg" else "image/png"
+    reply = _file_reply(req, path, ctype, cache="no-cache")
+    if ctype == "image/svg+xml":
+        reply.headers["Content-Security-Policy"] = SVG_CSP
+    return reply
 
 
 # --- server ---

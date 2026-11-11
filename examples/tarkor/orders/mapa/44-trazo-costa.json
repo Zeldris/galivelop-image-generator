@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../../gimg/schemas/order.schema.json",
+  "key": "mapa/44-trazo-costa",
+  "profile": "texturamapa",
+  "prompt": "Hand-painted fantasy map terrain, seen from directly above. Matte painterly brushwork, fine detail, restrained natural colour, soft warm light from the upper left, even exposure, calm and readable, no haze. Seamless tileable texture of fine concentric wave lines on dark blue water #1f3a52, lines in #5a7a7a, evenly spaced, seen from directly above, edge to edge.",
+  "seed": 1,
+  "draft": false,
+  "count": 2
+}

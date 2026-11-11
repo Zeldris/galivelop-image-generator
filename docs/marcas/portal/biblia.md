@@ -1,5 +1,7 @@
 # Portal Galivelop — biblia de estilo
 
+> **Obsoleta desde el 2026-11-10:** identidad anterior; manda `docs/marca.md` de Portal-Galivelop (ver la nota de [`hoja.md`](hoja.md)).
+
 Marca paraguas del taller. Fuente de verdad: repo `Portal-Galivelop`, lo publicado en `main` (commit `7c9a704`; el `aa76b34`
 que citaba esta biblia es de la rama de trabajo y no cambia nada de lo que aquí se lee; rutas en la sección 10). Alineada el
 2026-11-04 con la hoja aprobada, [`hoja.md`](hoja.md), que manda si difieren. Sin marca, el dato sale del repo; **[P]** es propuesta pendiente de la persona; *(suposición)* se comprueba en una ronda.

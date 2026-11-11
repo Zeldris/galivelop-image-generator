@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/21-patron-pie",
+  "profile": "patron",
+  "prompt": "Seamless repeating pattern of thin white bathymetric contour lines on a flat solid deep cerulean blue #0072a8 ground, lines of one fine even weight, evenly spread, low and uniform contrast so captions placed on top stay readable, calm, no waves, no crests, no foam, no hatching, no soundings, no compass rose. Flat two-ink print, crisp and sharp, no photographic rendering, no gradients, no glow, no text, no letters, no numbers, no watermark, no border, no frame. Palette strictly limited to medium cerulean ocean blue #0072a8 and off-white #fbfcfd.",
+  "seed": 1,
+  "count": 2
+}

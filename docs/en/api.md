@@ -371,6 +371,91 @@ elements and `viewBox`): `[{"id", "status": "ok|warn|fail", "message", "fix"?}]`
 curl -s $B/api/projects/mi-proyecto/check
 ```
 
+### GET /api/projects/{p}/brand
+
+The project's brand drafts: `[{"slug", "files": [keys present], "modified"}]`. Each brand's workshop is
+`<data>/projects/<p>/brand/<slug>/` (slug = the name without accents, lowercase and with hyphens); the keys are those of
+the system files: `emblema-alpha.png`, `emblema.svg`, `emblema-mono.svg`, `wordmark.svg`, `lockup-h.svg`, `lockup-v.svg`,
+`contactos.png`. Each step overwrites its own copy in the workshop and never touches the source attempt. Error:
+`project.unknown`.
+
+```sh
+curl -s $B/api/projects/mi-proyecto/brand
+```
+
+### POST /api/projects/{p}/brand/matte
+
+Removes the flat background of one of the project's attempts. Fields: `name` (the brand name), `source`
+(`{"profile", "key", "attempt"}`, resolved like `attempt_image`), `tol` (60), `soft` (110), `border` (6), `grow` (3, 0 to 32),
+`holes` (false: with `true`, background-coloured regions not connected to the edge are emptied too, such as an enclosed
+ring). Writes `emblema-alpha.png` and returns what `gimg brand matte` returns. Errors: `api.bad_param`,
+`brand.bad_name`, `brand.empty_text`, `brand.no_matte`, `order.attempt_unknown` (404), `api.not_found` (404),
+`project.unknown`.
+
+```sh
+curl -s -X POST $B/api/projects/mi-proyecto/brand/matte -H 'Content-Type: application/json' \
+  -d '{"name": "Mi Marca", "source": {"profile": "og", "key": "fauna/lobo", "attempt": 1}}'
+```
+
+### POST /api/projects/{p}/brand/trace
+
+Turns the cut-out emblem into SVG. Fields: `name`, `mode` (`color` or `mono`), `colors` (`color` only, 1 to 64), `usePalette`
+(`color` only; takes the project's `brand.palette` and excludes `colors`), `dp_tol` (1.2), `min_island` (12). Writes
+`emblema.svg` or `emblema-mono.svg`. Errors: `brand.missing_piece` (409, the cut-out is missing), `brand.no_palette`,
+`brand.bad_option`, `api.bad_param`.
+
+```sh
+curl -s -X POST $B/api/projects/mi-proyecto/brand/trace -H 'Content-Type: application/json' \
+  -d '{"name": "Mi Marca", "mode": "color", "usePalette": true}'
+```
+
+### POST /api/projects/{p}/brand/wordmark
+
+Draws the name as outlines. Fields: `name`, `font` (an installed family, e.g. `Cinzel`; resolved with `fc-match`, never
+a path), `text` (defaults to the name in capitals), `weight` (800), `spacing` (0.12). Writes `wordmark.svg`. Errors:
+`brand.font_unknown`, `brand.font_unreadable`, `brand.tool_missing` (500), `brand.wordmark_no_fit`,
+`brand.text_too_long`.
+
+```sh
+curl -s -X POST $B/api/projects/mi-proyecto/brand/wordmark -H 'Content-Type: application/json' \
+  -d '{"name": "Mi Marca", "font": "Cinzel", "weight": 700}'
+```
+
+### POST /api/projects/{p}/brand/lockup
+
+Joins the workshop's emblem and wordmark. Fields: `name`, `layout` (`h` or `v`), `cap` (0.45), `gap` (0.25), `width`
+(1.6). Writes `lockup-h.svg` or `lockup-v.svg`. Errors: `brand.missing_piece` (409, `emblema.svg` or `wordmark.svg` is
+missing), `brand.bad_option`.
+
+```sh
+curl -s -X POST $B/api/projects/mi-proyecto/brand/lockup -H 'Content-Type: application/json' \
+  -d '{"name": "Mi Marca", "layout": "h"}'
+```
+
+### POST /api/projects/{p}/brand/save
+
+Contact sheet and the whole system (7 files prefixed with the slug). Fields: `name`, `dest` (`data`: the
+`brand-out/<slug>/` folder in the project's data; `project`: the `brand.dir` folder of its configuration, inside the
+root, like `compose.templatesDir`), `force` (false). Returns `{name, slug, dest, out_dir, files, contact_size,
+overwritten}`. Errors: `brand.missing_piece` (409), `brand.exists` (409, without `force`), `brand.dir_missing` (400,
+`dest: project` without `brand.dir`), `path.outside` (400, a `brand.dir` that leaves the root through a link),
+`brand.bad_option`.
+
+```sh
+curl -s -X POST $B/api/projects/mi-proyecto/brand/save -H 'Content-Type: application/json' \
+  -d '{"name": "Mi Marca", "dest": "project", "force": true}'
+```
+
+### GET /api/projects/{p}/brand/files/{name}/{file}
+
+A workshop file: `name` is the slug and `file` one of the keys above (`emblema.svg`, not the prefixed name); any other
+name gives `api.not_found` (404). SVGs carry `Content-Security-Policy: sandbox` and `nosniff`; caching is `no-cache` with
+an ETag. A malformed slug gives `brand.bad_name`.
+
+```sh
+curl -s $B/api/projects/mi-proyecto/brand/files/mi-marca/emblema.svg
+```
+
 ## Interface
 
 `GET /` serves `gimg/ui/index.html` and `GET /ui/<path>` the files of `gimg/ui/` (extensions `.html .css .js .svg

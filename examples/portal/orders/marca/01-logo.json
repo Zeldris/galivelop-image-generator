@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/01-logo",
+  "profile": "cuadrado",
+  "prompt": "Monogram logo: the letters G and V joined by one shared horizontal stroke, white strokes of even width on a solid medium cerulean blue square with the top-right corner cut at 45 degrees, geometric, inspired by port signage. Flat vector illustration, nautical chart aesthetic, thin lines of even width, no gradients, no glow, no shading, no other text, no watermark, full-bleed edge to edge, no border, no frame, lots of empty space, minimal, technical, serene. Palette strictly limited to medium cerulean ocean blue #0072a8, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a.",
+  "seed": 1,
+  "count": 4
+}

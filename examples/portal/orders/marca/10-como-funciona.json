@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/10-como-funciona",
+  "profile": "panoramica",
+  "prompt": "A single horizontal line with exactly four nodes, evenly spaced, drawn as a commit history: four identical empty circles joined by one continuous line, ink grey on light off-white paper, very faint bathymetric contour lines far in the background, clean empty space above and below each node, the background kept pale and quiet. Richly detailed engraved antique nautical chart style, like a fine sea chart printed in two inks: many layers of fine lines and hatching, line density increasing in the darker areas to give depth and tone, lines of several weights, crisp and sharp, intricate but calm, premium print quality, high detail, elegant. No photographic rendering, no glow, no text, no letters, no numbers, no watermark, no border, no frame. Palette strictly limited to medium cerulean ocean blue #0072a8 and its tints and shades, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a.",
+  "seed": 1,
+  "count": 2
+}

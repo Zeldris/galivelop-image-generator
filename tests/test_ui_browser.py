@@ -13,7 +13,7 @@ from pathlib import Path
 from unittest import mock
 from urllib.parse import quote
 
-from gimg import cli, server
+from gimg import cli, paths, png, server
 from tests import browser
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -89,6 +89,7 @@ class UiBase(unittest.TestCase):
         path = cls.root / "galivelop-images.json"
         cfg = json.loads(path.read_text())
         compose = cfg["profiles"][PROFILE]["compose"]
+        compose["fields"] = ["title1", "subtitle"]  # los huecos de ELEMENTS_SVG (el ejemplo real solo lleva `lema`)
         compose["templates"] = {"claro": {"template": "plantillas/claro.svg", "fields": ["title1"]}}
         compose["templatesDir"] = "plantillas-extra"
         path.write_text(json.dumps(cfg))
@@ -170,7 +171,8 @@ class Browse(UiBase):
     def test_tabs_navigate_and_paint(self):
         self.open("/p/tarkor/pedidos", "document.querySelector('.order-row')")
         self.click("nav.tabs a[href='#/p/tarkor/piezas']")
-        self.page.wait("document.querySelectorAll('.piece-card').length === 6")
+        perfiles = len(json.loads((self.root / "galivelop-images.json").read_text(encoding="utf-8"))["profiles"])
+        self.page.wait("document.querySelectorAll('.piece-card').length === %d" % perfiles)  # one card per profile
         self.assertEqual(self.js("document.querySelector('nav.tabs a[aria-current=page]').textContent"), "Piezas")
         self.click("nav.tabs a[href='#/p/tarkor/marca']")
         self.page.wait("document.querySelector('.check-list .check-item')")
@@ -529,6 +531,86 @@ class QueueDrawer(UiBase):
         self.page.wait("document.querySelectorAll('#queue-drawer .queue-entry').length === 0")
         self.assertEqual([e for e in self.api("GET", "/api/queue") if e["state"] == "queued"], [])
         self.no_problems()
+
+
+class BrandShop(UiBase):
+    """«Sistema de logo» in the Marca tab: steps stay disabled with their reason until the piece exists, and the origin
+    can come from the URL (`?src=profile|key|attempt`). The steps that need the tools (matte on a real flat background,
+    rsvg) are covered by tests/test_brand.py and the API tests; no step is run here."""
+
+    @classmethod
+    def prepare(cls):
+        cls.submit("fondos/marca", count=2)
+
+    def disabled(self, text):
+        return self.js("""[...document.querySelectorAll('#brand-shop .shop-action')].filter(a => a.textContent.includes(%s))
+            .every(a => a.querySelector('button').disabled)""" % json.dumps(text))
+
+    def test_steps_wait_for_their_piece_and_say_why(self):
+        self.open("/p/tarkor/marca", "document.querySelector('#brand-shop .shop-step')")
+        self.assertEqual(self.js("document.querySelectorAll('#brand-shop .shop-step').length"), 7)
+        self.assertTrue(self.js("document.getElementById('shop-name').value.toLowerCase().includes('tarkor')"))
+        for label in ("Quitar fondo", "Pasar a SVG en color", "Lockup horizontal", "Guardar sistema"):
+            self.assertTrue(self.disabled(label), label)
+        self.assertIn("intento de origen", self.js("document.querySelector('#brand-shop .shop-why').textContent"))
+        self.no_problems()
+
+    def test_the_source_comes_from_the_url_and_enables_the_matte(self):
+        src = quote("%s|%s|1" % (PROFILE, "fondos/marca"), safe="")
+        self.open("/p/tarkor/marca?src=" + src, "document.querySelector('#brand-shop input[name=shop-attempt]:checked')")
+        self.page.wait("![...document.querySelectorAll('#brand-shop .shop-action button')].find(b => b.textContent === 'Quitar fondo').disabled")
+        self.assertTrue(self.disabled("Pasar a SVG en color"))  # still needs the matte
+        self.no_problems()
+
+    def seed_shop(self, slug):
+        """A workshop of another brand on disk, with its matte piece; removed when the test ends."""
+        shop = paths.project_data_dir(PROJECT) / "brand" / slug
+        shop.mkdir(parents=True)
+        self.addCleanup(shutil.rmtree, shop, ignore_errors=True)
+        (shop / ("%s-emblema-alpha.png" % slug)).write_bytes(png.rgba_bytes(2, 2, bytes([20, 90, 40, 255]) * 4))
+
+    def open_with_shops(self):
+        self.open("/p/tarkor/marca", "document.querySelector('#brand-shop .btn-toggle')")
+
+    def test_a_name_without_workshop_does_not_adopt_another_brand(self):
+        self.seed_shop("portal")
+        self.open_with_shops()
+        self.assertTrue(self.js("document.getElementById('shop-name').value.toLowerCase().includes('tarkor')"))
+        self.assertEqual(self.js("document.querySelectorAll('#brand-shop .shop-img').length"), 0)  # no piece of `portal`
+        self.assertTrue(self.disabled("Pasar a SVG en color"))
+        self.assertEqual(self.js("document.querySelector('#brand-shop .btn-toggle').getAttribute('aria-pressed')"), "false")
+        self.no_problems()
+
+    def test_picking_a_workshop_syncs_the_wordmark_text(self):
+        self.seed_shop("portal")
+        self.open_with_shops()
+        self.assertEqual(self.js("document.getElementById('shop-wtext').value"), self.js("document.getElementById('shop-name').value.toUpperCase()"))
+        self.click("#brand-shop .btn-toggle")
+        self.page.wait("document.getElementById('shop-name').value === 'portal'")
+        self.assertEqual(self.js("document.getElementById('shop-wtext').value"), "PORTAL")
+        self.assertEqual(self.js("document.querySelectorAll('#brand-shop .shop-img').length > 0"), True)  # its piece is shown
+        self.no_problems()
+
+    def test_picking_a_workshop_keeps_a_text_typed_for_that_name(self):
+        self.seed_shop("portal")
+        self.open_with_shops()
+        self.js("""(() => { const n = document.getElementById('shop-name'); n.value = 'portal'; n.dispatchEvent(new Event('input'));
+            const w = document.getElementById('shop-wtext'); w.value = 'EL PORTAL'; w.dispatchEvent(new Event('input')); })()""")
+        self.click("#brand-shop .btn-toggle")
+        self.page.wait("document.querySelector('#brand-shop .btn-toggle').getAttribute('aria-pressed') === 'true'")
+        self.assertEqual(self.js("document.getElementById('shop-wtext').value"), "EL PORTAL")
+        self.no_problems()
+
+    def test_a_project_without_brand_dir_cannot_save_there(self):
+        self.open("/p/tarkor/marca", "document.getElementById('shop-dest')")
+        has_dir = self.js("!document.querySelector('#shop-dest option[value=project]').disabled")
+        cfg = json.loads((self.root / "galivelop-images.json").read_text(encoding="utf-8"))
+        self.assertEqual(has_dir, bool((cfg.get("brand") or {}).get("dir")))
+
+    def test_the_attempt_card_links_to_the_brand_tab(self):
+        self.open(order_route("fondos/marca"), "document.querySelector('.gallery .attempt')")
+        href = self.js("document.querySelector('.gallery .attempt details a[href*=\"/marca?src=\"]').getAttribute('href')")
+        self.assertTrue(href.startswith("#/p/tarkor/marca?src="), href)
 
 
 if __name__ == "__main__":

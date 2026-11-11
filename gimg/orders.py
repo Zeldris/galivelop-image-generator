@@ -22,11 +22,11 @@ from .errors import GimgError
 
 STATES = ("new", "candidate", "discarded")
 SEED_LIMIT = 2 ** 32
-_PROFILE_PARAMS = ("width", "height", "steps", "cfg", "sampler", "model")
+_PROFILE_PARAMS = ("width", "height", "steps", "cfg", "sampler", "model", "tileable")
 _ORDER_FILE = "order.json"
 _FULL_PARAMS = {"type": "object", "properties": {
     "width": {"type": "integer", "minimum": 1}, "height": {"type": "integer", "minimum": 1},
-    "model": {"type": "string", "minLength": 1}}}
+    "model": {"type": "string", "minLength": 1}, "tileable": {"enum": ["xy", "x", "y"]}}}
 DRAFT_STEPS = 8
 DRAFT_SCALE = 0.5
 SIDE_STEP = 64
@@ -378,7 +378,7 @@ def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None)
         raise GimgError("order.spec_invalid", missing=", ".join(missing))
     params = spec["params"]
     if isinstance(params, dict):
-        extra = {k: v for k, v in params.items() if k not in ("width", "height", "model")}
+        extra = {k: v for k, v in params.items() if k not in ("width", "height", "model", "tileable")}
         errors = schema.validate(params, _FULL_PARAMS)
         if errors:
             raise GimgError("order.invalid", errors=errors)

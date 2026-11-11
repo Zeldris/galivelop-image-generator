@@ -21,6 +21,16 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 ### Añadido
 
 - Traducción al inglés de la API local: `docs/en/api.md`; el test de la documentación de la API comprueba los dos idiomas.
+- Sistema de logo (`gimg brand`, D37): `matte` recorta el fondo plano de un emblema generado (`--holes` vacía también
+  lo encerrado), `trace` lo vectoriza a SVG con la paleta de la marca o en una tinta, `wordmark` convierte el nombre
+  en trazados con una fuente instalada, `lockup` compone emblema y nombre en horizontal o vertical y `system` hace
+  todo de una vez con su hoja de contactos. El nombre necesita `rsvg-convert`; el resto, solo Python.
+- Taller «Sistema de logo» en la pestaña Marca: los mismos pasos desde un intento del proyecto, con vista previa sobre
+  claro y oscuro, y «Guardar» en los datos del proyecto o en su carpeta `brand.dir`. Rutas nuevas de la API:
+  `GET /api/projects/{p}/brand`, `POST .../brand/matte`, `trace`, `wordmark`, `lockup` y `save`, y
+  `GET .../brand/files/{name}/{file}`.
+- `tileable` (`xy`, `x` o `y`) en el perfil y en el pedido: texturas sin costura.
+- Modelo `zimage-turbo-q6` (Z-Image-Turbo, Apache-2.0) en el catálogo.
 
 ### Corregido
 

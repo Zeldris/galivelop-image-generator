@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/12-separador",
+  "profile": "separador",
+  "prompt": "A single horizontal line of bold even weight that for a short stretch in the middle becomes a stylised coastline with rías and then runs straight again, the stroke heavy enough to stay clearly visible when scaled down, ink grey on transparent. Richly detailed engraved antique nautical chart style, like a fine sea chart printed in two inks: many layers of fine lines and hatching, line density increasing in the darker areas to give depth and tone, lines of several weights, crisp and sharp, intricate but calm, premium print quality, high detail, elegant. No photographic rendering, no glow, no text, no letters, no numbers, no watermark, no border, no frame. Palette strictly limited to medium cerulean ocean blue #0072a8 and its tints and shades, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a.",
+  "seed": 1,
+  "count": 2
+}
