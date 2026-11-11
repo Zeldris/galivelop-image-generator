@@ -49,7 +49,7 @@ cat ~/.local/share/gimg/projects/*/log.jsonl \
 
 ```gw-opt-ai
 log: piloto/opt-ai/ronda-2026-11-11.jsonl
-# previous: <el registro de la ronda anterior>
+previous: piloto/opt-ai/base-2026-11-11.jsonl
 exclude_tasks: warmup
 cold_ms: 100
 ```
@@ -59,13 +59,21 @@ residente). Es el comportamiento esperado, no un hallazgo, mientras gimg no teng
 
 ## Banco de pruebas
 
-Aprobado el 2026-11-11 (P2), sin lanzar: necesita la GPU libre (ni el juego ni el narrador cargado en Ollama). Un
-pedido fijo, `examples/portal/orders/marca/14-icono-implantacion.json`, con 3 semillas y a 1024×1024 en el perfil
-**`steam-deck-libre`**: FLUX definitivo, FLUX borrador y Z-Image (unos 30-35 min). Su registro va a
-`piloto/opt-ai/base-<fecha>.jsonl` y pasa a `previous` en los ajustes. Segunda pasada, la de P1: Z-Image con
-`--vae-tile-size 512 --vae-tile-overlap 0.25`, mismas semillas, comparada con
-`measure.py <después> --previous <base> --profile steam-deck-libre` y mirando las imágenes a tamaño real por si hay
-costuras en cuadrícula de 512.
+Lanzado el 2026-11-11 (P2), con la GPU libre: un pedido fijo, `examples/portal/orders/marca/14-icono-implantacion.json`
+(claves `opt-ai/14-*` del proyecto `portal`), semillas 1-3, a 1024×1024 en **`steam-deck-libre`**: FLUX definitivo, FLUX
+borrador y Z-Image. Registro en `piloto/opt-ai/base-2026-11-11.jsonl` (es el `previous`), hoja en
+`piloto/opt-ai/base-2026-11-11.png`. Para repetirlo: `order submit --model <id> [--draft|--no-draft]` con una copia
+del pedido (`key` `opt-ai/…`, `count` 3). Una pasada con otro perfil de máquina: `gimg serve --stop`, encolar con
+`GIMG_AUTOSTART=0` y `GIMG_MACHINE_PROFILE=<json> gimg work` (si no, el trabajador del servicio la corre con el perfil
+normal).
+
+Resultado (desglose, n=3 cada uno): FLUX definitivo 1024² 278 s (carga 6, muestreo 231, VAE 44; 28,8 s/paso);
+FLUX borrador 512² 48 s; Z-Image 1024² 537 s (carga 8, muestreo 461, VAE 71; 57,7 s/paso). Calidad en el icono de
+prueba: Z-Image da el trazo más limpio; FLUX definitivo deja fondo moteado gris y sale peor que su borrador.
+
+**P1 descartada (2026-11-11):** Z-Image con `--vae-tile-size 512 --vae-tile-overlap 0.25` (9 trozos en vez de 49 de
+256) da el mismo VAE (70,3 s frente a 70,5), la misma memoria libre (5367 frente a 5359 MB) y la misma imagen sin
+costuras: no se aplica. Registro en `piloto/opt-ai/vae512-2026-11-11.jsonl`.
 
 Desglose por tamaño, pasos y fase (carga, muestreo, VAE), que `measure.py` no da:
 `python3 .claude/gw/gw-opt-ai-desglose.py <registro> [--profile P]`.
@@ -78,18 +86,17 @@ cada ronda quedan en `docs/handoff.md` (sección «Pendiente») y en `piloto/por
 
 ## Tiempos aceptables
 
-Propuestos el 2026-11-11 (P3), se fijan con los números del banco: en `steam-deck-libre`, Z-Image 1024² p95 ≤ 9,5
-min; FLUX borrador ≤ 1,2 min; FLUX definitivo 1024² ≤ 4,5 min. Ronda del 2026-11-11 (desglose): Z-Image 1024² p50
-536 s (carga 5,6, muestreo 461, VAE 71); FLUX con imagen de referencia 1344×768, 551 s (81 s/paso, n=2). Sin FLUX
-1024² ni borrador medidos aún en este perfil.
+Fijados con el banco del 2026-11-11 (P3), en `steam-deck-libre`: Z-Image 1024² p95 ≤ 9,5 min (medido 537 s);
+FLUX borrador ≤ 1,2 min (medido 48 s); FLUX definitivo 1024² ≤ 4,5 min (medido 278 s, 8 s por encima: sin decidir si se
+sube a 5 min; FLUX solo hace bocetos y su borrador sale mejor). FLUX con imagen de referencia 1344×768: 551 s (81 s/paso, n=2, ronda del 11-11).
 
 ## Ya en marcha
 
 - Perfil `steam-deck-libre` a 7 GB de VRAM (2026-11-10).
 - FLUX solo para bocetos; calidad con Z-Image a 8 pasos (2026-11-10).
 - Desglose por tamaño y fase, `.claude/gw/gw-opt-ai-desglose.py` (P5, 2026-11-11).
-- Aprobadas el 2026-11-11, pendientes de GPU libre: banco de pruebas (P2), VAE en trozos de 512 con solape 0,25 (P1,
-  solo si el banco no muestra costuras ni fallos de memoria) y tiempos aceptables (P3).
+- Banco de pruebas (P2) y tiempos aceptables (P3), 2026-11-11. VAE en trozos de 512 (P1) medido y descartado: no
+  gana nada.
 - No se propone: bajar Z-Image a menos de 8 pasos ni `--taesd` en la imagen final (calidad).
 - `flux3-klein-q8` sigue con ajustes en `steam-deck-libre.json` sin estar instalado (1 llamada fallida el 2026-11-10);
   se deja: es una configuración puesta a propósito y no estorba.
