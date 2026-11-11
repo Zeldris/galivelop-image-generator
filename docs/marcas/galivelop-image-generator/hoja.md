@@ -3,9 +3,10 @@
 **r9 (2026-11-11), aprobada por la persona el 2026-11-11** (decisiones en «Contradicciones»). Rehace la hoja del
 2026-11-04 (identidad oscura con violeta, en «Historia») como **variante de la identidad nueva del Portal**
 (Portal-Galivelop `08c7fe5`, `docs/marca.md`): comparte con ella papel, tinta, tipografías y lenguaje de línea, y conserva
-lo propio (el violeta, la rejilla de intentos, los marcos). Lo marcado **[P]** de interfaz, logos y nombre (D38) se aplica
-en la rama `claude/marca-r9`; hasta que esa rama llegue a `main` siguen la interfaz y los logos anteriores. Las piezas
-`og`/`social`, `og.txt` y `brand.palette` **no cambian** hasta medir una ronda plana.
+lo propio (el violeta, la rejilla de intentos, los marcos). Interfaz, logos y nombre (D38) están **aplicados
+el 2026-11-11** en la rama `claude/marca-r9` (`de53727`, `1b211f6`, `e4b5db0`); hasta que esa rama llegue a `main`, en `main`
+siguen la interfaz y los logos anteriores. Lo que sigue marcado **[P]** no está aplicado. Las piezas `og`/`social`,
+`og.txt` y `brand.palette` **no cambian** hasta medir una ronda plana.
 
 Sigue [`../plantilla-hoja-de-estilo.md`](../plantilla-hoja-de-estilo.md) (F2.12) y complementa a [`biblia.md`](biblia.md).
 Estados como en [`../README.md`](../README.md): sin marca sale del repo (ruta en la sección 13); **heredado de
@@ -66,19 +67,19 @@ marcado en violeta. El violeta no decora: señala **lo elegido** («Pide, prueba
 ## 3. Paleta
 
 Proporción: **70 % papel, 20 % tinta, hasta 10 % violeta** (60/30/10 con el acento más escaso: el violeta señala una sola
-cosa por pantalla o pieza). El modo por defecto es el **claro**, como el Portal **[P]**.
+cosa por pantalla o pieza). El modo por defecto es el **claro**, como el Portal.
 
 | Rol | Token | Hex claro | Hex oscuro | Uso | Contraste | Origen |
 |---|---|---|---|---|---|---|
 | Fondo | `--bg` | `#fbfcfd` | `#0d171e` | papel de la carta; fondo de pantalla y de pieza | — | Portal |
 | Superficie | `--surface` | `#e6eef3` | `#13212b` | tarjetas, cabeceras, celdas de la rejilla | — | Portal |
 | Texto | `--text` | `#13212b` | `#e6eef3` | tinta: texto, líneas de ilustración, trazo del símbolo de línea | 15,97 / 15,44 (13,97 sobre superficie) | Portal |
-| Texto secundario | `--text-2` | `#4a5b66` | `#9fb4c4` | ayudas, rótulos, metadatos | 6,86 / 8,46 (6,00 / 7,66 sobre superficie) | propio **[P]** (el oscuro ya está en uso) |
-| Borde de control | `--border` | `#6f8493` | `#6f8493` | bordes de campos y botones, foco inactivo (≥ 3:1) | 3,79 / 4,66 (3,31 sobre superficie clara) | propio **[P]** |
-| Línea suave | `--rule` | `#c9d5dd` | `#2b3d4a` | separadores y rejilla de fondo; decorativa, sin requisito de contraste | 1,46 / 1,61 | propio **[P]** |
+| Texto secundario | `--text-2` | `#4a5b66` | `#9fb4c4` | ayudas, rótulos, metadatos | 6,86 / 8,46 (6,00 / 7,66 sobre superficie) | propio (`tokens.css`) |
+| Borde de control | `--border` | `#6f8493` | `#6f8493` | bordes de campos y botones, foco inactivo (≥ 3:1) | 3,79 / 4,66 (3,31 sobre superficie clara) | propio (`tokens.css`) |
+| Línea suave | `--rule` | `#c9d5dd` | `#2b3d4a` | separadores y rejilla de fondo; decorativa, sin requisito de contraste | 1,46 / 1,61 | propio (`tokens.css`) |
 | **Acento** | `--accent` | `#5B34C9` | `#A78BFA` | **lo elegido**: enlace, botón primario, foco, celda marcada. Texto blanco sobre `#5B34C9`: 7,56 | 7,36 / 6,66 (6,44 / 6,03 sobre superficie) | propio |
 | Violeta de marca | `--brand` | `#8B5CF6` | `#8B5CF6` | celda encendida del símbolo, rellenos y titulares grandes. **Nunca texto de cuerpo** | 4,12 / 4,28 (no llega a AA) | propio |
-| Enlace de familia | `--family` | `#0072a8` | `#1aa6df` | solo para nombrar o enlazar al Portal (marca de familia, pie); ≤ 2 % | 5,15 / 6,53 | Portal **[P]** |
+| Enlace de familia | `--family` | `#0072a8` | `#1aa6df` | solo para nombrar o enlazar al Portal (marca de familia, pie); ≤ 2 % | 5,15 / 6,53 | Portal (`tokens.css`) |
 | Toque de ilustración | — | `#5d7a6a` | `#5d7a6a` | verde alga: un detalle por ilustración, nunca en interfaz | 4,59 sobre papel | Portal |
 | Estado: bien | `--ok` | `#1b7a3e` | `#5ad38a` | solo interfaz, nunca en piezas | 5,24 / 9,60 | propio (`tokens.css`) |
 | Estado: aviso | `--warn` | `#8a5a00` | `#f2c14e` | solo interfaz | 5,77 / 10,80 | propio (`tokens.css`) |
@@ -88,13 +89,13 @@ Contraste: sobre `--bg` de su modo (claro / oscuro). Texto ≥ 4,5:1; bordes y f
 
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
-| Fondo | Rec. (familia Galivelop) | claro (por defecto) `#fbfcfd`; oscuro `#0d171e` | heredado de Portal-Galivelop `08c7fe5` **[P]**. Hoy compuesto y medido: `#06121c` / `#f6fafd` |
-| Texto | Rec. (familia Galivelop) | `#13212b` sobre claro; `#e6eef3` sobre oscuro | heredado de Portal-Galivelop `08c7fe5` **[P]**. Hoy: `#eaf4fa` (`color_texto` de `piezas.json`) |
-| Acento | Obl. | violeta, uno por pieza: `#5B34C9` sobre claro, `#A78BFA` sobre oscuro; `#8B5CF6` solo como relleno o marca | repo (`docs/plan.md` «Estilos por proyecto»; `tokens.css`); el reparto por modo, **[P]** |
+| Fondo | Rec. (familia Galivelop) | claro (por defecto) `#fbfcfd`; oscuro `#0d171e` | heredado de Portal-Galivelop `08c7fe5`; aplicado en la interfaz (`gimg/ui/css/tokens.css`), **[P]** en las piezas. Piezas hoy, compuesto y medido: `#06121c` / `#f6fafd` |
+| Texto | Rec. (familia Galivelop) | `#13212b` sobre claro; `#e6eef3` sobre oscuro | heredado de Portal-Galivelop `08c7fe5`; aplicado en la interfaz, **[P]** en las piezas. Piezas hoy: `#eaf4fa` (`color_texto` de `piezas.json`) |
+| Acento | Obl. | violeta, uno por pieza: `#5B34C9` sobre claro, `#A78BFA` sobre oscuro; `#8B5CF6` solo como relleno o marca | repo (`docs/plan.md` «Estilos por proyecto»; `tokens.css`, que ya reparte el acento por modo) |
 | Resto de la paleta | Rec. | la tabla de roles. `brand.palette` propuesto (6, como el del Portal): `#fbfcfd`, `#13212b`, `#e6eef3`, `#5B34C9`, `#8B5CF6`, `#A78BFA`. El de hoy lleva 5: `#06121c`, `#A78BFA`, `#8B5CF6`, `#ffffff`, `#eaf4fa` | **[P]**; el de hoy, repo (`galivelop-images.json`) |
 | Combinaciones | Rec. | clara: papel + tinta + un `#5B34C9`; oscura: `#0d171e` + `#e6eef3` + un `#A78BFA`; sobre imagen: texto en tinta sobre la zona de papel, sin velo (la imagen plana ya deja papel libre); logo de línea directo sobre el papel | **[P]**. Hoy: velo `#06121c:0`-`0.3` y logo en baldosa (`piezas.json`) |
-| Prohibidos | Rec. | el azul del Portal como acento (solo como enlace de familia); violeta neón o magenta; negro `#000` y blanco `#fff` puros como fondo; `#8B5CF6` en texto de cuerpo; más de un acento por pieza; violeta en más del 10 % | **[P]** (levanta en parte el veto del 2026-11-04 a `#1aa6df`) |
-| Degradados | Opc. | ninguno: ni en el logo ni en la interfaz ni en las ilustraciones | heredado de Portal-Galivelop `08c7fe5` («no gradients, no glow») **[P]**. Hoy: baldosa `#8B5CF6 → #5B34C9` |
+| Prohibidos | Rec. | el azul del Portal como acento (solo como enlace de familia); violeta neón o magenta; negro `#000` y blanco `#fff` puros como fondo; `#8B5CF6` en texto de cuerpo; más de un acento por pieza; violeta en más del 10 % | aplicado en interfaz y logos; **[P]** en las piezas (levanta en parte el veto del 2026-11-04 a `#1aa6df`) |
+| Degradados | Opc. | ninguno: ni en el logo ni en la interfaz ni en las ilustraciones | heredado de Portal-Galivelop `08c7fe5` («no gradients, no glow»); aplicado en logo e interfaz. Las ilustraciones planas, **[P]** (sin ronda) |
 
 **Medido (identidad anterior):** paleta ≥ 72 % (r1 y r5: 75-88 %; r4 og 72,36 %) con `brand.palette` de 4 hex y ΔE76 < 15
 (`docs/records/contenido/calibracion-measure.md`). Con la paleta nueva no hay nada medido: la primera ronda plana lo dirá
@@ -102,28 +103,29 @@ Contraste: sobre `--bg` de su modo (claro / oscuro). Texto ≥ 4,5:1; bordes y f
 
 ## 4. Logo
 
-**Sistema de logo [P].** Una idea, seis piezas. Hoy existen las tres primeras con la identidad anterior (baldosa con
-degradado violeta, `rx` 30/128, nombre en Sora); el redibujo de la última columna no está hecho.
+**Sistema de logo.** Una idea, seis piezas. El redibujo r9 de la última columna está hecho (2026-11-11, `1b211f6`) salvo el
+monograma, que sigue **[P]**. Los dibujos anteriores (baldosa con degradado violeta, `rx` 30/128, nombre en Sora) quedan en
+el historial de git.
 
-| Pieza | Archivo | Qué es | Mínimo | Redibujo r9 **[P]** |
+| Pieza | Archivo | Qué es | Mínimo | Redibujo r9 |
 |---|---|---|---|---|
 | Símbolo (baldosa) | `logos/galivelop-image-generator-b.svg` | rejilla 2×2 de marcos con una celda encendida, sobre baldosa | 16 px | baldosa plana `#5B34C9`, chaflán 28/128 (como el Portal), líneas `#fbfcfd` de 12/128, celda elegida rellena `#fbfcfd`; sin degradado |
-| Símbolo de línea | no hay | la misma rejilla sin baldosa, para papel | 24 px | líneas `#13212b` (o `#e6eef3` sobre oscuro) de 12/128 y la celda elegida rellena `#8B5CF6`; es la pieza que más se parece al Portal |
-| Favicon | `gimg/ui/assets/gvig.svg` | el símbolo, para la pestaña | 16 px | el símbolo de baldosa; a 16 px la celda elegida ocupa 4 px como mínimo |
-| Monograma | no hay | «GVIG» | 12 px de alto | Big Shoulders Display 800, mayúsculas, `#13212b`; solo donde no cabe el nombre (cabecera estrecha, pie de pieza) |
+| Símbolo de línea | `logos/galivelop-image-generator-b-linea.svg`, `-b-linea-oscuro.svg` | la misma rejilla sin baldosa, para papel | 24 px | líneas `#13212b` (o `#e6eef3` sobre oscuro) de 12/128 y la celda elegida rellena `#8B5CF6`; es la pieza que más se parece al Portal |
+| Favicon | `gimg/ui/assets/gvig.svg` | el símbolo, para la pestaña | 16 px | el símbolo de baldosa (misma figura que `logos/…-b.svg`); a 16 px la celda elegida ocupa 4 px como mínimo |
+| Monograma | no hay | «GVIG» | 12 px de alto | Big Shoulders Display 800, mayúsculas, `#13212b`; solo donde no cabe el nombre (cabecera estrecha, pie de pieza). **[P]**, sin dibujar |
 | Nombre | dentro del lockup | «Galivelop IG» | 14 px de alto | Big Shoulders Display 700, tinta `#13212b`; «IG» en `#5B34C9` (en oscuro, `#e6eef3` y `#A78BFA`) |
-| Lockup | `logos/galivelop-image-generator-b-lockup.svg`, `gimg/ui/assets/gvig-lockup.svg` | símbolo + nombre a la derecha | 24 px de alto | símbolo de baldosa + nombre; separación 28/128 del lado de la baldosa |
+| Lockup | `logos/galivelop-image-generator-b-lockup.svg`, `-b-lockup-oscuro.svg`, `gimg/ui/assets/gvig-lockup.svg` | símbolo + nombre a la derecha | 24 px de alto | símbolo de baldosa + nombre; separación 28/128 del lado de la baldosa. El nombre va aún como `<text>` vivo: falta pasarlo a trazados |
 
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
 | Archivos | Obl. | los de la tabla; los candidatos `-a`, `-c` y `-d` se quedan como historia. `viewBox 0 0 128 128` (símbolo) y `0 0 1100 128` (lockup), con `<title>`; el símbolo no lleva `<text>` | repo (`docs/marcas/galivelop-image-generator/logos/`) |
-| Colores del logo | Obl. | hoy `#8B5CF6`, `#5B34C9`, `#FFFFFF` (degradado en la baldosa); r9: `#5B34C9`, `#fbfcfd`, `#8B5CF6`, `#13212b`, planos | repo; r9 **[P]** |
-| Variantes | Rec. | baldosa (vale sobre claro y oscuro) y línea (una versión por fondo) | baldosa: repo; línea: **[P]**, no hay archivo |
+| Colores del logo | Obl. | `#5B34C9`, `#fbfcfd`, `#8B5CF6`, `#13212b` (en oscuro, `#e6eef3` y `#A78BFA`), planos | repo |
+| Variantes | Rec. | baldosa (vale sobre claro y oscuro) y línea (una versión por fondo) | repo |
 | Tamaño mínimo | Obl. | símbolo 16 px, lockup 24 px de alto | repo |
 | Margen | Obl. | un cuarto del lado de la baldosa por cada lado | repo |
 | Posición en la pieza | Rec. | lockup al 9 % de la altura de la pieza | repo (`examples/pilot/componer.py`) |
-| Usos prohibidos | Obl. | deformar, girar, cambiar el violeta por el azul del Portal, encender más de una celda, sombra o brillo, ponerlo sobre una zona con detalle sin velo; con r9, además, degradado en la baldosa | repo; el último **[P]** |
-| Copia para `compose` | Rec. | no hay copia en `examples/galivelop-image-generator/logos/` | no hay (hueco de la sección 15) |
+| Usos prohibidos | Obl. | deformar, girar, cambiar el violeta por el azul del Portal, encender más de una celda, sombra o brillo, ponerlo sobre una zona con detalle sin velo; con r9, además, degradado en la baldosa | repo |
+| Copia para `compose` | Rec. | `examples/galivelop-image-generator/logos/galivelop-image-generator-b-lockup.svg`: copia congelada del lockup **anterior**, la que usan `og`/`social` (`piezas.json`); se cambia por el redibujo al volver a medir las piezas | repo |
 
 **Por qué una sola celda.** El símbolo dice lo que hace la herramienta: muchos intentos, uno elegido. Dos celdas
 encendidas ya no dicen eso; por eso es un uso prohibido y no una variante.
@@ -132,10 +134,10 @@ encendidas ya no dicen eso; por eso es un uso prohibido y no una variante.
 
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
-| Titulares | Rec. | **Big Shoulders Display** 700 (800 en el monograma), mayúsculas o caja normal, tracking 0 | **heredado de Portal-Galivelop** `08c7fe5`; pesos *(suposición)* **[P]** |
-| Texto | Rec. | **Literata** 400 (500 para énfasis) | **heredado de Portal-Galivelop**; **[P]** |
-| Datos | Rec. | **JetBrains Mono** 400: semillas, hex, rutas, órdenes, medidas | **heredado de Portal-Galivelop**; **[P]** |
-| Hoy | — | Sora 700 (tracking −0,03 em en el nombre, −0,02 en títulos) e Inter 400/500; monoespaciada del sistema | repo (`gimg/ui/css/tokens.css`, `examples/pilot/componer.py`) |
+| Titulares | Rec. | **Big Shoulders Display** 700 (800 en el monograma), mayúsculas o caja normal, tracking 0 | **heredado de Portal-Galivelop** `08c7fe5`; aplicado en la interfaz (`gimg/ui/fonts/`); pesos *(suposición)* |
+| Texto | Rec. | **Literata** 400 (500 para énfasis) | **heredado de Portal-Galivelop**; aplicado en la interfaz |
+| Datos | Rec. | **JetBrains Mono** 400: semillas, hex, rutas, órdenes, medidas | **heredado de Portal-Galivelop**; aplicado en la interfaz |
+| Piezas, hoy | — | Sora 700 (tracking −0,03 em en el nombre, −0,02 en títulos) e Inter 400/500: solo en la composición de piezas, ya no en la interfaz | repo (`examples/pilot/componer.py`, `piezas.json`) |
 | Licencia y origen | Rec. | las cinco son OFL, de `google/fonts`; `examples/pilot/fuentes.sh` baja hoy Sora e Inter a `piloto/fuentes/` y `componer.py` las usa con `FONTCONFIG_FILE` | repo; las tres nuevas *(suposición: la ruta en `google/fonts` se comprueba al bajarlas)* |
 
 **Regla de uso.** Lo que la herramienta **dice** va en Literata; lo que **mide** va en JetBrains Mono; lo que **nombra**
@@ -151,7 +153,7 @@ encendidas ya no dicen eso; por eso es un uso prohibido y no una variante.
 | Palabras vetadas en prompts | Obl. | `camera`, `lens`, `brush`, `paint`, `palette`, `easel`, `canvas`, `sparkle`, `spark`, `magic`, `robot`, `brain`, `face`, `person`, `artist`, `gallery`, `text`, `letters`, `logo`; además `like` y nombres de lugares reales | repo |
 | Estilo de imagen, medido | Obl. | r6-r8: marcos de vidrio, PBR, luz volumétrica, humo violeta sobre fondo oscuro (r7: 9/10 de la persona) | repo (`examples/galivelop-image-generator/prompts/`) |
 | Estilo de imagen r9 | Rec. | para los recursos de marca (símbolo, cabeceras de documentación, ilustraciones de la interfaz): plano, el del Portal («flat vector illustration… thin lines of even width, no gradients, no glow, no shading… lots of empty space»), con el motivo de los marcos en vez de la carta. Las piezas `og`/`social` ya medidas siguen en vidrio hasta que una ronda mida el plano | **[P]** *(suposición: sin ronda)* |
-| Lenguaje de formas | Rec. | trazo 12/128 con extremos redondos; esquinas: hoy `rx` 30/128 en la baldosa y 16/128 en el marco interior; r9: chaflán 28/128 en la baldosa, marcos interiores de esquina viva | repo; r9 **[P]** |
+| Lenguaje de formas | Rec. | trazo 12/128 con extremos redondos; esquinas: hoy `rx` 30/128 en la baldosa y 16/128 en el marco interior; r9: chaflán 28/128 en la baldosa, marcos interiores de esquina viva (aplicado al logo) | repo |
 | Prompts | Obl. | `estilo.txt` = `og.txt` = `r2-palabras.txt`; `r5-cuadrado.txt`, `r5-vertical.txt`, `r5-cabecera.txt`, `r2-luz.txt`; 124-130 palabras; acaban en «The image is completely textless.» | repo |
 
 **Dos estilos, un motivo.** El vidrio (r6-r8) y el plano (r9) cuentan lo mismo con los mismos marcos y el mismo violeta.
@@ -193,7 +195,7 @@ convive con el Portal. Lo que no vale es mezclarlos en una misma pieza.
 
 ## 10. Textos de composición
 
-> **r9:** el nombre que se compone es «Galivelop IG» (D38). Con r9 aprobada, titular en Big Shoulders Display y subtítulo en Literata **[P]**; hoy, Sora e Inter.
+> **r9:** el nombre que se compone es «Galivelop IG» (D38). En las piezas, titular en Big Shoulders Display y subtítulo en Literata **[P]**; hoy, Sora e Inter (la interfaz ya usa las nuevas).
 
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
@@ -302,7 +304,8 @@ Entre esta hoja (r9) y lo que había en el repo. **Resueltas por la persona el 2
 
 1. **La interfaz usaba la identidad anterior.** `gimg/ui/css/tokens.css` (D39) tenía fondo oscuro, Sora e Inter.
    **Decisión:** aplicar r9 a `tokens.css` en tarea propia (rama `claude/marca-r9`), con tema claro por defecto y el
-   oscuro (`#0d171e`) como alternativa; hasta que llegue a `main` manda el `tokens.css` de `main`.
+   oscuro (`#0d171e`) como alternativa; hasta que llegue a `main` manda el `tokens.css` de `main`. **Aplicado el
+   2026-11-11** (`de53727`).
 2. **Claro u oscuro por defecto.** **Decisión: claro** (papel `#fbfcfd`) por defecto en interfaz y documentación, oscuro
    (`#0d171e`) como alternativa; las piezas `og`/`social` siguen oscuras hasta una ronda plana.
 3. **Vidrio o plano.** r6-r8 (vidrio, luz volumétrica; r7 con 9/10) contradice «sin degradados ni brillo» del Portal.
@@ -310,11 +313,12 @@ Entre esta hoja (r9) y lo que había en el repo. **Resueltas por la persona el 2
    por los recursos de marca y se mide en una ronda antes de tocar `og.txt`.
 4. **Logo con degradado y `rx` 30/128** frente a baldosa plana con chaflán 28/128. **Decisión:** redibujar símbolo,
    lockup y favicon según la tabla de la sección 4, en la misma tarea que la interfaz; los SVG anteriores pasan a
-   historia.
+   historia. **Aplicado el 2026-11-11** (`1b211f6`); falta el monograma.
 5. **El azul del Portal.** **Decisión: solo ese uso.** El celeste `#1aa6df` sigue prohibido como acento de la
    herramienta; se admite únicamente como `--family` (≤ 2 %) en el enlace «parte de Galivelop». `biblia.md` lo recoge.
 6. **D38 sin aplicar.** **Decisión:** «Galivelop IG» (siglas «GVIG») se aplica al README, a los textos de
-   `examples/galivelop-image-generator` y a la interfaz en la misma tarea que r9.
+   `examples/galivelop-image-generator` y a la interfaz en la misma tarea que r9. **Aplicado el 2026-11-11** (`1ca2bb6`;
+   la interfaz ya lo decía y los textos de `examples/` no nombran el producto).
 7. **`brand.palette` de la configuración** tiene los 4 hex de la identidad anterior, con los que se midió el 72-88 %.
    **Decisión:** no se toca hasta la ronda plana; entonces, los 6 hex de la sección 3.
 
@@ -336,8 +340,9 @@ Los 17 cambios propuestos a la plantilla el 2026-11-04 se aplicaron ese día (ap
 son nuevos y están pendientes.
 
 **Balance de r9:** de los 15 obligatorios, 12 siguen completos desde el repo (son los de la identidad anterior, que es la
-aplicada) y 3 eran **[P]** (acento, logo, titular). r9 añade propuestas, no hechos: paleta por roles, tipografías, sistema
-de logo y estilo plano son **[P]** enteros, y lo plano no tiene ninguna ronda medida. Lo que la hoja gana es criterio:
+aplicada) y 3 eran **[P]** (acento, logo, titular). r9 nació como propuesta; el 2026-11-11 se aplicaron la paleta por roles
+y las tipografías (interfaz), el sistema de logo (salvo el monograma) y el nombre. Siguen **[P]** el estilo plano, sin
+ninguna ronda medida, `brand.palette` y las piezas. Lo que la hoja gana es criterio:
 qué se comparte con el Portal, qué es propio y por qué.
 
 **Lo aprendido:** una variante se define mejor por lo que **no** cambia (papel, tinta, línea, letras) que por su acento;
