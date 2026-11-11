@@ -142,7 +142,7 @@
   "error.delivery.target_taken": "el destino «{path}» ya es de {otherKey} / {otherProfile}; cambia la plantilla o las claves",
   "error.project.bad_name": "nombre de proyecto no válido: «{project}»",
   "error.delivery.write_failed": "no se pudo entregar «{path}»: {reason}",
-  "cli.description": "Generador de imágenes con IA local (cola, intentos, elegida y entrega).",
+  "cli.description": "Galivelop IG: generador de imágenes con IA local (cola, intentos, elegida y entrega).",
   "cli.help.lang": "idioma de los mensajes (por defecto, el del sistema)",
   "cli.help.json": "salida en JSON legible por máquinas",
   "cli.cmd.project": "registrar proyectos",

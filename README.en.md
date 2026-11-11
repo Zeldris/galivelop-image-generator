@@ -1,6 +1,8 @@
-# galivelop-image-generator
+# Galivelop IG
 
 [Español](README.md)
+
+**Galivelop IG** (short name **GVIG**) is the product name; the repository, the package and the command are still `galivelop-image-generator` and `gimg` (D38).
 
 A local AI image generator: one service per machine, shared by several projects (D1, D2). It uses stable-diffusion.cpp
 as the engine and the Steam Deck as the reference machine (D4). No dependencies: Python 3 standard library only (D6).
