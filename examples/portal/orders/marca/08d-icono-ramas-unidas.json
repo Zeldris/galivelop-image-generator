@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/08d-icono-ramas-unidas",
+  "profile": "cuadrado",
+  "seed": 1,
+  "count": 4,
+  "prompt": "A single simple line icon, centred: a merge, two lines starting at the left from two separate round nodes, one high and one low, curving towards each other and joining at one single round node in the middle, then continuing as one single straight line to the right that ends in a fourth round node. Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, bold and clear enough to read at 24 pixels, generous empty margin around each icon, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background. Flat vector pictogram, minimal, geometric. No photographic rendering, no gradients, no glow, no text, no letters, no numbers, no watermark, no border, no frame."
+}

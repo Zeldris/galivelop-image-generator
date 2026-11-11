@@ -2,7 +2,7 @@
   "$schema": "../../../../gimg/schemas/order.schema.json",
   "key": "marca/09c-icono-terminal",
   "profile": "cuadrado",
-  "prompt": "A single simple line icon, centred: a terminal window with a title bar of three small dots, inside it at the left a right-pointing chevron prompt followed by a short underscore caret, nothing else inside. Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, bold and clear enough to read at 24 pixels, generous empty margin around each icon, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background. Flat vector pictogram, minimal, geometric. No photographic rendering, no gradients, no glow, no text, no letters, no numbers, no watermark, no border, no frame.",
+  "prompt": "A single simple line icon, centred: a terminal window with a title bar of three small dots, inside it at the left the prompt >_ written as one compact group on a single baseline: a right-pointing chevron and, directly touching its right side at the bottom, a short underscore caret, both the same height band, nothing else inside. Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, bold and clear enough to read at 24 pixels, generous empty margin around each icon, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background. Flat vector pictogram, minimal, geometric. No photographic rendering, no gradients, no glow, no text, no letters, no numbers, no watermark, no border, no frame.",
   "seed": 1,
   "count": 2
 }

@@ -2,7 +2,7 @@
   "$schema": "../../../../gimg/schemas/order.schema.json",
   "key": "marca/17-marco-retrato",
   "profile": "cuadrado",
-  "prompt": "A square picture frame drawn only as a thin border of degree tick marks, like the graduated edge of a chart: short and long ticks evenly spaced along the four edges, the top-right corner cut straight at 45 degrees as a flat chamfer, the whole centre completely empty plain off-white. Simple line drawing: one uniform stroke width, no shading, no hatching, no fill, no texture, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background. Flat vector graphic, minimal, geometric, seen straight on. No landscape, no sky, no sea, no plants, no folded corner, no ornaments, no photographic rendering, no gradients, no glow, no text, no letters, no numbers, no watermark.",
+  "prompt": "A picture frame shaped as a five-sided outline: a square whose top-right corner is replaced by one short straight diagonal edge, so the frame has four right-angled corners and one flat bevelled corner. The frame is drawn only as a thin border of degree tick marks, like the graduated edge of a chart: short and long ticks evenly spaced along all five edges, every corner plain and clean, the whole centre completely empty plain off-white. Simple line drawing: one uniform stroke width, no shading, no hatching, no fill, no texture, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background. Flat vector graphic, minimal, geometric, seen straight on. No landscape, no sky, no sea, no plants, no photographic rendering, no gradients, no glow, no text, no letters, no numbers, no watermark.",
   "seed": 1,
   "count": 2
 }
