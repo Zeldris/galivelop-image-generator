@@ -259,5 +259,5 @@ paths.image = (p, profile, key, id, { raw = false } = {}) => {
   return picture(a.seed, a.params.width, a.params.height, (order.text && order.text.title1) || '', raw || !a.compose);
 };
 paths.preview = (id) => { const e = queue.find((x) => x.id === Number(id)); return e ? picture(e.seed + 1000, e.params.width || 1280, e.params.height || 640, '', true) : 'data:,'; };
-paths.asset = () => '/ui/assets/gvig-lockup.svg';
+paths.asset = () => '/ui/assets/gvig.svg';
 paths.log = () => 'data:text/plain,registro%20del%20intento%20(mock)';
