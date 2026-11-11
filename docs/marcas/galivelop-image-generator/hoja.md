@@ -7,6 +7,14 @@ la sección 13); **heredado de `<marca>`** sale del repo de la marca paraguas (a
 **[P]** es propuesta pendiente de la persona; *(suposición)* se comprueba en una ronda; «no hay» no existe. Puesta al día el
 2026-11-04 con la plantilla de los 17 cambios aprobados.
 
+> **Hereda de la identidad vigente del Portal (2026-11-11).** Lo que esta hoja dice de fondo, texto, tipografía, modelo,
+> estilo de imagen y palabras vetadas (`#06121c`, Sora/Inter, FLUX, humo violeta, veto a `no`/`not`/`like`) es la identidad
+> anterior de la familia, con la que se hicieron las piezas de r1-r8: se queda como histórico de esas piezas. **Para
+> cualquier pieza nueva manda el bloque «Identidad vigente» de [`../portal/hoja.md`](../portal/hoja.md)** (paleta
+> `#0072a8`/`#fbfcfd`/`#13212b`/`#5d7a6a`, Z-Image-Turbo q6 a 8 pasos, dos registros de dibujo, zonas limpias, croma,
+> versión oscura, «Cómo se escribe el prompt»), y esta hoja solo añade lo propio: el motivo de informática de la fila
+> «Motivo propio» de la sección 6 y el acento `#8B5CF6` para logo e interfaz (en imagen generada, ver la duda 2 del Portal).
+
 Commits de referencia: este repo `2259370` (rama `f2-motor`); Portal-Galivelop `aa76b34` (lo heredado, vía
 `docs/marcas/portal/biblia.md`, que lo lee desde `docs/records/lectura-2026-10-26-tarkor-y-marcas.md`; desde aquí no se
 abre ese repo).
@@ -23,7 +31,7 @@ abre ese repo).
 | Quién decide | Obl. | La persona; delegado al agente el 2026-10-26 («lo dejo en tus manos») hasta que diga otra cosa; cada decisión delegada lleva **[P]** y se le propone al cerrar F2 | repo (`docs/marcas/README.md`, «Elegido por el agente») |
 | Fecha de la hoja | Rec. | `2026-11-04` | — |
 | Familia visual | Rec. | `Galivelop`: fondo, texto, tipografía y baldosa son los de la familia (Rec. aquí, no Obl.) | heredado de Portal-Galivelop `aa76b34` |
-| Hereda de | Opc. | Portal-Galivelop `aa76b34` (leído solo a través de `docs/marcas/portal/biblia.md`) | repo |
+| Hereda de | Opc. | **Vigente:** [`../portal/hoja.md`](../portal/hoja.md), bloque «Identidad vigente» (2026-11-10 y 11). **Histórico (piezas r1-r8):** Portal-Galivelop `aa76b34` (leído solo a través de `docs/marcas/portal/biblia.md`) | repo |
 
 ## 1. Identidad
 
@@ -93,9 +101,10 @@ lo pone al 9 % del alto de la pieza (`r4-composicion.md`).
 
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
+| Motivo propio (identidad vigente, 2026-11-11) | Obl. | **La cola y la elegida, en informática:** una ventana de aplicación con una fila de miniaturas (celdas de una retícula), una de ellas marcada con un visto; variantes: la ventana sobre el mar de carta (grabado, portadas) o sola (icono, línea simple). Nada de cámaras, pinceles ni marcos de cristal con brillo: el brillo era de la identidad anterior. Icono: «an application window holding a row of small thumbnails, one of them marked with a tick» (sin número exacto de miniaturas). Acento violeta `#8B5CF6` solo en logo, baldosa e interfaz; en la imagen generada, las cuatro tintas del Portal salvo que la persona decida la duda 2 de su hoja | **propuesta del agente, 2026-11-11**, según la fila «Mar y tecnología» de `../portal/hoja.md`; pendiente de pieza (`#24 og por proyecto` del Portal) |
 | Motivos Sí | Obl. | 1) fila de marcos finos de cristal flotando en azul noche, solapados y en profundidad, cada uno con un brillo difuso (la cola); 2) un marco más encendido que los demás, en violeta, que derrama luz sobre sus vecinos (la elegida); 3) rejilla tenue de puntos en el fondo (la web del Portal); 4) un punto de luz (el arranque bajo demanda), sin usar aún | repo (`prompts/estilo.txt`; `docs/plan.md` «Metáforas»; `biblia.md` §7) |
 | Motivos No | Obl. | cámaras, pinceles, paletas, caballetes, chispas, robots, cerebros, personas, cuadros reconocibles, interfaz, texto | repo (`biblia.md` §7; `docs/plan.md`) |
-| Palabras vetadas | Obl. | `camera`, `lens`, `brush`, `paint`, `palette`, `easel`, `canvas`, `sparkle`, `spark`, `magic`, `robot`, `brain`, `face`, `person`, `artist`, `gallery`, `text`, `letters`, `logo`; más `like` y cualquier lugar real (reglas comunes) | repo (`biblia.md` §7). Ningún prompt de `prompts/*.txt` las contiene (grep del 2026-11-04) |
+| Palabras vetadas | Obl. | `camera`, `lens`, `brush`, `paint`, `palette`, `easel`, `canvas`, `sparkle`, `spark`, `magic`, `robot`, `brain`, `face`, `person`, `artist`, `gallery`, `text`, `letters`, `logo`; más `like` y cualquier lugar real (reglas comunes). **Vigente desde el 2026-11-11:** las palabras propias (cámara, pincel, paleta, chispa, robot, cerebro, persona, texto) siguen vetadas por ética y motivo; el veto a `no`/`not`/`without`/`like` **no se aplica** a piezas nuevas: rige «Cómo se escribe el prompt» de `../portal/hoja.md` (negaciones solo en el cierre, `like` como comparación de estilo, ningún color fuera de tinta) | repo (`biblia.md` §7). Ningún prompt de `prompts/*.txt` las contiene (grep del 2026-11-04) |
 | Estilo de imagen | Rec. | «minimal» y «nearly empty» **rechazados** (r4: ninguna publicable). Desde r6: «Style: elegant digital art, physically based rendering, soft volumetric light, crisp glass refraction and reflections, smooth gradients, fine detail. Colours: #06121c, #8B5CF6, #A78BFA, #eaf4fa and #ffffff highlights. Mood: focused, quietly creative, precise.», con los colores en hex (r6, 8/10). **r7 (2026-11-04):** sin el punto de luz suelto sobre las láminas («nothing else emits light»); el aura violeta de la lámina encendida se extiende como humo luminoso entre y detrás de las láminas, por el suelo como neblina baja, por la pared del fondo y hasta la mitad del encuadre como velo tenue (`orders/r7.json`) **r8 (veredicto de r7, 9/10, 2026-11-05):** fuera el humo blanco o gris; el humo y el aura moradas se extienden por toda la imagen (sin tapar la zona del texto con brillo: ahí, solo velado y oscuro). | repo (`prompts/estilo.txt`, elegido en r2; `orders/r6-detalle.json`, `orders/r7.json`); veredicto r6 en `../../records/contenido/r4-composicion.md` |
 | Lenguaje de forma | Opc. | marcos, celdas, filas y puntos de luz; plano, sin perspectiva ni sombra dura; una sola cosa encendida; trazo 12/128 con remates redondos; radios `rx` 30/128 en la baldosa, 16/128 en el marco interior | repo (`biblia.md` §5; `logos/…-b.svg`) |
 
@@ -210,7 +219,7 @@ ya no lleva «no letters, no logos».
 | 5 | Símbolo SVG válido | pasa a mano (viewBox, sin `<text>`/`<image>`/`filter`, legible a 16 px según la elección); copia en `examples/<p>/logos/` **no hay** |
 | 6 | Familia de titular instalada | **no comprobable**: la configuración no tiene `compose.fonts`, y las fuentes viven en `piloto/fuentes/`, no en `~/.local/share/fonts` |
 | 7 | Motivos Sí, No y palabras vetadas no vacíos | pasa; nadie lo valida |
-| 8 | Ningún prompt con palabra vetada, negación ni «like» pasa: `estilo.txt`, `r5-*.txt` y `r2-luz.txt` (su cierre «no letters, no logos» se cambió a «The image is completely textless.» el 2026-11-04, según el cambio 5 de la plantilla) |
+| 8 | Ningún prompt con palabra vetada, negación ni «like» | pasa en los prompts históricos: `estilo.txt`, `r5-*.txt` y `r2-luz.txt` (su cierre «no letters, no logos» se cambió a «The image is completely textless.» el 2026-11-04, según el cambio 5 de la plantilla). **Para piezas nuevas no se aplica tal cual**: la comprobación es el punto 5 de «Cómo se escribe el prompt» de `../portal/hoja.md` |
 | 9 | Prompt acaba en «The image is completely textless.» y tiene 120-320 palabras | pasa (124-130 palabras), `r2-luz.txt` incluido |
 | 10 | ≥ 1 perfil con múltiplos de 64; `targetWidth`/`targetHeight` cuando el destino difiere | pasa: múltiplos de 64 y `og` con `targetWidth` 1200 y `targetHeight` 630 (corregido el 2026-11-04) |
 | 11 | Cada perfil compuesto declara su zona y el prompt la describe | el prompt la describe; ningún perfil la declara (hueco) |
