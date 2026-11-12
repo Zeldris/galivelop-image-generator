@@ -50,6 +50,34 @@ def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def pause_path() -> Path:
+    return paths.data_dir() / "queue.paused"
+
+
+def is_paused() -> bool:
+    """Is the queue paused (the mark `pause` leaves next to ``queue.json``)? The worker finishes the image in progress
+    and takes no other one; the service launches no worker."""
+    return pause_path().exists()
+
+
+def pause() -> bool:
+    """Leave the pause mark; False if it was already there (pausing twice is harmless)."""
+    was = is_paused()
+    path = pause_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(_now() + "\n")
+    return not was
+
+
+def resume() -> bool:
+    """Remove the pause mark; False if there was none."""
+    try:
+        pause_path().unlink()
+    except FileNotFoundError:
+        return False
+    return True
+
+
 def worker_lock_path() -> Path:
     return paths.data_dir() / "worker.lock"
 

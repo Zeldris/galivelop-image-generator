@@ -854,5 +854,12 @@
   "ui.brand.shop.needFont": "Give a family.",
   "ui.brand.shop.needAll": "Missing: {files}.",
   "ui.attempt.forBrand": "Use for brand",
-  "ui.attempt.forBrandHint": "Opens the Brand tab with this attempt as the logo source"
+  "ui.attempt.forBrandHint": "Opens the Brand tab with this attempt as the logo source",
+  "cli.cmd.queue_pause": "pause the queue: the image in progress finishes and no other starts",
+  "cli.cmd.queue_resume": "resume the paused queue",
+  "cli.out.queue_paused": "Queue paused: the image in progress finishes and no other starts. `gimg queue resume` resumes it.",
+  "cli.out.queue_already_paused": "The queue was already paused.",
+  "cli.out.queue_resumed": "Queue resumed (the service, if alive, relaunches the worker in a few seconds; otherwise `gimg work`).",
+  "cli.out.queue_not_paused": "The queue was not paused.",
+  "cli.out.queue_paused_note": "The queue is paused (`gimg queue resume` resumes it)."
 }

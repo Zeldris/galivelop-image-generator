@@ -854,5 +854,12 @@
   "ui.brand.shop.needFont": "Indica una familia.",
   "ui.brand.shop.needAll": "Faltan: {files}.",
   "ui.attempt.forBrand": "Usar para marca",
-  "ui.attempt.forBrandHint": "Abre la pestaña Marca con este intento como origen del logo"
+  "ui.attempt.forBrandHint": "Abre la pestaña Marca con este intento como origen del logo",
+  "cli.cmd.queue_pause": "pausar la cola: termina la imagen en curso y no empieza otra",
+  "cli.cmd.queue_resume": "reanudar la cola pausada",
+  "cli.out.queue_paused": "Cola en pausa: la imagen en curso termina y no empieza otra. `gimg queue resume` la reanuda.",
+  "cli.out.queue_already_paused": "La cola ya estaba en pausa.",
+  "cli.out.queue_resumed": "Cola reanudada (el servicio, si está vivo, relanza el trabajador en unos segundos; si no, `gimg work`).",
+  "cli.out.queue_not_paused": "La cola no estaba en pausa.",
+  "cli.out.queue_paused_note": "La cola está en pausa (`gimg queue resume` la reanuda)."
 }

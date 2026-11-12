@@ -153,6 +153,8 @@ def _build(lang: str) -> argparse.ArgumentParser:
     leaf(g, "cancel", "cli.cmd.queue_cancel", arg("entry", "cli.arg.entry", type=int))
     leaf(g, "move", "cli.cmd.queue_move", arg("entry", "cli.arg.entry", type=int),
          arg("to", "cli.arg.queue_to", choices=queue.MOVES))
+    leaf(g, "pause", "cli.cmd.queue_pause")
+    leaf(g, "resume", "cli.cmd.queue_resume")
     leaf(g, "clear", "cli.cmd.queue_clear", opt("--project", "cli.arg.queue_project", metavar="P"))
 
     leaf(top, "work", "cli.cmd.work", opt("--once", "cli.arg.once", action="store_true"))
@@ -587,8 +589,18 @@ def _queue_running_lines(out: _Out, entry: dict) -> None:
 
 
 def _queue(args, sub, out: _Out) -> None:
-    if sub == "list":
+    if sub == "pause":
+        changed = queue.pause()
+        out.data({"paused": True, "changed": changed}) if out.as_json else out.line(
+            "cli.out.queue_paused" if changed else "cli.out.queue_already_paused")
+    elif sub == "resume":
+        changed = queue.resume()
+        out.data({"paused": False, "changed": changed}) if out.as_json else out.line(
+            "cli.out.queue_resumed" if changed else "cli.out.queue_not_paused")
+    elif sub == "list":
         entries = queue.list_entries(None if args.state is None else [args.state])
+        if queue.is_paused() and not out.as_json:
+            out.line("cli.out.queue_paused_note")
         if out.as_json:
             out.data([_entry_json(out, e) for e in entries])
         elif not entries:
