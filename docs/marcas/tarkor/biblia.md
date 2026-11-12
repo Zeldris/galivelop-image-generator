@@ -146,8 +146,8 @@ dibuja a mano (corregido el 2026-11-12). Los `tarkor-a/b/c/d.svg` y sus lockups 
 - **Zona reservada:** un tercio izquierdo liso (og, banner); la **mitad** izquierda en `header`; la mitad inferior en `square` y
   `portrait` (el prompt pide esa mitad libre, como la caja del 48 %). Una sola zona por perfil, la misma en prompt, plantilla
   y medida. En E2/E3 (cabecera y og), los dos tercios derechos en calma y la mitad inferior más vacía.
-- **Recortes:** las piezas con transparencia se generan sobre verde plano `#00ff00` («centred on a perfectly flat
-  untouched bright green background, lit evenly, 15 percent empty margin on every side», cerrando el prompt) o magenta
+- **Recortes:** las piezas con transparencia se generan sobre verde plano `#00ff00` (con la frase de croma de `hoja.md` §6, «Centred on a solid,
+  uniform, evenly lit chroma-key green background #00ff00, one flat colour edge to edge…», cerrando el prompt) o magenta
   `#ff00ff` si la pieza lleva verde, y se recortan con `gimg matte` (`-alpha.png`; reglas P8 y P9).
 - **El emblema manda (M8), y llega por composición:** todo lo que lleva la Semilla (avatar, icono, sello, medallón)
   se genera sin ella y la recibe desde los SVG de `logos/`, así es la misma en todas partes. Ningún modelo pinta el

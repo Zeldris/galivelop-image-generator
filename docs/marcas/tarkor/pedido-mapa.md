@@ -75,11 +75,17 @@ con la madera. Son la guía de cada textura y van en su prompt:
 ## 2. Cómo pedirlas
 
 - **Dos bloques comunes** (en inglés, delante de cada prompt):
-  - **Terreno** (bloques M-A y M-B):
+  - **Terreno** (bloque M-A, #44 y #45-#47):
 
     > Hand-painted fantasy map terrain, seen from directly above. Painterly realism halfway between a photograph and
     > an oil painting: realistic terrain, light and texture rendered with soft, visible brushwork. Restrained natural
     > colour, soft warm light from the upper left, even exposure, calm and readable, no haze.
+
+  - **Icono** (bloque M-B y #3; el de terreno dice «seen from directly above» y los iconos van en vista elevada):
+
+    > Hand-painted fantasy map icon. Painterly realism halfway between a photograph and an oil painting: realistic
+    > terrain, light and texture rendered with soft, visible brushwork. Restrained natural colour, soft warm light from
+    > the upper left, calm and readable, no haze.
 
   - **Materia** (bloques M-C y M-D): el bloque común de `peticiones.md` §2, tal cual (madera `#332415`/`#46311d`,
     hierro `#171310`, oro `#b8862b` con pátina `#7a5a1e` y filos `#f2c45a`, piedra `#3a342d`).
@@ -90,9 +96,11 @@ con la madera. Son la guía de cada textura y van en su prompt:
 - **Mosaico:** las texturas se piden «seamless tileable» y se generan 2-3 semillas. El perfil lleva `tileable`
   y gimg genera sin costura: no se arregla a mano. El código las repite como patrón: **sin motivos grandes que delaten la repetición**.
 - **Recortes:** los iconos y ornamentos van sobre verde plano `#00ff00`, centrados, con un 15 % de margen libre, y se
-  entregan como `-alpha.png` (recorte con `gimg matte`). La frase de croma cierra el prompt de cada pieza recortada,
-  como en el #3: `centred on a perfectly flat bright green background, 15 percent empty margin on every side`. Excepción: los iconos de bosque y ciénaga llevan verde, así que esos van sobre magenta
-  plano `#ff00ff`, y se marca `[recorte magenta]`.
+  entregan como `-alpha.png` (recorte con `gimg matte`). La frase de croma cierra el prompt de cada pieza recortada
+  y es la de la hoja (§6, «Recorte sobre croma»), literal: `Centred on a solid, uniform, evenly lit chroma-key green
+  background #00ff00, one flat colour edge to edge, the object lit evenly and floating, 15 percent empty margin on every
+  side.` Las tablas no la repiten; el pedido JSON de cada pieza la lleva. Excepción: los iconos de bosque y ciénaga llevan verde, así que esos van sobre magenta
+  plano `#ff00ff` (`magenta background #ff00ff` en la frase), y se marca `[recorte magenta]`.
 - **Perfiles:** los del mapa, declarados en `examples/tarkor/galivelop-images.json`. Donde las tablas dicen
   `textura`, es `texturamapa` 1024×1024 (`tileable: "xy"`); `icono`, `iconomapa` 768×768; `cartela` 1024×512; `banda`,
   `bandamapa` 1024×256, salvo el marco (#42), que es `marcomapa` 1024×256 (`tileable: "x"`).
@@ -106,11 +114,11 @@ La montaña de la primera ronda (q373, q372) salió en vector plano: con el acab
 
 ### Prueba de estilo
 
-| # | Pieza | Perfil | Prompt (tras el bloque de terreno) | Notas |
+| # | Pieza | Perfil | Prompt (tras el bloque de terreno; el #3, tras el de icono) | Notas |
 | --- | --- | --- | --- | --- |
 | 1 | Arena roja (desierto cálido) | `textura` | Seamless tileable texture of wind-rippled red sand dunes seen from directly above, colours #b0643a and #6e3a22 with crests catching light in #E0703A, long parallel ripples, scattered dark pebbles, edge to edge. | **K**. Fija el estilo de todo el terreno. |
 | 2 | Hielo (glaciar) | `textura` | Seamless tileable texture of a glacier surface seen from directly above, pale ice #c8d8dc with blue crevasses #a8d8f0 and cool shadows #7a98a8, wind-packed snow streaks, edge to edge. | **K**. El azul del hielo, sin brillo: nada brilla por sí mismo. |
-| 3 | Montaña (icono) | `icono` | A single rocky mountain peak as a painted map icon, seen slightly from above, dark stone #6b6257 and #3a342d with a lit left face, thin snow on the summit, centred on a perfectly flat bright green background, 15 percent empty margin on every side. | **K?** `[recorte]`. Fija el estilo de los iconos. 6-8 semillas. |
+| 3 | Montaña (icono) | `icono` | A single rocky mountain peak as a painted map icon, seen slightly from above, dark stone #6b6257 and #3a342d with a lit left face, thin snow on the summit. | **K?** `[recorte]`. Fija el estilo de los iconos. 6-8 semillas (el pedido lleva 6). |
 
 ### Bloque M-A — texturas de bioma (`MAP-13`)
 
@@ -134,13 +142,12 @@ Una por bioma, más dos del mar. El código rellena cada celda con la textura de
 ### Bloque M-B — iconos de relieve y vegetación (`MAP-13`)
 
 Se reparten por las celdas según la altura (`h`) y el bioma, en lugar de los iconos de Azgaar. **Tres variantes de
-cada uno** (tres semillas que salgan bien), para que no se repitan iguales. Todos con el bloque de terreno y el final
-común: *«centred on a perfectly flat bright green background, 15 percent empty margin on every side»* (o magenta, donde
-se indica).
+cada uno** (tres semillas que salgan bien), para que no se repitan iguales. Todos con el bloque de icono y la frase
+de croma de §2 (en magenta, donde se indica).
 
 | # | Pieza | Perfil | Prompt | Notas |
 | --- | --- | --- | --- | --- |
-| 16 | Cordillera (grupo de 3 picos) | `icono` | A small range of three rocky peaks as a painted map icon, seen slightly from above, dark stone #6b6257 and #3a342d, lit left faces, snow on the tallest. | **K?** `[recorte]`. Para las celdas más altas. |
+| 16 | Cordillera (grupo de 3 picos) | `icono` | A small range of three rocky peaks as a painted map icon, seen slightly from above, dark stone #6b6257 and #3a342d, lit left faces, snow on the tallest. | **K?** `[recorte]`. Para las celdas más altas. Tres picos exactos: 6 semillas (regla A10). |
 | 17 | Colina | `icono` | A low rounded grassy hill as a painted map icon, seen slightly from above, olive #6f7d44 with a lit left side and a soft shaded right side. | **K** `[recorte magenta]`. |
 | 18 | Colina pedregosa | `icono` | A low rocky hill as a painted map icon, seen slightly from above, grey brown stone #8a8068 and #6b6257, lit left side. | **K** `[recorte]`. Meseta y desiertos fríos. |
 | 19 | Duna | `icono` | A single crescent red sand dune as a painted map icon, seen slightly from above, #b0643a with a lit crest in #E0703A and a shaded hollow #6e3a22. | **K** `[recorte]`. Llanuras. |
@@ -161,18 +168,18 @@ recorte en verde. Se ven a 24-40 px: **silueta clara antes que detalle**.
 | # | Pieza | Perfil | Prompt (tras el bloque de materia) | Notas |
 | --- | --- | --- | --- | --- |
 | 26 | Ficha base | `icono` | A small round map token seen straight on, a disc of dark forged iron with a thin ring of old carved gold and four tiny gold points at top, bottom, left and right, the centre empty and slightly recessed. | **K** `[recorte]`. La base de todas: las demás, img2img desde esta (0,35-0,45); la ficha no es el emblema, así que la regla L1 no lo impide. |
-| 27 | Capital | `icono` | The same round iron map token with a gold ring, in its centre a raised relief of a fortified keep with three towers in old gold. | **K?** `[recorte]`. Algo mayor en el código. Tres torres exactas: de 6 a 10 semillas (regla A10). |
-| 28 | Asentamiento | `icono` | The same round iron map token, in its centre a raised relief of a small wooden palisade with two roofs, in old gold. | **K** `[recorte]`. |
-| 29 | Puerto | `icono` | The same round iron map token, in its centre a raised relief of a wooden pier and a mooring post, in old gold. | **K** `[recorte]`. Lugares de tipo costa. |
-| 30 | Ruinas | `icono` | The same round iron map token, in its centre a raised relief of two broken stone pillars, in dark stone and old gold. | **K** `[recorte]`. |
-| 31 | Hito | `icono` | The same round iron map token, in its centre a raised relief of a tall standing stone obelisk, in dark stone with a gold edge. | **K** `[recorte]`. |
-| 32 | Refugio | `icono` | The same round iron map token, in its centre a raised relief of a low stone hut with a smoke line, in old gold. | **K** `[recorte]`. |
-| 33 | Puesto de control | `icono` | The same round iron map token, in its centre a raised relief of a wooden watchtower with a barrier, in old gold. | **K** `[recorte]`. |
-| 34 | Mirador | `icono` | The same round iron map token, in its centre a raised relief of a rocky crag with a small platform on top, in old gold. | **K** `[recorte]`. |
-| 35 | Punto de agua | `icono` | The same round iron map token, in its centre a raised relief of a stone well with a blue crystal gem #4aa8d8 as the water. | **K** `[recorte]`. La gema es el único cristal de las fichas. |
-| 36 | Cantera | `icono` | The same round iron map token, in its centre a raised relief of stacked cut stone blocks and a pick, in old gold. | **K** `[recorte]`. |
-| 37 | Cruce y paso | `icono` | The same round iron map token, in its centre a raised relief of two crossing paths, in old gold. | **K** `[recorte]`. Cruces, cañones y pasos. |
-| 38 | Pasto y caza | `icono` | The same round iron map token, in its centre a raised relief of a curved horn and grass blades, in old gold. | **K** `[recorte]`. Pasto estacional, pradera, coto de caza. |
+| 27 | Capital | `icono` | The same round iron map token with a thin gold ring and four tiny gold points at top, bottom, left and right, in its centre a raised relief of a fortified keep with three towers in old gold. | **K?** `[recorte]`. Algo mayor en el código. Tres torres exactas: 6 semillas (regla A10). |
+| 28 | Asentamiento | `icono` | The same round iron map token with a thin gold ring and four tiny gold points at top, bottom, left and right, in its centre a raised relief of a small wooden palisade with two roofs, in old gold. | **K** `[recorte]`. |
+| 29 | Puerto | `icono` | The same round iron map token with a thin gold ring and four tiny gold points at top, bottom, left and right, in its centre a raised relief of a wooden pier and a mooring post, in old gold. | **K** `[recorte]`. Lugares de tipo costa. |
+| 30 | Ruinas | `icono` | The same round iron map token with a thin gold ring and four tiny gold points at top, bottom, left and right, in its centre a raised relief of two broken stone pillars, in dark stone and old gold. | **K** `[recorte]`. |
+| 31 | Hito | `icono` | The same round iron map token with a thin gold ring and four tiny gold points at top, bottom, left and right, in its centre a raised relief of a tall standing stone obelisk, in dark stone with a gold edge. | **K** `[recorte]`. |
+| 32 | Refugio | `icono` | The same round iron map token with a thin gold ring and four tiny gold points at top, bottom, left and right, in its centre a raised relief of a low stone hut with a thin smoke line, in old gold. | **K** `[recorte]`. |
+| 33 | Puesto de control | `icono` | The same round iron map token with a thin gold ring and four tiny gold points at top, bottom, left and right, in its centre a raised relief of a wooden watchtower with a barrier, in old gold. | **K** `[recorte]`. |
+| 34 | Mirador | `icono` | The same round iron map token with a thin gold ring and four tiny gold points at top, bottom, left and right, in its centre a raised relief of a rocky crag with a small platform on top, in old gold. | **K** `[recorte]`. |
+| 35 | Punto de agua | `icono` | The same round iron map token with a thin gold ring and four tiny gold points at top, bottom, left and right, in its centre a raised relief of a stone well with a blue crystal gem #4aa8d8 as the water. | **K** `[recorte]`. La gema es el único cristal de las fichas. |
+| 36 | Cantera | `icono` | The same round iron map token with a thin gold ring and four tiny gold points at top, bottom, left and right, in its centre a raised relief of stacked cut stone blocks and a pick, in old gold. | **K** `[recorte]`. |
+| 37 | Cruce y paso | `icono` | The same round iron map token with a thin gold ring and four tiny gold points at top, bottom, left and right, in its centre a raised relief of two crossing paths, in old gold. | **K** `[recorte]`. Cruces, cañones y pasos. |
+| 38 | Pasto y caza | `icono` | The same round iron map token with a thin gold ring and four tiny gold points at top, bottom, left and right, in its centre a raised relief of a curved horn and grass blades, in old gold. | **K** `[recorte]`. Pasto estacional, pradera, coto de caza. |
 
 ### Bloque M-D — cartografía y marco (`MAP-13`)
 
@@ -180,8 +187,8 @@ recorte en verde. Se ven a 24-40 px: **silueta clara antes que detalle**.
 | --- | --- | --- | --- | --- |
 | 39 | Rosa de los vientos | `icono` | A compass rose seen straight on, in old carved gold, with four long tapered points at top, bottom, left and right and four shorter points between them, a small ring of dark forged iron at the centre, crisp bevels. | **K?** `[recorte]`. Eco de la estrella y los cuatro puntos del emblema. Las letras N/S/E/O, en código. |
 | 40 | Cartela | `cartela` 1024×512 | An empty ornamental cartouche seen straight on, a wide rounded plaque of dark wood planks framed by forged iron with gold corner fittings and four rivets, the centre plain dark wood, even and empty. | **K** `[recorte]`. El nombre de la región va encima, en Cinzel. |
-| 41 | Barra de escala | `banda` 1024×256 | A horizontal map scale bar seen straight on, a long thin strip of dark forged iron divided into five equal segments by small gold studs, gold end caps. | **K** `[recorte]`. Los números, en código. |
-| 42 | Marco del mapa (lado) | `banda` 1024×256 | Seamless horizontally tileable border strip seen straight on, dark wood plank with a forged iron edge and a thin bevelled gold line along the inner side, matte. | **K**. Mosaico horizontal; el código lo gira para los cuatro lados. |
+| 41 | Barra de escala | `banda` 1024×256 | A horizontal map scale bar seen straight on, a long thin strip of dark forged iron divided into five equal segments by small gold studs, gold end caps. | **K** `[recorte]`. Los números, en código. Cinco segmentos exactos: 6 semillas (regla A10). |
+| 42 | Marco del mapa (lado) | `banda` 1024×256 | Seamless horizontally tileable border strip seen straight on, dark wood plank with a forged iron edge and a thin bevelled gold line along the inner side, matte, edge to edge. | **K**. Mosaico horizontal; el código lo gira para los cuatro lados. |
 | 43 | Marco del mapa (esquina) | `icono` | A square corner fitting seen straight on, forged iron with a small raised gold boss with four tapered points at its centre and gold bevelled edges, made to join two wood border strips at a right angle. | **K** `[recorte]`. |
 | 44 | Trazo de costa | `textura` | Seamless tileable texture of fine concentric wave lines on dark blue water #1f3a52, lines in #5a7a7a, evenly spaced, seen from directly above, edge to edge. | **K**. El código lo usa como relleno de una franja junto a la costa (el «contorno de olas» de los mapas clásicos). Va con el bloque de terreno, no el de materia. |
 
@@ -192,9 +199,9 @@ dentro de la textura y poco color**.
 
 | # | Pieza | Perfil | Prompt | Notas |
 | --- | --- | --- | --- | --- |
-| 45 | Tormenta magnética | `textura` | (bloque de terreno) Seamless tileable texture of swirling dust storm bands seen from directly above, rust #8a4a2a and iron grey #52626f streaks curving around small dark cores, edge to edge. | **K?** Llanuras del Viento Rojo. Sin rayos ni brillo (y nada morado: la luz morada es canon reservado). |
-| 46 | Zona de peligro | `textura` | (bloque de terreno) Seamless tileable texture of dark scorched ground with cracked dry earth, #3a2a1e and #6e3a22, irregular patches, edge to edge. | **K**. Se pinta al 30-40 % sobre el bioma. |
-| 47 | Niebla de lo no explorado | `textura` | (bloque de terreno) Seamless tileable texture of soft drifting low cloud seen from directly above, warm grey #8a8068 and #a39a80, gentle billows, edge to edge. | **K**. Para lo que el jugador aún no conoce, si se usa. |
+| 45 | Tormenta magnética | `textura` | (bloque de terreno) Seamless tileable texture of swirling dust storm bands seen from directly above, rust #8a4a2a and iron grey #52626f streaks curving around small dark cores, strong contrast and little colour, edge to edge. | **K?** Llanuras del Viento Rojo. Sin rayos ni brillo (y nada morado: la luz morada es canon reservado). |
+| 46 | Zona de peligro | `textura` | (bloque de terreno) Seamless tileable texture of dark scorched ground with cracked dry earth, #3a2a1e and #6e3a22, irregular patches, strong contrast and little colour, edge to edge. | **K**. Se pinta al 30-40 % sobre el bioma. |
+| 47 | Niebla de lo no explorado | `textura` | (bloque de terreno) Seamless tileable texture of soft drifting low cloud seen from directly above, warm grey #8a8068 and #a39a80, gentle billows, strong contrast and little colour, edge to edge. | **K**. Para lo que el jugador aún no conoce, si se usa. |
 | 48 | Estandarte de clan (genérico) | `icono` | (bloque de materia) A small vertical banner on a short iron pole seen straight on, plain dark cloth #46311d with a gold fringe at the bottom edge, the cloth face empty. | **K** `[recorte]`. El símbolo de cada clan lo pone el código (o un pedido aparte, cuando el canon lo fije). |
 
 ## 4. Entrega
