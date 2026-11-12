@@ -2,7 +2,7 @@
   "$schema": "../../../../../gimg/schemas/order.schema.json",
   "key": "mapa/08-pradera",
   "profile": "texturamapa",
-  "prompt": "Hand-painted fantasy map terrain, seen from directly above. Matte painterly brushwork, fine detail, restrained natural colour, soft warm light from the upper left, even exposure, calm and readable, no haze. Seamless tileable texture of open grassland seen from directly above, green #8f9e5c and #6f7d44, soft wind-combed patches, edge to edge.",
+  "prompt": "Hand-painted fantasy map terrain, seen from directly above. Painterly realism halfway between a photograph and an oil painting: realistic terrain, light and texture rendered with soft, visible brushwork. Restrained natural colour, soft warm light from the upper left, even exposure, calm and readable, no haze. Seamless tileable texture of open grassland seen from directly above, green #8f9e5c and #6f7d44, soft wind-combed patches, edge to edge.",
   "seed": 1,
   "draft": false,
   "count": 2

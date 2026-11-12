@@ -2,7 +2,7 @@
   "$schema": "../../../../../gimg/schemas/order.schema.json",
   "key": "mapa/02-hielo",
   "profile": "texturamapa",
-  "prompt": "Hand-painted fantasy map terrain, seen from directly above. Matte painterly brushwork, fine detail, restrained natural colour, soft warm light from the upper left, even exposure, calm and readable, no haze. Seamless tileable texture of a glacier surface seen from directly above, pale ice #c8d8dc with blue crevasses #a8d8f0 and cool shadows #7a98a8, wind-packed snow streaks, edge to edge.",
+  "prompt": "Hand-painted fantasy map terrain, seen from directly above. Painterly realism halfway between a photograph and an oil painting: realistic terrain, light and texture rendered with soft, visible brushwork. Restrained natural colour, soft warm light from the upper left, even exposure, calm and readable, no haze. Seamless tileable texture of a glacier surface seen from directly above, pale ice #c8d8dc with blue crevasses #a8d8f0 and cool shadows #7a98a8, wind-packed snow streaks, edge to edge.",
   "seed": 1,
   "draft": false,
   "count": 2
