@@ -50,5 +50,24 @@ class LeerEnteroTests(unittest.TestCase):
         self.assertIn('| F2.4 ', salida)
 
 
+
+_spec2 = importlib.util.spec_from_file_location('intentos_en_hoja', R / '.claude' / 'hooks' / 'intentos-en-hoja.py')
+intentos_en_hoja = importlib.util.module_from_spec(_spec2)
+_spec2.loader.exec_module(intentos_en_hoja)
+
+
+class IntentosEnHojaTests(unittest.TestCase):
+    def test_avisa_sin_bloquear_en_un_intento(self):
+        d = intentos_en_hoja.decision({'tool_name': 'Read', 'tool_input': {'file_path': '/x/attempts/q123-a.png'}})
+        self.assertIn('gimg sheet', d['systemMessage'])
+        self.assertNotIn('hookSpecificOutput', d)
+
+    def test_calla_en_lo_demas(self):
+        for datos in ({'tool_name': 'Read', 'tool_input': {'file_path': '/x/aprobadas/01.png'}},
+                      {'tool_name': 'Read', 'tool_input': {'file_path': '/x/attempts/q1.json'}},
+                      {'tool_name': 'Bash', 'tool_input': {'file_path': '/x/attempts/q1.png'}}):
+            self.assertIsNone(intentos_en_hoja.decision(datos))
+
+
 if __name__ == '__main__':
     unittest.main()
