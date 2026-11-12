@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "instalador/i1-lateral",
+  "profile": "portrait",
+  "prompt": "Epic fantasy matte painting, physically plausible, crisp edges, high contrast, clear air, no haze. Deep indigo blue night sky #1a2140, slightly green-leaning, near black #0f1428 at the top. A slanted belt of pale shimmering stardust in #4aa8d8 and #a8d8f0 crosses the sky and is the only light in it. Tall upright view. The belt of stardust rises from the lower left to the upper right across the middle of the frame. Low jagged dark rock spires in #0e0b08 stand along the bottom. Under them, across the bottom tenth, a band of dark forged iron #171310 with one thin line of old gold #b8862b on its top edge. The upper third, from the top edge downward, is plain calm sky in #1a2140, even and empty.",
+  "seed": 1,
+  "draft": false,
+  "count": 3
+}
