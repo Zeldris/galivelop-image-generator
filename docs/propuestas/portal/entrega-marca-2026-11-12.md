@@ -20,10 +20,11 @@ vectorial de los iconos (se usa esa, el PNG queda de respaldo); `aprobadas/` es 
 2. **La q311 (barco de olas) no tiene sitio**: Developer solo sale en «próximamente» con la ficha 15. Queda en
    `aprobadas/06-portada-developer-q311.png`.
 3. **Series de iconos completas** (el Portal no las mezcla con lucide), en `svg/`:
-   - 07 líneas de trabajo, **cinco** para las cinco líneas de `src/data/lineas.ts`: 07a código, 07b papel →
-     ventana, 07c documento con check, 07d compás sobre plano, 07e mundos (mapa plegado con cordillera). El reparto
+   - 07 líneas de trabajo, **cinco** para las cinco líneas de `src/data/lineas.ts`: 07a código, 07b papel-ventana
+     (corregido: una sola figura cuadrada, hoja con esquina doblada y ventana de tres puntos; q651), 07c documento con check, 07d compás sobre plano, 07e mundos (mapa plegado con cordillera). El reparto
      icono-línea lo decide el Portal.
-   - 08 valores: 08a candado, 08b mira, 08c historial (línea de tiempo con tres nodos), 08d ramas unidas.
+   - 08 valores: 08a candado, 08b mira, 08c historial (corregido: tres nodos en vertical y una rama a un cuarto; q658), 08d ramas unidas.
    - 09 vías: 09a rama, 09b bombilla, 09c terminal.
-4. Sin cambios: 10, 13, 15, 17, 18, 19 y 23 ya están en la web; el 12 (separador) espera su componente; el 14
+4. Sin cambios: 10, 13, 15, 17, 18, 19 y 23 ya están en la web; el 12 (separador) espera su componente y se queda el de
+   siempre (q564, con estrella) por decisión de la persona del 2026-11-12, aunque el Portal pidió uno sin estrella; el 14
    sigue sin uso (ADR 0004), en `aprobadas/`.
