@@ -47,5 +47,8 @@
   },
   "plan": [],
   "taskId": "[A-Z]{2,5}-\\d+",
-  "agentSignatures": false
+  "agentSignatures": false,
+  "privateCheck": {
+    "allowEmails": ["128x128@2x.png"]
+  }
 }
