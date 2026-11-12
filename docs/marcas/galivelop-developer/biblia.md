@@ -1,5 +1,10 @@
 # galivelop-developer — biblia de estilo
 
+> **Identidad anterior desde el 2026-11-12:** paleta, tipografía, logo, forma y estilo de imagen (secciones 2-5 y 7-9) son
+> histórico de r1-r5; manda [`hoja.md`](hoja.md), que sigue la identidad vigente del Portal con el acento `#0e9a93` /
+> `#16827c`. Siguen vigentes la esencia y la voz (secciones 1 y 6). El repo de developer se releyó en `main` `70b0396`: lo
+> que la sección 10 cita de `8fa309c` (`README.md`, `GLOSSARY.md`, `docs/adr/`) es idéntico allí.
+
 Estado: **aprobada el 2026-11-04** (decisiones delegadas por la persona; ver
 [`docs/records/decisiones-hojas-2026-11-04.md`](../../records/decisiones-hojas-2026-11-04.md) y [`hoja.md`](hoja.md)). El repo
 no tiene ninguna identidad visual (ni logo, ni color, ni tipografía): es una herramienta del taller y entra en la familia del
