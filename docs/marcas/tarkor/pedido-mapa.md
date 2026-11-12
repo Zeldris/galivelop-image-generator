@@ -1,4 +1,4 @@
-<!-- Copia de World-Maker-Fantasy docs/producto/pedido-imagenes-mapa.md (commit 7c5e2d13, 2026-11-10). El original manda; si cambia, se vuelve a copiar. -->
+<!-- Copia de World-Maker-Fantasy docs/producto/pedido-imagenes-mapa.md (commit 7c5e2d13, 2026-11-10). El original manda; si cambia, se vuelve a copiar. Corregido aquí el 2026-11-12 contra hoja.md §16 (acabado pintado, sin negativo, perfiles del mapa, prompts 39, 40 y 43): los mismos cambios se piden al original en docs/propuestas/world-maker-fantasy/entrega-hoja-2026-11-12.md. El original no ha cambiado desde 7c5e2d13. -->
 
 # Pedido a galivelop-image-generator: imágenes para el mapa de Helek (2026-11-10)
 
@@ -35,7 +35,10 @@ saturación contenida. El marco, la rosa de los vientos, la cartela y las fichas
 interfaz: madera oscura, hierro y oro tallado. Así el mapa casa con el juego (dentro del juego, el fondo es madera:
 hoja, decisión 1) sin parecer una pieza de marca.
 
-- **Terreno:** vista cenital, plana, pintura mate con pincelada fina, luz rasante suave desde arriba a la izquierda
+- **Acabado (decisión de la persona, 2026-11-12): pintado, con el de las ilustraciones del juego**: el de
+  `estilos.mapa` de `image-generator/estilo/mundo.json`, a medio camino entre la fotografía y el óleo, con pincelada
+  visible. Un terreno o un icono en vector plano no se acepta (hoja §16, regla A12).
+- **Terreno:** vista cenital, plana, pintura mate con pincelada visible, luz rasante suave desde arriba a la izquierda
   (la de la hoja), sin sombras arrojadas. Saturación por debajo de la de Azgaar: el mapa sostiene encima fronteras,
   rutas y etiquetas.
 - **Relieve y árboles:** iconos de cartografía pintada, en una vista ligeramente elevada (montañas y árboles se leen
@@ -74,32 +77,32 @@ con la madera. Son la guía de cada textura y van en su prompt:
 - **Dos bloques comunes** (en inglés, delante de cada prompt):
   - **Terreno** (bloques M-A y M-B):
 
-    > Hand-painted fantasy map terrain, seen from directly above. Matte painterly brushwork, fine detail, restrained
-    > natural colour, soft warm light from the upper left, even exposure, calm and readable, no haze.
+    > Hand-painted fantasy map terrain, seen from directly above. Painterly realism halfway between a photograph and
+    > an oil painting: realistic terrain, light and texture rendered with soft, visible brushwork. Restrained natural
+    > colour, soft warm light from the upper left, even exposure, calm and readable, no haze.
 
   - **Materia** (bloques M-C y M-D): el bloque común de `peticiones.md` §2, tal cual (madera `#332415`/`#46311d`,
     hierro `#171310`, oro `#b8862b` con pátina `#7a5a1e` y filos `#f2c45a`, piedra `#3a342d`).
-- **Negativo** (para el campo `negative`, o pegado a mano en sd-cli): el de la hoja, más lo del mapa:
-
-  > text, letters, words, numbers, labels, watermark, signature, people, face, hands, creature, sea monster, ship,
-  > cartoon, flat vector, clipart, blurry, lens flare, light rays, glow haze, chrome, neon, purple, violet, pink,
-  > moon, sun disc, cast shadow, grid, compass labels, cropped, tilted.
-
-  En las texturas del bloque M-A se añade además `perspective view, horizon`.
-- **Palabras vetadas** en el prompt: las de la hoja (§6), incluidas las negaciones. «no haze» es la única que se admite.
-- **Mosaico:** las texturas se piden «seamless tileable» y se generan 2-3 semillas. La costura se arregla después,
-  como dice `peticiones.md` §2. El código las repite como patrón: **sin motivos grandes que delaten la repetición**.
+- **Sin prompt negativo** (hoja §16, regla P3): lo que no debe salir (letras, números, criaturas, barcos, rejilla,
+  horizonte) no se nombra, ni negado.
+- **Palabras vetadas** en el prompt: las de la hoja (§6 y §16, regla P2: `star`, `title`, `castle`… incluidas las
+  negaciones). «no haze» es la única que se admite.
+- **Mosaico:** las texturas se piden «seamless tileable» y se generan 2-3 semillas. El perfil lleva `tileable`
+  y gimg genera sin costura: no se arregla a mano. El código las repite como patrón: **sin motivos grandes que delaten la repetición**.
 - **Recortes:** los iconos y ornamentos van sobre verde plano `#00ff00`, centrados, con un 15 % de margen libre, y se
-  entregan como `-alpha.png`. Excepción: los iconos de bosque y ciénaga llevan verde, así que esos van sobre magenta
+  entregan como `-alpha.png` (recorte con `gimg matte`). La frase de croma cierra el prompt de cada pieza recortada,
+  como en el #3: `centred on a perfectly flat bright green background, 15 percent empty margin on every side`. Excepción: los iconos de bosque y ciénaga llevan verde, así que esos van sobre magenta
   plano `#ff00ff`, y se marca `[recorte magenta]`.
-- **Perfiles:** los declarados en la hoja (§9). `textura` 1024×1024 e `icono` 512×512. Se añade uno solo:
-  `cartela` 1024×512.
-- **Modelo:** lo decide GVIG (columna «Modelo» como en `peticiones.md`: **K** = klein basta; **K?** = probar klein, puede
-  hacer falta uno mejor; **M** = modelo mejor o retoque a mano).
+- **Perfiles:** los del mapa, declarados en `examples/tarkor/galivelop-images.json`. Donde las tablas dicen
+  `textura`, es `texturamapa` 1024×1024 (`tileable: "xy"`); `icono`, `iconomapa` 768×768; `cartela` 1024×512; `banda`,
+  `bandamapa` 1024×256, salvo el marco (#42), que es `marcomapa` 1024×256 (`tileable: "x"`).
+- **Modelo:** `zimage-turbo-q6` a 8 pasos para lo que se entrega; FLUX.2 klein solo para bocetos (hoja §16, regla
+  P6). La columna «Modelo» (**K**, **K?**, **M**) dice solo la dificultad prevista.
 
 ## 3. Piezas
 
 Orden: primero la **prueba de estilo** (#1-#3). Con el sí de Álvaro a esas tres, el resto en el orden de los bloques.
+La montaña de la primera ronda (q373, q372) salió en vector plano: con el acabado pintado, la prueba se repite.
 
 ### Prueba de estilo
 
@@ -157,8 +160,8 @@ recorte en verde. Se ven a 24-40 px: **silueta clara antes que detalle**.
 
 | # | Pieza | Perfil | Prompt (tras el bloque de materia) | Notas |
 | --- | --- | --- | --- | --- |
-| 26 | Ficha base | `icono` | A small round map token seen straight on, a disc of dark forged iron with a thin ring of old carved gold and four tiny gold points at top, bottom, left and right, the centre empty and slightly recessed. | **K** `[recorte]`. La base de todas: las demás, img2img desde esta (0,35-0,45). |
-| 27 | Capital | `icono` | The same round iron map token with a gold ring, in its centre a raised relief of a fortified keep with three towers in old gold. | **K?** `[recorte]`. Algo mayor en el código. |
+| 26 | Ficha base | `icono` | A small round map token seen straight on, a disc of dark forged iron with a thin ring of old carved gold and four tiny gold points at top, bottom, left and right, the centre empty and slightly recessed. | **K** `[recorte]`. La base de todas: las demás, img2img desde esta (0,35-0,45); la ficha no es el emblema, así que la regla L1 no lo impide. |
+| 27 | Capital | `icono` | The same round iron map token with a gold ring, in its centre a raised relief of a fortified keep with three towers in old gold. | **K?** `[recorte]`. Algo mayor en el código. Tres torres exactas: de 6 a 10 semillas (regla A10). |
 | 28 | Asentamiento | `icono` | The same round iron map token, in its centre a raised relief of a small wooden palisade with two roofs, in old gold. | **K** `[recorte]`. |
 | 29 | Puerto | `icono` | The same round iron map token, in its centre a raised relief of a wooden pier and a mooring post, in old gold. | **K** `[recorte]`. Lugares de tipo costa. |
 | 30 | Ruinas | `icono` | The same round iron map token, in its centre a raised relief of two broken stone pillars, in dark stone and old gold. | **K** `[recorte]`. |
@@ -175,11 +178,11 @@ recorte en verde. Se ven a 24-40 px: **silueta clara antes que detalle**.
 
 | # | Pieza | Perfil | Prompt (tras el bloque de materia) | Notas |
 | --- | --- | --- | --- | --- |
-| 39 | Rosa de los vientos | `icono` | A compass rose seen straight on, a four-pointed star in old carved gold with its long points at top, bottom, left and right and four shorter points between them, a small ring of dark forged iron at the centre, crisp bevels. | **K?** `[recorte]`. Eco de la estrella y los cuatro puntos del emblema. Las letras N/S/E/O, en código. |
-| 40 | Cartela | `cartela` 1024×512 | An empty ornamental cartouche seen straight on, a wide rounded plaque of dark wood planks framed by forged iron with gold corner fittings and four rivets, the centre plain and calm for a title. | **K** `[recorte]`. El nombre de la región va encima, en Cinzel. |
+| 39 | Rosa de los vientos | `icono` | A compass rose seen straight on, in old carved gold, with four long tapered points at top, bottom, left and right and four shorter points between them, a small ring of dark forged iron at the centre, crisp bevels. | **K?** `[recorte]`. Eco de la estrella y los cuatro puntos del emblema. Las letras N/S/E/O, en código. |
+| 40 | Cartela | `cartela` 1024×512 | An empty ornamental cartouche seen straight on, a wide rounded plaque of dark wood planks framed by forged iron with gold corner fittings and four rivets, the centre plain dark wood, even and empty. | **K** `[recorte]`. El nombre de la región va encima, en Cinzel. |
 | 41 | Barra de escala | `banda` 1024×256 | A horizontal map scale bar seen straight on, a long thin strip of dark forged iron divided into five equal segments by small gold studs, gold end caps. | **K** `[recorte]`. Los números, en código. |
 | 42 | Marco del mapa (lado) | `banda` 1024×256 | Seamless horizontally tileable border strip seen straight on, dark wood plank with a forged iron edge and a thin bevelled gold line along the inner side, matte. | **K**. Mosaico horizontal; el código lo gira para los cuatro lados. |
-| 43 | Marco del mapa (esquina) | `icono` | A square corner fitting seen straight on, forged iron with a small four-pointed gold star at its centre and gold bevelled edges, made to join two wood border strips at a right angle. | **K** `[recorte]`. |
+| 43 | Marco del mapa (esquina) | `icono` | A square corner fitting seen straight on, forged iron with a small raised gold boss with four tapered points at its centre and gold bevelled edges, made to join two wood border strips at a right angle. | **K** `[recorte]`. |
 | 44 | Trazo de costa | `textura` | Seamless tileable texture of fine concentric wave lines on dark blue water #1f3a52, lines in #5a7a7a, evenly spaced, seen from directly above, edge to edge. | **K**. El código lo usa como relleno de una franja junto a la costa (el «contorno de olas» de los mapas clásicos). Va con el bloque de terreno, no el de materia. |
 
 ### Bloque M-E — capas del juego (`MAP-14`)
