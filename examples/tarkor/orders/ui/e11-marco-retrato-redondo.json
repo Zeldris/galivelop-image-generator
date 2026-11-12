@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "ui/e11-marco-retrato-redondo",
+  "profile": "icono",
+  "prompt": "Epic fantasy game asset. Materials: aged dark wood planks with raised grain in #332415 and #46311d, dark forged iron in #171310, old carved gold in #b8862b with dark patina #7a5a1e in the recesses and bright worn edges in #f2c45a, dark cracked stone in #3a342d. Warm raking light from the upper left, deep cool shadows in every groove. A thin dark bronze outline separates gold from background. Physically plausible materials, crisp edges, high contrast, no haze. A round frame of old carved gold with chiselled relief, seen straight on, a small raised gold boss with four tapered points at the top, bottom, left and right, iron rivets between them, the inside of the frame empty and filled with the same chroma-key green #00ff00. Centred on a solid, uniform, evenly lit chroma-key green background #00ff00, one flat colour edge to edge, the object lit evenly and floating, 15 percent empty margin on every side.",
+  "seed": 1,
+  "draft": false,
+  "count": 2
+}

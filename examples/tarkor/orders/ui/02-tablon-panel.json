@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "ui/02-tablon-panel",
+  "profile": "textura",
+  "prompt": "Epic fantasy game asset. Materials: aged dark wood planks with raised grain in #332415 and #46311d, dark forged iron in #171310, old carved gold in #b8862b with dark patina #7a5a1e in the recesses and bright worn edges in #f2c45a, dark cracked stone in #3a342d. Warm raking light from the upper left, deep cool shadows in every groove. A thin dark bronze outline separates gold from background. Physically plausible materials, crisp edges, high contrast, no haze. Seamless tileable texture of aged dark wood planks seen straight on, wood colours #332415 and #46311d with lighter grain lines in #7a5934, fine straight grain, a few tight knots, soft worn surface, subtle warm light from the upper left, even exposure across the whole image, flat, edge to edge, top view.",
+  "seed": 1,
+  "draft": false,
+  "count": 3
+}
