@@ -29,7 +29,8 @@ ya existen: `docs/marcas/tarkor/logos/tarkor-emblema-simple.svg`, `tarkor-lockup
    | `gold-900` | `#5a3a14` | | |
 
 3. **`.filete` y `.btn.pri` dejan el cristal** (`accent`) y pasan a oro: el cristal queda para foco y enlace
-   (regla C6). Filete en `gold-700`; el botón principal, con cerco `gold-700` sobre madera.
+   (regla C6). Filete en `gold-700`. **Propuesta de galivelop-image-generator, sin decidir:** el botón principal,
+   con cerco `gold-700` sobre madera; la regla solo exige que deje el cristal.
 4. **`.btn.pri { color: #fff }`** incumple C9 (blanco puro): pasa a hueso `#f1e4d0`.
 5. **Cinzel:** hoy cargáis 400, 600 y 700. La hoja usa 700 en titulares y 900 solo en el hero del juego; «TARKOR»
    en el riel, con `.title-gold`, va en 700 salvo que queráis el 900 (entonces hay que empaquetarlo).
@@ -46,5 +47,6 @@ ya existen: `docs/marcas/tarkor/logos/tarkor-emblema-simple.svg`, `tarkor-lockup
 8. **Comprobaciones al colocar** (hoja §16): I4 con luminancia media < 40 sobre 255 (A5); estados legibles a 20 px
    en gris (A3); I6 legible a 200 px de ancho (A4); todo lo de `app/src/imagenes/` por debajo de 1 MB (A8); los
    BMP sin alfa (A9).
-9. **Pendiente de la persona:** si I6 y las imágenes de la Deck amplían la decisión de Steam de la hoja (solo
-   cabecera y cápsula principal). Hasta que conteste, I6 está pedida pero no en cola.
+9. **Decidido por la persona (2026-11-12):** I6 (cápsula vertical, 600×900) y el icono 256² (es E14) amplían la
+   decisión de Steam de la hoja. Lo demás de la Deck (920×430, 1536×384 y el resto de vuestro doc 13 §3 D) son
+   recortes de E4 y E5, sin pieza propia.

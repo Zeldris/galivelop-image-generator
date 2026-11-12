@@ -17,7 +17,8 @@ en SVG ya existen: `docs/marcas/tarkor/logos/`.
 
 ## Qué cambiar en el juego
 
-1. **Fusionar UX-40 a `main`.** La marca en la interfaz está hecha en `claude/marca-interfaz` (`c858a150`) y `main`
+1. **Fusionar UX-40 a `main`, antes de recibir imágenes** (decisión de la persona, 2026-11-12: hasta entonces no
+   se os entrega ninguna). La marca en la interfaz está hecha en `claude/marca-interfaz` (`c858a150`) y `main`
    no la tiene: faltan `--color-gold-100…900`, `--color-stone-500/700`, `--color-night-900/950` y
    `--color-crystal-deep` (`frontend/src/index.css` l.55-66 de esa rama), `.gold-hairline` (l.277),
    `.corner-bracket-gold` (l.372) y `.title-gold` (l.462). Sin esos tokens, UX-41 no tiene dónde apoyarse.
@@ -49,7 +50,7 @@ en SVG ya existen: `docs/marcas/tarkor/logos/`.
    | `#1aa6df` | `#b8862b` | acento (≤ 10 % de la tarjeta) |
 
    Titulares en Cinzel 700 y texto en Inter 400, las dos ya empaquetadas en `frontend/src/assets/fonts/`. El
-   reparto de papeles es una propuesta: lo decide la persona.
+   **Propuesta de galivelop-image-generator, sin decidir:** el reparto de papeles lo decide la persona.
 6. **UX-41, las imágenes**, en el orden en que llegarán (estado de cada una: hoja §17):
    - ya válidas: barra de progreso E7 (pista y relleno, 1024×32), marco de retrato E11 y plantilla de captura E12;
    - después: texturas #2 (`.plank-panel`), #3 (`.wood-grain`), #4 (`.dust-road`), #5 (`.iron-band`) y #7
@@ -57,8 +58,21 @@ en SVG ya existen: `docs/marcas/tarkor/logos/`.
    - después: esquinas #8, separador #9, ranura #10 y los pictogramas #11-#15, que sustituyen a los emojis;
    - al final: cielo #6, carga E6, hero E5.
    Destino propuesto: `frontend/src/assets/ui/`.
+   Recomprobado en los componentes de `c858a150`: el ⚔️ de `Home.tsx` l.45 no tiene pieza pedida (vale la pestaña
+   «personaje» del #11); el 🎲 está también en `CombatExchangeBadge.tsx`, `RollBadge.tsx`, `ExtendedRollBadge.tsx` y
+   `GatheringDiceReveal.tsx`, no solo en `DiceRoll.tsx` l.113, y el #14 sirve para todos; quedan emojis sin pieza en
+   `EnciclopediaPanel.tsx`, `EquipoPanel.tsx`, `HungerThirstSelectionModal.tsx`, `CompanerosPanel.tsx` y
+   `EstadisticasPanel.tsx`: decid si se piden. `.corner-bracket-gold` (l.372) no lo usa ningún componente y
+   `.title-gold` solo `Home.tsx` l.30.
 7. **`.dust-road`** sigue marcado «Provisional» (l.175): deja de serlo cuando llegue la #4.
-8. **Mapa de Helek:** las 48 piezas de `docs/marcas/tarkor/pedido-mapa.md` esperan la decisión de Álvaro entre
-   vector plano y pintado; la prueba (montaña, q373) ya está aceptada.
-9. Sin cambios: `image-generator/estilo/` (`mundo.json`, `gradacion.json`, LUT). Las fichas, banners y miniaturas
+8. **Mapa de Helek: pintado**, con el acabado de vuestras ilustraciones (`estilos.mapa` de
+   `image-generator/estilo/mundo.json`); decisión de la persona, 2026-11-12 (hoja §16, regla A12). La montaña de
+   prueba (q373) salió en vector plano y se repite. Cambios que pedimos al original,
+   `docs/producto/pedido-imagenes-mapa.md` (`7c5e2d13`, rama `claude/pedido-mapa`), ya hechos en nuestra copia
+   `docs/marcas/tarkor/pedido-mapa.md`: bloque de terreno con el acabado pintado; fuera el bloque «Negativo»; la
+   costura la da `tileable`, no se arregla a mano; perfiles `texturamapa` 1024², `iconomapa` 768², `cartela`
+   1024×512, `bandamapa` y `marcomapa` 1024×256; modelo Z-Image a 8 pasos; #39 y #43 sin `star`; #40 sin `title`;
+   frase de croma al final de cada pieza recortada.
+9. `image-generator/estilo/` (`gradacion.json`, LUT): sin cambios. `mundo.json`: una sola cosa a revisar, en
+   `docs/propuestas/wmf-imagenes/entrega-hoja-2026-11-12.md`. Las fichas, banners y miniaturas
    del mundo siguen siendo de vuestro generador y no pasan por esta hoja.

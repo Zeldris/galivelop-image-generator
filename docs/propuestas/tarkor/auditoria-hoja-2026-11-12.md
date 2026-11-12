@@ -51,17 +51,31 @@ Gravedad: **C** contradice (dos fuentes dicen cosas distintas), **D** desfasado 
 6. Sin comprobación de luminancia media (I4 pide < 40 de 255) ni de contraste WCAG entre un texto y su fondo.
 7. `piezas.py` no centra el lockup en un tercio dado de la imagen (I1: tercio superior).
 
-## Preguntas a la persona
+## Decisiones de la persona (2026-11-12)
 
-1. **Tolerancia de color.** Recomendación: ΔE76 ≤ 15 frente al hex de paleta para imagen generada (es el umbral que
-   ya usa `gimg/measure.py` l.25) y hex exacto para CSS, SVG y piezas compuestas. No se inventa otro número.
-2. **Umbrales de 60/30/10.** Recomendación: madera + hierro ≥ 60 %, oro ≤ 10 %, brillo ≤ 5 % (ya decididos en la
-   hoja) y dejar el 30 sin cota propia hasta que gimg lo mida por familia.
-3. **Steam Deck.** ¿Las cinco piezas del Instalador (A16) amplían la decisión 7? Recomendación: sí para I6 y el
-   icono 256²; las otras tres salen como recorte de E4 y E5, sin generar nada nuevo.
-4. **Fusión de UX-40** (`c858a150`) a `main` del juego: la decide la sesión del juego. Recomendación: fusionarla
-   antes de entregar imágenes; UX-41 depende de sus tokens.
-5. **`castle`** entre las vetadas de la hoja, como en el doc 13. Recomendación: sí, y reescribir E2 y #6.
-6. **Mapa de Helek**: sigue abierta la decisión de Álvaro entre vector plano y pintado (`pedido-mapa.md` §3).
-7. **Reddit.** Ninguna canónica da medidas ni pieza para Reddit. Recomendación: usar E1 (avatar) y E2 (cabecera) y
-   no abrir pieza propia hasta que haya comunidad.
+Eran siete preguntas; la persona las respondió el mismo día y están aplicadas en `hoja.md` §16 y §17.
+
+1. **Tolerancia de color:** ΔE76 ≤ 15 en imagen generada; hex exacto en CSS y SVG.
+2. **60/30/10:** el «30» queda sin cota hasta que gimg mida por familia.
+3. **Steam Deck:** sí a la cápsula vertical I6 y al icono 256²; lo demás son recortes de E4 y E5.
+4. **UX-40:** se pide al juego que la fusione en `main` antes de recibir imágenes.
+5. **`castle`:** vetada.
+6. **Mapa de Helek:** pintado, con el acabado de las ilustraciones del juego.
+7. **Reddit:** usa E1 (avatar) y E2 (cabecera).
+
+## Segunda pasada (2026-11-12)
+
+| # | Dónde | Qué había | Arreglo |
+|---|---|---|---|
+| B1 | `peticiones.md` #6, #16, E1, E2, E3, E4, E9 | `stars`, `castle`, `glowing`, emblema pedido al modelo, img2img del #1, negación en E9 | Reescritos en su sitio |
+| B2 | `peticiones.md` E2 y E3 | E2 dejaba libres los dos tercios derechos y ponía el logo en el izquierdo; E3 decía logo a la izquierda y lema a la derecha | La zona libre es la del logo (hoja §9): tercio izquierdo en E2, centro en E3 |
+| B3 | `peticiones.md` §2 | Negativo, módulos de estrella y luz de la Semilla, «gimg no hace transparencia», costura a mano, `steps` 6, FLUX | Reescrito en su sitio |
+| B4 | `biblia.md` §7-§10; `hoja.md` §0 y §13; `peticiones.md` §0 | Commits y líneas del 2026-11-04 y del 2026-11-10 | Reescritos con lo comprobado el 2026-11-12; lo no recomprobado (lore, producto) lo dice |
+| B5 | `pedido-mapa.md` §2 | Negativo; costura a mano; perfiles `textura` e `icono` (son `texturamapa` e `iconomapa` 768²); modelo klein | Corregido en la copia; pedido al original |
+| B6 | `pedido-mapa.md` #39 y #43 (`star`), #40 (`for a title`) | Palabras vetadas; zona descrita por lo que irá encima | Reescritos |
+| B7 | `pedido-mapa.md` §1 y bloque de terreno | «Matte painterly brushwork, fine detail» dio iconos en vector plano (q373) | Bloque con el acabado de `estilos.mapa` de `mundo.json`; la prueba se repite |
+| B8 | `examples/tarkor/orders/` (`mapa/*`, `ui/e09-sello.json`, `marca/e02-cabecera.json`, `e03-og.json`, `e04-capsula.json`) | Llevan los prompts anteriores | Fuera de las rutas de este encargo: pendiente |
+| B9 | Juego `c858a150`, `Home.tsx` l.45 | Emoji ⚔️ que ningún pedido cubre | Fila en hoja §17; entrega al juego |
+| B10 | Juego `c858a150`, tiradas | El 🎲 está también en `CombatExchangeBadge.tsx`, `RollBadge.tsx`, `ExtendedRollBadge.tsx` y `GatheringDiceReveal.tsx`; el #14 solo nombra `DiceRoll.tsx` | Fila en hoja §17; entrega al juego |
+| B11 | Juego `c858a150` | `.corner-bracket-gold` (l.372) no lo usa ningún componente; `.title-gold` solo `Home.tsx` l.30 | Entrega al juego |
+| B12 | WMF-imagenes, `estilo/mundo.json` | La noche del juego nombra `stars` y la región de las Llanuras usa «long violet shadows»; la marca veta las dos | Reglas distintas para dos cosas distintas (ilustración del mundo y pieza de marca); `violet`, a revisar allí: entrega a WMF-imagenes |
