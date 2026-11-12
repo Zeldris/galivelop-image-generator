@@ -566,7 +566,8 @@ TEXT_PAIRS = [("text", "bg"), ("text", "surface"), ("text", "surface-2"), ("text
               ("bad", "bg"), ("bad", "surface"), ("text", "accent-soft"), ("text-2", "accent-soft"),
               ("family", "bg"), ("family", "surface"), ("on-status", "ok"), ("on-status", "warn"), ("on-status", "bad")]
 NONTEXT_PAIRS = [("border", "bg"), ("border", "surface"), ("border", "surface-2"), ("focus", "bg"), ("focus", "surface"),
-                 ("focus", "surface-2"), ("accent", "rule")]  # progress bar fill on its track
+                 ("focus", "surface-2"), ("accent", "bg"), ("accent", "surface"), ("accent", "surface-2")]
+# r10: the progress bar is outlined with --border and filled with --accent on --surface-2
 
 
 class Contrast(unittest.TestCase):
@@ -582,19 +583,21 @@ class Contrast(unittest.TestCase):
 
     def test_primary_button_fill_is_the_declared_one(self):
         for theme, tokens in theme_blocks().items():
-            self.assertEqual(tokens["accent-fill"].lower(), "#5b34c9", theme)
+            self.assertEqual(tokens["accent-fill"].lower(), "#7c5cd6", theme)
+            self.assertEqual(tokens["accent"].lower(), "#7c5cd6", theme)
             self.assertEqual(tokens["on-accent"].lower(), "#ffffff", theme)
-        self.assertGreaterEqual(ratio("#ffffff", "#5B34C9"), 7.5)
+        self.assertGreaterEqual(ratio("#ffffff", "#7C5CD6"), 4.5)
 
-    def test_r9_values_and_new_tokens_in_both_themes(self):
+    def test_r10_values_and_tokens_in_both_themes(self):
         blocks = theme_blocks()
         for theme, tokens in blocks.items():
-            for name in ("family", "rule", "brand"):
+            for name in ("family", "rule", "text-3", "grid", "accent-text"):
                 self.assertIn(name, tokens, "%s: falta --%s" % (theme, name))
-            self.assertEqual(tokens["brand"].lower(), "#8b5cf6", theme)
+            self.assertNotIn("brand", tokens, theme)  # r10 has one violet, --accent
         light, dark = blocks["light"], blocks["dark(selector)"]
         self.assertEqual((light["bg"].lower(), light["family"].lower()), ("#fbfcfd", "#0072a8"))
-        self.assertEqual((dark["bg"].lower(), dark["family"].lower()), ("#0d171e", "#1aa6df"))
+        self.assertEqual((dark["bg"].lower(), dark["family"].lower()), ("#0d171e", "#5cc8f2"))
+        self.assertEqual((light["accent-text"].lower(), dark["accent-text"].lower()), ("#7453cc", "#9577f3"))
         self.assertEqual(blocks["dark(auto)"], dark)  # the media query and the selector agree
 
     def test_border_and_rule_are_the_sheets(self):
@@ -602,9 +605,9 @@ class Contrast(unittest.TestCase):
         for theme, tokens in blocks.items():
             self.assertEqual(tokens["border"].lower(), "#6f8493", theme)
             self.assertNotIn("border-strong", tokens, theme)
-        self.assertEqual(blocks["light"]["rule"].lower(), "#c9d5dd")
-        self.assertEqual(blocks["dark(selector)"]["rule"].lower(), "#2b3d4a")
-        self.assertEqual(blocks["dark(auto)"]["rule"].lower(), "#2b3d4a")
+        self.assertEqual(blocks["light"]["rule"].lower(), "#b9cbd6")
+        self.assertEqual(blocks["dark(selector)"]["rule"].lower(), "#2b3d49")
+        self.assertEqual(blocks["dark(auto)"]["rule"].lower(), "#2b3d49")
         for theme, tokens in blocks.items():  # controls sit on these three fills
             for bg in ("bg", "surface", "surface-2"):
                 self.assertGreaterEqual(ratio(tokens["border"], tokens[bg]), 3.0, "%s: --border on --%s" % (theme, bg))
@@ -614,7 +617,7 @@ class Contrast(unittest.TestCase):
         self.assertNotIn("border-strong", css)
         for sel in (r"\.btn \{", r"input\[type=\"text\"\][^{]*\{", r"\.chip \{"):
             self.assertIn("var(--border)", re.search(sel + r"[^}]*\}", css, re.S).group(0), sel)
-        for sel in (r"\.card \{", r"\.tabs \{"):
+        for sel in (r"\.card \{", r"\.tabs \{"):  # the card draws its line (and its chamfer) with --edge
             self.assertIn("var(--rule)", re.search(sel + r"[^}]*\}", css, re.S).group(0), sel)
 
     def test_chip_status_text_reaches_aa_on_its_fill(self):
@@ -630,6 +633,23 @@ class Contrast(unittest.TestCase):
         self.assertIn("color-scheme: light;", re.search(r"^:root \{(.*?)\n\}", css, re.S | re.M).group(1))
         self.assertIn("prefers-color-scheme: dark", css)
         self.assertNotIn("gradient", css)
+
+    def test_inherited_rules_of_the_sheet(self):
+        """r10: no radii but the status dot and the spinner, no blur, no gradient but the 24 px grid."""
+        names = ("tokens.css", "base.css", "components.css", "layout.css")
+        css = re.sub(r"/\*.*?\*/", "", "".join(read(UI / "css" / n) for n in names), flags=re.S)
+        for banned in ("backdrop-filter", "blur(", "drop-shadow", "--r:", "--r-s:", "var(--r)", "var(--r-s)"):
+            self.assertNotIn(banned, css, banned)
+        rounded = re.findall(r"([^{}]+)\{[^{}]*border-radius[^{}]*\}", css)
+        for sel in rounded:
+            self.assertRegex(sel.strip(), r"(\.dot|\.spin)$", "border-radius fuera de las excepciones: " + sel.strip())
+        self.assertEqual(len(rounded), 3)
+        grads = re.findall(r"([^{}]+)\{[^{}]*gradient[^{}]*\}", css)
+        self.assertEqual([g.strip() for g in grads], ["body"])
+        self.assertIn("var(--grid)", re.search(r"body \{[^}]*\}", css, re.S).group(0))
+        for token in ("--chamfer-l: 28px", "--chamfer: 14px", "--chamfer-s: 10px", "--grid-step: 24px"):
+            self.assertIn(token, css, token)
+        self.assertIn("clip-path", re.search(r"\.card \{[^}]*\}", css, re.S).group(0))
 
 
 if __name__ == "__main__":
