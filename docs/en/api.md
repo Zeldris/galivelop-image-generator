@@ -352,7 +352,7 @@ Cancels all `queued` entries (only those of `project`, if given); it never touch
 curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/clear -d '{"project":"mi-proyecto"}'
 ```
 
-### POST /api/queue/pause, POST /api/queue/resume
+### POST /api/queue/pause
 
 Pause and resume the queue (body `{}`, with `Content-Type: application/json`). While paused the worker finishes the image in progress and takes no
 other, and the service launches no worker; on resume it relaunches one at its next beat (a few seconds). Response:
@@ -361,6 +361,14 @@ other, and the service launches no worker; on resume it relaunches one at its ne
 
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/pause -d '{}'
+```
+
+### POST /api/queue/resume
+
+Removes the pause (body `{}`); response `{"paused": false, "changed": bool}`. See `POST /api/queue/pause`. CLI: `gimg queue resume`.
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/resume -d '{}'
 ```
 
 ### GET /api/models

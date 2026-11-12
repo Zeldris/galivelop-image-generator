@@ -343,7 +343,7 @@ Cancela todas las entradas `queued` (solo las de `project`, si se da); nunca toc
 curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/clear -d '{"project":"mi-proyecto"}'
 ```
 
-### POST /api/queue/pause, POST /api/queue/resume
+### POST /api/queue/pause
 
 Pausan y reanudan la cola (cuerpo `{}`, con `Content-Type: application/json`). Con la cola en pausa el trabajador termina la imagen en curso y no
 coge otra, y el servicio no lanza trabajador; al reanudar lo relanza en su siguiente latido (unos segundos). Respuesta:
@@ -352,6 +352,14 @@ coge otra, y el servicio no lanza trabajador; al reanudar lo relanza en su sigui
 
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/pause -d '{}'
+```
+
+### POST /api/queue/resume
+
+Quita la pausa (cuerpo `{}`); respuesta `{"paused": false, "changed": bool}`. Ver `POST /api/queue/pause`. CLI: `gimg queue resume`.
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/resume -d '{}'
 ```
 
 ### GET /api/models
