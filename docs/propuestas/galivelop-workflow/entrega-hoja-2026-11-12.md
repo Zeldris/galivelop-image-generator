@@ -25,7 +25,7 @@ Los valores que más se van a usar:
 | Papel / superficie | `#fbfcfd` / `#ffffff` | `#0d171e` / `#111f29` | heredado del Portal |
 | Tinta / secundaria | `#13212b` / `#4a5c69` | `#e6eef3` / `#9fb2bf` | heredado del Portal |
 | Acento (vivo y hondo: el mismo hex) | `#3d6fd9` | `#3d6fd9` | 4,57:1 sobre el papel claro; blanco encima 4,69:1; 3,86:1 sobre el papel oscuro (solo trazo, foco y punto) |
-| Texto de acento y enlaces | `#3d6fd9` | `#487ce7` | 4,57:1 / 4,59:1 |
+| Texto de acento y enlaces | `#3d6fd9` | `#5185f1` | 4,57:1 claro; oscuro 5,16 / 4,77 / 4,51 sobre `#0d171e` / `#111f29` / `#16242e` |
 | Tinte | acento al 12 % | acento al 18 % | tinta encima 13,71:1 / 12,79:1 |
 
 Tipografías: Big Shoulders Display 800 en mayúsculas (títulos), Literata (texto), JetBrains Mono (datos). Las tres, OFL.

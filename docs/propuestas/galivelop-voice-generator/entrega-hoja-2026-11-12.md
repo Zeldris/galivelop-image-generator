@@ -37,7 +37,7 @@ cambian ni un valor (decisión de la persona, 2026-11-12, `docs/marcas/portal/ho
 |---|---|---|---|---|
 | `--acento` | `#d9467a` (decidido, 2026-11-12) | `#d9467a` | Foco (`outline` 2 px), punto de estado, marca. **Sin texto encima** | sobre papel 4,00 / 4,41; tinta encima 3,99; blanco encima 4,11 |
 | `--acento-hondo` | `#ce3c71` | `#ce3c71` | Bloques grandes con texto blanco, cuadrado del logo, texto de acento y enlaces en claro | sobre `#fbfcfd` 4,53; blanco encima 4,66 |
-| `--enlace` | `#ce3c71` | `#db487b` | Enlaces y texto de acento | 4,53 sobre `#fbfcfd`; 4,51 sobre `#0d171e` (4,17 sobre la superficie oscura `#111f29`: ahí, subrayado o tinta) |
+| `--enlace` | `#ce3c71` | `#e75485` | Enlaces y texto de acento | 4,53 sobre `#fbfcfd`; en oscuro 5,18 / 4,80 / 4,53 sobre `#0d171e` / `#111f29` / `#16242e` |
 | `--tinte` | `#d9467a` al 12 % | al 18 % | Hover, chips, píldoras | tinta encima 13,67 / 13,03 |
 
 Dos avisos para cuando haya pantalla: `--peligro` (`#a3135f`, heredado) está a 7° de tono del acento, así que el fallo

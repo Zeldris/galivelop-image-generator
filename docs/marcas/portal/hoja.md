@@ -239,7 +239,8 @@ Números de `docs/marca.md` del Portal (`7fc0357`; la columna «Fuente» cita se
 **Reglas de imagen para todas las piezas** (propuesta del Portal aceptada, 2026-11-12): ninguna imagen lleva texto;
 iconos de una línea, trazo uniforme, sin relleno, legibles a 24 px, una tinta, cuadrados, entregados en SVG;
 ilustraciones en grabado a dos tintas (cerúleo y tinta sobre papel, toque de alga); el mar y la carta náutica solo de
-fondo, el motivo principal es de software. **Versiones oscuras** de 10, 18, 19, 27 y 28: fondo transparente o sobre
+fondo, el motivo principal es de software. **El mar solo de fondo; el motivo principal es el software (código, ramas,
+ventanas, herramientas); nada de barcos, boyas ni flotadores como motivo salvo la serie del faro y la q311 ya aprobadas.** **Versiones oscuras** de 10, 18, 19, 27 y 28: fondo transparente o sobre
 `--celeste-hondo` oscuro (`#0b5e88`), nunca sobre el papel claro. Los recursos 4 (rosa de los vientos, sin letras) y 5
 (sello del taller, sin texto) se generan al final del lote.
 
