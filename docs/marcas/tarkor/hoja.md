@@ -145,7 +145,7 @@ luz, el criterio de la pieza de marca es la proporción 60/30/10, no el SATAVG.
 | Perfiles | Obl. | 23 declarados, todos con `cfg` 1.0, `euler`, múltiplos de 64 y ≤ 1 048 576 px. **Modelo por perfil:** `zimage-turbo-q6` a **8 pasos** en lo que se entrega (`og`, `banda`, `icono`, `cabecera`, `carga`, `capsula`, `marco` y los cinco del mapa); `flux2-klein-4b-q8` a 6 pasos solo en los que aún no se han pedido en calidad (`social`, `banner`, `square`, `header`, `portrait`, `emblema`, `textura`, `cielo`, `estampa`, `tira`, `avatar`): antes de generarlos en definitivo pasan a Z-Image. Redes: `og` 1280×640 → 1200×630, `social` 1280×640, `banner` 1280×512 → 1600×640, `square` 1024² → 1080², `header` 1536×512 → 1500×500, `portrait` 896×1152 → 1080×1350. Marca e interfaz (Bloque E): `emblema` 1024², `textura` 1024², `banda` 1024×256, `cielo` 1536×640, `icono` 512², `estampa` 1280×512, `tira` 1024×128, `avatar` 1024², `cabecera` 1536×512 → 1500×500, `carga` 1280×704, `capsula` 1024×576 → 616×353, `marco` 1280×704. Mapa (`pedido-mapa.md`; nombres propios para no pisar los de interfaz): `texturamapa` 1024² `tileable: "xy"`, `iconomapa` 768², `cartela` 1024×512, `bandamapa` 1024×256, `marcomapa` 1024×256 `tileable: "x"`. Las texturas sin costura llevan `tileable` en el perfil (`--circular` de sd-cli, arreglado en `b9c0187`): ya no se arregla la costura a mano. Steam: solo cápsula, cabecera y principal (decisión 7). Discord 960×540 y LinkedIn 1584×396, aparte cuando se pidan | repo (`examples/tarkor/galivelop-images.json`, 2026-11-11); modelos: `docs/handoff.md` (FLUX solo bocetos; Z-Image 8 pasos; Qwen-Image solo fotorrealismo o detalle muy concreto, sin perfil hoy); **aprobado por la persona, 2026-11-10** (`propuesta-fable-2026-11-10.md` §6 y §9.7; `peticiones.md` §3) |
 | Zona reservada | Obl. | las piezas de marca ya no son paisajes con un hueco: `og` (E3) es el lockup vertical centrado sobre noche con el lema debajo, sin zona; `cabecera` (E2): emblema a la izquierda (1/3) y madera o noche a la derecha; `capsula` (E4): emblema centrado, 60 % del hueco; hero (E5): mitad izquierda para el titular, emblema a la derecha. En el prompt la zona se describe **como cielo o madera lisa, con su fracción desde el borde** («the left third, from the left edge inward, is plain calm sky in #1a2140, even and empty»), nunca por lo que irá encima (§6, vetadas); el cinturón de polvo y la silueta del borde quedan en el resto. Para los paisajes de fondo sigue lo de r5: `izquierda 1/3` en og/social/banner, `izquierda 1/2` en header, `abajo 1/2` en square/portrait | **aprobado por la persona, 2026-11-10** (`propuesta-fable-2026-11-10.md` §6 E2-E5); paisaje: decidido el 2026-11-04 |
 | Composición por perfil | Rec. | `og` lleva `compose` E3 desde el 2026-11-10: `plantillas/og.svg` (solo vector sobre la noche generada: `<image id="gimg-logo">` 456×420 centrado, emblema 283,5 px = 45 % del alto, margen libre arriba y abajo ≈ 65 px = altura de la T; `<text id="gimg-lema">` Inter 400 30 px hueso `#f1e4d0` al 0,82, centrado debajo; sin velo, sin marco, sin separador #9 porque no tiene SVG), `logo: logos/tarkor-lockup-v.svg`, `fields: ["lema"]`, `fonts: ["Cinzel", "Inter"]` (Cinzel por la familia de marca; el wordmark va en trazos dentro del lockup). Los lockups se regeneraron con `brand.lockup(color="#b8862b")`: embebidos por `<image>`, `currentColor` salía negro. Las demás piezas de marca (E1, E2, E4, E5, E14) se componen en SVG sobre los PNG de `entrega/marca/`, sin velo | **aprobado por la persona, 2026-11-10** (`propuesta-fable-2026-11-10.md` §6); **configurado el 2026-11-10** (`tests/test_examples.py` `TarkorOgE3Tests` lo ata; prueba sin modelo en `piloto/tarkor/og-e3-prueba.png`) |
-| Piezas solo de logo | Rec. | `avatar` (E1, `e01-avatar.png`) 1024² → 400²: emblema completo sobre noche, desde 64 px (decisión 8; el monograma T solo por debajo); `icon` (E14, `e14-icono-app.png`) 512² → 16/32/128/512 y `fuente.png` 1024 para el Instalador: emblema simple sobre madera 950; favicon del juego: `tarkor-emblema-simple.svg`. Sustituir el favicon de Vite y el icono b del Instalador es propuesta a esos repos (`docs/propuestas/tarkor/diseno-interfaz-2026-11-10.md`) | **aprobado por la persona, 2026-11-10** (`propuesta-fable-2026-11-10.md` §6 E1 y E14, §9.8); WMF e Instalador: pendientes |
+| Piezas solo de logo | Rec. | `avatar` (E1, `e01-avatar.png`) 1024² → 400²: emblema completo sobre noche, desde 64 px (decisión 8; el monograma T solo por debajo); `icon` (E14, `e14-icono-app.png`) 512² → 16/32/128/512 y `fuente.png` 1024 para el Instalador: emblema sobre un disco de noche `night-950` `#0f1428` (emblema simple de 64 px para abajo; corregido el 2026-11-12, sección 18); favicon del juego: `tarkor-emblema-simple.svg`. Sustituir el favicon de Vite y el icono b del Instalador es propuesta a esos repos (`docs/propuestas/tarkor/diseno-interfaz-2026-11-10.md`) | **aprobado por la persona, 2026-11-10** (`propuesta-fable-2026-11-10.md` §6 E1 y E14, §9.8); WMF e Instalador: pendientes |
 | Borrador | Opc. | `draft: {scale: 0.5, steps: 4}` en los 23 perfiles. **FLUX es solo para bocetos** (composición, reparto, bocetos para el SVG: así salieron los de `piloto/tarkor/`); lo que se entrega va con `draft: false` en Z-Image a 8 pasos (~10 min por imagen a 1024² en la Deck). Un borrador no se puede elegir con `gimg choose` ni pasar por pieza | repo (`galivelop-images.json`; `docs/handoff.md`, prueba Z-Image del 2026-11-10) |
 | Velo por perfil | Rec. | **ninguno**: las piezas nuevas van sobre noche o madera generadas, no sobre foto velada. Los velos de r4-r5 (`#f1e4d0:0.55`, `#221c16:0.45`) salieron de `piezas.json` el 2026-11-10: las tres piezas que quedan (`og`, `cabecera`, `avatar`) llevan `velo: "#0f1428:0"` porque `piezas.py` exige la clave cuando hay fondo | **aprobado por la persona, 2026-11-10** (`propuesta-fable-2026-11-10.md` §4); `examples/tarkor/piezas.json` rehecho el 2026-11-10 |
 | Logo en la pieza | Rec. | E3 (`og`): lockup vertical centrado, emblema ≈ 45 % del alto; E2 (`cabecera`): emblema a la izquierda, ≈ 70 % del alto; E4 (`capsula`): emblema centrado al 60 % del hueco, wordmark debajo; E5 (hero): emblema a la derecha, titular en oro a la izquierda; E1/E14: solo emblema. Margen = altura de la T. Nunca al 9 % en una esquina sobre un paisaje (r4-r5). **Jerarquía:** el logo es lo más luminoso de la pieza; el fondo generado no lleva estrellas pintadas, ni castillo ni oro que pasen del 10 % (el cinturón de polvo es tenue y pasa por detrás del detalle, no del logo) | **aprobado por la persona, 2026-11-10** (`propuesta-fable-2026-11-10.md` §6); jerarquía: revisión de Tarkor, 2026-11-11 (`e02` q349) |
@@ -336,6 +336,197 @@ puede comprobar para el social preview ni para el og:image del juego; 3) el proy
 (aquel), y la plantilla no tiene fila para «el producto genera sus propias imágenes con otras reglas». **Desde el 2026-11-10 se añaden:** 4) un **sistema de logo de siete SVG** (emblema, simple, glifo, monograma, wordmark, dos lockups) con tres variantes cada uno, donde la plantilla prevé un símbolo y un lockup; 5) **once perfiles** de texturas, bandas y pictogramas que no son piezas de redes (`textura`, `banda`, `cielo`, `icono`, `estampa`, `tira`, `avatar`, `cabecera`, `carga`, `capsula`, `marco`): la fila «Perfiles» piensa en og y cabeceras; 6) el **acento heredado del Portal** (arcilla) deja de ser el de la marca y la plantilla no dice cómo se avisa al que lo hereda; 7) **favicon e icono de app** viven en otros repos (WMF, Instalador) y la hoja solo puede proponerlos (`docs/propuestas/tarkor/`); 8) el **negativo** común de las piezas no tiene fila (la plantilla solo prevé palabras vetadas en positivo).
 
 ---
+
+## 16. Reglas estrictas (2026-11-12)
+
+Cada regla dice **DEBE** o **NUNCA**, con qué se comprueba. Mandan sobre las secciones 1-12 si chocan; lo que aquí
+no tiene número es una pregunta abierta, no una regla (`docs/propuestas/tarkor/auditoria-hoja-2026-11-12.md`,
+«Preguntas»). «Paleta» son los 16 hex de `brand.palette` (`examples/tarkor/galivelop-images.json`). ΔE es ΔE76, la
+distancia euclídea en Lab de `gimg/measure.py` (l.83-84), con su umbral `DELTA_E = 15.0` (l.25).
+
+### Color
+
+| Id | Regla | Cómo se comprueba |
+|---|---|---|
+| C1 | En CSS, SVG y composición, todo color **DEBE** ser un hex de la sección 3, exacto (ΔE = 0) | `grep` de hex en el archivo contra la sección 3 |
+| C2 | En imagen generada, un color cuenta como de paleta si está a ΔE ≤ 15 de uno de sus hex. Tolerancia **[P1]**: es el umbral de gimg, no una decisión de marca | `gimg measure` (`palette_share`, `measure.py` l.170) |
+| C3 | Un paisaje (`og`, `banner`, `social`, `header` de fondo) **DEBE** tener ≥ 30 % de píxeles de paleta | `gimg measure`; calibración del 2026-11-02 (sección 3, «Medido») |
+| C4 | El oro (`#ffe9a8`, `#f2c45a`, `#b8862b`, `#7a5a1e`, `#5a3a14`, a ΔE ≤ 15) **NUNCA** pasa del 10 % de los píxeles de una pieza | Sin comando: hueco de gimg (sección 15). Hasta entonces, a ojo y apuntado como «no medido» |
+| C5 | El brillo (`#ffe9a8` y el halo `#ffd66b`) **NUNCA** pasa del 5 % de los píxeles | Igual que C4 |
+| C6 | El cristal (`#1f4a55`, `#2f6b7a`, `#4aa8d8`, `#a8d8f0`) **NUNCA** pasa del 10 % y **NUNCA** es acento fuera del juego: solo campo del emblema o gema | Igual que C4 |
+| C7 | Madera o noche **DEBEN** sumar ≥ 60 % de los píxeles. La cuota del 30 (hierro y piedra) no tiene cota **[P2]** | Igual que C4 |
+| C8 | Fuera del juego (og, avatar, cabeceras, cápsulas, hero, instalador de Windows) el fondo **DEBE** ser noche `#0f1428` → `#1a2140`. Dentro del juego y del asistente, madera `#1b130c` | A la vista, con el hex de la esquina superior |
+| C9 | **NUNCA** `#000000` ni `#ffffff`, ni morado o violeta, ni arcilla `#E0703A` en una pieza de marca | `grep -i '#000\b\|#fff\b\|#e0703a'` en CSS y SVG; en imagen, a la vista |
+| C10 | Un solo acento por pieza: el oro. **NUNCA** dos | A la vista |
+| C11 | Degradados: solo `#f2c45a` → `#7a5a1e` (bisel), `#1f4a55` → `#2f6b7a` (campo) y `#0f1428` → `#1a2140` → `#0e0b08` (noche). **NUNCA** otro | `grep gradient` en CSS y SVG |
+
+### Texto sobre imagen
+
+| Id | Regla | Cómo se comprueba |
+|---|---|---|
+| T1 | Ningún modelo pinta letras. Todo texto **DEBE** llegar por composición (`compose`) o por CSS | El prompt no lleva `text`, `letters`, `title`, `caption`, `sign` |
+| T2 | Contraste **DEBE** ser ≥ 4,5:1; ≥ 3:1 solo en titulares de 24 px o más. Medido en el peor punto de la caja, no en la media | `gimg measure` sobre la pieza compuesta (medidas previas: sección 12, «Contraste del texto») |
+| T3 | Pares que valen sin medir (calculados, sección 3): hueso `#f1e4d0` sobre `#0f1428` 14,55 · sobre `#1a2140` 12,54 · sobre `#1b130c` 14,63 · sobre `#332415` 11,93; `#f2c45a` sobre `#0f1428` 11,14; `#b8862b` sobre `#0f1428` 5,63; `#221c16` sobre hueso 13,44; `#5a3a14` sobre hueso 8,17; `#7a5a1e` sobre hueso 5,06 | — |
+| T4 | **NUNCA** `#b8862b` como tinta sobre hueso (2,58:1) | `grep` en CSS y plantillas |
+| T5 | Texto sobre escena generada **DEBE** caer en la zona libre declarada del perfil (sección 9, «Zona reservada»). **NUNCA** con velo: si no llega a T2, la pieza se repite | Caja del `<text>` de la plantilla dentro de la fracción declarada |
+| T6 | Familias: Cinzel en titulares (700; 900 solo en el hero), Inter en texto (400; 500 en el eyebrow). **NUNCA** otra familia en una pieza de marca | `fonts` del perfil y `font-family` de la plantilla |
+| T7 | El lema bajo el lockup de la og **DEBE** ir en Inter 400, 30 px, `#f1e4d0` al 0,82, centrado | `plantillas/og.svg`; `tests/test_examples.py` `TarkorOgE3Tests` |
+
+### Logo
+
+| Id | Regla | Cómo se comprueba |
+|---|---|---|
+| L1 | El emblema, el wordmark y los lockups **DEBEN** salir de los SVG de `docs/marcas/tarkor/logos/`. **NUNCA** los pinta un modelo ni se nombran en un prompt | Palabras vetadas (P2) |
+| L2 | Emblema completo: **NUNCA** por debajo de 64 px. De 64 px para abajo, `tarkor-emblema-simple.svg` | Tamaño del `<image>` en la plantilla |
+| L3 | Mínimos: lockup horizontal 160 px de ancho; lockup vertical 96 px de alto; wordmark 20 px de alto plano y 40 px tallado | Igual |
+| L4 | Margen libre alrededor del logo **DEBE** ser ≥ la altura de la T del wordmark en esa pieza | Medido en la plantilla (og: ≈ 65 px) |
+| L5 | **NUNCA** estirado, rotado, con sombra arrojada, con brillo fuera del bisel, ni el aro sin sus cuatro puntos | `transform` y `filter` del `<image>` en la plantilla |
+| L6 | **NUNCA** sobre morado, arcilla ni foto sin noche o madera debajo | A la vista |
+| L7 | En una pieza con logo, el logo **DEBE** ser lo más claro de la pieza | Luminancia máxima del fondo < la del oro `#f2c45a` en la caja del logo; a ojo hasta que gimg lo mida |
+| L8 | Tamaños fijados: og, emblema al 45 % del alto (283,5 px en 630); cápsula, emblema al 60 % del hueco; cabecera, emblema en el tercio izquierdo; lateral del instalador, lockup vertical a 120 px de ancho en la de 164; cabecera del instalador, emblema simple a 41 px en 57 | Plantilla de cada pieza |
+
+### Prompt y generación
+
+| Id | Regla | Cómo se comprueba |
+|---|---|---|
+| P1 | Todo prompt **DEBE** empezar por el bloque común (materia) o el bloque de noche (cielo), literal (sección 6 y `peticiones.md` §2) | Comparación de cadenas con el pedido en `orders/` |
+| P2 | **NUNCA** en un prompt: `moon`, `sun`, `star`, `stars`, `emblem`, `logo`, `title`, `text`, `letters`, `sign`, `caption`, `watermark`, `glowing`, `flare`, `purple`, `violet`, `like`, `human`, `man`, `woman`, `people`, nombres propios, ni las de la sección 6. `castle`: **[P5]** | `grep -iw` de la lista sobre `orders/` |
+| P3 | **NUNCA** una negación (`no`, `not`, `without`, `never`, `none`, `nothing`), salvo el `no haze` de los bloques. Sin prompt negativo | Igual |
+| P4 | La zona libre **DEBE** describirse como cielo o madera lisa, con su fracción desde el borde. **NUNCA** por lo que irá encima | Lectura del pedido |
+| P5 | Lado múltiplo de 64 y ancho × alto ≤ 1 048 576; `cfg` 1.0; `euler` | `galivelop-images.json`; lo valida gimg |
+| P6 | Lo que se entrega **DEBE** salir de `zimage-turbo-q6` a 8 pasos con `draft: false`. FLUX, solo bocetos | Manifiesto de la entrega |
+| P7 | De 2 a 3 semillas por pieza; de 6 a 10 cuando importa un recuento. Lo que exige un recuento exacto **NUNCA** se pide pintado: va al SVG | Número de intentos en el manifiesto |
+| P8 | Pieza con transparencia: la frase de croma **DEBE** cerrar el prompt; verde `#00ff00`, o magenta `#ff00ff` si la pieza lleva verde; recorte con `gimg matte` | Pedido y archivo `-alpha.png` |
+| P9 | Pieza suelta (icono, esquina, sello): centrada, de frente, con ≥ 15 % de margen libre por lado | Caja del recorte en `-alpha.png` |
+
+### Aceptación por tipo de pieza
+
+| Id | Regla | Cómo se comprueba |
+|---|---|---|
+| A1 | Textura en mosaico: repetida 4×4 **NUNCA** enseña costura ni un motivo que se repita | Montaje 4×4 a la vista; perfil con `tileable` |
+| A2 | Icono de interfaz o de mapa: **DEBE** leerse a 24 px en gris | Reducción a 24 px, sin color |
+| A3 | Icono de estado del asistente: **DEBE** leerse a 20 px en gris | Igual, a 20 px (Instalador, doc 13 §3, `d9d33fe`) |
+| A4 | Cápsula vertical: **DEBE** leerse a 200 px de ancho | Reducción a 200 px (doc 13 §3) |
+| A5 | Fondo bajo texto del asistente (I4): luminancia media **DEBE** ser < 40 sobre 255 | YAVG de `gimg measure` (doc 13 §3) |
+| A6 | Paisaje: YAVG 105-150 y SATAVG 18-32. Las piezas de noche y de materia **NUNCA** se juzgan por estos rangos | `gimg measure` (sección 7) |
+| A7 | EMD frente a la portada: Cb ≤ 6 y Cr ≤ 7,5, solo en paisajes | `gimg measure` (sección 12) |
+| A8 | Imágenes del asistente: WebP a calidad 85, o PNG si llevan transparencia; **NUNCA** más de 1 MB entre todas | `du -cb app/src/imagenes/*` en el Instalador (doc 13 §2) |
+| A9 | BMP del instalador de Windows: 24 bits, **NUNCA** con alfa | `file lateral.bmp cabecera.bmp` |
+| A10 | Recuentos (seis gajos, cuatro puntas, tres picos): la pieza se acepta solo si el número es exacto | Contado a mano |
+| A11 | El veredicto **DEBE** apuntarse en `docs/records/contenido/rN-<tema>.md` con el intento (`qNNN`) | Existe la línea |
+
+## 17. Matriz de cobertura (2026-11-12)
+
+Cada tipo de contenido, con lo que le aplica. **Bloque:** `común` (materia), `noche`, `terreno` (mapa),
+`—` (no se genera: se compone). **Estado:** `hecho` (aprobado o entregado), `pedido` (hay prompt escrito),
+`falta` (ni prompt ni pieza), `ajeno` (lo hace otro sistema). Medidas: generado → entregado.
+
+### Interfaz del juego, por pantalla
+
+Clases y líneas de `frontend/src/index.css` en `c858a150` (rama `claude/marca-interfaz`, sin fusionar a `main`).
+
+| Pantalla | Pieza | Reglas | Bloque | Perfil | Salida | Formato | Estado | Fuente |
+|---|---|---|---|---|---|---|---|---|
+| Todas (`App.tsx`, `ErrorBoundary`) | #3 madera de fondo, `.wood-grain` l.154 | C7, A1 | común | `textura` | 1024² | PNG mosaico | pedido | `peticiones.md` §3 A |
+| Inicio (`Home.tsx`) | #6 cielo, `.crystal-sky` l.316 | C8, C11, P2 | noche | `cielo` | 1536×640 | PNG | pedido; prompt con `stars`, a rehacer | `peticiones.md` §3 A |
+| Inicio | Titular `.title-gold` l.462, filete `.gold-hairline` l.277 | T6, C11 | — | — | CSS | CSS | hecho en rama | WMF `c858a150` |
+| Inicio | E5 fondo del hero | C8, T5 | noche | `cabecera` | 1536×512 | PNG | pedido | `peticiones.md` §3 E |
+| Carga | E6 pantalla de carga | C8, T1 | noche | `carga` | 1280×704 | PNG | pedido (`orders/ui/e06-carga.json`) | `peticiones.md` §3 E |
+| Carga y progreso | E7 pista y relleno | C4, A1 | común | `tira` | 1024×128 → 1024×32 | PNG alfa | hecho (q357, q359); sin entregar | sección 12 |
+| Mundos (`WorldSelect`, `WorldCard`) | #2 tablón, `.plank-panel` l.192 | C7, A1 | común | `textura` | 1024² | PNG mosaico | pedido | `peticiones.md` §3 A |
+| Personajes (`CharacterSelect`, `CharacterSaves`) | #2 tablón; E11 marco de retrato | A10, P8 | común | `icono` | 512² → 96² y 192² | PNG alfa | hecho con arreglo (q365) | sección 12 |
+| Partida, cabecera y pie (`GameHeader`, `GameFooter`) | #5 banda, `.iron-band` l.246 | C4, A1 | común | `banda` | 1024×256 | PNG mosaico x | pedido | `peticiones.md` §3 A |
+| Partida, cabecera | #13 fases (8) | A2, P8, P9 | común | `icono` | 512² → 64² y 32² | PNG alfa | pedido | `peticiones.md` §3 C |
+| Partida, narración (`LogPanel`, `ChatComposer`) | #4 camino de polvo, `.dust-road` l.177 | C7, A1 | común | `textura` | 1024² | PNG mosaico | pedido | `peticiones.md` §3 A |
+| Partida, combate (`CombatPanel`) | #7 tablón de defensa, `.plank-panel-defense` l.223 | A1 | común | `textura` | 1024² | PNG mosaico | pedido | `peticiones.md` §3 A |
+| Partida, combate | #14 dado | A2, A10, P8 | común | `icono` | 512² → 64² y 32² | PNG alfa | pedido | `peticiones.md` §3 C |
+| Partida, HUD | #12 barras (3); #10 ranura, `.skill-slot` l.422 | A2, P8 | común | `icono` | 512² → 64², 32²; 88² | PNG alfa | pedido | `peticiones.md` §3 B y C |
+| Partida, cajón (`GamePanelCajon`, `NavTabs`) | #11 pestañas (12) | A2, P8, P9 | común | `icono` | 512² → 128² y 64² | PNG alfa | pedido | `peticiones.md` §3 C |
+| Modales (`GameModals`) | #8 esquinas, `.corner-bracket-gold` l.372; #9 separador | C4, P8 | común | `icono`, `tira` | 512² → 128²; 1024×128 → 1024×64 | PNG alfa | pedido | `peticiones.md` §3 B |
+| Enciclopedia | #15 categorías (15); #16 medallón | A2, L1, P8 | común | `icono`, `emblema` | 512² → 64²; 768² | PNG alfa | pedido; #16 nombra el emblema, a rehacer | `peticiones.md` §3 C |
+| Botones y avisos | E13 botón ×3; E10 insignia; E9 sello; E17 tooltip | T1, L1, P8 | común | `banda`, `icono` | 128×48; 160×80; 96²; 128×64 | PNG alfa | E10 y E9 pedidos (`orders/ui/`); E9 nombra el emblema, a rehacer; E13 y E17 falta | `peticiones.md` §3 E |
+| Capturas | E12 plantilla | P8 | común | `marco` | 1280×704 | PNG alfa | hecho con arreglo (q366) | sección 12 |
+| `ComingSoon`, `Admin*` | Ninguna propia | — | — | — | — | — | falta: sin pedido del juego | WMF `c858a150` |
+
+### Mundo: regiones, mapa, personajes
+
+| Contenido | Reglas | Bloque | Perfil | Salida | Formato | Estado | Fuente |
+|---|---|---|---|---|---|---|---|
+| Biomas (13) como textura de terreno, M-A (15 piezas) | A1, hex por bioma de `pedido-mapa.md` l.58-70 | terreno | `texturamapa` | 1024² | PNG mosaico xy | pedido; prueba de estilo hecha | `pedido-mapa.md` §3 |
+| Relieve y vegetación, M-B (10) | A2, A10, P8 (magenta si lleva verde) | terreno | `iconomapa` | 768² | PNG alfa | pedido; montaña hecha (q373) | `pedido-mapa.md`; sección 12 |
+| Fichas de lugares, M-C (13) | A2, P8 | común | `iconomapa` | 768² | PNG alfa | pedido | `pedido-mapa.md` |
+| Cartografía y marco, M-D (6) | A1 (marco), T1 (cartela vacía) | común | `iconomapa`, `cartela`, `bandamapa`, `marcomapa` | 768²; 1024×512; 1024×256 | PNG | pedido | `pedido-mapa.md` |
+| Capas del juego, M-E (4) | A1, C9 | terreno | `texturamapa`, `iconomapa` | 1024²; 768² | PNG | pedido | `pedido-mapa.md` |
+| Estilo del mapa: vector plano o pintado | — | — | — | — | — | decisión abierta de Álvaro **[P6]** | sección 6 |
+| Mapas de zona 832×624, banners 1280×512 y miniaturas 768² de fichas (lugares, fauna, flora, objetos, PNJ, razas, facciones) | Las de `image-generator/estilo/mundo.json` del juego, no las de esta hoja | — | — | — | — | ajeno (WMF-imagenes) | `peticiones.md` §4 |
+| Personajes y criaturas en piezas de marca | **NUNCA** (sección 6, «Motivos No»; P2) | — | — | — | — | no se hace | sección 6 |
+| Iconos de habilidad, clase y asentamiento | Las del juego | — | — | 512² | — | ajeno (WMF-imagenes) | `peticiones.md` §4 |
+
+### Logo e iconos de aplicación
+
+| Contenido | Reglas | Perfil | Salida | Formato | Estado | Fuente |
+|---|---|---|---|---|---|---|
+| Emblema, emblema simple, emblema mono, wordmark, lockup h y v | L1-L7 | `gimg brand system` | vectorial | SVG | hecho | `docs/marcas/tarkor/logos/` |
+| Variantes `-claro` y `-mono` de cada pieza; glifo (E16); monograma | L1, C1 | `gimg brand` | vectorial | SVG | falta (hay `tarkor-emblema-mono.svg` y `tarkor-a-lockup-claro.svg`) | sección 4 |
+| Favicon del juego | L2 | — | vectorial | SVG | hecho aquí; sin colocar en el juego | `tarkor-emblema-simple.svg` |
+| E14 icono de aplicación (= I5) | L2, C8: disco `#0f1428` | composición | 1024, 512, 256, 128, 64, 32 y `.ico` 16/24/32/48/64/256 | PNG, ICO | falta: sin pedido; ICO es hueco de gimg | `peticiones.md` E14; doc 13 §3 A |
+| E1 avatar | L2, C8 | `avatar` | 1024² → 512², 400², 256² | PNG | pedido; el prompt pide el emblema al modelo, a rehacer por composición | `peticiones.md` E1 |
+
+### Instalador (Instalador-WMF-Tarkor, `docs/13-hoja-de-estilos-e-imagenes.md`, `d9d33fe` y `608661d`)
+
+| Id | Contenido | Reglas | Bloque | Perfil | Salida | Formato | Estado |
+|---|---|---|---|---|---|---|---|
+| I1 | Lateral de NSIS | C8, L8, A9, P4 | noche | `lateral` 704×1344 (no existe) o `portrait` | 164×314 y 328×628 | BMP 24 bits | pedido; perfil y BMP, huecos de gimg |
+| I2 | Cabecera de NSIS | C1, L2, L8, A9 | — | composición | 150×57 y 300×114 | BMP 24 bits | pedido; BMP, hueco |
+| I3 | Portada del asistente | C8, T1, A8 | noche | `cabecera` | 1536×512 → 1536×384 | WebP q85 | pedido; recorte y WebP, huecos |
+| I4 | Hierro del riel | A1, A5, A8 | común | `textura` | 1024² | WebP q85 mosaico xy | pedido |
+| I5 | Icono del instalador | = E14 | — | — | `.ico` | ICO | falta |
+| I6 | Cápsula vertical de la Deck | C8, L1, A4 | noche | `portrait` | 896×1152 → 768×1152 → 600×900 | PNG | pedido; **[P3]** |
+| #17 | Estados de comprobación (4) | A3, P8 | común | `icono` | 512² → 64² y 32² | PNG alfa | pedido; sin `orders/` |
+| #5, #2, #3, #9, E7, E13 | Barra, tablón, fondo, filete, progreso, botón | Las del juego | común | — | — | PNG | las mismas piezas del juego |
+
+### Steam
+
+| Contenido | Reglas | Perfil | Salida | Formato | Estado | Fuente |
+|---|---|---|---|---|---|---|
+| Cápsula principal y cabecera (E4) | C8, L8 | `capsula` | 1024×576 → 616×353 y 460×215 (231×87 sale de la cabecera) | PNG | pedido (`orders/marca/e04-capsula.json`); rechazada q352 y q353, se rehace | sección 12 |
+| Cápsula horizontal de la Deck | C8, L8 | `capsula` | 1024×576 → 1024×478 → 920×430 | PNG | falta; recorte, hueco **[P3]** | doc 13 §3 D |
+| Cápsula vertical | A4 | `portrait` | 600×900 (I6); 374×448 en la tienda | PNG | pedido **[P3]** | doc 13 §3 D; `peticiones.md` E4 |
+| Fondo (E5) | C8, sin logo | `cabecera` | 3840×1240; 1920×620 en la Deck | PNG | pedido; escalado, hueco | `peticiones.md` E5 |
+| Logo | L1, L3 | — | 1280×720 transparente | PNG | falta: es `tarkor-lockup-v.svg` rasterizado | doc 13 §3 D |
+| Icono | L2 | — | 256² | PNG | falta: es E14 | doc 13 §3 D |
+
+### Redes, Portal y tarjetas
+
+| Contenido | Reglas | Perfil | Salida | Formato | Estado | Fuente |
+|---|---|---|---|---|---|---|
+| og:image (E3) | C8, L8, T7 | `og` | 1280×640 → 1200×630 | PNG | pedido (`orders/marca/e03-og.json`); se rehace | sección 9 |
+| X, cabecera (E2) | C8, L8, P2 | `cabecera` | 1536×512 → 1500×500 | PNG | pedido; rechazada q349; el prompt lleva `castle` y `stars` | sección 12 |
+| X, Discord, GitHub, itch: avatar (E1) | L2, C8 | `avatar` | 400² | PNG | pedido | fila E1 |
+| Discord, cabecera | C8 | `cabecera` | 1536×512 → 960×540 | PNG | falta: sin perfil propio | `peticiones.md` E2 |
+| LinkedIn, cabecera | C8 | — | 1584×396 | PNG | falta: sin perfil | sección 9 |
+| Reddit | — | — | — | — | falta: ninguna canónica da su medida **[P7]** | — |
+| Publicación cuadrada y vertical | C3, T5 | `square`, `portrait` | 1024² → 1080²; 896×1152 → 1080×1350 | PNG | perfiles declarados en FLUX; pasan a Z-Image antes de entregar | sección 9 |
+| Portal, ficha de Tarkor: portada | C3, T1 | `banner` | 1280×512 → 1600×640 | WebP | consta una portada (Portal `aa76b34`, vía `biblia.md` §10); con la marca del 2026-11-10, falta | sección 11 |
+| Portal, novedades | C3 | `banner` | 1600 px y `-mini` 720 px | WebP | falta | sección 11 |
+| Tarjetas de `gw-media-content` (juego) | C8, C9, T2, T6 | — (HTML del juego) | 1600×900, `es` y `en` | PNG | ajeno; hoy con la paleta del Portal: se propone cambiarla | WMF `3a10a3fa`, `.claude/gw/gw-media-content.md` |
+| Hoja de contactos (E18) | — | composición | 1536×640 | PNG | falta | `peticiones.md` E18 |
+
+## 18. Estado de los repos (2026-11-12)
+
+Sustituye a los commits citados en las secciones 0 y 13 allí donde no coincidan.
+
+| Repo | Ref | Commit | Qué hay de marca |
+|---|---|---|---|
+| World-Maker-Fantasy | `origin/main` | `3a10a3fa` | Sin tokens `gold-*`, `night-*` ni `crystal-deep`; favicon de Vite; `docs/media/guia-canales.md` (antes `docs/difusion/`) |
+| World-Maker-Fantasy | `origin/claude/marca-interfaz` | `c858a150` | UX-40 hecha y comprobada en pantalla, **sin fusionar**: tokens (index.css l.55-66), `.gold-hairline` l.277, `.corner-bracket-gold` l.372, `.title-gold` l.462; `theme-color`, `og:title` y `og:description` en `index.html`. UX-41 (imágenes) espera a este repo |
+| Instalador-WMF-Tarkor | `origin/main` | `5631e77b` | — |
+| Instalador-WMF-Tarkor | `origin/claude/installer-docs-review-09e7vs` | `34d2bb27` | `docs/13-hoja-de-estilos-e-imagenes.md` (`d9d33fe`, `608661d`): pide I1-I6. `app/src/estilos.css` aún sin oro ni noche (INS-56) |
+| WMF-imagenes | — | — | Clon del mismo origen que el juego; nada que cambiar por esta hoja |
+| galivelop-image-generator | `agent/hojas-tarkor` | desde `3c04dd1` | 23 perfiles y 16 hex en `examples/tarkor/galivelop-images.json`; sin perfil `lateral` |
+
+La sección 9 decía que E14 va sobre madera 950: va sobre un disco de noche `#0f1428` (decisión de la usuaria en el
+Instalador, doc 13 §6.1, `608661d`; ya lo decía `peticiones.md`). Corregido el 2026-11-12.
 
 ## Contradicciones
 
