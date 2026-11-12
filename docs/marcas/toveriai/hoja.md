@@ -88,7 +88,7 @@ y «palabras» deja un hueco blanco en medio (`r2-estilo.md` l.39-41, l.53).
 | Usos prohibidos | Opc. | nunca bold en el wordmark (solo existen los pesos 300/400/500); no inventar otro símbolo (para ilustrar un concepto, el anillo de score); el símbolo va siempre junto al wordmark (lockup) o solo en una esquina libre, nunca suelto en el centro; sin degradados ni 3D en el logo; nunca el wordmark «VeriNews» | VeriNews_AI (`kit-visual-ia.html` l.310, l.368, l.372; `frontend/src/fonts.css`: sin 600/700); «VeriNews» prohibido, decisión delegada **[P]** (`docs/marcas/README.md` l.39-42; ver «Contradicciones», 1) |
 | Logo fuera de la paleta | Opc. | el SVG `a` usa `#2D6A4F` y `#B5832A`, los dos en `brand.palette`; el lockup añade `#1A1A1A`, que ya está en `brand.palette` desde el 2026-11-04. El `favicon.png` real usa un verde salvia (~`#6B8176`) y un dorado (~`#AD8E5C`) que no son los hex del kit (ver «Contradicciones», 3) | repo (archivos; `galivelop-images.json`); `biblia.md` incoherencia 3 |
 
-Copia en `examples/toveriai/logos/`: **no hay** (F2.10, dec. 3, pendiente); `piezas.json` apunta hoy a `docs/marcas/…/logos/`.
+Copia en `examples/toveriai/logos/`: **solo el lockup `a`** (`toveriai-a-lockup.svg`, desde `6abfc9d`), que es el `logo` del `compose` del perfil `og` (`examples/toveriai/galivelop-images.json` l.43); el símbolo suelto y las propuestas `b`-`d` siguen solo en `docs/marcas/toveriai/logos/`, y `piezas.json` (piloto) apunta allí.
 En r5 el lockup va al 9 % del alto de la pieza (`r4-composicion.md` l.28-33); en el `avatar` de r5, «sobre fondo oscuro, el
 símbolo dorado pierde algo frente al claro de la marca» (`r5-piezas.md` l.56). Los PNG `frontend/src/assets/logo.png`
 (2190×1980) y `logo-vertical.png` (2230×750), con el wordmark «VeriNews», **no los referencia ningún archivo del frontend**;
@@ -171,7 +171,7 @@ ronda de toVeriAI con Z-Image):
 | Zona reservada | Obl. | **r7:** `og` pasa a `izquierda 1/2` («The left half of the frame … is open bare paper … kept clear for legibility»; las tintas y el collage en la mitad derecha, sangre de buey desde arriba a la derecha y musgo desde abajo a la derecha, la banda ámbar en diagonal), caja `data-caja` de la plantilla `60,60,604,510` (margen 60, columna 604; logo a 52-54 px de alto, titular en dos líneas, filete corto en el acento y subtítulo en dos líneas; r7); el velo claro cae de izquierda a derecha (0,45 → 0 al 60 % del ancho). Motivo: el veredicto de r6 («la posición de los textos es lo que menos convence»: logo, titular y subtítulo apretados en la franja de arriba). Hasta r6, `og`, `wide`: `arriba 1/3` («The upper third of the frame is calm, bare unbleached cotton paper»); `square`, `portrait`: `arriba 1/2` («The upper half of the frame is calm, bare…»); `header`: `izquierda 2/3` («The left two thirds of the frame are calm, bare…», las tintas «stay inside the right third»). En píxeles (conversión de la plantilla): `og` 1200×630 → `0,0,600,630` (hasta r6, `0,0,1200,210`); `square` 1080×1080 → `0,0,1080,540`; `portrait` 1080×1350 → `0,0,1080,675`; `header` 1500×500 → `0,0,1000,500`. **Una sola zona por perfil, la del prompt** (criterio 3 de las decisiones): el `og` ya coincide (caja `60,60,604,510` dentro de la mitad izquierda, r7); en `square`, `portrait` y `header` la caja del piloto no coincide hoy (`arriba` ocupa el 48 % del alto, `izquierda` el 55 % del ancho, menos que los dos tercios de `header`; margen 6 %) y **se alinea a estas fracciones al portar a `compose`** (ver «Contradicciones», 9). Cómo se pide la zona para que salga limpia: §6, «Cómo se pide con el generador». La biblia §7 recoge ya las cuatro, `header` incluido | repo (`prompts/estilo.txt`, `r5-*.txt`; `examples/pilot/componer.py` `caja_zona` l.105-115; `biblia.md` §7; `r2-estilo.md` l.16 «en toVeriAI el texto va arriba») |
 | Velo por perfil | Rec. | `#F7F5F2:0.35` en los cuatro formatos compuestos (og, cuadrado, vertical, cabecera): el papel ya es claro y el velo solo iguala el grano bajo el texto | repo (`piezas.json` `velo`; `r4-composicion.md` l.17) |
 | Logo en la pieza | Rec. | lockup al 9 % del alto de la pieza (57 px en el `og`), en lo alto de la caja de la zona con el título debajo, margen 6 %. Regla del kit que lo respalda: el símbolo siempre junto al wordmark; si no caben, solo el símbolo en una esquina | repo (`componer.py` l.129-137; `r4-composicion.md` l.28-33); VeriNews_AI (`kit-visual-ia.html` l.372) |
-| Composición por perfil | Rec. | no hay plantilla SVG ni `compose` en la configuración: el piloto construye el SVG en código (`componer.construir_svg`: velo, lockup al 9 %, título Cormorant Garamond 300, subtítulo DM Sans 400 con opacidad 0,82). Portar a `compose: {template, logo, fields: ["title","subtitle"], fonts: ["Cormorant Garamond","DM Sans"], fit: "cover"}` (el plan ya lo prevé, `docs/plan.md` l.824-826) | **[P]** (F2.8/F2.12) |
+| Composición por perfil | Rec. | **`og` ya lo declara** (desde `6abfc9d`): `compose: {template: "plantillas/og.svg", fields: ["title1","title2","subtitle","subtitle2"], logo: "logos/toveriai-a-lockup.svg", fonts: ["Cormorant Garamond","DM Sans"], fit: "cover"}`. Los otros cuatro perfiles (`square`, `portrait`, `wide`, `header`) **no**: para ellos el piloto sigue construyendo el SVG en código (`componer.construir_svg`: velo, lockup al 9 %, título Cormorant Garamond 300, subtítulo DM Sans 400 con opacidad 0,82); portarlos a `compose` con su plantilla es **[P]** (F2.8/F2.12; `docs/plan.md` l.824-826) | repo (`examples/toveriai/galivelop-images.json` l.35-49; `examples/toveriai/plantillas/og.svg`) |
 | Piezas solo de logo | Rec. | `avatar` 512×512: `toveriai-a.svg` rasterizado, sin fondo (`"fondo": null`); hecho en r5. `icon` 180 (apple-touch-icon) / 192 (manifest) / 512: no hay; la web solo tiene el `favicon.png` de 512 y no tiene manifest ni apple-touch-icon | repo (`piezas.json`); `icon` **[P]** (`biblia.md` §9, primera ronda 5; `docs/plan.md` l.624-626) |
 | Borrador | Opc. | `draft: {scale: 0.5, steps: 4}` declarado en `og` (r3 midió 640×320 a 4 pasos, 51 s: YAVG/SATAVG/paleta 186/12/66 % frente a 180/12/69 % del definitivo, anticipando estilo y hueco). El borrador es el sitio de FLUX: al pasar el perfil a Z-Image, `draft.model: "flux2-klein-4b-q8"` | **[P]** aprobada por delegación (F2.10, dec. 7; `r3-borrador.md` l.47, l.63); `draft.model` **[P]** 2026-11-11 |
 | Palancas extra | Opc. | sin referencias de sujeto (motivo abstracto), sin imagen inicial (la zona salió limpia desde r1 con solo decirla), sin LUT (paleta 67-77 % sobre un umbral de 65), sin conversión final por parte de `gimg`. **Croma y mosaico** (§6, «Cómo se pide»): elementos sueltos sobre `#ff00ff` por hex y recorte con `gimg brand matte`; texturas repetibles en un perfil con `tileable`. Hoy ninguna pieza los usa | repo (`r1-fondos.md` l.50; `r5-piezas.md` l.31); croma y `tileable` **[P]** 2026-11-11 |
@@ -262,7 +262,7 @@ ronda de toVeriAI con Z-Image):
 - `examples/toveriai/piezas.json` (fuentes Cormorant Garamond / DM Sans, `peso_titulo` 300, textos, zona, color de texto y velo
   de las cuatro piezas, ruta del lockup y del avatar).
 - `examples/toveriai/prompts/estilo.txt`, `og.txt`, `r2-material.txt`, `r2-hex.txt`, `r2-palabras.txt`, `r2-luz.txt`,
-  `r5-cuadrado.txt`, `r5-vertical.txt`, `r5-cabecera.txt` y `orders/r1-og.json`, `r2-control.json`, `r2-luz.json` (motivo, estilo,
+  `r5-cuadrado.txt`, `r5-vertical.txt`, `r5-cabecera.txt` y `orders/r1-og.json`, `r2-control.json`, `r2-luz.json`, `r6-detalle.json` (`32739be`) y `r7.json` (`af139bf`) (motivo, estilo,
   zona por formato, luz).
 - `docs/marcas/toveriai/logos/toveriai-a.svg` y `-a-lockup.svg` (último cambio `b7f1baf`); las propuestas `b`-`d` siguen en la
   carpeta (`b`, dos trazos con remates redondos y tres puntos, candidata para ≤ 32 px).
@@ -291,15 +291,17 @@ del Portal como marca, el formato del `og:image` final.
   1080×1350, `wide` → 1200×675, `header` → 1500×500. El piloto los entrega ya a esos tamaños (`piezas.json`).
 - `wide` declarado (1280×768) y nunca generado: ni prompt ni pieza; `icon` (primera ronda 5 de la biblia) no se puede declarar
   (hueco) y no está hecho.
-- `compose`: plantilla, fuentes, zona, velo `#F7F5F2:0.35`, peso 300 y logo al 9 % viven en `examples/pilot/componer.py` y
-  `piezas.json`.
+- `compose`: el perfil `og` lo declara (`galivelop-images.json` l.35-49, plantilla `plantillas/og.svg`, desde `6abfc9d`); para
+  `square`, `portrait`, `wide` y `header`, plantilla, fuentes, zona, velo `#F7F5F2:0.35`, peso 300 y logo al 9 % siguen en
+  `examples/pilot/componer.py` y `piezas.json`.
 - `prompts/og.txt` y `orders/r1-og.json` llevan «without» y «neither red nor green» (comprobación 8: negación y nombra `red`):
   se dejan como histórico (decisión del 2026-11-04); `orders/r7.json` lleva «no readable letters, words or numbers anywhere»
   y «like a bandage» (negación, `letters`, `words` y comparación) y 431 palabras: es la dirección vigente, se corrige en el
   pedido de r8 (§6) y no se toca el histórico.
 - Los cinco perfiles declaran `flux2-klein-4b-q8` (boceto); la pieza final pide `zimage-turbo-q6` a 8 pasos y FLUX en
   `draft.model` (§9, Perfiles y Borrador). Sin perfil con `tileable` ni pieza sobre croma (ninguna lo necesita hoy).
-- Copia de los logos en `examples/toveriai/logos/`: pendiente (F2.10, dec. 3).
+- Copia de los logos en `examples/toveriai/logos/`: solo el lockup `a` (`6abfc9d`, lo usa el `compose` de `og`); el símbolo suelto,
+  pendiente de A1 (§16).
 - En `VeriNews_AI`: el `og:image` apunta al favicon de 512 y `twitter:card` es `summary`; no hay manifest ni apple-touch-icon;
   los PNG «VeriNews» siguen en `assets/`; la tarjeta compartible toma los hex a mano y se captura sobre `#ffffff`. Todo va a
   `docs/propuestas/verinews-ai/entrega-hoja-2026-11-12.md` (escrita el 2026-11-12), no se toca desde aquí.
@@ -314,8 +316,8 @@ del Portal como marca, el formato del `og:image` final.
 | 2 | Propósito en una frase | pasa (criterio; sale de la `description` y el `ld+json` de `index.html`) |
 | 3 | «Nunca se muestra» no vacío | pasa (lista del kit l.425); nadie lo valida por script |
 | 4 | `brand.palette` ≥ 3 hex ≤ 16; fondo, texto y acento nombrados | pasa (8 hex): fondo `#F7F5F2`, texto `#1A1A1A` y acento `#2D6A4F` están (la hoja nombra los roles, la configuración no los lleva) |
-| 5 | Símbolo SVG válido | pasa a mano (viewBox, `<title>`, sin `<text>`/`<image>`/`filter`; dos colores de la paleta); **legibilidad a 16 px sin mirar** (`rsvg-convert -w 32` pendiente; el README reserva `b` para ≤ 32 px); copia en `examples/<p>/logos/` **no hay**; **el dibujo es [P]** (la persona lo aprueba) |
-| 6 | Familia de titular instalada | **no comprobable**: sin `compose.fonts`, y las fuentes viven en `piloto/fuentes/`, no en `~/.local/share/fonts` |
+| 5 | Símbolo SVG válido | pasa a mano (viewBox, `<title>`, sin `<text>`/`<image>`/`filter`; dos colores de la paleta); **legibilidad a 16 px sin mirar** (`rsvg-convert -w 32` pendiente; el README reserva `b` para ≤ 32 px); copia en `examples/<p>/logos/`: solo el lockup `a` (`6abfc9d`); **el dibujo es [P]** (la persona lo aprueba) |
+| 6 | Familia de titular instalada | **no comprobable**: `og` declara `compose.fonts` (Cormorant Garamond, DM Sans; `galivelop-images.json` l.44-47), pero las fuentes viven en `piloto/fuentes/`, no en `~/.local/share/fonts` |
 | 7 | Motivos Sí, No y palabras vetadas no vacíos | pasa; nadie lo valida |
 | 8 | Ningún prompt con palabra vetada, negación ni «like» | **pasa salvo dos:** `og.txt` y `orders/r1-og.json` llevan «without» y «neither red nor green» (r1, histórico, no se tocan); `orders/r7.json` lleva «no readable letters, words or numbers anywhere» y «like a bandage» (negación, `letters`, `words`, comparación: se corrige en r8). `estilo.txt`, `r2-material/hex/palabras/luz.txt`, `r5-*.txt`, `orders/r2-control.json`, `r2-luz.json` y `r6-detalle.json` pasan con la lista del 2026-11-11 (grep de ese día) |
 | 9 | Prompt acaba en «The image is completely textless.» y tiene 120-320 palabras | pasa en los nueve prompts (138-193 palabras) y en `r6-detalle.json` (310); `r7.json` acaba bien pero tiene 431 (sobre 320 FLUX recorta; con Z-Image, sin medir) |
@@ -340,7 +342,7 @@ formato), velo y logo en la pieza (solo en `componer.py`), palabras vetadas sin 
 primera pieza útil), **varias variantes de logo** (lockup claro y oscuro obligan a dos plantillas; solo existe el claro),
 tipografía sin licencia ni ruta declaradas (aunque el repo de toVeriAI sí las aloja), imágenes de marca para la EMD sin lista (el
 favicon con alfa se mide mal y la portada del Portal es casi blanca), idiomas y textos por idioma (la web publica en cinco; las
-piezas solo en `es`), copia de los logos en `examples/<p>/logos/` pendiente. No le afectan: `compose.lut` (paleta 67-77 % sobre
+piezas solo en `es`), copia de los logos en `examples/<p>/logos/` a medias (solo el lockup `a`). No le afectan: `compose.lut` (paleta 67-77 % sobre
 65), `style.lora`.
 
 **Hueco propio de este proyecto, que la plantilla ya recoge desde Workflow pero con otra cara:** el «otro sistema que hace
@@ -397,11 +399,6 @@ negrita— y elementos gráficos):
 de alto como mínimo y por debajo solo el símbolo (kit l.345); símbolo en color hasta 32 px y, por debajo, la variante mono de
 A2 *(suposición hasta ver A13)*; zona libre del lockup, la altura de la «V» (kit l.345), que en `gimg brand lockup` se
 aproxima con `--margin 0.25`; en una pieza, el lockup al 9 % del alto (§9) y nunca a menos de 32 px de alto.
-
-**Desfases de esta hoja con este repo, vistos de paso el 2026-11-12** (no se corrigen aquí; no tocan la identidad): §9
-«Composición por perfil» dice que no hay `compose`, pero el perfil `og` ya lo declara (`template: plantillas/og.svg`, cuatro
-campos, `logo: logos/toveriai-a-lockup.svg`); §4 dice que no hay copia en `examples/toveriai/logos/`, y el lockup `a` ya está
-allí; los órdenes `r6-detalle.json` y `r7.json` ya existen en `examples/toveriai/orders/`.
 
 ---
 
