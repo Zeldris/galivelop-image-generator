@@ -112,7 +112,7 @@ se apunta en «Dudas» al final del bloque y decide la persona.
 | Duda | Estado | Fuente |
 |---|---|---|
 | 1. Dos registros | **Aplicada en el Portal:** su hoja ya pide grabado en las grandes y línea simple en iconos | l.152-156, l.213-214 («es lo que ya recoge esta hoja») |
-| 2. Acentos de producto | **Aplicada en el Portal** como regla del recurso 24: «el acento del producto, en el lugar del verde alga»; en imagen generada, solo las cuatro tintas. El Portal la sigue listando bajo «Dudas que decide la persona»: no consta un «sí» expreso | l.215-216, l.268 |
+| 2. Acentos de producto | **Cerrada por la persona (2026-11-12):** el acento del producto va donde el Portal usa el alga; papel, tinta y tipografías no cambian. El Portal ya lo aplicaba en el recurso 24 | l.215-216, l.268; «Familia Galivelop», «Decisiones de la persona» |
 | 3. Versión oscura de los grabados | **Abierta y reducida:** 11 y 16 se cancelaron (CSS), así que solo quedan 18 y 19 por generar; 10 y 1b, por CSS. Hoy 10 y 18 se muestran enmarcadas tal cual | l.135, l.137-138, l.217-218 |
 | 4. Engranaje de la 15 de Developer | **Cerrada por la persona (2026-11-11):** ni engranaje ni rama con anillo; la 15 de Developer es el barco de papel sobre mar con olas (q311) | l.125, l.219-220, l.254 |
 
@@ -288,7 +288,7 @@ y lo decide la persona.
 | Aspecto | Regla heredada (medidas) | Qué cambia | Fuente |
 |---|---|---|---|
 | Logo | Cuadrado de color plano (el **acento hondo**), chaflán de 28/128 (21,9 % del lado) en la esquina superior derecha, que pone el SVG y no el modelo; monograma de trazo 12/128 (9,4 %) en una sola tinta; sin degradado, sombra ni redondeo. Se genera con gimg sobre croma `#00ff00` y se vectoriza con `gimg brand trace` | El hex del cuadrado y el dibujo del monograma | Portal `docs/marca.md` l.229, l.167-171 |
-| Lockup | **Sin fuente vigente:** el Portal no define lockup en la identidad nueva (su wordmark es texto de la web); los `*-lockup.svg` de `logos/` son de la identidad anterior (Sora) | — | hueco: ver «Lo que falta» |
+| Lockup | **Común a la familia (decisión de la persona, 2026-11-12):** símbolo del producto + nombre en Big Shoulders Display 800, en mayúsculas, con las medidas de «Decisiones de la persona», punto 4; sale de `gimg brand lockup` | El símbolo y el texto del nombre | «Decisiones de la persona (2026-11-12)», punto 4 |
 | Iconos | Línea simple: un solo grosor de trazo, remates y uniones redondos, sin relleno, trama ni sombra, una tinta, legibles a 24 px; **los nodos y los interiores van huecos** (el papel de encima se resta como hueco, `fill-rule="evenodd"`). Vectorizados con `gimg brand trace --mode color --matte --dp-tol 0.5 --palette '#13212b,#fbfcfd'`; en la web, a `currentColor` con un contorno de lado/28 (≈ 0,85 px a 24 px, cerca de los 2 px de lucide), pintados a 22 px. Una serie se usa entera, sin mezclarla con lucide | El motivo, que es el de la hoja del producto | bloque «Dos registros de dibujo»; Portal `tools/marca/limpiar-iconos.cjs` l.2-3, l.12, l.66; `global.css` l.3755-3758; `LEEME.md` del piloto |
 | Ilustración | Grabado de carta náutica a dos tintas, con el bloque literal de «Dos registros de dibujo»; Z-Image, 8 pasos, cfg 1.0; 120-200 palabras; cierre y frase de paleta al final | El sujeto (el motivo de software del producto) y el cuarto color de la frase de paleta | bloque «Identidad vigente» |
 | Composición | Zona limpia descrita en positivo y al principio; a sangre, sin marco ni banda; sin texto en la imagen (lo pone la web en es, gl y en); sin «exactly N»; lo que se recorta, sobre croma | Nada | bloque «Identidad vigente» |
@@ -306,8 +306,8 @@ escribe el prompt», punto 4.
 
 ### Cómo se comprueba una hoja de producto
 
-1. Lleva los tres papeles de color (vivo, hondo claro y oscuro, secundario) con hex y con los seis ratios de la tabla
-   calculados; ninguno baja de su umbral.
+1. Lleva los tres hex de su acento (vivo, hondo y variante oscura), calculados con el método de «Decisiones de la
+   persona», punto 1, con sus ratios; ninguno baja de 4,5:1 donde el método lo exige.
 2. Papel, tinta, filete, retícula, tipografías, chaflanes y retícula de 24 px coinciden con esta hoja valor por valor.
 3. Su frase de paleta es la del Portal con su acento en el lugar del alga; ningún prompt nombra otro color.
 4. Su logo es un cuadrado plano del acento hondo con chaflán de 28/128 y trazo de 12/128, salido de gimg.
@@ -325,9 +325,53 @@ Con los acentos que el Portal tiene hoy en `src/data/productos/*.json` l.5 (`657
 | galivelop-developer | `#0E9A93` | 3,37 | 3,46 | 5,23 | Solo vivo: no vale para texto ni para llevar blanco |
 | galivelop-workflow | `#1AA6DF` (producto) y `#3D6FD9` (ficha de proyecto, `src/data/proyectos/galivelop-workflow.json` l.7) | 2,70 y 4,57 | 2,78 y 4,69 | 6,53 y 3,86 | El de producto es el celeste del Portal (vivo); dos acentos para una misma entidad |
 
-Faltan, y son **decisión de la persona** (aquí no se inventa ningún hex): el segundo tono de cada acento (el hondo o el
-vivo que no tienen), su variante para el tema oscuro, cuál de los dos acentos de workflow manda y si su vivo puede ser
-el celeste del Portal, y el lockup de la familia.
+Lo decidió la persona el 2026-11-12: está en la sección siguiente. Los hex hondos y de tema oscuro de cada producto no
+se escriben aquí: los calcula la hoja de cada uno con el método del punto 1.
+
+### Decisiones de la persona (2026-11-12)
+
+1. **Cada producto tiene dos tonos de acento, como el Portal.** Su hex de hoy es el **vivo**. El **hondo** y la
+   **variante de tema oscuro** se calculan, no se eligen a ojo:
+   1. Se pasa el vivo de sRGB a **OKLCH** (OKLab de Björn Ottosson, D65) y se guardan su tono `h` y su croma `C`.
+   2. **Hondo (tema claro):** con `h` y `C` fijos, se baja la luminosidad `L` en pasos de 0,005 desde la del vivo. En
+      cada paso se convierte a sRGB, se redondea a hex de 8 bits y se calcula el contraste WCAG 2.x **sobre el hex
+      redondeado**. El hondo es el **primer** hex que da ≥ 4,5:1 sobre el papel `#fbfcfd` (con eso el blanco `#ffffff`
+      encima da también ≥ 4,5:1, porque el blanco es más claro que el papel).
+   3. **Variante de tema oscuro:** igual, pero subiendo `L` en pasos de 0,005 hasta el primer hex con ≥ 4,5:1 sobre el
+      papel oscuro del Portal `#0d171e`.
+   4. Si un paso cae fuera de sRGB, se baja `C` de 0,005 en 0,005 (sin tocar `h`) hasta que entre.
+   5. Si el vivo ya cumple el umbral de un tema, ese tono **es el vivo** y la hoja lo dice; no se busca otro.
+   6. La hoja del producto escribe los tres hex (vivo, hondo, oscuro) con sus ratios: vivo y hondo sobre `#fbfcfd`,
+      blanco sobre el hondo, y la variante oscura sobre `#0d171e`.
+
+   Usos: el hondo hace lo que `--celeste-hondo` (bloques grandes, enlaces en claro, cuadrado del logo, texto de acento);
+   la variante oscura hace lo que `--enlace` en oscuro (texto y enlaces sobre `#0d171e`); el vivo, lo que `--celeste`
+   (foco, puntos de estado, tinte al 12 % / 18 %). Los bloques con texto blanco usan el hondo también en tema oscuro.
+   **Diferencia con el Portal, dicha como decisión de esta hoja:** el Portal oscurece su hondo en oscuro (`#0b5e88`,
+   para bloques) y aclara el enlace (`#5cc8f2`); un producto lleva una sola variante oscura, la de texto. El método se
+   probó aquí con los cuatro acentos de hoy y con el celeste, y termina en todos.
+2. **Workflow: manda `#3D6FD9`** (el de `src/data/proyectos/galivelop-workflow.json` l.7), no el celeste del Portal.
+   El `#1AA6DF` de `src/data/productos/galivelop-workflow.json` l.5 queda desfasado en el Portal (va en la entrega).
+3. **Los productos heredan papel, tinta y tipografías del Portal sin cambio.** Solo cambia el acento, y va **donde el
+   Portal usa el alga**: en la interfaz del producto, sus dos tonos ocupan el papel del acento; junto al Portal y en
+   las piezas generadas, es el «a touch of» de la frase de paleta. Con esto queda cerrada la duda 2.
+4. **Lockup común para la familia:** símbolo del producto + nombre. La persona decidió que sea común y con medidas
+   comunes; **los números siguientes los fija esta hoja**, a partir de las opciones de `gimg brand lockup`
+   (`gimg/brand.py`; todo se mide en lados del símbolo, `S`):
+
+   | Medida | Horizontal (`--layout h`) | Vertical (`--layout v`) |
+   |---|---|---|
+   | Nombre | alto de las letras = 0,45 `S` (`--cap 0.45`) | ancho del nombre = 1,6 `S` (`--width 1.6`) |
+   | Hueco entre símbolo y nombre | 0,25 `S` (`--gap 0.25`) | 0,25 `S` (`--gap 0.25`) |
+   | Margen libre alrededor | 0,25 `S` (`--margin 0.25`) | 0,25 `S` (`--margin 0.25`) |
+   | Tamaño mínimo | `S` ≥ 32 px (letras de 14,4 px) | `S` ≥ 48 px |
+
+   Por debajo del mínimo va el símbolo solo (hasta 16 px). El nombre sale de
+   `gimg brand wordmark "<NOMBRE>" --font <Big Shoulders Display variable .ttf> --weight 800 --spacing 0.01`: en
+   mayúsculas, peso 800 y tracking 0,01 em, como los títulos del Portal (`global.css` l.146-156). Va en `currentColor`
+   (tinta `#13212b` en claro, `#e6eef3` en oscuro), nunca en el acento. El símbolo es el SVG de `gimg brand trace` del
+   logo del producto. Orden: `gimg brand lockup simbolo.svg wordmark.svg --layout h --cap 0.45 --gap 0.25 --margin 0.25`
+   y lo mismo con `--layout v --width 1.6`. Los `*-lockup.svg` de `logos/` (Sora) quedan como históricos.
 
 ---
 

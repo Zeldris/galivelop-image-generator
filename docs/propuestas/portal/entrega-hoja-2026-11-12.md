@@ -43,3 +43,13 @@ acento (vivo y hondo). Sobre el papel `#fbfcfd`: image-generator `#7C5CD6` 4,69:
 developer `#0E9A93` 3,37:1, workflow `#1AA6DF` 2,70:1. Solo el primero llega a 4,5:1. Además, workflow tiene otro
 acento en `src/data/proyectos/galivelop-workflow.json` l.7 (`#3D6FD9`, 4,57:1). El segundo tono de cada acento, su
 variante oscura y cuál de los dos de workflow manda los decide la persona; aquí no se propone ningún hex.
+
+## Decidido por la persona el 2026-11-12 (después de escribir lo anterior)
+
+Detalle en `docs/marcas/portal/hoja.md`, «Familia Galivelop», «Decisiones de la persona (2026-11-12)».
+
+| # | Dónde | Qué cambia |
+|---|---|---|
+| 11 | `src/data/productos/galivelop-workflow.json` l.5 (`#1AA6DF`) | Pasa a `#3D6FD9`, el de `src/data/proyectos/galivelop-workflow.json` l.7: es el acento que manda para workflow |
+| 12 | `docs/marca.md` l.215-216 (duda 2) | Cerrada: el acento del producto va donde el Portal usa el alga; papel, tinta y tipografías no cambian |
+| 13 | Donde el Portal use el acento de un producto para texto, enlaces o bloques con texto blanco | Usar el tono hondo (tema claro) o la variante oscura que calcule la hoja de cada producto, no el hex vivo: el vivo solo marca puntos, foco y tinte |
