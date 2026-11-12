@@ -8,6 +8,14 @@ anterior está en git (`ef94330`). Marca creada desde cero (decisión de la pers
 viene del repo del juego, World-Maker-Fantasy (WMF) `3537d84`, o del Portal `aa76b34`; rutas en la sección 10. Molde y
 reglas comunes: [../README.md](../README.md). Las piezas concretas y sus prompts están en [`peticiones.md`](peticiones.md).
 
+> **Vigencia (2026-11-12).** Las reglas con medida están en [`hoja.md`](hoja.md) §16, la cobertura por tipo de
+> contenido en §17 y el estado de los repos en §18 (el juego, `main` `3a10a3fa` y UX-40 en `c858a150`; el
+> Instalador, `main` `5631e77b` y su pedido en `34d2bb27`). De esta biblia ya no vale: en §4, que los SVG no existan
+> y se dibujen a mano (existen desde el 2026-11-10 en `logos/`, generados con `gimg brand system`; nada se dibuja a
+> mano); en §7, el negativo y el img2img del #1 (el emblema se compone desde el SVG, ningún modelo lo pinta); en §8,
+> el estado de `01-emblema.json`; en §9, los perfiles «por declarar» (hay 23 en
+> `examples/tarkor/galivelop-images.json`); en §10, los commits `3537d84` y `ce9f33a`.
+
 ## 1. Esencia
 
 - **Qué es:** RPG narrativo de fantasía con IA local. Se juega en Berig, continente de Helek Sirik («Origen Azul»).
@@ -77,8 +85,9 @@ Base «madera + hierro» del juego (`index.css`, decisión nº 6) más los tonos
 ## 4. Logo
 
 Sistema de la propuesta §5, derivado de los dos PNG de `examples/tarkor/logos/` (la referencia aprobada). Los SVG
-**no existen todavía**: se dibujan a mano a partir del emblema #1 elegido (`peticiones.md`, §5 orden de trabajo, punto 2)
-en `docs/marcas/tarkor/logos/`. Los `tarkor-a/b/c/d.svg` y sus lockups de ahí son historia (r7 y anteriores).
+**existen desde el 2026-11-10** en `docs/marcas/tarkor/logos/` (`tarkor-emblema.svg`, `-simple`, `-mono`,
+`tarkor-wordmark.svg`, `tarkor-lockup-h.svg`, `tarkor-lockup-v.svg`), generados con `gimg brand system`: nada se
+dibuja a mano (corregido el 2026-11-12). Los `tarkor-a/b/c/d.svg` y sus lockups de ahí son historia (r7 y anteriores).
 
 | Pieza | Archivo previsto | Qué es | Mínimo |
 | --- | --- | --- | --- |
