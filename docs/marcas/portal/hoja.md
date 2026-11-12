@@ -2,9 +2,14 @@
 
 > **Dos identidades en esta hoja.** Desde el 2026-11-10 el Portal tiene identidad nueva (paleta #0072a8 / #fbfcfd /
 > #13212b / #5d7a6a, Big Shoulders Display, Literata y JetBrains Mono) y la lista de 24 recursos que pide: `docs/marca.md`
-> de Portal-Galivelop (`main` `08c7fe5`) es su fuente de verdad y el proyecto de gimg que la sigue está en
-> [`examples/portal/`](../../../examples/portal/). **Lo vigente está en el bloque «Identidad vigente» de abajo**: es lo que
-> `gimg` necesita para que un prompt salga a la primera y lo que heredan las hojas de producto. Las secciones 0-15,
+> de Portal-Galivelop es su fuente de verdad, **leída el 2026-11-12 en la rama `ccr-47f8fddd-o5ek6p` `6574c4f`
+> (2026-11-12 15:08, la más nueva: manda)** y en `main` `e16500f` (2026-11-11, lo publicado); antes esta hoja citaba
+> `08c7fe5`. Qué trae la rama que `main` no tiene: las portadas 6, los iconos 7c-7e, 8b, 8c, 9a, 9b y 14 entregados y la
+> regla de nombrar cada imagen en la ficha de Galivelop IG (`git diff e16500f 6574c4f -- docs/marca.md`); los tokens de
+> `src/estilos/global.css` l.1-135 son idénticos en las dos. El proyecto de gimg que la sigue está en
+> [`examples/portal/`](../../../examples/portal/). **Lo vigente está en el bloque «Identidad vigente» de abajo** (lo que
+> `gimg` necesita para que un prompt salga a la primera), seguido de «Interfaz del Portal», «Recursos» y **«Familia
+> Galivelop: lo que heredan los productos»**, que es la referencia de las hojas `galivelop-*`. Las secciones 0-15,
 > «Contradicciones» y «Lo que enseñó», [`biblia.md`](biblia.md) y [`logos/`](logos/) describen la identidad anterior
 > (#06121c, Sora/Inter, el umbral) y se quedan como histórico de r1-r8: no se siguen para piezas nuevas.
 
@@ -35,8 +40,9 @@ la persona, y la hoja sigue lo publicado en `main` (decidido el 2026-11-04; ver 
 ## Identidad vigente (2026-11-10 y 11): lo que gimg necesita
 
 Lo que sigue es lo que se aplica a cada pedido nuevo del Portal (`examples/portal/orders/marca/`) y lo que heredan las hojas
-de producto (`Hereda de` → esta sección). Fuente de verdad de la identidad: `docs/marca.md` del Portal (`main` `08c7fe5`),
-que desde este repo no se abre; lo que hay aquí es esa identidad **más lo que enseñó generarla con gimg** (ronda FLUX del
+de producto (`Hereda de` → esta sección). Fuente de verdad de la identidad: `docs/marca.md` del Portal (rama
+`ccr-47f8fddd-o5ek6p` `6574c4f`; `main` `e16500f`), que desde este repo se lee con `git show` y no se modifica; lo que hay
+aquí es esa identidad **más lo que enseñó generarla con gimg** (ronda FLUX del
 2026-11-10, Z-Image del 2026-11-10 y 11, hojas en `piloto/portal-marca/`). Donde un pedido de `examples/portal/` y esta
 sección digan cosas distintas, manda esta sección y el pedido se reescribe; donde esta sección y `docs/marca.md` choquen,
 se apunta en «Dudas» al final del bloque y decide la persona.
@@ -46,15 +52,15 @@ se apunta en «Dudas» al final del bloque y decide la persona.
 | Paleta | Cuatro tintas: cerúleo `#0072a8` (el mar, la tinta de color), papel `#fbfcfd` (fondo claro, «off-white»), gris tinta `#13212b` (la línea), verde alga `#5d7a6a` (solo «a touch of», nunca protagonista). Los grabados grandes admiten además «tints and shades» del cerúleo (bandas tonales del mar); los iconos, **una sola tinta**. **Versión oscura:** fondo `#0d171e`, líneas `#e6eef3`, cerúleo igual. `brand.palette` lleva las siete (`#0072a8`, `#1aa6df`, `#fbfcfd`, `#13212b`, `#5d7a6a`, `#e6eef3`, `#0d171e`); `#1aa6df` solo está para que `gimg measure` cuente el celeste que el modelo tiende a dar, no se pide. **En el prompt, el cerúleo se nombra «medium cerulean ocean blue #0072a8»**: «sky blue #0072a8» dio `#1aa6df` (desvío del 2026-11-10). Los colores van siempre en hex y en una sola frase final: «Palette strictly limited to …» | Portal `docs/marca.md` (vía `examples/portal/README.md`); repo (`examples/portal/galivelop-images.json` `brand.palette`, `prompts/estilo.txt`) |
 | Tipografía | Big Shoulders Display (titulares), Literata (texto), JetBrains Mono (código). **Ninguna imagen lleva texto**: ni generado ni compuesto; el proyecto no tiene `compose` ni perfil `og` con título, y el texto lo pone la web del Portal con sus fuentes. Por eso aquí no hace falta `compose.fonts` ni comprobación 6 | Portal `docs/marca.md`; repo (`examples/portal/README.md` «ninguna imagen lleva texto») |
 | Modelo y parámetros | **Calidad: `zimage-turbo-q6`, 8 pasos, cfg 1.0, euler**, base 1024 (`draft {scale 0.5, steps 4}`), en todos los perfiles de `examples/portal/`; ~10 min por imagen a 1024 en la Deck. **FLUX (`flux2-klein-4b-q8`, 6 pasos, cfg 1.0) solo para bocetos** (sirvió para los bocetos del logo, 01/04/05, no para entregar). **Qwen-Image solo para fotorrealismo o un detalle muy concreto**: ninguna pieza del Portal lo necesita. **Con cfg 1.0 no hay prompt negativo efectivo** (el pedido tampoco tiene campo `negative`): lo único que resta es lo que el propio prompt dice que no quiere, y eso a veces se cuela (ver «Cómo se escribe el prompt») | repo (`gimg/models.json`; `examples/portal/galivelop-images.json`; `docs/handoff.md`, fila `portal-marca`: «FLUX solo bocetos; calidad con Z-Image (8 pasos); Qwen-Image solo fotorrealismo») |
-| Mar y tecnología | **«El mar pone el dónde, la tecnología pone el qué.»** El mar y la costa gallega se quedan como fondo, color y textura (isobatas, curvas de nivel, carta náutica, papel, cerúleo); lo que se dibuja como motivo (iconos, portadas, ilustraciones) es de informática y desarrollo de software (ventana de editor, terminal, ramas, historial de commits, retícula, placa de circuito). **Dejan de ser protagonistas:** anclas, barcos, faros, remos, boyas, grúas de puerto, sextantes y nudos; quien vea la web piensa «taller de software gallego», no «algo náutico». **Única excepción:** el barco de papel de `marca/19-enviado`, como guiño único. La rosa de los vientos (04, y la pequeña de una esquina en 06) es instrumento de carta, no motivo náutico: se queda | **decisión de la persona, 2026-11-11**; pedidos en `examples/portal/orders/marca/` |
+| Mar y tecnología | **«El mar pone el dónde, la tecnología pone el qué.»** El mar y la costa gallega se quedan como fondo, color y textura (isobatas, curvas de nivel, carta náutica, papel, cerúleo); lo que se dibuja como motivo (iconos, portadas, ilustraciones) es de informática y desarrollo de software (ventana de editor, terminal, ramas, historial de commits, retícula, placa de circuito). **Dejan de ser protagonistas:** anclas, barcos, faros, remos, boyas, grúas de puerto, sextantes y nudos; quien vea la web piensa «taller de software gallego», no «algo náutico». **Excepciones náuticas, tres y cerradas:** 1) el barco de papel con mástil de `marca/19-enviado` (q339); 2) el barco de papel sobre mar con olas de la 15 de Developer (q311; «ese barco es la portada de Developer», la persona, 2026-11-11); 3) **la serie del faro de las tres portadas 06** (en obra con andamio q628, islote con cimientos y trípode q635, encendido de noche q641; aprobadas el 2026-11-12), que sustituye a la ventana de editor. El Portal solo escribe las dos primeras en su regla (ver «Recursos», desajustes). Ninguna pieza nueva añade un motivo náutico sin decisión de la persona. La rosa de los vientos (04, y la pequeña de una esquina en 03) es instrumento de carta, no motivo náutico: se queda | **decisión de la persona, 2026-11-11**; Portal `6574c4f` `docs/marca.md` l.147-151 (los dos barcos), l.124-125, l.129 (los tres faros, entregados); repo `3c04dd1` `examples/portal/orders/marca/06-*.json`, `docs/propuestas/portal/entrega-marca-2026-11-12.md` l.13-19, `piloto/portal-marca/portal-web-final/portal/LEEME.md` |
 | Dos registros de dibujo | **1) Grabado a dos tintas** para las ilustraciones grandes (03, 06, 10, 11, 13, 15, 16, 17, 18, 19, 20, 21): «Richly detailed engraved antique nautical chart style, like a fine sea chart printed in two inks: many layers of fine lines and hatching, line density increasing in the darker areas to give depth and tone, lines of several weights, crisp and sharp, intricate but calm, premium print quality, high detail, elegant.» Aprobado por la persona en la 06 (q310 y q311): rico en detalle, con el mar de líneas de ola y batimetría. **2) Línea simple** para iconos y pictogramas (01, 01b, 04, 05, 07, 08, 09, 12, 14, 23; el 12, separador, lleva hoy el bloque de grabado y una sola línea no admite tramas: se reescribe): «Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, bold and clear enough to read at 24 pixels, generous empty margin around each icon, a single ink colour.» Pensados para vectorizarse (`gimg brand`, trace) a `currentColor`: por eso una tinta, sin tramas. **No se mezclan en una pieza**: un icono con tramas no vectoriza; un grabado «minimal» sale pobre (lo enseñó la identidad anterior: «minimal» y «nearly empty» dieron piezas no publicables, y aquí la 06 gustó por lo contrario) | repo (`examples/portal/orders/marca/06-*.json`, `07-*.json`; `piloto/portal-marca/`); persona, 2026-11-11 (q310/q311) |
 | Zonas limpias | La cola del grabado («many layers of fine lines and hatching … filling the whole sheet to every edge») ensucia lo que debe quedar liso: el tercio para texto de la web, el centro de un marco (17), el fondo de un diagrama (10). **Cómo se pide:** 1) la zona limpia se describe **en positivo y al principio**, como papel: «the lower third of the sheet is plain flat off-white paper, open and unmarked»; 2) la trama se **confina**: «hatching and wave lines only in the upper two thirds» / «the window on the left third, open charted water on the right» (así salió la 06); 3) «filling the whole sheet to every edge» se usa **solo** en piezas sin zona (18, 21), nunca junto a una zona limpia. Si aun así entra trama, se limpia en la vectorización o el Portal pone el texto sobre un bloque de papel por CSS; no se reintenta a ciegas más de una tanda | repo (`orders/marca/06-*.json`: «the window on the left third, open charted water on the right» salió limpio; `18-404.json`: «filling the whole sheet to every edge») |
 | Recuentos | El modelo **no garantiza cantidades**: «exactly four nodes» dio siete puntos. 1) Se diseñan motivos que no dependan de un número exacto («a short commit history as a vertical line with a few round nodes», «several wave lines»); 2) cuando el número es el significado (seis gajos del emblema de Tarkor, ocho puntas de la rosa, dos ramas que se unen), el generado es **boceto** y el número se fija al vectorizar (`gimg brand` trace y edición del SVG) o al componer; 3) nunca «exactly N» en el prompt: no obedece y gasta palabras | repo (`piloto/portal-marca/`, pedido 08 «four round nodes»; `docs/handoff.md`, emblema de Tarkor «las juntas salen en X o cinco, no seis») |
 | Fondo y recorte | **gimg no da transparencia**: «on transparent» (04, 05) no hace nada y el modelo pinta un fondo cualquiera. Lo que tiene que recortarse (logo, sello, rosa, marcos, iconos sueltos) se genera **sobre croma plano** `#00ff00` («on a plain flat solid bright green #00ff00 background»; `#ff00ff` si la pieza lleva verde alga) y se recorta con `gimg brand` (matte, `--holes` para los huecos interiores; umbrales t0 60 / t1 110) y se vectoriza con trace; lo que va directo sobre papel (hojas de contactos de iconos para revisar, 07-09) se genera sobre `#fbfcfd`. El verde del croma **no va en «Palette strictly limited to …»**: es fondo, no tinta. Entregas: `-alpha.png` y `.svg` | repo (`gimg brand`, `gimg/brand.py`; `docs/handoff.md` pendientes de `portal-marca`: `--holes`, fondos `#00ff00`/`#ff00ff`; `examples/portal/README.md` «Transparencia y SVG») |
-| Versión oscura | Falta en 10, 11, 16, 18, 19 y 1b. **Qué es:** líneas `#e6eef3` sobre fondo `#0d171e`, el cerúleo igual, el verde alga igual. **Cómo se hace:** iconos y logos, **sin generar nada**: el SVG vectorizado se colorea por CSS (`currentColor`), y el 1b es el 01 en negativo. Grabados: una segunda generación con la **misma semilla** y las tintas cambiadas: «printed in two inks on dark slate paper #0d171e: pale off-white #e6eef3 lines and medium cerulean ocean blue #0072a8 tints and shades» en lugar de la frase de paleta clara; la composición varía poco con la misma semilla, pero se revisa como pieza nueva. Perfil: el mismo; el pedido, `<n>-oscuro.json` | **propuesta del agente**, 2026-11-11 (`examples/portal/README.md` «Versión oscura»: «líneas `#e6eef3` sobre `#0d171e`, o SVG coloreado por CSS»); ver «Dudas», 3 |
+| Versión oscura | Falta en 10, 18, 19 y 1b (11 y 16 se cancelaron: van por CSS; el Portal muestra hoy 10 y 18 «enmarcadas tal cual» en el tema oscuro, `docs/marca.md` `6574c4f` l.137-138). **Qué es:** líneas `#e6eef3` sobre fondo `#0d171e`, el cerúleo igual, el verde alga igual. **Cómo se hace:** iconos y logos, **sin generar nada**: el SVG vectorizado se colorea por CSS (`currentColor`), y el 1b es el 01 en negativo. Grabados: una segunda generación con la **misma semilla** y las tintas cambiadas: «printed in two inks on dark slate paper #0d171e: pale off-white #e6eef3 lines and medium cerulean ocean blue #0072a8 tints and shades» en lugar de la frase de paleta clara; la composición varía poco con la misma semilla, pero se revisa como pieza nueva. Perfil: el mismo; el pedido, `<n>-oscuro.json` | **propuesta del agente**, 2026-11-11 (`examples/portal/README.md` «Versión oscura»: «líneas `#e6eef3` sobre `#0d171e`, o SVG coloreado por CSS»); ver «Dudas», 3 |
 | Encuadre | Todas las piezas **a sangre**: «full-bleed edge to edge, no border, no frame, no white margin, no blank band» en el cierre. Lo enseñó el 404 (marco y banda blanca) y los logos de FLUX («45-degree cut corners» puso marcos y esquinas blancas): el chaflán del cuadrado del logo no se pide al modelo, lo pone el SVG. El único marco permitido es el que **es** la pieza (17, marco de retrato), y entonces el centro es zona limpia | repo (`orders/marca/18-404.json`, cierre; `examples/portal/README.md` «Desvío del bloque común») |
 | Perfiles | Los de `examples/portal/galivelop-images.json`: `cuadrado` 1024² (iconos, logo), `icono` 1024 → 512, `fondo` 1024 → 1200, `social` 1344×704 → 1200×630, `portada` 1344×768 → 1600×900, `tarjeta` 1344×768 → 1200×675, `cabecera` 1664×512 → 1600×500, `muro` 1792×448 → 1600×400; todos con Z-Image y `draft` 0,5/4. Sin `og`, sin zona reservada declarada (el texto lo pone la web), sin velo, sin `compose`. Patrones (21) con `tileable: "xy"` | repo (`examples/portal/galivelop-images.json`; `b9c0187` tileable) |
-| Referencias aprobadas | **Lo que gusta:** portadas 06 q310 y q311 (grabado a dos tintas, mucho detalle, ventana de editor sobre el mar de carta). **Bocetos útiles, no entregables:** FLUX q133 (01), q142 (04), q146 (05). **Rechazado:** marcos y bandas blancas (404), fondos que no son el croma puro (mapa 03 de Tarkor), «sky blue» | persona, 2026-11-11 (q310/q311); `docs/handoff.md`, ronda FLUX 2026-11-10 |
+| Referencias aprobadas | **Lo que gusta:** portadas 06 q310 y q311 (grabado a dos tintas, mucho detalle, ventana de editor sobre el mar de carta: aprobaron el registro; el motivo de la 06 es desde el 2026-11-12 la serie del faro, q628/q635/q641, y la q311 pasó a la 15 de Developer). **Bocetos útiles, no entregables:** FLUX q133 (01), q142 (04), q146 (05). **Rechazado:** marcos y bandas blancas (404), fondos que no son el croma puro (mapa 03 de Tarkor), «sky blue» | persona, 2026-11-11 (q310/q311); `docs/handoff.md`, ronda FLUX 2026-11-10 |
 
 **Cómo se escribe el prompt** (sustituye a la comprobación 8 del histórico para esta identidad):
 
@@ -74,13 +80,14 @@ se apunta en «Dudas» al final del bloque y decide la persona.
 4. **Lo que sigue vetado por ética** (de la biblia, vigente): personas, manos, rostros, robots, cerebros, «magia» de IA,
    gente en traje, apretones de manos, cohetes, gráficas de crecimiento, lugares reales reconocibles; y, por el criterio del
    2026-11-11, los motivos náuticos como protagonistas (`anchor`, `boat`, `ship`, `lighthouse`, `oar`, `buoy`, `crane`,
-   `sextant`, `knot`, `sail`, `sailor`), salvo el barco de papel de 19. Palabras que **no se escriben** porque no hacen
+   `sextant`, `knot`, `sail`, `sailor`), salvo las tres excepciones cerradas (barco de 19, barco de la 15 de Developer,
+   faro de las 06). Palabras que **no se escriben** porque no hacen
    nada o estorban: `transparent`, `exactly`, `sky blue`, `minimal` en un grabado, cualquier nombre de color que no sea una
    tinta.
 5. **Comprobación antes de encolar** (a mano, hasta que un script lo haga): acaba en la frase de paleta con los cuatro hex;
    lleva uno de los dos bloques de registro, no los dos; lleva el cierre a sangre; si hay zona limpia va antes del bloque y
    no hay «filling the whole sheet»; no hay `transparent`, `exactly`, `sky blue`, color fuera de tinta ni motivo náutico
-   fuera del 19; lo que se recorta va sobre croma; `seed` fijo y `count` 2-4 para elegir con `gimg choose`.
+   fuera de las tres excepciones (19, 15 de Developer, 06); lo que se recorta va sobre croma; `seed` fijo y `count` 2-4 para elegir con `gimg choose`.
 
 **Dudas que decide la persona** (2026-11-11):
 
@@ -99,6 +106,228 @@ se apunta en «Dudas» al final del bloque y decide la persona.
 4. **El engranaje de `15-proximamente-developer`.** El pedido pone «a small gear beside it» junto a la terminal; la hoja de
    galivelop-developer veta los engranajes («Nunca se muestra») y su motivo es la rama que vuelve por un anillo.
    **Recomendación:** quitar el engranaje y poner la rama con el anillo; la hoja de producto manda en su motivo.
+
+**Estado de las dudas el 2026-11-12** (Portal `6574c4f`, `docs/marca.md` l.211-220):
+
+| Duda | Estado | Fuente |
+|---|---|---|
+| 1. Dos registros | **Aplicada en el Portal:** su hoja ya pide grabado en las grandes y línea simple en iconos | l.152-156, l.213-214 («es lo que ya recoge esta hoja») |
+| 2. Acentos de producto | **Aplicada en el Portal** como regla del recurso 24: «el acento del producto, en el lugar del verde alga»; en imagen generada, solo las cuatro tintas. El Portal la sigue listando bajo «Dudas que decide la persona»: no consta un «sí» expreso | l.215-216, l.268 |
+| 3. Versión oscura de los grabados | **Abierta y reducida:** 11 y 16 se cancelaron (CSS), así que solo quedan 18 y 19 por generar; 10 y 1b, por CSS. Hoy 10 y 18 se muestran enmarcadas tal cual | l.135, l.137-138, l.217-218 |
+| 4. Engranaje de la 15 de Developer | **Cerrada por la persona (2026-11-11):** ni engranaje ni rama con anillo; la 15 de Developer es el barco de papel sobre mar con olas (q311) | l.125, l.219-220, l.254 |
+
+---
+
+## Interfaz del Portal: tokens y reglas (2026-11-12)
+
+Lo que fija el código del Portal y esta hoja no listaba. Fuente: Portal `6574c4f`, `src/estilos/global.css` (l.) y
+`docs/marca.md` (m.); las líneas 1-135 de `global.css` son las mismas en `main` `e16500f`. Los ratios de contraste son
+WCAG 2.x calculados aquí sobre esos hex (fórmula de luminancia relativa), no medidos en pantalla.
+
+| Token | Claro | Oscuro | Papel que hace | Contraste (claro / oscuro) | Fuente |
+|---|---|---|---|---|---|
+| `--papel` (`--fondo`) | `#fbfcfd` | `#0d171e` | Fondo de página | papel claro frente a papel oscuro, 17,65:1 | l.48, l.83; m.54 |
+| `--superficie` | `#ffffff` | `#111f29` | Fichas y paneles, un paso más claras que el papel en los dos temas | tinta encima 16,40 / 14,29 | l.57, l.92; m.56 |
+| `--fondo-alterno`, `--superficie-2` | `#f1f6f9` | `#111f29`, `#16242e` | Bandas alternas y segundo plano | — | l.56, l.58, l.91, l.93 (no están en la tabla de m.) |
+| `--tinta` (`--texto`) | `#13212b` | `#e6eef3` | Texto y línea; «gris granito con sesgo azul» | sobre papel 15,97 / 15,44 (AAA) | l.51, l.86; m.58 |
+| `--tinta-2` (`--texto-2`) | `#4a5c69` | `#9fb2bf` | Texto secundario y datos | 6,76 / 8,28 (AA) | l.52, l.87; m.59 |
+| `--texto-3` | `#5a6d7a` | `#7d919e` | Texto terciario | 5,24 / 5,54 (AA) | l.62, l.97 (no está en m.) |
+| `--celeste` | `#1aa6df` | `#1aa6df` | Acento vivo: marca, foco (`outline` 2 px), estado «publicado» | sobre papel 2,70 / 6,53; blanco encima 2,78; tinta encima 5,91 | l.5; m.52 |
+| `--celeste-hondo` | `#0072a8` | `#0b5e88` | Acento hondo: bloques grandes de color y, en claro, enlaces | sobre papel claro 5,15 (AA); blanco encima 5,29 / 7,07 | l.50, l.85, l.63; m.53 |
+| `--enlace` | `--celeste-hondo` | `#5cc8f2` | Enlaces | 5,15 / 9,49 | l.63, l.98 |
+| `--alga` | `#5d7a6a` | `#8fb09e` | Acento secundario: «en desarrollo», avisos suaves | sobre papel 4,59 / 7,66 | l.53, l.88; m.60 |
+| `--ok-texto` | `#3f5a4b` | `#8fb09e` | Texto y ✓ de «hecho»: el alga con contraste de texto | 7,37 / 7,66 (AAA) | l.77, l.108; m.67 |
+| `--peligro` / `--sobre-peligro` | `#a3135f` / `#ffffff` | `#f27ab0` / `#0d171e` | Fallo, rechazo o bloqueo; siempre con ✗ y texto, nunca solo color | sobre papel 7,26 / 7,07; texto encima 7,46 / 7,07 | l.73-74, l.105-106; m.65 |
+| `--peligro-tinte` | peligro al 10 % | peligro al 16 % | Fondo plano de una caja de fallo | — | l.75, l.107; m.66 |
+| `--tinte` | celeste al 12 % | celeste al 18 % | Plano translúcido (hover, chips, píldoras); sustituye al resplandor `--brillo` | tinta sobre tinte 14,25 / 11,65 | l.68, l.102; m.61, m.22-24 |
+| `--filete` (`--borde`) | `#b9cbd6` | `#2b3d49` | Bordes de 1 px y filetes | frente al papel 1,63 / 1,61 (decorativo: no lleva información él solo) | l.54, l.89; m.57 |
+| `--reticula` | `#e3edf3` | `#16242e` | Líneas de 1 px de la cuadrícula del papel | frente al papel 1,16 / 1,14 («muy tenue») | l.49, l.84, l.126-131; m.55 |
+| `--noche` | `#03090f` | igual | Fondo de los escenarios de imagen; no es el fondo de la página oscura | blanco encima 20,00 | l.8; m.62 |
+| `--velo` / `--velo-medio` / `--velo-denso` | `rgb(6 18 28)` al 62 / 68 / 78 % | igual | Velo plano sobre fotos (cabeceras: 62 % en oscuro, 68 % en claro) | texto blanco sobre el velo, peor caso (foto blanca): 5,33 / 6,59 / 9,61 | l.9-11, l.1427-1445; m.63 |
+| `--estado-publicado` / `--estado-desarrollo` | `--celeste` / alga al 55 % sobre blanco | `--celeste-hondo` / alga al 60 % sobre noche | Puntos de estado de 8 px; «en diseño» va hueco | — | l.70-71, l.103-104, l.562-567; m.64 |
+| `--discord` | `#5865f2` | igual | Ajeno a la paleta: solo en el botón de Discord | blanco encima 4,61 | l.13; m.68 |
+| `--sombra` | `0 12px 32px -18px` tinta al 35 % | negro al 70 % | La única sombra: panel desplegado o flotante | — | l.66, l.101; m.27-28 |
+| `--chaflan` / `--chaflan-grande` / `--chaflan-pequeno` | `14px` / `28px` / `10px` | igual | Esquina superior derecha cortada a 45°: fichas / bloques grandes / botones | — | l.25-27, l.444-450, l.767-773; m.25-26, m.69, m.72 (el de 10 px no está en m.) |
+| `--reticula-paso` | `24px` | igual | Paso de la cuadrícula; márgenes y tamaños se alinean a ella | — | l.28, l.131; m.33 |
+| `--curva`, `--transicion` | `cubic-bezier(0.2, 0.7, 0.3, 1)`, 200 ms | igual | Todo movimiento; desplazamientos de 2-3 px | — | l.31-32; m.36-37 |
+
+**Tipografía por papel** (m.74-87; l.15-22, l.146-180): títulos, **Big Shoulders Display** 800 (h1-h3) y 700 (h4), en
+mayúsculas, tracking 0,01 em, interlineado 1,02; h1 `clamp(44px, 9vw, 96px)`, h2 36 px, h3 32 px, h4 21,6 px. Texto,
+**Literata** 400/600, 17 px con interlineado 1,6. Datos (antetítulos, etiquetas, fechas, versiones, botones),
+**JetBrains Mono** 500, 12 px / 1,4, en mayúsculas, tracking 0,06 em (l.21-22; m.86 dice `.04em`: manda el código).
+Las tres con licencia OFL, servidas con `@fontsource-variable/*`.
+
+**Reglas de interfaz** (m.17-43), con lo que las comprueba:
+
+1. Tema claro por defecto (m.21; `:root` sin atributo es el claro, l.45-46).
+2. **Sin resplandores, desenfoques ni degradados de fondo**: ni `backdrop-filter`, ni `blur(`, ni `-gradient(`, ni
+   `drop-shadow(`, ni sombra con desenfoque distinto de 0 (m.22-24). Lo comprueba `src/estilos/marca.test.ts`; las
+   excepciones llevan `/* marca: permitido, <motivo> */` en la línea anterior: la retícula (l.127-130) y `--sombra`
+   (l.65-66, l.100-101).
+3. **Esquinas rectas o con chaflán, nunca redondas**: `border-radius` distinto de 0 falla el test; única excepción, el
+   punto de estado (`50%`, l.564-566). Chaflán 14 px en fichas, 28 px en bloques grandes, 10 px en botones.
+4. Líneas antes que sombras: borde de 1 px, filete de 2 px bajo cabeceras, discontinuo entre metadatos (m.27-28).
+5. Datos en monoespaciada y mayúsculas con tracking; lo que se lee de corrido, en la serif (m.29-30).
+6. El acento, en bloques grandes y planos: sobre `--celeste-hondo`, isobatas en blanco al 20-50 % (m.31-32).
+7. **La retícula se ve:** cuadrícula de 24 px con líneas de 1 px (m.33; l.126-131).
+8. Numeración y coordenadas reales, nada numerado por adorno (m.34-35).
+9. Movimiento mínimo: 200 ms, 2-3 px, nada se mueve solo salvo la animación del flujo (m.36-37).
+10. Contraste AA sobre el acento: sobre `--celeste-hondo`, texto blanco (5,29); sobre `--celeste`, «solo etiquetas
+    grandes o el granito» (m.38-39). Con los hex de hoy, blanco sobre `--celeste` da 2,78 (no llega ni al 3:1 de texto
+    grande) y la tinta 5,91: sobre `--celeste` solo vale la tinta.
+11. Los diagramas siguen la misma hoja (m.40-43).
+
+**El logo publicado todavía no las cumple:** `public/marca/gv-logo.svg` (`6574c4f`) sigue siendo la baldosa con degradado
+`#2BB3EA → #0083C1` y `rx` 30, que el Portal llama «Logo actual (prototipo)» (m.229). El recurso 1 (cuadrado de cerúleo
+plano con chaflán de 28/128 arriba a la derecha, monograma GV de trazo 12/128, m.229) y el 1b **no están entregados**:
+hay bocetos de FLUX (q133) y falta generarlos con gimg.
+
+## Recursos: entregado, cancelado y pendiente (2026-11-12)
+
+Números de `docs/marca.md` del Portal (`6574c4f`, m.); intento de origen en
+`piloto/portal-marca/portal-web-final/portal/LEEME.md` (fuera de git; raíz = aprobado y con sitio en la web).
+
+| # | Recurso | Estado | Dónde está en el Portal | Fuente |
+|---|---|---|---|---|
+| 1, 1b | Logo y negativo | **Pendiente** (boceto q133); la web usa el prototipo | `public/marca/gv-logo.svg` | m.101-102, m.229-230 |
+| 2 | Isobatas | No es de gimg (EMODnet + `gdal_contour`) | `public/marca/isobatas.svg` | m.231 |
+| 3, 4, 5 | Portada social, rosa de los vientos, sello | **Pendientes** (bocetos q142, q146) | — | m.232-234 |
+| 6 | Portadas por estado (3) | **Entregadas** el 2026-11-12: serie del faro (q628, q635, q641), 1600×900 | `public/marca/portada-<estado>.webp`; fondo velado de las fichas con `cabecera: "color"` | m.129 |
+| 7 | Iconos de líneas de trabajo | **Entregados** 7a (q523), 7c, 7d (q485), 7e (q643). **7b (q560) entregado y sin usar:** «ia-local» sigue con `Cpu` de lucide | `src/assets/iconos/codigo.svg`, `documento-check.svg`, `compas.svg`, `mundos.svg` | m.128, m.130 |
+| 8 | Iconos de valores | **Entregados** los cuatro: 8a (q540), 8b (q644), 8c (q649), 8d (q547) | `candado.svg`, `mira.svg`, `historial.svg`, `ramas-unidas.svg` | m.128, m.131 |
+| 9 | Iconos de participación | **Entregados** los tres: 9a (q572), 9b (q487), 9c (q537) | `ramas.svg`, `bombilla.svg`, `terminal.svg` | m.128, m.132 |
+| 10 | «Cómo funciona» | **Entregada** (q478), 1200×450 | `public/marca/como-funciona.webp` | m.120 |
+| 11 | Fondo de «Es para ti si…» | **Cancelada: por CSS** (2026-11-11) | — | m.135 |
+| 12 | Separador | Aprobado aquí (q564, versión transparente); **sin aplicar**: espera su componente en el Portal | — | m.246; `entrega-marca-2026-11-12.md` l.28 |
+| 13 | Cabecera de `/equipo` (era la de Productos: ADR 0004) | **Entregada** (q500), 1600×500 | `public/marca/cabecera-equipo.webp` | m.121, m.252 |
+| 14 | Icono «implantación y servicio» | **Entregado** el 2026-11-12 (q488): salió de «sin uso» | `src/assets/iconos/implantacion.svg`, aviso «¿Tienes un proyecto propio?» del inicio | m.133, m.253 |
+| 15 | Tarjetas «Próximamente» (2) | **Entregadas**: voz (q331) y Developer (q311, barco de papel) | `public/proyectos/<slug>/proxima.webp` (720×405) | m.122, m.125 |
+| 16 | Cabecera del Muro | **Cancelada: por CSS** | — | m.135 |
+| 17 | Marco de retrato | **Entregado** (q539), máscara 400×400 pintada con `--texto`; solo PNG (el trazador rompe las marcas) | `public/marca/marco-retrato.webp` | m.126 |
+| 18 | 404 | **Entregada** (q480), 900×600 | `public/marca/no-encontrado.webp` | m.123 |
+| 19 | «Enviado» | **Entregada** (q339), 480×360 | `public/marca/enviado.webp` | m.124 |
+| 20 | Cabecera de páginas legales | **Cancelada: por CSS** | — | m.135 |
+| 21 | Patrón del pie | **Cancelado: por CSS** (cerúleo liso) | — | m.135 |
+| 22 | Textura de papel | No sale de gimg; color plano | — | m.135 |
+| 23 | Icono de proyecto | **Entregado** el de workflow (q490); **pendiente** el de Tarkor | `public/proyectos/galivelop-workflow/icono.svg` | m.127, m.267 |
+| 24 | `og.jpg` por proyecto | **Pendiente** | `tools/og/fuentes/<slug>/og-fuente.png` | m.112, m.268 |
+
+**Productos (ADR 0004 del Portal, 2026-11-10, `docs/adr/0004-productos-en-el-perfil.md`):** los productos ya no tienen
+página, enlace en el menú ni franja en la portada; se ven dentro del perfil de cada miembro (`/equipo/<id>`) y
+`/productos` redirige a `/equipo`. Lo que se ofrece no cambia (ADR 0002 y 0003: sin precios, «Me interesa» por correo).
+Para las piezas: la cabecera 13 es la de `/equipo`; no hay tarjetas de producto (el 14 se reutilizó en el inicio); las
+tarjetas de proyecto con `cabecera: "color"` no usan la 6 (llevan su propia portada), que solo va de fondo velado en la
+ficha (m.129). El ADR 0002 sigue fijando el vocabulario (marca, taller, producto) y los acentos de
+`src/data/productos/*.json` l.5.
+
+**Desajustes entre el Portal y esta hoja**, para su sesión (detalle y rutas en
+[`../../propuestas/portal/entrega-hoja-2026-11-12.md`](../../propuestas/portal/entrega-hoja-2026-11-12.md)): la regla de
+excepciones náuticas del Portal no nombra el faro (m.150) y la fila 6 aún describe la ventana de editor (m.240); el 7b
+no se usa; `docs/marca.md` cita esta hoja en `db9c364` (m.144).
+
+## Familia Galivelop: lo que heredan los productos
+
+Para las hojas de `galivelop-developer`, `galivelop-voice-generator`, `galivelop-workflow` y
+`galivelop-image-generator`. Una marca de producto **copia los papeles y las relaciones** del Portal y **cambia solo los
+hex de sus acentos y su motivo**. Cada fila se puede comprobar con un número. «Portal» es el valor de hoy (tabla de
+tokens de arriba, con su línea); el umbral es el nivel WCAG que el Portal cumple, y lo que una hoja de producto tiene
+que cumplir con sus propios hex.
+
+### Qué se copia tal cual (no cambia ni un valor)
+
+| Aspecto | Valor heredado | Fuente |
+|---|---|---|
+| Papel y superficie | `#fbfcfd` / `#ffffff` en claro; `#0d171e` / `#111f29` en oscuro. Tema claro por defecto | tokens `--papel`, `--superficie` |
+| Tinta y sus dos escalones | `#13212b`, `#4a5c69`, `#5a6d7a` en claro; `#e6eef3`, `#9fb2bf`, `#7d919e` en oscuro | tokens `--tinta`, `--tinta-2`, `--texto-3` |
+| Filete y retícula | `#b9cbd6` y `#e3edf3` (claro), `#2b3d49` y `#16242e` (oscuro); retícula de 24 px con líneas de 1 px | tokens `--filete`, `--reticula`, `--reticula-paso` |
+| Tipografías por papel | Big Shoulders Display 800/700 en mayúsculas (títulos), Literata 400/600 a 17 px / 1,6 (texto), JetBrains Mono 500 a 12 px con tracking 0,06 em (datos) | «Tipografía por papel» |
+| Forma | Chaflán de 45° arriba a la derecha: 28 px bloques, 14 px fichas, 10 px botones; `border-radius` 0 (salvo el punto de estado); una sola sombra; sin degradados, desenfoques ni resplandores; movimiento de 200 ms y 2-3 px | reglas 2, 3, 4 y 9 |
+| Peligro, «hecho», velos y noche | `--peligro`, `--ok-texto`, `--velo*` y `--noche` con los hex del Portal | tokens |
+| Los dos registros de dibujo, el modelo y las reglas de prompt | Grabado a dos tintas (grandes) y línea simple (iconos); `zimage-turbo-q6`, 8 pasos, cfg 1.0; orden del prompt, cierre, zonas limpias, a sangre, sin recuentos, croma | bloque «Identidad vigente» |
+
+Que papel, tinta y tipografía no cambien es lo que hace familia: es la regla de la plantilla
+([`../plantilla-hoja-de-estilo.md`](../plantilla-hoja-de-estilo.md) l.59, «Familia Galivelop») aplicada a la identidad
+vigente.
+
+### Qué cambia: los papeles de color del producto y la relación que tienen que cumplir
+
+El Portal tiene **dos tonos de un mismo acento** y un acento secundario. Un producto pone sus hex en esos tres papeles.
+
+| Papel | En el Portal | Relación que el producto cumple con sus hex (comprobable) |
+|---|---|---|
+| **Acento vivo** | `--celeste` `#1aa6df`, igual en los dos temas | Mismo hex en claro y oscuro. No se usa para texto sobre papel claro (Portal: 2,70:1, por debajo de 3:1) ni lleva texto blanco encima (2,78:1); encima solo va la tinta `#13212b`, a ≥ 4,5:1 (Portal: 5,91). Sobre el papel oscuro `#0d171e`, ≥ 4,5:1 (Portal: 6,53). Usos: foco (`outline` 2 px), punto de estado, marca |
+| **Acento hondo** | `--celeste-hondo` `#0072a8` (claro), `#0b5e88` (oscuro) | El mismo tono que el vivo, más oscuro. En claro: ≥ 4,5:1 sobre el papel `#fbfcfd` (Portal: 5,15) **y** texto blanco `#ffffff` encima a ≥ 4,5:1 (Portal: 5,29): es el color de los bloques grandes, los enlaces y el cuadrado del logo. En oscuro se oscurece otro paso y el blanco encima da ≥ 7:1 (Portal: 7,07) |
+| **Enlace en oscuro** | `#5cc8f2` | Un tono claro del acento a ≥ 7:1 sobre `#0d171e` (Portal: 9,49) |
+| **Tinte** | acento vivo al 12 % sobre papel (claro) y al 18 % (oscuro) | Mismos porcentajes; la tinta encima sigue en ≥ 7:1 (Portal: 14,25 / 11,65) |
+| **Acento secundario** | `--alga` `#5d7a6a` (claro), `#8fb09e` (oscuro) | Desaturado y en poca cantidad («a touch of»): nunca bloque grande ni protagonista. ≥ 4,5:1 sobre el papel en claro (Portal: 4,59, justo) y ≥ 7:1 en oscuro (Portal: 7,66). En las **piezas generadas del producto, su acento ocupa el lugar del alga** (Portal `docs/marca.md` l.215-216, l.268): la frase de paleta lleva cerúleo, papel, tinta y «a touch of» el acento del producto |
+| **Isobatas sobre el bloque** | blanco al 20-50 % sobre el acento hondo | Mismos porcentajes |
+
+**Relaciones entre papeles que se mantienen** (todas se cumplen hoy en el Portal):
+
+1. Tinta sobre papel ≥ 7:1 en los dos temas (15,97 / 15,44); texto secundario y terciario ≥ 4,5:1 (6,76 y 5,24 /
+   8,28 y 5,54).
+2. Un acento con dos tonos, no dos acentos: el hondo lleva el color en superficie grande y el vivo marca puntos.
+   El secundario es de otra familia de color y más apagado que los dos.
+3. En oscuro: el papel no es negro (`#0d171e`; `--noche` `#03090f` queda para escenarios de imagen); el acento vivo no
+   cambia; el hondo se oscurece; el secundario, el peligro y el enlace se aclaran; el tinte sube de 12 % a 18 %.
+4. Filete y retícula por debajo de 3:1 frente al papel (1,63 y 1,16 / 1,61 y 1,14): son estructura, no llevan
+   información por sí solos.
+5. Texto sobre imagen, siempre sobre velo plano de tinta al 62-78 %: blanco encima ≥ 4,5:1 en el peor caso (5,33 con el
+   velo del 62 % sobre una foto blanca).
+6. El color de estado nunca va solo: peligro con ✗ y texto, «hecho» con ✓ (regla de `--peligro`, l.72).
+7. En imagen generada: como mucho cuatro tintas (cerúleo `#0072a8`, papel, tinta y un toque del acento del producto);
+   los grabados admiten tonos del cerúleo; los iconos, una sola tinta (`#13212b`), sin relleno.
+
+**La proporción papel / tinta / acento no tiene número en ninguna fuente.** Lo que hay es el orden (el papel es la
+mayor superficie, la tinta la línea, el acento hondo en bloques, el secundario un toque) y los porcentajes de arriba
+(tinte, velos, isobatas). No se inventa un reparto: si hace falta, se mide con `gimg measure` sobre las piezas aprobadas
+y lo decide la persona.
+
+### Logo, iconos e ilustración del producto
+
+| Aspecto | Regla heredada (medidas) | Qué cambia | Fuente |
+|---|---|---|---|
+| Logo | Cuadrado de color plano (el **acento hondo**), chaflán de 28/128 (21,9 % del lado) en la esquina superior derecha, que pone el SVG y no el modelo; monograma de trazo 12/128 (9,4 %) en una sola tinta; sin degradado, sombra ni redondeo. Se genera con gimg sobre croma `#00ff00` y se vectoriza con `gimg brand trace` | El hex del cuadrado y el dibujo del monograma | Portal `docs/marca.md` l.229, l.167-171 |
+| Lockup | **Sin fuente vigente:** el Portal no define lockup en la identidad nueva (su wordmark es texto de la web); los `*-lockup.svg` de `logos/` son de la identidad anterior (Sora) | — | hueco: ver «Lo que falta» |
+| Iconos | Línea simple: un solo grosor de trazo, remates y uniones redondos, sin relleno, trama ni sombra, una tinta, legibles a 24 px; **los nodos y los interiores van huecos** (el papel de encima se resta como hueco, `fill-rule="evenodd"`). Vectorizados con `gimg brand trace --mode color --matte --dp-tol 0.5 --palette '#13212b,#fbfcfd'`; en la web, a `currentColor` con un contorno de lado/28 (≈ 0,85 px a 24 px, cerca de los 2 px de lucide), pintados a 22 px. Una serie se usa entera, sin mezclarla con lucide | El motivo, que es el de la hoja del producto | bloque «Dos registros de dibujo»; Portal `tools/marca/limpiar-iconos.cjs` l.2-3, l.12, l.66; `global.css` l.3755-3758; `LEEME.md` del piloto |
+| Ilustración | Grabado de carta náutica a dos tintas, con el bloque literal de «Dos registros de dibujo»; Z-Image, 8 pasos, cfg 1.0; 120-200 palabras; cierre y frase de paleta al final | El sujeto (el motivo de software del producto) y el cuarto color de la frase de paleta | bloque «Identidad vigente» |
+| Composición | Zona limpia descrita en positivo y al principio; a sangre, sin marco ni banda; sin texto en la imagen (lo pone la web en es, gl y en); sin «exactly N»; lo que se recorta, sobre croma | Nada | bloque «Identidad vigente» |
+| Mar y tecnología | El mar pone el dónde (carta, isobatas, papel), la tecnología el qué. Ningún motivo náutico protagonista: las tres excepciones son del Portal y un producto no añade otra sin decisión de la persona | El motivo de software propio | fila «Mar y tecnología» |
+
+### Prohibido en toda la familia
+
+Degradados, resplandores, desenfoques, `backdrop-filter` y sombras difusas (salvo la del panel); esquinas redondeadas;
+texto dentro de una imagen; personas, manos, rostros, robots, cerebros, cohetes, gráficas de crecimiento, banderas,
+cruces de Santiago y lugares reales reconocibles; motivos náuticos protagonistas fuera de las tres excepciones; un color
+fuera de las tintas, ni como adjetivo; el acento del producto como color dominante de una pieza generada; texto blanco
+sobre el acento vivo; mezclar una serie de iconos propia con iconos de lucide; dibujar un SVG a mano (todo gráfico nace
+de gimg). Fuentes: reglas 2-3 y `marca.test.ts` del Portal; `docs/marca.md` l.157-158, l.179-180; bloque «Cómo se
+escribe el prompt», punto 4.
+
+### Cómo se comprueba una hoja de producto
+
+1. Lleva los tres papeles de color (vivo, hondo claro y oscuro, secundario) con hex y con los seis ratios de la tabla
+   calculados; ninguno baja de su umbral.
+2. Papel, tinta, filete, retícula, tipografías, chaflanes y retícula de 24 px coinciden con esta hoja valor por valor.
+3. Su frase de paleta es la del Portal con su acento en el lugar del alga; ningún prompt nombra otro color.
+4. Su logo es un cuadrado plano del acento hondo con chaflán de 28/128 y trazo de 12/128, salido de gimg.
+5. Sus iconos son de una tinta, sin relleno, con los nodos huecos, y legibles a 24 px.
+6. No hay en ella nada de «Prohibido en toda la familia».
+
+### Lo que falta para que las hojas de producto puedan cumplirlo
+
+Con los acentos que el Portal tiene hoy en `src/data/productos/*.json` l.5 (`6574c4f`), como **único** hex por producto:
+
+| Producto | Acento del Portal | Sobre papel `#fbfcfd` | Blanco encima | Sobre `#0d171e` | Qué papel puede hacer |
+|---|---|---|---|---|---|
+| galivelop-image-generator | `#7C5CD6` | 4,69 | 4,82 | 3,76 | Hondo en claro (cumple los dos 4,5); en oscuro no llega a 4,5 |
+| galivelop-voice-generator | `#C9467A` | 4,41 | 4,53 | 4,01 | Se queda a 0,09 del 4,5 sobre papel |
+| galivelop-developer | `#0E9A93` | 3,37 | 3,46 | 5,23 | Solo vivo: no vale para texto ni para llevar blanco |
+| galivelop-workflow | `#1AA6DF` (producto) y `#3D6FD9` (ficha de proyecto, `src/data/proyectos/galivelop-workflow.json` l.7) | 2,70 y 4,57 | 2,78 y 4,69 | 6,53 y 3,86 | El de producto es el celeste del Portal (vivo); dos acentos para una misma entidad |
+
+Faltan, y son **decisión de la persona** (aquí no se inventa ningún hex): el segundo tono de cada acento (el hondo o el
+vivo que no tienen), su variante para el tema oscuro, cuál de los dos acentos de workflow manda y si su vivo puede ser
+el celeste del Portal, y el lockup de la familia.
 
 ---
 
