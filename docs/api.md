@@ -25,7 +25,7 @@ La doc se comprueba con `tests/test_api_doc.py`: cada ruta registrada en `gimg/s
   `GIMG_AUTOSTART=0` (también `false`, `no`, `off`, sin distinguir mayúsculas) lo apaga.
 - **Inactividad:** se para solo tras 15 min sin peticiones, sin trabajador y sin entradas `queued`/`running`
   (`--idle-min`, `"serve": {"idleMinutes"}`; `0` = nunca).
-- **Trabajador:** el servicio no genera: lanza `gimg work` como proceso aparte cuando hay entradas en cola.
+- **Trabajador:** el servicio no genera: lanza `gimg work` como proceso aparte cuando hay entradas en cola, salvo con la cola en pausa.
 
 Los ejemplos usan `B=http://127.0.0.1:8737`.
 
@@ -76,7 +76,7 @@ si no el del sistema. Estados: 400 petición mal formada o valor no válido (`ap
 
 ### GET /api/health
 
-Estado del servicio. Respuesta: `{"ok": true, "api": 1, "version", "build", "pid", "port", "engine", "worker": bool}`.
+Estado del servicio. Respuesta: `{"ok": true, "api": 1, "version", "build", "pid", "port", "engine", "worker": bool, "paused": bool}`. `paused` es `true` con la cola en pausa (`gimg queue pause`).
 `build` es una huella del código que corre el servicio, sacada de las rutas y el contenido de los `.py` y `.json` de
 `gimg`, sin `gimg/ui/` (la interfaz se lee del disco en cada petición). Dos copias del mismo código dan la misma huella. Con la misma versión y otro código (tras un `git pull`), `gimg ui` (`arrancar.sh`) para el servicio
 viejo y arranca uno nuevo, salvo con un trabajador vivo.
@@ -341,6 +341,25 @@ Cancela todas las entradas `queued` (solo las de `project`, si se da); nunca toc
 
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/clear -d '{"project":"mi-proyecto"}'
+```
+
+### POST /api/queue/pause
+
+Pausan y reanudan la cola (cuerpo `{}`, con `Content-Type: application/json`). Con la cola en pausa el trabajador termina la imagen en curso y no
+coge otra, y el servicio no lanza trabajador; al reanudar lo relanza en su siguiente latido (unos segundos). Respuesta:
+`{"paused": bool, "changed": bool}` (`changed` es `false` si ya estaba así). El estado se lee en `paused` de
+`GET /api/health`. CLI: `gimg queue pause` y `gimg queue resume`.
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/pause -d '{}'
+```
+
+### POST /api/queue/resume
+
+Quita la pausa (cuerpo `{}`); respuesta `{"paused": false, "changed": bool}`. Ver `POST /api/queue/pause`. CLI: `gimg queue resume`.
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/resume -d '{}'
 ```
 
 ### GET /api/models

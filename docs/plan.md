@@ -1337,6 +1337,9 @@ de `contain` se recorta a la imagen); la interfaz mide así la zona y los elemen
    posición propia y el trabajador toma la primera) y `POST /api/queue/clear {"project"?}` (cancela todo lo `queued`,
    nunca lo `running`; devuelve las canceladas). CLI: `gimg queue move <id> up|down|top` y `gimg queue clear
    [--project]`. Errores `queue.not_movable` (409).
+   Pausa (R1): `gimg queue pause|resume` y `POST /api/queue/pause|resume` dejan o quitan la marca `queue.paused`; con
+   ella el trabajador termina la imagen en curso y no coge otra, y el servicio no lanza trabajador. Estado en `paused`
+   de `GET /api/health`.
 
 ### Pasos de F4d
 

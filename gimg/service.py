@@ -212,7 +212,7 @@ def maybe_launch_worker(launcher: _Launcher) -> bool:
                     launcher.not_before = time.monotonic() + RETRY_AFTER_FAILURE_S
             if time.monotonic() < launcher.not_before:
                 return False
-            if queue.worker_alive() is not False or not queue.list_entries(["queued"]):
+            if queue.is_paused() or queue.worker_alive() is not False or not queue.list_entries(["queued"]):
                 return False
             with open(worker_log_path(), "ab") as log:
                 launcher.proc = subprocess.Popen(
