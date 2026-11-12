@@ -439,7 +439,7 @@ distancia euclídea en Lab de `gimg/measure.py` (l.83-84), con su umbral `DELTA_
 
 ## 17. Matriz de cobertura (2026-11-12)
 
-Cada tipo de contenido, con lo que le aplica. **Bloque:** `común` (materia), `noche`, `terreno` (mapa),
+Cada tipo de contenido, con lo que le aplica. **Bloque:** `común` (materia), `noche`, `terreno` e `icono` (mapa),
 `—` (no se genera: se compone). **Estado:** `hecho` (aprobado o entregado), `pedido` (hay prompt escrito),
 `falta` (ni prompt ni pieza), `ajeno` (lo hace otro sistema). Medidas: generado → entregado.
 
@@ -476,7 +476,7 @@ Clases y líneas de `frontend/src/index.css` en `c858a150` (rama `claude/marca-i
 | Contenido | Reglas | Bloque | Perfil | Salida | Formato | Estado | Fuente |
 |---|---|---|---|---|---|---|---|
 | Biomas (13) como textura de terreno, M-A (15 piezas) | A1, hex por bioma de `pedido-mapa.md` l.58-70 | terreno | `texturamapa` | 1024² | PNG mosaico xy | pedido; la prueba se repite con el bloque pintado (A12) | `pedido-mapa.md` §3 |
-| Relieve y vegetación, M-B (10) | A2, A10, P8 (magenta si lleva verde) | terreno | `iconomapa` | 768² | PNG alfa | pedido; la montaña q373 salió en vector plano: se repite pintada (A12) | `pedido-mapa.md`; sección 12 |
+| Relieve y vegetación, M-B (10) | A2, A10, P8 (magenta si lleva verde) | icono | `iconomapa` | 768² | PNG alfa | pedido; la montaña q373 salió en vector plano: se repite pintada (A12) | `pedido-mapa.md`; sección 12 |
 | Fichas de lugares, M-C (13) | A2, P8 | común | `iconomapa` | 768² | PNG alfa | pedido | `pedido-mapa.md` |
 | Cartografía y marco, M-D (6) | A1 (marco), T1 (cartela vacía) | común | `iconomapa`, `cartela`, `bandamapa`, `marcomapa` | 768²; 1024×512; 1024×256 | PNG | pedido | `pedido-mapa.md` |
 | Capas del juego, M-E (4) | A1, C9 | terreno | `texturamapa`, `iconomapa` | 1024²; 768² | PNG | pedido | `pedido-mapa.md` |

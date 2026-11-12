@@ -23,7 +23,7 @@ P2, P3 y A12).
    shadows». Lo decide vuestra sesión con la persona; si es intencionado para el mundo, decidlo y la hoja lo apunta
    como excepción.
 2. **`estilos.mapa` es ahora el acabado del mapa de Helek** (decisión de la persona, 2026-11-12: pintado, con el
-   acabado de las ilustraciones del juego). El bloque de terreno de `docs/marcas/tarkor/pedido-mapa.md` §2 copia su
+   acabado de las ilustraciones del juego). Los bloques de terreno y de icono de `docs/marcas/tarkor/pedido-mapa.md` §2 copian su
    frase literal («Painterly realism halfway between a photograph and an oil painting: realistic terrain, light and
    texture rendered with soft, visible brushwork»). Si cambiáis `estilos.mapa.base`, avisad: el bloque se vuelve a
    copiar.

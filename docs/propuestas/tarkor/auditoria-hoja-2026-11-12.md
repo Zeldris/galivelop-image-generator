@@ -74,8 +74,32 @@ Eran siete preguntas; la persona las respondió el mismo día y están aplicadas
 | B5 | `pedido-mapa.md` §2 | Negativo; costura a mano; perfiles `textura` e `icono` (son `texturamapa` e `iconomapa` 768²); modelo klein | Corregido en la copia; pedido al original |
 | B6 | `pedido-mapa.md` #39 y #43 (`star`), #40 (`for a title`) | Palabras vetadas; zona descrita por lo que irá encima | Reescritos |
 | B7 | `pedido-mapa.md` §1 y bloque de terreno | «Matte painterly brushwork, fine detail» dio iconos en vector plano (q373) | Bloque con el acabado de `estilos.mapa` de `mundo.json`; la prueba se repite |
-| B8 | `examples/tarkor/orders/` (`mapa/*`, `ui/e09-sello.json`, `marca/e02-cabecera.json`, `e03-og.json`, `e04-capsula.json`) | Llevan los prompts anteriores | Fuera de las rutas de este encargo: pendiente |
+| B8 | `examples/tarkor/orders/` (`mapa/*`, `ui/e06`-`e12`, `marca/e02`-`e04`) | Llevaban los prompts anteriores | Sincronizados con `peticiones.md` y `pedido-mapa.md` en la tercera pasada |
 | B9 | Juego `c858a150`, `Home.tsx` l.45 | Emoji ⚔️ que ningún pedido cubre | Fila en hoja §17; entrega al juego |
 | B10 | Juego `c858a150`, tiradas | El 🎲 está también en `CombatExchangeBadge.tsx`, `RollBadge.tsx`, `ExtendedRollBadge.tsx` y `GatheringDiceReveal.tsx`; el #14 solo nombra `DiceRoll.tsx` | Fila en hoja §17; entrega al juego |
 | B11 | Juego `c858a150` | `.corner-bracket-gold` (l.372) no lo usa ningún componente; `.title-gold` solo `Home.tsx` l.30 | Entrega al juego |
 | B12 | WMF-imagenes, `estilo/mundo.json` | La noche del juego nombra `stars` y la región de las Llanuras usa «long violet shadows»; la marca veta las dos | Reglas distintas para dos cosas distintas (ilustración del mundo y pieza de marca); `violet`, a revisar allí: entrega a WMF-imagenes |
+
+## Tercera pasada (2026-11-12)
+
+`grep -iw` de la lista entera de la regla P2 y de las negaciones de P3 sobre `peticiones.md` y `pedido-mapa.md`.
+
+| # | Dónde | Qué había | Arreglo |
+|---|---|---|---|
+| C1 | `peticiones.md` #8, #9, #10, #11, #13, #15, #17, E11 | `four-pointed star` (y `glowing` en #17) | El remate se describe por su forma: `gold boss` o `gold finial with four tapered points`; en los pictogramas de cristal, `faceted gem … with four tapered points` |
+| C2 | `peticiones.md` E6 | `glowing dust`, bloque común en una escena de noche | Bloque de noche; la banda de hierro, una vez; la hoguera, en afirmativo |
+| C3 | `peticiones.md` #1 | `emblem`, `nothing`, `no gems`, `no rays`, `no flare`, `without` | Prompt retirado: el emblema no se pide pintado (L1) |
+| C4 | `peticiones.md` §2, plantilla del bloque C, #8-#10, E9-E13, E17; `pedido-mapa.md` §2; `biblia.md` §7 | Cuatro frases de croma distintas, y la que escribí en la segunda pasada no era la de la hoja | Una sola, la de hoja §6 («Recorte sobre croma»), literal y cerrando el prompt |
+| C5 | `pedido-mapa.md` M-B | Los iconos decían «bloque de terreno», pero sus pedidos llevaban otro bloque («map icon, matte painterly brushwork»), que no estaba escrito y dio vector plano | Bloque de icono escrito en §2, con el acabado pintado |
+| C6 | `pedido-mapa.md` #27-#38, #42, #45-#47 | El pedido JSON decía más que la tabla (aro y cuatro puntas en cada ficha, «edge to edge», «strong contrast and little colour») | La tabla toma el texto del pedido, que es el que se probó |
+| C7 | `orders/ui/e07-barra-relleno.json`, `e11`, `e12`, `e09`, `e10`, `e06`; `marca/e02`-`e04` | Negaciones (`no halo`, `no cast shadow`, `no stars`, `no fires and no lamps`), `reserved for an emblem`, `for a centred title`, `castle`, `stars` | Sincronizados con la petición |
+| C8 | `orders/mapa/03`, `16`, `27`, `41` | `count` 2 con un recuento exacto en el prompt | `count` 6 (regla P7) |
+
+**Pedido JSON sin petición vigente:** `orders/r1-og.json`, `r2-control.json`, `r2-luz.json`, `r2-luz-r1.json`,
+`r6-detalle.json`, `r7-lapiz.json`, `r7-lapiz-b.json` (rondas de estilo históricas; `tests/test_examples.py` las ata a
+`prompts/*.txt`), `ui/01-emblema.json` (prompt retirado) y `ui/01b-emblema-plano.json` (boceto del sistema de logo).
+No se han tocado.
+
+**Petición sin pedido JSON:** #2-#17 enteros (salvo lo de arriba), E1, E5, E13, E17, la variante redonda de E11
+(`e11-marco-retrato-redondo`), I1, I3, I4 e I6. E8, E14, E15, E16, E18, I2 e I5 no se generan. No se han creado
+pedidos: no estaba en el encargo.

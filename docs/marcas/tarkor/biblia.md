@@ -159,15 +159,15 @@ dibuja a mano (corregido el 2026-11-12). Los `tarkor-a/b/c/d.svg` y sus lockups 
 | --- | --- |
 | `peticiones.md` §2 bloque común y Bloque I bloque de noche | **vigentes** (2026-11-12): materiales y luz; cielo; sin negativo |
 | `peticiones.md` #1 emblema | **histórico**: sirvió de boceto (FLUX q185, el único con seis gajos) para trazar los SVG con `gimg brand system`; ya no se pide pintado. `examples/tarkor/orders/ui/01-emblema.json` y `01b-emblema-plano.json` quedan como historia |
-| `peticiones.md` #2-#17, E1-E18 e I1-I6 | vigentes; #6, #16, E1, E2, E3, E4 y E9 reescritos el 2026-11-12 (sin `stars`, sin `castle`, emblema por composición); #18 fuera (D7) |
+| `peticiones.md` #2-#17, E1-E18 e I1-I6 | vigentes; #6, #16, E1, E2, E3, E4 y E9 reescritos el 2026-11-12 (sin `stars`, sin `castle`, emblema por composición), y #8-#11, #13, #15, #17, E6, E7 y E10-E13 el mismo día (sin `star`, sin `glowing`, sin negaciones); #18 fuera (D7) |
 | `examples/tarkor/plantillas/og.svg` + `compose` del perfil `og` | **rehecha el 2026-11-10 con E3**: lockup vertical centrado sobre la noche, lema en Inter 400 debajo, fuentes Cinzel e Inter (`tests/test_examples.py` `TarkorOgE3Tests`) |
 | `examples/tarkor/prompts/og.txt` | r1 (`5d0178c`): técnico sí, persona **no**; histórico |
 | `examples/tarkor/prompts/r2-*.txt`, `estilo.txt`, `r5-*.txt` | r2-r5, paisajes con acento arcilla; históricos: nombran «sun» (vetada), «natural muted colours», «lower third». Sus medidas siguen valiendo como medidas de lo que eran (contraste, paleta, YAVG) |
 | `piloto/tarkor/flux-01-emblema.png`, `piloto/portal-marca/tarkor/intentos/` | ronda FLUX del 2026-11-10 con el prompt anterior (q154, q150, q153): el brillo tapaba la piedra; es lo que corrige M2 |
 
-Plantilla para una pieza de marca nueva: bloque común de `peticiones.md` §2 → módulos que lleve (cristal, luz de la
-Semilla, estrella, noche, madera) → la pieza («A ... seen straight on, centred, floating on a perfectly flat untouched
-bright green background») → materiales con hex → «15 percent empty margin on every side». Entre 60 y 160
+Plantilla para una pieza de marca nueva: bloque común de `peticiones.md` §2 → módulos que lleve (cristal, noche,
+madera) → la pieza («A ... seen straight on») → materiales con hex → la frase de croma de `hoja.md` §6, que cierra el
+prompt. Entre 60 y 160
 palabras después del bloque común, en afirmativo y sin negaciones, con `[recorte]` si lleva fondo verde. La estrella y
 la luz de la Semilla no son módulos: llegan con el emblema, por composición.
 

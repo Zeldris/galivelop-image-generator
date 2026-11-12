@@ -69,10 +69,11 @@ en SVG ya existen: `docs/marcas/tarkor/logos/`.
    `image-generator/estilo/mundo.json`); decisión de la persona, 2026-11-12 (hoja §16, regla A12). La montaña de
    prueba (q373) salió en vector plano y se repite. Cambios que pedimos al original,
    `docs/producto/pedido-imagenes-mapa.md` (`7c5e2d13`, rama `claude/pedido-mapa`), ya hechos en nuestra copia
-   `docs/marcas/tarkor/pedido-mapa.md`: bloque de terreno con el acabado pintado; fuera el bloque «Negativo»; la
+   `docs/marcas/tarkor/pedido-mapa.md`: bloque de terreno con el acabado pintado y bloque de icono escrito aparte (M-B); fuera el bloque «Negativo»; la
    costura la da `tileable`, no se arregla a mano; perfiles `texturamapa` 1024², `iconomapa` 768², `cartela`
    1024×512, `bandamapa` y `marcomapa` 1024×256; modelo Z-Image a 8 pasos; #39 y #43 sin `star`; #40 sin `title`;
-   frase de croma al final de cada pieza recortada.
+   la frase de croma de la hoja al final de cada pieza recortada; #27-#38, #42 y #45-#47 con el texto de
+   nuestros pedidos.
 9. `image-generator/estilo/` (`gradacion.json`, LUT): sin cambios. `mundo.json`: una sola cosa a revisar, en
    `docs/propuestas/wmf-imagenes/entrega-hoja-2026-11-12.md`. Las fichas, banners y miniaturas
    del mundo siguen siendo de vuestro generador y no pasan por esta hoja.
