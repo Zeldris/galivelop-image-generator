@@ -61,7 +61,10 @@
 @media (max-width: 640px) { .compare .pair { grid-template-columns: 1fr; } }
 
 /* panel lateral */
-.order-panel .card { padding: 12px; }
+.order-panel .card { padding: 12px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.order-panel .card > h2, .order-panel .card > h3 { margin: 0; }
+.order-panel .card > h3 { margin-top: 6px; }
+.order-panel .card > .btn { justify-self: start; max-width: 100%; }
 .order-panel textarea { min-height: 150px; }
 .swatches { display: flex; gap: 6px; flex-wrap: wrap; }
 .swatch { width: 32px; height: 32px; flex: none; border: 2px solid var(--border); background: var(--sw); cursor: pointer; padding: 0; }
