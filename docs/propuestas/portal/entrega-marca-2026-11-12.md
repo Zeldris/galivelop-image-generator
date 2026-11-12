@@ -23,7 +23,7 @@ vectorial de los iconos (se usa esa, el PNG queda de respaldo); `aprobadas/` es 
    - 07 líneas de trabajo, **cinco** para las cinco líneas de `src/data/lineas.ts`: 07a código, 07b papel →
      ventana, 07c documento con check, 07d compás sobre plano, 07e mundos (mapa plegado con cordillera). El reparto
      icono-línea lo decide el Portal.
-   - 08 valores: 08a candado, 08b mira, 08c historial, 08d ramas unidas (08b y 08c, ver `LEEME.md`).
+   - 08 valores: 08a candado, 08b mira, 08c historial (línea de tiempo con tres nodos), 08d ramas unidas.
    - 09 vías: 09a rama, 09b bombilla, 09c terminal.
 4. Sin cambios: 10, 13, 15, 17, 18, 19 y 23 ya están en la web; el 12 (separador) espera su componente; el 14
    sigue sin uso (ADR 0004), en `aprobadas/`.
