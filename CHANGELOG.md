@@ -20,6 +20,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- `gimg queue pause` and `gimg queue resume`: pausing leaves the `queue.paused` mark in the data directory; the worker
+  finishes the image in progress and takes no other, `gimg serve` launches no worker meanwhile and `queue list` says
+  so. On resume the service relaunches the worker at its next beat (a few seconds).
 - English translation of the local API: `docs/en/api.md`; the API doc test now checks both languages.
 - Logo system (`gimg brand`, D37): `matte` removes the flat background of a generated emblem (`--holes` also empties
   what is enclosed), `trace` turns it into an SVG with the brand palette or in one ink, `wordmark` turns the name into

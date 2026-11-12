@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/25b-icono-galeria",
+  "profile": "cuadrado",
+  "seed": 221,
+  "count": 2,
+  "prompt": "A single simple line icon of an image gallery, centred in the square frame: two picture frames overlapping. In front, at the lower left, one square frame with rounded corners; behind it a second frame of the same size, shifted up and to the right, so that only its top edge and its right edge show as an L-shaped outline behind the front frame. Inside the front frame a tiny picture: one zigzag line of two mountain peaks along the bottom and one small hollow circle for the sun in the upper corner. The frame behind is empty. Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, bold and clear enough to read at 24 pixels, generous empty margin around the icon, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background. Flat vector pictogram, minimal, geometric. No photographic rendering, no gradients, no glow, no text, no letters, no numbers, no watermark, no border, no frame."
+}

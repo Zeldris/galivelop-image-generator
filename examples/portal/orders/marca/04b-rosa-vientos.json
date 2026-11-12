@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/04b-rosa-vientos",
+  "profile": "cuadrado",
+  "seed": 331,
+  "count": 2,
+  "prompt": "A compass rose of a nautical chart, seen flat and straight on, centred: a star of eight slender pointed arms radiating from the centre, the four main arms long and the four diagonal arms between them shorter, each arm a narrow kite shape split down its middle with one half left empty and the other half filled solid, a small hollow circle at the centre, and around the star one thin ring with fine evenly spaced tick marks. Perfectly symmetric. The tips of the arms carry nothing: no letters for north, south, east or west, no cardinal initials, no fleur-de-lis, no degree numbers. Main arms ink grey, diagonal arms cerulean blue. Flat vector line illustration, technical drawing of a chart instrument, clean thin lines of even width, no gradients, no glow, no shading, no texture, no shadow, the drawing centred with a clear margin around it, on a plain flat solid bright green #00ff00 background that fills the whole image edge to edge. No photographic rendering, no metal, no brass, no 3D, no text, no letters, no initials, no numbers, no numerals, no watermark, no border, no frame. Drawing colours strictly limited to ink grey #13212b and medium cerulean blue #0072a8."
+}

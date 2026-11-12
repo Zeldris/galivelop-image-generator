@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/30-cabecera-novedades",
+  "profile": "muro",
+  "seed": 321,
+  "count": 2,
+  "prompt": "A long commit history running from the left edge to the right edge of a very wide image: one main horizontal line at mid height with many round nodes along it, and several side branches that curve away from the main line, run parallel to it above or below for a while with their own nodes, and curve back to join it again. The nodes are round commit dots of different sizes, some small and solid, some larger hollow rings, the merge nodes the largest. Smooth rounded curves where branches leave and rejoin, even rhythm across the whole width, main line in ink grey, branches in cerulean blue, one branch in seaweed green, lines shaded with fine engraved hatching; the background is light off-white #fbfcfd paper with only very faint, pale cerulean bathymetric contour lines of a sea chart, barely visible, kept pale and quiet. Richly detailed engraved antique nautical chart style, like a fine sea chart printed in two inks: many layers of fine lines and hatching, line density increasing in the darker areas to give depth and tone, lines of several weights, crisp and sharp, intricate but calm, premium print quality, high detail, elegant. Flat graphic seen straight on, no horizon, no sky, no landscape, no ships, no boats, no islands. No photographic rendering, no glow, no text, no letters, no numbers, no handwriting, no labels, no watermark, no border, no frame. Palette strictly limited to medium cerulean ocean blue #0072a8 and its tints and shades, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a."
+}

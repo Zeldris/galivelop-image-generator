@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/25c-icono-a-fondo",
+  "profile": "cuadrado",
+  "seed": 231,
+  "count": 2,
+  "prompt": "A single simple line icon of stacked layers, centred in the square frame: three flat sheets stacked one above another and seen at an angle from above. The top sheet is one complete wide flat diamond shape, a rhombus; under it, two more sheets show only as two wide V-shaped lines, one below the other, parallel to the lower edges of the diamond, with an even gap between them. Symmetric left to right, nothing else. Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, bold and clear enough to read at 24 pixels, generous empty margin around the icon, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background. Flat vector pictogram, minimal, geometric. No photographic rendering, no gradients, no glow, no text, no letters, no numbers, no watermark, no border, no frame."
+}

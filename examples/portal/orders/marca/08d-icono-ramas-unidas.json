@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/08d-icono-ramas-unidas",
+  "profile": "cuadrado",
+  "seed": 61,
+  "count": 3,
+  "prompt": "A single simple line icon of two branches flowing together into one, as wide as it is tall, centred in the square frame. Exactly three hollow circles: one hollow circle in the exact centre of the icon, one hollow circle at the lower left corner and one hollow circle at the lower right corner. Two straight diagonal lines run from the two lower circles up into the central circle and touch its outline. From the top of the central circle one straight vertical line rises to near the top edge and ends there with a plain rounded end, with no circle at its top end. Nothing above the central circle except that single open line. The central circle is where the two branches meet. All three circles the same size, each an outlined ring with the background showing inside. Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, bold and clear enough to read at 24 pixels, generous empty margin around the icon, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background. Flat vector pictogram, minimal, geometric. No photographic rendering, no gradients, no glow, no text, no letters, no numbers, no watermark, no border, no frame."
+}

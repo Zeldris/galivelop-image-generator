@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/27-estado-vacio-zi",
+  "profile": "formulario",
+  "seed": 292,
+  "count": 1,
+  "prompt": "An empty state illustration: in the centre, a code editor window drawn as crisp ink grey line art with fine engraved shading: a wide rectangle with slightly rounded corners and a narrow title bar across its top holding three small round dots at the left end. The inside of the window is completely blank plain off-white paper, empty, except for one single short thick vertical bar near its top left corner, the text cursor, in cerulean blue. No lines of code, no writing, no symbols, no glyphs, no characters, no icons anywhere inside the window. The window takes about half the width, with wide empty paper margins around it; the background is light off-white #fbfcfd paper with only very faint, pale cerulean bathymetric contour lines of a sea chart, barely visible, kept pale and quiet. Richly detailed engraved antique nautical chart style, like a fine sea chart printed in two inks: many layers of fine lines and hatching, line density increasing in the darker areas to give depth and tone, lines of several weights, crisp and sharp, intricate but calm, premium print quality, high detail, elegant. Flat graphic seen straight on, no horizon, no sky, no landscape, no ships, no boats, no islands. No photographic rendering, no glow, no text, no letters, no numbers, no handwriting, no labels, no watermark, no border, no frame. Palette strictly limited to medium cerulean ocean blue #0072a8 and its tints and shades, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a."
+}

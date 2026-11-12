@@ -15,6 +15,8 @@ las crea una vez; desde entonces son del proyecto.
   aprobado aquí el 2026-10-27).
 - `.claude/hooks/leer-entero.py` (PreToolUse de Read): rechaza leer `docs/plan.md` entero sin `offset`/`limit` y dice
   el `grep` que basta (aprobado el 2026-10-27). Otro documento grande se añade a `GRANDES`.
+- `.claude/hooks/intentos-en-hoja.py` (T1, PreToolUse de Read): al leer un `.png` de `attempts/q…` avisa, sin bloquear,
+  de que se revisen en una hoja (`gimg sheet`); aprobado el 2026-11-12.
 - `gimg sheet IMAGEN... --out hoja.png`: hoja de contactos con rótulos; las rondas se revisan con una hoja, no con
   imágenes sueltas (una hoja de 6 cuesta como una imagen; aprobado el 2026-11-04).
 - Subagentes que escriben código mientras la principal sigue: en worktree (`isolation: "worktree"`) y de vuelta con
@@ -59,6 +61,10 @@ las crea una vez; desde entonces son del proyecto.
   CI de un commit lo mira un subagente barato que devuelve una línea, o se espera al aviso del pull request suscrito;
   los pull requests, con `state: open` (aprobado el 2026-11-11).
 
+- 2026-11-12, sesión `c7c2a076` (hojas-repos): 382 llamadas, contexto medio 114k, 4 compactaciones. 44 imágenes leídas
+  sueltas ≈ 4-5 M arrastrados (T1); la bitácora, 10 lecturas, 979k; subagentes de 80 y 66 llamadas, por encima del
+  tope de ~30: partir esos encargos.
+
 ## Ajustes en vigor
 
 - Ventana de compactación automática: `CLAUDE_CODE_AUTO_COMPACT_WINDOW` en `.claude/settings.json`, 200000 desde el
@@ -79,6 +85,7 @@ las crea una vez; desde entonces son del proyecto.
 <!-- Cifras medidas con las que comparar: fecha, sesión, contexto medio, llamadas, total. -->
 - 2026-11-05, `f2-motor` desde `849b301` (F3.3-F4d, 4 sesiones): ~98 M de entrada, 66 % en subagentes; la principal
   más cara, `0e571705`: 229 llamadas, 105k de media, 3 tramos (118/166, 110/168, 77/95).
+- 2026-11-12, sesión `c7c2a076` (hojas-repos): 382 llamadas, contexto medio 114k, 4 compactaciones.
 - 2026-10-25, sesión `a0f496d5` (aplicar el flujo y diseño D1-D26): 50 llamadas, contexto medio 113k (suelo 38k,
   techo 166k), 5,6 M de entrada en la principal + 0,9 M en subagentes.
 - 2026-10-25, sesión `1d4848af` (F0 hasta la retro): 30 llamadas, contexto medio 81k (suelo 45k, techo 115k),

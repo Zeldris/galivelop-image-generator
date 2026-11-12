@@ -1,6 +1,6 @@
 # toVeriAI — biblia de estilo
 
-Fuente de verdad: repo `VeriNews_AI`, commit `5a7401f` (`main`, 2026-11-03), sobre todo su kit visual v1.1 (rutas en la sección 10).
+Fuente de verdad: repo `VeriNews_AI`, commit `1f98db6` (`main`, comprobado el 2026-11-12; de `5a7401f` a aquí no cambia nada visual: ni CSS, ni fuentes, ni kit, ni favicon), sobre todo su kit visual v1.1 (rutas en la sección 10).
 La hoja [`hoja.md`](hoja.md) (aprobada el 2026-11-04 por delegación de la persona, ver
 [`../../records/decisiones-hojas-2026-11-04.md`](../../records/decisiones-hojas-2026-11-04.md)) es lo que `gimg` lee; esta biblia es la
 lectura larga y se alinea con ella. Sin marca, el dato sale del repo; **[P]** es propuesta del agente aprobada por delegación;
@@ -161,7 +161,7 @@ manifest desde el símbolo elegido (solo composición).
 
 ## 10. Fuentes
 
-Repo `VeriNews_AI`, commit `5a7401f` (la biblia citaba `02ac654`; entre los dos solo cambia, de lo visual, `Navbar.jsx`):
+Repo `VeriNews_AI`, commit `1f98db6` (la biblia citaba `02ac654` y luego `5a7401f`; entre los tres solo cambia, de lo visual, `Navbar.jsx`, y nunca el wordmark):
 
 - Kit visual (paleta, tipografía, logo, forma, tono, IMI, frases, 20 prompts, formatos): `Documentacion/v1.1/kit-visual-ia.html`.
 - Símbolo: `frontend/public/favicon.png` (512×512, medido aquí), `frontend/src/assets/logo.png` y `logo-vertical.png`

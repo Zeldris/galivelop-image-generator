@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "ui/13-fase-pensando",
+  "profile": "icono",
+  "prompt": "Epic fantasy game asset. Materials: aged dark wood planks with raised grain in #332415 and #46311d, dark forged iron in #171310, old carved gold in #b8862b with dark patina #7a5a1e in the recesses and bright worn edges in #f2c45a, dark cracked stone in #3a342d. Warm raking light from the upper left, deep cool shadows in every groove. A thin dark bronze outline separates gold from background. Physically plausible materials, crisp edges, high contrast, no haze. Single game interface icon of a quill pen, set in a shallow round recess of dark forged iron that fills 80 percent of the frame. The motif is old carved gold with chiselled relief, one thick simple silhouette filling 60 percent of the recess, with a thin dark bronze outline, straight on, symmetric where possible, readable at small size. Centred on a solid, uniform, evenly lit chroma-key green background #00ff00, one flat colour edge to edge, the object lit evenly and floating, 15 percent empty margin on every side.",
+  "seed": 1,
+  "draft": false,
+  "count": 2
+}

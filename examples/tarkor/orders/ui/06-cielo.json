@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "ui/06-cielo",
+  "profile": "cielo",
+  "prompt": "Epic fantasy matte painting, physically plausible, crisp edges, high contrast, clear air, no haze. Deep indigo blue night sky #1a2140, slightly green-leaning, near black #0f1428 at the top. A slanted belt of pale shimmering stardust in #4aa8d8 and #a8d8f0 crosses the sky and is the only light in it. Wide view. The belt of stardust crosses the upper half of the frame from the lower left to the upper right. Low silhouettes of jagged dark rock spires in #0e0b08 stand along the very bottom edge. Above them, the lower third of the frame is plain dark sky fading to #0e0b08, even and empty.",
+  "seed": 1,
+  "draft": false,
+  "count": 2
+}

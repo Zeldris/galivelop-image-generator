@@ -1,5 +1,12 @@
 # Galivelop-workflow — biblia de estilo
 
+> **Histórico (identidad anterior, r1-r8).** Desde el 2026-11-12 Workflow sigue la identidad vigente del Portal con su
+> acento `#3D6FD9` (hondo `#3d6fd9`, variante oscura `#487ce7`): manda [`hoja.md`](hoja.md), bloques «Identidad
+> vigente», «Interfaz», «Recursos» y «Familia Galivelop». De esta biblia **siguen valiendo** la esencia (§1), la voz y
+> las frases (§6) y los vetos de motivo (§7). **No se siguen para piezas nuevas:** la paleta (§2: `#0d1b2a`, el celeste
+> `#38b6e8`, ámbar y verde), la tipografía (§3: Inter y Sora), las reglas del logo (§4: baldosa `rx` 30 con
+> degradado), el estilo de imagen y los prompts (§7-§8: FLUX, líneas de luz) y los formatos (§9).
+
 Estado: **propuestas** (2026-10-26). El repo no tiene identidad visual; lo que hay sale del Portal. Lo marcado **[P]** lo
 decide la persona. Fuentes con ruta y commit en la sección 10.
 

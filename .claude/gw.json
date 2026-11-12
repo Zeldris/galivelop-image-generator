@@ -46,5 +46,9 @@
     "slow": []
   },
   "plan": [],
-  "taskId": "[A-Z]{2,5}-\\d+"
+  "taskId": "[A-Z]{2,5}-\\d+",
+  "agentSignatures": false,
+  "privateCheck": {
+    "allowEmails": ["128x128@2x.png"]
+  }
 }

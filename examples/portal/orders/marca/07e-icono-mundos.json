@@ -1,0 +1,7 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/07e-icono-mundos",
+  "profile": "cuadrado",
+  "seed": 2,
+  "prompt": "A single simple line icon, centred: a folded paper map of three vertical panels in a zigzag, with two small triangular mountain peaks drawn side by side on the middle panel, nothing else on the map. Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, bold and clear enough to read at 24 pixels, generous empty margin around each icon, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background. Flat vector pictogram, minimal, geometric. No photographic rendering, no gradients, no glow, no text, no letters, no numbers, no watermark, no border, no frame."
+}

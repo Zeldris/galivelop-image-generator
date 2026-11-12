@@ -2,7 +2,7 @@
   "$schema": "../../../../gimg/schemas/order.schema.json",
   "key": "marca/20-cabecera-legal",
   "profile": "legal",
-  "prompt": "A thin chart title-block border: a rectangle with inner rules and small corner marks, ink grey on transparent. Richly detailed engraved antique nautical chart style, like a fine sea chart printed in two inks: many layers of fine lines and hatching, line density increasing in the darker areas to give depth and tone, lines of several weights, crisp and sharp, intricate but calm, premium print quality, high detail, elegant. No photographic rendering, no glow, no text, no letters, no numbers, no watermark. Palette strictly limited to medium cerulean ocean blue #0072a8 and its tints and shades, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a.",
+  "prompt": "A long thin title-block border like the cartouche of a sea chart: a wide rectangle drawn with a double rule, an outer line and a thinner inner line, small square marks at the four corners and a few evenly spaced short tick marks along the top and bottom edges, the whole inside completely empty plain off-white. Simple line drawing: uniform thin strokes, no shading, no hatching, no fill, no texture, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background. Flat vector graphic, minimal, geometric, seen straight on. No sea, no water, no waves, no landscape, no plants, no blue, no photographic rendering, no gradients, no text, no letters, no numbers, no watermark.",
   "seed": 1,
   "count": 2
 }

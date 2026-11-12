@@ -50,6 +50,40 @@ def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def pause_path() -> Path:
+    return paths.data_dir() / "queue.paused"
+
+
+def is_paused() -> bool:
+    """Is the queue paused (the mark `pause` leaves next to ``queue.json``)? The worker finishes the image in progress
+    and takes no other one; the service launches no worker."""
+    return pause_path().exists()
+
+
+def pause() -> bool:
+    """Leave the pause mark; False if it was already there (pausing twice is harmless)."""
+    path = pause_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with fsutil.lock(queue_path()):  # the queue's own lock: `claim` checks the mark under it
+        try:
+            fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        except FileExistsError:
+            return False
+        with os.fdopen(fd, "w") as fh:
+            fh.write(_now() + "\n")
+    return True
+
+
+def resume() -> bool:
+    """Remove the pause mark; False if there was none."""
+    with fsutil.lock(queue_path()):
+        try:
+            pause_path().unlink()
+        except FileNotFoundError:
+            return False
+    return True
+
+
 def worker_lock_path() -> Path:
     return paths.data_dir() / "worker.lock"
 
@@ -316,9 +350,10 @@ def next_queued():
 
 
 def claim():
-    """Mark the first queued entry ``running`` with this process's pid; returns it, or ``None``."""
+    """Mark the first queued entry ``running`` with this process's pid; returns it, or ``None`` (also while the queue
+    is paused: the mark is checked under the queue lock, so a `pause` that returned stops every later claim)."""
     def change(data):
-        entry = _first_queued(data)
+        entry = None if is_paused() else _first_queued(data)
         if entry is not None:
             entry["state"] = "running"
             entry["pid"] = os.getpid()
