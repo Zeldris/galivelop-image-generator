@@ -3,11 +3,12 @@
 Herramienta del taller, sin identidad propia: **familia del Portal** con acento violeta **[P]**. Molde y reglas comunes en
 [`../README.md`](../README.md). Datos de este repo en `24d69c8`; del Portal, en `aa76b34`.
 
-> **r9 (2026-11-11), propuesta sin aprobar:** [`hoja.md`](hoja.md) redefine la marca como **variante de la identidad
-> nueva del Portal** (papel, tinta, línea y tipografías compartidos; violeta, símbolo y motivos propios). Esta biblia
-> describe la identidad anterior, que es la aplicada hoy (`gimg/ui/css/tokens.css`, logos, piezas r6-r8). Donde las dos
-> difieren, lo dice la sección «Contradicciones» de la hoja; el celeste `#1aa6df` sigue prohibido como acento y r9 solo
-> lo propone como enlace de familia (≤ 2 %).
+> **r10 (2026-11-12):** [`hoja.md`](hoja.md) es la que manda. r9 (2026-11-11) redefinió la marca como variante de la
+> identidad nueva del Portal y **se aprobó y se aplicó** a interfaz, logos y nombre (PR #6, `2509674`); r10, propuesta
+> sin aplicar, la alinea con «Familia Galivelop» de [`../portal/hoja.md`](../portal/hoja.md): acento `#7C5CD6` con sus
+> tonos calculados, tokens heredados y lockup común. Esta biblia describe la **identidad anterior a r9** (fondo oscuro,
+> Sora e Inter, vidrio), que solo sigue en las piezas `og` y `social` hasta que se mida una ronda plana. Donde difieren,
+> lo dice «Contradicciones» de la hoja.
 
 ## 1. Esencia
 
