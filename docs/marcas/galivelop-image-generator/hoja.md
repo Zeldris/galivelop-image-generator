@@ -120,7 +120,7 @@ el historial de git.
 | Símbolo (baldosa) | `logos/galivelop-image-generator-b.svg` | rejilla 2×2 de marcos con una celda encendida, sobre baldosa | 16 px | baldosa plana `#5B34C9`, chaflán 28/128 (como el Portal), líneas `#fbfcfd` de 12/128, celda elegida rellena `#fbfcfd`; sin degradado |
 | Símbolo de línea | `logos/galivelop-image-generator-b-linea.svg`, `-b-linea-oscuro.svg` | la misma rejilla sin baldosa, para papel | 24 px | líneas `#13212b` (o `#e6eef3` sobre oscuro) de 12/128 y la celda elegida rellena `#8B5CF6`; es la pieza que más se parece al Portal |
 | Favicon | `gimg/ui/assets/gvig.svg` | el símbolo, para la pestaña | 16 px | el símbolo de baldosa (misma figura que `logos/…-b.svg`); a 16 px la celda elegida ocupa 4 px como mínimo |
-| Monograma | no hay | «GVIG» | 12 px de alto | Big Shoulders Display 800, mayúsculas, `#13212b`; solo donde no cabe el nombre (cabecera estrecha, pie de pieza). **[P]**, sin dibujar |
+| Monograma | no hay | «IG» | 12 px de alto | **Decidido por la persona (2026-11-12): «IG» en una tinta (`#fbfcfd`) sobre el cuadrado con chaflán en el hondo `#5B34C9`, que pasa a ser el símbolo del producto** (sustituye a la rejilla; la rejilla y los dibujos con degradado, `rx` 30 o Sora son históricos). **Dependencia:** orden nueva en `gimg brand` que monte el cuadrado con chaflán. Sin dibujar |
 | Nombre | dentro del lockup | «Galivelop IG» | 14 px de alto | Big Shoulders Display 700, tinta `#13212b`; «IG» en `#5B34C9` (en oscuro, `#e6eef3` y `#A78BFA`) |
 | Lockup | `logos/galivelop-image-generator-b-lockup.svg`, `-b-lockup-oscuro.svg`, `gimg/ui/assets/gvig-lockup.svg` | símbolo + nombre a la derecha | 24 px de alto | símbolo de baldosa + nombre; separación 28/128 del lado de la baldosa. El nombre va aún como `<text>` vivo: falta pasarlo a trazados |
 
@@ -322,7 +322,7 @@ Entre esta hoja (r9) y lo que había en el repo. **Resueltas por la persona el 2
    por los recursos de marca y se mide en una ronda antes de tocar `og.txt`.
 4. **Logo con degradado y `rx` 30/128** frente a baldosa plana con chaflán 28/128. **Decisión:** redibujar símbolo,
    lockup y favicon según la tabla de la sección 4, en la misma tarea que la interfaz; los SVG anteriores pasan a
-   historia. **Aplicado el 2026-11-11** (`1b211f6`); falta el monograma.
+   historia. **Aplicado el 2026-11-11** (`1b211f6`); falta el monograma «IG», decidido por la persona (2026-11-12) como símbolo.
 5. **El azul del Portal.** **Decisión: solo ese uso.** El celeste `#1aa6df` sigue prohibido como acento de la
    herramienta; se admite únicamente como `--family` (≤ 2 %) en el enlace «parte de Galivelop». `biblia.md` lo recoge.
 6. **D38 sin aplicar.** **Decisión:** «Galivelop IG» (siglas «GVIG») se aplica al README, a los textos de

@@ -69,12 +69,7 @@ solo en el cierre, ningún color fuera de las tintas, comprobación antes de enc
 
 **Dudas que decide la persona** (2026-11-12; la recomendación va en cada una):
 
-1. **Qué hex es el acento vivo.** El Portal publica `#0E9A93` (`src/data/productos/galivelop-developer.json` l.5) y
-   esta hoja y los SVG de `logos/` usaban `#2BB3A3` (propuesta del agente, `docs/plan.md` «Herramientas del taller»).
-   La decisión del 2026-11-12 dice «su hex de hoy es el vivo» y la tabla sobre la que se decidió es la de los acentos
-   del Portal (`../portal/hoja.md`, «Lo que falta…»). **Recomendación: `#0E9A93`**, que es lo publicado y lo que esta
-   hoja aplica; con él la tinta encima da 4,74:1. Si la persona prefiere `#2BB3A3`, el mismo cálculo da hondo `#118376`
-   (4,51:1 sobre papel, blanco encima 4,63) y oscuro el propio vivo (6,97:1), y habría que cambiar el hex en el Portal.
+1. **Cerrada. Decidido por la persona (2026-11-12): el acento vivo es `#0E9A93`** (hondo `#16827c`); `#2BB3A3` pasa a histórico. El cálculo con `#2BB3A3` (hondo `#118376`) queda como histórico.
 2. **Cómo se escribe el nombre en el lockup.** La regla común pide mayúsculas en Big Shoulders Display 800; el Portal
    lo llama «Galivelop Developer» (l.3) y esta hoja decía «galivelop-developer», en minúsculas y con guion, «sin
    mayúsculas sostenidas» (secciones 0 y 5). **Recomendación: «GALIVELOP DEVELOPER»**, sin guion, en el lockup y en
@@ -82,10 +77,8 @@ solo en el cierre, ningún color fuera de las tintas, comprobación antes de enc
 3. **Qué tono del acento va en la frase de paleta.** **Recomendación:** el hondo `#16827c` en piezas claras y el vivo
    `#0e9a93` en la versión oscura, que es la relación del alga del Portal en claro (≥ 4,5:1 sobre el papel). En oscuro
    el Portal pide ≥ 7:1 a su alga y el vivo da 5,23: el método no calcula un tono más claro y aquí no se inventa.
-4. **Motivo de iconos y logo.** La persona cerró la portada (el barco) y quitó de ella la rama con anillo; no dijo
-   nada del icono ni del monograma. **Recomendación:** monograma «GD» para el logo (hace familia con el «GV» del
-   Portal, m.229; es la letra `d` que se eligió) y la terminal con la rama que vuelve para el icono de proyecto.
-5. **Los SVG de `logos/`.** Los nueve son de la identidad anterior: baldosa con degradado y `rx` 30, nombre en Sora,
+4. **Motivo de iconos y logo.** La persona cerró la portada (el barco) y quitó de ella la rama con anillo. **Símbolo del logo: decidido por la persona (2026-11-12)**: monograma «GD» en una tinta sobre el cuadrado con chaflán en el hondo `#16827c`; **dependencia:** orden nueva en `gimg brand` que monte el cuadrado con chaflán. **Sigue abierto** el icono de proyecto. **Recomendación:** la terminal con la rama que vuelve.
+5. **Los SVG de `logos/`.** (Decidido por la persona, 2026-11-12: históricos, no se copian.) Los nueve son de la identidad anterior: baldosa con degradado y `rx` 30, nombre en Sora,
    `#2BB3A3`; no cumplen las reglas 2 y 3 del Portal y no salieron de gimg. **Recomendación:** dejarlos como histórico,
    no copiarlos al repo de developer y generar el logo nuevo con gimg («Recursos»).
 6. **El lema y las frases** («El tercer relevo», sección 10) son propuesta aprobada por delegación y no chocan con
