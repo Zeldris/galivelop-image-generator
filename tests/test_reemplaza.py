@@ -61,5 +61,22 @@ class ReemplazaTests(unittest.TestCase):
         self.assertIn('no existe la nueva', p.stderr)
 
 
+    def test_falla_si_la_nueva_es_el_destino(self):
+        (self.d / '07 a.png').write_bytes(b'UNICA')
+        p = subprocess.run(['bash', str(SCRIPT), str(self.d / '07 a.png'), str(self.d / '07 a.png')],
+                           capture_output=True, text=True)
+        self.assertNotEqual(p.returncode, 0)
+        self.assertIn('mismo archivo', p.stderr)
+        self.assertEqual((self.d / '07 a.png').read_bytes(), b'UNICA')
+        self.assertFalse((self.d / 'descartes').exists())
+
+    def test_destino_sin_extension(self):
+        (self.d / 'logo').write_bytes(b'VIEJA')
+        p = subprocess.run(['bash', str(SCRIPT), str(self.nueva), str(self.d / 'logo')],
+                           capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertEqual((self.d / 'descartes' / 'logo-anterior').read_bytes(), b'VIEJA')
+
+
 if __name__ == '__main__':
     unittest.main()

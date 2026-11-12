@@ -18,7 +18,7 @@ def decision(datos):
         return None
     ruta = ruta.replace('\\', '/')
     if ruta.lower().endswith('.png') and '/attempts/q' in ruta:
-        return {'systemMessage': AVISO}
+        return {'hookSpecificOutput': {'hookEventName': 'PreToolUse', 'additionalContext': AVISO}}
     return None
 
 

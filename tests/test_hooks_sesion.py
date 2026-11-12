@@ -59,8 +59,10 @@ _spec2.loader.exec_module(intentos_en_hoja)
 class IntentosEnHojaTests(unittest.TestCase):
     def test_avisa_sin_bloquear_en_un_intento(self):
         d = intentos_en_hoja.decision({'tool_name': 'Read', 'tool_input': {'file_path': '/x/attempts/q123-a.png'}})
-        self.assertIn('gimg sheet', d['systemMessage'])
-        self.assertNotIn('hookSpecificOutput', d)
+        h = d['hookSpecificOutput']
+        self.assertEqual(h['hookEventName'], 'PreToolUse')
+        self.assertIn('gimg sheet', h['additionalContext'])
+        self.assertNotIn('permissionDecision', h)
 
     def test_calla_en_lo_demas(self):
         for datos in ({'tool_name': 'Read', 'tool_input': {'file_path': '/x/aprobadas/01.png'}},

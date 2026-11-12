@@ -1,6 +1,10 @@
 # Retro 2026-11-12: hojas a cada repo y tanda del Portal (`hojas-repos` → `main`)
 
-**Estado:** pendiente de la persona.
+**Estado:** aprobada y aplicada por la persona el 2026-11-12: R1-R4, A2, T1-T3 y W1-W3 aplicadas; A1
+aprobada a prueba (se decide tras comparar 25a/25c/26a a 768²); colores de enlace en oscuro adoptados (#5185f1
+workflow, #e75485 voice).
+
+A3 se mira en la próxima ronda, con A2 ya en uso.
 
 Fase 2 de la ida a `main`: `gw-opt-ai` (ronda de imágenes del 11-11 22 h al 12-11 22 h), `gw-opt-tokens` (sesión
 `c7c2a076`) y retro. Solo se aplica lo que la persona confirme.

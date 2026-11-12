@@ -15,18 +15,22 @@ destino=$2
 carpeta=$(dirname -- "$destino")
 nombre=$(basename -- "$destino")
 base=${nombre%.*}
-ext=${nombre##*.}
+case $nombre in *.*) suf=".${nombre##*.}" ;; *) suf="" ;; esac
 mkdir -p -- "$carpeta"
 leeme="$carpeta/LEEME.md"
 fecha=$(date +%F)
 nota=""
 
+if [ -e "$destino" ] && [ "$nueva" -ef "$destino" ]; then
+  echo "la nueva y el destino son el mismo archivo: $destino" >&2
+  exit 1
+fi
 if [ -f "$destino" ]; then
   mkdir -p -- "$carpeta/descartes"
-  descarte="$carpeta/descartes/$base-anterior.$ext"
+  descarte="$carpeta/descartes/$base-anterior$suf"
   n=2
   while [ -e "$descarte" ]; do
-    descarte="$carpeta/descartes/$base-anterior-$n.$ext"
+    descarte="$carpeta/descartes/$base-anterior-$n$suf"
     n=$((n + 1))
   done
   mv -- "$destino" "$descarte"
