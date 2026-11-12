@@ -373,7 +373,8 @@ def health(req):
     except GimgError:
         provider = None
     return {"ok": True, "api": API_VERSION, "version": __version__, "build": BUILD, "pid": os.getpid(),
-            "port": req.server.server_address[1], "engine": provider, "worker": queue.worker_alive() is True}
+            "port": req.server.server_address[1], "engine": provider, "worker": queue.worker_alive() is True,
+            "paused": queue.is_paused()}
 
 
 @route("GET", "/api/locales/{lang}")
@@ -804,6 +805,18 @@ def queue_move(req):
     if not isinstance(to, str):
         raise GimgError("api.bad_param", name="to")
     return queue.entry_view(queue.move(_int_param("id", req.params["id"]), to), req.lang)
+
+
+@route("POST", "/api/queue/pause")
+def queue_pause(req):
+    _fields(req.body, ())
+    return {"paused": True, "changed": queue.pause()}
+
+
+@route("POST", "/api/queue/resume")
+def queue_resume(req):
+    _fields(req.body, ())
+    return {"paused": False, "changed": queue.resume()}
 
 
 @route("POST", "/api/queue/clear")

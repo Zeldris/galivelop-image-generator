@@ -353,7 +353,13 @@ def _run(args, out: _Out) -> int:
         return _ui(args, out)
     elif cmd == "work":
         handled = worker.run(once=args.once, lang=out.lang)
-        out.data({"processed": handled}) if out.as_json else out.line("cli.out.processed", count=handled)
+        paused = queue.is_paused()
+        if out.as_json:
+            out.data({"processed": handled, **({"paused": True} if paused else {})})
+        else:
+            out.line("cli.out.processed", count=handled)
+            if paused:
+                out.line("cli.out.queue_paused_note")
     return 0
 
 

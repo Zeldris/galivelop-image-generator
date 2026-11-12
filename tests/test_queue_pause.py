@@ -63,8 +63,31 @@ class PauseTests(QueueBase):
         self.push()
         queue.pause()
         self.assertEqual(worker.run(), 0)
+        self.assertEqual([e["state"] for e in queue.list_entries()], ["queued"])
         queue.resume()
         self.assertEqual(worker.run(), 1)
+
+    def test_claim_itself_refuses_while_paused(self):
+        self.push()
+        queue.pause()
+        self.assertIsNone(queue.claim())
+        queue.resume()
+        self.assertEqual(queue.claim()["id"], 1)
+
+    def test_two_racing_pauses_only_one_changes(self):
+        import threading
+        results = []
+        threads = [threading.Thread(target=lambda: results.append(queue.pause())) for _ in range(8)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        self.assertEqual(sorted(results), [False] * 7 + [True])
+
+    def test_work_in_pause_says_so(self):
+        queue.pause()
+        self.assertIn("The queue is paused", self.run_cli("work")[1])
+        self.assertEqual(json.loads(self.run_cli("--json", "work")[1]), {"processed": 0, "paused": True})
 
     def test_service_launches_no_worker_while_paused_and_launches_after_resume(self):
         self.push()
