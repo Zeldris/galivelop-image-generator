@@ -3,7 +3,7 @@
 # Pedido a galivelop-image-generator: imágenes para el mapa de Helek (2026-11-10)
 
 **Para:** una sesión en `galivelop-image-generator` (GVIG), que lo genera en local en la Deck. **De:** World-Maker-Fantasy
-(WMF), tarea `MAP-19` de [`roadmap-mapas.md`](roadmap-mapas.md). **Estado:** pedido; GVIG decide modelo, semillas y
+(WMF), tarea `MAP-19` de `roadmap-mapas.md` (en el repo WMF). **Estado:** pedido; GVIG decide modelo, semillas y
 retoques. La nota de cada pieza la pone Álvaro.
 
 Este documento se basta solo: no hace falta leer WMF para generar. Las rutas de WMF son de `00c0d8b7` (rama

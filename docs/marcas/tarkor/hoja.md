@@ -455,9 +455,9 @@ Clases y líneas de `frontend/src/index.css` en `c858a150` (rama `claude/marca-i
 | Inicio | Emoji ⚔️ de la tarjeta (`Home.tsx` l.45) | A2 | común | `icono` | 512² → 64² | PNG alfa | falta: ningún pedido lo cubre (vale la pestaña «personaje» del #11) | WMF `c858a150` |
 | Inicio | E5 fondo del hero | C8, T5 | noche | `cabecera` | 1536×512 | PNG | pedido | `peticiones.md` §3 E |
 | Carga | E6 pantalla de carga | C8, T1 | noche | `carga` | 1280×704 | PNG | pedido (`orders/ui/e06-carga.json`) | `peticiones.md` §3 E |
-| Carga y progreso | E7 pista y relleno | C4, A1 | común | `tira` | 1024×128 → 1024×32 | PNG alfa | hecho (q357, q359); sin entregar | sección 12 |
+| Carga y progreso | E7 pista y relleno | C4, A1 | común | `tira` | 1024×128 → 1024×32 | PNG alfa | hecho (q357, q359); se regenera con los prompts nuevos (#659-666, 2026-11-12); sin entregar | sección 12 |
 | Mundos (`WorldCard.tsx`), personajes (`CharacterCard.tsx`, `CharacterSelect.tsx`, `CharacterSaves.tsx`), modales (`ModalShell.tsx`, `DetailModal.tsx`, `EspecializacionModal.tsx`), avisos (`Notificaciones.tsx`) y mapa (`InteractiveMap.tsx`) | #2 tablón, `.plank-panel` l.192 | C7, A1 | común | `textura` | 1024² | PNG mosaico | pedido | `peticiones.md` §3 A |
-| Personajes (`CharacterSelect`, `CharacterSaves`) | #2 tablón; E11 marco de retrato | A10, P8 | común | `icono` | 512² → 96² y 192² | PNG alfa | hecho con arreglo (q365) | sección 12 |
+| Personajes (`CharacterSelect`, `CharacterSaves`) | #2 tablón; E11 marco de retrato | A10, P8 | común | `icono` | 512² → 96² y 192² | PNG alfa | hecho con arreglo (q365); se regenera con los prompts nuevos (#659-666, 2026-11-12) | sección 12 |
 | Partida, cabecera y pie (`GameHeader.tsx`, `GameFooter.tsx`), riel plegado (`CollapsedRail.tsx`), cajón (`PanelDrawer.tsx`) y barra lateral derecha (`SideNav.tsx` l.34) | #5 banda, `.iron-band` l.246 | C4, A1 | común | `banda` | 1024×256 | PNG mosaico x | pedido | `peticiones.md` §3 A |
 | Partida, cabecera | #13 fases (8) | A2, P8, P9 | común | `icono` | 512² → 64² y 32² | PNG alfa | pedido | `peticiones.md` §3 C |
 | Partida, narración (`LogPanel.tsx`, `ChatComposer.tsx`) y barra lateral izquierda (`SideNav.tsx` l.34) | #4 camino de polvo, `.dust-road` l.177 | C7, A1 | común | `textura` | 1024² | PNG mosaico | pedido | `peticiones.md` §3 A |
@@ -468,7 +468,7 @@ Clases y líneas de `frontend/src/index.css` en `c858a150` (rama `claude/marca-i
 | Narración y barra lateral (`LogPanel.tsx` l.196, `SideNav.tsx` l.34: `.corner-bracket` l.348; `.corner-bracket-gold` l.372 no lo usa ningún componente) | #8 esquinas; #9 separador | C4, P8 | común | `icono`, `tira` | 512² → 128²; 1024×128 → 1024×64 | PNG alfa | pedido | `peticiones.md` §3 B |
 | Enciclopedia | #15 categorías (15); #16 medallón | A2, L1, P8 | común | `icono`, `emblema` | 512² → 64²; 768² | PNG alfa | pedido (#16 rehecho el 2026-11-12: la Semilla, por composición) | `peticiones.md` §3 C |
 | Botones y avisos | E13 botón ×3; E10 insignia; E9 sello; E17 tooltip | T1, L1, P8 | común | `banda`, `icono` | 128×48; 160×80; 96²; 128×64 | PNG alfa | E10 y E9 pedidos (`orders/ui/`, sincronizados con `peticiones.md` el 2026-11-12); E13 y E17 falta | `peticiones.md` §3 E |
-| Capturas | E12 plantilla | P8 | común | `marco` | 1280×704 | PNG alfa | hecho con arreglo (q366) | sección 12 |
+| Capturas | E12 plantilla | P8 | común | `marco` | 1280×704 | PNG alfa | hecho con arreglo (q366); se regenera con los prompts nuevos (#659-666, 2026-11-12) | sección 12 |
 | `ComingSoon`, `Admin*` | Ninguna propia | — | — | — | — | — | falta: sin pedido del juego | WMF `c858a150` |
 
 ### Mundo: regiones, mapa, personajes
@@ -505,7 +505,7 @@ Clases y líneas de `frontend/src/index.css` en `c858a150` (rama `claude/marca-i
 | I4 | Hierro del riel | A1, A5, A8 | común | `textura` | 1024² | WebP q85 mosaico xy | pedido |
 | I5 | Icono del instalador | = E14 | — | — | `.ico` | ICO | falta |
 | I6 | Cápsula vertical de la Deck | C8, L1, A4 | noche | `portrait` | 896×1152 → 768×1152 → 600×900 | PNG | pedido (aprobada el 2026-11-12, decisión 3) |
-| #17 | Estados de comprobación (4) | A3, P8 | común | `icono` | 512² → 64² y 32² | PNG alfa | pedido; sin `orders/` |
+| #17 | Estados de comprobación (4) | A3, P8 | común | `icono` | 512² → 64² y 32² | PNG alfa | pedido (`orders/ui/17-estado-{aviso,en-curso,error,hecho}.json`) |
 | #5, #2, #3, #9, E7, E13 | Barra, tablón, fondo, filete, progreso, botón | Las del juego | común | — | — | PNG | las mismas piezas del juego |
 
 ### Steam

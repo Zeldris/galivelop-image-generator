@@ -123,7 +123,7 @@ pantalla.
 |---|---|---|---|---|---|
 | `--acento` (vivo) | `#3d6fd9` | `#3d6fd9` | Marca, foco (`outline` 2 px), punto de estado, base del tinte | sobre papel 4,57 / 3,86; blanco encima 4,69; tinta encima 3,50 | `--celeste` `#1aa6df` (2,70 / 6,53) |
 | `--acento-hondo` | `#3d6fd9` (**es el vivo**: ya cumple) | `#3d6fd9` | Bloques grandes con texto blanco (también en oscuro), cuadrado del logo, texto de acento y enlaces en claro | sobre papel claro 4,57 (AA); blanco encima 4,69 | `--celeste-hondo` `#0072a8` (5,15; blanco 5,29) |
-| `--enlace` | `--acento-hondo` | `#487ce7` (**variante oscura**, OKLCH L 0,604) | Texto de acento y enlaces | 4,57 / 4,59 | `--celeste-hondo` / `#5cc8f2` (5,15 / 9,49) |
+| `--enlace` | `--acento-hondo` | `#487ce7` (**variante oscura**, OKLCH L 0,604) | Texto de acento y enlaces | 4,57 / 4,59 sobre `#0d171e`. **Límite:** sobre la superficie oscura `#111f29` da 4,24 y sobre `#16242e` 4,01 (< 4,5): en fichas y bandas oscuras el texto de enlace va en tinta o subrayado, y el acento queda en borde, subrayado o punto. Tono que haría falta, mismo método (`acento.py`): `#5185f1` (4,51 sobre `#16242e`, 4,77 sobre `#111f29`, 5,16 sobre `#0d171e`; blanco encima 3,51), calculado, no adoptado | `--celeste-hondo` / `#5cc8f2` (5,15 / 9,49) |
 | `--tinte` | acento al 12 % (`#e4ebf9` sobre papel) | acento al 18 % (`#162740`) | Plano translúcido: hover, chips, píldoras | tinta sobre tinte 13,71 / 12,79 | 14,25 / 11,65 |
 | Isobatas sobre el bloque | blanco al 20-50 % sobre `#3d6fd9` | igual | Textura del bloque grande | — | mismos porcentajes |
 | Acento secundario | **heredado [P]:** `--alga` `#5d7a6a` | `#8fb09e` | «En desarrollo», avisos suaves | 4,59 / 7,66 | el mismo (ver «Dudas», 3) |
