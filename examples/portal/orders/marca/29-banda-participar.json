@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/29-banda-participar",
+  "profile": "muro",
+  "seed": 311,
+  "count": 2,
+  "prompt": "A very wide, very pale banner, almost empty. Only in the right third of the image: two thin branch lines of a commit history, one starting higher and one starting lower, each with two or three small hollow round nodes on it, that curve gently toward each other as they run to the right and join in one slightly larger round node near the right edge, with a single line going on from it. The left two thirds of the image are clean empty off-white #fbfcfd paper with nothing drawn on them. Everything is drawn very faint and low contrast, in thin pale cerulean blue lines with fine engraved hatching, like a watermark; the background is light off-white #fbfcfd paper with only very faint, pale cerulean bathymetric contour lines of a sea chart, barely visible, kept pale and quiet. Richly detailed engraved antique nautical chart style, like a fine sea chart printed in two inks: many layers of fine lines and hatching, line density increasing in the darker areas to give depth and tone, lines of several weights, crisp and sharp, intricate but calm, premium print quality, high detail, elegant. Flat graphic seen straight on, no horizon, no sky, no landscape, no ships, no boats, no islands. No photographic rendering, no glow, no text, no letters, no numbers, no handwriting, no labels, no watermark, no border, no frame. Palette strictly limited to medium cerulean ocean blue #0072a8 and its tints and shades, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a."
+}

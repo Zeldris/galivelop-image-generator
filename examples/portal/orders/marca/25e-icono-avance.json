@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/25e-icono-avance",
+  "profile": "cuadrado",
+  "seed": 251,
+  "count": 2,
+  "prompt": "A single simple line icon of progress along a route, centred in the square frame: a path that climbs in gentle steps from the lower left to the upper right, made of three small hollow circles of the same size joined by straight line segments, and at the upper right end of the path a small flag: a short vertical pole with a triangular pennant pointing right at its top. The circles are outlined rings with the background showing inside. Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, bold and clear enough to read at 24 pixels, generous empty margin around the icon, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background. Flat vector pictogram, minimal, geometric. No photographic rendering, no gradients, no glow, no text, no letters, no numbers, no watermark, no border, no frame."
+}

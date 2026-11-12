@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/25d-icono-como-esta-hecho",
+  "profile": "cuadrado",
+  "seed": 241,
+  "count": 2,
+  "prompt": "A single simple line icon of how software is built, centred in the square frame: one wrench, an open-end spanner drawn in outline, lying diagonally from the lower left to the upper right with its open U-shaped jaw at the upper right end; crossing over the middle of its handle, one large chevron made of two straight strokes of equal length that meet in a sharp point on the left, like an arrowhead pointing left, a code angle bracket drawn as a plain geometric shape. The wrench and the chevron cross each other like an X. Two shapes only. Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, bold and clear enough to read at 24 pixels, generous empty margin around the icon, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background. Flat vector pictogram, minimal, geometric. No photographic rendering, no gradients, no glow, no text, no letters, no numbers, no watermark, no border, no frame."
+}

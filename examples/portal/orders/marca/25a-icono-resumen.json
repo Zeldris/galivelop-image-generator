@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/25a-icono-resumen",
+  "profile": "cuadrado",
+  "seed": 211,
+  "count": 2,
+  "prompt": "A single simple line icon of a text document, centred in the square frame: one upright sheet of paper, a tall rectangle with rounded corners whose top right corner is folded down, and inside it four plain straight horizontal lines stacked one under another with even gaps, the bottom line about half as long as the others. The lines are plain smooth strokes that stand for text, not writing. One object only. Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, bold and clear enough to read at 24 pixels, generous empty margin around the icon, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background. Flat vector pictogram, minimal, geometric. No photographic rendering, no gradients, no glow, no text, no letters, no numbers, no watermark, no border, no frame."
+}

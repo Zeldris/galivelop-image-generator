@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/26c-marcador-pendiente",
+  "profile": "cuadrado",
+  "seed": 281,
+  "count": 2,
+  "prompt": "A single simple line icon of a step not started yet, centred in the square frame: one large empty circle whose outline is a dashed line, a ring broken into short thick curved dashes of equal length with clear wide gaps between them, like a dotted cut-out line going round in a circle. The gaps show the background, the ring is not continuous. The inside of the circle is completely empty. One circle only, nothing else, no fill. Simple line icon style: one very thick heavy uniform stroke width, rounded caps and joins, no shading, no hatching, no texture, bold and clear enough to read at 16 pixels, generous empty margin around the icon, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background. Flat vector pictogram, minimal, geometric. No photographic rendering, no gradients, no glow, no text, no letters, no numbers, no watermark, no border, no frame."
+}
