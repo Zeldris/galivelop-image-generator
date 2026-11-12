@@ -4,6 +4,15 @@ Herramienta del taller, sin identidad propia: **familia del Portal** con acento 
 en [`../README.md`](../README.md). Datos de su repo (rama `claude/voces-f1`) en `ab1ff10`; de este, en `fd2ae53`; del
 Portal, en `aa76b34`.
 
+> **Histórico desde el 2026-11-12.** Esta biblia describe la identidad anterior (azul noche `#06121c`, Sora/Inter, FLUX,
+> cinta de luz, baldosa con degradado), con la que se hicieron las piezas de r1-r5. Voice-generator es ahora un producto
+> de la familia Galivelop: **para cualquier pieza nueva manda [`hoja.md`](hoja.md), bloques «Identidad vigente»,
+> «Interfaz» y «Recursos»**, que heredan de [`../portal/hoja.md`](../portal/hoja.md) («Familia Galivelop»). De aquí
+> siguen valiendo §1 (esencia y ética) y §6 (voz y frases). Cambia: el acento tiene tres tonos calculados (vivo
+> `#d9467a`, hondo `#ce3c71`, variante oscura `#db487b`; [`tonos.py`](tonos.py)), que sustituyen a `#A62E5A` y
+> `#F6B1CA`; las tipografías son las del Portal; el logo `a` y su lockup quedan como boceto. El repo de voces está hoy
+> en `main` `5f67bd4` (F1 hecha), no en `ab1ff10`.
+
 **Aprobada el 2026-11-04** (decisiones delegadas por la persona, `docs/records/decisiones-hojas-2026-11-04.md`): lo que sigue
 marcado **[P]** es propuesta del agente aprobada por delegación. Campo a campo, en [`hoja.md`](hoja.md).
 
