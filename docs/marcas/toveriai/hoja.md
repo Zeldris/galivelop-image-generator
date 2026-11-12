@@ -8,8 +8,13 @@ plantilla. Estados como en [`../README.md`](../README.md): sin marca sale de un 
 propuesta del agente aprobada por delegación (no es un valor que salga de un repo), con su porqué en la misma celda; *(suposición)* se comprueba en una ronda; «no hay» solo
 donde la plantilla lo admite.
 
-Commits de referencia: `VeriNews_AI` `5a7401f` (`main`, 2026-11-03; la biblia cita `02ac654`, nueve commits antes: entre los
-dos solo cambia, de lo visual, `frontend/src/components/Navbar.jsx`); este repo `5460d2c` (`f2-motor`; la biblia, `74d99f8`; los
+Commits de referencia: `VeriNews_AI` `1f98db6` (`main`, leído el 2026-11-12; la hoja citaba `5a7401f` y la biblia, antes,
+`02ac654`). **Comprobación del 2026-11-12 (`5a7401f..1f98db6`, `git diff --stat`):** no cambia ningún CSS, ni `fonts.css`, ni
+`index.html`, ni `frontend/public/`, ni `Documentacion/`: paleta, tipografía, wordmark, favicon, kit y tarjeta compartible
+siguen como dice esta hoja. Lo que sí cambia y la toca: `frontend/src/components/Navbar.jsx` pasa los rótulos de
+administración a `t('nav.admin.…')` (l.139 en adelante; el wordmark sigue en l.98-105, tres `span` en l.101-103); los JSON de
+`i18n/` crecen y los rangos del IMI de `es_ES.json` suben una línea (l.529-531; `home.title` sigue en l.33); `GLOSSARY.md` l.1
+pasa a `galivelop-workflow v0.5.0`; `README.md` solo cambia Java 17 → 21. Ampliaciones propuestas ese día: sección 16. Este repo `5460d2c` (`f2-motor`; la biblia, `74d99f8`; los
 logos, `b7f1baf`). El repo de toVeriAI se ha leído **sin modificar nada**. Familia visual `propia`: toVeriAI no es una
 herramienta del taller y no hereda nada del Portal.
 
@@ -29,9 +34,9 @@ en la configuración.
 |---|---|---|---|
 | Nombre de marca | Obl. | «toVeriAI»: `to` en minúscula, `Veri` y `AI` con mayúscula inicial, de una pieza y sin puntos medios. Así va en el `<title>`, en el `ld+json` (`Organization.name`), en el wordmark del `Navbar` y del pie (`to` + `Veri` + `AI` en tres `span`, con `translate="no"`) y en la tarjeta compartible. «VeriNews» / «VeriNews AI» es el nombre del repo y del proyecto de ciclo (`README.md`), no el de la marca (ver «Contradicciones», 1) | VeriNews_AI (`frontend/index.html` `<title>`; `frontend/src/components/Navbar.jsx` l.98-104; `Footer.jsx` l.86; `components/share/ShareCard.jsx`; `Documentacion/v1.1/kit-visual-ia.html` l.335) |
 | Nombre en código | Obl. | `toveriai` | repo (`examples/toveriai/galivelop-images.json`, `name`) |
-| Fuente de verdad | Rec. | `VeriNews_AI` `main` `5a7401f` (paleta, tipografía, wordmark, favicon, tono, frases, canales, rangos del IMI); este repo `5460d2c` (prompts, piezas, medidas, logos vectorizados). Rutas por campo en la sección 13 | repo |
+| Fuente de verdad | Rec. | `VeriNews_AI` `main` `1f98db6` (paleta, tipografía, wordmark, favicon, tono, frases, canales, rangos del IMI); este repo `5460d2c` (prompts, piezas, medidas, logos vectorizados). Rutas por campo en la sección 13 | repo |
 | Quién decide | Obl. | La persona. Dio ella el veredicto de r1 (2026-10-26, «sí» a toveriai, por proyecto); desde entonces, delegado al agente («lo dejo en tus manos») hasta que diga otra cosa, con dos encargos explícitos: el agente vectoriza el símbolo y **la persona lo aprueba** (`docs/plan.md` l.260), y las decisiones de marca delegadas se le proponen al cerrar (wordmark «toVeriAI», rangos IMI del kit en las piezas; `docs/marcas/README.md` l.39-42). Todas las decisiones delegadas quedan aprobadas el 2026-11-04 (`docs/records/decisiones-hojas-2026-11-04.md`) y las de agente llevan **[P]** con la nota «aprobada por delegación»; el dibujo del símbolo sigue pendiente de ver por la persona | repo (`docs/records/contenido/r1-fondos.md` l.52-53; `docs/plan.md` l.258-261; `docs/marcas/README.md` l.14, l.39-42) |
-| Fecha de la hoja | Rec. | `2026-11-11` (aprobada el 2026-11-04; afinada el 2026-11-11 con lo aprendido al generar con `gimg` en las otras marcas: modelos, lista vetada, zona limpia, croma y tema oscuro; los cambios llevan **[P]** hasta que la persona los vea) | — |
+| Fecha de la hoja | Rec. | `2026-11-12` (aprobada el 2026-11-04; comprobada contra `VeriNews_AI` `1f98db6` y ampliada con la sección 16 el 2026-11-12; afinada el 2026-11-11 con lo aprendido al generar con `gimg` en las otras marcas: modelos, lista vetada, zona limpia, croma y tema oscuro; los cambios llevan **[P]** hasta que la persona los vea) | — |
 | Familia visual | Rec. | `propia`: papel cálido, serif fina, verde bosque como único acento; nada de la familia Galivelop (fondo oscuro, Sora, baldosa) | repo (`docs/marcas/README.md` l.84: «toVeriAI puede salirse de la familia») |
 | Hereda de | Opc. | no hay | — |
 
@@ -60,7 +65,7 @@ en la configuración.
 | Fondo | Obl. | clara (por defecto y única hecha): papel `#F7F5F2` (`--color-bg`); superficies `#FDFCFB` (tarjeta) y `#F0EDE8` (alterna). Oscura (tema oscuro): `#1A1A1A` (pie, «hero de contraste»), **solo compuesta sobre fondo plano, sin imagen generada**: el papel de la marca es claro y una acuarela sobre papel oscuro ya no es toVeriAI; texto `#FFFFFF`, filetes y acentos `#52B788` (el verde «sobre fondo oscuro» del kit), lockup oscuro de §4. Sin pieza hecha *(suposición: el contraste está sin medir)* **[P]** | VeriNews_AI (`frontend/src/App.css` l.114-116, l.117; `kit-visual-ia.html` l.273-275); repo (`galivelop-images.json` `brand.palette`; `piezas.json` `velo`) |
 | Texto | Obl. | `#1A1A1A` sobre claro («nunca negro puro»); `#FFFFFF` sobre oscuro; secundarios `#777777` (apagado), `#999999` (gris medio) | VeriNews_AI (`App.css` l.117-119, l.159; `kit-visual-ia.html` l.273-275); `#1A1A1A` es el `color_texto` de las cuatro piezas de `piezas.json` y **no está en `brand.palette`** |
 | Acento | Obl. | verde bosque `#2D6A4F` (`--color-green`): «Veri» del wordmark, CTAs, enlaces y **único acento en piezas genéricas**; es también el verde del símbolo. El Portal da al proyecto `#2F7A55`; **resuelto: manda `#2D6A4F`** (ver «Contradicciones», 6) | VeriNews_AI (`App.css` l.127; `kit-visual-ia.html` l.284; `frontend/src/utils/imiColors.js` `C_GREEN`) |
-| Acentos en imagen, en orden de peso y significado | Rec. | en piezas genéricas, uno solo (`#2D6A4F`). En piezas que hablan del IMI, el semáforo con su significado: verde `#2D6A4F` = credibilidad alta (70-100), ámbar `#B5832A` = moderada (40-69), granate `#9B2335` = baja (0-39; «granate/vino, no un rojo de alarma»). En la imagen generada el orden de peso es el del motivo «entre dos tintas»: granate y verde a los lados, ámbar en la banda central | VeriNews_AI (`kit-visual-ia.html` l.284, l.442-447; `imiColors.js`: ≥70 verde, ≥40 ámbar, resto granate; `i18n/es_ES.json` l.530-532); el orden en imagen, repo (`prompts/estilo.txt`) |
+| Acentos en imagen, en orden de peso y significado | Rec. | en piezas genéricas, uno solo (`#2D6A4F`). En piezas que hablan del IMI, el semáforo con su significado: verde `#2D6A4F` = credibilidad alta (70-100), ámbar `#B5832A` = moderada (40-69), granate `#9B2335` = baja (0-39; «granate/vino, no un rojo de alarma»). En la imagen generada el orden de peso es el del motivo «entre dos tintas»: granate y verde a los lados, ámbar en la banda central | VeriNews_AI (`kit-visual-ia.html` l.284, l.442-447; `imiColors.js`: ≥70 verde, ≥40 ámbar, resto granate; `i18n/es_ES.json` l.529-531); el orden en imagen, repo (`prompts/estilo.txt`) |
 | Resto de la paleta | Rec. | verdes de apoyo `#52B788` (medio, «acentos sobre fondo oscuro»), `#74C69D` (claro), `#B7E4C7` (pálido), `#E8F4EE` (fondo verde); ámbar claro `#E9A94A` y fondo `#FBF6ED`; granate claro `#E07085` y fondo `#FBF0F2`; bordes `#E8E4DF` y `#F0EDE9`, línea decorativa `#D8D4CF`, borde oscuro `#2A2A2A`, placeholder `#C0BCB8`. Los siete colores de métricas (`#D97706`, `#7C3AED`, `#3B82F6`, `#EA580C`, `#0D9488`…) son de la interfaz, no de marca. `brand.palette` lleva **8**: `#F7F5F2`, `#9B2335`, `#2D6A4F`, `#B5832A`, `#1A1A1A`, `#FDFCFB`, `#F0EDE8` y `#FFFFFF` (texto, superficies y blanco de la pieza oscura; añadidos el 2026-11-04) | VeriNews_AI (`App.css` l.114-160; `kit-visual-ia.html` l.248-266); repo (`galivelop-images.json`) |
 | Combinaciones | Rec. | clara estándar: `#F7F5F2` + texto `#1A1A1A` + acento `#2D6A4F`; tarjeta: `#FDFCFB` + `#1A1A1A` + `#2D6A4F`; oscura: `#1A1A1A` + `#FFFFFF` + `#2D6A4F` (sin pieza hecha); sobre un score: `#F7F5F2` + `#1A1A1A` + verde/ámbar/granate según el IMI. Sobre imagen (r4-r5): texto `#1A1A1A` con velo `#F7F5F2:0.35` en los cuatro formatos; contraste medido 14,7-15,9:1 | VeriNews_AI (`kit-visual-ia.html` l.271-276); repo (`piezas.json` `velo`, `color_texto`; `r4-composicion.md` l.17; `r5-piezas.md` l.31) |
 | Prohibidos | Rec. | negro puro `#000`; blanco puro `#FFF` **como fondo**; azules corporativos; degradados brillantes o neón; más de un acento en **lo compuesto** de una pieza genérica (texto, filete, wordmark: solo `#2D6A4F`); ámbar y granate fuera de piezas que hablan del IMI, salvo en la imagen generada, donde las tres tintas **son** el espectro del IMI (motivo «entre dos tintas», §6) y por eso valen en todas las piezas; rojo de alarma puro. Añadidos en la biblia: rosa y magenta (el vino de r1 tiraba a magenta) | VeriNews_AI (`kit-visual-ia.html` l.284, l.447); rosa/magenta, repo (`r1-fondos.md` l.50, l.60; `biblia.md` §2) |
@@ -189,7 +194,7 @@ ronda de toVeriAI con Z-Image):
 | Carpeta de entrega | Obl. | `entrega` | repo (`galivelop-images.json` `delivery.dir`) |
 | Nombre del archivo | Rec. | `{key}-{profile}.png` (el valor por defecto, escrito explícito) | repo (`delivery.template`) |
 | Dónde se publica cada pieza | Rec. | `og`: `og:image` y `twitter:image` de `frontend/index.html` (**consta**; hoy apuntan a `https://www.toveriai.com/favicon.png`, 512 cuadrado, y `twitter:card` es `summary`, que con una pieza 1200×630 pasaría a `summary_large_image`); `square` y `portrait`: Instagram `instagram.com/toveriai/` (cuenta **consta** en el pie, piezas **no consta**); `wide`: X `x.com/toVeriAIX` y LinkedIn `linkedin.com/company/toveriai/` (cuentas **constan**, piezas **no consta**); `header`: cabecera de X y Facebook `facebook.com/profile.php?id=61591928098458` (cuentas **constan**, piezas **no consta**); `avatar`: las cuatro redes (**no consta**); `icon`: apple-touch-icon y manifest (**no existen** en el repo); social preview de GitHub, no comprobable | VeriNews_AI (`frontend/index.html` `og:image`, `twitter:image`, `twitter:card`; `Footer.jsx` l.57-62 `SOCIAL_LINKS`) |
-| Otras piezas de marca que hace otro sistema | Rec. | **sí, dentro de la propia app:** `frontend/src/utils/shareImage.js` captura con `html-to-image` (`pixelRatio: 2`) la **tarjeta compartible** `ShareCard` (1080×1350, «etiqueta nutricional editorial», «Diseño acordado con Fable») y el **sello** `ShareSeal` (480×480), y los comparte por la Web Share API con título «toVeriAI». Toman paleta y fuente **a mano, en CSS propio** (`ShareCard.css`: `#2D6A4F`, `#B7E4C7`, `#B5832A`, `#9B2335`, `#52B788`, `#74C69D`, `#E8F4EE`, Cormorant Garamond y DM Sans; `bandaImi` en `shareImage.js`), no de `App.css`; **se capturan sobre `#FFFFFF` puro** (`backgroundColor: '#ffffff'`; `.shc-canvas` `background: #FFFFFF`), el blanco de fondo que el kit prohíbe (ver «Contradicciones», 8). Usan `favicon.png` + wordmark en `span`, como el `Navbar`. Además, `gw-media-content` si el repo adopta el flujo (ya tiene `GLOSSARY.md` de Galivelop-workflow v0.4.3) | VeriNews_AI (`utils/shareImage.js`; `components/share/ShareCard.jsx`, `ShareCard.css` l.5-10, l.29-31, l.84-85; `ShareSeal.jsx`, `ShareSeal.css`; `kit-visual-ia.html` l.284; `GLOSSARY.md` l.1) |
+| Otras piezas de marca que hace otro sistema | Rec. | **sí, dentro de la propia app:** `frontend/src/utils/shareImage.js` captura con `html-to-image` (`pixelRatio: 2`) la **tarjeta compartible** `ShareCard` (1080×1350, «etiqueta nutricional editorial», «Diseño acordado con Fable») y el **sello** `ShareSeal` (480×480), y los comparte por la Web Share API con título «toVeriAI». Toman paleta y fuente **a mano, en CSS propio** (`ShareCard.css`: `#2D6A4F`, `#B7E4C7`, `#B5832A`, `#9B2335`, `#52B788`, `#74C69D`, `#E8F4EE`, `#1A1A1A` y un gris verdoso **`#6B7F76` que no es token de `App.css`** (`ShareCard.css` l.50, `ShareSeal.css` l.26), Cormorant Garamond y DM Sans; `bandaImi` en `shareImage.js` l.3-7, que repite los hex de `imiColors.js` l.1-3), no de `App.css`: `ShareCard.css` no usa ni un `var(--…)`; el reparto línea a línea, en la sección 16, fila A8; **se capturan sobre `#FFFFFF` puro** (`backgroundColor: '#ffffff'`; `.shc-canvas` `background: #FFFFFF`), el blanco de fondo que el kit prohíbe (ver «Contradicciones», 8). Usan `favicon.png` + wordmark en `span`, como el `Navbar`. Además, `gw-media-content` si el repo adopta el flujo (ya tiene `GLOSSARY.md` de Galivelop-workflow v0.5.0) | VeriNews_AI (`utils/shareImage.js`; `components/share/ShareCard.jsx`, `ShareCard.css` l.5-10, l.29-31, l.84-85; `ShareSeal.jsx`, `ShareSeal.css`; `kit-visual-ia.html` l.284; `GLOSSARY.md` l.1) |
 | Manifiesto | Opc. | `galivelop-images.manifest.json` (por defecto, no declarado) | repo (esquema) |
 | Conversión final | Opc. | el `og:image` de la web es PNG hoy (`favicon.png`); una pieza 1200×630 en PNG o WebP la decide el repo *(suposición: PNG, como lo que ya sirve; LinkedIn no acepta WebP en vista previa)* | VeriNews_AI (`frontend/index.html`) |
 
@@ -205,7 +210,7 @@ ronda de toVeriAI con Z-Image):
 
 ## 13. Fuentes de verdad
 
-**VeriNews_AI** (toVeriAI), `main` `5a7401f` (leído solo; nada modificado):
+**VeriNews_AI** (toVeriAI), `main` `1f98db6` (leído solo; nada modificado; las líneas se han vuelto a mirar el 2026-11-12):
 
 - `frontend/index.html` (`<title>` «toVeriAI — Verificación de credibilidad de noticias con IA»; `<meta name="description">`;
   `og:image` y `twitter:image` = `https://www.toveriai.com/favicon.png`; `twitter:card` `summary`; canonical
@@ -221,7 +226,7 @@ ronda de toVeriAI con Z-Image):
   Garamond 400, 26 px, tracking 0,08 em, `to`/`AI` `--color-dark`, `Veri` `--color-green`); `Footer.jsx` l.50-54 (idiomas),
   l.57-62 (`SOCIAL_LINKS`: Instagram, LinkedIn, Facebook, X), l.86 (wordmark); `Footer.css` l.22-27 (wordmark blanco a peso 300
   sobre `#1A1A1A`).
-- `frontend/src/i18n/es_ES.json` l.33 (`home.title` «La verdad no es binaria»), l.530-532 (rangos «Baja (0–39)», «Moderada
+- `frontend/src/i18n/es_ES.json` l.33 (`home.title` «La verdad no es binaria»), l.529-531 (rangos «Baja (0–39)», «Moderada
   (40–69)», «Alta (70–100)»; igual en los otros cuatro idiomas).
 - `frontend/src/utils/imiColors.js` (`C_GREEN #2D6A4F`, `C_AMBER #B5832A`, `C_RED #9B2335`; ≥ 70 / ≥ 40; claros
   `#52B788/#E9A94A/#E07085`; fondos `#EFF8F3/#FBF6ED/#FBF0F2`); las excepciones `pages/AdminPage.jsx` l.12-13 y
@@ -242,10 +247,13 @@ ronda de toVeriAI con Z-Image):
   formatos), l.846 («valores sacados literales del código real»).
 - `Documentacion/v1.1/marketing.html` l.6 (`<title>` «toVeriAI — …»), l.278-285 (rangos 0–49 / 50–74 / 75–100 con `#e74c3c`,
   `#c9761f`, `#27ae60`), l.486 (beta).
-- `README.md` l.1-10 (TFC de DAW, «siete dimensiones», «ES, GL, CA, EU», autores), `GLOSSARY.md` l.1 (flujo v0.4.3), «IMI»,
+- `README.md` l.1-10 (TFC de DAW, «siete dimensiones», «ES, GL, CA, EU», autores), `GLOSSARY.md` l.1 (flujo v0.5.0), «IMI»,
   «Dimensión».
-- **Ya no existe:** `frontend/public/favicon.svg` (borrado en `e8b251c`). **No existe:** manifest, apple-touch-icon, SVG del
-  símbolo, pieza `og` 1200×630.
+- **Ya no existe:** `frontend/public/favicon.svg` (borrado en `e8b251c`). **No existe:** manifest, apple-touch-icon,
+  `theme-color`, SVG del símbolo, pieza `og` 1200×630, tema oscuro (ni `prefers-color-scheme` ni `data-theme` en `frontend/src`
+  ni en `index.html`). **Existe y nadie lo usa:** `frontend/public/icons.svg`, un sprite de seis iconos (`bluesky-icon`,
+  `discord-icon`, `documentation-icon`, `github-icon`, `social-icon`, `x-icon`) con relleno `#08060d`, fuera de la paleta y sin
+  referencias en `frontend/src` ni en `index.html`.
 
 **Este repo**, `f2-motor` `5460d2c`:
 
@@ -294,7 +302,7 @@ del Portal como marca, el formato del `og:image` final.
 - Copia de los logos en `examples/toveriai/logos/`: pendiente (F2.10, dec. 3).
 - En `VeriNews_AI`: el `og:image` apunta al favicon de 512 y `twitter:card` es `summary`; no hay manifest ni apple-touch-icon;
   los PNG «VeriNews» siguen en `assets/`; la tarjeta compartible toma los hex a mano y se captura sobre `#ffffff`. Todo va a
-  `docs/propuestas/toveriai.md` (carpeta aún sin crear), no se toca desde aquí.
+  `docs/propuestas/verinews-ai/entrega-hoja-2026-11-12.md` (escrita el 2026-11-12), no se toca desde aquí.
 
 ---
 
@@ -344,15 +352,15 @@ hoy nada los alinea y la tarjeta ya se desvía (fondo `#ffffff`).
 
 ## Contradicciones
 
-Entre el repo de toVeriAI (`5a7401f`) y su propio kit, entre el repo y la biblia (`74d99f8`), o entre la biblia y lo que ya
+Entre el repo de toVeriAI (`1f98db6`; ninguna cambia de estado entre `5a7401f` y `1f98db6`) y su propio kit, entre el repo y la biblia (`74d99f8`), o entre la biblia y lo que ya
 generó el motor.
 
 1. **Wordmark «toVeriAI» frente a «VeriNews».** El código (`Navbar`, pie, `ShareCard`), el `<title>`, el `ld+json` y el kit
    dicen «toVeriAI»; los PNG `frontend/src/assets/logo.png` y `logo-vertical.png` dicen «VeriNews» con `Veri` gris, y **ningún
    archivo del frontend los referencia**. El `README.md` llama al proyecto «VeriNews AI» (es su nombre académico).
    **Resuelta (aprobada por delegación):** la hoja manda con «toVeriAI» (decisión delegada, `docs/marcas/README.md` l.39-42, que la persona confirma);
-   en `docs/propuestas/toveriai.md` se le pide al repo retirar los dos PNG huérfanos o regenerarlos con el wordmark actual.
-2. **Rangos del IMI.** Kit (l.442-444), `imiColors.js`, i18n (l.530-532) y seis páginas dicen 0-39 / 40-69 / 70-100 con
+   en `docs/propuestas/verinews-ai/entrega-hoja-2026-11-12.md` se le pide al repo retirar los dos PNG huérfanos o regenerarlos con el wordmark actual.
+2. **Rangos del IMI.** Kit (l.442-444), `imiColors.js`, i18n (l.529-531) y seis páginas dicen 0-39 / 40-69 / 70-100 con
    granate / ámbar / verde; `Documentacion/v1.1/marketing.html` l.278-285 dice 0-49 / 50-74 / 75-100 con `#e74c3c`, `#c9761f`,
    `#27ae60` (colores fuera de marca); `AdminPage.jsx` l.12-13 y `AdminDatasetPage.jsx` l.100-101 cortan en ≥ 75 / ≥ 50, y
    `AdminIncidenciasPage.jsx` l.29 pinta el bajo con `#C0392B`. **Resuelta (aprobada por delegación):** en las piezas, los rangos y colores del kit (lo
@@ -372,7 +380,7 @@ generó el motor.
    `#2D6A4F` en todas partes. **Resuelta (aprobada por delegación):** `#2D6A4F` manda (es el del producto); el `#2F7A55` es cosa del Portal, que puede
    mantenerlo como su aproximación o corregirlo; se apunta en la propuesta al Portal, no aquí.
 7. **Commit citado por la biblia.** La biblia cita `02ac654`; el repo está en `5a7401f` (2026-11-03). Entre los dos, de lo visual
-   solo cambia `Navbar.jsx` (9 líneas). **Resuelta (aprobada por delegación):** actualizar la cita en la biblia a `5a7401f` al aprobar esta hoja.
+   solo cambia `Navbar.jsx` (9 líneas). **Resuelta (aprobada por delegación):** actualizar la cita en la biblia a `5a7401f` al aprobar esta hoja. **2026-11-12:** hoja y biblia citan ya `1f98db6`; de `5a7401f` a `1f98db6` vuelve a cambiar solo `Navbar.jsx` (rótulos de administración a i18n), sin efecto en la marca.
 8. **La tarjeta compartible rompe dos reglas del kit.** `ShareCard.css` l.8 y `shareImage.js` capturan sobre `#FFFFFF` puro,
    que el kit l.284 prohíbe como fondo; `.shc-dim-name` va a `font-weight: 500` y hay un `700` en l.52, cuando el kit l.310 dice
    «nunca bold» (y `fonts.css` no sirve ese peso: el navegador lo sintetiza). Además toma los hex a mano, no de `App.css`.
@@ -390,7 +398,7 @@ generó el motor.
     de las piezas son los cinco del código. Se apunta al repo que el `README.md` está desfasado.
 11. **`og:image` cuadrado.** `index.html` sirve el favicon de 512 como `og:image` y `twitter:image` con `twitter:card` `summary`.
     **Resuelta (aprobada por delegación):** la pieza `og` 1200×630 de esta hoja (ya compuesta en r4) pasa a `og:image`, con `twitter:card`
-    `summary_large_image`; es la primera pieza de la prioridad y la entrada principal de `docs/propuestas/toveriai.md`.
+    `summary_large_image`; es la primera pieza de la prioridad y la entrada principal de `docs/propuestas/verinews-ai/entrega-hoja-2026-11-12.md`.
 12. **Peso del wordmark en el pie.** El kit l.335 y el `Navbar` ponen el wordmark a 400; `Footer.css` l.24 lo pone a 300 sobre
     `#1A1A1A`. **Resuelta (aprobada por delegación):** el lockup oscuro, si se hace, a 400 como el kit; se apunta al repo la diferencia, menor.
 13. **Pesos de la familia Galivelop.** La regla acordada para la familia (titular 700, subtítulo Inter 400 con opacidad 0,82) no
