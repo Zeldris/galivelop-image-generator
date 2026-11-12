@@ -1,36 +1,244 @@
 # Hoja de estilo mínima: galivelop-developer
 
-**Aprobada el 2026-11-04** (decisiones delegadas por la persona; ver
-[`docs/records/decisiones-hojas-2026-11-04.md`](../../records/decisiones-hojas-2026-11-04.md)); tercer caso de [`../plantilla-hoja-de-estilo.md`](../plantilla-hoja-de-estilo.md)
-(F2.12), rellenada tras [`../galivelop-image-generator/hoja.md`](../galivelop-image-generator/hoja.md) y
-[`../galivelop-workflow/hoja.md`](../galivelop-workflow/hoja.md) (las dos aprobadas el 2026-11-04) y con su misma forma.
-Complementa a [`biblia.md`](biblia.md): la biblia es la lectura larga; esta hoja es lo que `gimg` necesita, campo a campo y en el
-orden de la plantilla. Estados como en [`../README.md`](../README.md): sin marca sale de un repo (ruta en la sección 13);
-**heredado de `<marca>`** sale del repo de la marca paraguas (el Portal) leído a través de su biblia; **[P]** es propuesta
-del agente, **aprobada por delegación** el 2026-11-04 (con su porqué en la misma celda); *(suposición)* se comprueba en una ronda; «no hay» solo donde la
-plantilla lo admite. Incluye las tres filas que dejó la hoja de Workflow (acentos en imagen, otro sistema que hace piezas,
-canales con «consta / no consta en el repo»).
+> **Dos identidades en esta hoja.** Desde el 2026-11-12 galivelop-developer sigue la identidad vigente del Portal con su
+> propio acento: papel `#fbfcfd`, tinta `#13212b`, Big Shoulders Display, Literata y JetBrains Mono **heredados sin
+> cambio**, y un acento verde azulado en dos tonos (vivo `#0e9a93`, hondo `#16827c`) en el lugar que el Portal da al
+> alga. La referencia es [`../portal/hoja.md`](../portal/hoja.md), sección «Familia Galivelop: lo que heredan los
+> productos» y su subsección «Decisiones de la persona (2026-11-12)». **Lo vigente son los cuatro bloques de abajo**, con
+> la misma forma que la hoja del Portal: «Identidad vigente», «Interfaz», «Recursos» y «Familia Galivelop: cómo la
+> cumple esta hoja». Lo que se hereda se dice como herencia y remite al Portal; lo propio va explícito. Las secciones
+> 0-15, «Contradicciones» y «Lo que enseñó», [`biblia.md`](biblia.md) y los SVG de [`logos/`](logos/) describen la
+> identidad anterior (`#06121c`, Sora/Inter, acento `#2BB3A3`, línea de luz, baldosa con degradado) y se quedan como
+> histórico de r1-r5: no se siguen para piezas nuevas. De ellas sigue vigente la **voz** (secciones 1, 2 y 10: propósito,
+> tono, ética, frases), que sale del repo de developer y no choca con nada.
 
-Commits de referencia: galivelop-developer `8fa309c` (rama `claude/f1-instalacion`, árbol local; el mismo que cita la biblia);
-este repo `fd2ae53` (`f2-motor`); Portal-Galivelop `aa76b34` (lo heredado, vía `biblia.md` §10 y `docs/marcas/portal/biblia.md`;
-desde aquí no se abre ese repo). El repo de developer se ha leído **sin modificar nada**.
+Commits de referencia (leídos el 2026-11-12 con `git show`, **sin modificar nada**):
 
-> **Hereda de la identidad vigente del Portal (2026-11-11).** Lo que esta hoja dice de fondo, texto, tipografía, modelo,
-> estilo de imagen y palabras vetadas (`#06121c`, Sora/Inter, FLUX, línea de luz con rama teal, veto a `no`/`not`/`like`)
-> es la identidad anterior de la familia, con la que se hicieron las piezas de r1-r5: se queda como histórico. **Para
-> cualquier pieza nueva manda el bloque «Identidad vigente» de [`../portal/hoja.md`](../portal/hoja.md)**, y esta hoja solo
-> añade lo propio: el motivo de la fila «Motivo propio» de la sección 6 y el acento `#2BB3A3` para logo e interfaz. Lo ético
-> de la sección 2 sigue entero, **engranajes incluidos**: el pedido del Portal `15-proximamente-developer` pone «a small
-> gear» junto a la terminal y choca con esta hoja (ver la fila «Motivo propio»).
+- **galivelop-developer** `main` `70b0396` (2026-10-25, «F0 cerrada»: lo publicado). Antes esta hoja citaba `8fa309c`
+  (2026-10-25, rama `claude/f1-instalacion`, **por delante de `main`**: trae F1.1). Entre los dos solo cambian
+  `docs/plan.md`, `docs/traspaso.md`, `gdev/engine.py`, `gdev/locales/{es,en}.json`,
+  `gdev/machine_profiles/steam-deck.json` y tres archivos de tests (`git diff --stat origin/main 8fa309c`): `README.md`,
+  `README.en.md`, `GLOSSARY.md`, `docs/adr/` y `.claude/gw.json` son idénticos, así que las líneas que la sección 13
+  cita de ellos valen en `70b0396`. Hay además una rama `claude/gw-update-0.5.1` `82bb114` (flujo 0.5.1, sin fusionar).
+- **Portal-Galivelop** rama `ccr-47f8fddd-o5ek6p` `6574c4f` (la que cita la hoja del Portal): `docs/marca.md` (m.),
+  `src/estilos/global.css` (l.) y `src/data/productos/galivelop-developer.json`.
+- **Este repo** `8bb0ae1` (rama `hojas-repos`): `docs/marcas/portal/hoja.md`.
 
-**Lo primero que hay que saber:** el repo de galivelop-developer **no tiene identidad visual**: ni SVG, ni PNG, ni CSS, ni HTML,
-ni favicon, ni licencia (`README.md` l.52: «Todavía no hay licencia»). Lleva Galivelop-workflow **0.3.0**, anterior a
-`gw-media-content`, así que tampoco tiene plantillas de tarjetas ni paleta genérica que alinear. Todo lo visual de esta hoja
-viene del Portal (heredado) o de la biblia y los prompts de este repo; la identidad **de voz** (propósito, límites, campo
-semántico, tono) sí sale del repo de developer, y es la más clara de las tres herramientas: `README.md`, `GLOSSARY.md` y las dos
-ADR dicen lo que es y lo que nunca hace.
+**Lo primero que hay que saber:** el repo de galivelop-developer **sigue sin identidad visual**: en `main` `70b0396`
+no hay ningún SVG, PNG, WebP, ICO, CSS ni HTML (`git ls-tree -r --name-only origin/main`: fuera de `.claude/`, solo
+Markdown, JSON y Python), ni licencia (`README.md` l.52). Es una orden de terminal (`gdev`), sin interfaz gráfica. Todo
+lo visual de esta hoja es herencia del Portal o cálculo; lo único que el Portal dice de este producto es su ficha
+(`src/data/productos/galivelop-developer.json` `6574c4f`: l.3 nombre «Galivelop Developer», l.5 acento `#0E9A93`, l.8
+estado «proximamente») y su tarjeta «Próximamente» (m.125).
 
 ---
+
+## Identidad vigente (2026-11-12): lo que gimg necesita
+
+Lo que se aplica a cada pedido nuevo de galivelop-developer. «Heredado» quiere decir: el valor es el de
+[`../portal/hoja.md`](../portal/hoja.md), bloque «Identidad vigente», fila del mismo nombre, y aquí no se repite ni se
+cambia. Donde esta hoja y la del Portal digan cosas distintas en algo heredado, manda la del Portal y esta se corrige.
+
+| Campo | Valor | Estado |
+|---|---|---|
+| Paleta | **Heredadas:** cerúleo `#0072a8` (el mar, la tinta de color), papel `#fbfcfd`, gris tinta `#13212b`. **Propia:** el acento verde azulado **ocupa el lugar del verde alga** `#5d7a6a` y solo como «a touch of», nunca protagonista. Dos tonos calculados (ver «Interfaz», «Cálculo»): **vivo `#0e9a93`** y **hondo `#16827c`**; la variante de tema oscuro es el propio vivo. En imagen clara el toque es el hondo (4,52:1 sobre el papel, como el alga del Portal, que da 4,59); en la versión oscura, el vivo (5,23:1 sobre `#0d171e`). Frase de paleta: «Palette strictly limited to medium cerulean ocean blue #0072a8, off-white #fbfcfd, ink grey #13212b and a touch of deep teal #16827c.» *(suposición: el nombre «deep teal» se comprueba en una ronda; ninguna pieza se ha generado con él)*. Los grabados admiten «tints and shades» del cerúleo, no del acento; los iconos, **una sola tinta** `#13212b`. `brand.palette` para `gimg measure`: `#0072a8`, `#1aa6df`, `#fbfcfd`, `#13212b`, `#16827c`, `#0e9a93`, `#e6eef3`, `#0d171e`. El acento se distingue del cerúleo (ΔE76 39,1 el hondo y 43,0 el vivo, sobre el umbral de 15 de `gimg measure`); hondo y vivo entre sí no (ΔE76 9,7): la medida los cuenta juntos | heredado de `../portal/hoja.md` (fila «Paleta»; «Decisiones de la persona», punto 3); vivo: Portal `6574c4f` `src/data/productos/galivelop-developer.json` l.5; hondo: `tonos.py` (cálculo); qué tono va en la frase: **[P]** («Dudas», 3) |
+| Tipografía | **Heredada:** Big Shoulders Display (títulos), Literata (texto), JetBrains Mono (datos y órdenes: `gdev task <nombre>`, `local/<tarea>`). **Ninguna imagen lleva texto**, ni generado ni compuesto: lo pone quien publica la pieza. Sora, Inter y DejaVu Sans Mono (secciones 5 y 10) quedan como histórico | heredado de `../portal/hoja.md` (fila «Tipografía»; «Tipografía por papel»; «Decisiones», punto 3) |
+| Modelo y parámetros | **Heredado:** calidad `zimage-turbo-q6`, 8 pasos, cfg 1.0, euler; FLUX solo bocetos; Qwen-Image solo fotorrealismo (ninguna pieza de developer lo necesita); sin prompt negativo. Las piezas de r1-r5 salieron con FLUX: histórico | heredado de `../portal/hoja.md` (fila «Modelo y parámetros») |
+| Mar y tecnología | **Heredado:** el mar pone el dónde, la tecnología el qué; ningún motivo náutico protagonista. **Propio:** developer tiene una de las tres excepciones cerradas del Portal, **el barco de papel sobre mar con olas** (q311): «ese barco es la portada de Developer» (la persona, 2026-11-11). Es la única; no añade otra sin decisión de la persona | heredado de `../portal/hoja.md` (fila «Mar y tecnología», excepción 2); Portal `6574c4f` `docs/marca.md` m.125, m.254 |
+| Motivo propio | **Portada e ilustración grande: el barco de papel sobre el mar de carta con olas** (grabado a dos tintas), decidido por la persona; sustituye a «la terminal con la rama y el anillo» que pedía esta hoja (m.125). **Iconos y logo:** el motivo de software propio es **la terminal** (ventana con el chevrón del prompt y el cursor de bloque) y **la rama que sale de la línea principal y vuelve** (la tarea local que vuelve revisada), en línea simple; el anillo de revisión va como nodo hueco, según la regla de iconos de la familia. Verbo de la rama: «departs from the main line», nunca «leaves». **Sin engranaje** (cerrado por la persona el 2026-11-11) | barco: **decisión de la persona, 2026-11-11** (m.125, m.254; `../portal/hoja.md`, estado de las dudas, 4); terminal y rama para iconos y logo: **[P]**, de la sección 6 y `biblia.md` §4-§5 («Dudas», 4) |
+| Dos registros de dibujo | **Heredado**, con los dos bloques literales del Portal: grabado a dos tintas para lo grande (portada, `og`, social) y línea simple para iconos y logo. No se mezclan. El estilo «clean minimal vector-like … soft glow» de la sección 6 es histórico: «minimal» y «glow» ya no se escriben | heredado de `../portal/hoja.md` (fila «Dos registros de dibujo») |
+| Zonas limpias | **Heredado:** la zona se describe en positivo y al principio, como papel; la trama se confina; «filling the whole sheet to every edge» solo sin zona. Zonas de developer: tercio inferior limpio en la tarjeta (m.254) y **tercio izquierdo** en el `og` del Portal, para el icono (m.268). Las zonas `abajo 1/2` y `arriba 1/2` de la sección 9 eran para texto compuesto y quedan como histórico | heredado de `../portal/hoja.md` (fila «Zonas limpias»); Portal `docs/marca.md` m.254, m.268 |
+| Recuentos | **Heredado:** nunca «exactly N». En developer el número que significa algo es **una** rama que sale y vuelve: el generado es boceto y se fija al vectorizar | heredado de `../portal/hoja.md` (fila «Recuentos») |
+| Fondo y recorte | **Heredado:** lo que se recorta (logo, iconos sueltos) va sobre croma plano `#00ff00` y se recorta y vectoriza con `gimg brand`. El logo y los iconos se generan en una sola tinta, sin el acento: el color del cuadrado lo pone el SVG | heredado de `../portal/hoja.md` (fila «Fondo y recorte») |
+| Versión oscura | **Heredado:** líneas `#e6eef3` sobre `#0d171e`, cerúleo igual. **Propio:** el toque de acento pasa del hondo al vivo `#0e9a93`. Iconos y logo, sin generar nada: el SVG a `currentColor` | heredado de `../portal/hoja.md` (fila «Versión oscura», propuesta del agente allí); el tono: `tonos.py` |
+| Encuadre | **Heredado:** todo a sangre, sin marco ni banda; el chaflán del cuadrado del logo lo pone el SVG, no el modelo | heredado de `../portal/hoja.md` (fila «Encuadre») |
+| Perfiles | **Heredados** los de `examples/portal/galivelop-images.json`: `cuadrado` e `icono` (logo, iconos), `tarjeta` (la 15), `social` (`og` 1200×630), `portada`. Los de `examples/galivelop-developer/galivelop-images.json` (`og`, `social`, `square`, `portrait`, `header`, con FLUX y `#06121c`) son histórico: **falta pasarlos a la identidad vigente** («Recursos», pendiente) | heredado de `../portal/hoja.md` (fila «Perfiles»); repo (`examples/galivelop-developer/galivelop-images.json`) |
+| Referencias aprobadas | **Lo que gusta:** q311, el barco de papel sobre mar con olas (la persona, 2026-11-11), entregada como tarjeta 15. **Histórico, aprobado para la identidad anterior:** el `og` de r1 («sí» de la persona, 2026-10-26) y las piezas de r4-r5 (delegadas). **Rechazado:** el engranaje y la rama con anillo en la tarjeta 15 | Portal `docs/marca.md` m.125; `../portal/hoja.md` («Referencias aprobadas»; «Recursos», 15); sección 12 de esta hoja |
+
+**Cómo se escribe el prompt.** Heredado entero de `../portal/hoja.md`, «Cómo se escribe el prompt» (orden, negaciones
+solo en el cierre, ningún color fuera de las tintas, comprobación antes de encolar). Lo propio:
+
+1. La frase final es la de la fila «Paleta», con el acento donde el Portal pone «seaweed green #5d7a6a»; en la versión
+   oscura, «a touch of teal #0e9a93».
+2. Palabras propias que siguen vetadas por ética y motivo (sección 2 y fila «Palabras vetadas» de la sección 6):
+   `robot`, `brain`, `cloud`, `chip`, `gear`, `hand`, `screen`, `face`, `person`, `human`, `humanoid`, `magic`, `spark`,
+   `keyboard`, `leaf`, `leaves`, `foliage`, `plant`. El código no es legible: «rows of short indented dashes».
+3. De los motivos náuticos solo se nombra el barco de papel, y solo en la portada de developer.
+4. El veto a `no`/`not`/`without`/`like` y el cierre «The image is completely textless.» son de la identidad anterior:
+   no se aplican a piezas nuevas.
+
+**Dudas que decide la persona** (2026-11-12; la recomendación va en cada una):
+
+1. **Qué hex es el acento vivo.** El Portal publica `#0E9A93` (`src/data/productos/galivelop-developer.json` l.5) y
+   esta hoja y los SVG de `logos/` usaban `#2BB3A3` (propuesta del agente, `docs/plan.md` «Herramientas del taller»).
+   La decisión del 2026-11-12 dice «su hex de hoy es el vivo» y la tabla sobre la que se decidió es la de los acentos
+   del Portal (`../portal/hoja.md`, «Lo que falta…»). **Recomendación: `#0E9A93`**, que es lo publicado y lo que esta
+   hoja aplica; con él la tinta encima da 4,74:1. Si la persona prefiere `#2BB3A3`, el mismo cálculo da hondo `#118376`
+   (4,51:1 sobre papel, blanco encima 4,63) y oscuro el propio vivo (6,97:1), y habría que cambiar el hex en el Portal.
+2. **Cómo se escribe el nombre en el lockup.** La regla común pide mayúsculas en Big Shoulders Display 800; el Portal
+   lo llama «Galivelop Developer» (l.3) y esta hoja decía «galivelop-developer», en minúsculas y con guion, «sin
+   mayúsculas sostenidas» (secciones 0 y 5). **Recomendación: «GALIVELOP DEVELOPER»**, sin guion, en el lockup y en
+   titulares; `galivelop-developer` con guion queda para el repo, el nombre en código y la monoespaciada.
+3. **Qué tono del acento va en la frase de paleta.** **Recomendación:** el hondo `#16827c` en piezas claras y el vivo
+   `#0e9a93` en la versión oscura, que es la relación del alga del Portal en claro (≥ 4,5:1 sobre el papel). En oscuro
+   el Portal pide ≥ 7:1 a su alga y el vivo da 5,23: el método no calcula un tono más claro y aquí no se inventa.
+4. **Motivo de iconos y logo.** La persona cerró la portada (el barco) y quitó de ella la rama con anillo; no dijo
+   nada del icono ni del monograma. **Recomendación:** monograma «GD» para el logo (hace familia con el «GV» del
+   Portal, m.229; es la letra `d` que se eligió) y la terminal con la rama que vuelve para el icono de proyecto.
+5. **Los SVG de `logos/`.** Los nueve son de la identidad anterior: baldosa con degradado y `rx` 30, nombre en Sora,
+   `#2BB3A3`; no cumplen las reglas 2 y 3 del Portal y no salieron de gimg. **Recomendación:** dejarlos como histórico,
+   no copiarlos al repo de developer y generar el logo nuevo con gimg («Recursos»).
+6. **El lema y las frases** («El tercer relevo», sección 10) son propuesta aprobada por delegación y no chocan con
+   nada: se conservan. Falta la versión `en` (el repo publica en es y en; el Portal, además, en gl).
+
+---
+
+## Interfaz de galivelop-developer: tokens y reglas (2026-11-12)
+
+**Hoy no hay interfaz que vestir:** `gdev` es una orden de terminal y el repo no tiene CSS ni HTML (`70b0396`). Esta
+sección fija lo que usaría una web, una página de documentación o las tarjetas de `gw-media-content` si llegan.
+
+**Tokens heredados sin cambio** (valor por valor, de `../portal/hoja.md`, «Interfaz del Portal: tokens y reglas»):
+`--papel`, `--superficie`, `--fondo-alterno`, `--superficie-2`, `--tinta`, `--tinta-2`, `--texto-3`, `--filete`,
+`--reticula`, `--reticula-paso`, `--peligro*`, `--ok-texto`, `--noche`, `--velo*`, `--sombra`, `--chaflan*`, `--curva`
+y `--transicion`. También la tipografía por papel y las once reglas de interfaz.
+
+**Tokens propios: el acento.** Ocupan los papeles de `--celeste`, `--celeste-hondo`, `--enlace` y `--tinte` del
+Portal. Los nombres de variable son **[P]**; los hex salen de `tonos.py` y los ratios son WCAG 2.x sobre esos hex.
+
+| Token **[P]** | Claro | Oscuro | Papel que hace (el del Portal) | Contraste, con el umbral de la familia | Fuente |
+|---|---|---|---|---|---|
+| `--acento` (vivo) | `#0e9a93` | `#0e9a93` | Lo que `--celeste`: foco (`outline` 2 px), punto de estado, marca. Mismo hex en los dos temas | sobre papel claro 3,37 (no es color de texto en claro); blanco encima 3,46 (**nunca texto blanco encima**); tinta `#13212b` encima 4,74 (≥ 4,5); sobre `#0d171e` 5,23 (≥ 4,5); sobre la superficie oscura `#111f29` 4,84 | Portal `productos/galivelop-developer.json` l.5; `tonos.py` |
+| `--acento-hondo` | `#16827c` | `#16827c` | Lo que `--celeste-hondo`: bloques grandes, enlaces en claro, cuadrado del logo, texto de acento en claro. **En oscuro no se oscurece otro paso:** los bloques con texto blanco usan el mismo hondo | sobre papel claro 4,52 (≥ 4,5); blanco encima 4,65 (≥ 4,5); en oscuro, como bloque sobre `#0d171e`, 3,90 (no es texto); la tinta `#13212b` encima 3,53 y la tinta clara `#e6eef3` 3,96: **sobre el hondo solo va blanco** | `tonos.py`: OKLCH L 0,5498, C 0,0903, 14 pasos |
+| `--enlace` | `--acento-hondo` | `#0e9a93` | Enlaces y texto de acento | 4,52 / 5,23 (≥ 4,5 los dos). El Portal da 9,49 en oscuro; aquí manda el método, que pide 4,5 | `tonos.py`: la variante oscura es el vivo (regla 5 del método, 0 pasos) |
+| `--tinte` | vivo al 12 % sobre papel (`#dff0f0`) | vivo al 18 % (`#0d2f33`) | Hover, chips, píldoras | tinta encima 13,95 / 12,16 (≥ 7) | `tonos.py` |
+| Isobatas sobre el bloque | blanco al 20-50 % sobre `#16827c` | igual | Textura del bloque de acento | mismos porcentajes que el Portal | heredado |
+
+**En qué se aparta del Portal, y por qué:** 1) el Portal oscurece su hondo en tema oscuro (`#0b5e88`) y aclara el
+enlace (`#5cc8f2`); un producto lleva una sola variante oscura, la de texto (decisión de la hoja del Portal, punto 1).
+2) Aquí la variante oscura coincide con el vivo, porque `#0e9a93` ya da 5,23:1 sobre `#0d171e`. 3) El alga `#5d7a6a` no
+pasa a la interfaz del producto como acento secundario: su lugar lo ocupa el acento propio («Decisiones», punto 3);
+«hecho» sigue siendo `--ok-texto` y el fallo `--peligro`, heredados. Al lado del Portal (su web, sus fichas) el acento
+de developer es solo el toque.
+
+**Reglas de interfaz:** heredadas las once. Las dos que nombran el acento, con los hex de developer: regla 6, el
+acento en bloques grandes y planos es `#16827c`, con isobatas en blanco al 20-50 %; regla 10, sobre `#16827c`, texto
+blanco (4,65:1); sobre `#0e9a93`, solo la tinta `#13212b` (4,74:1).
+
+**Cálculo** (método de `../portal/hoja.md`, «Decisiones de la persona», punto 1; script [`tonos.py`](tonos.py), solo
+biblioteca estándar). Se reproduce con:
+
+```sh
+python3 docs/marcas/galivelop-developer/tonos.py '#0E9A93'
+```
+
+```text
+vivo                         #0e9a93   OKLCH L=0.6198 C=0.1053 h=189.05
+vivo sobre papel claro       3.37      #fbfcfd
+blanco sobre vivo            3.46      #ffffff
+tinta sobre vivo             4.74      #13212b
+vivo sobre papel oscuro      5.23      #0d171e
+hondo                        #16827c   L=0.5498 C=0.0903 pasos=14
+hondo sobre papel claro      4.52      #fbfcfd
+blanco sobre hondo           4.65      #ffffff
+hondo sobre papel oscuro     3.90      #0d171e
+oscuro                       #0e9a93   L=0.6198 C=0.1053 pasos=0
+oscuro sobre papel oscuro    5.23      #0d171e
+tinte 12 % (claro)           #dff0f0   tinta encima 13.95
+tinte 18 % (oscuro)          #0d2f33   tinta encima 12.16
+```
+
+Comprobado contra la hoja del Portal: el script da para `#0E9A93` los 3,37 / 3,46 / 5,23 de su tabla «Lo que falta» y,
+con `#1AA6DF`, los 2,70 / 2,78 / 5,91 / 6,53 y los tintes 14,25 / 11,65 de su tabla de tokens. El croma baja de 0,1053
+a 0,0903 en el hondo porque a esa luminosidad el tono 189° con el croma del vivo cae fuera de sRGB (regla 4). Lo que
+el método no fija y el script decide está en su cabecera: el paso 0 es el propio vivo, el croma vuelve al del vivo en
+cada paso y la tolerancia de «dentro de sRGB» es 1e-6. Con `#2BB3A3` (duda 1): hondo `#118376`, oscuro `#2bb3a3`.
+
+## Recursos: entregado, cancelado y pendiente (2026-11-12)
+
+Números de `docs/marca.md` del Portal (`6574c4f`, m.) donde los hay. Nada nuevo se ha generado para esta hoja.
+
+| Recurso | Estado | Dónde está | Fuente |
+|---|---|---|---|
+| Tarjeta «Próximamente» de Developer (15) | **Entregada** el 2026-11-11: el barco de papel sobre mar con olas (q311), 720×405 | Portal `public/proyectos/galivelop-developer/proxima.webp`; original en `piloto/portal-marca/portal-web-final/portal/aprobadas/06-portada-developer-q311.png` (fuera de git) | m.125, m.254; `../../propuestas/portal/entrega-marca-2026-11-12.md` l.20-21 |
+| Logo: cuadrado plano `#16827c` con chaflán y monograma | **Pendiente**: sin boceto. El `d` de `logos/` es de la identidad anterior | — | «Familia», «Logo, iconos e ilustración» |
+| Lockup horizontal y vertical | **Pendiente**: depende del logo y de la duda 2 (el nombre) | — | `../portal/hoja.md`, «Decisiones», punto 4 |
+| Icono de proyecto (23) y favicon | **Pendiente**: el Portal solo pide el 23 para Tarkor y Workflow (m.267); la ficha de producto usa hoy `"icono": "code"` (l.6) | — | m.267; `productos/galivelop-developer.json` l.6 |
+| `og.jpg` del proyecto (24) | **Pendiente** en toda la familia: 1200×630, tercio izquierdo para el icono, el acento en el lugar del alga | Portal `tools/og/fuentes/galivelop-developer/og-fuente.png` (cuando exista) | m.268 |
+| Social preview de GitHub (1280×640) y avatar | **Pendiente** con la identidad vigente; no consta en el repo cuál hay puesto | — | sección 11 |
+| `examples/galivelop-developer/`: configuración, prompts y pedidos | **Histórico** (FLUX, `#06121c`, `#2BB3A3`, Sora/Inter): falta reescribirlos con Z-Image, la paleta de la fila «Paleta» y los perfiles del Portal. Fuera del alcance de esta hoja | repo `examples/galivelop-developer/` | `galivelop-images.json` l.9 (`#2BB3A3`) |
+| Piezas de r1-r5 (`og`, cuadrado, vertical, cabecera, avatar) | **Histórico**: hechas con la identidad anterior, nunca publicadas | `piloto/r5/galivelop-developer/` (fuera de git) | secciones 9 y 12 |
+| SVG de `logos/` (`a`-`d` y lockups) | **Histórico**: se conservan en la carpeta, no se usan en piezas nuevas («Dudas», 5) | [`logos/`](logos/) | sección 4 |
+| Tarjetas de `gw-media-content` | **No hay**: developer lleva el flujo 0.3.0 en `main` (0.5.1 en una rama sin fusionar). El mapeo `Palette:` de la sección 11 es de la identidad anterior; el vigente va en la entrega | `../../propuestas/galivelop-developer/entrega-hoja-2026-11-12.md` | developer `70b0396` `.claude/gw.json` l.3; `82bb114` l.3 |
+
+## Familia Galivelop: cómo la cumple esta hoja
+
+Sigue, apartado por apartado, «Familia Galivelop: lo que heredan los productos» de `../portal/hoja.md`.
+
+### Qué se copia tal cual
+
+Las siete filas de la tabla del Portal, sin cambiar un valor: papel y superficie, tinta y sus dos escalones, filete y
+retícula, tipografías por papel, forma (chaflán de 45° arriba a la derecha, `border-radius` 0, una sola sombra, sin
+degradados), peligro / «hecho» / velos / noche, y los dos registros de dibujo con el modelo y las reglas de prompt.
+Aquí no se copian los hex: se leen allí, para que no haya dos sitios que mantener.
+
+### Qué cambia: los papeles de color
+
+| Papel | En el Portal | En galivelop-developer | Relación que cumple |
+|---|---|---|---|
+| Acento vivo | `#1aa6df` | `#0e9a93`, igual en los dos temas | papel claro 3,37 (no es texto); blanco encima 3,46 (prohibido); tinta encima 4,74 ≥ 4,5; sobre `#0d171e` 5,23 ≥ 4,5 |
+| Acento hondo | `#0072a8` / `#0b5e88` | `#16827c` en los dos temas | sobre papel 4,52 ≥ 4,5; blanco encima 4,65 ≥ 4,5. No llega al ≥ 7 que el Portal da en oscuro con su `#0b5e88`: un producto no lleva ese tercer tono |
+| Enlace en oscuro | `#5cc8f2` | `#0e9a93` (el vivo) | 5,23 ≥ 4,5, el umbral del método; no llega al 7 del Portal |
+| Tinte | vivo al 12 % / 18 % | igual, con `#0e9a93` | tinta encima 13,95 / 12,16 ≥ 7 |
+| Acento secundario | alga `#5d7a6a` / `#8fb09e` | **no tiene**: el acento propio ocupa ese lugar, en poca cantidad, junto al Portal y en las piezas generadas | toque: `#16827c` en claro (4,52 ≥ 4,5), `#0e9a93` en oscuro (5,23; «Dudas», 3) |
+| Isobatas sobre el bloque | blanco al 20-50 % | igual, sobre `#16827c` | mismos porcentajes |
+
+Relaciones 1 y 3-6 del Portal (tinta sobre papel, tema oscuro, filete y retícula, texto sobre velo, estado nunca solo):
+heredadas con sus hex. Relación 2: un acento con dos tonos, el hondo en superficie y el vivo en puntos. Relación 7: en
+imagen generada, como mucho cerúleo, papel, tinta y un toque del acento; iconos, una tinta. **La proporción papel /
+tinta / acento sigue sin número**, como en el Portal.
+
+### Logo, iconos e ilustración
+
+| Aspecto | Regla heredada | Lo propio de developer | Estado |
+|---|---|---|---|
+| Logo | Cuadrado de color plano del acento hondo, chaflán de 28/128 arriba a la derecha (lo pone el SVG), monograma de trazo 12/128 en una sola tinta; sin degradado, sombra ni redondeo; generado con gimg sobre croma `#00ff00` y vectorizado con `gimg brand trace` | Cuadrado `#16827c`; monograma **«GD»** en blanco `#ffffff` (4,65:1 sobre el hondo; la tinta `#13212b` daría 3,53). El dibujo sale del generador, en línea simple y sobre croma, como el «GV» del Portal (m.229) | **Pendiente**; el monograma «GD» y el blanco son **[P]** («Dudas», 4) |
+| Lockup | Símbolo + nombre en Big Shoulders Display 800, mayúsculas, tracking 0,01 em, en `currentColor` (tinta `#13212b` en claro, `#e6eef3` en oscuro), nunca en el acento; horizontal: letras a 0,45 `S`, hueco 0,25 `S`, margen 0,25 `S`, mínimo `S` ≥ 32 px; vertical: nombre a 1,6 `S` de ancho, mínimo `S` ≥ 48 px; por debajo, el símbolo solo (hasta 16 px) | Nombre «GALIVELOP DEVELOPER» («Dudas», 2). Órdenes: `gimg brand wordmark "GALIVELOP DEVELOPER" --font <Big Shoulders Display variable .ttf> --weight 800 --spacing 0.01 -o wordmark.svg`; `gimg brand lockup simbolo.svg wordmark.svg --layout h --cap 0.45 --gap 0.25 --margin 0.25 -o galivelop-developer-lockup-h.svg`; lo mismo con `--layout v --width 1.6 --gap 0.25 --margin 0.25`. Las medidas anteriores (52/128, separación 28/128, mínimo 120 px, nombre en `#2BB3A3`) y los `*-lockup*.svg` de `logos/` son histórico | **Pendiente**: necesita el símbolo; la ruta de la fuente no consta en el repo |
+| Iconos | Línea simple, un grosor, remates redondos, sin relleno ni trama, una tinta `#13212b`, legibles a 24 px, nodos e interiores huecos; `gimg brand trace --mode color --matte --dp-tol 0.5 --palette '#13212b,#fbfcfd'`; a `currentColor`; la serie entera, sin mezclar con lucide | Motivos: terminal con chevrón y cursor de bloque; rama que sale y vuelve, con el nodo hueco. El Portal ya tiene `terminal.svg` (9c, q537) y `ramas-unidas.svg` (8d, q547): son de sus series y no se reutilizan como marca de developer | **Pendiente**; motivos **[P]** |
+| Ilustración | Grabado de carta náutica a dos tintas, bloque literal del Portal; Z-Image, 8 pasos, cfg 1.0; 120-200 palabras; cierre y frase de paleta al final | Sujeto: el barco de papel sobre el mar con olas (portada, `og`, social). Cuarto color de la frase: `#16827c` | q311 **entregada** (con la paleta del Portal, alga incluida: no se regenera); `og` y social, pendientes |
+| Composición | Zona limpia en positivo y al principio; a sangre; sin texto en la imagen; sin «exactly N»; lo que se recorta, sobre croma | Nada. Los títulos y lockups compuestos de r4-r5 son histórico | heredado |
+| Mar y tecnología | Ningún motivo náutico protagonista fuera de las tres excepciones | Usa la excepción 2 (el barco); ninguna más | heredado |
+
+### Prohibido
+
+Todo lo de «Prohibido en toda la familia» de `../portal/hoja.md`. Además, propio (sección 2 y `biblia.md` §1): nada
+que lo muestre autónomo (trabaja en una rama acotada y lo revisa una persona o Claude), nubes (es local), engranajes,
+pantallas con código legible, teclados, hojas o brotes en la rama; nada de «en abierto», «MIT» ni «open source» (el
+repo no tiene licencia, `README.md` l.52), ni de mostrarlo ejecutando tareas mientras el `README` diga «aún no ejecuta
+ninguna tarea» (l.10). De la identidad anterior quedan anulados, por chocar con lo vigente: el degradado de la baldosa,
+el halo y el «soft glow», el `rx` 30, el nombre del lockup en el color del acento, y «el celeste del Portal junto al
+acento» como prohibición (ahora el acento va junto al cerúleo como toque; ΔE76 39,1, se distinguen).
+
+### Comprobación de esta hoja
+
+Los seis puntos de «Cómo se comprueba una hoja de producto»:
+
+| # | Punto | Resultado |
+|---|---|---|
+| 1 | Tres hex del acento calculados, con ratios, ninguno bajo 4,5 donde el método lo exige | **Pasa:** vivo `#0e9a93`, hondo `#16827c` (4,52 sobre papel; blanco 4,65), oscuro `#0e9a93` (5,23) |
+| 2 | Papel, tinta, filete, retícula, tipografías y chaflanes coinciden con el Portal | **Pasa** por remisión: esta hoja no escribe otros valores en lo vigente |
+| 3 | Frase de paleta del Portal con el acento en el lugar del alga; ningún prompt nombra otro color | **Pasa en la hoja; no en `examples/galivelop-developer/prompts/`**, que son histórico y están por reescribir |
+| 4 | Logo: cuadrado plano del hondo con chaflán de 28/128 y trazo de 12/128, salido de gimg | **No pasa:** pendiente de generar; los de `logos/` son la baldosa anterior |
+| 5 | Iconos de una tinta, sin relleno, nodos huecos, legibles a 24 px | **Sin iconos todavía** |
+| 6 | Nada de «Prohibido en toda la familia» | **Pasa en lo vigente;** el histórico (degradado, `rx` 30, halo) está marcado como tal |
+
+---
+
+> **Histórico (identidad anterior, r1-r5).** De aquí al final la hoja es la aprobada el 2026-11-04 (decisiones delegadas;
+> ver [`../../records/decisiones-hojas-2026-11-04.md`](../../records/decisiones-hojas-2026-11-04.md)), con la forma de
+> [`../plantilla-hoja-de-estilo.md`](../plantilla-hoja-de-estilo.md). Estados: sin marca sale de un repo; **[P]** es propuesta
+> del agente aprobada por delegación; *(suposición)* se comprueba en una ronda. No se sigue para piezas nuevas, salvo la voz
+> (secciones 1, 2 y 10). Donde cita galivelop-developer `8fa309c`, vale lo dicho arriba en «Commits de referencia».
 
 ## 0. Ficha
 
@@ -185,7 +393,10 @@ textless.». Ninguno lleva palabra vetada de la biblia ni negación.
 
 ## 13. Fuentes de verdad
 
-**galivelop-developer**, `claude/f1-instalacion` `8fa309c` (árbol local; leído solo, nada modificado):
+**galivelop-developer**, `main` `70b0396` (releído el 2026-11-12 con `git show`, nada modificado). Las líneas de `README.md`,
+`README.en.md`, `GLOSSARY.md`, `docs/adr/`, `.claude/gw.json` y `AGENTS.md` son las mismas que en `claude/f1-instalacion`
+`8fa309c`, que es lo que esta lista citaba; `docs/traspaso.md` l.11-14 (F1.1 hecha, en pausa), `gdev/locales/` y las líneas de
+`docs/plan.md` son de `8fa309c`, que va por delante de `main`:
 
 - `README.md` l.1 (nombre), l.3 (enlace a `README.en.md`), l.5-6 (propósito), l.8-12 («Estado»: F0 hecha, «aún no ejecuta
   ninguna tarea»), l.14-21 («Qué es»: `local/<tarea>`, nunca la bitácora, la rama protegida ni `.claude/`, «tercer relevo»,
