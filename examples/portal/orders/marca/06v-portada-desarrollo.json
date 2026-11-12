@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/06v-portada-desarrollo",
+  "profile": "portada",
+  "seed": 111,
+  "count": 2,
+  "prompt": "A lighthouse under construction on a small rocky islet in the open sea, seen from slightly above, its round stone tower only half built and wrapped in fine wooden scaffolding with ladders and a small wooden crane, drawn in crisp off-white and ink grey line art with fine engraved shading, small ripples around the rocks. Richly detailed engraved nautical chart style, like a fine antique sea chart printed in two inks: the sea built from many layers of fine wave lines and hatching, line density increasing towards the deep water to give depth, tonal bands from deep cerulean at the bottom to lighter cerulean at the top, bathymetric contour lines with small depth soundings drawn as tiny dots, a delicate compass rose with fine tick marks in a corner, subtle foam strokes and a few glints of light on the crests. Crisp sharp lines of several weights, intricate but calm, premium print quality, high detail, elegant. No realistic objects, no photographic rendering, no glow, no text, no letters, no numbers, no watermark, no horizon, no sky, no clouds, full-bleed edge to edge, no border, no frame, the subject small on the right third, open water on the left. Palette strictly limited to medium cerulean ocean blue #0072a8 and its tints and shades, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a."
+}
