@@ -348,6 +348,61 @@ piezas de marca» no es una skill del flujo sino **la propia aplicación**, que 
 (tarjeta y sello compartibles) con los hex copiados a mano en su CSS. La hoja debería ser su fuente igual que lo es de `gimg`;
 hoy nada los alinea y la tarjeta ya se desvía (fondo `#ffffff`).
 
+## 16. Ampliaciones propuestas (2026-11-12)
+
+**Todo lo de esta sección es PROPUESTA (no decidida).** No cambia la identidad de toVeriAI (papel cálido, Cormorant Garamond +
+DM Sans, verde bosque `#2D6A4F`, semáforo del IMI): añade lo que el repo no tiene hoy y `gimg` puede darle. Cada fila dice qué
+falta (con su fuente en `VeriNews_AI` `1f98db6`), qué pieza de `gimg` lo produce y en qué perfil de
+`examples/toveriai/galivelop-images.json`, y quién decide. Nada se dibuja a mano: los SVG salen de `gimg brand trace` sobre un
+PNG, y las imágenes, de un pedido. La entrega para la sesión de su repo es
+`docs/propuestas/verinews-ai/entrega-hoja-2026-11-12.md`; nada de esto se ha generado todavía.
+
+| # | PROPUESTA | Qué falta hoy (fuente) | Pieza de `gimg` y perfil | Decide |
+|---|---|---|---|---|
+| A1 | **Símbolo en SVG sacado de su PNG** | el símbolo solo existe como `frontend/public/favicon.png` 512×512 RGBA (igual a `frontend/src/assets/favicon.png`); no hay SVG del símbolo en el repo. El `logos/toveriai-a.svg` de aquí (`b7f1baf`) se dibujó antes de la regla «todo nace del generador» y sigue sin aprobar (§4) | `gimg brand trace <favicon.png> --mode color --palette "#2D6A4F,#B5832A"` (el PNG ya trae alfa: sin `--matte`); alternativa fiel al píxel, `--colors 2`, que saca el salvia y el dorado del PNG (Contradicciones, 3). Sin perfil: es una orden de marca, no genera | su dueña/dueño: qué colores (kit o PNG) y si sustituye al `a` |
+| A2 | **Variantes mono y silueta del símbolo** | no hay ninguna; el símbolo tiene dos colores y a 16-32 px los once puntos se empastan *(suposición: sin mirar)* | `gimg brand trace <favicon.png> --mode mono` y `--mode silhouette`; se usa en `#1A1A1A` sobre claro y `#FFFFFF` sobre oscuro. Sin perfil | su dueña/dueño, viendo la hoja de contactos (A13) |
+| A3 | **Wordmark y lockups «toVeriAI» a trazos** (horizontal y vertical), en lugar de los PNG «VeriNews» | `frontend/src/assets/logo.png` (2190×1980) y `logo-vertical.png` (2230×750) llevan el nombre viejo y nadie los importa; el wordmark vive solo como tres `span` (`Navbar.jsx` l.101-103) | `gimg brand system` sobre el favicon con `--name toVeriAI --text toVeriAI --font CormorantGaramond[wght].ttf --weight 400 --spacing 0.08` (peso y tracking de `Navbar.css` l.18-26): PNG sin fondo, emblema en color y mono, nombre, dos lockups (`h`, `v`) y su hoja de contactos. **Límite:** `brand wordmark` y `brand lockup --color` dan el nombre en **un solo color**; el «Veri» en verde no sale de ahí. El lockup a dos tintas sigue siendo el `<text>` de `compose` (`examples/toveriai/logos/toveriai-a-lockup.svg`). Sin perfil | su dueña/dueño: si quiere los lockups mono o espera a que `gimg` dé el nombre a dos tintas |
+| A4 | **Lockup para fondo oscuro, con «Veri» legible** | el pie pinta `to`/`AI` en blanco y `Veri` en `--color-green` sobre `#1A1A1A` (`Footer.css` l.22-27; kit l.275, «pieza oscura», acento `#2D6A4F`): **2,72:1**, por debajo del 3:1 que WCAG pide incluso a texto grande | `gimg brand lockup <emblema> <nombre> --color "#FFFFFF"` (mono claro); para dos tintas sobre oscuro, `Veri` en `#52B788` (`--color-green-mid`, `App.css` l.128; 7,03:1 sobre `#1A1A1A`), que es el verde que el kit da para fondo oscuro. Sin perfil; en piezas, plantilla oscura de `compose` | su dueña/dueño: cambia un color del wordmark en el pie; hasta que decida, §4 sigue diciendo «`Veri` siempre en `#2D6A4F`» |
+| A5 | **`og:image` 1200×630** | `index.html` l.29 y l.36 apuntan a `https://www.toveriai.com/favicon.png` (512, cuadrado) y l.33 dice `twitter:card` `summary` | perfil `og` (1280×640 → 1200×630), plantilla `plantillas/og.svg`, lema de §10; ya compuesto en r4-r7, falta el veredicto de r8 (§6) | la persona de aquí da el veredicto; su dueña/dueño lo publica |
+| A6 | **Tarjetas para redes** | las cuatro cuentas constan (`Footer.jsx` l.57-62), ninguna pieza en el repo | perfiles `square` (1080×1080, Instagram), `portrait` (1080×1350), `wide` (1200×675, X y LinkedIn; **nunca generado**: le falta prompt) y `header` (1500×500, cabecera de X); textos de §10, todos literales de su kit | su dueña/dueño: qué redes y qué frases |
+| A7 | **Iconos de aplicación** (apple-touch-icon 180, manifest 192 y 512, favicon 32) y `theme-color` | `index.html` l.5 solo tiene `<link rel="icon" … href="/favicon.png">`; no hay manifest, ni apple-touch-icon, ni `theme-color` | desde el SVG de A1 (y el mono de A2 para 32 px). **Hueco de `gimg`:** no hay perfil `icon` (§15); hoy lo haría el piloto, como el `avatar`. `theme-color` propuesto: `#F7F5F2` (`--color-bg`, `App.css` l.114) | su dueña/dueño; depende de A1 |
+| A8 | **Tarjeta compartible con tokens** en vez de hex copiados | `ShareCard.css` no usa ningún `var(--…)`: `#FFFFFF` (l.8), `#1A1A1A` (l.10, l.30), `#2D6A4F` (l.15, l.31), `#B7E4C7` (l.20, l.36, l.74, l.81, l.83), `#B5832A` (l.34, l.63, l.71, l.84), `#74C69D` (l.49), `#6B7F76` (l.50), `#52B788` (l.64), `#E8F4EE` (l.78), `#9B2335` (l.85); `font-weight: 700` en l.52 (no hay woff2 de ese peso: `fonts.css` solo 300/400/500); `ShareSeal.css` l.26, l.33, l.37 igual; `shareImage.js` l.5-7 repite `imiColors.js` l.1-3 y l.21 captura sobre `'#ffffff'` | no la produce `gimg` (la genera la app en el navegador): la hoja le da los tokens (tabla de la entrega) y `gimg measure <captura.png> --palette …` y `--zone … --text "#1A1A1A"` la comprueban después. `#6B7F76` **no tiene token**: o entra en `App.css` como token nuevo o pasa a `--color-muted` (`#777777`, l.119) | su dueña/dueño: fondo (`#F7F5F2` o `#FDFCFB`), qué hacer con `#6B7F76` y con el 700 |
+| A9 | **Serie de iconos propia** | los iconos van como SVG en línea en cada componente (p. ej. el chevrón de `Navbar.jsx` l.202-204); `frontend/public/icons.svg` es un sprite ajeno a la marca (relleno `#08060d`) que nadie referencia | cada icono, un pedido sobre croma `#ff00ff` en `square`, recorte con `gimg brand matte` y `gimg brand trace --mode mono`; reglas del kit l.397 (trazo ~1,3 px, sin relleno, un color) y de §6 «Lenguaje de forma»; se acepta si se lee a 24 px | su dueña/dueño: si quiere serie propia y de qué conceptos (dimensiones del IMI, tipos de entrada, estados) |
+| A10 | **Ilustración para la web** (cabeceras de página, estados vacíos, 404) y los cuatro motivos del kit sin probar | las cabeceras son un degradado CSS (`ComoFuncionaPage.css` l.10 y otras tres); de los cinco motivos de §6 solo «entre dos tintas» está generado | estilo y forma de pedir de §6; `header` para cabeceras, `og` y `wide` para apaisadas, `square` para estados vacíos; una ronda por motivo (espectro, cita tipográfica, doble página, anillo de score), en borrador FLUX y pieza con Z-Image | su dueña/dueño: si la web lleva ilustración o se queda tipográfica |
+| A11 | **Tema oscuro: no** en la web; solo piezas oscuras compuestas | no hay tema oscuro (ni `prefers-color-scheme` ni `data-theme` en `frontend/src`); lo único oscuro es el pie y el «hero de contraste» (kit l.275) | recomendación: no ofrecerlo (la marca es papel claro, §3); para una pieza oscura, fondo plano `#1A1A1A` compuesto por `compose`, sin imagen generada, con los pares de contraste de abajo | su dueña/dueño |
+| A12 | **Reglas comprobables** (contraste, tamaños mínimos, zona libre) | el kit da margen y mínimo en prosa (l.345, l.348) y ningún contraste medido | tabla de abajo; en piezas, `gimg measure --zone X,Y,W,H --text #RRGGBB` da el contraste real; zona libre con `gimg brand lockup --margin` (en diámetros del emblema) | su dueña/dueño confirma los mínimos |
+| A13 | **Hoja de contactos para decidir** | — | `gimg sheet` con A1-A4 a 16, 32, 64 y 512 px sobre `#F7F5F2` y sobre `#1A1A1A`: una sola imagen para decir sí o no | la persona de aquí la manda; su dueña/dueño decide |
+
+**Contrastes de sus propios tokens** (calculados el 2026-11-12 con la fórmula de luminancia relativa de WCAG 2.1 sobre los hex
+de `frontend/src/App.css` l.114-139 y l.159; umbrales: 4,5:1 texto normal, 3:1 texto grande —desde 24 px, o 18,66 px en
+negrita— y elementos gráficos):
+
+| Par (texto sobre fondo) | Contraste | Vale para |
+|---|---|---|
+| `#1A1A1A` sobre `#F7F5F2` / `#FDFCFB` / `#F0EDE8` | 15,99 / 16,98 / 14,90 | todo |
+| `#2D6A4F` sobre `#F7F5F2` / `#FDFCFB` / `#F0EDE8` / `#E8F4EE` | 5,87 / 6,24 / 5,47 / 5,66 | todo |
+| `#FFFFFF` sobre `#2D6A4F` | 6,39 | todo (botones) |
+| `#9B2335` sobre `#F7F5F2` / `#FDFCFB` / `#FBF0F2` | 7,19 / 7,63 / 7,02 | todo |
+| `#B5832A` sobre `#F7F5F2` / `#FDFCFB` / `#FBF6ED` / `#FFFFFF` | 3,09 / 3,28 / 3,12 / 3,36 | **solo texto grande y gráficos**: el ámbar del IMI no pasa como texto pequeño |
+| `#777777` sobre `#F7F5F2` / `#FDFCFB` | 4,12 / 4,37 | **solo texto grande**: el gris apagado se queda corto para cuerpo |
+| `#999999` / `#AAAAAA` sobre `#F7F5F2` | 2,62 / 2,13 | **ninguno**: solo decorativo |
+| `#FFFFFF` sobre `#1A1A1A` | 17,40 | todo |
+| `#2D6A4F` sobre `#1A1A1A` | 2,72 | **ninguno** (es el «Veri» del pie: A4) |
+| `#52B788` / `#74C69D` / `#B7E4C7` sobre `#1A1A1A` | 7,03 / 8,54 / 12,38 | todo |
+| `#B5832A` / `#E9A94A` sobre `#1A1A1A` | 5,18 / 8,49 | todo |
+| `#9B2335` / `#E07085` sobre `#1A1A1A` | 2,23 / 5,66 | el granate oscuro, **ninguno**; el claro, todo |
+| `#B7E4C7` sobre `#2D6A4F` | 4,55 | todo, por poco (cabecera de la tarjeta compartible) |
+
+**Tamaños mínimos y zona libre** (PROPUESTA; lo que ya decía §4, puesto en cifras que se pueden comprobar): wordmark, 18 px
+de alto como mínimo y por debajo solo el símbolo (kit l.345); símbolo en color hasta 32 px y, por debajo, la variante mono de
+A2 *(suposición hasta ver A13)*; zona libre del lockup, la altura de la «V» (kit l.345), que en `gimg brand lockup` se
+aproxima con `--margin 0.25`; en una pieza, el lockup al 9 % del alto (§9) y nunca a menos de 32 px de alto.
+
+**Desfases de esta hoja con este repo, vistos de paso el 2026-11-12** (no se corrigen aquí; no tocan la identidad): §9
+«Composición por perfil» dice que no hay `compose`, pero el perfil `og` ya lo declara (`template: plantillas/og.svg`, cuatro
+campos, `logo: logos/toveriai-a-lockup.svg`); §4 dice que no hay copia en `examples/toveriai/logos/`, y el lockup `a` ya está
+allí; los órdenes `r6-detalle.json` y `r7.json` ya existen en `examples/toveriai/orders/`.
+
 ---
 
 ## Contradicciones
