@@ -1,5 +1,270 @@
 # Hoja de estilo mínima: Galivelop-workflow
 
+> **Dos identidades en esta hoja.** Desde el 2026-11-12 Galivelop-workflow sigue la identidad vigente del Portal con
+> su propio acento: papel `#fbfcfd`, tinta `#13212b`, Big Shoulders Display, Literata y JetBrains Mono **heredados**, y
+> el acento **`#3D6FD9`** con sus tonos calculados (hondo `#3d6fd9`, variante oscura `#487ce7`). La referencia es
+> [`../portal/hoja.md`](../portal/hoja.md) (este repo, `8bb0ae1`), sección «Familia Galivelop: lo que heredan los
+> productos» (l.228-374) y su subsección «Decisiones de la persona (2026-11-12)» (l.331-374). **Lo vigente está en los
+> cuatro bloques de abajo**, con los mismos títulos y el mismo orden que la hoja del Portal: «Identidad vigente»,
+> «Interfaz», «Recursos» y «Familia Galivelop». Lo que se hereda se dice como herencia y remite al Portal; lo propio va
+> explícito. Las secciones 0-15, «Contradicciones» y «Lo que enseñó», [`biblia.md`](biblia.md) y [`logos/`](logos/)
+> describen la identidad anterior (`#0d1b2a`, Inter/Sora, líneas de luz, FLUX) y se quedan como histórico de r1-r8: no
+> se siguen para piezas nuevas.
+
+Commits de referencia: Galivelop-workflow `origin/main` `2e55d66` (2026-11-12, etiqueta `v0.5.2`; antes esta hoja
+citaba `7d61089`, y la `v0.5.1` es `eeec886`, 2026-11-05); Portal-Galivelop rama `ccr-47f8fddd-o5ek6p` `6574c4f` y
+`main` `e16500f`, leídos a través de `../portal/hoja.md`; este repo `8bb0ae1` (`hojas-repos`). El repo de Workflow se
+ha leído **sin modificar nada** (`git show origin/main:<ruta>`).
+
+**Lo primero que hay que saber:** el repo de Galivelop-workflow **sigue sin identidad visual propia** en `2e55d66`:
+ni CSS, ni SVG, ni favicon, ni logo, ni imagen en el `README` (`git ls-tree -r origin/main` no lista ningún `.svg`,
+`.png`, `.css`, `.webp` ni `.ico`; `docs/design/*.md` es el diseño del flujo `1.0.0`, no diseño gráfico:
+`docs/design/README.md` l.1). Lo único con color son las plantillas HTML de su skill `gw-media-content`
+(`skills/gw-media-content/template/media/source/card.html` l.12-17), con una paleta genérica «override these to match
+the project». Es además **una plantilla que se instala en otros repos** (`docs/es/apply.md` l.107-108: `apply.py`
+copia `scripts/`, las skills, los ganchos y el CI): la marca es del repo de Workflow, no de lo que instala (ver
+«Recursos» y «Dudas», 5).
+
+---
+
+## Identidad vigente (2026-11-12): lo que gimg necesita
+
+Lo que se aplica a cada pedido nuevo de Workflow. **Toda fila que dice «heredado» vale lo que diga la fila del mismo
+nombre del bloque «Identidad vigente» de `../portal/hoja.md` (l.50-63)**: aquí no se copia el texto, para que no haya
+dos versiones; si la del Portal cambia, cambia esta. Donde un pedido de `examples/galivelop-workflow/` y esta sección
+digan cosas distintas, manda esta sección (los pedidos y la configuración de hoy son de la identidad anterior: ver
+«Recursos», «Lo que la configuración no refleja»).
+
+| Campo | Valor | Estado |
+|---|---|---|
+| Paleta | **Heredado:** cerúleo `#0072a8`, papel `#fbfcfd`, gris tinta `#13212b`; tonos del cerúleo en los grabados; iconos a una sola tinta; versión oscura `#0d171e` / `#e6eef3`. **Propio:** el cuarto color, que en el Portal es el verde alga, aquí es el acento de Workflow, **`#3D6FD9`**, y solo como «a touch of», nunca protagonista. Frase final: «Palette strictly limited to medium cerulean ocean blue #0072a8, off-white #fbfcfd, ink grey #13212b and a touch of cobalt blue #3d6fd9.» El nombre «cobalt blue» es *(suposición: sin ronda)*: el Portal aprendió que el nombre desvía el color («sky blue» dio `#1aa6df`) y aquí hay dos azules en la misma frase (cerúleo `#0072a8`, tono OKLCH 239,7°; acento, 263,1°: 23,4° de distancia; `acento.py "#0072a8"`), así que la primera tanda mide con `gimg measure` si el modelo los separa. `brand.palette` para lo nuevo: `#0072a8`, `#fbfcfd`, `#13212b`, `#3d6fd9`, `#487ce7`, `#e6eef3`, `#0d171e`. **El `#1AA6DF` no es color de Workflow**: es el celeste del Portal | heredado de `../portal/hoja.md` l.52; el lugar del acento, decisión de la persona 2026-11-12 (l.355-357); el hex, decisión 2 (l.353-354; Portal `src/data/proyectos/galivelop-workflow.json` l.7); tonos, `acento.py` |
+| Tipografía | **Heredado, sin cambio:** Big Shoulders Display (titulares), Literata (texto), JetBrains Mono (código y datos). Ninguna imagen generada lleva texto: lo pone quien la usa (la web del Portal, el `README`, la tarjeta HTML). Inter y Sora quedan en el histórico | heredado de `../portal/hoja.md` l.53 y l.154-158; decisión 3 (l.355) |
+| Modelo y parámetros | **Heredado:** calidad con `zimage-turbo-q6`, 8 pasos, cfg 1.0, euler, base 1024; FLUX solo para bocetos; Qwen-Image solo fotorrealismo (ninguna pieza de Workflow lo pide). Sin prompt negativo efectivo | heredado de `../portal/hoja.md` l.54 |
+| Mar y tecnología | **Heredado:** el mar pone el dónde (carta, isobatas, papel, cerúleo), la tecnología el qué. **Propio, el qué de Workflow: el relevo como historial de commits**: una línea de nodos redondos unidos por tramos cortos, una rama que se aparta y vuelve a unirse, y el último nodo con un visto (la revisión); el testigo es un tramo más grueso entre dos nodos. Workflow no añade ningún motivo náutico: las tres excepciones son del Portal | heredado de `../portal/hoja.md` l.55 y l.295; el motivo, propuesta del agente del 2026-11-11 que el Portal ya usa en su recurso 23 (`examples/portal/orders/marca/23-icono-workflow.json`; entregado, q490) |
+| Dos registros de dibujo | **Heredado, con los dos bloques literales del Portal.** Línea simple: el motivo solo (icono, símbolo, avatar). Grabado a dos tintas: el motivo sobre el mar de carta, con la línea de nodos como **ruta trazada sobre la carta** (cabecera, social, `og`). No se mezclan en una pieza | heredado de `../portal/hoja.md` l.56 |
+| Zonas limpias | **Heredado.** Las piezas anchas de Workflow reservan papel liso para el texto que pone quien las usa: se describe en positivo y al principio, y la trama se confina a la otra parte | heredado de `../portal/hoja.md` l.57 |
+| Recuentos | **Heredado:** nunca «exactly N». **Propio:** el motivo se pide «a few round nodes»; lo que sí es significado (una rama que se une, un solo visto en el último nodo) se fija al vectorizar | heredado de `../portal/hoja.md` l.58 |
+| Fondo y recorte | **Heredado:** lo que se recorta, sobre croma plano `#00ff00` (el acento es azul: no hace falta `#ff00ff`); matte y trace con `gimg brand`; entregas `-alpha.png` y `.svg` | heredado de `../portal/hoja.md` l.59 |
+| Versión oscura | **Heredado:** iconos, símbolo y lockup, sin generar nada (el SVG a `currentColor`); grabados, segunda generación con la misma semilla y las tintas cambiadas. **Propio:** en imagen el acento no cambia de hex (como el cerúleo y el alga en el Portal); `#3d6fd9` da 3,86:1 sobre `#0d171e`, que vale para trazo y no para texto. Ninguna pieza oscura pedida hoy | heredado de `../portal/hoja.md` l.60; ratio, `acento.py` |
+| Encuadre | **Heredado:** todo a sangre; el chaflán del cuadrado del logo lo pone el SVG, no el modelo | heredado de `../portal/hoja.md` l.61 |
+| Perfiles | **Heredado en nombres y medidas** (`cuadrado` 1024², `icono` 1024 → 512, `social` 1344×704 → 1200×630, `cabecera` 1664×512 → 1600×500), con Z-Image y `draft` 0,5/4. **Propio:** el social preview de GitHub es 1280×640 (`social` con otro destino). Hoy `examples/galivelop-workflow/galivelop-images.json` solo tiene los perfiles de la identidad anterior (`og`, `social`, `square`, `banner`, todos con `flux2-klein-4b-q8`): falta declarar los nuevos | heredado de `../portal/hoja.md` l.62; repo (`examples/galivelop-workflow/galivelop-images.json`, `profiles`) |
+| Referencias aprobadas | **Lo que gusta:** el icono de proyecto que el Portal ya publica (recurso 23, q490: tres nodos encadenados y el último con visto). **Heredado:** el registro de grabado que la persona aprobó en q310/q311. **Histórico, no referencia para lo nuevo:** r7 (6/10) y r8 (filamentos de vidrio, árbol de nodos de luz) | `../portal/hoja.md` l.63 y l.212; históricos, sección 6 |
+
+**Cómo se escribe el prompt.** Heredado entero de `../portal/hoja.md` l.65-90 (orden, negaciones solo en el cierre,
+ningún color fuera de las tintas, vetos de ética, comprobación antes de encolar). Lo propio:
+
+1. **Sujeto:** el motivo de arriba, dicho sin números («a short commit history: a line of a few round nodes joined by
+   short links, one branch leaving the line and joining it again, the last node holding a checkmark tick»).
+2. **Frase de paleta:** la de la fila «Paleta», con el acento en el lugar del alga.
+3. **Vetos propios, que se suman a los del Portal** (sección 6, vigentes): `robot`, `brain`, `circuit`, `code rain`,
+   `capsule`, `pill`, `hand`, `keyboard`, `screen`, `human`, `humanoid`, `spark`, `sparkle`, `magic`. La placa de
+   circuito es motivo permitido en el Portal (l.55) y **no en Workflow**: su ética veta lo que sugiera autonomía o
+   «magia» de la IA (sección 2). `text`, `letters` y `logo` solo aparecen en el cierre («no text, no letters»).
+4. **Prompts propuestos** (texto, sin encolar; los pedidos van en `examples/galivelop-workflow/orders/`, fuera del
+   alcance de este cambio):
+   - **Símbolo (boceto, perfil `cuadrado`, sobre croma):** «Monogram logo, centred: the capital letters G and W drawn
+     as one continuous stroke of even width with rounded caps and joins, on a solid flat square. Flat vector
+     pictogram, geometric, no shading, no hatching, no texture, no gradients, no glow, no other text, no watermark,
+     no border, no frame, the square on a plain flat solid bright green #00ff00 background. Palette strictly limited
+     to cobalt blue #3d6fd9 for the square and white #ffffff for the stroke.» El chaflán de 28/128 y el trazo de
+     12/128 se fijan al vectorizar. *(suposición: sin ronda; el `01-logo` del Portal sigue en boceto, q133)*
+   - **Icono de proyecto:** el del pedido 23 del Portal, ya entregado; no se rehace.
+   - **Cabecera y social (grabado):** «A sea chart seen from above with a route traced across it as a short commit
+     history: a line of a few round nodes joined by short links, one branch leaving the route and joining it again,
+     the last node holding a checkmark tick, in the right two thirds of the sheet; the left third is plain flat
+     off-white paper, open and unmarked. [bloque de grabado del Portal, l.56]. No photographic rendering, no glow, no
+     text, no letters, no numbers, no watermark, full-bleed edge to edge, no border, no frame. [frase de paleta].»
+     *(suposición: sin ronda)*
+
+**Dudas que decide la persona** (2026-11-12), con recomendación:
+
+1. **El vivo y el hondo de Workflow son el mismo hex.** El método (l.343, punto 5) lo dice así: `#3D6FD9` ya da
+   4,57:1 sobre el papel, luego el hondo es el vivo. Consecuencia: las reglas del **vivo** del Portal no se cumplen
+   al pie de la letra, porque están escritas para un vivo claro (`#1aa6df`): sobre el acento de Workflow el texto va
+   en **blanco** (4,69:1) y no en tinta (3,50:1), y «texto blanco sobre el acento vivo» (prohibido de familia, l.302)
+   aquí es lo correcto. **Recomendación:** aceptarlo y que Workflow tenga dos hex (`#3d6fd9` y `#487ce7`) y no tres;
+   la alternativa, un vivo más claro, contradice que el vivo es el hex de hoy.
+2. **Cerrada. Símbolo del logo: decidido por la persona (2026-11-12), monograma «GW»** en una tinta sobre el cuadrado con chaflán de 28/128 en el hondo `#3d6fd9`; los logos anteriores (degradado, `rx` 30, Sora) son históricos y no se copian a su repo. Los nodos del icono 23 se quedan como icono de proyecto y motivo de las ilustraciones. **Dependencia:** `gimg brand` no tiene aún la orden que monte el cuadrado con chaflán.
+3. **Acento secundario en la interfaz propia.** La decisión 3 pone el acento del producto donde el Portal usa el alga
+   en las piezas generadas y junto al Portal; no dice qué hace de secundario dentro de la interfaz de Workflow
+   (avisos suaves, «en desarrollo»). **Recomendación:** se hereda el alga del Portal (`#5d7a6a` / `#8fb09e`) sin
+   inventar otro hex; `--ok-texto` ya sale de ella.
+4. **Ámbar del testigo, verde y rojo de los diagramas.** La identidad anterior daba significado a `#f2b34a`
+   (testigo), `#4cc38a` (ok) y `#f0716a` (rechazo), los de los diagramas `gw-*.svg` del Portal. La familia hereda
+   `--ok-texto` y `--peligro` y no tiene ámbar. **Recomendación:** en lo nuevo, «hecho» y fallo con los tokens del
+   Portal, y el testigo se dice con forma (el tramo más grueso), sin color propio; los diagramas `gw-*.svg` son del
+   Portal y los rehace su sesión.
+5. **¿La marca viaja con lo que Workflow instala en otros repos?** **Recomendación: no.** El logo, `docs/marca.md` y
+   la nota de paleta se quedan en el repo de Workflow, fuera de `scripts/`, `skills/`, `templates/` y `hooks/`; las
+   plantillas de `gw-media-content` siguen con su paleta genérica, porque cada proyecto que adopta el flujo pone la
+   suya (`card.html` l.12). Detalle en
+   [`../../propuestas/galivelop-workflow/entrega-hoja-2026-11-12.md`](../../propuestas/galivelop-workflow/entrega-hoja-2026-11-12.md).
+6. **El nombre en mayúsculas.** El lockup común escribe «GALIVELOP-WORKFLOW» en Big Shoulders Display 800 y en
+   `currentColor` (decisión 4, l.358-374); la ficha de la identidad anterior decía «w minúscula, sin mayúsculas
+   sostenidas» y el lockup de r7 iba en dos tonos. **Recomendación:** manda la decisión 4 en el lockup; en texto
+   corrido el nombre sigue siendo «Galivelop-workflow», como en el título del `README` (l.1).
+
+---
+
+## Interfaz de Galivelop-workflow: tokens y reglas (2026-11-12)
+
+Workflow no tiene hoy interfaz con CSS propio. Estos tokens son para lo que sí pinta color: las tarjetas HTML de
+`gw-media-content` **del propio repo de Workflow**, su `README`, su ficha en el Portal y, cuando exista, el Management
+Center (la `1.0`: `README.es.md` l.9-12; `docs/design/G-mmc.md`). **Todo token que no está en la tabla se hereda del
+Portal sin cambiar un valor** (`../portal/hoja.md` l.127-152 y «Qué se copia tal cual», l.236-246): `--papel`,
+`--superficie`, `--fondo-alterno`, `--tinta`, `--tinta-2`, `--texto-3`, `--filete`, `--reticula`, `--peligro`,
+`--ok-texto`, `--noche`, `--velo*`, `--sombra`, `--chaflan*`, `--reticula-paso`, `--curva`, `--transicion`.
+
+Lo propio son los papeles del acento. Los nombres de token son los del Portal con `acento` en lugar de `celeste`
+(propuesta: Workflow no tiene CSS que los fije). Los ratios son WCAG 2.x calculados sobre los hex, no medidos en
+pantalla.
+
+| Token | Claro | Oscuro | Papel que hace | Contraste (claro / oscuro) | En el Portal |
+|---|---|---|---|---|---|
+| `--acento` (vivo) | `#3d6fd9` | `#3d6fd9` | Marca, foco (`outline` 2 px), punto de estado, base del tinte | sobre papel 4,57 / 3,86; blanco encima 4,69; tinta encima 3,50 | `--celeste` `#1aa6df` (2,70 / 6,53) |
+| `--acento-hondo` | `#3d6fd9` (**es el vivo**: ya cumple) | `#3d6fd9` | Bloques grandes con texto blanco (también en oscuro), cuadrado del logo, texto de acento y enlaces en claro | sobre papel claro 4,57 (AA); blanco encima 4,69 | `--celeste-hondo` `#0072a8` (5,15; blanco 5,29) |
+| `--enlace` | `--acento-hondo` | `#5185f1` (**variante oscura**, adoptada 2026-11-12) | Texto de acento y enlaces | 5,16 / 4,77 / 4,51 sobre `#0d171e` / `#111f29` / `#16242e` (papel, superficie y segundo plano oscuros; blanco encima 3,51). Sustituye a `#487ce7` (4,57 / 4,24 / 4,01), que no llegaba a 4,5 en fichas y bandas oscuras; calculado con `acento.py` | `--celeste-hondo` / `#5cc8f2` (5,15 / 9,49) |
+| `--tinte` | acento al 12 % (`#e4ebf9` sobre papel) | acento al 18 % (`#162740`) | Plano translúcido: hover, chips, píldoras | tinta sobre tinte 13,71 / 12,79 | 14,25 / 11,65 |
+| Isobatas sobre el bloque | blanco al 20-50 % sobre `#3d6fd9` | igual | Textura del bloque grande | — | mismos porcentajes |
+| Acento secundario | **heredado [P]:** `--alga` `#5d7a6a` | `#8fb09e` | «En desarrollo», avisos suaves | 4,59 / 7,66 | el mismo (ver «Dudas», 3) |
+
+**De dónde salen los hex** (método de `../portal/hoja.md` l.333-345; nada se elige a ojo):
+
+```
+$ python3 docs/marcas/galivelop-workflow/acento.py
+vivo   #3d6fd9  OKLCH L=0.564 C=0.172 h=263.1
+hondo  #3d6fd9  (es el vivo: ya cumple)
+oscuro #487ce7  (L=0.604 C=0.172)
+  4.57:1  vivo sobre papel #fbfcfd
+  4.69:1  blanco sobre vivo
+  3.50:1  tinta #13212b sobre vivo
+  3.86:1  vivo sobre papel oscuro #0d171e
+  4.57:1  hondo sobre papel #fbfcfd
+  4.69:1  blanco sobre hondo
+  3.86:1  hondo sobre papel oscuro #0d171e
+  4.59:1  oscuro sobre papel oscuro #0d171e
+  4.59:1  papel oscuro #0d171e sobre oscuro (texto encima)
+ 13.71:1  tinta sobre tinte claro #e4ebf9 (vivo al 12 %)
+ 12.79:1  tinta clara #e6eef3 sobre tinte oscuro #162740 (vivo al 18 %)
+  1.00:1  vivo frente a hondo
+```
+
+[`acento.py`](acento.py) (solo stdlib) sigue el método paso a paso: OKLab de Ottosson, `h` y `C` fijos, `L` en pasos
+de 0,005, contraste sobre el hex redondeado a 8 bits. La variante oscura sale en el octavo paso (L 0,564 → 0,604) sin
+salirse de sRGB. Con otro hex como argumento reproduce los ratios de la tabla del Portal (l.321-326): `#1aa6df` da
+2,70 / 2,78 / 5,91 / 6,53 y `#7C5CD6`, 4,69 / 4,82.
+
+**Dónde se aparta Workflow de la relación del Portal, y por qué** (todo sale del método, no de una elección):
+
+| Relación del Portal (`../portal/hoja.md` l.258-262) | En Workflow | Motivo |
+|---|---|---|
+| El vivo no lleva texto blanco ni se usa para texto sobre papel; encima, solo tinta a ≥ 4,5:1 | Al revés: blanco encima 4,69; tinta encima 3,50; como texto sobre papel, 4,57 | El vivo es el hondo (punto 5 del método): hace los dos papeles con las reglas del hondo. Ver «Dudas», 1 |
+| El vivo, ≥ 4,5:1 sobre el papel oscuro | 3,86: en oscuro el vivo solo marca foco, punto y trazo (≥ 3:1 de elemento gráfico); el texto va en `#487ce7` | El método no mueve el vivo |
+| El hondo se oscurece en oscuro y el blanco encima da ≥ 7:1 | El hondo no cambia; blanco encima 4,69 (AA) | Decisión 1 (l.349-351): un producto lleva una sola variante oscura, la de texto |
+| Enlace en oscuro ≥ 7:1 | 4,59 | El método fija el umbral en 4,5:1 (l.340-341) |
+
+**Tipografía por papel.** Heredada sin cambio (`../portal/hoja.md` l.154-158): títulos en Big Shoulders Display 800
+(700 en h4), mayúsculas, tracking 0,01 em; texto en Literata 400/600 a 17 px / 1,6; datos (órdenes, rutas, versiones,
+`Siguiente:`) en JetBrains Mono 500 a 12 px, mayúsculas, tracking 0,06 em. Las tres, OFL. **Ninguna está instalada en
+este equipo** (`~/.local/share/fonts/galivelop/` solo tiene Inter, Sora y las de otras marcas): hace falta el `.ttf`
+variable de Big Shoulders Display para `gimg brand wordmark`.
+
+**Reglas de interfaz.** Las once del Portal (`../portal/hoja.md` l.160-178), heredadas: tema claro por defecto; sin
+resplandores, desenfoques ni degradados; esquinas rectas o con chaflán de 45° arriba a la derecha (28 / 14 / 10 px);
+líneas antes que sombras; datos en monoespaciada; el acento en bloques grandes y planos; retícula de 24 px a la
+vista; numeración real; movimiento de 200 ms y 2-3 px; contraste AA; los diagramas siguen la misma hoja. Lo propio
+es la regla 10: **sobre el acento de Workflow, texto blanco** (4,69:1). Nada las comprueba en el repo de Workflow (no
+tiene CSS); el `marca.test.ts` del Portal comprueba su ficha.
+
+**Los logos de `logos/` no las cumplen:** `galivelop-workflow-a.svg` y `-b.svg` son baldosas con degradado y `rx` 30,
+y los `*-lockup.svg` llevan Sora. Son de la identidad anterior y quedan como históricos (`../portal/hoja.md` l.374).
+
+## Recursos: entregado, cancelado y pendiente (2026-11-12)
+
+| Recurso | Estado | Dónde está o iría | Fuente |
+|---|---|---|---|
+| Icono de proyecto (recurso 23 del Portal) | **Entregado** (q490): tres nodos encadenados, el último con visto; línea simple, una tinta | Portal `public/proyectos/galivelop-workflow/icono.svg` | `../portal/hoja.md` l.212; `examples/portal/orders/marca/23-icono-workflow.json` |
+| Símbolo del logo (cuadrado plano `#3d6fd9`, chaflán 28/128, monograma «GW» de trazo 12/128 en una tinta; decidido por la persona, 2026-11-12) | **Pendiente**: sin generar; depende de la orden nueva de `gimg brand` que monte el cuadrado con chaflán. Los `logos/galivelop-workflow-{a,b,c,d}.svg` son históricos | `docs/marcas/galivelop-workflow/logos/` y, copiado, `docs/marca/` del repo de Workflow | regla heredada, `../portal/hoja.md` l.290; «Dudas», 2 |
+| Símbolo en negativo y a `currentColor` | **Pendiente**: sale del SVG del símbolo, sin generar | igual | `../portal/hoja.md` l.60 |
+| Lockup horizontal y vertical | **Pendiente**: necesita el símbolo y el `.ttf` de Big Shoulders Display. Órdenes en «Familia Galivelop», punto 4 | igual; `README` de Workflow | decisión 4, `../portal/hoja.md` l.358-374 |
+| Social preview de GitHub, 1280×640 | **Pendiente** con la identidad vigente. Las de r4-r8 son de la anterior | ajustes del repo en GitHub (no es un archivo: no se comprueba desde el repo) | sección 11 |
+| `og.jpg` de la ficha del Portal (recurso 24) | **Pendiente** | Portal `tools/og/fuentes/galivelop-workflow/og-fuente.png` | `../portal/hoja.md` l.213 |
+| Cabecera del `README`, 1600×500 (grabado) | **No pedida**; se puede generar | `docs/marca/` del repo de Workflow | «Cómo se escribe el prompt», 4 |
+| Avatar 512 | **Pendiente**: el símbolo rasterizado. El de r5 es el logo `a`, histórico | GitHub, Discord | sección 9 |
+| Tarjetas de redes (1200×675) | **No las hace `gimg`**: las renderiza `gw-media-content-now` desde HTML. Paleta: la nota del repo de Workflow (ver abajo) | `docs/media/` del repo de Workflow | Workflow `skills/gw-media-content/note.md` l.10, l.15; `card.html` l.8 |
+| Portada de la ficha en el Portal | Publicada con la identidad anterior *(suposición: `public/proyectos/galivelop-workflow/portada.webp`)*; la decide el Portal | Portal | sección 8 |
+| `banner` 1600×640, `og`/`cuadrado`/`vertical`/`cabecera` de r4-r8 | **Históricos**: identidad anterior | `piloto/` (fuera de git) | secciones 9 y 12 |
+
+**Paleta para las tarjetas de `gw-media-content` del repo de Workflow** (sustituye a la propuesta del 2026-11-04 de
+«Contradicciones», 1, que usaba `#0d1b2a` y `#38b6e8`). Las variables son las de `card.html` l.13-17; los valores, los
+tokens heredados y el acento calculado:
+
+```
+Palette: --background: #fbfcfd; --surface: #ffffff; --border: #b9cbd6; --text: #13212b; --muted: #4a5c69;
+         --accent: #3d6fd9; --accent-text: #ffffff; --good: #3f5a4b; --bad: #a3135f;
+         --font: "Literata", serif; --mono: "JetBrains Mono", monospace
+```
+
+`.brand` (l.22) pinta el nombre en `--accent` a 20 px y 700: `#3d6fd9` sobre `#fbfcfd` da 4,57:1, pasa. Esa nota
+(`.claude/gw/gw-media-content.md`) es **del repo de Workflow**, no de la plantilla que instala.
+
+**Lo que la configuración de este repo no refleja** (fuera del alcance de este cambio; va a la bitácora):
+`examples/galivelop-workflow/galivelop-images.json` tiene `brand.palette` y los cuatro perfiles de la identidad
+anterior, con FLUX; `prompts/`, `orders/`, `plantillas/` y `piezas.json` también; `tests/test_examples.py` l.312 exige
+la copia de `galivelop-workflow-b-lockup.svg` (histórico) en `examples/galivelop-workflow/logos/`. No hay pedidos con
+la identidad vigente.
+
+## Familia Galivelop: lo que hereda y cómo lo cumple
+
+Las seis comprobaciones de «Cómo se comprueba una hoja de producto» (`../portal/hoja.md` l.307-315), una a una:
+
+| # | Comprobación | En Workflow | Resultado |
+|---|---|---|---|
+| 1 | Tres hex del acento calculados, con ratios; ninguno bajo 4,5:1 donde el método lo exige | vivo `#3d6fd9`, hondo `#3d6fd9` (4,57 sobre `#fbfcfd`; blanco encima 4,69), oscuro `#487ce7` (4,59 sobre `#0d171e`); salida de `acento.py` arriba | **pasa** (dos hex distintos: «Dudas», 1) |
+| 2 | Papel, tinta, filete, retícula, tipografías, chaflanes y retícula de 24 px, valor por valor | Esta hoja no los copia: remite a la tabla del Portal | **pasa por remisión** |
+| 3 | Frase de paleta del Portal con el acento en el lugar del alga; ningún prompt nombra otro color | Fila «Paleta» y prompts propuestos. Los prompts de `examples/galivelop-workflow/prompts/` son históricos y nombran otros | **pasa en lo vigente**; ningún pedido nuevo encolado |
+| 4 | Logo: cuadrado plano del acento hondo, chaflán 28/128, trazo 12/128, salido de gimg | No existe: los de `logos/` llevan degradado y `rx` 30 | **no pasa: pendiente** |
+| 5 | Iconos de una tinta, sin relleno, nodos huecos, legibles a 24 px | El 23 (q490), entregado por la serie del Portal; Workflow no tiene serie propia | **pasa** con el único icono que hay |
+| 6 | Nada de «Prohibido en toda la familia» (l.297-305) | Lo vigente, nada, con una salvedad: «texto blanco sobre el acento vivo» («Dudas», 1). Los logos históricos tienen degradado y esquinas redondas | **pasa en lo vigente**, con la salvedad |
+
+**Lo que se hereda, por aspecto** (`../portal/hoja.md` l.286-295), y lo propio:
+
+1. **Logo.** Heredado: cuadrado de color plano, chaflán de 28/128 arriba a la derecha puesto por el SVG, monograma de
+   trazo 12/128 en una tinta, generado sobre croma `#00ff00` y vectorizado con `gimg brand trace`. Propio: el hex del
+   cuadrado (`#3d6fd9`) y el dibujo (monograma «GW»; «Dudas», 2).
+2. **Iconos.** Heredado: línea simple, un grosor, remates redondos, sin relleno ni trama, una tinta, nodos huecos,
+   `gimg brand trace --mode color --matte --dp-tol 0.5 --palette '#13212b,#fbfcfd'`, a `currentColor`. Propio: el
+   motivo (nodos, ramas, visto, el tramo grueso del testigo). Una serie se usa entera, sin mezclarla con lucide.
+3. **Ilustración.** Heredado: grabado de carta náutica a dos tintas con el bloque literal, Z-Image, 120-200 palabras,
+   cierre y frase de paleta. Propio: el sujeto (la ruta de commits sobre la carta) y el cuarto color.
+4. **Lockup.** Heredado entero, con las medidas del Portal (l.362-367): nombre a 0,45 `S` de alto en horizontal y
+   1,6 `S` de ancho en vertical, hueco y margen de 0,25 `S`, mínimo `S` ≥ 32 px (horizontal) y ≥ 48 px (vertical);
+   por debajo, el símbolo solo hasta 16 px. Nombre en `currentColor`, nunca en el acento. Propio: el símbolo y el
+   texto. Órdenes (a falta del símbolo y de la fuente):
+
+   ```
+   gimg brand wordmark "GALIVELOP-WORKFLOW" --font <BigShouldersDisplay variable .ttf> --weight 800 --spacing 0.01 -o wordmark.svg
+   gimg brand lockup simbolo.svg wordmark.svg --layout h --cap 0.45 --gap 0.25 --margin 0.25 -o galivelop-workflow-lockup-h.svg
+   gimg brand lockup simbolo.svg wordmark.svg --layout v --width 1.6 --gap 0.25 --margin 0.25 -o galivelop-workflow-lockup-v.svg
+   ```
+
+   El nombre tiene 18 caracteres: en horizontal el lockup sale muy ancho, y el `README` puede preferir el vertical o
+   el símbolo solo. Eso se ve al generarlo; las medidas no se tocan sin decisión de la persona.
+5. **Composición y prohibidos.** Heredados sin cambio (l.294, l.297-305). Se suman los vetos de la ética de Workflow
+   (sección 2): nada que sugiera autonomía de la IA.
+
+---
+
+## Histórico: identidad anterior (r1-r8)
+
+Todo lo que sigue, hasta el final, es la hoja aprobada el 2026-11-04 con la identidad anterior. **No se sigue para
+piezas nuevas.** Sigue valiendo, y lo usan los bloques de arriba: la sección 1 (propósito, lema, tono, idiomas, campo
+semántico), la sección 2 (ética), los vetos propios de la sección 6 y los textos de la sección 10. Las líneas del
+repo de Workflow se han vuelto a comprobar en `2e55d66`: el lema sigue en `AGENTS.md` l.24, `templates/es/AGENTS.md`
+l.27 y l.32, `templates/es/GLOSSARY.md` l.11 y `templates/es/log.md` l.4; en `README.es.md` pasa de l.43 a **l.47**,
+el estado es ahora «`0.5.2`, etapa 1 en rodaje» (l.9, antes «0.4.3») y `.claude-plugin/plugin.json` dice `0.5.2`; la
+paleta de `card.html` (l.13-15) no ha cambiado. Donde abajo se lee `7d61089`, la lectura es de esa fecha.
+
 **Propuesta** (2026-11-04), **Aprobada por la persona el 2026-11-04**; segundo caso de [`../plantilla-hoja-de-estilo.md`](../plantilla-hoja-de-estilo.md) (F2.12), rellenada
 tras [`../galivelop-image-generator/hoja.md`](../galivelop-image-generator/hoja.md) y con su misma forma. Complementa a
 [`biblia.md`](biblia.md): la biblia es la lectura larga; esta hoja es lo que `gimg` necesita, campo a campo y en el orden de la
@@ -7,25 +272,8 @@ plantilla. Estados como en [`../README.md`](../README.md): sin marca sale de un 
 `<marca>`** sale del repo de la marca paraguas (el Portal) leído a través de la biblia; **[P]** es propuesta pendiente de la
 persona, con su porqué en la misma celda; *(suposición)* se comprueba en una ronda; «no hay» solo donde la plantilla lo admite.
 
-Commits de referencia: Galivelop-workflow `7d61089` (`main`, 2026-11-04; la biblia cita `56212e8`, anterior); este repo
-`78f0083` (`f2-motor`); Portal-Galivelop `aa76b34` (lo heredado, vía `biblia.md` §10 y `docs/marcas/portal/biblia.md`; desde
-aquí no se abre ese repo). El repo de Workflow se ha leído **sin modificar nada**.
-
-> **Hereda de la identidad vigente del Portal (2026-11-11).** Lo que esta hoja dice de fondo, texto, tipografía, modelo,
-> estilo de imagen y palabras vetadas (`#0d1b2a`, Inter/Sora, FLUX, filamentos de vidrio en 3D, veto a `no`/`not`/`like`)
-> es la identidad anterior de la familia, con la que se hicieron las piezas de r1-r8: se queda como histórico. **Para
-> cualquier pieza nueva manda el bloque «Identidad vigente» de [`../portal/hoja.md`](../portal/hoja.md)**, y esta hoja solo
-> añade lo propio: el motivo de la fila «Motivo propio» de la sección 6 y el acento `#3D6FD9` para logo e interfaz. El
-> motivo de Workflow (ramas que se bifurcan y se unen, nodos, el testigo del relevo) **ya es de informática**: es el que
-> mejor encaja con «Mar y tecnología» y cambia solo de registro (línea simple o grabado, sin luz ni brillo).
-
-**Lo primero que hay que saber:** el repo de Galivelop-workflow **no tiene identidad visual propia**: ni CSS, ni SVG, ni
-favicon, ni logo, ni paleta declarada. Lo único con color y fuente son las plantillas HTML de su skill `gw-media-content`
-(`skills/gw-media-content/template/media/source/*.html`), que traen una paleta genérica «para sobrescribir según el proyecto»
-y que el propio repo no sobrescribe (no existe `.claude/gw/gw-media-content.md` en él). Todo lo visual de esta hoja viene, por
-tanto, del Portal (heredado) o de la biblia y los prompts de este repo; la identidad **de voz** sí sale del repo de Workflow.
-
----
+Commits de esa lectura: Galivelop-workflow `7d61089` (`main`, 2026-11-04; la biblia cita `56212e8`, anterior); este repo
+`78f0083` (`f2-motor`); Portal-Galivelop `aa76b34` (vía `biblia.md` §10 y `docs/marcas/portal/biblia.md`).
 
 ## 0. Ficha
 
@@ -37,7 +285,7 @@ tanto, del Portal (heredado) o de la biblia y los prompts de este repo; la ident
 | Quién decide | Obl. | La persona. Dio ella el veredicto de r1 (2026-10-26, «sí» a workflow pese a la nota de las líneas); desde entonces, delegado al agente («lo dejo en tus manos») hasta que diga otra cosa; cada decisión delegada lleva **[P]** y se le propone al cerrar F2 | repo (`docs/records/contenido/r1-fondos.md` l.52-53; `docs/marcas/README.md`, «Elegido por el agente») |
 | Fecha de la hoja | Rec. | `2026-11-04` | — |
 | Familia visual | Rec. | `Galivelop`, **con tres valores propios justificados**: fondo `#0d1b2a` (no `#06121c`), texto `#eef6fb` (no `#eaf4fa`) y titular Inter (no Sora), porque la biblia toma la paleta y la letra de los siete diagramas `gw-*.svg` que el Portal ya publica del flujo: son lo más parecido a una marca que Workflow tiene. Baldosa del logo, la de la familia (`rx` 30/128, trazo 12) | heredado de Portal-Galivelop `aa76b34` (`docs/diagramas/gw-*.svg`, vía `biblia.md` §2-§3 y §10) |
-| Hereda de | Opc. | **Vigente:** [`../portal/hoja.md`](../portal/hoja.md), bloque «Identidad vigente» (2026-11-10 y 11). **Histórico (piezas r1-r8):** Portal-Galivelop `aa76b34` (leído solo a través de `biblia.md` §10 y `docs/marcas/portal/biblia.md`) | repo |
+| Hereda de | Opc. | **Vigente:** [`../portal/hoja.md`](../portal/hoja.md), bloques «Identidad vigente» y «Familia Galivelop» (2026-11-12), como dicen los bloques de arriba. **Histórico (piezas r1-r8):** Portal-Galivelop `aa76b34` (leído solo a través de `biblia.md` §10 y `docs/marcas/portal/biblia.md`) | repo |
 
 ## 1. Identidad
 
@@ -102,7 +350,7 @@ la pieza (`r4-composicion.md` l.28-33). El repo de Workflow no tiene favicon ni 
 
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
-| Motivo propio (identidad vigente, 2026-11-11) | Obl. | **El relevo como historial de commits:** una línea de nodos redondos unidos por tramos cortos, una rama que se aparta y vuelve a unirse, y el último nodo con un visto (la revisión); el testigo, un tramo más grueso entre dos nodos. Es el icono que el Portal ya le pide (`orders/marca/23-icono-workflow.json`: «three round nodes chained in a row by short links, the last node holding a checkmark tick»). Variantes: solo, en línea simple (icono, avatar); sobre el mar de carta, en grabado, con la línea de nodos como ruta trazada sobre la carta (portada). Sin número exacto de nodos en el prompt («a few round nodes»). Ámbar y verde de los nodos quedan para la interfaz y los diagramas `gw-*.svg`; en imagen generada, las cuatro tintas del Portal | **propuesta del agente, 2026-11-11**, según `../portal/hoja.md` «Mar y tecnología»; icono en `examples/portal/orders/marca/23-icono-workflow.json` |
+| Motivo propio (identidad vigente, 2026-11-11; pasa a la fila «Mar y tecnología» de arriba) | Obl. | **El relevo como historial de commits:** una línea de nodos redondos unidos por tramos cortos, una rama que se aparta y vuelve a unirse, y el último nodo con un visto (la revisión); el testigo, un tramo más grueso entre dos nodos. Es el icono que el Portal ya le pide (`orders/marca/23-icono-workflow.json`: «three round nodes chained in a row by short links, the last node holding a checkmark tick»). Variantes: solo, en línea simple (icono, avatar); sobre el mar de carta, en grabado, con la línea de nodos como ruta trazada sobre la carta (portada). Sin número exacto de nodos en el prompt («a few round nodes»). En imagen generada, las tres tintas del Portal y un toque del acento `#3D6FD9`; el ámbar y el verde de los nodos, ver «Dudas», 4 | **propuesta del agente, 2026-11-11**, según `../portal/hoja.md` «Mar y tecnología»; icono en `examples/portal/orders/marca/23-icono-workflow.json` |
 | Motivos Sí | Obl. | 1) varias líneas finas de luz que corren hacia el borde derecho, se bifurcan y se vuelven a unir, con un nodo redondo en cada unión (el grafo de ramas); 2) un trazo corto de luz («dash») que pasa del final de una línea al principio de la siguiente en un nodo brillante (el relevo, el testigo); 3) celeste en las líneas, unos pocos nodos en ámbar y verde; 4) azul noche plano con rejilla tenue (los diagramas del Portal). Sin usar aún, de la biblia: el sello de revisión (anillo con marca de visto), el cuaderno de bitácora cerrado | repo (`prompts/estilo.txt`, elegido en r2 con el «sí» de la persona en r1; `docs/plan.md` l.634-636; `biblia.md` §7) |
 | Motivos No | Obl. | personas, manos, pantallas, teclados, robots, cerebros, circuitos, lluvia de código, neón saturado, texto; la píldora o cápsula (r1 la pintó al pedir «capsule») | repo (`biblia.md` §7; `r1-fondos.md` l.47 y l.57) |
 | Palabras vetadas | Obl. | `robot`, `brain`, `circuit`, `code rain`, `capsule`, `pill`, `hand`, `keyboard`, `screen`, `human`, `humanoid`, `spark`, `sparkle`, `magic`, `text`, `letters`, `logo`; más `like` y cualquier lugar real (reglas comunes) | repo (`biblia.md` §7: `robot`, `brain`, `circuit`, `code rain`, `capsule`, `hand`, `keyboard`, `screen`, `like a`); `pill`, `human`, `humanoid`, `spark`, `sparkle`, `magic`, `text`, `letters`, `logo` **[P]** (cierran lo que «Nunca se muestra» nombra y lo que se parece a texto o logo, como pide la plantilla). **`estilo.txt`, `r2-*.txt` y `r5-*.txt` no las contienen; `og.txt` y `orders/r1-og.json` sí llevan `capsule`** (son el prompt de r1, superado). **Vigente desde el 2026-11-11:** las palabras propias (robot, cerebro, circuito, lluvia de código, cápsula, mano, teclado, pantalla, persona, texto) siguen vetadas; el veto a `no`/`not`/`without`/`like` **no se aplica** a piezas nuevas: rige «Cómo se escribe el prompt» de `../portal/hoja.md` |

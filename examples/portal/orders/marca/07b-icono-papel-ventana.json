@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/07b-icono-papel-ventana",
+  "profile": "cuadrado",
+  "seed": 31,
+  "count": 2,
+  "prompt": "A single simple line icon, centred, one single square-ish shape that fills the frame: a sheet of paper with a folded top-left corner whose lower right half has already turned into an application window, the window part has a title bar across it with three small dots, the paper part keeps two short text lines, one continuous outline for the whole shape, one object only, no arrow. Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, bold and clear enough to read at 24 pixels, generous empty margin around the icon, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background. Flat vector pictogram, minimal, geometric. No photographic rendering, no gradients, no glow, no text, no letters, no numbers, no watermark, no border, no frame."
+}

@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "instalador/i3-portada",
+  "profile": "cabecera",
+  "prompt": "Epic fantasy matte painting, physically plausible, crisp edges, high contrast, clear air, no haze. Deep indigo blue night sky #1a2140, slightly green-leaning, near black #0f1428 at the top. A slanted belt of pale shimmering stardust in #4aa8d8 and #a8d8f0 crosses the sky and is the only light in it. Wide view along a packed earth road in #241a10 that runs from the bottom centre to a long dark timber palisade on a low hill, its closed gate in the middle of the frame, plain dark banners hanging on its posts, jagged dark rock spires in #0e0b08 on both sides. The gate has dark forged iron fittings #171310 and one thin line of old gold #b8862b across its lintel. The upper half is calm sky crossed by the belt of stardust. All the detail sits in the middle band of the height; the top fifth and the bottom fifth are quiet and even.",
+  "seed": 1,
+  "draft": false,
+  "count": 2
+}

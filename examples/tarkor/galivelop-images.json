@@ -136,6 +136,7 @@
       }
     },
     "textura": {
+      "tileable": "xy",
       "width": 1024,
       "height": 1024,
       "steps": 6,

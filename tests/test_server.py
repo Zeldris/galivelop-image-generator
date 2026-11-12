@@ -125,6 +125,22 @@ def _gimg(req):
     raise GimgError("order.prompt_too_long", length=9, max=5)
 
 
+JSON = {"Content-Type": "application/json"}
+
+
+class QueuePauseApi(ServerBase):
+    def test_pause_resume_and_health(self):
+        def body(resp):
+            return json.loads(resp[1])
+        self.assertEqual(body(self.call("POST", "/api/queue/pause", headers=JSON, body={})), {"paused": True, "changed": True})
+        self.assertEqual(body(self.call("POST", "/api/queue/pause", headers=JSON, body={})), {"paused": True, "changed": False})
+        self.assertIs(body(self.call())["paused"], True)
+        self.assertEqual(body(self.call("POST", "/api/queue/resume", headers=JSON, body={})), {"paused": False, "changed": True})
+        self.assertEqual(body(self.call("POST", "/api/queue/resume", headers=JSON, body={})), {"paused": False, "changed": False})
+        self.assertIs(body(self.call())["paused"], False)
+        self.assertEqual(body(self.call("GET", "/api/queue")), [])  # still a list
+
+
 class HealthAndHeaders(ServerBase):
     def test_health(self):
         resp, payload = self.call()
@@ -136,6 +152,7 @@ class HealthAndHeaders(ServerBase):
         self.assertEqual(body["port"], self.port)
         self.assertEqual(body["engine"], "fake")
         self.assertIs(body["worker"], False)
+        self.assertIs(body["paused"], False)
         self.assertEqual(resp.getheader("Cache-Control"), "no-store")
         self.assertIn("application/json", resp.getheader("Content-Type"))
 

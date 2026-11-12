@@ -42,6 +42,10 @@ Once the attempt exists nothing can fail the entry: the success log line and `qu
 entry whose `finish` failed stays ``running`` and recovery deals with it), and no failure line is written. No
 `finish` error ever stops `run()`.
 
+Pause (`queue.is_paused`, ``<data>/queue.paused``): checked before every claim, so the image in progress is finished
+and the worker exits (the service launches none while the mark is there; `queue resume` removes it and the next beat of
+the service relaunches). A worker started while paused exits at once with 0 handled.
+
 Errors: the entry ``error`` is ``{"code", "params"}`` plus ``"errors"`` (schema errors as path/code/params)
 when there are any (`queue.make_error`; render with `queue.error_text`):
 a `GimgError` keeps its code, params and schema errors, `EngineTimeout` is ``engine.timeout``, an `EngineError` with a `code` keeps it, any other is
@@ -432,6 +436,8 @@ def run(once: bool = False, engine=None, lang=None) -> int:
         eng = engine or engine_mod.get_engine()
         handled = 0
         while True:
+            if queue.is_paused():  # the image in progress was finished above; the next one waits for `queue resume`
+                return handled
             entry = queue.claim()
             if entry is None:
                 return handled

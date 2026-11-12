@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/05b-sello-taller",
+  "profile": "cuadrado",
+  "seed": 341,
+  "count": 2,
+  "prompt": "A round workshop seal without any lettering, seen flat and straight on, centred: two thin concentric rings close together, and in the band between them fine evenly spaced degree tick marks all the way round, like the border scale of a nautical chart, only plain tick marks. In the open centre of the seal, a small commit history motif: two short branch lines with a hollow round node on each that rise from the lower left and lower right and join in one larger hollow round node in the middle, with one short vertical line going up from it. The band of the seal holds only tick marks: no words, no curved text, no monogram, no initials, no stars, no date. Rings and ticks in ink grey, the branch motif in cerulean blue. Flat vector line illustration, technical drawing of a chart instrument, clean thin lines of even width, no gradients, no glow, no shading, no texture, no shadow, the drawing centred with a clear margin around it, on a plain flat solid bright green #00ff00 background that fills the whole image edge to edge. No photographic rendering, no metal, no brass, no 3D, no text, no letters, no initials, no numbers, no numerals, no watermark, no border, no frame. Drawing colours strictly limited to ink grey #13212b and medium cerulean blue #0072a8."
+}

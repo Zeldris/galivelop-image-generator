@@ -2,7 +2,7 @@
   "$schema": "../../../../../gimg/schemas/order.schema.json",
   "key": "mapa/45-tormenta",
   "profile": "texturamapa",
-  "prompt": "Hand-painted fantasy map terrain, seen from directly above. Matte painterly brushwork, fine detail, restrained natural colour, soft warm light from the upper left, even exposure, calm and readable, no haze. Seamless tileable texture of swirling dust storm bands seen from directly above, rust #8a4a2a and iron grey #52626f streaks curving around small dark cores, strong contrast and little colour, edge to edge.",
+  "prompt": "Hand-painted fantasy map terrain, seen from directly above. Painterly realism halfway between a photograph and an oil painting: realistic terrain, light and texture rendered with soft, visible brushwork. Restrained natural colour, soft warm light from the upper left, even exposure, calm and readable, no haze. Seamless tileable texture of swirling dust storm bands seen from directly above, rust #8a4a2a and iron grey #52626f streaks curving around small dark cores, strong contrast and little colour, edge to edge.",
   "seed": 1,
   "draft": false,
   "count": 2

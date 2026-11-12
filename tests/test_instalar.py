@@ -65,7 +65,7 @@ class InstalarBase(unittest.TestCase):
         folder.mkdir()
         for bindir in ("/usr/bin", "/bin"):
             for entry in os.listdir(bindir) if os.path.isdir(bindir) else ():
-                if entry not in names and not (folder / entry).exists():
+                if entry not in names and not os.path.lexists(folder / entry):
                     os.symlink(os.path.join(bindir, entry), folder / entry)
         return folder
 

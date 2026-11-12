@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/08c-icono-historial",
+  "profile": "cuadrado",
+  "seed": 41,
+  "prompt": "A single simple line icon of a git branch, centred in the square frame: on the left, one straight vertical line running from near the top to near the bottom with three hollow circles threaded on it, one at the top, one in the middle and one at the bottom; from the middle circle a second line bends out to the right and up and ends in a fourth hollow circle at the upper right. Four circles in total, all the same size. Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, bold and clear enough to read at 24 pixels, generous empty margin around the icon, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background. Flat vector pictogram, minimal, geometric. No photographic rendering, no gradients, no glow, no text, no letters, no numbers, no watermark, no border, no frame.",
+  "count": 3
+}

@@ -5,7 +5,7 @@ Semilla de piedra con juntas de luz, estrella de cuatro puntas), desarrollada en
 [`propuesta-fable-2026-11-10.md`](propuesta-fable-2026-11-10.md) (§9: diez decisiones aprobadas). **r7** («lápiz de
 fantasía», New Rocker, arcilla, Semilla de hierro) queda archivada en [`hoja.md`](hoja.md), sección «Historia»; su texto
 anterior está en git (`ef94330`). Marca creada desde cero (decisión de la persona, 2026-10-26); lo que sigue sin marca
-viene del repo del juego, World-Maker-Fantasy (WMF) `3537d84`, o del Portal `aa76b34`; rutas en la sección 10. Molde y
+viene del repo del juego, World-Maker-Fantasy (WMF) `main` `3a10a3fa` y UX-40 en `c858a150`, o del Portal `aa76b34`; rutas en la sección 10. Molde y
 reglas comunes: [../README.md](../README.md). Las piezas concretas y sus prompts están en [`peticiones.md`](peticiones.md).
 
 ## 1. Esencia
@@ -77,8 +77,9 @@ Base «madera + hierro» del juego (`index.css`, decisión nº 6) más los tonos
 ## 4. Logo
 
 Sistema de la propuesta §5, derivado de los dos PNG de `examples/tarkor/logos/` (la referencia aprobada). Los SVG
-**no existen todavía**: se dibujan a mano a partir del emblema #1 elegido (`peticiones.md`, §5 orden de trabajo, punto 2)
-en `docs/marcas/tarkor/logos/`. Los `tarkor-a/b/c/d.svg` y sus lockups de ahí son historia (r7 y anteriores).
+**existen desde el 2026-11-10** en `docs/marcas/tarkor/logos/` (`tarkor-emblema.svg`, `-simple`, `-mono`,
+`tarkor-wordmark.svg`, `tarkor-lockup-h.svg`, `tarkor-lockup-v.svg`), generados con `gimg brand system`: nada se
+dibuja a mano (corregido el 2026-11-12). Los `tarkor-a/b/c/d.svg` y sus lockups de ahí son historia (r7 y anteriores).
 
 | Pieza | Archivo previsto | Qué es | Mínimo |
 | --- | --- | --- | --- |
@@ -139,32 +140,36 @@ en `docs/marcas/tarkor/logos/`. Los `tarkor-a/b/c/d.svg` y sus lockups de ahí s
   obelisco goirnte en los paisajes; Pilares Rotos ya en la portada del Portal (no repetir en el og).
 - **Vetadas** (`mundo.json`): moon/moonlit/moonlight, crystal dust, heavens, scar/wound/gash, negaciones (`no`,
   `without`...), nombres propios, humanos, pólvora; y de la marca: `purple`, `violet`, `like` y **`sun`** (pinta el disco: se
-  dice la dirección, no la fuente). En las piezas de marca el negativo de `peticiones.md` §2 lleva además las negaciones
-  que FLUX sí admite como negativo (moon, sun disc, purple, violet, pink, lens flare, light rays, glow haze...).
+  dice la dirección, no la fuente), `star`, `stars`, `emblem`, `logo`, `title`, `text`, `glowing`, `flare` y `castle`
+  (`hoja.md` §16, regla P2). **No hay prompt negativo**: lo que no debe salir no se nombra, ni negado; la única negación
+  admitida es el `no haze` de los bloques (regla P3).
 - **Zona reservada:** un tercio izquierdo liso (og, banner); la **mitad** izquierda en `header`; la mitad inferior en `square` y
   `portrait` (el prompt pide esa mitad libre, como la caja del 48 %). Una sola zona por perfil, la misma en prompt, plantilla
   y medida. En E2/E3 (cabecera y og), los dos tercios derechos en calma y la mitad inferior más vacía.
-- **Recortes:** las piezas con transparencia se generan sobre verde plano `#00ff00` («perfectly flat untouched bright
-  green background, lit evenly, no cast shadow») y entran con la transparencia de gimg (D6 de `peticiones.md`).
-- **El emblema manda (M8):** todo lo que lleve la Semilla sale por img2img del #1 elegido (fuerza 0,35-0,45), para que
-  sea el mismo en avatar, icono, sello y medallón.
+- **Recortes:** las piezas con transparencia se generan sobre verde plano `#00ff00` (con la frase de croma de `hoja.md` §6, «Centred on a solid,
+  uniform, evenly lit chroma-key green background #00ff00, one flat colour edge to edge…», cerrando el prompt) o magenta
+  `#ff00ff` si la pieza lleva verde, y se recortan con `gimg matte` (`-alpha.png`; reglas P8 y P9).
+- **El emblema manda (M8), y llega por composición:** todo lo que lleva la Semilla (avatar, icono, sello, medallón)
+  se genera sin ella y la recibe desde los SVG de `logos/`, así es la misma en todas partes. Ningún modelo pinta el
+  emblema ni se le nombra en un prompt (regla L1).
 
 ## 8. Prompts
 
 | Archivo / pieza | Estado |
 | --- | --- |
-| `peticiones.md` §2 bloque común + negativo | **vigente** (2026-11-10): materiales y luz, módulos por pieza |
-| `peticiones.md` #1 emblema | **vigente**: prompt de la propuesta §5; 8-10 semillas; elección por silueta a 32 px. `examples/tarkor/orders/ui/01-emblema.json` lleva aún el prompt anterior (`5503a04`) y se rehace |
-| `peticiones.md` #2-#17 y E1-E18 | vigentes; #18 fuera (D7) |
-| `examples/tarkor/plantillas/og.svg` + `compose` del perfil `og` | **r7, se rehace con E3**: lockup vertical a la izquierda, lema en Inter a la derecha, fuentes Cinzel e Inter |
+| `peticiones.md` §2 bloque común y Bloque I bloque de noche | **vigentes** (2026-11-12): materiales y luz; cielo; sin negativo |
+| `peticiones.md` #1 emblema | **histórico**: sirvió de boceto (FLUX q185, el único con seis gajos) para trazar los SVG con `gimg brand system`; ya no se pide pintado. `examples/tarkor/orders/ui/01-emblema.json` y `01b-emblema-plano.json` quedan como historia |
+| `peticiones.md` #2-#17, E1-E18 e I1-I6 | vigentes; #6, #16, E1, E2, E3, E4 y E9 reescritos el 2026-11-12 (sin `stars`, sin `castle`, emblema por composición), y #8-#11, #13, #15, #17, E6, E7 y E10-E13 el mismo día (sin `star`, sin `glowing`, sin negaciones); #18 fuera (D7) |
+| `examples/tarkor/plantillas/og.svg` + `compose` del perfil `og` | **rehecha el 2026-11-10 con E3**: lockup vertical centrado sobre la noche, lema en Inter 400 debajo, fuentes Cinzel e Inter (`tests/test_examples.py` `TarkorOgE3Tests`) |
 | `examples/tarkor/prompts/og.txt` | r1 (`5d0178c`): técnico sí, persona **no**; histórico |
 | `examples/tarkor/prompts/r2-*.txt`, `estilo.txt`, `r5-*.txt` | r2-r5, paisajes con acento arcilla; históricos: nombran «sun» (vetada), «natural muted colours», «lower third». Sus medidas siguen valiendo como medidas de lo que eran (contraste, paleta, YAVG) |
 | `piloto/tarkor/flux-01-emblema.png`, `piloto/portal-marca/tarkor/intentos/` | ronda FLUX del 2026-11-10 con el prompt anterior (q154, q150, q153): el brillo tapaba la piedra; es lo que corrige M2 |
 
-Plantilla para una pieza de marca nueva: bloque común de `peticiones.md` §2 → módulos que lleve (cristal, luz de la
-Semilla, estrella, noche, madera) → la pieza («A ... seen straight on, centred, floating on a perfectly flat untouched
-bright green background») → materiales con hex → «15 percent empty margin on every side» → negativo. Entre 60 y 160
-palabras después del bloque común, en afirmativo (las negaciones van al negativo), con `[recorte]` si lleva fondo verde.
+Plantilla para una pieza de marca nueva: bloque común de `peticiones.md` §2 → módulos que lleve (cristal, noche,
+madera) → la pieza («A ... seen straight on») → materiales con hex → la frase de croma de `hoja.md` §6, que cierra el
+prompt. Entre 60 y 160
+palabras después del bloque común, en afirmativo y sin negaciones, con `[recorte]` si lleva fondo verde. La estrella y
+la luz de la Semilla no son módulos: llegan con el emblema, por composición.
 
 Plantilla para un paisaje: preámbulo de `mundo.json` (noche con cinturón de polvo, día o atardecer) → encuadre con la
 zona reservada → sujeto y región con su luz (`regiones.*.luz`) → «Style: cinematic matte painting, rich natural colour,
@@ -174,14 +179,17 @@ paisajes; las piezas nocturnas de marca (E1-E6) son más oscuras por definición
 
 ## 9. Formatos y piezas
 
-Perfiles de `examples/tarkor/galivelop-images.json`: `banner` (1600×640), `og` (1200×630), `social`, `square`
-(1080×1080), `portrait` (1080×1350), `header` (**1500×500**, cabecera de X), `emblema` (1024×1024). Por declarar
-(`peticiones.md` §2): `textura`, `banda`, `cielo`, `icono`, `estampa`, `tira`, `avatar`, `cabecera`, `carga`, `capsula`,
-`marco`. Discord (960×540) sale de `cabecera`; LinkedIn (1584×396) aparte, cuando se pida.
+Perfiles de `examples/tarkor/galivelop-images.json` (23 declarados; generado → entregado). Redes: `og` 1280×640 →
+1200×630, `social` 1280×640, `banner` 1280×512 → 1600×640, `square` 1024² → 1080², `header` 1536×512 → 1500×500,
+`portrait` 896×1152 → 1080×1350. Marca e interfaz: `emblema` 1024², `textura` 1024², `banda` 1024×256, `cielo`
+1536×640, `icono` 512², `estampa` 1280×512, `tira` 1024×128, `avatar` 1024², `cabecera` 1536×512 → 1500×500, `carga`
+1280×704, `capsula` 1024×576 → 616×353, `marco` 1280×704. Mapa: `texturamapa` 1024² (`tileable: "xy"`), `iconomapa`
+768², `cartela` 1024×512, `bandamapa` 1024×256, `marcomapa` 1024×256 (`tileable: "x"`). Sin perfil todavía: `lateral`
+704×1344 (I1 del Instalador), LinkedIn 1584×396. Discord 960×540 sale de `cabecera`; Reddit usa E1 y E2.
 
 Orden de trabajo (el detalle, en `peticiones.md` §5):
 
-1. **#1 emblema** (referencia de todo) y, a mano, el sistema de logo en SVG (sección 4): favicon e icono del Instalador.
+1. **Sistema de logo en SVG** (sección 4), hecho con `gimg brand system`: de él salen el favicon y el icono E14 del Instalador.
 2. **Marca fuera del juego:** E1 avatar, E2 cabecera, E3 og (plantilla nueva), E4 Steam (header y main; decisión 7).
 3. **Interfaz:** bloque A (fondos), #16 medallón, #10 ranura, E6 carga, E7 barra, bloque C (pictogramas), B, D y el resto de E.
 4. **Paisajes** (banner, cuadrado, vertical, cabecera) con la plantilla de paisaje, cuando el Portal los pida.
@@ -193,25 +201,29 @@ recortes `-alpha.png`; SVG en `docs/marcas/tarkor/logos/`.
 
 ## 10. Fuentes
 
-- WMF `3537d84` (HEAD de `claude/generador-mapas` el 2026-11-10: `3e4582dc`, sin cambios en estos archivos):
-  `frontend/src/index.css` l.9-14 (fuentes), l.23-67 (madera, hierro, cristal, acero, musgo, peligro, coste, misión),
-  l.167-184 (`.plank-panel`), l.216-222 (`.iron-band`), l.226-234 (`.accent-hairline`), l.246-254 (`.gem`), l.269-286
-  (`.crystal-sky`), l.300-322 (`.corner-bracket`), l.324-348 (`.rivet`), l.369-388 (`.skill-slot`);
-  `frontend/src/pages/Home.tsx` l.20-34 (cielo, eyebrow, título con gema y filetes); `frontend/index.html` (sin
-  `<link rel="icon">` ni `og:image`); `frontend/public/favicon.svg` (rayo violeta `#863bff`, ajeno a la marca);
+- WMF `main` `3a10a3fa` y `claude/marca-interfaz` `c858a150` (UX-40, sin fusionar; las líneas son de `c858a150`,
+  comprobadas el 2026-11-12): `frontend/src/index.css` l.9-14 (fuentes), l.23-49 (madera, hierro, cristal, acero),
+  l.55-66 (oro, piedra, noche, `crystal-deep`), l.69-91 (musgo, peligro, coste, misión), l.192 (`.plank-panel`), l.246
+  (`.iron-band`), l.258 (`.accent-hairline`), l.277 (`.gold-hairline`), l.288 (`.gem`), l.316 (`.crystal-sky`), l.348
+  (`.corner-bracket`), l.372 (`.corner-bracket-gold`), l.377 (`.rivet`), l.422 (`.skill-slot`), l.462 (`.title-gold`);
+  `frontend/src/pages/Home.tsx` l.20 (cielo), l.30 (título `title-gold`); `frontend/index.html` (`theme-color`,
+  `og:title` y `og:description` en `c858a150`; sin `<link rel="icon">` ni `og:image`); `frontend/public/favicon.svg` (rayo violeta `#863bff`, ajeno a la marca);
   `frontend/src/assets/fonts/` (Cinzel e Inter, OFL); `docs/producto/02-decisiones.md` nº 6 (madera + hierro);
-  `docs/producto/tarkor-contenido-web.md` l.40 (lema), l.66 y l.76 (motor y privacidad); `docs/difusion/guia-canales.md`
-  l.3-4 (voz); `docs/canon-opencode/00-nucleo.md` «Tono prohibido»; `docs/rpgtarkor/lore-mundo/genesis.md` (las
+  `docs/producto/tarkor-contenido-web.md` l.40 (lema), l.66 y l.76 (motor y privacidad); `docs/media/guia-canales.md`
+  (voz; antes `docs/difusion/`); `docs/canon-opencode/00-nucleo.md` «Tono prohibido»; `docs/rpgtarkor/lore-mundo/genesis.md` (las
   Semillas, arco de Tarkor, «El cielo sin luna» l.146-155); `docs/rpgtarkor/lore-mundo/regiones/llanuras-del-viento-rojo.md`
   l.376-385 (Los Pilares Rotos); `docs/producto/plan-imagenes/guia-visual-mundo.md` §1-2; `image-generator/estilo/mundo.json`
-  (preámbulo, vetadas).
-- Instalador-WMF-Tarkor `ce9f33a`: `app/src-tauri/icons/icon.png` y `fuente.png` (rombo azul sobre disco marrón,
-  `tauri.conf.json` l.34); `docs/11-diseno-del-frontal.md` l.135 (iconos de estado); `estilos.css` l.60 (`.filete`).
+  (preámbulo, estilos, vetadas; releído el 2026-11-12). Las citas de lore y de producto de esta lista son de `3537d84`
+  y no se han recomprobado.
+- Instalador-WMF-Tarkor `main` `5631e77b` y `34d2bb27`: `docs/13-hoja-de-estilos-e-imagenes.md` (`d9d33fe`, `608661d`:
+  pedido I1-I6 y E14 sobre noche); `app/src/estilos.css` l.31-33 (`.riel`), l.60 (`.filete`), l.65 (`.barra`), l.90-91
+  (`.pista`, `.relleno`); `app/src-tauri/icons/` (rombo azul sobre disco marrón, a sustituir por E14). De `ce9f33a`,
+  sin recomprobar: `tauri.conf.json` l.34 y `docs/11-diseno-del-frontal.md` l.135 (iconos de estado).
 - Portal `aa76b34`: `src/data/proyectos/tarkor.json` l.7 (acento `#E0703A`, **pendiente de cambiar a oro `#b8862b`**
   por propuesta a ese repo); `public/proyectos/tarkor/portada.webp` (1600×640, Pilares Rotos); `public/marca/gv-logo.svg`
   (baldosa de la familia); `docs/marca.md` l.3-4 (aún «pendiente de elegir tipografía»).
 - Aquí: `examples/tarkor/logos/` (los dos PNG aprobados; `tarkor-a/b-lockup.svg` son r7); `examples/tarkor/galivelop-images.json`
-  (`5503a04`: perfiles, `brand.palette` y `compose` del `og` aún de r7); `propuesta-fable-2026-11-10.md` (§2 M1-M10, §3-§9);
+  (2026-11-12: 23 perfiles, `brand.palette` de 16 hex y `compose` E3 en `og`); `propuesta-fable-2026-11-10.md` (§2 M1-M10, §3-§9);
   `peticiones.md` (piezas, prompts, decisiones D1-D7); `docs/plan.md` «Estilos por proyecto», párrafo Tarkor (paleta
   medida sobre la portada, *suposición*, de r7); `docs/records/contenido/r1-fondos.md`;
   `docs/records/lectura-2026-10-26-tarkor-y-marcas.md` §1, §2 y §4; `docs/records/decisiones-hojas-2026-11-04.md`

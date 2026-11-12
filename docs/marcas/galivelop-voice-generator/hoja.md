@@ -1,32 +1,217 @@
 # Hoja de estilo mínima: galivelop-voice-generator
 
-**Aprobada el 2026-11-04** (decisiones delegadas por la persona; ver `docs/records/decisiones-hojas-2026-11-04.md`); tercer caso de [`../plantilla-hoja-de-estilo.md`](../plantilla-hoja-de-estilo.md)
-(F2.12), rellenada tras [`../galivelop-image-generator/hoja.md`](../galivelop-image-generator/hoja.md) y
-[`../galivelop-workflow/hoja.md`](../galivelop-workflow/hoja.md) (las dos aprobadas el 2026-11-04) y con su misma forma.
-Complementa a [`biblia.md`](biblia.md): la biblia es la lectura larga; esta hoja es lo que `gimg` necesita, campo a campo y en el
-orden de la plantilla. Estados como en [`../README.md`](../README.md): sin marca sale de un repo (ruta en la sección 13);
-**heredado de `<marca>`** sale del repo de la marca paraguas (el Portal) leído a través de su biblia; **[P]** es propuesta
-del agente, **aprobada por delegación** el 2026-11-04 (la persona no la ha visto pieza a pieza), con su porqué en la misma celda; *(suposición)* se comprueba en una ronda; «no hay» solo donde la
-plantilla lo admite.
+> **Dos identidades en esta hoja.** Desde el 2026-11-12 voice-generator es un **producto de la familia Galivelop**: sigue
+> la hoja del Portal ([`../portal/hoja.md`](../portal/hoja.md), «Familia Galivelop: lo que heredan los productos» y
+> «Decisiones de la persona (2026-11-12)») y solo pone su acento y su motivo. **Lo vigente son los cuatro bloques de
+> abajo**, con la misma forma que los del Portal: «Identidad vigente», «Interfaz: tokens y reglas», «Recursos» y «Familia
+> Galivelop: lo que hereda y cómo se comprueba». Las secciones 0-15, «Contradicciones» y «Lo que enseñó»,
+> [`biblia.md`](biblia.md) y los ocho SVG de [`logos/`](logos/) describen la identidad anterior (`#06121c`, Sora/Inter,
+> FLUX, cinta de luz, baldosa con degradado) con la que se hicieron las piezas de r1-r5: se quedan como histórico y **no
+> se siguen para piezas nuevas**. De ellas sigue vigente lo que no es visual: propósito, tono, vocabulario y ética
+> (secciones 1 y 2).
 
-Commits de referencia: galivelop-voice-generator `ab1ff10` (`claude/voces-f1`, el mismo que cita la biblia; `main` solo tiene el
-diseño, PR #2 de ese repo); este repo `fd2ae53` (`f2-motor`; la biblia cita `24d69c8`, anterior); Portal-Galivelop `aa76b34` (lo
-heredado, vía `docs/marcas/portal/biblia.md`; desde aquí no se abre ese repo). El repo de voces se ha leído **sin modificar nada**.
+**Aprobada el 2026-11-04** (decisiones delegadas por la persona; ver `docs/records/decisiones-hojas-2026-11-04.md`);
+reescrita el 2026-11-12 para seguir al Portal sección por sección. Estados como en [`../README.md`](../README.md):
+**heredado** remite a una sección de la hoja del Portal y no repite sus valores salvo donde hacen falta para comprobar;
+**propio** es lo que solo vale para voice; **calculado** sale de [`tonos.py`](tonos.py); **[P]** es propuesta del agente
+(las que esperan a la persona están en «Dudas que decide la persona»).
 
-> **Hereda de la identidad vigente del Portal (2026-11-11).** Lo que esta hoja dice de fondo, texto, tipografía, modelo,
-> estilo de imagen y palabras vetadas (`#06121c`, Sora/Inter, FLUX, cinta de luz frambuesa, veto a `no`/`not`/`like`) es
-> la identidad anterior de la familia, con la que se hicieron las piezas de r1-r5: se queda como histórico. **Para cualquier
-> pieza nueva manda el bloque «Identidad vigente» de [`../portal/hoja.md`](../portal/hoja.md)**, y esta hoja solo añade lo
-> propio: el motivo de la fila «Motivo propio» de la sección 6 y el acento `#D9467A` para logo e interfaz. Lo ético de la
-> sección 2 (nada de micrófonos, bocas, rostros ni «clonar») sigue entero.
+Commits de referencia: galivelop-voice-generator `main` `5f67bd4` (2026-11-11, «F1: núcleo de gvoice (#4)»; antes esta
+hoja citaba `claude/voces-f1` `ab1ff10`); Portal-Galivelop rama `ccr-47f8fddd-o5ek6p` `6574c4f` (el que cita la hoja del
+Portal); este repo `8bb0ae1` (`hojas-repos`). Los dos repos ajenos se han leído con `git show`, **sin modificar nada**.
 
-**Lo primero que hay que saber:** el repo de galivelop-voice-generator **no tiene identidad visual**: ni CSS, ni HTML, ni SVG, ni
-favicon, ni logo, ni paleta, ni web. Tampoco tiene licencia («Todavía no hay licencia», `README.md` l.50) ni la skill
-`gw-media-content` (su flujo es Galivelop-workflow v0.3.0, anterior a esa skill). Todo lo visual de esta hoja viene del Portal
-(heredado), de la biblia y de los prompts y piezas de este repo; la identidad **de voz** (propósito, tono, vocabulario) sí sale del
-repo de voces (`README.md`, `GLOSSARY.md`).
+**Lo primero que hay que saber:** el repo de voces **sigue sin nada visual** en `5f67bd4`: ningún `.css`, `.html`,
+`.svg`, `.png`, `.jpg`, `.ico` ni `.webp` (`git ls-tree -r --name-only origin/main`, 0 archivos), ni logo, ni licencia
+(`README.md` l.70, «Todavía no hay licencia»). **F1 no trae nada visual:** `git diff --stat ab1ff10 origin/main` son 50
+archivos de `gvoice/`, `tests/`, `examples/`, `docs/` y los dos README; la orden `gvoice` es de terminal (`README.md`
+l.18-33) y la interfaz es la fase F5 de su plan (`docs/plan.md` l.45: «Proyectos; pedidos; galería de tomas con
+reproductor y comparación; ficha con avisos; efectos con escucha; es/en»), sin empezar. Todo lo visual vive aquí.
 
 ---
+
+## Identidad vigente (2026-11-12): lo que gimg necesita
+
+Lo que se aplica a cada pedido nuevo de voice. Cada fila dice qué hereda (y de qué fila del bloque «Identidad vigente»
+del Portal) y qué es propio. Donde esta hoja y la del Portal digan cosas distintas en algo heredado, manda la del Portal
+y esta se corrige.
+
+| Campo | Valor | Estado |
+|---|---|---|
+| Paleta | **Heredado:** cerúleo `#0072a8` («medium cerulean ocean blue #0072a8»), papel `#fbfcfd`, tinta `#13212b`; versión oscura, fondo `#0d171e` y líneas `#e6eef3`; los grabados admiten «tints and shades» del cerúleo; los iconos, una sola tinta. **Propio: el acento frambuesa ocupa el lugar del alga `#5d7a6a`**, en poca cantidad («a touch of»), nunca bloque grande ni protagonista. Frase final de todo prompt de voice: **«Palette strictly limited to medium cerulean ocean blue #0072a8 and its tints and shades, off-white #fbfcfd, ink grey #13212b and a touch of raspberry pink #d9467a.»** (sin «and its tints and shades» en línea simple). `brand.palette` del proyecto pasa a ser la del Portal con los tres tonos del acento en lugar del alga: `#0072a8`, `#1aa6df`, `#fbfcfd`, `#13212b`, `#e6eef3`, `#0d171e`, `#d9467a`, `#ce3c71`, `#db487b` (hoy lleva la anterior: ver «Recursos», pendientes) | Portal, fila «Paleta» y «Qué cambia», fila «Acento secundario» (`../portal/hoja.md` l.52, l.262) y decisión 3 (l.355-357); el nombre «raspberry pink» es el de `examples/galivelop-voice-generator/prompts/estilo.txt`; el tono que va en la frase, **[P]** (duda 2) |
+| Acento: tres tonos | **Vivo `#d9467a`** (el hex de hoy), **hondo `#ce3c71`** (tema claro) y **variante oscura `#db487b`** (tema oscuro). El hondo y la oscura son **calculados**, no elegidos: OKLCH del vivo `L` 0,6143, `C` 0,1869, `h` 2,78°; hondo, 6 pasos de 0,005 hacia abajo (`L` 0,5843); oscura, 1 paso hacia arriba (`L` 0,6193); croma y tono sin tocar (los dos caen dentro de sRGB). Ratios en «Interfaz». Reproduce: `python3 docs/marcas/galivelop-voice-generator/tonos.py '#D9467A'` | **calculado** con el método de la decisión 1 del Portal (`../portal/hoja.md` l.333-352); vivo: `docs/plan.md` l.765 («voces frambuesa `#D9467A`»), `docs/marcas/README.md` l.180, `examples/galivelop-voice-generator/galivelop-images.json` `brand.palette`. **El Portal traía otro hex, `#C9467A`** (`src/data/productos/galivelop-voice-generator.json` l.5, `6574c4f`): **Decidido por la persona (2026-11-12): vivo `#D9467A`**, y el Portal cambia su l.5 (duda 1, cerrada) |
+| Tipografía | **Heredado sin cambio:** Big Shoulders Display (titulares), Literata (texto), JetBrains Mono (datos). **Ninguna imagen lleva texto**, ni generado ni compuesto: lo pone la web o la interfaz con sus fuentes. Sora e Inter y las piezas compuestas con título (r4-r5) son histórico | Portal, fila «Tipografía» (l.53) y decisión 3 |
+| Modelo y parámetros | **Heredado:** calidad con `zimage-turbo-q6`, 8 pasos, cfg 1.0, euler, base 1024 y `draft {scale 0.5, steps 4}`; FLUX solo bocetos; Qwen-Image no hace falta. Con cfg 1.0 no hay prompt negativo. Los perfiles de `examples/galivelop-voice-generator/galivelop-images.json` (FLUX, 1280×640) son los de r1-r5: histórico | Portal, fila «Modelo y parámetros» (l.54) |
+| Mar y tecnología | **Heredado:** el mar pone el dónde (carta, isobatas, papel, cerúleo) y la tecnología el qué; ningún motivo náutico protagonista; voice no añade excepción. **Propio, el qué de voice: la onda como dato.** 1) En grabado: la forma de onda dibujada como una sola línea, el perfil de profundidad del fondo de una carta («a sound wave drawn as a single depth profile line of the seabed»). 2) En línea simple: una ventana de aplicación con una fila de barras verticales de distinta altura («an application window holding a row of short vertical bars of varying height, a waveform»), sin número de barras; la toma elegida se marca con un visto o un subrayado, no con color. 3) En el logo: la onda que entra y se enrosca en espiral, la huella de la voz | Portal, fila «Mar y tecnología» (l.55); motivo 1, pedido `examples/portal/orders/marca/15-proximamente-voz.json` (aprobado, q331) y Portal `docs/marca.md` l.254 (`6574c4f`); motivo 2, **[P]** del 2026-11-11 (sin pieza); motivo 3, `docs/plan.md` l.770 («una cinta de onda que se enrosca en una huella») y `logos/galivelop-voice-generator-a.svg` (`<title>`) |
+| Dos registros de dibujo | **Heredado, con los bloques literales del Portal:** grabado a dos tintas para lo grande; línea simple para iconos y logo. No se mezclan. **Deja de valer** el estilo de r1-r5 («thin precise luminous lines, soft glow, smooth gradients», sección 6): pide resplandor y degradado, prohibidos en toda la familia | Portal, fila «Dos registros de dibujo» (l.56) y «Prohibido en toda la familia» (l.297-305) |
+| Zonas limpias, recuentos, encuadre | **Heredado sin cambio:** zona limpia en positivo y al principio, como papel; trama confinada; nunca «exactly N» (las barras, «a row of», «several»); todo a sangre con el cierre del Portal. La «zona reservada» en azul noche de r1-r5 (sección 9) es histórico | Portal, filas «Zonas limpias», «Recuentos», «Encuadre» (l.57, l.58, l.61) |
+| Fondo y recorte | **Heredado:** lo que se recorta (logo, iconos sueltos) va sobre croma `#00ff00` y se recorta y vectoriza con `gimg brand`. **Propio:** ninguna pieza de voice lleva verde, así que no hace falta `#ff00ff`; **el frambuesa y el magenta están a un paso**: nunca croma `#ff00ff` en una pieza con acento | Portal, fila «Fondo y recorte» (l.59) |
+| Versión oscura | **Heredado:** iconos y logo por CSS (`currentColor`), sin generar; un grabado, segunda generación con la misma semilla y la frase «printed in two inks on dark slate paper #0d171e: pale off-white #e6eef3 lines and medium cerulean ocean blue #0072a8 tints and shades», con el toque de acento igual (`#d9467a`: en imagen no se cambia de tono). Ninguna pieza de voice la necesita hoy | Portal, fila «Versión oscura» (l.60) |
+| Perfiles | **Heredado:** los de `examples/portal/galivelop-images.json` (`cuadrado`, `icono`, `social`, `portada`, `tarjeta`, `cabecera`…), todos Z-Image. La tarjeta 15 se hizo con `tarjeta` del proyecto del Portal. Voice no tiene aún perfiles propios con la identidad vigente | Portal, fila «Perfiles» (l.62) |
+| Referencias aprobadas | **Lo que gusta:** la tarjeta «Próximamente» de voz, **q331** (la onda como perfil del fondo, grabado a dos tintas, tercio inferior limpio), entregada y publicada en el Portal. **Histórico aprobado:** r1 «sí» de la persona (semillas 3 y 4, cinta rosa y anillos) con la identidad anterior; vale como antecedente del motivo (la onda que se enrosca), no como estilo. **Rechazado en la familia:** resplandores, degradados, marcos y bandas blancas | Portal `docs/marca.md` l.122, l.254 (`6574c4f`); `../portal/hoja.md` l.204; `docs/records/contenido/r1-fondos.md` l.46 |
+
+**Cómo se escribe el prompt:** heredado entero de «Cómo se escribe el prompt» del Portal (`../portal/hoja.md` l.65-90):
+orden, negaciones solo en el cierre, ningún color fuera de las tintas, 120-200 palabras, comprobación antes de encolar
+(con el frambuesa donde aquel dice los cuatro hex). **Propio de voice**, además de lo vetado en toda la familia:
+
+- **No se nombran** (ética, sección 2): `microphone`, `mic`, `headphones`, `speaker`, `studio`, `mouth`, `lips`, `face`,
+  `person`, `singer`, `voice actor`, `human`. Tampoco como negación en el sujeto: el modelo pinta lo nombrado.
+- **Nada que sugiera clonar la voz de alguien**: las voces son personas sintéticas (`GLOSSARY.md` l.43 de voces,
+  «Voz»).
+- **El acento no es adjetivo del sujeto:** «a raspberry wave» lo vuelve protagonista. El color lo pone solo la frase de
+  paleta; el toque se sitúa describiendo la forma («one small mark on the chosen bar»).
+- El pedido aprobado de la 15 nombra en el sujeto lo que no quiere («no rocks, no seaweed, no plants») y lleva el alga en
+  la frase de paleta: **está aprobado y no se rehace**; si un día se regenera, va en positivo («a smooth bare seabed
+  profile») y con la frase de paleta de voice.
+
+**Dudas que decide la persona** (2026-11-12):
+
+1. **Cerrada. Decidido por la persona (2026-11-12): el acento vivo es `#D9467A`** (hondo `#ce3c71`, oscura `#db487b`). El Portal cambia `src/data/productos/galivelop-voice-generator.json` l.5 de `#C9467A` a `#D9467A` (entrega al Portal, cambio 14). El cálculo con `#C9467A` (hondo `#c74479`, oscura `#d35083`) queda como histórico.
+2. **Qué tono va en la imagen generada.** La decisión 3 dice «a touch of» el acento sin decir cuál de los tres.
+   **Recomendación:** el vivo `#d9467a` en claro y en oscuro; el hondo y la oscura existen para texto en interfaz, y en
+   un toque pequeño el modelo no distingue `#d9467a` de `#ce3c71` (contraste entre ellos, 1,13:1).
+3. **Sobre el acento vivo no cabe texto.** El Portal pone la tinta sobre su vivo a 5,91:1; sobre `#d9467a` la tinta da
+   3,99 y el blanco 4,11: ninguno llega a 4,5. **Recomendación:** en voice el vivo no lleva texto encima nunca (foco,
+   punto de estado y tinte, que es para lo que está); el texto sobre color va sobre el hondo, en blanco (4,66).
+4. **El acento se parece al peligro heredado.** `--peligro` `#a3135f` tiene tono OKLCH 356,0° y croma 0,183; el hondo
+   de voice, 2,9° y 0,186: son 7° de diferencia y 1,60:1 entre ellos. **Recomendación:** mantener el peligro del Portal
+   (la herencia manda) y cumplir a rajatabla su regla 6, peligro siempre con ✗ y texto, nunca solo color; se comprueba
+   en la primera pantalla de F5 y, si se confunden, se vuelve a la persona.
+5. **Nombre en el lockup.** El lockup común va en mayúsculas («GALIVELOP VOICE GENERATOR», como el `nombre` de la ficha
+   del Portal, l.3); el repo se titula `galivelop-voice-generator`, en minúsculas y con guiones (`README.md` l.1), que
+   era la regla de esta hoja. **Recomendación:** mayúsculas y sin guiones en el lockup (decisión 4 de la persona); el
+   nombre con guiones se queda para código, rutas y texto corrido.
+6. **Las piezas con título de r4-r5** (`og`, `cuadrado`, `vertical`, `cabecera` con lema compuesto) chocan con «ninguna
+   imagen lleva texto». **Recomendación:** darlas por históricas y no rehacerlas; la tarjeta social sale sin texto y el
+   título lo pone quien la publica. El lema y las frases de la sección 10 siguen valiendo como texto.
+
+---
+
+## Interfaz: tokens y reglas (2026-11-12)
+
+Voice no tiene interfaz (llega en F5). Cuando la tenga, copia los tokens del Portal y cambia solo los del acento. Los
+nombres de los tokens del acento son **[P]**: los fija su repo; los valores, no. Ratios WCAG 2.x calculados por
+`tonos.py` sobre los hex, no medidos en pantalla.
+
+**Heredado sin cambiar un valor** (tabla de tokens del Portal, `../portal/hoja.md` l.127-152, y «Qué se copia tal
+cual», l.236-246): `--papel`, `--superficie`, `--fondo-alterno`, `--superficie-2`, `--tinta`, `--tinta-2`, `--texto-3`,
+`--filete`, `--reticula` y `--reticula-paso` (24 px), `--peligro`, `--sobre-peligro`, `--peligro-tinte`, `--ok-texto`,
+`--noche`, `--velo*`, `--sombra`, los tres chaflanes (28 / 14 / 10 px), `--curva` y `--transicion`; la tipografía por
+papel (Big Shoulders Display 800/700 en mayúsculas, Literata 400/600 a 17 px / 1,6, JetBrains Mono 500 a 12 px con
+tracking 0,06 em) y las once reglas de interfaz (l.160-178). Tema claro por defecto.
+
+**Propio: el acento en el papel de `--celeste`, `--celeste-hondo`, `--enlace` y `--tinte`.**
+
+| Token **[P]** | Claro | Oscuro | Papel que hace (el del Portal) | Contraste | Umbral y resultado |
+|---|---|---|---|---|---|
+| `--acento` (vivo) | `#d9467a` | `#d9467a` | El de `--celeste`: foco (`outline` 2 px), punto de estado, marca. Sin texto encima | sobre papel 4,00 / 4,41; blanco encima 4,11; tinta encima 3,99 | Mismo hex en los dos temas: cumple. No es texto sobre papel claro (4,00 < 4,5): cumple. Como elemento no textual pasa el 3:1 en los dos temas. **Tinta encima ≥ 4,5: no cumple** (Portal 5,91): duda 3 |
+| `--acento-hondo` | `#ce3c71` | `#ce3c71` | El de `--celeste-hondo`: bloques grandes de color, enlaces en claro, cuadrado del logo, texto de acento | sobre papel `#fbfcfd` 4,53; sobre superficie `#ffffff` 4,66; blanco encima 4,66 | ≥ 4,5 sobre papel y blanco encima ≥ 4,5: **cumple** (Portal 5,15 y 5,29). En oscuro no se oscurece otro paso: los bloques con texto blanco usan este mismo hex (decisión 1, l.349-351) |
+| `--enlace` | `--acento-hondo` | `#e75485` (adoptado 2026-11-12; antes `#db487b`) | El de `--enlace`: texto y enlaces sobre el papel oscuro | 5,18 / 4,80 / 4,53 sobre `#0d171e` / `#111f29` / `#16242e` | ≥ 4,5 sobre el papel de su tema: **cumple**. El Portal llega a 9,49 en oscuro; un producto lleva una sola variante oscura a 4,5 (decisión 1). Con `#e75485` da 4,80 sobre `#111f29` y 4,53 sobre `#16242e` (con `#db487b` daba 4,17 y 3,94, por lo que se sustituyó), y 5,18 sobre `#0d171e`.
+| `--tinte` | `#d9467a` al 12 % (`#f7e6ed` sobre papel) | al 18 % (`#321f2f` sobre papel) | El de `--tinte`: hover, chips, píldoras | tinta encima 13,67 / 13,03 | Mismos porcentajes y tinta ≥ 7: **cumple** (Portal 14,25 / 11,65) |
+| Isobatas sobre el bloque | blanco al 20-50 % sobre `#ce3c71` | igual | Las del Portal sobre `--celeste-hondo`; en voice, la línea de la onda | — | Mismos porcentajes (heredado) |
+
+**Lo que el producto no tiene:** acento secundario. En el Portal es el alga; junto al Portal, el secundario **es** el
+acento de voice. En la interfaz de voice «hecho» es `--ok-texto` y el fallo `--peligro`, heredados; no se añade un
+cuarto color.
+
+**Relaciones del Portal, una a una** (`../portal/hoja.md` l.265-279): 1, 4, 5 y 6 se cumplen porque papel, tinta,
+filete, retícula, velos y peligro son los mismos hex. 2 (un acento con dos tonos): cumple, vivo y hondo comparten tono
+(2,8° y 2,9°) y croma. 3 (en oscuro el vivo no cambia, el tinte sube a 18 %): cumple; el hondo no se oscurece y el
+enlace se aclara un paso, como fija la decisión 1. 7 (cuatro tintas en imagen, iconos de una): cumple con la frase de
+paleta de arriba.
+
+**Los tonos de la identidad anterior no pasan a la interfaz:** `#A62E5A` (6,47 sobre papel, elegido a ojo) y `#F6B1CA`
+(10,41 sobre `#0d171e`) eran el «acento oscuro» y el «acento claro» de la sección 3. La decisión 1 pide tonos
+calculados, así que los sustituyen `#ce3c71` y `#db487b`; se quedan en el histórico y en los SVG de `logos/`.
+
+## Recursos: entregado, histórico y pendiente (2026-11-12)
+
+| Recurso | Estado | Dónde está | Fuente |
+|---|---|---|---|
+| Tarjeta «Próximamente» de voz (recurso 15 del Portal) | **Entregada y publicada** (q331): la onda como perfil del fondo marino, 720×405 | Portal `public/proyectos/galivelop-voice-generator/proxima.webp`; pedido `examples/portal/orders/marca/15-proximamente-voz.json` | Portal `docs/marca.md` l.122, l.254 (`6574c4f`); `../portal/hoja.md` l.204 |
+| Logo: símbolo | **Pendiente.** **Decidido por la persona (2026-11-12):** el símbolo es el monograma de iniciales en una tinta (papel `#fbfcfd`) sobre el cuadrado plano con chaflán de 28/128 en el tono hondo del acento; los logos anteriores (degradado, `rx` 30, Sora) pasan a histórico y no se copian a su repo. **Dependencia:** `gimg brand` no tiene aún la orden que monte el cuadrado con chaflán; se crea en este repo. Antes de la decisión: regla heredada: cuadrado plano del hondo `#ce3c71`, chaflán de 28/128 arriba a la derecha, dibujo de trazo 12/128 en una tinta, sin degradado ni redondeo; nace de gimg sobre croma `#00ff00` y se vectoriza con `gimg brand trace`. Dibujo propio: la onda que se enrosca (el concepto del `a`). **Hueco:** `gimg brand` no tiene hoy una orden que monte el cuadrado con chaflán alrededor del trazo, y a mano no se dibuja | — | `../portal/hoja.md` l.290, l.313 |
+| Logos `a`-`d` y sus lockups | **Históricos.** Dibujados a mano el 2026-10 (`10d71ec`), baldosa `rx` 30 con degradado `#D9467A → #A62E5A` y nombre en Sora: no cumplen la regla del logo ni la del lockup. El `a` queda como boceto del dibujo; mientras no haya otro, es lo único que hay | `logos/galivelop-voice-generator-{a,b,c,d}.svg` y `-lockup.svg` | `../portal/hoja.md` l.374 («quedan como históricos») |
+| Lockup común | **Pendiente** del símbolo y de la fuente. Nombre: `gimg brand wordmark "GALIVELOP VOICE GENERATOR" --font <Big Shoulders Display variable .ttf> --weight 800 --spacing 0.01`; lockups: `gimg brand lockup simbolo.svg wordmark.svg --layout h --cap 0.45 --gap 0.25 --margin 0.25` y `--layout v --width 1.6 --gap 0.25 --margin 0.25`. Nombre en `currentColor` (tinta), nunca en el acento. Mínimo: `S` ≥ 32 px en horizontal, ≥ 48 px en vertical; por debajo, el símbolo solo hasta 16 px. La fuente no está instalada en el equipo donde se escribió esta hoja (`fc-list`, 2026-11-12) | — | `../portal/hoja.md` l.358-374 (decisión 4) |
+| Icono de proyecto (recurso 23 del Portal) | **Pendiente.** Línea simple, una tinta `#13212b`, nodos huecos, legible a 24 px: la ventana con la fila de barras. El Portal usa hoy el genérico `"icono": "audio"` | — | Portal `src/data/productos/galivelop-voice-generator.json` l.6; `../portal/hoja.md` l.212, l.292 |
+| `og.jpg` del proyecto (recurso 24 del Portal) | **Pendiente.** Grabado, perfil `social`, la onda como perfil del fondo y el toque de frambuesa; sin texto | Portal `tools/og/fuentes/galivelop-voice-generator/og-fuente.png` | `../portal/hoja.md` l.213 |
+| Tarjeta social del repo (GitHub, 1280×640) | **Pendiente**, la misma imagen que el 24 en perfil `social` | — | sección 11 |
+| Iconos de interfaz (tomas, huella, cola, efectos) | **No hay y no se piden aún:** esperan a F5 y a la lista que haga su repo. Serán una serie entera, sin mezclar con lucide | — | voces `docs/plan.md` l.45; `../portal/hoja.md` l.292 |
+| Piezas de r1-r5 (`og`, `cuadrado`, `vertical`, `cabecera`, `avatar`) | **Históricas**: azul noche, cinta de luz, título compuesto en Sora. Dos se ven en la ficha de image-generator del Portal como muestras del piloto (r3 y r5) y ahí se quedan | `piloto/` (fuera de git); Portal `src/data/proyectos/galivelop-image-generator.json` l.271-289 | secciones 9-12 |
+| Proyecto de gimg | **Pendiente de reescribir**: `examples/galivelop-voice-generator/galivelop-images.json` lleva `brand.palette` y perfiles de la identidad anterior (FLUX, `#06121c`). No se toca desde esta tarea | `examples/galivelop-voice-generator/` | fila «Paleta» de arriba |
+
+**Prompts propuestos para lo pendiente** (**[P]**, sin encolar; siguen el orden del Portal y se revisan con su punto 5):
+
+- **Símbolo** (perfil `cuadrado`, sobre croma): «A single continuous line that enters from the left as a gentle sound
+  wave and curls inward into a spiral of a few turns, centred, on a plain flat solid bright green #00ff00 background.
+  Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no
+  texture, bold and clear enough to read at 24 pixels, generous empty margin around each icon, a single ink colour. No
+  photographic rendering, no glow, no text, no letters, no numbers, no watermark, no border, no frame. Palette strictly
+  limited to ink grey #13212b.» Se alarga hasta 120 palabras describiendo la forma, no el color.
+- **Icono de proyecto** (perfil `icono`, sobre papel `#fbfcfd`): el mismo bloque de línea simple, con el sujeto «an
+  application window holding a row of short vertical bars of varying height, a waveform, one bar underlined».
+- **`og` y tarjeta social** (perfil `social`): el sujeto de la 15 en positivo («a sound wave drawn as a single depth
+  profile line of a smooth bare seabed, crossing the upper two thirds from side to side; the lower third of the sheet is
+  plain flat off-white paper, open and unmarked»), el bloque de grabado y la frase de paleta de voice.
+
+## Familia Galivelop: lo que hereda y cómo se comprueba
+
+Las seis comprobaciones de «Cómo se comprueba una hoja de producto» (`../portal/hoja.md` l.307-315), con el resultado
+de hoy:
+
+| # | Comprobación | Resultado |
+|---|---|---|
+| 1 | Tres hex del acento, calculados, con ratios; ninguno bajo 4,5 donde el método lo exige | **Pasa.** Vivo `#d9467a`, hondo `#ce3c71` (4,53 sobre `#fbfcfd`; blanco encima 4,66), oscura `#db487b` (4,51 sobre `#0d171e`). Salida literal abajo. Abierto: cuál es el vivo (duda 1) |
+| 2 | Papel, tinta, filete, retícula, tipografías y chaflanes coinciden con el Portal valor por valor | **Pasa por remisión:** esta hoja no escribe otros valores; los cita |
+| 3 | Frase de paleta del Portal con el acento en el lugar del alga; ningún prompt nombra otro color | **Pasa** en la frase y en los tres prompts propuestos. El pedido aprobado de la 15 lleva el alga: histórico aprobado |
+| 4 | Logo: cuadrado plano del hondo, chaflán 28/128, trazo 12/128, salido de gimg | **No pasa:** no existe; los de `logos/` son los anteriores |
+| 5 | Iconos de una tinta, sin relleno, nodos huecos, legibles a 24 px | **Sin iconos:** nada que comprobar |
+| 6 | Nada de «Prohibido en toda la familia» | **Pasa** en los bloques vigentes. Lo incumplen, y por eso son histórico: el degradado y el `rx` de los logos, el «soft glow, smooth gradients» de `estilo.txt`, el texto compuesto de r4-r5 |
+
+Salida de `python3 docs/marcas/galivelop-voice-generator/tonos.py '#D9467A' '#C9467A'` (2026-11-12). El mismo script
+reproduce los ratios del Portal con `'#1aa6df'` (2,70 / 2,78 / 5,91 / 6,53 y tintes 14,25 / 11,65: `../portal/hoja.md`
+l.135, l.142), que es la prueba de que calcula lo mismo:
+
+```text
+vivo   #d9467a  OKLCH L=0.6143 C=0.1869 h=2.78
+       sobre #fbfcfd 4.00 | blanco encima 4.11 | tinta #13212b encima 3.99 | sobre #0d171e 4.41
+hondo  #ce3c71  L=0.5843 C=0.1869 (6 pasos)
+       sobre #fbfcfd 4.53 | blanco encima 4.66 | sobre #0d171e 3.89
+oscuro #db487b  L=0.6193 C=0.1869 (1 pasos)
+       sobre #0d171e 4.51
+tinte  12 % sobre #fbfcfd = #f7e6ed, tinta encima 13.67 | 18 % sobre #0d171e = #321f2f, tinta #e6eef3 encima 13.03
+
+vivo   #c9467a  OKLCH L=0.5892 C=0.1721 h=359.36
+       sobre #fbfcfd 4.41 | blanco encima 4.53 | tinta #13212b encima 3.63 | sobre #0d171e 4.01
+hondo  #c74479  L=0.5842 C=0.1721 (1 pasos)
+       sobre #fbfcfd 4.51 | blanco encima 4.63 | sobre #0d171e 3.91
+oscuro #d35083  L=0.6192 C=0.1721 (6 pasos)
+       sobre #0d171e 4.53
+tinte  12 % sobre #fbfcfd = #f5e6ed, tinta encima 13.61 | 18 % sobre #0d171e = #2f1f2f, tinta #e6eef3 encima 13.17
+```
+
+Una precisión del método que el texto del Portal no fija y `tonos.py` sí: cuando un paso cae fuera de sRGB, la croma se
+baja **desde la del vivo en cada paso** (no se arrastra la rebaja al paso siguiente). Con el frambuesa no ha hecho
+falta: ningún paso sale de sRGB.
+
+**Qué ha cambiado en el repo de voces desde `ab1ff10`** (lo que las secciones históricas citan con línea vieja):
+
+| Dato | En `ab1ff10` (secciones 0-15) | En `main` `5f67bd4` |
+|---|---|---|
+| Estado | «F0 hecha», «Aún no genera voces» (`README.md` l.10-13) | «F1 (núcleo) hecha … **Aún no genera voces de verdad**: el motor real llega en F2» (`README.md` l.12-13). La promesa de la sección 2 sigue igual: no se afirma que genera voces |
+| Licencia | «Todavía no hay licencia» (`README.md` l.50) | Igual, ahora en l.70 |
+| Orden | No había | `python3 -m gvoice` con `project`, `order`, `work`, `choose`, `attempt`, `undo`, `queue` (`README.md` l.18-33); solo motor `fake` (l.33) |
+| Flujo | Galivelop-workflow v0.3.0, sin `gw-media-content` | Igual (`.claude/gw.json` `version`; `AGENTS.md` l.1) |
+| Interfaz | Sin fecha | Fase F5 del plan (`docs/plan.md` l.45), sin empezar |
+| Rama | `claude/voces-f1` | F1 fusionada en `main` por el PR #4; siguiente, F2 en rama nueva (`docs/traspaso.md`, «Estado actual») |
+
+Lo que sale de aquí hacia su sesión está en
+[`../../propuestas/galivelop-voice-generator/entrega-hoja-2026-11-12.md`](../../propuestas/galivelop-voice-generator/entrega-hoja-2026-11-12.md).
+
+---
+
+## Histórico (identidad anterior, r1-r5)
+
+Desde aquí, la hoja del 2026-11-04 tal como se aprobó, con sus citas a `ab1ff10`. **No se sigue para piezas nuevas**;
+valen las secciones 1 y 2 (identidad de voz y ética).
 
 ## 0. Ficha
 
@@ -38,7 +223,7 @@ repo de voces (`README.md`, `GLOSSARY.md`).
 | Quién decide | Obl. | La persona. Dio ella el veredicto de r1 (2026-10-26, «sí» a voice-generator en las semillas 3 y 4); desde entonces, delegado al agente («lo dejo en tus manos») hasta que diga otra cosa; cada decisión delegada lleva **[P]** y se le propone al cerrar F2. El 2026-11-04 delegó las dudas de esta hoja y quedó aprobada (`docs/records/decisiones-hojas-2026-11-04.md`) | repo (`docs/records/contenido/r1-fondos.md` l.46 y l.52-53; `docs/marcas/README.md` l.24-38, «Elegido por el agente») |
 | Fecha de la hoja | Rec. | `2026-11-04` | — |
 | Familia visual | Rec. | `Galivelop`: fondo, texto, tipografía y baldosa son los de la familia, sin cambios (Rec. aquí, no Obl.) | heredado de Portal-Galivelop `aa76b34` (vía `docs/marcas/portal/biblia.md` §2-§4); `docs/plan.md` l.662-665 («Herramientas del taller … entran en la familia del Portal **[P]**»; la familia está confirmada por las piezas de r1-r5, el acento sigue **[P]**) |
-| Hereda de | Opc. | **Vigente:** [`../portal/hoja.md`](../portal/hoja.md), bloque «Identidad vigente» (2026-11-10 y 11). **Histórico (piezas r1-r5):** Portal-Galivelop `aa76b34` (leído solo a través de `docs/marcas/portal/biblia.md`) | repo |
+| Hereda de | Opc. | **Vigente:** [`../portal/hoja.md`](../portal/hoja.md), bloques «Identidad vigente» y «Familia Galivelop» (2026-11-12). **Histórico (piezas r1-r5):** Portal-Galivelop `aa76b34` (leído solo a través de `docs/marcas/portal/biblia.md`) | repo |
 
 ## 1. Identidad
 
@@ -106,7 +291,7 @@ Copia en `examples/galivelop-voice-generator/logos/`: **no hay** (F2.10, dec. 3,
 
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
-| Motivo propio (identidad vigente, 2026-11-11) | Obl. | **La onda como dato, no como sonido en el aire:** la forma de onda dibujada como una sola línea, el perfil de profundidad del fondo marino de una carta (lo que el Portal ya le pide en `orders/marca/15-proximamente-voz.json`: «a sound wave drawn as a single depth profile line of the seabed»); en icono, línea simple, las barras de tomas dentro de una ventana de aplicación («an application window holding a row of short vertical bars of varying height, a waveform»), sin número de barras y sin ninguna «encendida» (una tinta: la elegida se marca con un visto o un subrayado, no con color). Nada de micrófono, boca ni cara, como siempre. El pedido 15 nombra en el sujeto lo que no quiere («no rocks, no seaweed, no plants»): se reescribe en positivo («a smooth bare seabed profile») según el punto 2 de «Cómo se escribe el prompt». Acento frambuesa `#D9467A` solo en logo, baldosa e interfaz | **propuesta del agente, 2026-11-11**, según `../portal/hoja.md` «Mar y tecnología»; pieza en `examples/portal/orders/marca/15-proximamente-voz.json` |
+| Motivo propio (identidad vigente, 2026-11-11) | Obl. | **La onda como dato, no como sonido en el aire:** la forma de onda dibujada como una sola línea, el perfil de profundidad del fondo marino de una carta (lo que el Portal ya le pide en `orders/marca/15-proximamente-voz.json`: «a sound wave drawn as a single depth profile line of the seabed»); en icono, línea simple, las barras de tomas dentro de una ventana de aplicación («an application window holding a row of short vertical bars of varying height, a waveform»), sin número de barras y sin ninguna «encendida» (una tinta: la elegida se marca con un visto o un subrayado, no con color). Nada de micrófono, boca ni cara, como siempre. El pedido 15 nombra en el sujeto lo que no quiere («no rocks, no seaweed, no plants»): se reescribe en positivo («a smooth bare seabed profile») según el punto 2 de «Cómo se escribe el prompt». **Desde el 2026-11-12** el acento es además el «a touch of» de la frase de paleta (bloque «Identidad vigente», fila «Paleta»), no solo logo e interfaz | **propuesta del agente, 2026-11-11**, según `../portal/hoja.md` «Mar y tecnología»; pieza en `examples/portal/orders/marca/15-proximamente-voz.json` |
 | Motivos Sí | Obl. | 1) una sola cinta de luz con forma de onda sonora («sound-wave ribbon») que entra desde el centro y se enrosca en anillos concéntricos finos hechos de hilos de luz (la huella de la voz); 2) frambuesa cálida con crestas blancas (la voz, la toma elegida); 3) azul noche profundo con rejilla tenue de puntos (la web del Portal). Sin usar aún, de la biblia: las barras de tomas con una encendida; los anillos concéntricos sueltos | repo (`prompts/estilo.txt`, «sí» de la persona en r1 sobre `og.txt`, elegido en r2; `docs/plan.md` l.670 «Voces: una cinta de onda que se enrosca en una huella»; `biblia.md` §7) |
 | Motivos No | Obl. | micrófonos, cascos, altavoces, estudios, bocas, caras, personas, cantantes, actores de voz, robots, cerebros, chispas, texto | repo (`biblia.md` §7; `docs/plan.md` l.666-667; `docs/marcas/README.md` l.179) |
 | Palabras vetadas | Obl. | `microphone`, `mic`, `headphones`, `speaker`, `studio`, `mouth`, `lips`, `face`, `person`, `singer`, `voice actor`, `human`, `robot`, `brain`, `sparkle`, `magic`, `text`, `letters`, `logo`; más `like` y cualquier lugar real (reglas comunes) | repo (`biblia.md` §7). `estilo.txt`, `r2-*.txt` y `r5-*.txt` no las contienen (grep del 2026-11-04); `og.txt` y `orders/r1-og.json` llevan «shaped like a sound wave» y se **dejan como históricos** (prompt de r1, superado: r2 lo cambió a «sound-wave ribbon»; contradicción 4). **Vigente desde el 2026-11-11:** las palabras propias (micrófono, cascos, altavoz, estudio, boca, labios, cara, persona, cantante, actor de voz, robot, cerebro, texto) siguen vetadas por ética; el veto a `no`/`not`/`without`/`like` **no se aplica** a piezas nuevas: rige «Cómo se escribe el prompt» de `../portal/hoja.md` («shaped like a sound wave» dejaría de ser un problema; lo que importa es no nombrar en el sujeto lo que no se quiere) |

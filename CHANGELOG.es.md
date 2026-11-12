@@ -20,6 +20,9 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Añadido
 
+- `gimg queue pause` y `gimg queue resume`: la pausa deja la marca `queue.paused` en el directorio de datos; el
+  trabajador termina la imagen en curso y no coge otra, `gimg serve` no lanza trabajador mientras dure y `queue list`
+  lo avisa. Al reanudar, el servicio relanza el trabajador en su siguiente latido (unos segundos).
 - Traducción al inglés de la API local: `docs/en/api.md`; el test de la documentación de la API comprueba los dos idiomas.
 - Sistema de logo (`gimg brand`, D37): `matte` recorta el fondo plano de un emblema generado (`--holes` vacía también
   lo encerrado), `trace` lo vectoriza a SVG con la paleta de la marca o en una tinta, `wordmark` convierte el nombre
