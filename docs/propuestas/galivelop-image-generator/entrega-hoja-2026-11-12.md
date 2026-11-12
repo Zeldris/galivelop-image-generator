@@ -23,11 +23,11 @@ diferencias con el código de hoy» de la hoja.
 |---|---|---|---|
 | Q1 | r9 (aprobada el 2026-11-11) fijó tres violetas, `#5B34C9`, `#A78BFA` y `#8B5CF6`; la decisión del 2026-11-12 da `#7C5CD6` y `#896ae5`. ¿Se sustituyen? | sí / se quedan los de r9 | **Sí.** Es la decisión más reciente y la que hace familia. Se pierde contraste (texto 7,36 → 4,69; botón 7,56 → 4,82) pero sigue en AA |
 | Q2 | El método solo garantiza 4,5:1 sobre el papel. Dentro de fichas el texto de acento da 4,43 (`#f1f6f9`), 4,20 (`#111f29`), 3,96 (`#16242e`), 4,03 / 3,82 (tinte) | A: método estricto y texto de acento solo sobre papel o `#ffffff` (hay que quitar enlaces de fichas oscuras y dos pares de `tests/test_ui.py` l.564). B: un tono de texto calculado contra la peor superficie: `#7453cc` claro (papel 5,31; `#ffffff` 5,45; `#f1f6f9` 5,01; tinte 4,56), `#9577f3` oscuro (`#0d171e` 5,36; `#111f29` 4,96; `#16242e` 4,68; tinte 4,51) | **B**, solo para `--accent-text`; `#7C5CD6` sigue en rellenos, foco y logo. Añade un paso al método de la familia, así que vale para los demás productos |
-| Q3 | «IG» en violeta en el nombre (r9) frente a nombre en una tinta (lockup común) | una tinta / «IG» en acento | **Una tinta** |
+| Q3 | «IG» en violeta en el nombre (r9) frente a nombre en una tinta (lockup común) | una tinta / «IG» en acento | **Cerrada. Decidido por la persona (2026-11-12):** nombre en una tinta; el símbolo es el monograma «IG» en una tinta sobre el cuadrado con chaflán en el hondo (la rejilla y los logos anteriores son históricos) |
 | Q4 | Aviso (`--warn` `#8a5a00` / `#f2c14e`): la familia no tiene color de aviso | conservar el ámbar propio / avisar con tinta e icono | **Conservarlo**: una cola de generación necesita distinguir «en espera» de «fallo» |
 | Q5 | Enlace al Portal en oscuro: `#1aa6df` (r9) o `#5cc8f2` (el enlace del Portal) | — | **`#5cc8f2`** (9,49 sobre `#0d171e`) |
 | Q6 | Lockup vertical, que r9 y la biblia prohibían | admitirlo / no | **Admitirlo** como secundario |
-| Q7 | El cuadrado con chaflán no lo sabe hacer `gimg` (ver G1). ¿Se añade a `gimg brand` o el símbolo va sin cuadrado hasta entonces? | añadir `--tile` / esperar | **Añadirlo**: sin eso ningún producto de la familia puede sacar su logo de gimg |
+| Q7 | El cuadrado con chaflán no lo sabe hacer `gimg` (ver G1). ¿Se añade a `gimg brand` o el símbolo va sin cuadrado hasta entonces? | añadir `--tile` / esperar | **Cerrada. Decidido por la persona (2026-11-12): orden nueva en `gimg brand` que monte el cuadrado con chaflán, como dependencia de todos los símbolos.** Motivo: sin eso ningún producto de la familia puede sacar su logo de gimg |
 
 Las tablas de abajo dan el valor con las recomendaciones; donde Q2 cambia el valor, van los dos.
 
@@ -145,9 +145,9 @@ Todo con `gimg` en local; nada dibujado a mano. Desde VS Code, con `GIMG_CONFIG_
 
 | # | Pieza | Cómo | Depende de |
 |---|---|---|---|
-| P1 | **Símbolo**: rejilla 2×2 con una celda encendida | boceto en línea simple sobre croma `#00ff00` con `zimage-turbo-q6`, perfil `cuadrado` 1024²; sin «exactly N» (el 2×2 se fija al elegir la candidata); `gimg brand matte` y `gimg brand trace --mode color --matte --dp-tol 0.5 --palette '#13212b,#fbfcfd'`; cuadrado con G1. Si no sale en 2-3 intentos, se apunta en troubleshooting y se rediseña (memoria del proyecto) | G1, Q7 |
+| P1 | **Símbolo** (decidido 2026-11-12): monograma «IG» en una tinta sobre el cuadrado con chaflán en el hondo; antes, rejilla 2×2 con una celda encendida (histórica) | boceto en línea simple sobre croma `#00ff00` con `zimage-turbo-q6`, perfil `cuadrado` 1024²; sin «exactly N» (el 2×2 se fija al elegir la candidata); `gimg brand matte` y `gimg brand trace --mode color --matte --dp-tol 0.5 --palette '#13212b,#fbfcfd'`; cuadrado con G1. Si no sale en 2-3 intentos, se apunta en troubleshooting y se rediseña (memoria del proyecto) | G1, Q7 |
 | P2 | **Wordmark y lockups** | las tres órdenes de la hoja §4 («GALIVELOP IG», 800, `--spacing 0.01`; `h` con `--cap 0.45 --gap 0.25 --margin 0.25`; `v` con `--width 1.6`) | P1, Q3, Q6 |
-| P3 | **Favicon y monograma «GVIG»** | el símbolo de P1; `gimg brand wordmark "GVIG"` con las mismas opciones | P1 |
+| P3 | **Favicon y wordmark «GVIG»** | el símbolo de P1 («IG»); `gimg brand wordmark "GVIG"` con las mismas opciones | P1 |
 | P4 | **Ronda plana medida** (lo pendiente de `docs/handoff.md` l.18) | grabado a dos tintas, el motivo propio, frase de paleta con «a touch of violet #7C5CD6»; `count` 2-4, `seed` fijo; `gimg measure` con la paleta de E1. Mide dos cosas: si «violet» da `#7C5CD6` y qué proporción ocupa. Con el resultado se fijan E1-E5 y los umbrales de la hoja §12 | P2 |
 | P5 | **`og` 1200×630 y `social` 1280×640** con el lockup nuevo | sobre la ronda de P4, `compose` con `lockup-h.svg`; zona limpia de papel a la izquierda; entonces L6 y X9 | P2, P4 |
 | P6 | **`avatar` 512** | el símbolo de P1 | P1 |

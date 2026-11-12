@@ -35,7 +35,7 @@ cambian ni un valor (decisión de la persona, 2026-11-12, `docs/marcas/portal/ho
 
 | Token (nombre propuesto) | Claro | Oscuro | Uso | Contraste |
 |---|---|---|---|---|
-| `--acento` | `#d9467a` | `#d9467a` | Foco (`outline` 2 px), punto de estado, marca. **Sin texto encima** | sobre papel 4,00 / 4,41; tinta encima 3,99; blanco encima 4,11 |
+| `--acento` | `#d9467a` (decidido, 2026-11-12) | `#d9467a` | Foco (`outline` 2 px), punto de estado, marca. **Sin texto encima** | sobre papel 4,00 / 4,41; tinta encima 3,99; blanco encima 4,11 |
 | `--acento-hondo` | `#ce3c71` | `#ce3c71` | Bloques grandes con texto blanco, cuadrado del logo, texto de acento y enlaces en claro | sobre `#fbfcfd` 4,53; blanco encima 4,66 |
 | `--enlace` | `#ce3c71` | `#db487b` | Enlaces y texto de acento | 4,53 sobre `#fbfcfd`; 4,51 sobre `#0d171e` (4,17 sobre la superficie oscura `#111f29`: ahí, subrayado o tinta) |
 | `--tinte` | `#d9467a` al 12 % | al 18 % | Hover, chips, píldoras | tinta encima 13,67 / 13,03 |
@@ -52,7 +52,7 @@ la hoja, «Recursos».
 | Pieza | Estado | Qué falta |
 |---|---|---|
 | Tarjeta «Próximamente» (la onda como perfil del fondo marino) | **Hecha y publicada en el Portal** (q331; `public/proyectos/galivelop-voice-generator/proxima.webp`) | Nada |
-| Símbolo del logo: cuadrado plano `#ce3c71` con chaflán de 28/128 y la onda que se enrosca, trazo 12/128 | Pendiente | Generar el trazo sobre croma y vectorizarlo (`gimg brand trace`). `gimg brand` no tiene todavía una orden que monte el cuadrado con chaflán: es trabajo de este repo |
+| Símbolo del logo: monograma «GV» en una tinta sobre el cuadrado `#ce3c71` con chaflán de 28/128 (decidido por la persona, 2026-11-12; la onda anterior es histórica) | Pendiente | Depende de una orden nueva de `gimg brand` que monte el cuadrado con chaflán: es trabajo de este repo. Los logos de `logos/` son históricos y no se copian |
 | Lockup común (símbolo + «GALIVELOP VOICE GENERATOR» en Big Shoulders Display 800), horizontal y vertical | Pendiente | El símbolo y la fuente; las órdenes están en la hoja |
 | Icono de proyecto, línea simple (ventana con fila de barras) | Pendiente | Generar; sustituiría al `"icono": "audio"` genérico de la ficha del Portal |
 | `og` / tarjeta social del repo (1280×640 y 1200×630), sin texto | Pendiente | Generar |
@@ -62,9 +62,7 @@ la hoja, «Recursos».
 
 Detalle y recomendación de cada una en la hoja, «Dudas que decide la persona».
 
-1. **El hex vivo:** aquí `#D9467A`; el Portal publica `#C9467A` (`src/data/productos/galivelop-voice-generator.json`
-   l.5, `6574c4f`). Con el segundo, hondo `#c74479` y oscura `#d35083`. Recomendación: `#D9467A` y que el Portal cambie
-   su línea. **Hasta que decida, su repo no fija los tokens en código.**
+1. **Cerrada. Decidido por la persona (2026-11-12): el hex vivo es `#D9467A`.** El Portal cambia su l.5 (entrega al Portal, cambio 14).
 2. Qué tono va en la imagen generada (recomendación: el vivo).
 3. Sobre el vivo no cabe texto a 4,5:1 ni en tinta ni en blanco (recomendación: no poner texto encima).
 4. Acento y peligro se parecen (recomendación: mantener el peligro heredado, siempre con ✗ y texto).

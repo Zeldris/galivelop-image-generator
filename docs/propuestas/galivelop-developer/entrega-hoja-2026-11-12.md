@@ -67,11 +67,10 @@ Ya entregada: la tarjeta «Próximamente» (15), el barco de papel q311, en el P
 
 Las seis dudas de la hoja («Dudas que decide la persona»), con su recomendación:
 
-1. Acento vivo: `#0E9A93` (Portal) o `#2BB3A3` (hoja anterior). **Recomendado `#0E9A93`**; con el otro, hondo `#118376`.
+1. **Cerrada. Decidido por la persona (2026-11-12): acento vivo `#0E9A93`** (hondo `#16827c`); `#2BB3A3` pasa a histórico.
 2. Nombre en el lockup: **«GALIVELOP DEVELOPER»** en mayúsculas y sin guion; `galivelop-developer` para repo y código.
 3. Tono en la frase de paleta: **hondo en claro, vivo en oscuro**. El vivo da 5,23 en oscuro, no el ≥ 7 del alga del
    Portal; el método no calcula un tono más claro.
-4. Motivo de logo e icono: **monograma «GD»** y **terminal con la rama que vuelve** (la portada, el barco, ya está
-   cerrada por la persona).
-5. SVG de `logos/`: **histórico**, no se copian; logo nuevo con `gimg`.
+4. Motivo de icono: **terminal con la rama que vuelve** (la portada, el barco, ya está cerrada por la persona). **Logo decidido por la persona (2026-11-12):** monograma «GD» en una tinta sobre el cuadrado con chaflán en el hondo `#16827c`; depende de una orden nueva de `gimg brand` que monte el cuadrado con chaflán.
+5. SVG de `logos/`: **histórico**, no se copian (decidido por la persona, 2026-11-12); logo nuevo con `gimg`.
 6. Lema y frases: se conservan; **falta la versión `en`** (y `gl` para el Portal).

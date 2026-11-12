@@ -287,7 +287,7 @@ y lo decide la persona.
 
 | Aspecto | Regla heredada (medidas) | Qué cambia | Fuente |
 |---|---|---|---|
-| Logo | Cuadrado de color plano (el **acento hondo**), chaflán de 28/128 (21,9 % del lado) en la esquina superior derecha, que pone el SVG y no el modelo; monograma de trazo 12/128 (9,4 %) en una sola tinta; sin degradado, sombra ni redondeo. Se genera con gimg sobre croma `#00ff00` y se vectoriza con `gimg brand trace` | El hex del cuadrado y el dibujo del monograma | Portal `docs/marca.md` l.229, l.167-171 |
+| Logo | Cuadrado de color plano (el **acento hondo**), chaflán de 28/128 (21,9 % del lado) en la esquina superior derecha, que pone el SVG y no el modelo; monograma de trazo 12/128 (9,4 %) en una sola tinta; sin degradado, sombra ni redondeo. Se genera con gimg sobre croma `#00ff00` y se vectoriza con `gimg brand trace` | El hex del cuadrado y las iniciales del monograma. **Decidido por la persona (2026-11-12):** en los productos `galivelop-*` el símbolo es el monograma de iniciales en una tinta sobre el cuadrado con chaflán en el tono hondo del acento; los logos anteriores (degradado, `rx` 30, Sora) son históricos y no se copian a sus repos. **Dependencia:** `gimg brand` necesita una orden nueva que monte el cuadrado con chaflán | Portal `docs/marca.md` l.229, l.167-171 |
 | Lockup | **Común a la familia (decisión de la persona, 2026-11-12):** símbolo del producto + nombre en Big Shoulders Display 800, en mayúsculas, con las medidas de «Decisiones de la persona», punto 4; sale de `gimg brand lockup` | El símbolo y el texto del nombre | «Decisiones de la persona (2026-11-12)», punto 4 |
 | Iconos | Línea simple: un solo grosor de trazo, remates y uniones redondos, sin relleno, trama ni sombra, una tinta, legibles a 24 px; **los nodos y los interiores van huecos** (el papel de encima se resta como hueco, `fill-rule="evenodd"`). Vectorizados con `gimg brand trace --mode color --matte --dp-tol 0.5 --palette '#13212b,#fbfcfd'`; en la web, a `currentColor` con un contorno de lado/28 (≈ 0,85 px a 24 px, cerca de los 2 px de lucide), pintados a 22 px. Una serie se usa entera, sin mezclarla con lucide | El motivo, que es el de la hoja del producto | bloque «Dos registros de dibujo»; Portal `tools/marca/limpiar-iconos.cjs` l.2-3, l.12, l.66; `global.css` l.3755-3758; `LEEME.md` del piloto |
 | Ilustración | Grabado de carta náutica a dos tintas, con el bloque literal de «Dos registros de dibujo»; Z-Image, 8 pasos, cfg 1.0; 120-200 palabras; cierre y frase de paleta al final | El sujeto (el motivo de software del producto) y el cuarto color de la frase de paleta | bloque «Identidad vigente» |
@@ -321,7 +321,7 @@ Con los acentos que el Portal tiene hoy en `src/data/productos/*.json` l.5 (`657
 | Producto | Acento del Portal | Sobre papel `#fbfcfd` | Blanco encima | Sobre `#0d171e` | Qué papel puede hacer |
 |---|---|---|---|---|---|
 | galivelop-image-generator | `#7C5CD6` | 4,69 | 4,82 | 3,76 | Hondo en claro (cumple los dos 4,5); en oscuro no llega a 4,5 |
-| galivelop-voice-generator | `#C9467A` | 4,41 | 4,53 | 4,01 | Se queda a 0,09 del 4,5 sobre papel |
+| galivelop-voice-generator | `#D9467A` (decidido 2026-11-12; antes `#C9467A`) | 4,00 | 4,11 | 4,41 | Ni el vivo ni el blanco encima llegan a 4,5 en claro: texto y bloques en el hondo `#ce3c71` (4,53; blanco 4,66) |
 | galivelop-developer | `#0E9A93` | 3,37 | 3,46 | 5,23 | Solo vivo: no vale para texto ni para llevar blanco |
 | galivelop-workflow | `#1AA6DF` (producto) y `#3D6FD9` (ficha de proyecto, `src/data/proyectos/galivelop-workflow.json` l.7) | 2,70 y 4,57 | 2,78 y 4,69 | 6,53 y 3,86 | El de producto es el celeste del Portal (vivo); dos acentos para una misma entidad |
 
@@ -372,6 +372,12 @@ se escriben aquí: los calcula la hoja de cada uno con el método del punto 1.
    (tinta `#13212b` en claro, `#e6eef3` en oscuro), nunca en el acento. El símbolo es el SVG de `gimg brand trace` del
    logo del producto. Orden: `gimg brand lockup simbolo.svg wordmark.svg --layout h --cap 0.45 --gap 0.25 --margin 0.25`
    y lo mismo con `--layout v --width 1.6`. Los `*-lockup.svg` de `logos/` (Sora) quedan como históricos.
+5. **Voice: acento vivo `#D9467A`** (hondo `#ce3c71`, oscura `#db487b`, ya calculados en
+   `../galivelop-voice-generator/hoja.md`; ratios con `python3 docs/marcas/galivelop-voice-generator/tonos.py '#D9467A'`). El Portal cambia
+   `src/data/productos/galivelop-voice-generator.json` l.5 de `#C9467A` a `#D9467A` (`docs/propuestas/portal/entrega-hoja-2026-11-12.md`, cambio 14). Developer: vivo `#0E9A93`, hondo `#16827c`; `#2BB3A3` es histórico.
+6. **Símbolo de los productos `galivelop-*`:** monograma de iniciales en una tinta sobre el cuadrado con chaflán en el tono hondo del
+   acento (GV, GD, GW, IG). Los logos anteriores (degradado, `rx` 30, Sora) son históricos y no se copian a sus repos.
+   **Dependencia:** una orden nueva en `gimg brand` que monte el cuadrado con chaflán.
 
 ---
 
@@ -572,7 +578,7 @@ taller y Productos», «Galivelop son dos cosas…»), l.310 («Aquí no se vend
 Taller, Productos, Producto, Integrante promocionado, Encargo), `README.md` l.5-9 y l.44-47 (cuatro proyectos),
 `src/components/Idioma.tsx` l.10-16 (selector de idioma, nuevo),
 `src/data/proyectos/galivelop-image-generator.json` l.7 (`#8B5CF6`), `src/data/productos/*.json` l.5 (acentos de producto:
-image-generator `#7C5CD6`, developer `#0E9A93`, voice-generator `#C9467A`, workflow `#1AA6DF`),
+image-generator `#7C5CD6`, developer `#0E9A93`, voice-generator `#C9467A` (decidido el 2026-11-12: pasa a `#D9467A`), workflow `#1AA6DF`),
 `public/proyectos/galivelop-image-generator/portada.webp` 1600×1000.
 
 **Este repo**, `f2-motor` `5460d2c`:
@@ -703,7 +709,7 @@ motor.
    `paginas-estaticas.mjs` l.10). **Resuelta:** la captura `galivelop-portal.jpg` solo calibra la medida; no es arte de marca ni referencia de estilo. La EMD queda sin referencia hasta que una pieza `og` reciba el «sí» de la persona.
 4. **Dos juegos de acentos en la rama de trabajo.** `src/data/proyectos/*.json` da workflow
    `#3D6FD9` e image-generator `#8B5CF6`; `src/data/productos/*.json` da workflow `#1AA6DF` (el celeste de la marca) e
-   image-generator `#7C5CD6`, más developer `#0E9A93` y voice-generator `#C9467A`. La biblia y el prompt usan solo los de
+   image-generator `#7C5CD6`, más developer `#0E9A93` y voice-generator `#C9467A` (hoy `#D9467A`, decidido el 2026-11-12). La biblia y el prompt usan solo los de
    proyecto; las biblias de las herramientas (`docs/plan.md` l.664) proponen otros (`#2BB3A3` developer, `#D9467A` voces).
    **Propuesta:** en la imagen del Portal, los puntos son **de proyecto** (lo que la biblia y r2 fijaron) y nunca de
    producto; se le pide al Portal un solo acento por entidad, y a las hojas de las herramientas que lean el suyo del Portal

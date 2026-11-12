@@ -39,7 +39,7 @@ Los ratios son WCAG 2.x calculados sobre los hex de `src/estilos/global.css`, no
 ## Pendiente de la persona
 
 Los acentos de producto de `src/data/productos/*.json` l.5 son un solo hex cada uno y el Portal usa dos tonos de su
-acento (vivo y hondo). Sobre el papel `#fbfcfd`: image-generator `#7C5CD6` 4,69:1, voice-generator `#C9467A` 4,41:1,
+acento (vivo y hondo). Sobre el papel `#fbfcfd`: image-generator `#7C5CD6` 4,69:1, voice-generator `#C9467A` 4,41:1 (decidido después: `#D9467A`, 4,00:1; cambio 14),
 developer `#0E9A93` 3,37:1, workflow `#1AA6DF` 2,70:1. Solo el primero llega a 4,5:1. Además, workflow tiene otro
 acento en `src/data/proyectos/galivelop-workflow.json` l.7 (`#3D6FD9`, 4,57:1). El segundo tono de cada acento, su
 variante oscura y cuál de los dos de workflow manda los decide la persona; aquí no se propone ningún hex.
@@ -53,3 +53,4 @@ Detalle en `docs/marcas/portal/hoja.md`, «Familia Galivelop», «Decisiones de 
 | 11 | `src/data/productos/galivelop-workflow.json` l.5 (`#1AA6DF`) | Pasa a `#3D6FD9`, el de `src/data/proyectos/galivelop-workflow.json` l.7: es el acento que manda para workflow |
 | 12 | `docs/marca.md` l.215-216 (duda 2) | Cerrada: el acento del producto va donde el Portal usa el alga; papel, tinta y tipografías no cambian |
 | 13 | Donde el Portal use el acento de un producto para texto, enlaces o bloques con texto blanco | Usar el tono hondo (tema claro) o la variante oscura que calcule la hoja de cada producto, no el hex vivo: el vivo solo marca puntos, foco y tinte |
+| 14 | `src/data/productos/galivelop-voice-generator.json` l.5 (`#C9467A`) | Pasa a `#D9467A`, el vivo que usan la hoja de voice, el plan y `brand.palette`: **decidido por la persona (2026-11-12)**. Sobre papel da 4,00:1 (blanco encima 4,11); el texto va en el hondo `#ce3c71` (4,53; 4,66 con blanco) y en oscuro `#db487b` (4,51 sobre `#0d171e`) |

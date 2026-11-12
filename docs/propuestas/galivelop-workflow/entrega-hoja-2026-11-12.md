@@ -64,7 +64,7 @@ El icono que sí vale hoy es el de proyecto que el Portal ya publica (su recurso
 
 | Pieza | Formato | Estado | Depende de |
 |---|---|---|---|
-| Símbolo: cuadrado `#3d6fd9` con chaflán y monograma en blanco | SVG; PNG 512 para avatar | Pendiente: prompt propuesto en la hoja | La persona decide el dibujo (monograma «GW», recomendado, o los nodos) |
+| Símbolo: cuadrado `#3d6fd9` con chaflán y monograma en blanco | SVG; PNG 512 para avatar | Pendiente: prompt propuesto en la hoja | Decidido por la persona (2026-11-12): monograma «GW» en una tinta sobre el cuadrado con chaflán; depende de una orden nueva de `gimg brand` que lo monte |
 | Símbolo en negativo y a una tinta | SVG | Sale del anterior, sin generar | El símbolo |
 | Lockup horizontal y vertical, en claro y oscuro | SVG | Pendiente: órdenes en la hoja, «Familia Galivelop», punto 4 | El símbolo y el `.ttf` variable de Big Shoulders Display (no está en el equipo) |
 | Social preview de GitHub | PNG 1280×640 | Pendiente | Perfil nuevo con Z-Image en `examples/galivelop-workflow/` |
@@ -76,7 +76,7 @@ El icono que sí vale hoy es el de proyecto que el Portal ya publica (su recurso
 ## Pendiente de la persona
 
 Las seis dudas de la hoja («Dudas que decide la persona»), cada una con recomendación: 1) vivo y hondo son el mismo
-hex; 2) monograma «GW» o nodos como símbolo; 3) el alga como acento secundario en la interfaz propia; 4) el ámbar
+hex; 2) cerrada: monograma «GW» (decidido por la persona, 2026-11-12); 3) el alga como acento secundario en la interfaz propia; 4) el ámbar
 del testigo y los colores de los diagramas `gw-*.svg`; 5) la marca no viaja con lo instalado; 6) el nombre en
-mayúsculas en el lockup. Hasta que se cierre la 2 no se genera el símbolo, y sin símbolo no hay lockup ni logo en el
+mayúsculas en el lockup. El símbolo no se genera hasta que exista la orden de `gimg brand` que monta el cuadrado con chaflán, y sin símbolo no hay lockup ni logo en el
 `README`: los puntos 1 y 4 de «Qué crear» sí se pueden hacer ya.

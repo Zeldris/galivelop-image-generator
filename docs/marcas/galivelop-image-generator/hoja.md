@@ -294,13 +294,13 @@ sombra ni redondeo; se genera con gimg sobre croma `#00ff00` y se vectoriza con 
 
 | Pieza | Qué es | Regla | De quién | Hoy |
 |---|---|---|---|---|
-| Símbolo | rejilla 2×2 de marcos con una celda encendida, sobre el cuadrado | cuadrado `#7C5CD6`, chaflán 28/128, líneas `#fbfcfd` de 12/128 (4,69:1 sobre el cuadrado); la celda elegida, rellena `#fbfcfd` | la forma del cuadrado, heredada; el dibujo, propio | `logos/galivelop-image-generator-b.svg`: `#5B34C9`, `rx` 28, a mano (R1) |
+| Símbolo | **Decidido por la persona (2026-11-12): monograma «IG» en una tinta (`#fbfcfd`) sobre el cuadrado con chaflán en el hondo**; sustituye a la rejilla 2×2, que pasa a histórico junto a los logos anteriores (degradado, `rx` 30, Sora), no se copian a repos. **Dependencia:** orden nueva en `gimg brand` que monte el cuadrado con chaflán | cuadrado `#7C5CD6`, chaflán 28/128, «IG» de trazo 12/128 en `#fbfcfd` (4,69:1 sobre el cuadrado) | la forma del cuadrado, heredada; el dibujo, propio | `logos/galivelop-image-generator-b.svg`: `#5B34C9`, `rx` 28, a mano (R1) |
 | Símbolo de una tinta | la rejilla sin cuadrado, para papel | `currentColor` (tinta `#13212b` o `#e6eef3`); la celda elegida, rellena en la misma tinta. Es `emblema-mono.svg` de `gimg brand system` | propio | `…-b-linea.svg` con la celda en `#8B5CF6` (R2) |
 | Favicon | el símbolo | el mismo archivo que el símbolo; mínimo 16 px | propio | `gimg/ui/assets/gvig.svg` |
 | Wordmark | «GALIVELOP IG» | Big Shoulders Display 800, mayúsculas, tracking 0,01 em, en `currentColor`, **nunca en el acento** | heredado | no hay (R3) |
 | Lockup horizontal | símbolo + nombre a la derecha | alto de letras 0,45 `S`; hueco 0,25 `S`; margen 0,25 `S`; mínimo `S` ≥ 32 px | heredado | `…-b-lockup.svg`: 700, caja normal, «IG» en `#5B34C9`, hueco 28/128 = 0,22 `S` (R4) |
 | Lockup vertical | símbolo + nombre debajo | ancho del nombre 1,6 `S`; hueco y margen 0,25 `S`; mínimo `S` ≥ 48 px | heredado | no hay; r9 y la biblia decían «nunca el nombre debajo» (`biblia.md` l.72) |
-| Monograma | «GVIG» | un wordmark con las mismas reglas, donde no cabe el nombre | propio **[P]** | no hay (R5) |
+| Monograma | «GVIG» como wordmark suelto | un wordmark con las mismas reglas, donde no cabe el nombre; **el «IG» del símbolo es el decidido el 2026-11-12** | propio **[P]** (el wordmark); símbolo decidido | no hay (R5) |
 
 Órdenes (las medidas son las de la decisión 4 de la persona; `--spacing` y `--margin` hay que escribirlos porque los
 valores por defecto de `gimg` son 0,12 y 0, `gimg/cli.py` l.123, l.131):

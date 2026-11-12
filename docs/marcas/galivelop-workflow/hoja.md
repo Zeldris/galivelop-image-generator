@@ -84,11 +84,7 @@ ningún color fuera de las tintas, vetos de ética, comprobación antes de encol
    en **blanco** (4,69:1) y no en tinta (3,50:1), y «texto blanco sobre el acento vivo» (prohibido de familia, l.302)
    aquí es lo correcto. **Recomendación:** aceptarlo y que Workflow tenga dos hex (`#3d6fd9` y `#487ce7`) y no tres;
    la alternativa, un vivo más claro, contradice que el vivo es el hex de hoy.
-2. **Símbolo del logo: monograma «GW» o los nodos del icono 23.** La regla heredada pide un cuadrado plano del acento
-   hondo con un monograma (l.290), y la persona pidió en r7 que el logo siguiera el formato del de Galivelop
-   (sección 4). El Portal ya publica como icono del proyecto los tres nodos con visto. **Recomendación:** logo =
-   monograma «GW» en el cuadrado `#3d6fd9` con chaflán; los nodos se quedan como icono de proyecto y motivo de las
-   ilustraciones.
+2. **Cerrada. Símbolo del logo: decidido por la persona (2026-11-12), monograma «GW»** en una tinta sobre el cuadrado con chaflán de 28/128 en el hondo `#3d6fd9`; los logos anteriores (degradado, `rx` 30, Sora) son históricos y no se copian a su repo. Los nodos del icono 23 se quedan como icono de proyecto y motivo de las ilustraciones. **Dependencia:** `gimg brand` no tiene aún la orden que monte el cuadrado con chaflán.
 3. **Acento secundario en la interfaz propia.** La decisión 3 pone el acento del producto donde el Portal usa el alga
    en las piezas generadas y junto al Portal; no dice qué hace de secundario dentro de la interfaz de Workflow
    (avisos suaves, «en desarrollo»). **Recomendación:** se hereda el alga del Portal (`#5d7a6a` / `#8fb09e`) sin
@@ -188,7 +184,7 @@ y los `*-lockup.svg` llevan Sora. Son de la identidad anterior y quedan como his
 | Recurso | Estado | Dónde está o iría | Fuente |
 |---|---|---|---|
 | Icono de proyecto (recurso 23 del Portal) | **Entregado** (q490): tres nodos encadenados, el último con visto; línea simple, una tinta | Portal `public/proyectos/galivelop-workflow/icono.svg` | `../portal/hoja.md` l.212; `examples/portal/orders/marca/23-icono-workflow.json` |
-| Símbolo del logo (cuadrado plano `#3d6fd9`, chaflán 28/128, monograma de trazo 12/128 en blanco) | **Pendiente**: sin generar. Los `logos/galivelop-workflow-{a,b,c,d}.svg` son históricos | `docs/marcas/galivelop-workflow/logos/` y, copiado, `docs/marca/` del repo de Workflow | regla heredada, `../portal/hoja.md` l.290; «Dudas», 2 |
+| Símbolo del logo (cuadrado plano `#3d6fd9`, chaflán 28/128, monograma «GW» de trazo 12/128 en una tinta; decidido por la persona, 2026-11-12) | **Pendiente**: sin generar; depende de la orden nueva de `gimg brand` que monte el cuadrado con chaflán. Los `logos/galivelop-workflow-{a,b,c,d}.svg` son históricos | `docs/marcas/galivelop-workflow/logos/` y, copiado, `docs/marca/` del repo de Workflow | regla heredada, `../portal/hoja.md` l.290; «Dudas», 2 |
 | Símbolo en negativo y a `currentColor` | **Pendiente**: sale del SVG del símbolo, sin generar | igual | `../portal/hoja.md` l.60 |
 | Lockup horizontal y vertical | **Pendiente**: necesita el símbolo y el `.ttf` de Big Shoulders Display. Órdenes en «Familia Galivelop», punto 4 | igual; `README` de Workflow | decisión 4, `../portal/hoja.md` l.358-374 |
 | Social preview de GitHub, 1280×640 | **Pendiente** con la identidad vigente. Las de r4-r8 son de la anterior | ajustes del repo en GitHub (no es un archivo: no se comprueba desde el repo) | sección 11 |
