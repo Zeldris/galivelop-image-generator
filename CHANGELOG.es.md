@@ -9,21 +9,42 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Sin publicar]
 
-### Cambiado
+### Añadido
 
-- La interfaz es clara por defecto (antes oscura); el tema oscuro sigue disponible. Paleta por roles de la hoja de
-  marca r9.
-- Fuentes nuevas de la interfaz: Big Shoulders Display, Literata y JetBrains Mono sustituyen a Inter y Sora.
-- Logo y favicon redibujados (hoja de marca r9): baldosa plana, lockups claro y oscuro y versiones en línea.
-- El nombre visible del producto es «Galivelop IG» (GVIG) en el README y en `cli.description` (D38); el repositorio,
-  el paquete y la orden siguen siendo `galivelop-image-generator` y `gimg`.
+- `gimg brand trace --ink-only [--paper #hex]`: SVG de una sola tinta; el papel queda transparente y el resto es un
+  trazado con `fill="currentColor"`.
+- `gimg brand overlay BASE MOTIVO`: coloca un SVG de motivo sobre un SVG base sin tocarla (`--fit`, `--box x,y,w,h`,
+  `--recolor #hex|currentColor`, `--skip-rect`); los `id` del motivo llevan prefijo para no chocar.
+
+## [0.5.0] - 2026-11-13
 
 ### Añadido
 
+- `gimg measure --family NOMBRE=#hex,#hex,...` (repetible) reparte los píxeles por familia de color (color más cercano,
+  ΔE76 < 15, el resto como `otros`), para comprobar reglas como el 60/30/10. Clave `families` nueva en el JSON y error
+  `measure.bad_family`.
+- `gimg export --crop X,Y,W,H` (caja en píxeles del original, antes de `--size`, también para ICO) y `--anchor`
+  (`center` por defecto, `top`, `bottom`, `left`, `right` o una esquina como `top-left`: dónde cae el recorte de
+  proporción de `--size`). El resultado lleva `crop` y la CLI lo dice, así una cadena de recortes queda como orden
+  repetible. Errores `export.bad_crop`, `export.crop_outside` y `export.bad_anchor`.
 - `gimg queue pause` y `gimg queue resume`: la pausa deja la marca `queue.paused` en el directorio de datos; el
   trabajador termina la imagen en curso y no coge otra, `gimg serve` no lanza trabajador mientras dure y `queue list`
-  lo avisa. Al reanudar, el servicio relanza el trabajador en su siguiente latido (unos segundos).
+  lo avisa. Al reanudar, el servicio relanza el trabajador en su siguiente latido (unos segundos). En pausa, lo que
+  espera en cola no mantiene vivo el servicio, y `gimg queue resume` lo vuelve a arrancar si queda algo en cola. El
+  cajón de la cola de la interfaz tiene el botón «Pausar cola» / «Reanudar cola» y la pastilla dice «en pausa».
+- `gimg brand system --margin` (espacio libre alrededor de los dos lockups) y `--mono` (lockups con el emblema en una
+  tinta: todo el lockup en `currentColor`, como piden las hojas de la familia).
+- Perfiles de ejemplo para los canales que piden las hojas de marca: `lateral` 704×1344 (instalador de Windows),
+  `linkedin` 1584×396, `discord` 960×540 y `panorama` 1600×900 en `examples/tarkor/`, e `icon` 512×512 en
+  `examples/toveriai/`.
+- `gimg export IMAGEN SALIDA`: copia un PNG entregado a WebP sin pérdida, ICO (un PNG por lado, 16 a 256) o BMP de
+  24 bits sin alfa (sobre `--background`), o a un PNG de otro tamaño; `--size` recorta al centro y reduce, nunca
+  amplía. Codificadores en Python puro; la entrega sigue siendo el PNG con su procedencia.
 - Traducción al inglés de la API local: `docs/en/api.md`; el test de la documentación de la API comprueba los dos idiomas.
+- `gimg brand square DIBUJO.svg --fill #RRGGBB --ink #RRGGBB`: el símbolo de familia, un cuadrado plano con chaflán a
+  45° (28/128 por defecto) en la esquina superior derecha y el dibujo de `trace`/`wordmark` encajado dentro en una tinta;
+  con `--png 512,128,32` escribe además un PNG por lado y dice el contraste de la tinta sobre el fondo (aviso por
+  debajo de 4,5:1).
 - Sistema de logo (`gimg brand`, D37): `matte` recorta el fondo plano de un emblema generado (`--holes` vacía también
   lo encerrado), `trace` lo vectoriza a SVG con la paleta de la marca o en una tinta, `wordmark` convierte el nombre
   en trazados con una fuente instalada, `lockup` compone emblema y nombre en horizontal o vertical y `system` hace
@@ -35,12 +56,25 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - `tileable` (`xy`, `x` o `y`) en el perfil y en el pedido: texturas sin costura.
 - Modelo `zimage-turbo-q6` (Z-Image-Turbo, Apache-2.0) en el catálogo.
 
+### Cambiado
+
+- La interfaz es clara por defecto (antes oscura); el tema oscuro sigue disponible. Paleta por roles de la hoja de
+  marca r9.
+- Fuentes nuevas de la interfaz: Big Shoulders Display, Literata y JetBrains Mono sustituyen a Inter y Sora.
+- Logo y favicon redibujados (hoja de marca r9): baldosa plana, lockups claro y oscuro y versiones en línea.
+- El nombre visible del producto es «Galivelop IG» (GVIG) en el README y en `cli.description` (D38); el repositorio,
+  el paquete y la orden siguen siendo `galivelop-image-generator` y `gimg`.
+- `gimg brand wordmark` y `system`, y el taller «Sistema de logo», espacian las letras 0,01 em por defecto (antes
+  0,12), el de la familia.
+
 ### Corregido
 
 - `gimg work` ya no se rinde cuando solo encuentra sondeos compartidos de `worker.lock` (`_single_worker` sigue
   esperando); si un sondeo no se suelta nunca, falla a los pocos segundos con `worker.already_running` en vez de girar
   para siempre.
 - La barra de progreso indeterminada usa `--accent`, con contraste suficiente sobre su pista en el tema oscuro.
+- Cuando otro CLI acaba de reemplazar el servicio por uno de otro código, el CLI que esperaba lo conserva y ahora lo
+  avisa (antes no decía nada).
 
 ## [0.4.1] - 2026-11-06
 

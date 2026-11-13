@@ -9,6 +9,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- `gimg brand trace --ink-only [--paper #hex]`: a single-ink SVG; the paper becomes transparent and the rest is one
+  path with `fill="currentColor"`.
+- `gimg brand overlay BASE MOTIF`: places a motif SVG over a base SVG without touching it (`--fit`, `--box x,y,w,h`,
+  `--recolor #hex|currentColor`, `--skip-rect`); the motif's `id`s are prefixed so they do not clash.
+
+## [0.5.0] - 2026-11-13
+
+### Added
+
+- `gimg measure --family NAME=#hex,#hex,...` (repeatable) splits the pixels by colour family (nearest colour, ΔE76 < 15,
+  the rest as `other`), to check rules such as 60/30/10. New `families` key in the JSON and error `measure.bad_family`.
+- `gimg export --crop X,Y,W,H` (box in pixels of the original, applied before `--size`, also for ICO) and
+  `--anchor` (`center` by default, `top`, `bottom`, `left`, `right` or a corner such as `top-left`: where the
+  proportion crop of `--size` sits). The result carries `crop` and the CLI prints it, so a crop chain stays a
+  repeatable command. Errors `export.bad_crop`, `export.crop_outside` and `export.bad_anchor`.
+- `gimg queue pause` and `gimg queue resume`: pausing leaves the `queue.paused` mark in the data directory; the worker
+  finishes the image in progress and takes no other, `gimg serve` launches no worker meanwhile and `queue list` says
+  so. On resume the service relaunches the worker at its next beat (a few seconds). While paused, what is queued does
+  not keep the service alive, and `gimg queue resume` starts it again if anything is still queued. The queue drawer
+  of the interface has a "Pause queue" / "Resume queue" button and the queue pill says "paused".
+- `gimg brand system --margin` (free space around both lockups) and `--mono` (lockups with the one-ink emblem: the
+  whole lockup in `currentColor`, as the family's sheets ask).
+- Example profiles for the channels the brand sheets ask for: `lateral` 704×1344 (Windows installer), `linkedin`
+  1584×396, `discord` 960×540 and `panorama` 1600×900 in `examples/tarkor/`, and `icon` 512×512 in `examples/toveriai/`.
+- `gimg export IMAGE OUT`: copies a delivered PNG to lossless WebP, ICO (one PNG per side, 16 to 256) or 24-bit BMP
+  without alpha (over `--background`), or to a PNG of another size; `--size` crops around the centre and scales
+  down, never up. Pure-Python encoders; the delivery stays the PNG with its provenance.
+- English translation of the local API: `docs/en/api.md`; the API doc test now checks both languages.
+- Logo system (`gimg brand`, D37): `matte` removes the flat background of a generated emblem (`--holes` also empties
+  what is enclosed), `trace` turns it into an SVG with the brand palette or in one ink, `wordmark` turns the name into
+  paths with an installed font, `lockup` composes emblem and name horizontally or vertically, and `system` does it
+  all in one go with its contact sheet. The name needs `rsvg-convert`; the rest, only Python.
+- `gimg brand square DRAWING.svg --fill #RRGGBB --ink #RRGGBB`: the family symbol, a flat square with a 45-degree
+  chamfer (28/128 by default) on the top right corner and the drawing from `trace`/`wordmark` fitted inside in one ink;
+  `--png 512,128,32` also writes one PNG per side and the contrast of ink on fill is reported (warning under 4.5:1).
+- "Logo system" workshop in the Brand tab: the same steps from an attempt of the project, previewed on light and
+  dark, and "Save" to the project's data or to its `brand.dir` folder. New API routes:
+  `GET /api/projects/{p}/brand`, `POST .../brand/matte`, `trace`, `wordmark`, `lockup` and `save`, and
+  `GET .../brand/files/{name}/{file}`.
+- `tileable` (`xy`, `x` or `y`) in the profile and in the order: seamless textures.
+- Model `zimage-turbo-q6` (Z-Image-Turbo, Apache-2.0) in the catalogue.
+
 ### Changed
 
 - The interface is light by default (it was dark); the dark theme stays available. Palette by roles from the r9 brand
@@ -17,29 +61,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Logo and favicon redrawn (r9 brand sheet): flat tile, light and dark lockups and line versions.
 - The product's visible name is "Galivelop IG" (GVIG) in the README and in `cli.description` (D38); the repository,
   the package and the command stay `galivelop-image-generator` and `gimg`.
-
-### Added
-
-- `gimg queue pause` and `gimg queue resume`: pausing leaves the `queue.paused` mark in the data directory; the worker
-  finishes the image in progress and takes no other, `gimg serve` launches no worker meanwhile and `queue list` says
-  so. On resume the service relaunches the worker at its next beat (a few seconds).
-- English translation of the local API: `docs/en/api.md`; the API doc test now checks both languages.
-- Logo system (`gimg brand`, D37): `matte` removes the flat background of a generated emblem (`--holes` also empties
-  what is enclosed), `trace` turns it into an SVG with the brand palette or in one ink, `wordmark` turns the name into
-  paths with an installed font, `lockup` composes emblem and name horizontally or vertically, and `system` does it
-  all in one go with its contact sheet. The name needs `rsvg-convert`; the rest, only Python.
-- "Logo system" workshop in the Brand tab: the same steps from an attempt of the project, previewed on light and
-  dark, and "Save" to the project's data or to its `brand.dir` folder. New API routes:
-  `GET /api/projects/{p}/brand`, `POST .../brand/matte`, `trace`, `wordmark`, `lockup` and `save`, and
-  `GET .../brand/files/{name}/{file}`.
-- `tileable` (`xy`, `x` or `y`) in the profile and in the order: seamless textures.
-- Model `zimage-turbo-q6` (Z-Image-Turbo, Apache-2.0) in the catalogue.
+- `gimg brand wordmark` and `system`, and the "Logo system" workshop, space the letters 0.01 em by default (it was
+  0.12), the family's tracking.
 
 ### Fixed
 
 - `gimg work` no longer gives up when it only finds shared probes of `worker.lock` (`_single_worker` keeps waiting);
   if a probe never lets go, it fails after a few seconds with `worker.already_running` instead of spinning forever.
 - The indeterminate progress bar uses `--accent`, with enough contrast on its track in the dark theme.
+- When another CLI has just replaced the service with one of other code, the CLI that waited keeps it and now warns
+  about it (it used to say nothing).
 
 ## [0.4.1] - 2026-11-06
 

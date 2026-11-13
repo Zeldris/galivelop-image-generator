@@ -14,6 +14,8 @@ creada.
 - Los hallazgos se escriben también en un archivo fuera del árbol (el scratchpad, o
   `"$(git rev-parse --git-dir)/review.md"`), no solo en la conversación: una compactación o un relevo se los lleva, y
   de ese archivo salen los encargos de los arreglos y los leves que se apuntan en la bitácora. (criterio)
+- Si el revisor no puede escribir ese archivo (una skill que solo devuelve el informe), lo escribe la sesión
+  principal nada más recibirlo y antes de arreglar nada. (criterio)
 - Un dato que caduca (una versión, un precio, una cuota, un límite de un servicio externo) escrito en el diff lleva su
   fecha y su fuente; si no, es un hallazgo. (criterio)
 - La revisión acaba con un veredicto, uno de tres: `SHIP` (nada que arreglar), `SHIP WITH FIXES` (hay arreglos, ninguno
@@ -83,3 +85,6 @@ creada.
 - **CHANGELOG por fase.** Un PR que cierra una fase (o trae algo visible para el usuario) añade su entrada en
   `CHANGELOG.md` y `CHANGELOG.es.md`; las notas de cada release de GitHub salen de ahí (`releases.py notes`). Que
   falte es un hallazgo medio. (criterio)
+- **Tabla de estados HTTP.** `gimg/server.py` mapea todos los códigos de error, también los de órdenes solo de CLI, y
+  `tests/test_server.py` lo exige: un código nuevo va a esa tabla o a la lista de 500 del test. Que esté sin endpoint
+  no es un hallazgo; que falte, sí (lo pilla el test). (criterio)

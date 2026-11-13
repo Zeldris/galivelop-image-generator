@@ -36,7 +36,7 @@ proponen a cada repo al cerrar F2 (`docs/propuestas/`).
   - Developer **d**: hace familia con «gw»; la **a** se lee como una «b».
 - **Tarkor:** acento de marca arcilla `#E0703A`; el cristal `#4aa8d8` queda dentro del juego y como secundario. La
   paleta completa y la regla vigente están en la hoja de estilo, [tarkor/hoja.md](tarkor/hoja.md) §3.
-- **Acentos de las herramientas:** imágenes `#8B5CF6`, voces `#D9467A` y developer `#2BB3A3`, como se propusieron.
+- **Acentos de las herramientas:** imágenes `#7C5CD6` (era `#8B5CF6`; cambiado en la hoja r10), voces `#D9467A` y developer `#2BB3A3`, como se propusieron.
 - **toVeriAI:**
   - wordmark «toVeriAI», el del código del kit;
   - rangos IMI del kit (0-39 / 40-69 / 70-100) en las piezas;
@@ -170,7 +170,7 @@ sobre madera y hierro; las propuestas usan las dos para que la persona elija):
   ruptura). Insinúa sin resolver nada reservado; sin luz morada.
 - **d. Hierro y madera:** escudo redondo de madera `#5c4126` con aro de hierro, cuatro remaches y una T forjada.
 
-**galivelop-image-generator** (acento [P] `#8B5CF6`, en la baldosa de la familia; nada de cámara, pincel ni chispa):
+**galivelop-image-generator** (acento `#7C5CD6`, en la baldosa de la familia; nada de cámara, pincel ni chispa):
 
 - **a. La cola:** tres marcos en fila escalonada, el de delante encendido (la elegida).
 - **b. Rejilla de intentos:** un marco con 2×2 celdas y una encendida.

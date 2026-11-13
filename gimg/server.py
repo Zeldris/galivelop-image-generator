@@ -19,6 +19,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote
 
 from . import __version__, brandshop, build_id, compose, delivery, doctor, i18n, measure, models, orders, paths, projects, queue
+from .brand import SPACING as _WORDMARK_SPACING
 from .errors import GimgError
 
 API_VERSION = 1
@@ -49,9 +50,11 @@ _EXACT = {
     405: ("api.method_not_allowed",), 411: ("api.length_required",), 413: ("api.body_too_large",),
     415: ("api.content_type",),
     409: ("compose.template_exists", "compose.busy", "measure.busy", "api.heavy_busy", "compose.nothing_to_do", "compose.no_attempts", "serve.already_running", "serve.port_busy", "serve.not_running", "order.discard_chosen",
-          "order.history_empty", "queue.not_cancellable", "queue.not_movable", "delivery.target_taken", "brand.exists", "brand.missing_piece"),
+          "order.history_empty", "queue.not_cancellable", "queue.not_movable", "delivery.target_taken", "brand.exists", "brand.missing_piece", "export.exists"),
     400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "compose.template_unknown", "compose.element_unknown", "compose.bad_layout", "compose.bad_element", "compose.templates_dir_missing", "api.bad_json",
-          "api.bad_param", "brand.no_matte", "brand.dir_missing", "brand.no_palette", "brand.font_unknown", "brand.empty_text", "brand.text_too_long", "brand.empty_wordmark", "brand.wordmark_no_fit", "brand.font_unreadable"),
+          "api.bad_param", "brand.no_matte", "brand.dir_missing", "brand.no_palette", "brand.font_unknown", "brand.empty_text", "brand.text_too_long", "brand.empty_wordmark", "brand.wordmark_no_fit", "brand.font_unreadable", "brand.bad_square",
+          "export.size_not_for_ico", "export.icon_sizes_only_ico", "export.upscale", "export.too_big",
+          "export.bad_crop", "export.crop_outside", "export.bad_anchor"),
 }
 # Server-side faults whose names match the 400 patterns below: checked first.
 _SERVER_FAULTS = ("compose.svg_too_big", "engine.unknown", "engine.bad_delay", "machine.invalid", "machine.bad_path", "machine.bad_name",
@@ -935,7 +938,7 @@ def brand_wordmark(req):
     if text is not None and not isinstance(text, str):
         raise GimgError("api.bad_param", name="text")
     font = _str_field(body, "font")
-    opts = {"weight": _int(body, "weight", 800), "spacing": _number(body, "spacing", 0.12)}
+    opts = {"weight": _int(body, "weight", 800), "spacing": _number(body, "spacing", _WORDMARK_SPACING)}
     with _heavy():  # rsvg-convert
         return brandshop.wordmark(project, name, font, text, **opts)
 

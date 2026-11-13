@@ -15,6 +15,7 @@ color está dentro de sRGB si sus tres canales lineales están en [0, 1] con una
 tolerancia de 1e-6 (el redondeo de ida y vuelta del propio vivo).
 """
 import math
+import re
 import sys
 
 PAPER_LIGHT = "#fbfcfd"  # --papel, tema claro (Portal global.css l.48)
@@ -28,6 +29,9 @@ EPS = 1e-6
 
 
 def hex_to_rgb(value):
+    if not re.fullmatch(r"#?[0-9A-Fa-f]{6}", value):
+        print("hex no válido: %s (se espera #RRGGBB)" % value, file=sys.stderr)
+        sys.exit(2)
     value = value.lstrip("#")
     return tuple(int(value[i:i + 2], 16) / 255 for i in (0, 2, 4))
 

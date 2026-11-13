@@ -7,7 +7,7 @@ import os
 import sys
 import traceback
 
-from . import __version__, brand, compose, delivery, doctor, i18n, measure, orders, projects, queue, service, sheet, worker
+from . import __version__, brand, compose, delivery, doctor, export, i18n, measure, orders, projects, queue, service, sheet, worker
 from .errors import GimgError
 
 LANGS = ("es", "en")
@@ -97,7 +97,9 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--dest", "cli.arg.template_dest", choices=("local", "project"), default="local"))
 
     leaf(top, "measure", "cli.cmd.measure", arg("image", "cli.arg.image_path"),
-         opt("--palette", "cli.arg.palette"), opt("--project", "cli.arg.measure_project", metavar="PROJECT"),
+         opt("--palette", "cli.arg.palette"),
+         opt("--family", "cli.arg.family", action="append", default=[], metavar="NAME=#RRGGBB,..."),
+         opt("--project", "cli.arg.measure_project", metavar="PROJECT"),
          opt("--refs", "cli.arg.refs", nargs="+", default=[], metavar="IMAGE"),
          opt("--zone", "cli.arg.zone", metavar="X,Y,W,H"), opt("--text", "cli.arg.text_color", metavar="#RRGGBB"))
 
@@ -122,7 +124,7 @@ def _build(lang: str) -> argparse.ArgumentParser:
     leaf(g, "wordmark", "cli.cmd.brand_wordmark", arg("text", "cli.arg.brand_text"),
          opt("--font", "cli.arg.brand_font", required=True, metavar="TTF"),
          opt("--weight", "cli.arg.brand_weight", type=int, default=800),
-         opt("--spacing", "cli.arg.brand_spacing", type=float, default=0.12),
+         opt("--spacing", "cli.arg.brand_spacing", type=float, default=brand.SPACING),
          opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"))
     props = (opt("--cap", "cli.arg.brand_cap", type=float, default=0.45),
              opt("--gap", "cli.arg.brand_gap", type=float, default=0.25),
@@ -140,22 +142,41 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--box", "cli.arg.brand_box", metavar="x,y,w,h"),
          opt("--recolor", "cli.arg.brand_recolor", metavar="#HEX"),
          opt("--skip-rect", "cli.arg.brand_skip_rect", action="store_true"))
+    leaf(g, "square", "cli.cmd.brand_square", arg("drawing", "cli.arg.brand_drawing_svg"),
+         opt("--fill", "cli.arg.brand_fill", required=True, metavar="#RRGGBB"),
+         opt("--ink", "cli.arg.brand_ink_hex", required=True, metavar="#RRGGBB"),
+         opt("--chamfer", "cli.arg.brand_chamfer", type=float, default=28),
+         opt("--pad", "cli.arg.brand_pad", type=float, default=24),
+         opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"),
+         opt("--png", "cli.arg.brand_png_sizes", metavar="512,128,32"),
+         opt("--force", "cli.arg.brand_force_square", action="store_true"))
     leaf(g, "system", "cli.cmd.brand_system", arg("image", "cli.arg.brand_png"),
          opt("--name", "cli.arg.brand_name", required=True),
          opt("--font", "cli.arg.brand_font", required=True, metavar="TTF"),
          opt("--out-dir", "cli.arg.brand_out_dir", required=True, metavar="DIR"),
          opt("--weight", "cli.arg.brand_weight", type=int, default=800),
-         opt("--spacing", "cli.arg.brand_spacing", type=float, default=0.12),
+         opt("--spacing", "cli.arg.brand_spacing", type=float, default=brand.SPACING),
          opt("--palette", "cli.arg.brand_palette", metavar="#HEX,#HEX"),
          opt("--colors", "cli.arg.brand_colors", type=int, metavar="N"),
          opt("--text", "cli.arg.brand_wordmark_text"),
          opt("--holes", "cli.arg.brand_holes", action="store_true"),
+         opt("--margin", "cli.arg.brand_margin", type=float, default=0.0),
+         opt("--mono", "cli.arg.brand_mono_lockup", action="store_true"),
          opt("--force", "cli.arg.brand_force", action="store_true"), *props)
 
     leaf(top, "sheet", "cli.cmd.sheet", arg("images", "cli.arg.sheet_images", nargs="*", metavar="IMAGE"),
          opt("--out", "cli.arg.sheet_out", required=True, metavar="PNG"),
          opt("--columns", "cli.arg.sheet_columns", type=int, default=sheet.DEFAULT_COLUMNS),
          opt("--width", "cli.arg.sheet_width", type=int, default=sheet.DEFAULT_WIDTH))
+
+    leaf(top, "export", "cli.cmd.export", arg("image", "cli.arg.export_image", metavar="PNG"),
+         arg("out", "cli.arg.export_out", metavar="OUT"),
+         opt("--size", "cli.arg.export_size", metavar="WxH"),
+         opt("--crop", "cli.arg.export_crop", metavar="X,Y,W,H"),
+         opt("--anchor", "cli.arg.export_anchor", metavar="center|top|bottom|left|right"),
+         opt("--icon-sizes", "cli.arg.export_icon_sizes", metavar="16,32,…"),
+         opt("--background", "cli.arg.export_background", default=export.BACKGROUND, metavar="#RRGGBB"),
+         opt("--force", "cli.arg.export_force", action="store_true"))
 
     g = group(top, "queue", "cli.cmd.queue")
     leaf(g, "list", "cli.cmd.queue_list", opt("--state", "cli.arg.queue_state", choices=queue.STATES))
@@ -277,9 +298,25 @@ def _brand(args, sub, out: _Out) -> None:
     elif sub == "overlay":
         res = brand.overlay(args.base, args.motif, args.out, args.fit, args.box, args.recolor, args.skip_rect)
         key = "cli.out.brand_overlay"
+    elif sub == "square":
+        try:
+            sides = [int(v) for v in args.png.split(",")] if args.png else []
+        except ValueError:
+            raise GimgError("brand.bad_square", reason="--png is a list of whole numbers, like 512,128,32")
+        res = brand.square(args.drawing, args.out, args.fill, args.ink, args.chamfer, args.pad, sides, args.force)
+        if out.as_json:
+            out.data(res)
+            return
+        out.line("cli.out.brand_square", **res)
+        for path in res["pngs"]:
+            out.line("cli.out.brand_file", path=path)
+        if res["contrast"] < 4.5:
+            out.line("cli.out.brand_square_low", contrast=res["contrast"])
+        return
     elif sub == "system":
         res = brand.system(args.image, args.name, args.font, args.out_dir, args.weight, args.spacing, args.palette,
-                           args.colors, args.text, args.cap, args.gap, args.width, args.force, args.holes)
+                           args.colors, args.text, args.cap, args.gap, args.width, args.force, args.holes,
+                           args.margin, args.mono)
         if out.as_json:
             out.data(res)
             return
@@ -357,6 +394,16 @@ def _run(args, out: _Out) -> int:
                      columns=res["columns"], count=len(res["images"]))
             for i, path in enumerate(res["images"], 1):
                 out.line("cli.out.sheet_item", index=i, path=path)
+    elif cmd == "export":
+        res = export.export(args.image, args.out, args.size, args.icon_sizes, args.background, args.force,
+                           args.crop, args.anchor)
+        if out.as_json:
+            out.data(res)
+        else:
+            out.line("cli.out.export_done", out=res["out"], format=res["format"].upper(), bytes=res["bytes"],
+                     sizes=", ".join("%dx%d" % s for s in res["sizes"]))
+            if "crop" in res:
+                out.line("cli.out.export_crop", crop=",".join(str(v) for v in res["crop"]))
     elif cmd == "queue":
         _queue(args, sub, out)
     elif cmd == "serve":
@@ -505,7 +552,7 @@ def _measure(args, out: _Out) -> None:
         if not brand or not brand.get("palette"):
             raise GimgError("measure.no_brand_palette", name=args.project)
         palette = brand["palette"]
-    res = measure.measure(args.image, palette, args.refs, args.zone, args.text)
+    res = measure.measure(args.image, palette, args.refs, args.zone, args.text, args.family)
     if out.as_json:
         out.data(res)
         return
@@ -516,6 +563,12 @@ def _measure(args, out: _Out) -> None:
         out.line("cli.out.measure_palette", pct=p["pct"], delta=p["deltaE"], count=len(p["colors"]))
         for color, pct in p["by_color"].items():
             out.line("cli.out.measure_palette_color", color=color, pct=pct)
+    if "families" in res:
+        f = res["families"]
+        out.line("cli.out.measure_families", delta=f["deltaE"], count=len(f["by_family"]))
+        for name, pct in f["by_family"].items():
+            out.line("cli.out.measure_family", name=name, pct=pct)
+        out.line("cli.out.measure_family_other", pct=f["other"])
     for e in res.get("emd", ()):
         out.line("cli.out.measure_emd", **e)
     if "emd_median" in res:
@@ -613,8 +666,18 @@ def _queue(args, sub, out: _Out) -> None:
             "cli.out.queue_paused" if changed else "cli.out.queue_already_paused")
     elif sub == "resume":
         changed = queue.resume()
-        out.data({"paused": False, "changed": changed}) if out.as_json else out.line(
-            "cli.out.queue_resumed" if changed else "cli.out.queue_not_paused")
+        # a paused queue lets the service stop when idle (`service._busy`): bring it back for what is waiting
+        try:  # the queue is already resumed: nothing after the change may turn it into a failure
+            waiting = changed and bool(queue.list_entries(["queued"]))
+        except (GimgError, OSError):
+            waiting = False
+        if out.as_json:
+            out.data({"paused": False, "changed": changed, **({"service": _autostart(out)} if waiting else {})})
+        else:
+            out.line("cli.out.queue_resumed" if changed else "cli.out.queue_not_paused")
+            if waiting:
+                sys.stdout.flush()
+                _autostart(out)
     elif sub == "list":
         entries = queue.list_entries(None if args.state is None else [args.state])
         if queue.is_paused() and not out.as_json:

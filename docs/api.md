@@ -348,7 +348,9 @@ curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/clear -d '{"pro
 Pausan y reanudan la cola (cuerpo `{}`, con `Content-Type: application/json`). Con la cola en pausa el trabajador termina la imagen en curso y no
 coge otra, y el servicio no lanza trabajador; al reanudar lo relanza en su siguiente latido (unos segundos). Respuesta:
 `{"paused": bool, "changed": bool}` (`changed` es `false` si ya estaba así). El estado se lee en `paused` de
-`GET /api/health`. CLI: `gimg queue pause` y `gimg queue resume`.
+`GET /api/health`. Con la cola en pausa, lo que espera en ella no mantiene vivo el servicio: se apaga por inactividad
+como sin cola, y `gimg queue resume` lo vuelve a arrancar si queda algo en cola. CLI: `gimg queue pause` y
+`gimg queue resume`.
 
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/pause -d '{}'
@@ -420,7 +422,7 @@ curl -s -X POST $B/api/projects/mi-proyecto/brand/trace -H 'Content-Type: applic
 ### POST /api/projects/{p}/brand/wordmark
 
 Dibuja el nombre a trazos. Campos: `name`, `font` (familia instalada, p. ej. `Cinzel`; se resuelve con `fc-match`, nunca
-una ruta), `text` (por defecto el nombre en mayúsculas), `weight` (800), `spacing` (0,12). Escribe `wordmark.svg`. Errores:
+una ruta), `text` (por defecto el nombre en mayúsculas), `weight` (800), `spacing` (0,01). Escribe `wordmark.svg`. Errores:
 `brand.font_unknown`, `brand.font_unreadable`, `brand.tool_missing` (500), `brand.wordmark_no_fit`, `brand.text_too_long`.
 
 ```sh

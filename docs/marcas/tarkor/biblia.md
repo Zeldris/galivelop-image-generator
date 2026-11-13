@@ -179,13 +179,14 @@ paisajes; las piezas nocturnas de marca (E1-E6) son más oscuras por definición
 
 ## 9. Formatos y piezas
 
-Perfiles de `examples/tarkor/galivelop-images.json` (23 declarados; generado → entregado). Redes: `og` 1280×640 →
+Perfiles de `examples/tarkor/galivelop-images.json` (27 declarados; generado → entregado). Redes: `og` 1280×640 →
 1200×630, `social` 1280×640, `banner` 1280×512 → 1600×640, `square` 1024² → 1080², `header` 1536×512 → 1500×500,
 `portrait` 896×1152 → 1080×1350. Marca e interfaz: `emblema` 1024², `textura` 1024², `banda` 1024×256, `cielo`
 1536×640, `icono` 512², `estampa` 1280×512, `tira` 1024×128, `avatar` 1024², `cabecera` 1536×512 → 1500×500, `carga`
 1280×704, `capsula` 1024×576 → 616×353, `marco` 1280×704. Mapa: `texturamapa` 1024² (`tileable: "xy"`), `iconomapa`
-768², `cartela` 1024×512, `bandamapa` 1024×256, `marcomapa` 1024×256 (`tileable: "x"`). Sin perfil todavía: `lateral`
-704×1344 (I1 del Instalador), LinkedIn 1584×396. Discord 960×540 sale de `cabecera`; Reddit usa E1 y E2.
+768², `cartela` 1024×512, `bandamapa` 1024×256, `marcomapa` 1024×256 (`tileable: "x"`). Canales (2026-11-13): `lateral`
+704×1344 (I1 del Instalador), `linkedin` 1536×384 → 1584×396, `discord` 1344×768 → 960×540, `panorama` 1344×768 →
+1600×900; Reddit usa E1 y E2.
 
 Orden de trabajo (el detalle, en `peticiones.md` §5):
 

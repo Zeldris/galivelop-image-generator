@@ -4,6 +4,9 @@ Stdlib plus ``ffmpeg``/``ffprobe``; the image is only read. What is measured:
 
 - ``yavg`` / ``satavg``: ``signalstats`` of the whole image (BT.601, 0-255).
 - ``palette``: share of pixels within CIE76 delta E < `DELTA_E` of some palette colour (image scaled to 256 px wide).
+- ``families``: share of pixels per colour family (``--family NAME=#hex,#hex``, repeatable): each pixel goes to the
+  nearest colour of all the families and counts for its family if it is within CIE76 delta E < `DELTA_E`, else for
+  ``other`` (checks rules such as Tarkor's 60/30/10).
 - ``emd``: Wasserstein-1 distance between the Y, Cb and Cr histograms of the image and of each reference, on a 160x64
   ``yuv444p`` decimation, identical to Tarkor's ``medir/emd.py``; the median per channel if there is more than one reference.
 - ``contrast``: WCAG 2.x ratio of a text colour against the mean, the 10th and the 90th percentile of the relative
@@ -39,6 +42,21 @@ def parse_hex(text) -> tuple:
 
 def hex_of(rgb) -> str:
     return "#%02x%02x%02x" % tuple(rgb)
+
+
+def parse_families(specs) -> list:
+    """``["NAME=#hex,#hex", ...]`` to ``[(name, [rgb, ...]), ...]`` in the given order; ``measure.bad_family`` on an
+    empty, repeated or reserved (``other``) name, a missing ``=`` or a family without colours (a bad colour is ``measure.bad_hex``)."""
+    out, seen = [], set()
+    for spec in specs:
+        name, sep, colors = str(spec).partition("=")
+        name = name.strip()
+        parts = [c for c in colors.split(",") if c.strip()] if sep else []
+        if not name or name == "other" or name in seen or not parts:
+            raise GimgError("measure.bad_family", value=str(spec))
+        seen.add(name)
+        out.append((name, [parse_hex(c) for c in parts]))
+    return out
 
 
 def parse_zone(text) -> tuple:
@@ -167,26 +185,52 @@ def pixels(path, zone=None) -> list:
     return [(data[i], data[i + 1], data[i + 2]) for i in range(0, len(data), 3)]
 
 
-def palette_share(pix, palette, threshold=DELTA_E) -> dict:
-    """``{"pct": share near any colour, "by_color": {hex: share whose nearest colour it is}}``, in percent."""
-    labs = [rgb_lab(c) for c in palette]
-    counts = [0] * len(palette)
-    near = 0
+def _nearest(pix, colors, threshold):
+    """Per pixel, the index of the nearest of `colors` (CIE76) or None if it is not within `threshold`."""
+    labs = [rgb_lab(c) for c in colors]
     cache = {}
+    out = []
     for p in pix:
         if p not in cache:
             lab = rgb_lab(p)
             dists = [delta_e(lab, q) for q in labs]
             best = min(range(len(dists)), key=dists.__getitem__)
             cache[p] = best if dists[best] < threshold else None
-        if cache[p] is not None:
-            counts[cache[p]] += 1
+        out.append(cache[p])
+    return out
+
+
+def palette_share(pix, palette, threshold=DELTA_E) -> dict:
+    """``{"pct": share near any colour, "by_color": {hex: share whose nearest colour it is}}``, in percent."""
+    counts = [0] * len(palette)
+    near = 0
+    for i in _nearest(pix, palette, threshold):
+        if i is not None:
+            counts[i] += 1
             near += 1
     total = len(pix) or 1
     by_color = {}
     for c, n in zip(palette, counts):
         by_color[hex_of(c)] = round(100.0 * n / total, 2)
     return {"pct": round(100.0 * near / total, 2), "by_color": by_color}
+
+
+def family_share(pix, families, threshold=DELTA_E) -> dict:
+    """`families` is ``[(name, [rgb, ...]), ...]``. ``{"deltaE", "by_family": {name: pct}, "other": pct}``: each pixel
+    goes to the family of its nearest colour if within `threshold`, else to ``other``; percent, 2 decimals."""
+    colors, owner = [], []
+    for k, (_, rgbs) in enumerate(families):
+        colors.extend(rgbs)
+        owner.extend([k] * len(rgbs))
+    counts, other = [0] * len(families), 0
+    for i in _nearest(pix, colors, threshold):
+        if i is None:
+            other += 1
+        else:
+            counts[owner[i]] += 1
+    total = len(pix) or 1
+    return {"deltaE": threshold, "by_family": {n: round(100.0 * c / total, 2) for (n, _), c in zip(families, counts)},
+            "other": round(100.0 * other / total, 2)}
 
 
 def yuv_planes(path) -> list:
@@ -229,8 +273,9 @@ def contrast(pix, text_rgb) -> dict:
     return {k: round(v, 2) for k, v in res.items()}
 
 
-def measure(image, palette=None, refs=(), zone=None, text=None) -> dict:
-    """All the measures asked for, as a JSON-ready dict. `palette` and `text` are hex strings, `zone` is x,y,w,h."""
+def measure(image, palette=None, refs=(), zone=None, text=None, families=None) -> dict:
+    """All the measures asked for, as a JSON-ready dict. `palette` and `text` are hex strings, `zone` is x,y,w,h, `families` a list of ``NAME=#hex,#hex``."""
+    fams = parse_families(families) if families else []
     palette_rgb = [parse_hex(c) for c in palette] if palette else []
     text_rgb = parse_hex(text) if text is not None else None
     zone_t = parse_zone(zone) if isinstance(zone, str) else zone
@@ -238,10 +283,13 @@ def measure(image, palette=None, refs=(), zone=None, text=None) -> dict:
         raise GimgError("cli.measure_zone_text")
     yavg, satavg = signalstats(image)
     result = {"image": str(image), "yavg": round(yavg, 2), "satavg": round(satavg, 2)}
+    pix = pixels(image) if palette_rgb or fams else None
     if palette_rgb:
-        share = palette_share(pixels(image), palette_rgb)
+        share = palette_share(pix, palette_rgb)
         result["palette"] = {"colors": [hex_of(c) for c in palette_rgb], "deltaE": DELTA_E,
                              "pct": share["pct"], "by_color": share["by_color"]}
+    if fams:
+        result["families"] = family_share(pix, fams)
     if refs:
         mine = yuv_planes(image)
         per_ref = []

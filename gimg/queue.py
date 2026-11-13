@@ -116,20 +116,7 @@ def worker_alive():
     """Does a worker hold ``worker.lock`` right now? ``True`` / ``False``, or ``None`` when it cannot be known (the
     lock exists but cannot be opened). A pure read: it creates neither the data folder nor the lock (no lock file
     means no worker has ever run, so ``False``). Callers that start workers must treat ``None`` as "do not start"."""
-    try:
-        fd = os.open(str(worker_lock_path()), os.O_RDWR)
-    except FileNotFoundError:
-        return False
-    except OSError:
-        return None
-    try:
-        try:  # shared: another probe at the same moment (a CLI, `/api/health`) is not a worker (F3.5)
-            fcntl.flock(fd, fcntl.LOCK_SH | fcntl.LOCK_NB)
-        except OSError:
-            return True
-        return False
-    finally:
-        os.close(fd)  # closing releases the lock
+    return fsutil.held(worker_lock_path())
 
 
 def _load() -> dict:

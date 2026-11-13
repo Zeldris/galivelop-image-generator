@@ -9,7 +9,7 @@ as the engine and the Steam Deck as the reference machine (D4). No dependencies:
 
 ## Status
 
-Version **0.4.1**, phases **F0-F4 done** and on `main`: projects, orders, attempts, chosen candidate and delivery,
+Version **0.5.0**, phases **F0-F4 done** and on `main`: projects, orders, attempts, chosen candidate and delivery,
 persistent queue, CLI, real engine (`sd-cli`, with `instalar.sh`), composition and brand measurement, local HTTP API
 and browser interface. Still pending: manual checks on the Deck (pilot rounds, a full walk through the interface in
 the browser), the pilot with real projects (F5) and what follows (see "Next steps"). The test engine (`fake`,
@@ -107,12 +107,17 @@ python3 -m gimg queue cancel 3
 python3 -m gimg compose my-project fauna/red-howler banner 1 --template poster   # recompose without generating
 python3 -m gimg templates my-project banner           # the profile's composition templates
 python3 -m gimg measure image.png --project my-project   # palette, contrast and distance to the brand
+python3 -m gimg measure image.png --family "wood=#1b130c,#332415" --family "gold=#b8862b,#f2c45a"   # % of pixels per colour family (+ other)
 python3 -m gimg sheet --out sheet.png a.png b.png     # contact sheet to review a round
+python3 -m gimg export a.png a.webp --size 960x540   # copy to WebP, ICO or BMP (the delivery stays PNG)
+python3 -m gimg export a.png b.png --crop 64,0,768,1152 --size 600x900   # declared crop (X,Y,W,H of the original), then scale down
+python3 -m gimg export a.png b.png --size 1536x384 --anchor top   # where the proportion crop sits: top|bottom|left|right (or top-left…), centre by default
 python3 -m gimg brand matte logo.png                  # removes the flat background: logo-alpha.png (the original is untouched)
 python3 -m gimg brand trace logo-alpha.png --mode color|mono|silhouette   # PNG to SVG (--palette, --colors, --matte)
 python3 -m gimg brand wordmark TARKOR --font Cinzel.ttf -o wordmark.svg   # the name as paths, no <text> (--weight, --spacing)
 python3 -m gimg brand lockup emblema.svg wordmark.svg --layout h|v   # emblem and wordmark in one SVG (--cap, --gap, --width, --margin, --color, -o)
-python3 -m gimg brand system emblema.png --name Tarkor --font Cinzel.ttf --out-dir marca/   # the seven files of the logo system (--weight, --spacing, --palette, --colors, --text, --cap, --gap, --width, --force overwrites)
+python3 -m gimg brand square ig.svg --fill '#7C5CD6' --ink '#fbfcfd' --png 512,128,32   # the symbol: square with a 28/128 chamfer and the drawing in one ink (--chamfer, --pad, -o, --force)
+python3 -m gimg brand system emblema.png --name Tarkor --font Cinzel.ttf --out-dir marca/   # the seven files of the logo system (--weight, --spacing, --palette, --colors, --text, --cap, --gap, --width, --margin, --mono for a one-ink lockup, --force overwrites)
 python3 -m gimg doctor                                # checks the engine, models and tools (--verify)
 python3 -m gimg serve                                 # local service on 127.0.0.1:8737 (--detach, --status, --stop, --port, --idle-min)
 python3 -m gimg ui                                    # open the interface in the browser (starts the service if needed; --no-browser)
