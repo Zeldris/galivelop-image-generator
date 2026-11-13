@@ -112,6 +112,28 @@ class MatteTests(BrandBase):
         self.assertEqual(code, 1)
         self.assertIn("nope.png", err)
 
+    def test_a_file_that_is_no_png_is_refused_with_its_reason(self):
+        src = self.tmp / "roto.png"
+        src.write_bytes(b"not a png at all")
+        with self.assertRaises(GimgError) as cm:
+            brand.matte(src)
+        self.assertEqual(cm.exception.code, "png.invalid")
+        code, _, err = self.run_cli("brand", "matte", str(src))
+        self.assertEqual(code, 1)
+        self.assertIn("roto.png", err)
+        self.assertIn("not a PNG", err)
+        self.assertFalse((self.tmp / "roto-alpha.png").exists())
+
+    def test_wordmark_and_system_without_font_are_usage_errors(self):
+        src = self.tmp / "a.png"
+        square_png(src)
+        for argv in (("brand", "wordmark", "Galivelop"), ("brand", "system", str(src))):
+            with self.subTest(cmd=argv[1]):
+                code, _, err = self.run_cli(*argv)
+                self.assertEqual(code, 2)
+                self.assertIn("--font", err)
+        self.assertEqual(sorted(p.name for p in self.tmp.iterdir()), ["a.png"])
+
 
 class WriteTests(BrandBase):
     def test_output_has_the_mode_of_a_plain_file(self):

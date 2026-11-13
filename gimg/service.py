@@ -121,19 +121,8 @@ def read_state():
 
 
 def lock_held() -> bool:
-    """Is ``serve.lock`` taken by a live process? A pure read: it creates nothing."""
-    try:
-        fd = os.open(str(lock_path()), os.O_RDWR)
-    except OSError:
-        return False
-    try:
-        try:  # shared, so two probes at the same moment do not see each other as the service
-            fcntl.flock(fd, fcntl.LOCK_SH | fcntl.LOCK_NB)
-        except OSError:
-            return True
-        return False
-    finally:
-        os.close(fd)
+    """Is ``serve.lock`` taken by a live process? A pure read: it creates nothing (not knowing counts as not taken)."""
+    return fsutil.held(lock_path()) is True
 
 
 def health(port: int, timeout: float = 1.0):
@@ -406,12 +395,7 @@ def ensure_running(lang=None, warn=None) -> dict:
         if running == __version__ and built == mine:
             return current
         if queue.worker_alive() is not False:
-            if warn:
-                if running == __version__:  # same version, older code (a checkout that changed): say which build
-                    running, installed = "%s+%s" % (running, built or "?"), "%s+%s" % (__version__, mine)
-                else:
-                    installed = __version__
-                warn(i18n.t("cli.warn.service_old_version", lang, running=running, installed=installed))
+            _warn_other_code(warn, lang, running, built, mine)
             return current
         # one CLI at a time replaces it (a second SIGTERM would cut the old one's requests in progress)
         paths.data_dir().mkdir(parents=True, exist_ok=True)
@@ -419,8 +403,10 @@ def ensure_running(lang=None, warn=None) -> dict:
         try:
             fcntl.flock(fd, fcntl.LOCK_EX)
             fresh = status()
-            if fresh is not None and fresh["pid"] != current["pid"]:
-                return fresh  # another CLI already replaced it
+            if fresh is not None and fresh["pid"] != current["pid"]:  # another CLI already replaced it
+                if (fresh.get("version"), fresh.get("build")) != (__version__, mine):  # with other code: say so
+                    _warn_other_code(warn, lang, fresh.get("version"), fresh.get("build"), mine)
+                return fresh
             with contextlib.suppress(GimgError):
                 stop(expected_pid=current["pid"])
             deadline = time.monotonic() + STOP_WAIT_S + 2.0
@@ -430,6 +416,18 @@ def ensure_running(lang=None, warn=None) -> dict:
         finally:
             os.close(fd)
     return _detach_or_join(lang)
+
+
+def _warn_other_code(warn, lang, running, built, mine) -> None:
+    """`warn` that the service kept runs other code than this CLI: another version, or the same one with another
+    build (a checkout that changed), then both builds are named."""
+    if not warn:
+        return
+    if running == __version__:
+        running, installed = "%s+%s" % (running, built or "?"), "%s+%s" % (__version__, mine)
+    else:
+        installed = __version__
+    warn(i18n.t("cli.warn.service_old_version", lang, running=running or "?", installed=installed))
 
 
 def _detach_or_join(lang) -> dict:

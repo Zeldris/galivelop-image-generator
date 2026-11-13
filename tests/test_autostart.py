@@ -183,6 +183,25 @@ class Autostart(Env):
             state = service.ensure_running("en")
         self.assertEqual((state["pid"], state["version"]), (new["pid"], gimg.__version__))
 
+    def test_a_replacement_by_another_cli_with_other_code_is_kept_with_a_warning(self):
+        """Two checkouts of the same version with different code: the CLI that waited on ``serve.replace.lock``
+        keeps what the first one started (no second SIGTERM), but says it runs other code (fix-0.4.1, leve)."""
+        old = {"pid": 2 ** 22 + 1, "port": 1, "url": "http://127.0.0.1:1", "version": "0.0.0-old",
+               "build": "old-code", "startedAt": "2026-11-06T13:08:35Z"}
+        other = dict(old, pid=2 ** 22 + 2, version=gimg.__version__, build="other-code")
+        lives = iter([(old, {"pid": old["pid"], "version": "0.0.0-old", "build": "old-code"}),
+                      (other, {"pid": other["pid"], "version": gimg.__version__, "build": "other-code"})])
+        warnings = []
+        with mock.patch.object(service, "_live", side_effect=lambda: next(lives)), \
+                mock.patch.object(queue, "worker_alive", return_value=False), \
+                mock.patch.object(service, "stop", side_effect=AssertionError("already replaced")), \
+                mock.patch.object(service, "detach", side_effect=AssertionError("nothing to start")):
+            state = service.ensure_running("en", warnings.append)
+        self.assertEqual(state["pid"], other["pid"])
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("+other-code", warnings[0])
+        self.assertIn("+" + gimg.build_id(), warnings[0])
+
     def test_a_probe_at_the_same_moment_is_not_a_worker_nor_a_service(self):
         """The real flake: CLI B probed ``worker.lock`` while CLI A (or the old service's `/api/health`) was probing
         it too, saw it taken and kept the old service with "a worker is alive". A probe holds the lock shared."""

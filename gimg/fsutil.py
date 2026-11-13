@@ -80,3 +80,24 @@ def try_lock(path):
         yield taken
     finally:
         os.close(fd)
+
+
+def held(path):
+    """Does a process hold `path` (a lock file itself, not ``<path>.lock``) exclusively right now? ``True`` /
+    ``False``, or ``None`` when it cannot be known (the file exists but cannot be opened). A pure read: it creates
+    nothing, and no file means no holder. The probe takes the lock *shared*, so two probes at the same moment do not
+    see each other as the holder (F3.5, 0.4.1)."""
+    try:
+        fd = os.open(str(path), os.O_RDWR)
+    except FileNotFoundError:
+        return False
+    except OSError:
+        return None
+    try:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_SH | fcntl.LOCK_NB)
+        except OSError:
+            return True
+        return False
+    finally:
+        os.close(fd)  # closing releases the lock
