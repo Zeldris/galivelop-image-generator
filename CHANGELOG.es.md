@@ -9,6 +9,8 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Sin publicar]
 
+## [0.5.0] - 2026-11-13
+
 ### Añadido
 
 - `gimg measure --family NOMBRE=#hex,#hex,...` (repetible) reparte los píxeles por familia de color (color más cercano,
