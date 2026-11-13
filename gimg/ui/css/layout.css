@@ -10,8 +10,7 @@
 .brand img { width: 28px; height: 28px; }
 .crumbs { display: flex; align-items: center; gap: 2px 6px; flex-wrap: wrap; min-width: 0; font: 500 12px/1.4 var(--font-mono); text-transform: uppercase; letter-spacing: .06em; }
 .crumbs:empty { display: none; }
-.crumbs a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40vw; }
-.crumbs a { color: var(--text-2); }
+.crumbs a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40vw; color: var(--text-2); }
 .crumbs .sep { color: var(--text-3); }
 .crumbs b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40vw; }
 .header-tools { margin-left: auto; display: flex; gap: 6px; align-items: center; flex: none; }
@@ -54,6 +53,7 @@
 .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--gap); }
 .project-card { display: grid; gap: 8px; text-decoration: none; color: var(--text); }
 .project-card.is-broken { opacity: .7; border-style: dashed; }
+.project-card.is-broken::after { background: repeating-linear-gradient(135deg, var(--edge) 0 3px, transparent 3px 6px); }   /* la diagonal, a trazos como el borde */
 .project-card h2 { font-size: 23px; padding-right: var(--chamfer); }
 .project-card .meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 14px; line-height: 1.45; color: var(--text-2); }
 .project-card .path { font: 12px/1.4 var(--font-mono); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -571,6 +571,37 @@ NONTEXT_PAIRS = [("border", "bg"), ("border", "surface"), ("border", "surface-2"
 # r10: the progress bar is outlined with --border and filled with --accent on --surface-2
 
 
+class DashedChamfer(unittest.TestCase):
+    def test_every_dashed_card_has_a_dashed_diagonal(self):
+        """Revisión de r10: el chaflán recorta el borde y ::after dibuja la diagonal; con borde discontinuo, a trazos."""
+        css = "\n".join(p.read_text(encoding="utf-8") for p in sorted((UI / "css").glob("*.css")))
+        css = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
+        rules = re.findall(r"([^{}]+)\{([^{}]*)\}", css)
+        dashed_after = set()
+        for selectors, body in rules:
+            if "repeating-linear-gradient" in body:
+                dashed_after.update(s.strip() for s in selectors.split(",") if s.strip().endswith("::after"))
+        checked = 0
+        for selectors, body in rules:
+            if not re.search(r"border-style:\s*dashed", body):
+                continue
+            for sel in (s.strip() for s in selectors.split(",")):
+                if sel.startswith((".attempt", ".project-card", ".card")):
+                    checked += 1
+                    self.assertIn(sel + "::after", dashed_after, sel)
+        self.assertGreaterEqual(checked, 3)
+
+
+class EditorThinBoxes(unittest.TestCase):
+    def test_handles_and_name_leave_the_text_visible(self):
+        """Revisión de r10: en cajas finas el rótulo y las asas tapaban el texto que encuadran."""
+        css = re.sub(r"/\*.*?\*/", "", read(UI / "css" / "components.css"), flags=re.S)
+        self.assertRegex(css, r"\.ed-box \{[^}]*container-type:\s*size")
+        self.assertRegex(css, r"\.ed-handle \{[^}]*opacity:\s*0[;\s]")
+        self.assertRegex(css, r"\.ed-box:hover \.ed-handle, \.ed-box:focus-within \.ed-handle \{\s*opacity:\s*1")
+        self.assertRegex(css, r"@container \(max-height: 40px\) \{\s*\.ed-name \{\s*top:\s*100%")
+
+
 class Contrast(unittest.TestCase):
     def test_text_pairs_reach_aa(self):
         for theme, tokens in theme_blocks().items():
@@ -588,6 +619,24 @@ class Contrast(unittest.TestCase):
             self.assertEqual(tokens["accent"].lower(), "#7c5cd6", theme)
             self.assertEqual(tokens["on-accent"].lower(), "#ffffff", theme)
         self.assertGreaterEqual(ratio("#ffffff", "#7C5CD6"), 4.5)
+
+    def test_on_image_over_the_veil_reaches_aa_on_a_white_image(self):
+        """--on-image va sobre --overlay, que es translúcido: el peor caso es el velo sobre una imagen blanca."""
+        css = (UI / "css" / "tokens.css").read_text(encoding="utf-8")
+        veils = re.findall(r"--overlay:\s*rgb\((\d+) (\d+) (\d+) / (\.\d+|[01](?:\.\d+)?)\)", css)
+        self.assertEqual(len(veils), 3, "un --overlay por bloque de tema")
+        for theme, tokens in theme_blocks().items():
+            self.assertEqual(tokens["on-image"].lower(), "#ffffff", theme)
+        for r, g, b, alpha in veils:
+            a = float(alpha)
+            mixed = "#%02x%02x%02x" % tuple(round(int(v) * a + 255 * (1 - a)) for v in (r, g, b))
+            self.assertGreaterEqual(ratio("#ffffff", mixed), 4.5, "--on-image sobre --overlay %s" % alpha)
+
+    def test_accent_text_is_never_a_fill(self):
+        """--on-accent sobre --accent-text no llega a 4,5:1 en oscuro: --accent-text es solo tinta, nunca relleno."""
+        for path in sorted((UI / "css").glob("*.css")) + sorted((UI / "js").rglob("*.js")):
+            text = path.read_text(encoding="utf-8")
+            self.assertNotRegex(text, r"(background|background-color|fill)\s*:\s*var\(--accent-text\)", path.name)
 
     def test_r10_values_and_tokens_in_both_themes(self):
         blocks = theme_blocks()
@@ -646,8 +695,12 @@ class Contrast(unittest.TestCase):
         for group in rounded:
             for sel in group.split(","):  # cada selector del grupo, no solo el último
                 self.assertRegex(sel.strip(), r"(\.dot|\.spin)$", "border-radius fuera de las excepciones: " + sel.strip())
-        grads = re.findall(r"([^{}]+)\{[^{}]*gradient[^{}]*\}", css)
-        self.assertEqual([g.strip() for g in grads], ["body"])
+        grads = re.findall(r"([^{}]+)\{([^{}]*gradient[^{}]*)\}", css)
+        # la única otra: la diagonal discontinua del chaflán, trazos de corte seco (DashedChamfer), no un degradado
+        dashes = [(g, b) for g, b in grads if all(s.strip().endswith("::after") for s in g.split(","))]
+        for _, body in dashes:
+            self.assertRegex(body, r"repeating-linear-gradient\(135deg, var\(--edge\) 0 3px, transparent 3px 6px\)")
+        self.assertEqual([g.strip() for g, b in grads if (g, b) not in dashes], ["body"])
         self.assertIn("var(--grid)", re.search(r"body \{[^}]*\}", css, re.S).group(0))
         for token in ("--chamfer-l: 28px", "--chamfer: 14px", "--chamfer-s: 10px", "--grid-step: 24px"):
             self.assertIn(token, css, token)
