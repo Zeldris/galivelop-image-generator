@@ -762,7 +762,7 @@ cabecera 960×540 de Discord; 4) `square` 1080×1080 con el lema; 5) avatar 512�
 son CLI locales y sus principios son IA local, nada residente y el humano revisa. Por eso entran **en la familia del Portal**
 **[P]**: fondo `#06121c` con rejilla de puntos, Sora e Inter, y un logo en el mismo cuadrado rx 30 de `gv-logo.svg` con un
 monograma y su acento. Acentos propuestos **[P]**, distintos de los del Portal y de los tres proyectos: imágenes violeta
-`#8B5CF6`, voces frambuesa `#D9467A` y developer verde azulado `#2BB3A3`. *No:* robots, cerebros, rostros, personas reales
+`#7C5CD6`, voces frambuesa `#D9467A` y developer verde azulado `#2BB3A3`. *No:* robots, cerebros, rostros, personas reales
 (voces: nada que sugiera clonar a alguien), «magia» de IA. *Formatos:* `social` (GitHub), `og`, `avatar`; el `banner` del
 Portal solo si la persona decide presentarlas allí. *Metáforas* (de sus textos):
 
