@@ -116,7 +116,9 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--colors", "cli.arg.brand_colors", type=int, metavar="N"),
          opt("--dp-tol", "cli.arg.brand_dp_tol", type=float, default=1.2),
          opt("--min-island", "cli.arg.brand_min_island", type=float, default=12),
-         opt("--matte", "cli.arg.brand_matte", action="store_true"))
+         opt("--matte", "cli.arg.brand_matte", action="store_true"),
+         opt("--ink-only", "cli.arg.brand_ink_only", action="store_true"),
+         opt("--paper", "cli.arg.brand_paper", metavar="#HEX"))
     leaf(g, "wordmark", "cli.cmd.brand_wordmark", arg("text", "cli.arg.brand_text"),
          opt("--font", "cli.arg.brand_font", required=True, metavar="TTF"),
          opt("--weight", "cli.arg.brand_weight", type=int, default=800),
@@ -131,6 +133,13 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--margin", "cli.arg.brand_margin", type=float, default=0.0),
          opt("--color", "cli.arg.brand_ink", metavar="COLOR"),
          opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"), *props)
+    leaf(g, "overlay", "cli.cmd.brand_overlay", arg("base", "cli.arg.brand_overlay_base"),
+         arg("motif", "cli.arg.brand_overlay_motif"),
+         opt("-o", "cli.arg.brand_overlay_out", dest="out", metavar="SVG"),
+         opt("--fit", "cli.arg.brand_fit", type=float, default=0.5),
+         opt("--box", "cli.arg.brand_box", metavar="x,y,w,h"),
+         opt("--recolor", "cli.arg.brand_recolor", metavar="#HEX"),
+         opt("--skip-rect", "cli.arg.brand_skip_rect", action="store_true"))
     leaf(g, "system", "cli.cmd.brand_system", arg("image", "cli.arg.brand_png"),
          opt("--name", "cli.arg.brand_name", required=True),
          opt("--font", "cli.arg.brand_font", required=True, metavar="TTF"),
@@ -259,12 +268,15 @@ def _brand(args, sub, out: _Out) -> None:
         key = "cli.out.brand_matte"
     elif sub == "trace":
         res = brand.trace(args.image, args.out, args.mode, args.palette, args.colors, args.dp_tol, args.min_island,
-                          args.matte)
+                          args.matte, args.ink_only, args.paper)
         key = "cli.out.brand_trace"
     elif sub == "lockup":
         res = brand.lockup(args.emblem, args.wordmark, args.out, args.layout, args.cap, args.gap, args.width, args.margin,
                            args.color)
         key = "cli.out.brand_lockup"
+    elif sub == "overlay":
+        res = brand.overlay(args.base, args.motif, args.out, args.fit, args.box, args.recolor, args.skip_rect)
+        key = "cli.out.brand_overlay"
     elif sub == "system":
         res = brand.system(args.image, args.name, args.font, args.out_dir, args.weight, args.spacing, args.palette,
                            args.colors, args.text, args.cap, args.gap, args.width, args.force, args.holes)
