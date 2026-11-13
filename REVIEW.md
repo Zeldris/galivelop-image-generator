@@ -83,3 +83,6 @@ creada.
 - **CHANGELOG por fase.** Un PR que cierra una fase (o trae algo visible para el usuario) añade su entrada en
   `CHANGELOG.md` y `CHANGELOG.es.md`; las notas de cada release de GitHub salen de ahí (`releases.py notes`). Que
   falte es un hallazgo medio. (criterio)
+- **Tabla de estados HTTP.** `gimg/server.py` mapea todos los códigos de error, también los de órdenes solo de CLI, y
+  `tests/test_server.py` lo exige: un código nuevo va a esa tabla o a la lista de 500 del test. Que esté sin endpoint
+  no es un hallazgo; que falte, sí (lo pilla el test). (criterio)
