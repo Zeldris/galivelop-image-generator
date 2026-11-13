@@ -28,6 +28,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   what is enclosed), `trace` turns it into an SVG with the brand palette or in one ink, `wordmark` turns the name into
   paths with an installed font, `lockup` composes emblem and name horizontally or vertically, and `system` does it
   all in one go with its contact sheet. The name needs `rsvg-convert`; the rest, only Python.
+- `gimg brand square DRAWING.svg --fill #RRGGBB --ink #RRGGBB`: the family symbol, a flat square with a 45-degree
+  chamfer (28/128 by default) on the top right corner and the drawing from `trace`/`wordmark` fitted inside in one ink;
+  `--png 512,128,32` also writes one PNG per side and the contrast of ink on fill is reported (warning under 4.5:1).
 - "Logo system" workshop in the Brand tab: the same steps from an attempt of the project, previewed on light and
   dark, and "Save" to the project's data or to its `brand.dir` folder. New API routes:
   `GET /api/projects/{p}/brand`, `POST .../brand/matte`, `trace`, `wordmark`, `lockup` and `save`, and

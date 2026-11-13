@@ -654,5 +654,114 @@ class SystemTests(BrandBase):
         self.assertFalse(self.out.exists())
 
 
+class SquareTests(BrandBase):
+    def setUp(self):
+        super().setUp()
+        self.draw = self.tmp / "ig.svg"
+        self.draw.write_text(path_svg(40, 20, "#123456", "ig"))
+        self.out = self.tmp / "sq.svg"
+
+    def make(self, **kw):
+        args = dict(fill="#7C5CD6", ink="#fbfcfd")
+        args.update(kw)
+        return brand.square(self.draw, kw.pop("out", self.out), **{k: v for k, v in args.items() if k != "out"})
+
+    def code(self, **kw):
+        with self.assertRaises(GimgError) as cm:
+            self.make(**kw)
+        return cm.exception
+
+    def test_the_square_path_has_the_chamfer_on_the_top_right_only(self):
+        res = self.make()
+        text = self.out.read_text()
+        self.assertIn('viewBox="0 0 128 128"', text)
+        self.assertIn('<path fill="#7c5cd6" d="M0 0 H100 L128 28 V128 H0 Z"/>', text)
+        self.assertNotIn("rx=", text)
+        self.assertNotIn("Gradient", text)
+        self.assertEqual(res["out"], str(self.out))
+        self.assertEqual(res["pngs"], [])
+        self.assertEqual((res["fill"], res["ink"]), ("#7c5cd6", "#fbfcfd"))
+        self.assertAlmostEqual(res["contrast"], 4.69, places=1)
+
+    def test_another_chamfer_changes_the_path(self):
+        self.make(chamfer=40)
+        self.assertIn('d="M0 0 H88 L128 40 V128 H0 Z"', self.out.read_text())
+
+    def test_the_drawing_is_fitted_centered_inside_the_padding_in_the_ink(self):
+        self.make()
+        text = self.out.read_text()
+        self.assertNotIn("#123456", text)
+        self.assertNotIn("currentColor", text)
+        self.assertIn('fill="#fbfcfd"', text)
+        (x, y, w, h), = box_of(text)
+        self.assertAlmostEqual(w, 80, places=2)  # 128 - 2 * 24
+        self.assertAlmostEqual(h, 40, places=2)
+        self.assertAlmostEqual(x, 24, places=2)
+        self.assertAlmostEqual(y, 44, places=2)  # centered vertically
+
+    def test_current_color_and_none_are_handled(self):
+        self.draw.write_text(path_svg(20, 20).replace('fill="currentColor"', 'fill="currentColor" stroke="none"'))
+        self.make()
+        text = self.out.read_text()
+        self.assertNotIn("currentColor", text)
+        self.assertIn('stroke="none"', text)
+
+    def test_validations_carry_their_code(self):
+        for kw in ({"chamfer": -1}, {"chamfer": 65}, {"pad": -1}, {"pad": 49}, {"fill": "red"}, {"ink": "#fff"}, {"fill": None},
+                   {"pngs": [0]}, {"pngs": [9000]}):
+            exc = self.code(**kw)
+            self.assertEqual(exc.code, "brand.bad_square", kw)
+        self.assertFalse(self.out.exists())
+        self.assertIn("chamfer", str(self.code(chamfer=65)))
+
+    def test_does_not_overwrite_without_force(self):
+        self.out.write_text("mine")
+        self.assertEqual(self.code().code, "brand.exists")
+        self.assertEqual(self.out.read_text(), "mine")
+        self.make(force=True)
+        self.assertIn("<path", self.out.read_text())
+
+    def test_default_output_sits_next_to_the_drawing(self):
+        res = brand.square(self.draw, None, "#7C5CD6", "#fbfcfd")
+        self.assertEqual(res["out"], str(self.tmp / "ig-square.svg"))
+        self.assertTrue((self.tmp / "ig-square.svg").exists())
+
+    @unittest.skipUnless(shutil.which("rsvg-convert"), "needs rsvg-convert")
+    def test_png_sizes_and_corners(self):
+        res = self.make(pngs=[64, 32])
+        self.assertEqual(res["pngs"], [str(self.tmp / "sq-64.png"), str(self.tmp / "sq-32.png")])
+        w, h, rgba = png.read_rgba(self.tmp / "sq-64.png")
+        self.assertEqual((w, h), (64, 64))
+        top_right, bottom_left = rgba[((0 * w) + w - 1) * 4:][:4], rgba[((h - 1) * w) * 4:][:4]
+        self.assertEqual(top_right[3], 0)  # the chamfer cuts the corner
+        self.assertEqual(tuple(bottom_left), (0x7C, 0x5C, 0xD6, 255))
+        self.assertEqual(png.read_rgba(self.tmp / "sq-32.png")[:2], (32, 32))
+
+    @unittest.skipUnless(shutil.which("rsvg-convert"), "needs rsvg-convert")
+    def test_png_clash_needs_force(self):
+        (self.tmp / "sq-64.png").write_bytes(b"x")
+        self.assertEqual(self.code(pngs=[64]).code, "brand.exists")
+        self.assertFalse(self.out.exists())
+
+    def test_cli(self):
+        code, text, err = self.run_cli("brand", "square", str(self.draw), "--fill", "#7C5CD6", "--ink", "#fbfcfd",
+                                       "-o", str(self.out), "--json")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(json.loads(text)["fill"], "#7c5cd6")
+        code, text, err = self.run_cli("brand", "square", str(self.draw), "--fill", "#7C5CD6", "--ink", "#7C5CE6",
+                                       "-o", str(self.tmp / "b.svg"))
+        self.assertEqual(code, 0, err)
+        self.assertIn("contrast", text)
+        self.assertIn("under 4.5:1", text)
+        code, text, err = self.run_cli("brand", "square", str(self.draw), "--fill", "#7C5CD6", "--ink", "#fbfcfd",
+                                       "-o", str(self.out))
+        self.assertNotEqual(code, 0)
+        self.assertIn("already has", err)
+        code, text, err = self.run_cli("brand", "square", str(self.draw), "--fill", "#7C5CD6", "--ink", "#fbfcfd",
+                                       "--chamfer", "99", "-o", str(self.tmp / "c.svg"))
+        self.assertNotEqual(code, 0)
+        self.assertIn("chamfer", err)
+
+
 if __name__ == "__main__":
     unittest.main()

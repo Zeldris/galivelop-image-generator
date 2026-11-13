@@ -112,6 +112,7 @@ python3 -m gimg brand matte logo.png                  # removes the flat backgro
 python3 -m gimg brand trace logo-alpha.png --mode color|mono|silhouette   # PNG to SVG (--palette, --colors, --matte)
 python3 -m gimg brand wordmark TARKOR --font Cinzel.ttf -o wordmark.svg   # the name as paths, no <text> (--weight, --spacing)
 python3 -m gimg brand lockup emblema.svg wordmark.svg --layout h|v   # emblem and wordmark in one SVG (--cap, --gap, --width, --margin, --color, -o)
+python3 -m gimg brand square ig.svg --fill '#7C5CD6' --ink '#fbfcfd' --png 512,128,32   # the symbol: square with a 28/128 chamfer and the drawing in one ink (--chamfer, --pad, -o, --force)
 python3 -m gimg brand system emblema.png --name Tarkor --font Cinzel.ttf --out-dir marca/   # the seven files of the logo system (--weight, --spacing, --palette, --colors, --text, --cap, --gap, --width, --force overwrites)
 python3 -m gimg doctor                                # checks the engine, models and tools (--verify)
 python3 -m gimg serve                                 # local service on 127.0.0.1:8737 (--detach, --status, --stop, --port, --idle-min)

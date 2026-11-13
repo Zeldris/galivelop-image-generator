@@ -861,5 +861,16 @@
   "cli.out.queue_already_paused": "La cola ya estaba en pausa.",
   "cli.out.queue_resumed": "Cola reanudada (el servicio, si está vivo, relanza el trabajador en unos segundos; si no, `gimg work`).",
   "cli.out.queue_not_paused": "La cola no estaba en pausa.",
-  "cli.out.queue_paused_note": "La cola está en pausa (`gimg queue resume` la reanuda)."
+  "cli.out.queue_paused_note": "La cola está en pausa (`gimg queue resume` la reanuda).",
+  "cli.cmd.brand_square": "monta el símbolo: cuadrado plano con chaflán en la esquina superior derecha y el dibujo SVG dentro, en una tinta",
+  "cli.arg.brand_drawing_svg": "SVG del dibujo (el de «brand trace» o «brand wordmark»)",
+  "cli.arg.brand_fill": "color del cuadrado, #RRGGBB",
+  "cli.arg.brand_ink_hex": "color del dibujo, #RRGGBB",
+  "cli.arg.brand_chamfer": "chaflán en unidades de 128 (0-64; por defecto 28)",
+  "cli.arg.brand_pad": "margen interior en unidades de 128 (0-48; por defecto 24)",
+  "cli.arg.brand_png_sizes": "lados de los PNG, separados por comas (necesita rsvg-convert)",
+  "cli.arg.brand_force_square": "pisa los archivos que ya existan",
+  "cli.out.brand_square": "{out}: cuadrado {fill}, tinta {ink}, contraste {contrast}:1",
+  "cli.out.brand_square_low": "aviso: el contraste {contrast}:1 está por debajo de 4,5:1 (WCAG AA para texto)",
+  "error.brand.bad_square": "cuadrado no válido: {reason}"
 }
