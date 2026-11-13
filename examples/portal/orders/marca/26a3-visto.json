@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/26a3-visto",
+  "profile": "cuadrado",
+  "seed": 263,
+  "count": 3,
+  "prompt": "Only a bold check mark, a tick, alone and centred in the square image: a short stroke going down to the right joined at a rounded corner to a longer stroke going up to the right. Nothing around it: no circle, no ring, no box, no badge, no outline around the mark, only the check mark itself on the empty background. The check mark is drawn as one single very thick heavy stroke with the same stroke weight throughout, both strokes exactly equally thick, rounded caps and rounded join, not tapered, not a brush stroke, not handwritten, solid and even, bold and clear enough to read at 16 pixels, generous empty margin around it. Flat vector pictogram, minimal, geometric, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background that fills the whole image edge to edge. No shading, no hatching, no texture, no shadow, no photographic rendering, no gradients, no glow, no 3D, no text, no letters, no numbers, no watermark, no border, no frame."
+}

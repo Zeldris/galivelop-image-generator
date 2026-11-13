@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/05c-sello-anillos",
+  "profile": "cuadrado",
+  "seed": 344,
+  "count": 3,
+  "prompt": "A round technical seal that is only an empty ring scale, with the centre completely empty: two thin concentric circles close together near the edge, and in the narrow band between them regular, evenly spaced short radial degree tick marks all the way round, 72 short ticks with every ninth tick longer, like the border scale of a nautical chart or the bezel of an instrument. The two rings are complete, closed and perfectly round; the ticks are crisp, straight, equal and unbroken around the whole circle. The whole large area inside the inner ring is completely empty plain background: nothing drawn in the centre, no monogram, no emblem, no star, no compass needle, no hands, no centre dot, no crosshair, no third ring. The band holds only plain tick marks: no words, no curved text, no numbers, no dates, no stars. One thin uniform stroke weight. Flat vector line drawing, simple line style, technical drawing of a chart instrument, crisp clean lines, perfectly symmetric, seen flat and straight on, the drawing centred with a clear margin around it, a single ink colour, ink grey #13212b, on a plain flat off-white #fbfcfd background that fills the whole image edge to edge. No second colour, no blue, no shading, no hatching, no texture, no shadow, no gradients, no glow, no photographic rendering, no metal, no brass, no 3D, no text, no letters, no initials, no numbers, no numerals, no watermark, no border, no frame."
+}
