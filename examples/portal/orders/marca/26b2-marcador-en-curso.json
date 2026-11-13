@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/26b2-marcador-en-curso",
+  "profile": "cuadrado",
+  "seed": 601,
+  "count": 2,
+  "prompt": "A single simple line icon of a step in progress, centred in the square frame: one large circle drawn as a thick outlined ring, and inside it three thick round dots in one horizontal row through the centre, like an ellipsis, equal in size and evenly spaced. The dots stay fully inside the ring without touching it. The inside of the ring shows the background, no fill. Nothing else. Simple line icon style: one very thick heavy uniform stroke width, rounded caps and joins, no shading, no hatching, no texture, bold and clear enough to read at 16 pixels, generous empty margin around the icon, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background. Flat vector pictogram, minimal, geometric. No photographic rendering, no gradients, no glow, no text, no letters, no numbers, no watermark, no border, no frame."
+}
