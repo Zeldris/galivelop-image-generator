@@ -22,6 +22,10 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Añadido
 
+- `gimg export --crop X,Y,W,H` (caja en píxeles del original, antes de `--size`, también para ICO) y `--anchor`
+  (`center` por defecto, `top`, `bottom`, `left`, `right` o una esquina como `top-left`: dónde cae el recorte de
+  proporción de `--size`). El resultado lleva `crop` y la CLI lo dice, así una cadena de recortes queda como orden
+  repetible. Errores `export.bad_crop`, `export.crop_outside` y `export.bad_anchor`.
 - `gimg queue pause` y `gimg queue resume`: la pausa deja la marca `queue.paused` en el directorio de datos; el
   trabajador termina la imagen en curso y no coge otra, `gimg serve` no lanza trabajador mientras dure y `queue list`
   lo avisa. Al reanudar, el servicio relanza el trabajador en su siguiente latido (unos segundos). En pausa, lo que
