@@ -564,7 +564,8 @@ TEXT_PAIRS = [("text", "bg"), ("text", "surface"), ("text", "surface-2"), ("text
               ("text-2", "surface-2"), ("accent-text", "bg"), ("accent-text", "surface"), ("accent-text", "surface-2"),
               ("on-accent", "accent-fill"), ("ok", "bg"), ("ok", "surface"), ("warn", "bg"), ("warn", "surface"),
               ("bad", "bg"), ("bad", "surface"), ("text", "accent-soft"), ("text-2", "accent-soft"),
-              ("family", "bg"), ("family", "surface"), ("on-status", "ok"), ("on-status", "warn"), ("on-status", "bad")]
+              ("family", "bg"), ("family", "surface"), ("on-status", "ok"), ("on-status", "warn"), ("on-status", "bad"),
+              ("text-3", "bg"), ("text-3", "surface"), ("text-3", "surface-2")]
 NONTEXT_PAIRS = [("border", "bg"), ("border", "surface"), ("border", "surface-2"), ("focus", "bg"), ("focus", "surface"),
                  ("focus", "surface-2"), ("accent", "bg"), ("accent", "surface"), ("accent", "surface-2")]
 # r10: the progress bar is outlined with --border and filled with --accent on --surface-2
@@ -641,15 +642,37 @@ class Contrast(unittest.TestCase):
         for banned in ("backdrop-filter", "blur(", "drop-shadow", "--r:", "--r-s:", "var(--r)", "var(--r-s)"):
             self.assertNotIn(banned, css, banned)
         rounded = re.findall(r"([^{}]+)\{[^{}]*border-radius[^{}]*\}", css)
-        for sel in rounded:
-            self.assertRegex(sel.strip(), r"(\.dot|\.spin)$", "border-radius fuera de las excepciones: " + sel.strip())
-        self.assertEqual(len(rounded), 3)
+        self.assertTrue(rounded)
+        for group in rounded:
+            for sel in group.split(","):  # cada selector del grupo, no solo el último
+                self.assertRegex(sel.strip(), r"(\.dot|\.spin)$", "border-radius fuera de las excepciones: " + sel.strip())
         grads = re.findall(r"([^{}]+)\{[^{}]*gradient[^{}]*\}", css)
         self.assertEqual([g.strip() for g in grads], ["body"])
         self.assertIn("var(--grid)", re.search(r"body \{[^}]*\}", css, re.S).group(0))
         for token in ("--chamfer-l: 28px", "--chamfer: 14px", "--chamfer-s: 10px", "--grid-step: 24px"):
             self.assertIn(token, css, token)
         self.assertIn("clip-path", re.search(r"\.card \{[^}]*\}", css, re.S).group(0))
+
+    def test_review_fixes_of_buttons_focus_and_selects(self):
+        """Revisión de r10: el hover primario no cambia el relleno (--accent-text bajo blanco es 3,4:1 en oscuro), las
+        reglas de desactivado van detrás de las de hover, el peligro sigue rojo al pasar el puntero, el foco y la
+        comparación van dentro del chaflán y los `select` conservan la grafía de los nombres."""
+        css = re.sub(r"/\*.*?\*/", "", read(UI / "css" / "base.css") + read(UI / "css" / "components.css"), flags=re.S)
+        rules = [(sel.strip(), body) for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", css)]
+        def where(selector):
+            hits = [i for i, (sel, _) in enumerate(rules) if selector in [x.strip() for x in sel.split(",")]]
+            self.assertTrue(hits, selector)
+            return hits
+        for i in where(".btn-primary:hover"):
+            self.assertNotIn("background", rules[i][1])
+        last_hover = max(where(".btn:hover") + where(".btn-primary:hover") + where(".btn-danger:hover"))
+        for sel in (".btn:disabled", ".btn-primary:disabled", ".btn-danger:disabled"):
+            self.assertGreater(min(where(sel)), last_hover, sel + " va antes de un hover")
+        self.assertIn("var(--bad)", rules[where(".btn-danger:hover")[0]][1])
+        self.assertRegex(rules[where(".card:focus-visible")[0]][1], r"outline-offset:\s*calc\(-1")
+        self.assertRegex(rules[where(".attempt.is-compared")[0]][1], r"outline-offset:\s*-")
+        for i in where("select"):
+            self.assertNotIn("text-transform", rules[i][1])
 
 
 if __name__ == "__main__":

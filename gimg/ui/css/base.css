@@ -54,20 +54,20 @@ img { display: block; max-width: 100%; }
   transition: border-color .2s, background-color .2s, color .2s;
 }
 .btn:hover { border-color: var(--accent); color: var(--accent-text); }
-.btn-primary:hover { color: var(--on-accent); }
 .btn-yes[aria-pressed="true"]:hover, .btn-no[aria-pressed="true"]:hover { color: var(--on-status); }
 .btn:active { transform: translateY(1px); }
-.btn:disabled, .btn[aria-disabled="true"] { opacity: .5; cursor: not-allowed; transform: none; border-color: var(--border); color: var(--text); }
-.btn-primary:disabled, .btn-primary[aria-disabled="true"] { color: var(--on-accent); border-color: var(--accent-fill); background: var(--accent-fill); }
 .btn-primary { background: var(--accent-fill); border-color: var(--accent-fill); color: var(--on-accent); }
-.btn-primary:hover { background: var(--accent-text); border-color: var(--accent-text); }
+.btn-primary:hover { color: var(--on-accent); border-color: var(--text); }   /* el relleno no cambia: --accent-text bajo blanco no llega a 4,5:1 en oscuro */
 .btn-ghost { background: transparent; border-color: transparent; }
 .btn-ghost:hover { background: var(--surface-2); border-color: var(--border); }
-.btn-danger { color: var(--bad); border-color: var(--bad); }
+.btn-danger, .btn-danger:hover { color: var(--bad); border-color: var(--bad); }
 .btn-icon { padding: 8px; width: var(--tap); }
+.btn-toggle[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+.btn:disabled, .btn[aria-disabled="true"] { opacity: .5; cursor: not-allowed; transform: none; border-color: var(--border); color: var(--text); }
+.btn-primary:disabled, .btn-primary[aria-disabled="true"] { color: var(--on-accent); border-color: var(--accent-fill); background: var(--accent-fill); }
+.btn-danger:disabled, .btn-danger[aria-disabled="true"] { color: var(--bad); border-color: var(--bad); }
 .btn-yes[aria-pressed="true"] { background: var(--ok); border-color: var(--ok); color: var(--on-status); }
 .btn-no[aria-pressed="true"] { background: var(--bad); border-color: var(--bad); color: var(--on-status); }
-.btn-toggle[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
 .btn .eta { font-weight: 400; color: inherit; opacity: .85; }
 .btn .kbd { margin-left: 2px; }
 
@@ -78,9 +78,8 @@ img { display: block; max-width: 100%; }
 .stack { display: grid; gap: var(--gap); }
 
 /* campos */
-.field { display: grid; gap: 4px; }
+.field { display: grid; gap: 4px; min-width: 0; align-content: start; }
 .field > label, .field > .label, .label { font: 500 12px/1.4 var(--font-mono); text-transform: uppercase; letter-spacing: .06em; color: var(--text-2); }
-.field { min-width: 0; align-content: start; }
 input[type="text"], input[type="number"], input[type="search"], textarea, select {
   width: 100%; min-height: var(--tap); padding: 8px 10px;
   border: 1px solid var(--border);
@@ -88,7 +87,7 @@ input[type="text"], input[type="number"], input[type="search"], textarea, select
   transition: border-color .2s;
 }
 input[type="text"]:hover, input[type="number"]:hover, input[type="search"]:hover, textarea:hover, select:hover { border-color: var(--accent); }
-select { font: 500 12px/1.4 var(--font-mono); text-transform: uppercase; letter-spacing: .06em; text-overflow: ellipsis; }
+select { text-overflow: ellipsis; }
 textarea { min-height: 120px; resize: vertical; font-family: var(--font-mono); font-size: 13.5px; line-height: 1.5; }
 input[type="checkbox"] { width: 22px; height: 22px; flex: none; accent-color: var(--accent-fill); margin: 0; }
 .check { display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); cursor: pointer; }
@@ -135,7 +134,7 @@ input[type="checkbox"] { width: 22px; height: 22px; flex: none; accent-color: va
   clip-path: polygon(0 0, 100% 100%, calc(100% - var(--edge-w) * 1.42) 100%, 0 calc(var(--edge-w) * 1.42));
 }
 a.card:hover { --edge: var(--accent); }
-a.card:focus-visible { outline-offset: calc(-1 * var(--focus-w)); }   /* dentro: fuera lo recortaría el chaflán */
+.card:focus-visible { outline-offset: calc(-1 * var(--focus-w)); }   /* dentro: fuera lo recortaría el chaflán */
 .card h2 { margin-bottom: 8px; }
 
 /* avisos */
@@ -160,7 +159,7 @@ dialog {
   clip-path: polygon(0 0, calc(100% - var(--chamfer-l)) 0, 100% var(--chamfer-l), 100% 100%, 0 100%);
 }
 dialog::after {
-  content: ""; position: absolute; top: 0; right: 0; width: var(--chamfer-l); height: var(--chamfer-l);
+  content: ""; position: absolute; top: -1px; right: -1px; width: var(--chamfer-l); height: var(--chamfer-l);
   background: var(--border); pointer-events: none;
   clip-path: polygon(0 0, 100% 100%, calc(100% - 1.42px) 100%, 0 1.42px);
 }
