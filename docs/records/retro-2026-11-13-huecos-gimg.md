@@ -1,6 +1,7 @@
 # Retro 2026-11-13: huecos de `gimg` (`ccr-85e9d14e-zt7p8b` → `main`)
 
-**Estado:** pendiente de la persona.
+**Estado:** aprobada por la persona el 2026-11-13 y aplicada: T1, T2 y R3 aplicadas; R2 aprobada sin cambio; R1
+queda como W1, y W1 y W2 quedan aquí para `gw-harvest`.
 
 Fase 2 de la ida a `main`, después de la fase 1 (15 hallazgos: 5 medios y 4 leves fáciles arreglados en `f7ee415`,
 los leves en «Pendiente» de la bitácora). Solo se aplica lo que la persona confirme.
