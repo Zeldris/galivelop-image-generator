@@ -243,7 +243,7 @@ class OrderScreen(UiBase):
     """The order: attempts, verdicts, choosing, retouching, compare, lightbox, texts, editor. One order per scenario."""
 
     KEYS = ("fondos/voto", "fondos/elegir", "fondos/comparar", "fondos/retoque", "fondos/textos", "fondos/editor",
-            "fondos/volver", "fondos/plantilla", "fondos/guardar", "fondos/atajos")
+            "fondos/volver", "fondos/plantilla", "fondos/guardar", "fondos/atajos", "fondos/estrecho")
 
     @classmethod
     def prepare(cls):
@@ -422,6 +422,24 @@ class OrderScreen(UiBase):
         self.page.wait("!document.querySelector('dialog.editor')")
         a = [x for x in self.data(key)["attempts"] if x["id"] == 2][0]
         self.assertEqual(a["compose"]["layout"], {"title1": {"x": 43, "y": 50, "w": 500, "h": 60}})
+        self.no_problems()
+
+    def test_editor_on_a_narrow_screen_shows_the_whole_image_and_no_overlap(self):
+        # A una columna (≤1000 px), la escena con `overflow: hidden` era un contenedor desplazable: su fila encogía (la
+        # imagen salía cortada; a 360 px, 18 px de alto) y la ayuda de debajo pisaba la lista de elementos.
+        self.page.ws.close()
+        self.page = self.browser.new_page(width=768, height=900)
+        self.open_editor("fondos/estrecho")
+        self.page.key("ArrowDown", shift=True)
+        box = lambda s: self.js("(() => { const r = document.querySelector(%s).getBoundingClientRect();"
+                                " return [r.top, r.bottom, r.height]; })()" % json.dumps(s))
+        stage, img, main, side = box(".ed-stage"), box(".ed-img"), box(".ed-main"), box(".ed-side")
+        self.assertGreater(img[2], 300)
+        self.assertAlmostEqual(stage[2], img[2], delta=1, msg="la escena corta la imagen")
+        self.assertAlmostEqual(stage[0], img[0], delta=1, msg="la imagen se desplazó dentro de la escena")
+        last = self.js("document.querySelector('.ed-main').lastElementChild.getBoundingClientRect().bottom")
+        self.assertLessEqual(last, main[1] + 1, "la ayuda se sale de su columna")
+        self.assertLessEqual(main[1], side[0], "la ayuda pisa la lista de elementos")
         self.no_problems()
 
     def test_editor_goes_back_to_the_template(self):

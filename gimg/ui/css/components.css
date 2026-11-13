@@ -89,7 +89,7 @@ dialog.editor[open] { display: flex; }
 .ed-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; }
 .ed-main { min-width: 0; min-height: 0; overflow: auto; display: grid; align-content: start; gap: 8px; }
 .ed-side { min-width: 0; overflow: auto; display: grid; align-content: start; gap: 10px; }
-.ed-stage { position: relative; justify-self: start; line-height: 0; max-width: 100%; background: var(--surface-2); overflow: hidden; touch-action: none; user-select: none; }
+.ed-stage { position: relative; justify-self: start; line-height: 0; max-width: 100%; background: var(--surface-2); overflow: clip; touch-action: none; user-select: none; }
 .ed-img { display: block; max-width: 100%; max-height: calc(96vh - 190px); width: auto; height: auto; pointer-events: none; }
 .ed-box { position: absolute; box-sizing: border-box; background-repeat: no-repeat; outline: 2px solid var(--accent-text); outline-offset: -2px; cursor: move; touch-action: none; line-height: 1.2; }
 .ed-box.ed-logo { outline-color: var(--ok); }
@@ -110,7 +110,7 @@ dialog.editor-save form { display: grid; gap: 12px; }
 dialog.editor-save fieldset { border: 0; padding: 0; margin: 0; }
 @media (max-width: 1000px) {
   .ed-body { grid-template-columns: 1fr; overflow: auto; align-content: start; }
-  .ed-main, .ed-side { overflow: visible; }
+  .ed-main, .ed-side { overflow: visible; min-height: auto; }
   .ed-img { max-height: 60vh; }
 }
 
