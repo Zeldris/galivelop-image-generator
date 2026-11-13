@@ -191,7 +191,7 @@ cerrojo `fcntl.flock` por archivo para cada leer-modificar-escribir.
 
 **Pedidos e intentos** (`gimg/orders.py`). Un pedido vive en `<datos>/projects/<proyecto>/orders/<key>/@<perfil>/`
 (la `@` evita que la clave `a/banner` choque con la clave `a` y el perfil `banner`): `order.json` y
-`attempts/<id>.png` (o `attempts/q<entrada>.png` si lo creó una entrada de la cola). `order.json`: `key`, `profile`, `prompt` (el del proyecto), `references`, `params`, `seed`,
+`attempts/<id>.png` (o `attempts/q<entrada>.png` si lo creó una entrada de la cola). `order.json`: `key`, `profile`, `prompt` (el del proyecto), `negative` (opcional: prompt negativo, solo si no está vacío; el intento lo copia y sd-cli lo recibe como `--negative-prompt`), `references`, `params`, `seed`,
 `createdAt`, `updatedAt`, `attempts` (lista de `{id, state, seed, prompt, params, references, image, note,
 createdAt, queueEntry?}`, con `prompt` exacto ya con el estilo y `params` completos: `width`, `height`, `steps`, `cfg`,
 `sampler`, `model`), `chosen` (id o `null`) y `chosenHistory` (pila para deshacer). Estados: `new`, `candidate`,

@@ -25,6 +25,7 @@ export function retouchPanel(ctx, { onSubmit }) {
 
   const prompt = h('textarea', { id: 'retouch-prompt', value: order.prompt || '', spellcheck: 'false', aria: { describedby: 'retouch-prompt-hint' } });
   const promptHint = h('div.hint', { id: 'retouch-prompt-hint' });
+  const negative = h('textarea', { id: 'retouch-negative', value: order.negative || '', rows: 2, spellcheck: 'false', maxlength: 4000 });
   const steps = h('input', { type: 'number', min: 1, max: 60, value: params.steps ?? cfg.steps ?? '' });
   const cfgScale = h('input', { type: 'number', min: 0, max: 30, step: 0.5, value: params.cfg ?? cfg.cfg ?? '' });
   const sampler = h('input', { type: 'text', value: params.sampler ?? cfg.sampler ?? '' });
@@ -57,6 +58,7 @@ export function retouchPanel(ctx, { onSubmit }) {
     const s = { count: 1, ...extra };
     const text = stripStyle(prompt.value, cfg.style);
     if (text !== (order.prompt || '')) s.prompt = text;
+    if (negative.value.trim() !== (order.negative || '')) s.negative = negative.value.trim();
     const num = (el) => (el.value === '' ? undefined : Number(el.value));
     if (num(steps) !== undefined && num(steps) !== params.steps) s.steps = num(steps);
     if (num(cfgScale) !== undefined && num(cfgScale) !== params.cfg) s.cfg = num(cfgScale);
@@ -83,8 +85,9 @@ export function retouchPanel(ctx, { onSubmit }) {
   const node = h('section.card', { aria: { labelledby: 'retouch-h' } },
     h('h2', { id: 'retouch-h' }, t('ui.retouch.title'), ' ', dirty),
     h('div.field', {}, h('label', { for: 'retouch-prompt' }, t('ui.retouch.prompt')), prompt, promptHint),
+    h('div.field', {}, h('label', { for: 'retouch-negative' }, t('ui.retouch.negative')), negative),
     cfg.style ? h('div.field', {}, h('span.label', {}, t('ui.retouch.style')), h('div.readonly', {}, cfg.style)) : null,
-    h('div.row', {}, h('button.btn', { type: 'button', onclick: () => { prompt.value = order.prompt || ''; checkPrompt(); } }, t('ui.retouch.restore'))),
+    h('div.row', {}, h('button.btn', { type: 'button', onclick: () => { prompt.value = order.prompt || ''; negative.value = order.negative || ''; checkPrompt(); } }, t('ui.retouch.restore'))),
     h('h3', {}, t('ui.retouch.params')),
     modelSel
       ? h('div.field', {}, h('label', { for: 'retouch-model' }, t('ui.retouch.model')), modelSel)
@@ -107,6 +110,7 @@ export function retouchPanel(ctx, { onSubmit }) {
     load(attempt) {
       const p = attempt.params || {};
       prompt.value = attempt.prompt ? stripStyle(attempt.prompt, cfg.style) : order.prompt || '';
+      negative.value = attempt.negative || '';
       if (p.steps !== undefined) steps.value = p.steps;
       if (p.cfg !== undefined) cfgScale.value = p.cfg;
       if (p.sampler !== undefined) sampler.value = p.sampler;

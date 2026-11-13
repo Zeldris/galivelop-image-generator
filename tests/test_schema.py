@@ -311,6 +311,25 @@ class ComposeConfigTests(unittest.TestCase):
         self.assertEqual(self.found(compose={"template": "t.svg", "fonts": [3]}), [(base, "type")])
 
 
+class OrderNegativeTests(unittest.TestCase):
+    ORDER = {"key": "a", "profile": "og", "prompt": "x"}
+
+    def found(self, negative):
+        return sorted((e.path, e.code) for e in S.validate(dict(self.ORDER, negative=negative), S.load_schema("order")))
+
+    def test_negative_is_optional_and_may_be_empty(self):
+        self.assertEqual(self.found("blurry, text, watermark"), [])
+        self.assertEqual(self.found(""), [])
+        self.assertEqual(self.found("x" * 4000), [])
+
+    def test_negative_longer_than_prompt_limit(self):
+        self.assertEqual(self.found("x" * 4001), [("/negative", "maxLength")])
+
+    def test_negative_is_a_string(self):
+        for bad in (3, None, ["a"], {"a": 1}):
+            self.assertEqual(self.found(bad), [("/negative", "type")], repr(bad))
+
+
 class OrderTextTests(unittest.TestCase):
     ORDER = {"key": "a", "profile": "og", "prompt": "x"}
 

@@ -154,6 +154,23 @@ class ArgvTests(Base):
                 argv.remove(flag)
                 self.assertEqual(argv[1:], self.expected(job.output))
 
+    def test_negative_prompt_goes_after_the_size_and_seed(self):
+        negative = "blurry \"text\" -W 1; $HOME"
+        _, job, _ = self.run_job(negative=negative)
+        argv = self.argv()
+        self.assertEqual(argv.count("--negative-prompt"), 1)
+        self.assertEqual(argv[argv.index("--negative-prompt") + 1], negative)
+        i = argv.index("--negative-prompt")
+        del argv[i:i + 2]
+        self.assertEqual(argv[1:], self.expected(job.output))
+
+    def test_no_or_empty_negative_no_flag(self):
+        for value in (None, ""):
+            with self.subTest(negative=value):
+                _, job, _ = self.run_job(negative=value)
+                self.assertNotIn("--negative-prompt", self.argv())
+                self.assertEqual(self.argv()[1:], self.expected(job.output))
+
     def test_no_tileable_no_circular_flag(self):
         self.run_job()
         self.assertEqual([a for a in self.argv() if a.startswith("--circular")], [])

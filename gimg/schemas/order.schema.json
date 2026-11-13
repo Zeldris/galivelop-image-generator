@@ -33,6 +33,11 @@
       "description": "Text prompt describing the image.",
       "maxLength": 4000
     },
+    "negative": {
+      "type": "string",
+      "description": "Negative prompt: what the image must not show. Optional; an empty one is the same as none. Passed to sd-cli as --negative-prompt.",
+      "maxLength": 4000
+    },
     "references": {
       "type": "array",
       "items": {
