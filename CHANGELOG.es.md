@@ -14,20 +14,6 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - `gimg measure --family NOMBRE=#hex,#hex,...` (repetible) reparte los píxeles por familia de color (color más cercano,
   ΔE76 < 15, el resto como `otros`), para comprobar reglas como el 60/30/10. Clave `families` nueva en el JSON y error
   `measure.bad_family`.
-
-### Cambiado
-
-- La interfaz es clara por defecto (antes oscura); el tema oscuro sigue disponible. Paleta por roles de la hoja de
-  marca r9.
-- Fuentes nuevas de la interfaz: Big Shoulders Display, Literata y JetBrains Mono sustituyen a Inter y Sora.
-- Logo y favicon redibujados (hoja de marca r9): baldosa plana, lockups claro y oscuro y versiones en línea.
-- El nombre visible del producto es «Galivelop IG» (GVIG) en el README y en `cli.description` (D38); el repositorio,
-  el paquete y la orden siguen siendo `galivelop-image-generator` y `gimg`.
-- `gimg brand wordmark` y `system`, y el taller «Sistema de logo», espacian las letras 0,01 em por defecto (antes
-  0,12), el de la familia.
-
-### Añadido
-
 - `gimg export --crop X,Y,W,H` (caja en píxeles del original, antes de `--size`, también para ICO) y `--anchor`
   (`center` por defecto, `top`, `bottom`, `left`, `right` o una esquina como `top-left`: dónde cae el recorte de
   proporción de `--size`). El resultado lleva `crop` y la CLI lo dice, así una cadena de recortes queda como orden
@@ -60,6 +46,17 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
   `GET .../brand/files/{name}/{file}`.
 - `tileable` (`xy`, `x` o `y`) en el perfil y en el pedido: texturas sin costura.
 - Modelo `zimage-turbo-q6` (Z-Image-Turbo, Apache-2.0) en el catálogo.
+
+### Cambiado
+
+- La interfaz es clara por defecto (antes oscura); el tema oscuro sigue disponible. Paleta por roles de la hoja de
+  marca r9.
+- Fuentes nuevas de la interfaz: Big Shoulders Display, Literata y JetBrains Mono sustituyen a Inter y Sora.
+- Logo y favicon redibujados (hoja de marca r9): baldosa plana, lockups claro y oscuro y versiones en línea.
+- El nombre visible del producto es «Galivelop IG» (GVIG) en el README y en `cli.description` (D38); el repositorio,
+  el paquete y la orden siguen siendo `galivelop-image-generator` y `gimg`.
+- `gimg brand wordmark` y `system`, y el taller «Sistema de logo», espacian las letras 0,01 em por defecto (antes
+  0,12), el de la familia.
 
 ### Corregido
 

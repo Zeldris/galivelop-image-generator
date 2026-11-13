@@ -13,20 +13,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - `gimg measure --family NAME=#hex,#hex,...` (repeatable) splits the pixels by colour family (nearest colour, ΔE76 < 15,
   the rest as `other`), to check rules such as 60/30/10. New `families` key in the JSON and error `measure.bad_family`.
-
-### Changed
-
-- The interface is light by default (it was dark); the dark theme stays available. Palette by roles from the r9 brand
-  sheet.
-- New interface fonts: Big Shoulders Display, Literata and JetBrains Mono replace Inter and Sora.
-- Logo and favicon redrawn (r9 brand sheet): flat tile, light and dark lockups and line versions.
-- The product's visible name is "Galivelop IG" (GVIG) in the README and in `cli.description` (D38); the repository,
-  the package and the command stay `galivelop-image-generator` and `gimg`.
-- `gimg brand wordmark` and `system`, and the "Logo system" workshop, space the letters 0.01 em by default (it was
-  0.12), the family's tracking.
-
-### Added
-
 - `gimg export --crop X,Y,W,H` (box in pixels of the original, applied before `--size`, also for ICO) and
   `--anchor` (`center` by default, `top`, `bottom`, `left`, `right` or a corner such as `top-left`: where the
   proportion crop of `--size` sits). The result carries `crop` and the CLI prints it, so a crop chain stays a
@@ -57,6 +43,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `GET .../brand/files/{name}/{file}`.
 - `tileable` (`xy`, `x` or `y`) in the profile and in the order: seamless textures.
 - Model `zimage-turbo-q6` (Z-Image-Turbo, Apache-2.0) in the catalogue.
+
+### Changed
+
+- The interface is light by default (it was dark); the dark theme stays available. Palette by roles from the r9 brand
+  sheet.
+- New interface fonts: Big Shoulders Display, Literata and JetBrains Mono replace Inter and Sora.
+- Logo and favicon redrawn (r9 brand sheet): flat tile, light and dark lockups and line versions.
+- The product's visible name is "Galivelop IG" (GVIG) in the README and in `cli.description` (D38); the repository,
+  the package and the command stay `galivelop-image-generator` and `gimg`.
+- `gimg brand wordmark` and `system`, and the "Logo system" workshop, space the letters 0.01 em by default (it was
+  0.12), the family's tracking.
 
 ### Fixed
 
