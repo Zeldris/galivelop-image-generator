@@ -501,11 +501,12 @@ class OrderScreen(UiBase):
             self.page = self.browser.new_page(width=width, height=800)
             for label, go in screens:
                 with self.subTest(width=width, screen=label):
-                    go()
-                    self.page.pump(0.2)
-                    problems = self.js(self.FIT_PROBE)
-                    self.js("document.querySelectorAll('dialog[open]').forEach(d => d.close())")
-                    self.assertEqual(problems, [])
+                    try:
+                        go()
+                        self.page.pump(0.2)
+                        self.assertEqual(self.js(self.FIT_PROBE), [])
+                    finally:   # un diálogo modal abierto inutilizaría las pantallas siguientes
+                        self.js("document.querySelectorAll('dialog[open]').forEach(d => d.close())")
         self.no_problems()
 
     def test_editor_goes_back_to_the_template(self):

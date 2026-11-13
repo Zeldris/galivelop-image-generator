@@ -659,15 +659,15 @@ class Contrast(unittest.TestCase):
         `.card`. Toda regla con `outline` cuyo sujeto sea uno de ellos lleva `outline-offset` negativo."""
         css = re.sub(r"/\*.*?\*/", "", "".join(read(UI / "css" / n) for n in ("base.css", "layout.css", "components.css")), flags=re.S)
         rules = re.findall(r"([^{}]+)\{([^{}]*)\}", css)
+        tokens = lambda compound: set(re.findall(r"^[a-z]+|\.[a-zA-Z_-]+", re.sub(r":[a-z-]+(\([^)]*\))?", "", compound)))
         chamfered = set()
         for sel, body in rules:
-            if "clip-path" in body:
-                chamfered |= {s.strip() for s in sel.split(",") if "::" not in s}
+            if re.search(r"clip-path\s*:\s*polygon", body):
+                chamfered |= {t for s in sel.split(",") if "::" not in s for t in tokens(re.split(r"\s+|>|\+|~", s.strip())[-1])}
         js = "".join(read(f) for f in (UI / "js").rglob("*.js"))
         for combo in re.findall(r"'[a-z]*((?:\.[a-z-]+)*\.card(?:\.[a-z-]+)*)'", js):
             chamfered |= {"." + c for c in combo.split(".") if c and c != "card"}
         self.assertTrue({".card", "dialog", ".attempt"} <= chamfered, chamfered)
-        tokens = lambda compound: set(re.findall(r"^[a-z]+|\.[a-zA-Z_-]+", re.sub(r":[a-z-]+(\([^)]*\))?", "", compound)))
         seen = 0
         for sel, body in rules:
             if not re.search(r"(^|;)\s*outline(-offset)?\s*:", body):

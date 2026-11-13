@@ -9,7 +9,7 @@ Lee el JSON del gancho en la entrada estándar; ante cualquier error deja pasar.
 import json
 import sys
 
-AVISO = ('Leer intentos sueltos se arrastra en cada llamada: para revisarlos, una hoja: '
+AVISO = ('Cada imagen suelta (intento o captura) se arrastra en cada llamada: para revisarlas, una hoja: '
          '`gimg sheet IMAGEN... --out hoja.png` (una hoja de 6 cuesta como una imagen).')
 
 
