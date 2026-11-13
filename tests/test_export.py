@@ -147,6 +147,13 @@ class IcoTests(Base):
         self.assertEqual(exc.code, "export.size_not_for_ico")
         self.assertIn("--icon-sizes", exc.message("es"))
 
+    def test_fallo_al_escribir_lleva_su_codigo(self):
+        src = self.source(32, 32, ruido(32, 32))
+        (self.tmp / "file").write_text("x")
+        exc = self.error(src, self.tmp / "file" / "a.png")  # its folder is a file
+        self.assertEqual(exc.code, "export.write_failed")
+        self.assertIn("a.png", exc.message("es"))
+
     def test_lados_fuera_de_rango(self):
         src = self.source(32, 32, ruido(32, 32))
         exc = self.error(src, self.tmp / "a.ico", icon_sizes="16,512")

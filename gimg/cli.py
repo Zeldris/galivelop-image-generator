@@ -655,7 +655,10 @@ def _queue(args, sub, out: _Out) -> None:
     elif sub == "resume":
         changed = queue.resume()
         # a paused queue lets the service stop when idle (`service._busy`): bring it back for what is waiting
-        waiting = changed and bool(queue.list_entries(["queued"]))
+        try:  # the queue is already resumed: nothing after the change may turn it into a failure
+            waiting = changed and bool(queue.list_entries(["queued"]))
+        except (GimgError, OSError):
+            waiting = False
         if out.as_json:
             out.data({"paused": False, "changed": changed, **({"service": _autostart(out)} if waiting else {})})
         else:

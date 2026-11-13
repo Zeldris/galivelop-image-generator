@@ -46,13 +46,13 @@ def hex_of(rgb) -> str:
 
 def parse_families(specs) -> list:
     """``["NAME=#hex,#hex", ...]`` to ``[(name, [rgb, ...]), ...]`` in the given order; ``measure.bad_family`` on an
-    empty or repeated name, a missing ``=`` or a family without colours (a bad colour is ``measure.bad_hex``)."""
+    empty, repeated or reserved (``other``) name, a missing ``=`` or a family without colours (a bad colour is ``measure.bad_hex``)."""
     out, seen = [], set()
     for spec in specs:
         name, sep, colors = str(spec).partition("=")
         name = name.strip()
         parts = [c for c in colors.split(",") if c.strip()] if sep else []
-        if not name or name in seen or not parts:
+        if not name or name == "other" or name in seen or not parts:
             raise GimgError("measure.bad_family", value=str(spec))
         seen.add(name)
         out.append((name, [parse_hex(c) for c in parts]))
@@ -283,12 +283,13 @@ def measure(image, palette=None, refs=(), zone=None, text=None, families=None) -
         raise GimgError("cli.measure_zone_text")
     yavg, satavg = signalstats(image)
     result = {"image": str(image), "yavg": round(yavg, 2), "satavg": round(satavg, 2)}
+    pix = pixels(image) if palette_rgb or fams else None
     if palette_rgb:
-        share = palette_share(pixels(image), palette_rgb)
+        share = palette_share(pix, palette_rgb)
         result["palette"] = {"colors": [hex_of(c) for c in palette_rgb], "deltaE": DELTA_E,
                              "pct": share["pct"], "by_color": share["by_color"]}
     if fams:
-        result["families"] = family_share(pixels(image), fams)
+        result["families"] = family_share(pix, fams)
     if refs:
         mine = yuv_planes(image)
         per_ref = []

@@ -111,7 +111,7 @@ class ParseTests(Base):
                          [("madera", [(0, 0, 0), (255, 255, 255)]), ("oro", [(184, 134, 43)])])
 
     def test_familias_malas(self):
-        for bad in (["=#000000"], ["x"], ["x="], ["x=,"], ["a=#000000", "a=#ffffff"]):
+        for bad in (["=#000000"], ["x"], ["x="], ["x=,"], ["a=#000000", "a=#ffffff"], ["other=#000000"]):
             self.assertEqual(self.code(measure.parse_families, bad), "measure.bad_family", bad)
         self.assertEqual(self.code(measure.parse_families, ["a=rojo"]), "measure.bad_hex")
 

@@ -358,6 +358,7 @@
   "error.export.too_big": "the image exceeds the {format} maximum ({max} px a side): pass --size to scale it down",
   "error.export.out_is_input": "the output \"{path}\" is the input itself: pick another name so the delivered PNG is not overwritten",
   "error.export.exists": "\"{path}\" already exists: pass --force to overwrite it",
+  "error.export.write_failed": "could not write \"{path}\": {reason}",
   "cli.cmd.sheet": "contact sheet: several images in one PNG, each with its number and name, to review a round by reading a single image",
   "cli.arg.sheet_images": "images of the sheet, in order (only read)",
   "cli.arg.sheet_out": "output PNG (it cannot be one of the inputs)",

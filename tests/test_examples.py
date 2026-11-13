@@ -471,10 +471,6 @@ class TarkorOgE3Tests(unittest.TestCase):
             self.assertTrue((ROOT / p["logo"]).is_file(), p["logo"])
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class ChannelProfileTests(unittest.TestCase):
     """The profiles the brand sheets asked for (hojas-repos gaps): each one delivers the size of its channel."""
 
@@ -494,3 +490,7 @@ class ChannelProfileTests(unittest.TestCase):
                     self.assertLessEqual(cfg["width"] * cfg["height"], 1048576)
                     gen, out = cfg["width"] / cfg["height"], size[0] / size[1]
                     self.assertLess(abs(gen - out) / out, 0.05, "the crop to the target loses over 5 %")
+
+
+if __name__ == "__main__":
+    unittest.main()

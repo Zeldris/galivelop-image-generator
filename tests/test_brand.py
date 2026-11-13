@@ -765,6 +765,13 @@ class SquareTests(BrandBase):
         self.assertNotIn("currentColor", text)
         self.assertIn('stroke="none"', text)
 
+    def test_attributes_that_only_end_in_fill_are_left_alone(self):
+        self.draw.write_text(path_svg(20, 20).replace('fill="currentColor"', 'fill="#123456" data-fill="keep"'))
+        self.make()
+        text = self.out.read_text()
+        self.assertIn('data-fill="keep"', text)
+        self.assertNotIn("#123456", text)
+
     def test_validations_carry_their_code(self):
         for kw in ({"chamfer": -1}, {"chamfer": 65}, {"pad": -1}, {"pad": 49}, {"fill": "red"}, {"ink": "#fff"}, {"fill": None},
                    {"pngs": [0]}, {"pngs": [9000]}):

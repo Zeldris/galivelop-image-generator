@@ -446,7 +446,7 @@ def _fit(piece: dict, x: float, y: float, w: float, h: float, ink=None) -> str:
 
 
 SQUARE = 128
-_PAINT = re.compile(r'\b(fill|stroke)="([^"]*)"')
+_PAINT = re.compile(r'(?<![\w:.-])(fill|stroke)="([^"]*)"')
 
 
 def _square_ink(inner: str, ink: str) -> str:

@@ -358,6 +358,7 @@
   "error.export.too_big": "la imagen pasa del máximo de {format} ({max} px de lado): pasa --size para reducirla",
   "error.export.out_is_input": "la salida «{path}» es la propia entrada: elige otro nombre para no pisar el PNG entregado",
   "error.export.exists": "«{path}» ya existe: pasa --force para sobrescribirlo",
+  "error.export.write_failed": "no se pudo escribir «{path}»: {reason}",
   "cli.cmd.sheet": "hoja de contactos: varias imágenes en un PNG, cada una con su número y nombre, para revisar una ronda leyendo una sola imagen",
   "cli.arg.sheet_images": "imágenes de la hoja, en orden (solo se leen)",
   "cli.arg.sheet_out": "PNG de salida (no puede ser una de las entradas)",

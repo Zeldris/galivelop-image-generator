@@ -27,7 +27,7 @@ import struct
 import tempfile
 from collections import Counter
 
-from . import png
+from . import fsutil, png
 from .errors import GimgError
 
 FORMATS = ("webp", "ico", "bmp", "png")
@@ -124,16 +124,16 @@ def fit(width: int, height: int, rgba, dst_w: int, dst_h: int, anchor=(0.5, 0.5)
     span_x, span_y = dst_w / scale, dst_h / scale
     cols = _taps(width, (width - span_x) * anchor[0], span_x, dst_w)
     rows = _taps(height, (height - span_y) * anchor[1], span_y, dst_h)
-    alpha = rgba[3::4]
-    planes = [[c * a for c, a in zip(rgba[k::4], alpha)] for k in range(3)] + [list(alpha)]
     needed = sorted({j for taps in rows for j, _ in taps})
-    wide = []  # per channel, {source row: [dst_w floats]}
-    for plane in planes:
-        by_row = {}
-        for y in needed:
-            base = y * width
-            by_row[y] = [sum(plane[base + j] * w for j, w in taps) for taps in cols]
-        wide.append(by_row)
+    x0 = min(j for taps in cols for j, _ in taps)
+    x1 = max(j for taps in cols for j, _ in taps) + 1
+    wide = [{}, {}, {}, {}]  # per channel, {source row: [dst_w floats]}; premultiplied a row at a time
+    for y in needed:
+        seg = rgba[(y * width + x0) * 4:(y * width + x1) * 4]
+        alpha = seg[3::4]
+        planes = [[c * a for c, a in zip(seg[k::4], alpha)] for k in range(3)] + [list(alpha)]
+        for by_row, plane in zip(wide, planes):
+            by_row[y] = [sum(plane[j - x0] * w for j, w in taps) for taps in cols]
     out = bytearray(dst_w * dst_h * 4)
     for y, taps in enumerate(rows):
         mixed = []
@@ -498,25 +498,25 @@ def export(image, out, size=None, icon_sizes=None, background=BACKGROUND, force:
         else:
             blob = png.rgba_bytes(width, height, rgba)
     folder = os.path.dirname(os.path.abspath(out))
-    os.makedirs(folder, exist_ok=True)
-    fd, tmp = tempfile.mkstemp(prefix=".gimg-export-", dir=folder)
     try:
+        os.makedirs(folder, exist_ok=True)
+        fd, tmp = tempfile.mkstemp(prefix=".gimg-export-", dir=folder)
+    except OSError as exc:
+        raise GimgError("export.write_failed", path=str(out), reason=str(exc.strerror or exc))
+    try:
+        fsutil.honour_umask(fd)
         with os.fdopen(fd, "wb") as fh:
             fh.write(blob)
-        os.chmod(tmp, 0o666 & ~_umask())
         os.replace(tmp, out)
-    except BaseException:
+    except BaseException as exc:
         with contextlib.suppress(OSError):
             os.unlink(tmp)
+        if isinstance(exc, OSError):
+            raise GimgError("export.write_failed", path=str(out), reason=str(exc.strerror or exc))
         raise
     res = {"out": out, "format": fmt, "sizes": sizes, "bytes": len(blob)}
     if box is not None:
         res["crop"] = list(box)
     return res
 
-
-def _umask() -> int:
-    mask = os.umask(0)
-    os.umask(mask)
-    return mask
 
