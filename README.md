@@ -75,6 +75,7 @@ Un pedido pide una imagen con una clave y un perfil:
 - `key`: identifica la imagen dentro del proyecto; puede llevar subcarpetas.
 - `profile`: perfil de la configuración del proyecto que se aplica.
 - `prompt`: descripción de la imagen.
+- `negative`: prompt negativo, opcional (qué no debe salir); vacío es lo mismo que ausente. Se pasa a `sd-cli` como `--negative-prompt` y queda en los metadatos del intento. Sirve el bloque negativo de la hoja de estilo de cada marca.
 - `references`: imágenes de referencia (el perfil de máquina limita cuántas).
 - `seed`: semilla, para repetir un resultado.
 

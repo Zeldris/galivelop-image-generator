@@ -292,6 +292,8 @@ class SdCppEngine(Engine):
                 "-p", job.prompt,
                 "--cfg-scale", _num(cfg), "--steps", str(steps), "--sampling-method", sampler,
                 "-W", str(job.width), "-H", str(job.height), "--seed", str(job.seed)]
+        if job.negative:
+            argv += ["--negative-prompt", job.negative]
         if eng.get("paramsBackend"):
             argv += ["--params-backend", eng["paramsBackend"]]
         if eng.get("maxVram"):

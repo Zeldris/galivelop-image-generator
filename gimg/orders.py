@@ -146,9 +146,11 @@ def _profile(config: dict, profile: str) -> dict:
     return found
 
 
-def _check_fields(prompt=None, params=None, seed=None) -> None:
+def _check_fields(prompt=None, params=None, seed=None, negative=None) -> None:
     """Validate loose fields (overrides) with the order schema, through a dummy order."""
     probe = {"key": "x", "profile": "x", "prompt": "x" if prompt is None else prompt}
+    if negative is not None:
+        probe["negative"] = negative
     if params is not None:
         probe["params"] = params
     if seed is not None:
@@ -221,6 +223,8 @@ def submit(project: str, order: dict) -> dict:
         "strength": order.get("strength"),
         "text": dict(order.get("text", {})),
     }
+    if order.get("negative"):
+        fields["negative"] = order["negative"]
     path = _order_file(project, key, profile)
     with fsutil.lock(path):
         now = _now()
@@ -232,6 +236,8 @@ def submit(project: str, order: dict) -> dict:
             record = {"key": key, "profile": profile, "createdAt": now, "attempts": [],
                       "chosen": None, "chosenHistory": []}
         record.update(fields)
+        if not order.get("negative"):  # only orders with a negative carry the key, so stored orders keep their shape
+            record.pop("negative", None)
         record["updatedAt"] = now
         fsutil.write_json(path, record)
     return copy.deepcopy(record)
@@ -250,7 +256,8 @@ def check_order(project: str, order: dict) -> list:
     candidate = {"prompt": order["prompt"], "references": list(order.get("references", [])),
                  "params": copy.deepcopy(order.get("params", {})), "seed": order.get("seed"),
                  "draft": bool(order.get("draft", False)), "initImage": order.get("initImage"),
-                 "strength": order.get("strength"), "text": dict(order.get("text", {}))}
+                 "strength": order.get("strength"), "text": dict(order.get("text", {})),
+                 "negative": order.get("negative", "")}
     specs = build_specs(candidate, profile_cfg, order.get("count", 1))
     from . import limits
     machine = limits.load_machine()
@@ -286,7 +293,7 @@ def set_text(project: str, key: str, profile: str, text: dict, replace: bool = F
 
 
 def attempt_specs(project: str, key: str, profile: str, count: int = 1, *,
-                  seed=None, prompt=None, params=None, draft=None, template=None, model=None) -> list:
+                  seed=None, prompt=None, params=None, draft=None, template=None, model=None, negative=None) -> list:
     """Specs of `count` attempts to enqueue; never changes the stored order (D19-D20).
 
     Each spec is ``{"seed", "prompt", "params", "references", "draft", "initImage", "strength", "text"}`` (the last three are the order's, ``None`` or ``{}`` if absent):
@@ -298,14 +305,17 @@ def attempt_specs(project: str, key: str, profile: str, count: int = 1, *,
     - draft: `draft` if given (True/False), else the order's ``draft``.
     - prompt: `prompt` (a retouched one) or the order's, plus the profile ``style`` appended as
       ``prompt + ", " + style`` when the style is non-empty (otherwise the prompt alone).
+    - negative: `negative` (a retouched one) or the order's; kept in the spec as ``negative`` only when it is not
+      empty (the profile ``style`` is not appended to it).
     - template: the id of a composition template (F4b), kept in each spec as ``template`` when given; `queue.enqueue`
       checks it exists (``compose.template_unknown``).
     - model: a catalog id (F4d) that replaces the profile's (and the draft's) model in each spec; unknown is ``model.unknown``;
       `queue.enqueue` checks it against the machine profile."""
-    _check_fields(prompt, params, seed)
+    _check_fields(prompt, params, seed, negative)
     order = get(project, key, profile)
     profile_cfg = _profile(projects.get(project)["config"], profile)
-    specs = build_specs(order, profile_cfg, count, seed=seed, prompt=prompt, params=params, draft=draft)
+    specs = build_specs(order, profile_cfg, count, seed=seed, prompt=prompt, params=params, draft=draft,
+                        negative=negative)
     if template is not None:
         for spec in specs:
             spec["template"] = template
@@ -318,7 +328,7 @@ def attempt_specs(project: str, key: str, profile: str, count: int = 1, *,
 
 
 def build_specs(order: dict, profile_cfg: dict, count: int = 1, *, seed=None, prompt=None, params=None,
-                draft=None) -> list:
+                draft=None, negative=None) -> list:
     """The pure part of `attempt_specs`: specs from an order record (stored or candidate) and its profile."""
     if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= 50:
         raise GimgError("order.count_invalid", min=1, max=50)
@@ -340,6 +350,7 @@ def build_specs(order: dict, profile_cfg: dict, count: int = 1, *, seed=None, pr
     max_prompt = schema.load_schema("order")["properties"]["prompt"]["maxLength"]
     if len(text) > max_prompt:
         raise GimgError("order.prompt_too_long", length=len(text), max=max_prompt)
+    neg = order.get("negative", "") if negative is None else negative
     base = base_seed
     return [{
         "seed": _rng.randrange(SEED_LIMIT) if base is None else base + i,
@@ -350,6 +361,7 @@ def build_specs(order: dict, profile_cfg: dict, count: int = 1, *, seed=None, pr
         "initImage": order.get("initImage"),
         "strength": order.get("strength"),
         "text": dict(order.get("text") or {}),
+        **({"negative": neg} if neg else {}),  # only attempts with a negative carry the key
     } for i in range(count)]
 
 
@@ -409,6 +421,8 @@ def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None)
             record["queueEntry"] = entry_id
         if spec.get("draft") is True:  # only drafts carry the key, so stored orders keep their shape
             record["draft"] = True
+        if isinstance(spec.get("negative"), str) and spec["negative"]:  # same for the negative prompt
+            record["negative"] = spec["negative"]
         for extra in ("engine", "engineVersion", "log"):  # which engine made it (the manifest repeats the first two)
             if isinstance(spec.get(extra), str):
                 record[extra] = spec[extra]

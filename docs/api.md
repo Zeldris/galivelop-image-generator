@@ -158,7 +158,7 @@ curl -s -X PUT -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/o
 ### POST /api/projects/{p}/orders/{profile}/{key}/attempts
 
 Más intentos (otra semilla, retoque del prompt, varios seguidos, borrador). Cuerpo, todo opcional: `{"count", "seed",
-"prompt", "steps", "cfg", "sampler", "draft", "template", "model"}` (`template`: id de una plantilla de
+"prompt", "negative", "steps", "cfg", "sampler", "draft", "template", "model"}` (`negative`: prompt negativo retocado; `""` lo quita; `template`: id de una plantilla de
 `GET …/profiles/{profile}/templates`, la de los intentos nuevos; sin él, `default`; `model`: id de `GET /api/models`
 que sustituye al del perfil en estos intentos, como `gimg attempt new --model`). Respuesta 202: `{"entries",
 "estimateMs"}`; cada entrada lleva su `template`. Errores: `order.count_invalid`, `order.prompt_too_long`, `limit.*`,

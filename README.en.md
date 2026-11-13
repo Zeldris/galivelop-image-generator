@@ -73,7 +73,7 @@ An order asks for one image by key and profile:
 
 - `key`: identifies the image inside the project; it may include subfolders.
 - `profile`: profile from the project config to apply.
-- `prompt`: description of the image.
+- `negative`: negative prompt, optional (what must not appear); empty is the same as absent. It is passed to `sd-cli` as `--negative-prompt` and kept in the attempt's metadata. Use it for the negative block of each brand's style sheet.
 - `references`: reference images (the machine profile limits how many).
 - `seed`: seed, to reproduce a result.
 
