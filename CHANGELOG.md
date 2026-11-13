@@ -9,6 +9,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- `gimg brand lockup` no longer overwrites an existing file: it gives `brand.exists` unless `--force` is passed (like
+  `system` and `square`).
+
+### Fixed
+
+- `gimg brand square --force --png`: if a PNG fails midway, the previous files stay intact (the SVG and PNGs are written
+  under temporary names and renamed at the end).
+- The interface: a `/api/health` answer launched before pausing or resuming the queue no longer puts the old state back.
+
 ## [0.5.0] - 2026-11-13
 
 ### Added
