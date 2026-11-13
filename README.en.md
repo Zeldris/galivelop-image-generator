@@ -63,7 +63,7 @@ Each project keeps a `galivelop-images.json` file in its repo (D12):
 - `name`: project name.
 - `delivery.dir`: delivery dir, relative to the project repo.
 - `delivery.template`: name of the delivered file; `{key}` is the order key and `{profile}` the profile.
-- `profiles`: named generation profiles (size, steps, `cfg`, sampler and model).
+- `profiles`: named generation profiles (size, steps, `cfg`, sampler and model; `tileable`: `"xy"`, `"x"` or `"y"` asks for a seamless texture, `--circular`/`--circularx`/`--circulary` of sd-cli).
 
 An order asks for one image by key and profile:
 
