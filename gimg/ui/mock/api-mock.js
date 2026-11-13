@@ -50,7 +50,8 @@ const queue = [
   { id: 8, project: PROJECT, key: 'icono', profile: 'icono', seed: 7, params: { steps: 8, width: 512, height: 512 }, draft: false, state: 'done', startedAt: ago(4100), finishedAt: ago(4000), error: null, attemptId: 8 },
 ];
 
-/* la cola avanza sola */
+/* la cola avanza sola (en pausa, lo que corre termina y no empieza nada más) */
+let paused = false;
 setInterval(() => {
   const running = queue.find((e) => e.state === 'running');
   if (running) {
@@ -66,7 +67,7 @@ setInterval(() => {
       order.updatedAt = now();
       running.attemptId = id;
     }
-  } else {
+  } else if (!paused) {
     const q = queue.find((e) => e.state === 'queued');
     if (q) { q.state = 'running'; q.startedAt = now(); q.progress = { step: 0, steps: q.params.steps || 6, etaS: (q.params.steps || 6) * 2 }; }
   }
@@ -88,7 +89,7 @@ export async function transport(method, url, body) {
   const seg = u.pathname.split('/').filter(Boolean).map(decodeURIComponent); // ['api', ...]
   const lang = u.searchParams.get('lang') || 'es';
   const [, r0, r1, r2, r3, r4, r5, r6, r7] = seg;
-  if (r0 === 'health') return ok({ ok: true, version: '0.0.0-mock', worker: true, queue: { running: queue.filter((e) => e.state === 'running').length, queued: queue.filter((e) => e.state === 'queued').length } });
+  if (r0 === 'health') return ok({ ok: true, version: '0.0.0-mock', worker: true, paused, queue: { running: queue.filter((e) => e.state === 'running').length, queued: queue.filter((e) => e.state === 'queued').length } });
   if (r0 === 'locales') return ok(await loadLocale(r1));
   if (r0 === 'queue') {
     if (r1 && r2 === 'cancel') {
@@ -97,6 +98,11 @@ export async function transport(method, url, body) {
       if (!['queued', 'running'].includes(e.state)) return err(409, 'queue.not_pending', `La entrada ${r1} ya terminó`, { id: r1 });
       e.state = 'cancelled'; e.finishedAt = now(); e.progress = undefined;
       return ok(e);
+    }
+    if ((r1 === 'pause' || r1 === 'resume') && method === 'POST') {
+      const changed = paused !== (r1 === 'pause');
+      paused = r1 === 'pause';
+      return ok({ paused, changed });
     }
     if (r1 === 'clear' && method === 'POST') {
       const gone = queue.filter((e) => e.state === 'queued' && (!(body && body.project) || e.project === body.project));

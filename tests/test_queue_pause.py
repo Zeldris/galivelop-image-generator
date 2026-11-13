@@ -114,6 +114,30 @@ class PauseTests(QueueBase):
         self.assertNotIn("paused", self.run_cli("queue", "list")[1])
         self.assertIn("was not paused", self.run_cli("queue", "resume")[1])
 
+    def test_a_paused_queue_does_not_keep_the_service_alive(self):
+        """Queued entries wait for `resume` while paused: only a running one keeps the service up (leve R1)."""
+        self.push()
+        with mock.patch.object(queue, "worker_alive", return_value=False):
+            self.assertTrue(service._busy())
+            queue.pause()
+            self.assertFalse(service._busy())
+        with mock.patch.object(queue, "worker_alive", return_value=True):  # an image in progress when it paused
+            self.assertTrue(service._busy())
+
+    def test_resume_starts_the_service_only_when_entries_wait(self):
+        queue.pause()
+        with mock.patch.object(cli, "_autostart", return_value={"running": True}) as start:
+            self.assertEqual(json.loads(self.run_cli("--json", "queue", "resume")[1]),
+                             {"paused": False, "changed": True})
+            start.assert_not_called()  # nothing queued: nothing to start
+            self.push()
+            queue.pause()
+            self.assertEqual(json.loads(self.run_cli("--json", "queue", "resume")[1]),
+                             {"paused": False, "changed": True, "service": {"running": True}})
+            self.assertEqual(start.call_count, 1)
+            self.run_cli("queue", "resume")  # not paused: no change, no start
+            self.assertEqual(start.call_count, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

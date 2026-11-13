@@ -357,7 +357,9 @@ curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/clear -d '{"pro
 Pause and resume the queue (body `{}`, with `Content-Type: application/json`). While paused the worker finishes the image in progress and takes no
 other, and the service launches no worker; on resume it relaunches one at its next beat (a few seconds). Response:
 `{"paused": bool, "changed": bool}` (`changed` is `false` if it was already so). The state is read in `paused` of
-`GET /api/health`. CLI: `gimg queue pause` and `gimg queue resume`.
+`GET /api/health`. While paused, what waits in the queue does not keep the service alive: it stops when idle as with
+an empty queue, and `gimg queue resume` starts it again if anything is still queued. CLI: `gimg queue pause` and
+`gimg queue resume`.
 
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/pause -d '{}'

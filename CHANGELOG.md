@@ -22,7 +22,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - `gimg queue pause` and `gimg queue resume`: pausing leaves the `queue.paused` mark in the data directory; the worker
   finishes the image in progress and takes no other, `gimg serve` launches no worker meanwhile and `queue list` says
-  so. On resume the service relaunches the worker at its next beat (a few seconds).
+  so. On resume the service relaunches the worker at its next beat (a few seconds). While paused, what is queued does
+  not keep the service alive, and `gimg queue resume` starts it again if anything is still queued. The queue drawer
+  of the interface has a "Pause queue" / "Resume queue" button and the queue pill says "paused".
 - English translation of the local API: `docs/en/api.md`; the API doc test now checks both languages.
 - Logo system (`gimg brand`, D37): `matte` removes the flat background of a generated emblem (`--holes` also empties
   what is enclosed), `trace` turns it into an SVG with the brand palette or in one ink, `wordmark` turns the name into
@@ -40,6 +42,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `gimg work` no longer gives up when it only finds shared probes of `worker.lock` (`_single_worker` keeps waiting);
   if a probe never lets go, it fails after a few seconds with `worker.already_running` instead of spinning forever.
 - The indeterminate progress bar uses `--accent`, with enough contrast on its track in the dark theme.
+- When another CLI has just replaced the service with one of other code, the CLI that waited keeps it and now warns
+  about it (it used to say nothing).
 
 ## [0.4.1] - 2026-11-06
 

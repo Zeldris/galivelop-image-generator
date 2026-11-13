@@ -348,7 +348,9 @@ curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/clear -d '{"pro
 Pausan y reanudan la cola (cuerpo `{}`, con `Content-Type: application/json`). Con la cola en pausa el trabajador termina la imagen en curso y no
 coge otra, y el servicio no lanza trabajador; al reanudar lo relanza en su siguiente latido (unos segundos). Respuesta:
 `{"paused": bool, "changed": bool}` (`changed` es `false` si ya estaba así). El estado se lee en `paused` de
-`GET /api/health`. CLI: `gimg queue pause` y `gimg queue resume`.
+`GET /api/health`. Con la cola en pausa, lo que espera en ella no mantiene vivo el servicio: se apaga por inactividad
+como sin cola, y `gimg queue resume` lo vuelve a arrancar si queda algo en cola. CLI: `gimg queue pause` y
+`gimg queue resume`.
 
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/pause -d '{}'

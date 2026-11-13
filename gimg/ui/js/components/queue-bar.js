@@ -3,7 +3,9 @@
    intento terminado. Se alimenta de store.queue (queue-poll.js).
    F4d: cada entrada `queued` se sube, baja o pasa a primera (POST /api/queue/{id}/move) y «Vaciar cola» cancela todo lo
    que espera (POST /api/queue/clear, con confirmación; nunca toca lo que corre). El orden de la fila es el de
-   `position` (si la entrada no la trae, su id), que es de donde toma el trabajador. */
+   `position` (si la entrada no la trae, su id), que es de donde toma el trabajador.
+   R1: «Pausar cola» / «Reanudar cola» (POST /api/queue/pause|resume): en pausa, lo que corre termina y no empieza
+   nada más; la pastilla lo dice («en pausa») y el estado se lee en `paused` de GET /api/health (queue-poll.js). */
 
 import { h, mmss, replace } from '../dom.js';
 import * as i18n from '../i18n.js';
@@ -24,6 +26,7 @@ let hosts = null;
 export function initQueueBar(pillHost, drawerHost) {
   hosts = { pillHost, drawerHost };
   store.subscribe('queue', render);
+  store.subscribe('queuePaused', render);
   render();
 }
 
@@ -68,7 +71,7 @@ function render() {
   // Solo se repinta si cambia lo que se ve (cada sondeo vuelve a llamar aquí); con algo en marcha, las cuentas atrás
   // y las barras por tiempo se refrescan en cada sondeo (cubo de 3 s).
   const tick = entries.some((e) => e.state === 'running') ? Math.floor(Date.now() / 3000) : 0;
-  const sig = JSON.stringify([i18n.lang(), open, filter, entries, tick, router.parse().project || null]);
+  const sig = JSON.stringify([i18n.lang(), open, filter, entries, tick, router.parse().project || null, store.get('queuePaused')]);
   if (sig === lastSig) return;
   lastSig = sig;
   const active = document.activeElement;
@@ -83,11 +86,12 @@ function render() {
 function paint(entries) {
   const c = store.queueCounts();
   const running = entries.find((e) => e.state === 'running');
-  const label = c.running || c.queued
+  const paused = store.get('queuePaused') === true;
+  const label = [c.running || c.queued
     ? [c.running ? t('ui.queue.running', { n: c.running }) : null, c.queued ? t('ui.queue.queued', { n: c.queued }) : null].filter(Boolean).join(' · ')
-    : t('ui.queue.empty');
+    : t('ui.queue.empty'), paused ? t('ui.queue.pausedLabel') : null].filter(Boolean).join(' · ');
   const pill = h('button.queue-pill', {
-    type: 'button', class: running ? 'is-running' : '', data: { fid: 'pill' }, aria: { expanded: open, controls: 'queue-drawer', label: `${t('ui.queue.label')}: ${label}` },
+    type: 'button', class: [running ? 'is-running' : '', paused ? 'is-paused' : ''].filter(Boolean).join(' '), data: { fid: 'pill' }, aria: { expanded: open, controls: 'queue-drawer', label: `${t('ui.queue.label')}: ${label}` },
     onclick: () => toggleQueue(),
   }, h('span.dot', { aria: { hidden: true } }), h('span', {}, label), running ? progressOf(running) : null);
   replace(hosts.pillHost, pill);
@@ -113,6 +117,9 @@ function paint(entries) {
       inProject && inProject < line.length
         ? h('button.btn', { type: 'button', data: { fid: 'clear-project' }, onclick: () => clearQueue(current, inProject) }, t('ui.queue.clearProject', { project: current }), ` (${inProject})`)
         : null) : null,
+    h('div.row', {},
+      h('button.btn', { type: 'button', data: { fid: 'pause' }, aria: { pressed: paused }, onclick: () => togglePause(!paused) }, t(paused ? 'ui.queue.resume' : 'ui.queue.pause'))),
+    paused ? h('p.hint', {}, t('ui.queue.pausedHint')) : null,
     h('p.hint', {}, t('ui.queue.idle')));
 }
 
@@ -198,6 +205,17 @@ async function clearQueue(project, n) {
   try {
     const cancelled = await api.clearQueue(project);
     toast(t('ui.queue.cleared', { n: Array.isArray(cancelled) ? cancelled.length : n }));
+    const { refreshNow } = await import('../queue-poll.js');
+    await refreshNow();
+  } catch (err) { toastError(describeError(err, t)); }
+}
+
+/** «Pausar cola» / «Reanudar cola»: lo que corre termina; el foco se queda en el mismo botón. */
+async function togglePause(on) {
+  try {
+    await api.pauseQueue(on);
+    store.set('queuePaused', on);
+    toast(t(on ? 'ui.queue.pausedToast' : 'ui.queue.resumedToast'));
     const { refreshNow } = await import('../queue-poll.js');
     await refreshNow();
   } catch (err) { toastError(describeError(err, t)); }

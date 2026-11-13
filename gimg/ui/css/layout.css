@@ -25,6 +25,8 @@
 .queue-pill:hover { border-color: var(--accent); }
 .queue-pill .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); flex: none; }
 .queue-pill.is-running .dot { background: var(--ok); animation: pulse 1.6s ease-in-out infinite; }
+.queue-pill.is-paused { border-color: var(--warn); }
+.queue-pill.is-paused .dot { background: var(--warn); animation: none; }
 .queue-pill progress { width: 70px; height: 6px; }
 @keyframes pulse { 50% { opacity: .35; } }
 

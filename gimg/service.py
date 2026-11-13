@@ -8,7 +8,8 @@
   session, output to ``<data>/worker.log``) when something is ``queued`` and nobody holds ``worker.lock``. It runs
   after each enqueue through the API (`kick`) and on a 2 s beat. If the lock state cannot be known
   (`queue.worker_alive` is ``None``) nothing is launched.
-* It stops on SIGTERM/SIGINT or after the idle time (no request, no worker, nothing queued/running): it stops
+* It stops on SIGTERM/SIGINT or after the idle time (no request, no worker, nothing queued/running; with the queue
+  paused, what is queued does not count): it stops
   accepting, waits up to `STOP_WAIT_S` for requests in progress, deletes ``serve.json`` and releases the lock. It
   never touches the worker.
 """
@@ -251,11 +252,13 @@ def _single_instance():
 
 
 def _busy() -> bool:
-    """Work the service must not stop under: a worker (or not knowing), or a queued/running entry (or not knowing)."""
+    """Work the service must not stop under: a worker (or not knowing), or a queued/running entry (or not knowing).
+    With the queue paused, a queued entry waits for `resume`, not for the service: only a running one counts, so a
+    paused queue does not keep the service alive for ever (`gimg queue resume` starts it again)."""
     if queue.worker_alive() is not False:
         return True
     try:
-        return bool(queue.list_entries(["queued", "running"]))
+        return bool(queue.list_entries(["running"] if queue.is_paused() else ["queued", "running"]))
     except Exception:  # noqa: BLE001
         return True
 

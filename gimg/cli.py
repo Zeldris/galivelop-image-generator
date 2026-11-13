@@ -601,8 +601,15 @@ def _queue(args, sub, out: _Out) -> None:
             "cli.out.queue_paused" if changed else "cli.out.queue_already_paused")
     elif sub == "resume":
         changed = queue.resume()
-        out.data({"paused": False, "changed": changed}) if out.as_json else out.line(
-            "cli.out.queue_resumed" if changed else "cli.out.queue_not_paused")
+        # a paused queue lets the service stop when idle (`service._busy`): bring it back for what is waiting
+        waiting = changed and bool(queue.list_entries(["queued"]))
+        if out.as_json:
+            out.data({"paused": False, "changed": changed, **({"service": _autostart(out)} if waiting else {})})
+        else:
+            out.line("cli.out.queue_resumed" if changed else "cli.out.queue_not_paused")
+            if waiting:
+                sys.stdout.flush()
+                _autostart(out)
     elif sub == "list":
         entries = queue.list_entries(None if args.state is None else [args.state])
         if queue.is_paused() and not out.as_json:
