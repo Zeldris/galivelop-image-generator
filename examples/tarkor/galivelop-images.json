@@ -335,6 +335,60 @@
         "scale": 0.5,
         "steps": 4
       }
+    },
+    "lateral": {
+      "width": 704,
+      "height": 1344,
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "zimage-turbo-q6",
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "linkedin": {
+      "width": 1536,
+      "height": 384,
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "zimage-turbo-q6",
+      "targetWidth": 1584,
+      "targetHeight": 396,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "discord": {
+      "width": 1344,
+      "height": 768,
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "zimage-turbo-q6",
+      "targetWidth": 960,
+      "targetHeight": 540,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
+    },
+    "panorama": {
+      "width": 1344,
+      "height": 768,
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler": "euler",
+      "model": "zimage-turbo-q6",
+      "targetWidth": 1600,
+      "targetHeight": 900,
+      "draft": {
+        "scale": 0.5,
+        "steps": 4
+      }
     }
   }
 }

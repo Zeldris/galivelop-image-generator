@@ -29,6 +29,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   of the interface has a "Pause queue" / "Resume queue" button and the queue pill says "paused".
 - `gimg brand system --margin` (free space around both lockups) and `--mono` (lockups with the one-ink emblem: the
   whole lockup in `currentColor`, as the family's sheets ask).
+- Example profiles for the channels the brand sheets ask for: `lateral` 704×1344 (Windows installer), `linkedin`
+  1584×396, `discord` 960×540 and `panorama` 1600×900 in `examples/tarkor/`, and `icon` 512×512 in `examples/toveriai/`.
 - English translation of the local API: `docs/en/api.md`; the API doc test now checks both languages.
 - Logo system (`gimg brand`, D37): `matte` removes the flat background of a generated emblem (`--holes` also empties
   what is enclosed), `trace` turns it into an SVG with the brand palette or in one ink, `wordmark` turns the name into

@@ -29,6 +29,9 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
   cajón de la cola de la interfaz tiene el botón «Pausar cola» / «Reanudar cola» y la pastilla dice «en pausa».
 - `gimg brand system --margin` (espacio libre alrededor de los dos lockups) y `--mono` (lockups con el emblema en una
   tinta: todo el lockup en `currentColor`, como piden las hojas de la familia).
+- Perfiles de ejemplo para los canales que piden las hojas de marca: `lateral` 704×1344 (instalador de Windows),
+  `linkedin` 1584×396, `discord` 960×540 y `panorama` 1600×900 en `examples/tarkor/`, e `icon` 512×512 en
+  `examples/toveriai/`.
 - Traducción al inglés de la API local: `docs/en/api.md`; el test de la documentación de la API comprueba los dos idiomas.
 - Sistema de logo (`gimg brand`, D37): `matte` recorta el fondo plano de un emblema generado (`--holes` vacía también
   lo encerrado), `trace` lo vectoriza a SVG con la paleta de la marca o en una tinta, `wordmark` convierte el nombre
