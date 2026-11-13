@@ -64,9 +64,14 @@ class IntentosEnHojaTests(unittest.TestCase):
         self.assertIn('gimg sheet', h['additionalContext'])
         self.assertNotIn('permissionDecision', h)
 
+    def test_avisa_tambien_con_capturas_del_scratchpad(self):
+        d = intentos_en_hoja.decision({'tool_name': 'Read', 'tool_input': {'file_path': '/tmp/c/scratchpad/r2/pedidos-d-dark.png'}})
+        self.assertIn('gimg sheet', d['hookSpecificOutput']['additionalContext'])
+
     def test_calla_en_lo_demas(self):
         for datos in ({'tool_name': 'Read', 'tool_input': {'file_path': '/x/aprobadas/01.png'}},
                       {'tool_name': 'Read', 'tool_input': {'file_path': '/x/attempts/q1.json'}},
+                      {'tool_name': 'Read', 'tool_input': {'file_path': '/tmp/c/scratchpad/r2/hoja-r2.png'}},
                       {'tool_name': 'Bash', 'tool_input': {'file_path': '/x/attempts/q1.png'}}):
             self.assertIsNone(intentos_en_hoja.decision(datos))
 
