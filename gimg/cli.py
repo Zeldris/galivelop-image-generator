@@ -111,6 +111,17 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--border", "cli.arg.brand_border", type=int, default=6),
          opt("--grow", "cli.arg.brand_grow", type=int, default=3),
          opt("--holes", "cli.arg.brand_holes", action="store_true"))
+    leaf(g, "fit", "cli.cmd.brand_fit", arg("image", "cli.arg.brand_png"),
+         opt("-o", "cli.arg.brand_out_fit", dest="out", metavar="PNG"),
+         opt("--anchor", "cli.arg.brand_fit_anchor", choices=brand.FIT_ANCHORS, default="right"),
+         opt("--min-x", "cli.arg.brand_fit_min_x", type=float, metavar="PX"),
+         opt("--max-x", "cli.arg.brand_fit_max_x", type=float, metavar="PX"),
+         opt("--margin", "cli.arg.brand_fit_margin", type=float, default=24),
+         opt("--paper", "cli.arg.brand_fit_paper", default="auto", metavar="auto|#RRGGBB"),
+         opt("--tol", "cli.arg.brand_fit_tol", type=float, default=40),
+         opt("--feather", "cli.arg.brand_fit_feather", type=float, default=400),
+         opt("--feather-y", "cli.arg.brand_fit_feather_y", type=float, default=60),
+         opt("--max-scale", "cli.arg.brand_fit_max_scale", type=float, default=1.0))
     leaf(g, "trace", "cli.cmd.brand_trace", arg("image", "cli.arg.brand_png"),
          opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"),
          opt("--mode", "cli.arg.brand_mode", choices=tuple(brand.MODES), default="color"),
@@ -299,6 +310,16 @@ def _brand(args, sub, out: _Out) -> None:
     if sub == "matte":
         res = brand.matte(args.image, args.out, args.tol, args.soft, args.border, args.grow, args.holes)
         key = "cli.out.brand_matte"
+    elif sub == "fit":
+        res = brand.fit(args.image, args.out, args.anchor, args.min_x, args.max_x, args.margin, args.paper, args.tol,
+                        args.feather, args.feather_y, args.max_scale)
+        if out.as_json:
+            out.data(res)
+            return
+        out.line("cli.out.brand_fit", out=res["out"], scale=res["scale"], dx=res["shift"][0], dy=res["shift"][1],
+                 paper=res["paper"], box=",".join(str(v) for v in res["box"]),
+                 box_after=",".join(str(v) for v in res["box_after"]))
+        return
     elif sub == "trace":
         res = brand.trace(args.image, args.out, args.mode, args.palette, args.colors, args.dp_tol, args.min_island,
                           args.matte, args.ink_only, args.paper)

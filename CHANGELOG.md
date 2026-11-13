@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   path with `fill="currentColor"`.
 - `gimg brand overlay BASE MOTIF`: places a motif SVG over a base SVG without touching it (`--fit`, `--box x,y,w,h`,
   `--recolor #hex|currentColor`, `--skip-rect`); the motif's `id`s are prefixed so they do not clash.
+- `gimg brand rose`: a compass rose drawn by code as an exact SVG (`--points 4|8|16`, one stroke width,
+  `--ink`/`--accent` as hex or `currentColor` for a single ink, `--png` through rsvg-convert).
+- `gimg brand fit`: reframes an image so its motif falls in a zone (`--anchor`, `--min-x`, `--max-x`); the rest is
+  paper and the moved image's edges fade into it (`--feather`, `--feather-y`).
 
 ## [0.5.0] - 2026-11-13
 
