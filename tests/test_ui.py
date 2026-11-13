@@ -564,9 +564,11 @@ TEXT_PAIRS = [("text", "bg"), ("text", "surface"), ("text", "surface-2"), ("text
               ("text-2", "surface-2"), ("accent-text", "bg"), ("accent-text", "surface"), ("accent-text", "surface-2"),
               ("on-accent", "accent-fill"), ("ok", "bg"), ("ok", "surface"), ("warn", "bg"), ("warn", "surface"),
               ("bad", "bg"), ("bad", "surface"), ("text", "accent-soft"), ("text-2", "accent-soft"),
-              ("family", "bg"), ("family", "surface"), ("on-status", "ok"), ("on-status", "warn"), ("on-status", "bad")]
+              ("family", "bg"), ("family", "surface"), ("on-status", "ok"), ("on-status", "warn"), ("on-status", "bad"),
+              ("text-3", "bg"), ("text-3", "surface"), ("text-3", "surface-2")]
 NONTEXT_PAIRS = [("border", "bg"), ("border", "surface"), ("border", "surface-2"), ("focus", "bg"), ("focus", "surface"),
-                 ("focus", "surface-2"), ("accent", "rule")]  # progress bar fill on its track
+                 ("focus", "surface-2"), ("accent", "bg"), ("accent", "surface"), ("accent", "surface-2")]
+# r10: the progress bar is outlined with --border and filled with --accent on --surface-2
 
 
 class Contrast(unittest.TestCase):
@@ -582,19 +584,21 @@ class Contrast(unittest.TestCase):
 
     def test_primary_button_fill_is_the_declared_one(self):
         for theme, tokens in theme_blocks().items():
-            self.assertEqual(tokens["accent-fill"].lower(), "#5b34c9", theme)
+            self.assertEqual(tokens["accent-fill"].lower(), "#7c5cd6", theme)
+            self.assertEqual(tokens["accent"].lower(), "#7c5cd6", theme)
             self.assertEqual(tokens["on-accent"].lower(), "#ffffff", theme)
-        self.assertGreaterEqual(ratio("#ffffff", "#5B34C9"), 7.5)
+        self.assertGreaterEqual(ratio("#ffffff", "#7C5CD6"), 4.5)
 
-    def test_r9_values_and_new_tokens_in_both_themes(self):
+    def test_r10_values_and_tokens_in_both_themes(self):
         blocks = theme_blocks()
         for theme, tokens in blocks.items():
-            for name in ("family", "rule", "brand"):
+            for name in ("family", "rule", "text-3", "grid", "accent-text"):
                 self.assertIn(name, tokens, "%s: falta --%s" % (theme, name))
-            self.assertEqual(tokens["brand"].lower(), "#8b5cf6", theme)
+            self.assertNotIn("brand", tokens, theme)  # r10 has one violet, --accent
         light, dark = blocks["light"], blocks["dark(selector)"]
         self.assertEqual((light["bg"].lower(), light["family"].lower()), ("#fbfcfd", "#0072a8"))
-        self.assertEqual((dark["bg"].lower(), dark["family"].lower()), ("#0d171e", "#1aa6df"))
+        self.assertEqual((dark["bg"].lower(), dark["family"].lower()), ("#0d171e", "#5cc8f2"))
+        self.assertEqual((light["accent-text"].lower(), dark["accent-text"].lower()), ("#7453cc", "#9577f3"))
         self.assertEqual(blocks["dark(auto)"], dark)  # the media query and the selector agree
 
     def test_border_and_rule_are_the_sheets(self):
@@ -602,9 +606,9 @@ class Contrast(unittest.TestCase):
         for theme, tokens in blocks.items():
             self.assertEqual(tokens["border"].lower(), "#6f8493", theme)
             self.assertNotIn("border-strong", tokens, theme)
-        self.assertEqual(blocks["light"]["rule"].lower(), "#c9d5dd")
-        self.assertEqual(blocks["dark(selector)"]["rule"].lower(), "#2b3d4a")
-        self.assertEqual(blocks["dark(auto)"]["rule"].lower(), "#2b3d4a")
+        self.assertEqual(blocks["light"]["rule"].lower(), "#b9cbd6")
+        self.assertEqual(blocks["dark(selector)"]["rule"].lower(), "#2b3d49")
+        self.assertEqual(blocks["dark(auto)"]["rule"].lower(), "#2b3d49")
         for theme, tokens in blocks.items():  # controls sit on these three fills
             for bg in ("bg", "surface", "surface-2"):
                 self.assertGreaterEqual(ratio(tokens["border"], tokens[bg]), 3.0, "%s: --border on --%s" % (theme, bg))
@@ -614,7 +618,7 @@ class Contrast(unittest.TestCase):
         self.assertNotIn("border-strong", css)
         for sel in (r"\.btn \{", r"input\[type=\"text\"\][^{]*\{", r"\.chip \{"):
             self.assertIn("var(--border)", re.search(sel + r"[^}]*\}", css, re.S).group(0), sel)
-        for sel in (r"\.card \{", r"\.tabs \{"):
+        for sel in (r"\.card \{", r"\.tabs \{"):  # the card draws its line (and its chamfer) with --edge
             self.assertIn("var(--rule)", re.search(sel + r"[^}]*\}", css, re.S).group(0), sel)
 
     def test_chip_status_text_reaches_aa_on_its_fill(self):
@@ -630,6 +634,73 @@ class Contrast(unittest.TestCase):
         self.assertIn("color-scheme: light;", re.search(r"^:root \{(.*?)\n\}", css, re.S | re.M).group(1))
         self.assertIn("prefers-color-scheme: dark", css)
         self.assertNotIn("gradient", css)
+
+    def test_inherited_rules_of_the_sheet(self):
+        """r10: no radii but the status dot and the spinner, no blur, no gradient but the 24 px grid."""
+        names = ("tokens.css", "base.css", "components.css", "layout.css")
+        css = re.sub(r"/\*.*?\*/", "", "".join(read(UI / "css" / n) for n in names), flags=re.S)
+        for banned in ("backdrop-filter", "blur(", "drop-shadow", "--r:", "--r-s:", "var(--r)", "var(--r-s)"):
+            self.assertNotIn(banned, css, banned)
+        rounded = re.findall(r"([^{}]+)\{[^{}]*border-radius[^{}]*\}", css)
+        self.assertTrue(rounded)
+        for group in rounded:
+            for sel in group.split(","):  # cada selector del grupo, no solo el último
+                self.assertRegex(sel.strip(), r"(\.dot|\.spin)$", "border-radius fuera de las excepciones: " + sel.strip())
+        grads = re.findall(r"([^{}]+)\{[^{}]*gradient[^{}]*\}", css)
+        self.assertEqual([g.strip() for g in grads], ["body"])
+        self.assertIn("var(--grid)", re.search(r"body \{[^}]*\}", css, re.S).group(0))
+        for token in ("--chamfer-l: 28px", "--chamfer: 14px", "--chamfer-s: 10px", "--grid-step: 24px"):
+            self.assertIn(token, css, token)
+        self.assertIn("clip-path", re.search(r"\.card \{[^}]*\}", css, re.S).group(0))
+
+    def test_outlines_on_chamfered_elements_stay_inside(self):
+        """Retro R1 (2026-11-13): un contorno con desfase positivo sobre un elemento con chaflán lo recorta el
+        `clip-path`. Elementos con chaflán: los que llevan `clip-path` en el CSS y las clases que el JS pone junto a
+        `.card`. Toda regla con `outline` cuyo sujeto sea uno de ellos lleva `outline-offset` negativo."""
+        css = re.sub(r"/\*.*?\*/", "", "".join(read(UI / "css" / n) for n in ("base.css", "layout.css", "components.css")), flags=re.S)
+        rules = re.findall(r"([^{}]+)\{([^{}]*)\}", css)
+        tokens = lambda compound: set(re.findall(r"^[a-z]+|\.[a-zA-Z_-]+", re.sub(r":[a-z-]+(\([^)]*\))?", "", compound)))
+        chamfered = set()
+        for sel, body in rules:
+            if re.search(r"clip-path\s*:\s*polygon", body):
+                chamfered |= {t for s in sel.split(",") if "::" not in s for t in tokens(re.split(r"\s+|>|\+|~", s.strip())[-1])}
+        js = "".join(read(f) for f in (UI / "js").rglob("*.js"))
+        for combo in re.findall(r"'[a-z]*((?:\.[a-z-]+)*\.card(?:\.[a-z-]+)*)'", js):
+            chamfered |= {"." + c for c in combo.split(".") if c and c != "card"}
+        self.assertTrue({".card", "dialog", ".attempt"} <= chamfered, chamfered)
+        seen = 0
+        for sel, body in rules:
+            if not re.search(r"(^|;)\s*outline(-offset)?\s*:", body):
+                continue
+            for one in sel.split(","):
+                subject = re.split(r"\s+|>|\+|~", one.strip())[-1]
+                if not tokens(subject) & chamfered:
+                    continue
+                seen += 1
+                m = re.search(r"outline-offset\s*:\s*([^;]+)", body)
+                self.assertTrue(m and m.group(1).strip().startswith(("-", "calc(-")), f"{one.strip()}: {body.strip()}")
+        self.assertGreaterEqual(seen, 2)
+
+    def test_review_fixes_of_buttons_focus_and_selects(self):
+        """Revisión de r10: el hover primario no cambia el relleno (--accent-text bajo blanco es 3,4:1 en oscuro), las
+        reglas de desactivado van detrás de las de hover, el peligro sigue rojo al pasar el puntero, el foco y la
+        comparación van dentro del chaflán y los `select` conservan la grafía de los nombres."""
+        css = re.sub(r"/\*.*?\*/", "", read(UI / "css" / "base.css") + read(UI / "css" / "components.css"), flags=re.S)
+        rules = [(sel.strip(), body) for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", css)]
+        def where(selector):
+            hits = [i for i, (sel, _) in enumerate(rules) if selector in [x.strip() for x in sel.split(",")]]
+            self.assertTrue(hits, selector)
+            return hits
+        for i in where(".btn-primary:hover"):
+            self.assertNotIn("background", rules[i][1])
+        last_hover = max(where(".btn:hover") + where(".btn-primary:hover") + where(".btn-danger:hover"))
+        for sel in (".btn:disabled", ".btn-primary:disabled", ".btn-danger:disabled"):
+            self.assertGreater(min(where(sel)), last_hover, sel + " va antes de un hover")
+        self.assertIn("var(--bad)", rules[where(".btn-danger:hover")[0]][1])
+        self.assertRegex(rules[where(".card:focus-visible")[0]][1], r"outline-offset:\s*calc\(-1")
+        self.assertRegex(rules[where(".attempt.is-compared")[0]][1], r"outline-offset:\s*-")
+        for i in where("select"):
+            self.assertNotIn("text-transform", rules[i][1])
 
 
 if __name__ == "__main__":

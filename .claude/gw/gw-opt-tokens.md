@@ -17,6 +17,8 @@ las crea una vez; desde entonces son del proyecto.
   el `grep` que basta (aprobado el 2026-10-27). Otro documento grande se añade a `GRANDES`.
 - `.claude/hooks/intentos-en-hoja.py` (T1, PreToolUse de Read): al leer un `.png` de `attempts/q…` avisa, sin bloquear,
   de que se revisen en una hoja (`gimg sheet`); aprobado el 2026-11-12.
+  Desde el 2026-11-13 avisa también de las capturas `.png` del scratchpad cuyo nombre no diga `hoja`/`sheet`: cada
+  ronda de capturas de la interfaz se monta con `gimg sheet` y se mira suelta solo la que la hoja señale (aprobado ese día).
 - `gimg sheet IMAGEN... --out hoja.png`: hoja de contactos con rótulos; las rondas se revisan con una hoja, no con
   imágenes sueltas (una hoja de 6 cuesta como una imagen; aprobado el 2026-11-04).
 - Subagentes que escriben código mientras la principal sigue: en worktree (`isolation: "worktree"`) y de vuelta con
@@ -79,10 +81,15 @@ las crea una vez; desde entonces son del proyecto.
   2026-10-25; F1 en un tramo de 38 llamadas llegó a 167k).
 - En F2.0, cada ronda del piloto (rN) cuenta como paso: se cierra con la bitácora subida y `/clear` (aprobado el
   2026-10-27).
+- Cada ronda de revisión visual de la interfaz (rN de capturas) cuenta como paso: commit, bitácora y `/clear`
+  (aprobado el 2026-11-13; `ccr-85e9d14e-zt7p8b` encadenó r2-r4 y tocó techos de 164k).
 
 ## Referencias medidas
 
 <!-- Cifras medidas con las que comparar: fecha, sesión, contexto medio, llamadas, total. -->
+- 2026-11-13, `ccr-85e9d14e-zt7p8b` desde `2e6b642` (revisión de la interfaz r10): 135 llamadas, 127,6k de media,
+  3 compactaciones (presupuesto 2; techos 163/164/106k), 17,2 M en la principal + 1,2 M en 1 subagente; 28 capturas
+  sueltas, ~2,2 M arrastrados (13 %).
 - 2026-11-05, `f2-motor` desde `849b301` (F3.3-F4d, 4 sesiones): ~98 M de entrada, 66 % en subagentes; la principal
   más cara, `0e571705`: 229 llamadas, 105k de media, 3 tramos (118/166, 110/168, 77/95).
 - 2026-11-12, sesión `c7c2a076` (hojas-repos): 382 llamadas, contexto medio 114k, 4 compactaciones.
