@@ -6,6 +6,7 @@ Uso: python3 docs/marcas/galivelop-workflow/acento.py [#rrggbb]   (por defecto, 
 Solo stdlib. OKLab de Björn Ottosson (D65); contraste WCAG 2.x sobre el hex redondeado.
 """
 import math
+import re
 import sys
 
 PAPEL, PAPEL_OSCURO, BLANCO, TINTA, TINTA_OSCURA = "#fbfcfd", "#0d171e", "#ffffff", "#13212b", "#e6eef3"
@@ -13,6 +14,9 @@ PASO = 0.005
 
 
 def a_rgb(h):
+    if not re.fullmatch(r"#?[0-9A-Fa-f]{6}", h):
+        print("hex no válido: %s (se espera #RRGGBB)" % h, file=sys.stderr)
+        sys.exit(2)
     h = h.lstrip("#")
     return [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
 

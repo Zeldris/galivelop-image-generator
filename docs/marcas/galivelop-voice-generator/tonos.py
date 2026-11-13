@@ -12,6 +12,7 @@ de 0,005 en 0,005 desde la del vivo (sin tocar el tono) hasta que entra. Si el v
 cumple un umbral, ese tono es el vivo. El contraste se calcula sobre el hex redondeado.
 """
 import math
+import re
 import sys
 
 PAPEL, PAPEL_OSCURO, BLANCO, TINTA, TINTA_OSCURA = "#fbfcfd", "#0d171e", "#ffffff", "#13212b", "#e6eef3"
@@ -19,6 +20,9 @@ PASO, UMBRAL = 0.005, 4.5
 
 
 def rgb(hexa):
+    if not re.fullmatch(r"#?[0-9A-Fa-f]{6}", hexa):
+        print("hex no válido: %s (se espera #RRGGBB)" % hexa, file=sys.stderr)
+        sys.exit(2)
     h = hexa.lstrip("#")
     return [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
 
