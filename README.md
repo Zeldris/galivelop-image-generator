@@ -119,6 +119,7 @@ python3 -m gimg brand trace logo-alpha.png --mode color|mono|silhouette   # PNG 
 python3 -m gimg brand wordmark TARKOR --font Cinzel.ttf -o wordmark.svg   # el nombre a trazos, sin <text> (--weight, --spacing)
 python3 -m gimg brand lockup emblema.svg wordmark.svg --layout h|v   # emblema y nombre en un SVG (--cap, --gap, --width, --margin, --color, -o)
 python3 -m gimg brand square ig.svg --fill '#7C5CD6' --ink '#fbfcfd' --png 512,128,32   # el símbolo: cuadrado con chaflán 28/128 y el dibujo en una tinta (--chamfer, --pad, -o, --force)
+python3 -m gimg brand rose -o rosa.svg --png rosa.png   # rosa de los vientos dibujada por código, un solo grosor (--points 4|8|16, --size, --stroke, --ink, --accent, --paper, --no-ring, --ticks, --margin; currentColor en --ink y --accent da una sola tinta)
 python3 -m gimg brand system emblema.png --name Tarkor --font Cinzel.ttf --out-dir marca/   # los siete archivos del logo (--weight, --spacing, --palette, --colors, --text, --cap, --gap, --width, --margin, --mono para el lockup en una tinta, --force pisa)
 python3 -m gimg doctor                                # comprueba el motor, los modelos y las herramientas (--verify)
 python3 -m gimg serve                                 # servicio local en 127.0.0.1:8737 (--detach, --status, --stop, --port, --idle-min)

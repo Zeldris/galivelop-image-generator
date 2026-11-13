@@ -141,6 +141,18 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"),
          opt("--png", "cli.arg.brand_png_sizes", metavar="512,128,32"),
          opt("--force", "cli.arg.brand_force_square", action="store_true"))
+    leaf(g, "rose", "cli.cmd.brand_rose",
+         opt("-o", "cli.arg.brand_out_svg_rose", dest="out", metavar="SVG", required=True),
+         opt("--png", "cli.arg.brand_rose_png", metavar="PNG"),
+         opt("--size", "cli.arg.brand_rose_size", type=int, default=1024),
+         opt("--points", "cli.arg.brand_rose_points", type=int, default=8),
+         opt("--stroke", "cli.arg.brand_rose_stroke", type=float, default=0.02),
+         opt("--ink", "cli.arg.brand_rose_ink", default="#13212b", metavar="COLOR"),
+         opt("--accent", "cli.arg.brand_rose_accent", default="#0072a8", metavar="COLOR"),
+         opt("--paper", "cli.arg.brand_rose_paper", default="#fbfcfd", metavar="COLOR"),
+         opt("--no-ring", "cli.arg.brand_rose_no_ring", action="store_true"),
+         opt("--ticks", "cli.arg.brand_rose_ticks", type=int, default=32),
+         opt("--margin", "cli.arg.brand_rose_margin", type=float, default=0.08))
     leaf(g, "system", "cli.cmd.brand_system", arg("image", "cli.arg.brand_png"),
          opt("--name", "cli.arg.brand_name", required=True),
          opt("--font", "cli.arg.brand_font", required=True, metavar="TTF"),
@@ -300,6 +312,16 @@ def _brand(args, sub, out: _Out) -> None:
             out.line("cli.out.brand_file", path=path)
         if res["contrast"] < 4.5:
             out.line("cli.out.brand_square_low", contrast=res["contrast"])
+        return
+    elif sub == "rose":
+        res = brand.rose(args.out, args.png, args.size, args.points, args.stroke, args.ink, args.accent,
+                         not args.no_ring, args.ticks, args.margin, args.paper)
+        if out.as_json:
+            out.data(res)
+            return
+        out.line("cli.out.brand_rose", **res)
+        if res["png"]:
+            out.line("cli.out.brand_file", path=res["png"])
         return
     elif sub == "system":
         res = brand.system(args.image, args.name, args.font, args.out_dir, args.weight, args.spacing, args.palette,
