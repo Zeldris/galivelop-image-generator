@@ -653,6 +653,34 @@ class Contrast(unittest.TestCase):
             self.assertIn(token, css, token)
         self.assertIn("clip-path", re.search(r"\.card \{[^}]*\}", css, re.S).group(0))
 
+    def test_outlines_on_chamfered_elements_stay_inside(self):
+        """Retro R1 (2026-11-13): un contorno con desfase positivo sobre un elemento con chaflán lo recorta el
+        `clip-path`. Elementos con chaflán: los que llevan `clip-path` en el CSS y las clases que el JS pone junto a
+        `.card`. Toda regla con `outline` cuyo sujeto sea uno de ellos lleva `outline-offset` negativo."""
+        css = re.sub(r"/\*.*?\*/", "", "".join(read(UI / "css" / n) for n in ("base.css", "layout.css", "components.css")), flags=re.S)
+        rules = re.findall(r"([^{}]+)\{([^{}]*)\}", css)
+        chamfered = set()
+        for sel, body in rules:
+            if "clip-path" in body:
+                chamfered |= {s.strip() for s in sel.split(",") if "::" not in s}
+        js = "".join(read(f) for f in (UI / "js").rglob("*.js"))
+        for combo in re.findall(r"'[a-z]*((?:\.[a-z-]+)*\.card(?:\.[a-z-]+)*)'", js):
+            chamfered |= {"." + c for c in combo.split(".") if c and c != "card"}
+        self.assertTrue({".card", "dialog", ".attempt"} <= chamfered, chamfered)
+        tokens = lambda compound: set(re.findall(r"^[a-z]+|\.[a-zA-Z_-]+", re.sub(r":[a-z-]+(\([^)]*\))?", "", compound)))
+        seen = 0
+        for sel, body in rules:
+            if not re.search(r"(^|;)\s*outline(-offset)?\s*:", body):
+                continue
+            for one in sel.split(","):
+                subject = re.split(r"\s+|>|\+|~", one.strip())[-1]
+                if not tokens(subject) & chamfered:
+                    continue
+                seen += 1
+                m = re.search(r"outline-offset\s*:\s*([^;]+)", body)
+                self.assertTrue(m and m.group(1).strip().startswith(("-", "calc(-")), f"{one.strip()}: {body.strip()}")
+        self.assertGreaterEqual(seen, 2)
+
     def test_review_fixes_of_buttons_focus_and_selects(self):
         """Revisión de r10: el hover primario no cambia el relleno (--accent-text bajo blanco es 3,4:1 en oscuro), las
         reglas de desactivado van detrás de las de hover, el peligro sigue rojo al pasar el puntero, el foco y la

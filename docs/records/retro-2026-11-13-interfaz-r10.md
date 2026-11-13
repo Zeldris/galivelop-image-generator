@@ -1,6 +1,11 @@
 # Retro 2026-11-13: revisión de la interfaz con la hoja r10 (`ccr-85e9d14e-zt7p8b` → `main`)
 
-**Estado:** propuesta, a la espera de la persona.
+**Estado:** aprobada por la persona el 2026-11-13 y aplicada: T1, T2, R1 y R2 aplicadas; W1 y W2 quedan aquí para
+`gw-harvest`.
+
+R2 encontró un solape real (el cuerpo de la ayuda pisaba 4 px su pie, por el margen negativo de la fase 1;
+arreglado) y es roja sin el arreglo del editor (`aebaa00`): la ayuda pisa la lista a 360 px y la escena corta la
+imagen a 768 px.
 
 Fase 2 de la ida a `main`: `gw-opt-tokens` (desde `2e6b642`) y retro. Solo se aplica lo que la persona confirme.
 

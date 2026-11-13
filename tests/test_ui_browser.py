@@ -442,6 +442,72 @@ class OrderScreen(UiBase):
         self.assertLessEqual(main[1], side[0], "la ayuda pisa la lista de elementos")
         self.no_problems()
 
+    # Sondeo de maquetación: la página no se desplaza a lo ancho, nada visible sale del ancho de la ventana y ningún
+    # elemento en flujo pisa a su hermano siguiente. Devuelve la lista de problemas legibles.
+    FIT_PROBE = r"""(() => {
+      const W = innerWidth, out = [];
+      const name = e => e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') + [...e.classList].map(c => '.' + c).join('');
+      const shown = e => { const r = e.getBoundingClientRect(), cs = getComputedStyle(e);
+        return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && !e.closest('.sr-only'); };
+      if (document.documentElement.scrollWidth > W + 1) out.push('página ' + document.documentElement.scrollWidth + ' px de ancho');
+      const clipped = e => { for (let a = e.parentElement; a; a = a.parentElement) {
+        const o = getComputedStyle(a).overflowX; if (o !== 'visible') return true; } return false; };
+      for (const e of document.querySelectorAll('body *')) {
+        if (!shown(e)) continue;
+        const r = e.getBoundingClientRect();
+        if ((r.right > W + 1 || r.left < -1) && !clipped(e)) out.push(name(e) + ' sale del ancho (' + Math.round(r.left) + '..' + Math.round(r.right) + ')');
+        const n = e.nextElementSibling, cs = getComputedStyle(e);
+        if (!n || !shown(n) || cs.position === 'absolute' || cs.position === 'fixed' || cs.display === 'contents') continue;
+        const ns = getComputedStyle(n); if (ns.position === 'absolute' || ns.position === 'fixed') continue;
+        const q = n.getBoundingClientRect();
+        const dx = Math.min(r.right, q.right) - Math.max(r.left, q.left), dy = Math.min(r.bottom, q.bottom) - Math.max(r.top, q.top);
+        if (dx > 2 && dy > 2) out.push(name(e) + ' pisa a ' + name(n));
+      }
+      // contenido que se sale de su caja y pisa al hermano siguiente de la caja
+      for (const e of document.querySelectorAll('body *')) {
+        const p = e.parentElement, n = p && p.nextElementSibling;
+        if (!shown(e) || !n || !shown(n) || getComputedStyle(p).overflowY !== 'visible') continue;
+        const cs = getComputedStyle(e), ns = getComputedStyle(n);
+        if (['absolute', 'fixed'].includes(cs.position) || ['absolute', 'fixed'].includes(ns.position)) continue;
+        const r = e.getBoundingClientRect(), q = n.getBoundingClientRect();
+        const dx = Math.min(r.right, q.right) - Math.max(r.left, q.left), dy = Math.min(r.bottom, q.bottom) - Math.max(r.top, q.top);
+        if (dx > 2 && dy > 2) out.push(name(e) + ' se sale de ' + name(p) + ' y pisa a ' + name(n));
+      }
+      // cajas que recortan (hidden/clip) con contenido más alto que ellas: algo queda cortado
+      for (const e of document.querySelectorAll('body *')) {
+        const o = getComputedStyle(e).overflowY;
+        if (shown(e) && e.clientHeight > 2 && (o === 'hidden' || o === 'clip') && e.scrollHeight > e.clientHeight + 2)
+          out.push(name(e) + ' corta su contenido (' + e.scrollHeight + ' > ' + e.clientHeight + ')');
+      }
+      return [...new Set(out)].slice(0, 12);
+    })()"""
+
+    def test_main_screens_fit_at_360_768_and_1280(self):
+        # Retro R2 (2026-11-13): la imagen cortada del editor solo se vio a mano; este barrido hace de red a tres anchos.
+        screens = [
+            ("proyectos", lambda: self.open("/", "document.querySelector('a.project-card')")),
+            ("pedidos", lambda: self.open("/p/tarkor/pedidos", "document.querySelector('a.order-row')")),
+            ("piezas", lambda: self.open("/p/tarkor/piezas", "document.querySelector('.piece-card')")),
+            ("pedido", lambda: self.order("fondos/voto")),
+            ("nuevo pedido", lambda: (self.open("/p/tarkor/piezas", "document.querySelector('.piece-card')"),
+                                      self.click(".piece-card button[data-slot=new-order]"),
+                                      self.page.wait("document.querySelector('dialog.new-order[open]')"))),
+            ("atajos", lambda: (self.open("/", "document.querySelector('a.project-card')"), self.click("#help"),
+                                self.page.wait("document.querySelector('#shortcuts[open] dt')"))),
+            ("editor", lambda: self.open_editor("fondos/estrecho")),
+        ]
+        for width in (360, 768, 1280):
+            self.page.ws.close()
+            self.page = self.browser.new_page(width=width, height=800)
+            for label, go in screens:
+                with self.subTest(width=width, screen=label):
+                    go()
+                    self.page.pump(0.2)
+                    problems = self.js(self.FIT_PROBE)
+                    self.js("document.querySelectorAll('dialog[open]').forEach(d => d.close())")
+                    self.assertEqual(problems, [])
+        self.no_problems()
+
     def test_editor_goes_back_to_the_template(self):
         key = "fondos/volver"  # its own order: the tests of a class run in name order
         self.open_editor(key)
