@@ -164,7 +164,7 @@ curl -s -X PUT -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/o
 ### POST /api/projects/{p}/orders/{profile}/{key}/attempts
 
 More attempts (another seed, a prompt tweak, several in a row, draft). Body, all optional: `{"count", "seed",
-"prompt", "steps", "cfg", "sampler", "draft", "template", "model"}` (`template`: id of a template from
+"prompt", "negative", "steps", "cfg", "sampler", "draft", "template", "model"}` (`negative`: a retouched negative prompt; `""` removes it; `template`: id of a template from
 `GET …/profiles/{profile}/templates`, the one for the new attempts; without it, `default`; `model`: id from
 `GET /api/models` that replaces the profile's in these attempts, like `gimg attempt new --model`). Response 202:
 `{"entries", "estimateMs"}`; each entry carries its `template`. Errors: `order.count_invalid`,

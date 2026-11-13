@@ -253,6 +253,8 @@ def enqueue(project: str, key: str, profile: str, specs: list) -> list:
                      "template": spec.get("template"), "position": data["nextId"],
                      "state": "queued", "pid": None, "enqueuedAt": now, "startedAt": None,
                      "finishedAt": None, "error": None, "attemptId": None, "cancelRequested": False}
+            if spec.get("negative"):  # only entries with a negative carry the key
+                entry["negative"] = spec["negative"]
             data["nextId"] += 1
             data["entries"].append(entry)
             added.append(entry)
@@ -499,11 +501,11 @@ def submit_order(project: str, order: dict, draft=None, template=None, model=Non
 
 
 def new_attempts(project: str, key: str, profile: str, count: int = 1, *, seed=None, prompt=None, params=None,
-                 draft=None, template=None, model=None) -> tuple:
+                 draft=None, template=None, model=None, negative=None) -> tuple:
     """`gimg attempt new` and ``POST …/attempts``: enqueue `count` more attempts. Returns ``(entries, provider)``."""
     provider = engine_mod.get_engine().provider
     specs = orders.attempt_specs(project, key, profile, count, seed=seed, prompt=prompt, params=params, draft=draft,
-                                 template=template, model=model)
+                                 template=template, model=model, negative=negative)
     return enqueue(project, key, profile, specs), provider
 
 

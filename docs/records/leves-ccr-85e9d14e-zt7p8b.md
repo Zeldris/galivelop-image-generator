@@ -13,3 +13,8 @@ De la revisión del diff contra `origin/main` (fase 1). No se arreglan en este p
   `png.read_rgba` ignora `tRNS`; `--circular` junto a `--vae-tiling` no está probado.
 - El camino completo con `rsvg-convert` (wordmark, lockup, `system` y luego `save`) solo corre en el CI: este
   contenedor no lo tiene.
+
+Fase 1 de 2026-11-13 (diff contra `origin/main` sobre `9844344`):
+
+- `brand lockup --force` reutiliza la clave de ayuda `cli.arg.brand_force_square` (`gimg/cli.py:136`); mejor una
+  genérica `cli.arg.brand_force`.

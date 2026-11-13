@@ -46,6 +46,11 @@ class LogTests(unittest.TestCase):
             "app.image.seed": 5, "app.image.references": 1, "app.image.engine_version": "fake-1",
             "app.image.sample_ms": 100, "app.image.decode_ms": 20, "app.image.draft": False})
 
+    def test_record_carries_the_negative_only_when_present(self):
+        rec = log.record_for("k", "t", dict(SPEC, negative="blurry"), MACHINE, "fake")
+        self.assertEqual(rec["app.image.negative"], "blurry")
+        self.assertNotIn("app.image.negative", log.record_for("k", "t", SPEC, MACHINE, "fake"))
+
     def test_record_error_and_no_nulls(self):
         spec = {"seed": 0, "prompt": "p", "params": {}}
         rec = log.record_for("k", "t", spec, MACHINE, "fake", error="boom")

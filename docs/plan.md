@@ -191,7 +191,7 @@ cerrojo `fcntl.flock` por archivo para cada leer-modificar-escribir.
 
 **Pedidos e intentos** (`gimg/orders.py`). Un pedido vive en `<datos>/projects/<proyecto>/orders/<key>/@<perfil>/`
 (la `@` evita que la clave `a/banner` choque con la clave `a` y el perfil `banner`): `order.json` y
-`attempts/<id>.png` (o `attempts/q<entrada>.png` si lo creó una entrada de la cola). `order.json`: `key`, `profile`, `prompt` (el del proyecto), `references`, `params`, `seed`,
+`attempts/<id>.png` (o `attempts/q<entrada>.png` si lo creó una entrada de la cola). `order.json`: `key`, `profile`, `prompt` (el del proyecto), `negative` (opcional: prompt negativo, solo si no está vacío; el intento lo copia y sd-cli lo recibe como `--negative-prompt`), `references`, `params`, `seed`,
 `createdAt`, `updatedAt`, `attempts` (lista de `{id, state, seed, prompt, params, references, image, note,
 createdAt, queueEntry?}`, con `prompt` exacto ya con el estilo y `params` completos: `width`, `height`, `steps`, `cfg`,
 `sampler`, `model`), `chosen` (id o `null`) y `chosenHistory` (pila para deshacer). Estados: `new`, `candidate`,
@@ -1000,6 +1000,9 @@ posible.
   persona decida [P]; sin su decisión, su ronda r5 no empieza. El símbolo de toVeriAI necesita SVG antes de componerlo.
 - **Sumas y URLs del catálogo.** Se toman de lo descargado en la Deck y la persona las verifica; sin red o con cuota de Hugging
   Face, `instalar.sh` reintenta con `-C -`.
+- **Prompt negativo con el `sd-cli` real (manual Deck).** El campo `negative` del pedido llega a `sd-cli` como
+  `--negative-prompt` (0.5.x, `ccr-85e9d14e-zt7p8b`), probado solo con el `sd-cli` falso. Lo comprueba la persona en la
+  Deck: un pedido con y sin `negative`, misma semilla, y que la imagen cambie y el registro de `sd-cli` lo lleve.
 - **Herramientas del CI.** ffmpeg y rsvg-convert se instalan con `apt` en `check.yml`; si el CI no arranca (sin cuota), vale el
   check en local con la confirmación de la persona (`AGENTS.md`, «Relevos»).
 

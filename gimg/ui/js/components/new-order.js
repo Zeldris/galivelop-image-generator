@@ -1,7 +1,7 @@
 /* Panel «Nuevo pedido» (F4d, D22): un `dialog` modal para crear un pedido desde la interfaz.
-   - Campos: clave, perfil, prompt, textos de la composición (`compose.fields` del perfil), plantilla, modelo, semilla
-     (vacía = al azar), borrador y número de intentos seguidos. «Copiar de…» rellena prompt, textos, semilla, borrador y
-     parámetros (pasos, cfg, sampler) desde un pedido existente del mismo perfil.
+   - Campos: clave, perfil, prompt, prompt negativo (opcional), textos de la composición (`compose.fields` del perfil), plantilla, modelo, semilla
+     (vacía = al azar), borrador y número de intentos seguidos. «Copiar de…» rellena prompt, textos, semilla, borrador,
+     prompt negativo y parámetros (pasos, cfg, sampler) desde un pedido existente del mismo perfil.
    - Modelo: GET /api/models; los que la máquina no permite salen deshabilitados, con su motivo (`reason.message`).
    - Palabras vetadas (`brand.bannedWords`): aviso en vivo bajo el prompt, nunca bloquea.
    - Envía POST /api/projects/{p}/orders (`template` y `model` solo si difieren del perfil) y, si sale bien, abre el
@@ -49,6 +49,7 @@ export async function openNewOrder(project, { profile = '', opener = null } = {}
   const profileSel = h('select', { id: 'no-profile' }, profiles.map((p) => h('option', { value: p, selected: p === (profiles.includes(profile) ? profile : profiles[0]) }, p)));
   const prompt = h('textarea', { id: 'no-prompt', rows: 4, spellcheck: 'false', aria: { describedby: 'no-prompt-hint' } });
   const promptHint = h('div.hint', { id: 'no-prompt-hint' });
+  const negative = h('textarea', { id: 'no-negative', rows: 2, spellcheck: 'false', maxlength: 4000 });
   const textsBox = h('div.stack');
   const templateSel = h('select', { id: 'no-template' });
   const templateField = h('div.field', { hidden: true }, h('label', { for: 'no-template' }, t('ui.retouch.template')), templateSel);
@@ -73,6 +74,7 @@ export async function openNewOrder(project, { profile = '', opener = null } = {}
       h('div.field', {}, h('label', { for: 'no-profile' }, t('ui.newOrder.profile')), profileSel)),
     copyField,
     h('div.field', {}, h('label', { for: 'no-prompt' }, t('ui.newOrder.prompt')), prompt, promptHint),
+    h('div.field', {}, h('label', { for: 'no-negative' }, t('ui.newOrder.negative')), negative),
     textsBox,
     h('div.cols-2', {}, templateField, modelField),
     h('div.cols-2', {},
@@ -141,6 +143,7 @@ export async function openNewOrder(project, { profile = '', opener = null } = {}
       const o = await api.order(project, name, from);
       if (closed || profileSel.value !== name || copySel.value !== from) return;
       prompt.value = o.prompt || '';
+      negative.value = o.negative || '';
       for (const [field, input] of Object.entries(textInputs)) input.value = (o.text || {})[field] ?? '';
       seed.value = o.seed ?? '';
       draft.checked = Boolean(o.draft);
@@ -161,6 +164,7 @@ export async function openNewOrder(project, { profile = '', opener = null } = {}
     if (!KEY_PATTERN.test(k) || k.length > MAX_KEY) { showError(t('ui.newOrder.keyInvalid'), key); return null; }
     if (!prompt.value.trim()) { showError(t('ui.newOrder.promptRequired'), prompt); return null; }
     const body = { key: k, profile: profileSel.value, prompt: prompt.value.trim(), count: Math.max(1, Math.min(MAX_COUNT, Math.round(Number(count.value)) || 1)) };
+    if (negative.value.trim()) body.negative = negative.value.trim();
     const text = Object.fromEntries(Object.entries(textInputs).filter(([, input]) => input.value !== '').map(([field, input]) => [field, input.value]));
     if (Object.keys(text).length) body.text = text;
     if (seed.value !== '') body.seed = Number(seed.value);

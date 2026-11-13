@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+from unittest import mock
 from xml.etree import ElementTree
 from xml.sax.saxutils import escape
 from pathlib import Path
@@ -455,7 +456,7 @@ class LockupTests(BrandBase):
         for name in ("A one = b", "x id = y", "R&D onload = 1 <text>"):
             for piece in (self.emblem, self.word):
                 piece.write_text(path_svg(100, 50, title=escape(name)))  # as gimg writes a title
-            brand.lockup(self.emblem, self.word, self.tmp / "l.svg", title=name)
+            brand.lockup(self.emblem, self.word, self.tmp / "l.svg", title=name, force=True)
             self.assertEqual(ElementTree.fromstring((self.tmp / "l.svg").read_text()).find(ns + "title").text, name)
 
     def test_a_forbidden_attribute_is_still_refused_next_to_a_title(self):
@@ -509,6 +510,21 @@ class LockupTests(BrandBase):
         self.assertEqual(code, 0)
         self.assertEqual(brand._read_svg(out)["box"], tuple(float(v) for v in re.search(
             r'viewBox="([^"]+)"', out.read_text()).group(1).split()[:2]) + (485.0, 100.0))
+
+    def test_lockup_does_not_overwrite_without_force(self):
+        code, _, out = self.lock()
+        self.assertEqual(code, 0)
+        out.write_text("mine")
+        code, err, _ = self.lock()
+        self.assertEqual(code, 1)
+        self.assertIn("l.svg", err)
+        self.assertEqual(out.read_text(), "mine")
+        with self.assertRaises(GimgError) as cm:
+            brand.lockup(self.emblem, self.word, out)
+        self.assertEqual(cm.exception.code, "brand.exists")
+        code, _, _ = self.lock("--force")
+        self.assertEqual(code, 0)
+        self.assertIn("<path", out.read_text())
 
     def test_text_output_line(self):
         code, out, _ = self.run_cli("brand", "lockup", str(self.emblem), str(self.word), "-o", str(self.tmp / "t.svg"))
@@ -786,6 +802,54 @@ class SquareTests(BrandBase):
         self.assertEqual(self.out.read_text(), "mine")
         self.make(force=True)
         self.assertIn("<path", self.out.read_text())
+
+    @unittest.skipUnless(shutil.which("rsvg-convert"), "needs rsvg-convert")
+    def test_force_is_all_or_nothing_when_a_png_fails_midway(self):
+        old = {self.out: "old svg", self.tmp / "sq-64.png": "old 64", self.tmp / "sq-32.png": "old 32"}
+        for path, text in old.items():
+            path.write_text(text)
+        before = set(self.tmp.iterdir())
+        real, calls = brand._rsvg, []
+
+        def flaky(argv, env):
+            calls.append(argv)
+            if len(calls) == 2:
+                raise GimgError("brand.tool_failed", tool="rsvg-convert", reason="boom")
+            return real(argv, env)
+
+        with mock.patch.object(brand, "_rsvg", flaky):
+            exc = self.code(pngs=[64, 32], force=True)
+        self.assertEqual(exc.code, "brand.tool_failed")
+        self.assertIn("boom", str(exc))
+        self.assertEqual(len(calls), 2)
+        for path, text in old.items():
+            self.assertEqual(path.read_text(), text)
+        self.assertEqual(set(self.tmp.iterdir()), before)  # no temporary files left
+
+    def test_a_failed_final_rename_restores_every_old_file(self):
+        old = {self.out: "old svg", self.tmp / "sq-64.png": "old 64", self.tmp / "sq-32.png": "old 32"}
+        for path, text in old.items():
+            path.write_text(text)
+        before = set(self.tmp.iterdir())
+
+        def fake_rsvg(argv, env):
+            Path(argv[argv.index("-o") + 1]).write_bytes(b"new png")
+
+        real = os.replace
+
+        def flaky(src, dst, *a, **k):
+            if str(dst) == str(self.tmp / "sq-32.png") and str(src).endswith(".png.tmp"):
+                raise OSError(28, "No space left")
+            return real(src, dst, *a, **k)
+
+        with mock.patch.object(brand, "_rsvg", fake_rsvg), mock.patch.object(brand.shutil, "which", return_value="/x"), \
+                mock.patch.object(brand.os, "replace", flaky):
+            exc = self.code(pngs=[64, 32], force=True)
+        self.assertEqual(exc.code, "brand.write_failed")
+        self.assertIn("No space left", str(exc))
+        for path, text in old.items():
+            self.assertEqual(path.read_text(), text)  # the SVG and the first PNG were not left new
+        self.assertEqual(set(self.tmp.iterdir()), before)  # no temporaries or backups left
 
     def test_default_output_sits_next_to_the_drawing(self):
         res = brand.square(self.draw, None, "#7C5CD6", "#fbfcfd")

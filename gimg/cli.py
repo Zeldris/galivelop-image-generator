@@ -74,7 +74,7 @@ def _build(lang: str) -> argparse.ArgumentParser:
     g = group(top, "attempt", "cli.cmd.attempt")
     leaf(g, "new", "cli.cmd.attempt_new", project, okey, oprofile,
          opt("--seed", "cli.arg.seed", type=int), opt("--count", "cli.arg.count", type=int, default=1),
-         opt("--prompt", "cli.arg.prompt"), opt("--steps", "cli.arg.steps", type=int),
+         opt("--prompt", "cli.arg.prompt"), opt("--negative", "cli.arg.negative"), opt("--steps", "cli.arg.steps", type=int),
          opt("--cfg", "cli.arg.cfg", type=float), opt("--sampler", "cli.arg.sampler"),
          opt("--draft", "cli.arg.draft", action=argparse.BooleanOptionalAction, default=None),
          opt("--template", "cli.arg.template", metavar="ID"),
@@ -132,7 +132,8 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--layout", "cli.arg.brand_layout", choices=brand.LAYOUTS, default="h"),
          opt("--margin", "cli.arg.brand_margin", type=float, default=0.0),
          opt("--color", "cli.arg.brand_ink", metavar="COLOR"),
-         opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"), *props)
+         opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"),
+         opt("--force", "cli.arg.brand_force_square", action="store_true"), *props)
     leaf(g, "square", "cli.cmd.brand_square", arg("drawing", "cli.arg.brand_drawing_svg"),
          opt("--fill", "cli.arg.brand_fill", required=True, metavar="#RRGGBB"),
          opt("--ink", "cli.arg.brand_ink_hex", required=True, metavar="#RRGGBB"),
@@ -284,7 +285,7 @@ def _brand(args, sub, out: _Out) -> None:
         key = "cli.out.brand_trace"
     elif sub == "lockup":
         res = brand.lockup(args.emblem, args.wordmark, args.out, args.layout, args.cap, args.gap, args.width, args.margin,
-                           args.color)
+                           args.color, force=args.force)
         key = "cli.out.brand_lockup"
     elif sub == "square":
         try:
@@ -590,6 +591,8 @@ def _order(args, sub, out: _Out) -> None:
             return
         out.line("cli.out.order_head", order=o["key"], profile=o["profile"])
         out.line("cli.out.order_prompt", prompt=o["prompt"])
+        if o.get("negative"):
+            out.line("cli.out.order_negative", negative=o["negative"])
         out.line("cli.out.order_seed", seed=out.none(o["seed"]))
         out.line("cli.out.order_refs", references=", ".join(o["references"]) or out.t("cli.out.none"))
         if o.get("initImage") is not None:
@@ -616,7 +619,8 @@ def _attempt(args, sub, out: _Out) -> None:
                                        ("sampler", args.sampler)) if v is not None}
         entries, provider = queue.new_attempts(args.project, args.key, args.profile, args.count,
                                                seed=args.seed, prompt=args.prompt, params=overrides,
-                                               draft=args.draft, template=args.template, model=args.model)
+                                               draft=args.draft, template=args.template, model=args.model,
+                                               negative=args.negative)
         _queued(out, entries, provider)
     elif sub == "mark":
         item = orders.mark(args.project, args.key, args.profile, args.attempt, args.state)

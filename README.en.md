@@ -63,7 +63,7 @@ Each project keeps a `galivelop-images.json` file in its repo (D12):
 - `name`: project name.
 - `delivery.dir`: delivery dir, relative to the project repo.
 - `delivery.template`: name of the delivered file; `{key}` is the order key and `{profile}` the profile.
-- `profiles`: named generation profiles (size, steps, `cfg`, sampler and model).
+- `profiles`: named generation profiles (size, steps, `cfg`, sampler and model; `tileable`: `"xy"`, `"x"` or `"y"` asks for a seamless texture, `--circular`/`--circularx`/`--circulary` of sd-cli).
 
 An order asks for one image by key and profile:
 
@@ -74,6 +74,7 @@ An order asks for one image by key and profile:
 - `key`: identifies the image inside the project; it may include subfolders.
 - `profile`: profile from the project config to apply.
 - `prompt`: description of the image.
+- `negative`: negative prompt, optional (what must not appear); empty is the same as absent. It is passed to `sd-cli` as `--negative-prompt` and kept in the attempt's metadata. Use it for the negative block of each brand's style sheet.
 - `references`: reference images (the machine profile limits how many).
 - `seed`: seed, to reproduce a result.
 

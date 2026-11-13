@@ -700,7 +700,7 @@ def order_text(req):
 
 @route("POST", _ORD + "/attempts")
 def attempt_new(req):
-    q, body = req.params, _fields(req.body, ("count", "seed", "prompt", "steps", "cfg", "sampler", "draft", "template", "model"))
+    q, body = req.params, _fields(req.body, ("count", "seed", "prompt", "negative", "steps", "cfg", "sampler", "draft", "template", "model"))
     model = body.get("model")
     if model is not None and not isinstance(model, str):
         raise GimgError("api.bad_param", name="model")
@@ -710,7 +710,8 @@ def attempt_new(req):
     overrides = {k: body[k] for k in ("steps", "cfg", "sampler") if body.get(k) is not None}
     entries, provider = queue.new_attempts(q["p"], q["key"], q["profile"], body.get("count", 1),
                                            seed=body.get("seed"), prompt=body.get("prompt"), params=overrides,
-                                           draft=draft, template=_template_param(body.get("template")), model=model)
+                                           draft=draft, template=_template_param(body.get("template")), model=model,
+                                           negative=body.get("negative"))
     _after_enqueue()
     return Reply(202, queue.queued_view(entries, provider, req.lang), json=True)
 
