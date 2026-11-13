@@ -587,12 +587,12 @@ def _fit(piece: dict, x: float, y: float, w: float, h: float, ink=None) -> str:
 
 
 SQUARE = 128
-_PAINT = re.compile(r'(?<![\w:.-])(fill|stroke)="([^"]*)"')
+_PAINT_ATTR = re.compile(r'(?<![\w:.-])(fill|stroke)="([^"]*)"')
 
 
 def _square_ink(inner: str, ink: str) -> str:
     """`inner` with every fill and stroke that paints (not ``none``) turned into `ink`; unpainted paths inherit it."""
-    return '<g fill="%s">%s</g>' % (ink, _PAINT.sub(lambda m: m.group(0) if m.group(2).strip() == "none" else '%s="%s"' % (m.group(1), ink), inner))
+    return '<g fill="%s">%s</g>' % (ink, _PAINT_ATTR.sub(lambda m: m.group(0) if m.group(2).strip() == "none" else '%s="%s"' % (m.group(1), ink), inner))
 
 
 def square(drawing, out=None, fill=None, ink=None, chamfer: int = 28, pad: int = 24, pngs=None, force: bool = False) -> dict:
