@@ -9,7 +9,7 @@ as the engine and the Steam Deck as the reference machine (D4). No dependencies:
 
 ## Status
 
-Version **0.4.1**, phases **F0-F4 done** and on `main`: projects, orders, attempts, chosen candidate and delivery,
+Version **0.5.0**, phases **F0-F4 done** and on `main`: projects, orders, attempts, chosen candidate and delivery,
 persistent queue, CLI, real engine (`sd-cli`, with `instalar.sh`), composition and brand measurement, local HTTP API
 and browser interface. Still pending: manual checks on the Deck (pilot rounds, a full walk through the interface in
 the browser), the pilot with real projects (F5) and what follows (see "Next steps"). The test engine (`fake`,
