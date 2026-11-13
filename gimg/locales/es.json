@@ -909,5 +909,19 @@
   "cli.arg.brand_force_square": "pisa los archivos que ya existan",
   "cli.out.brand_square": "{out}: cuadrado {fill}, tinta {ink}, contraste {contrast}:1",
   "cli.out.brand_square_low": "aviso: el contraste {contrast}:1 está por debajo de 4,5:1 (WCAG AA para texto)",
-  "error.brand.bad_square": "cuadrado no válido: {reason}"
+  "error.brand.bad_square": "cuadrado no válido: {reason}",
+  "cli.cmd.brand_fit": "reencuadra una imagen generada para que el motivo caiga en una zona, rellenando el resto con el papel y fundiendo los bordes (el original no se toca)",
+  "cli.arg.brand_out_fit": "PNG de salida (por defecto, el nombre con -fit)",
+  "cli.arg.brand_fit_anchor": "con qué borde de la zona toca la caja del motivo (por defecto right)",
+  "cli.arg.brand_fit_min_x": "límite izquierdo de la zona en px (por defecto, el margen)",
+  "cli.arg.brand_fit_max_x": "límite derecho de la zona en px (por defecto, el ancho menos el margen)",
+  "cli.arg.brand_fit_margin": "margen en px de los lados de la zona que no se dan (por defecto 24)",
+  "cli.arg.brand_fit_paper": "el color del papel: auto (mediana del borde) o #RRGGBB",
+  "cli.arg.brand_fit_tol": "distancia RGB al papel a partir de la cual un píxel es tinta (por defecto 40)",
+  "cli.arg.brand_fit_feather": "px del fundido horizontal en los bordes de la imagen desplazada (por defecto 400)",
+  "cli.arg.brand_fit_feather_y": "px del fundido vertical en los bordes de la imagen desplazada (por defecto 60)",
+  "cli.arg.brand_fit_max_scale": "escala máxima permitida (por defecto 1.0: nunca agranda)",
+  "cli.out.brand_fit": "{out}: escala {scale}, desplazamiento {dx},{dy}, papel {paper}, motivo {box} -> {box_after}",
+  "error.brand.no_ink": "no se encontró tinta (no ink found): nada difiere del papel {paper} en más de {tol} (baja --tol o da --paper)",
+  "error.brand.empty_zone": "zona vacía: min-x {min_x} no es menor que max-x {max_x}"
 }

@@ -115,6 +115,7 @@ python3 -m gimg export a.png a.webp --size 960x540  # copia a WebP, ICO o BMP (l
 python3 -m gimg export a.png b.png --crop 64,0,768,1152 --size 600x900   # recorte declarado (X,Y,W,H del original) y luego reducción
 python3 -m gimg export a.png b.png --size 1536x384 --anchor top   # recorte de la proporción arriba|abajo|izquierda|derecha (o top-left…), por defecto al centro
 python3 -m gimg brand matte logo.png                  # quita el fondo plano: logo-alpha.png (el original no se toca)
+python3 -m gimg brand fit banda.png -o banda-fit.png --anchor right --min-x 1000   # reencuadra: el motivo cae en la zona, el resto es papel con los bordes fundidos (--max-x, --margin, --paper, --tol, --feather, --feather-y, --max-scale, --json)
 python3 -m gimg brand trace logo-alpha.png --mode color|mono|silhouette   # PNG a SVG (--palette, --colors, --matte)
 python3 -m gimg brand wordmark TARKOR --font Cinzel.ttf -o wordmark.svg   # el nombre a trazos, sin <text> (--weight, --spacing)
 python3 -m gimg brand lockup emblema.svg wordmark.svg --layout h|v   # emblema y nombre en un SVG (--cap, --gap, --width, --margin, --color, -o)

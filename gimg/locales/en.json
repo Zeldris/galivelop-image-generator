@@ -909,5 +909,19 @@
   "cli.arg.brand_force_square": "overwrite files that already exist",
   "cli.out.brand_square": "{out}: square {fill}, ink {ink}, contrast {contrast}:1",
   "cli.out.brand_square_low": "warning: contrast {contrast}:1 is under 4.5:1 (WCAG AA for text)",
-  "error.brand.bad_square": "invalid square: {reason}"
+  "error.brand.bad_square": "invalid square: {reason}",
+  "cli.cmd.brand_fit": "reframe a generated image so the motif lands in a zone, filling the rest with the paper and fading the edges (the original is not touched)",
+  "cli.arg.brand_out_fit": "output PNG (default: the name with -fit)",
+  "cli.arg.brand_fit_anchor": "which edge of the zone the motif box touches (default right)",
+  "cli.arg.brand_fit_min_x": "left limit of the zone in px (default: the margin)",
+  "cli.arg.brand_fit_max_x": "right limit of the zone in px (default: width minus the margin)",
+  "cli.arg.brand_fit_margin": "margin in px for the zone sides that are not given (default 24)",
+  "cli.arg.brand_fit_paper": "the paper color: auto (median of the border) or #RRGGBB",
+  "cli.arg.brand_fit_tol": "RGB distance to the paper above which a pixel is ink (default 40)",
+  "cli.arg.brand_fit_feather": "px of the horizontal fade at the edges of the moved image (default 400)",
+  "cli.arg.brand_fit_feather_y": "px of the vertical fade at the edges of the moved image (default 60)",
+  "cli.arg.brand_fit_max_scale": "largest scale allowed (default 1.0: it never enlarges)",
+  "cli.out.brand_fit": "{out}: scale {scale}, shift {dx},{dy}, paper {paper}, motif {box} -> {box_after}",
+  "error.brand.no_ink": "no ink found: nothing differs from the paper {paper} by more than {tol} (lower --tol or give --paper)",
+  "error.brand.empty_zone": "empty zone: min-x {min_x} is not below max-x {max_x}"
 }

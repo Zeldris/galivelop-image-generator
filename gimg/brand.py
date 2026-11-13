@@ -104,6 +104,140 @@ def matte(src, out=None, tol: float = 60, soft: float = 110, border: int = 6, gr
             "transparent": round(clear / (width * height), 4)}
 
 
+FIT_ANCHORS = ("left", "center", "right")
+FIT_NOISE = 0.005  # rows and columns with less ink than this share do not count for the motif box
+
+
+def _fit_paper(width, height, rgba, paper):
+    """``(r, g, b)``: the `paper` hex, or with ``auto`` the median of the border (four bands of 8 px)."""
+    if paper != "auto":
+        try:
+            return _trace.parse_hex(paper)
+        except ValueError as exc:
+            raise _bad(exc)
+    band = min(8, width, height)
+    chan = ([], [], [])
+    for y in range(height):
+        xs = range(width) if (y < band or y >= height - band) else list(range(band)) + list(range(width - band, width))
+        for x in xs:
+            i = (y * width + x) * 4
+            chan[0].append(rgba[i])
+            chan[1].append(rgba[i + 1])
+            chan[2].append(rgba[i + 2])
+    return tuple(sorted(c)[len(c) // 2] for c in chan)
+
+
+def _fit_box(width, height, rgba, paper, tol):
+    """``[x0, y0, x1, y1]`` (end excluded) of the ink, ignoring the noisy rows and columns; ``None`` without ink."""
+    limit = tol * tol
+    pr, pg, pb = paper
+    cols, rows = [0] * width, [0] * height
+    for y in range(height):
+        i, n = y * width * 4, 0
+        for x in range(width):
+            dr, dg, db = rgba[i] - pr, rgba[i + 1] - pg, rgba[i + 2] - pb
+            if dr * dr + dg * dg + db * db > limit:
+                cols[x] += 1
+                n += 1
+            i += 4
+        rows[y] = n
+    xs = [x for x in range(width) if cols[x] >= max(2, FIT_NOISE * height)]
+    ys = [y for y in range(height) if rows[y] >= max(2, FIT_NOISE * width)]
+    if not xs or not ys:
+        return None
+    return [xs[0], ys[0], xs[-1] + 1, ys[-1] + 1]
+
+
+def fit(src, out=None, anchor: str = "right", min_x=None, max_x=None, margin: float = 24, paper: str = "auto",
+        tol: float = 40, feather: float = 400, feather_y: float = 60, max_scale: float = 1.0) -> dict:
+    """Reframe `src` so its motif (the ink over the paper) lands in a zone, filling the rest with the paper.
+
+    The output has the size of `src` and is opaque. The whole image is scaled by ``s = min(max_scale, zone/box)`` (bilinear)
+    and moved so the box of the motif sits on `anchor` of the zone (``[min_x or margin, max_x or W - margin]`` in x,
+    ``[margin, H - margin]`` in y; vertically it is centered); its edges that stay inside the canvas fade into the paper
+    over `feather` px (x) and `feather_y` px (y). A motif already inside the zone at scale 1 leaves the image as it is.
+    """
+    out = _check_out(src, out or default_out(src, "-fit", ".png"))
+    if anchor not in FIT_ANCHORS:
+        raise GimgError("brand.bad_option", reason="anchor must be one of %s (got %r)" % (", ".join(FIT_ANCHORS), anchor))
+    if not (0 <= tol <= 442) or feather < 0 or feather_y < 0 or margin < 0 or not max_scale > 0:
+        raise GimgError("brand.bad_option", reason="tol 0-442, margin, feather and feather-y 0 or more, max-scale above 0")
+    width, height, rgba = png.read_rgba(src)
+    x0z = margin if min_x is None else min_x
+    x1z = width - margin if max_x is None else max_x
+    if x0z < 0 or x1z > width or margin * 2 >= height:
+        raise GimgError("brand.bad_option", reason="min-x and max-x must lie inside 0-%d and the margin must leave room" % width)
+    if x0z >= x1z:
+        raise GimgError("brand.empty_zone", min_x=round(x0z, 2), max_x=round(x1z, 2))
+    ink = _fit_paper(width, height, rgba, paper)
+    box = _fit_box(width, height, rgba, ink, tol)
+    if box is None:
+        raise GimgError("brand.no_ink", tol=tol, paper="#%02x%02x%02x" % ink)
+    y0z, y1z = margin, height - margin
+    bw, bh = box[2] - box[0], box[3] - box[1]
+    s = min(max_scale, (x1z - x0z) / bw, (y1z - y0z) / bh)
+    if s == 1.0 and box[0] >= x0z and box[2] <= x1z and box[1] >= y0z and box[3] <= y1z:
+        dx = dy = 0
+    else:
+        if anchor == "right":
+            dx = x1z - box[2] * s
+        elif anchor == "left":
+            dx = x0z - box[0] * s
+        else:
+            dx = (x0z + x1z) / 2 - (box[0] + box[2]) * s / 2
+        dy = (y0z + y1z) / 2 - (box[1] + box[3]) * s / 2
+        dx, dy = int(round(dx)), int(round(dy))
+    if s == 1.0 and dx == 0 and dy == 0:
+        data = bytearray(rgba)
+        data[3::4] = b"\xff" * (width * height)
+    else:
+        sw, sh = max(1, int(round(width * s))), max(1, int(round(height * s)))
+        data = _fit_compose(width, height, rgba, ink, sw, sh, dx, dy, feather, feather_y)
+    _write(out, png.rgba_bytes(width, height, bytes(data)))
+    after = [round(box[0] * s + dx, 1), round(box[1] * s + dy, 1), round(box[2] * s + dx, 1), round(box[3] * s + dy, 1)]
+    return {"src": str(src), "out": out, "size": [width, height], "paper": "#%02x%02x%02x" % ink, "box": box,
+            "box_after": after, "scale": round(s, 4), "shift": [dx, dy], "zone": [x0z, y0z, x1z, y1z]}
+
+
+def _fit_ramp(i, size, edge_lo, edge_hi, span):
+    """Alpha of the pixel `i` of ``size``: 0 to 1 over `span` px from each edge that is inside the canvas."""
+    a = 1.0
+    if span > 0:
+        if edge_lo:
+            a = min(a, (i + 0.5) / span)
+        if edge_hi:
+            a = min(a, (size - i - 0.5) / span)
+    return a
+
+
+def _fit_compose(width, height, rgba, paper, sw, sh, dx, dy, feather, feather_y) -> bytearray:
+    """The canvas of `paper` with `rgba` scaled to ``sw x sh`` (bilinear) at ``(dx, dy)``, faded where its edges are inside."""
+    out = bytearray(bytes((paper[0], paper[1], paper[2], 255)) * (width * height))
+    xr, yr = width / sw, height / sh  # source pixels per scaled one
+    cols = []  # per canvas column: x, byte offset of the left tap and of the right one, weight of the right, alpha
+    for x in range(max(0, dx), min(width, dx + sw)):
+        u = (x - dx + 0.5) * xr - 0.5
+        i0 = max(0, min(width - 1, int(math.floor(u))))
+        i1 = min(width - 1, i0 + 1)
+        cols.append((x, i0 * 4, i1 * 4, min(1.0, max(0.0, u - i0)),
+                     _fit_ramp(x - dx, sw, dx > 0, dx + sw < width, feather)))
+    for y in range(max(0, dy), min(height, dy + sh)):
+        v = (y - dy + 0.5) * yr - 0.5
+        j0 = max(0, min(height - 1, int(math.floor(v))))
+        j1 = min(height - 1, j0 + 1)
+        w2 = min(1.0, max(0.0, v - j0))
+        ay = _fit_ramp(y - dy, sh, dy > 0, dy + sh < height, feather_y)
+        r0, r1, base = j0 * width * 4, j1 * width * 4, y * width * 4
+        for x, a0, a1, w1, ax in cols:
+            alpha = ax * ay
+            o = base + x * 4
+            for c in range(3):
+                top = rgba[r0 + a0 + c] + (rgba[r0 + a1 + c] - rgba[r0 + a0 + c]) * w1
+                bot = rgba[r1 + a0 + c] + (rgba[r1 + a1 + c] - rgba[r1 + a0 + c]) * w1
+                out[o + c] = int(round(paper[c] + (top + (bot - top) * w2 - paper[c]) * alpha))
+    return out
+
+
 def parse_palette(text) -> list:
     """``"#aabbcc,#112233"`` -> ``["#aabbcc", "#112233"]`` (a list passes through); a bad color is ``brand.bad_option``."""
     items = [s.strip() for s in text.split(",")] if isinstance(text, str) else list(text)
@@ -629,5 +763,5 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = SP
             "contact_size": list(sheet_size), "overwritten": sorted(clash), "seconds": round(time.monotonic() - t0, 1)}
 
 
-__all__ = ["contact_sheet", "targets_of", "check_targets", "matte", "trace", "wordmark", "lockup", "system", "slugify", "parse_palette", "default_out", "MODES", "SPACING", "LAYOUTS",
+__all__ = ["contact_sheet", "targets_of", "check_targets", "matte", "fit", "trace", "wordmark", "lockup", "system", "slugify", "parse_palette", "default_out", "MODES", "SPACING", "LAYOUTS",
            "SYSTEM_FILES", "TOOL"]
