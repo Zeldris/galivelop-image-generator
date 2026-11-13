@@ -1000,6 +1000,9 @@ posible.
   persona decida [P]; sin su decisión, su ronda r5 no empieza. El símbolo de toVeriAI necesita SVG antes de componerlo.
 - **Sumas y URLs del catálogo.** Se toman de lo descargado en la Deck y la persona las verifica; sin red o con cuota de Hugging
   Face, `instalar.sh` reintenta con `-C -`.
+- **Prompt negativo con el `sd-cli` real (manual Deck).** El campo `negative` del pedido llega a `sd-cli` como
+  `--negative-prompt` (0.5.x, `ccr-85e9d14e-zt7p8b`), probado solo con el `sd-cli` falso. Lo comprueba la persona en la
+  Deck: un pedido con y sin `negative`, misma semilla, y que la imagen cambie y el registro de `sd-cli` lo lleve.
 - **Herramientas del CI.** ffmpeg y rsvg-convert se instalan con `apt` en `check.yml`; si el CI no arranca (sin cuota), vale el
   check en local con la confirmación de la persona (`AGENTS.md`, «Relevos»).
 

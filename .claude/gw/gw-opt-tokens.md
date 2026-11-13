@@ -88,9 +88,19 @@ las crea una vez; desde entonces son del proyecto.
 - Cada ronda de revisión visual de la interfaz (rN de capturas) cuenta como paso: commit, bitácora y `/clear`
   (aprobado el 2026-11-13; `ccr-85e9d14e-zt7p8b` encadenó r2-r4 y tocó techos de 164k).
 
+- `/clear` también entre dos tareas de la misma sesión y siempre al volver tras más de 1 h de pausa (la caché caducó
+  y el contexto se reescribe entero): `0cacc78c` encadenó la release v0.5.0 y la tarea de leves, 70 llamadas a 126k
+  de media frente a un suelo de 88k, ~1,9 M de más (aprobado el 2026-11-13, como regla, sin gancho).
+- Tope de 30 llamadas en el encargo de cada subagente: en `.claude/gw/gw-orchestrate-dealer.md` (aprobado el
+  2026-11-13).
+
 ## Referencias medidas
 
 <!-- Cifras medidas con las que comparar: fecha, sesión, contexto medio, llamadas, total. -->
+- 2026-11-13, `ccr-85e9d14e-zt7p8b` desde `529468b` (release v0.5.0, leves sin equipo, fase 1), sesiones `0cacc78c` y
+  `6e5628a7`: principal 123 llamadas, ~15 M (126k y 117k de media, techos 162/149k, 0 compactaciones); 4 subagentes,
+  113 llamadas, ~12,3 M, arranque 66-69k. Suelo tras `/clear`: 85-88k (en octubre, 38-45k), casi todo herramientas y
+  conectores del entorno; la persona no lo cambia de momento.
 - 2026-11-13, `ccr-85e9d14e-zt7p8b` desde `2e6b642` (revisión de la interfaz r10): 135 llamadas, 127,6k de media,
   3 compactaciones (presupuesto 2; techos 163/164/106k), 17,2 M en la principal + 1,2 M en 1 subagente; 28 capturas
   sueltas, ~2,2 M arrastrados (13 %).
