@@ -32,6 +32,9 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Perfiles de ejemplo para los canales que piden las hojas de marca: `lateral` 704×1344 (instalador de Windows),
   `linkedin` 1584×396, `discord` 960×540 y `panorama` 1600×900 en `examples/tarkor/`, e `icon` 512×512 en
   `examples/toveriai/`.
+- `gimg export IMAGEN SALIDA`: copia un PNG entregado a WebP sin pérdida, ICO (un PNG por lado, 16 a 256) o BMP de
+  24 bits sin alfa (sobre `--background`), o a un PNG de otro tamaño; `--size` recorta al centro y reduce, nunca
+  amplía. Codificadores en Python puro; la entrega sigue siendo el PNG con su procedencia.
 - Traducción al inglés de la API local: `docs/en/api.md`; el test de la documentación de la API comprueba los dos idiomas.
 - Sistema de logo (`gimg brand`, D37): `matte` recorta el fondo plano de un emblema generado (`--holes` vacía también
   lo encerrado), `trace` lo vectoriza a SVG con la paleta de la marca o en una tinta, `wordmark` convierte el nombre

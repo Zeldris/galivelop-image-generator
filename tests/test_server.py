@@ -35,6 +35,7 @@ INTENDED_500 = {
     "serve.start_failed",
     # brand.*: faults of the machine, not of the request (the rest of brand.* has its 4xx)
     "brand.out_is_input", "brand.tool_missing", "brand.tool_failed", "brand.timeout", "brand.write_failed",
+    "export.out_is_input",
 }
 
 

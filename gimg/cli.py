@@ -7,7 +7,7 @@ import os
 import sys
 import traceback
 
-from . import __version__, brand, compose, delivery, doctor, i18n, measure, orders, projects, queue, service, sheet, worker
+from . import __version__, brand, compose, delivery, doctor, export, i18n, measure, orders, projects, queue, service, sheet, worker
 from .errors import GimgError
 
 LANGS = ("es", "en")
@@ -149,6 +149,13 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--out", "cli.arg.sheet_out", required=True, metavar="PNG"),
          opt("--columns", "cli.arg.sheet_columns", type=int, default=sheet.DEFAULT_COLUMNS),
          opt("--width", "cli.arg.sheet_width", type=int, default=sheet.DEFAULT_WIDTH))
+
+    leaf(top, "export", "cli.cmd.export", arg("image", "cli.arg.export_image", metavar="PNG"),
+         arg("out", "cli.arg.export_out", metavar="OUT"),
+         opt("--size", "cli.arg.export_size", metavar="WxH"),
+         opt("--icon-sizes", "cli.arg.export_icon_sizes", metavar="16,32,…"),
+         opt("--background", "cli.arg.export_background", default=export.BACKGROUND, metavar="#RRGGBB"),
+         opt("--force", "cli.arg.export_force", action="store_true"))
 
     g = group(top, "queue", "cli.cmd.queue")
     leaf(g, "list", "cli.cmd.queue_list", opt("--state", "cli.arg.queue_state", choices=queue.STATES))
@@ -348,6 +355,13 @@ def _run(args, out: _Out) -> int:
                      columns=res["columns"], count=len(res["images"]))
             for i, path in enumerate(res["images"], 1):
                 out.line("cli.out.sheet_item", index=i, path=path)
+    elif cmd == "export":
+        res = export.export(args.image, args.out, args.size, args.icon_sizes, args.background, args.force)
+        if out.as_json:
+            out.data(res)
+        else:
+            out.line("cli.out.export_done", out=res["out"], format=res["format"].upper(), bytes=res["bytes"],
+                     sizes=", ".join("%dx%d" % s for s in res["sizes"]))
     elif cmd == "queue":
         _queue(args, sub, out)
     elif cmd == "serve":

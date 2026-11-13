@@ -499,9 +499,9 @@ Clases y líneas de `frontend/src/index.css` en `c858a150` (rama `claude/marca-i
 
 | Id | Contenido | Reglas | Bloque | Perfil | Salida | Formato | Estado |
 |---|---|---|---|---|---|---|---|
-| I1 | Lateral de NSIS | C8, L8, A9, P4 | noche | `lateral` 704×1344 | 164×314 y 328×628 | BMP 24 bits | pedido; BMP, hueco de gimg |
-| I2 | Cabecera de NSIS | C1, L2, L8, A9 | — | composición | 150×57 y 300×114 | BMP 24 bits | pedido; BMP, hueco |
-| I3 | Portada del asistente | C8, T1, A8 | noche | `cabecera` | 1536×512 → 1536×384 | WebP q85 | pedido; recorte y WebP, huecos |
+| I1 | Lateral de NSIS | C8, L8, A9, P4 | noche | `lateral` 704×1344 | 164×314 y 328×628 | BMP 24 bits | pedido; BMP con `gimg export` |
+| I2 | Cabecera de NSIS | C1, L2, L8, A9 | — | composición | 150×57 y 300×114 | BMP 24 bits | pedido; BMP con `gimg export` |
+| I3 | Portada del asistente | C8, T1, A8 | noche | `cabecera` | 1536×512 → 1536×384 | WebP q85 | pedido; recorte y WebP (sin pérdida) con `gimg export` |
 | I4 | Hierro del riel | A1, A5, A8 | común | `textura` | 1024² | WebP q85 mosaico xy | pedido |
 | I5 | Icono del instalador | = E14 | — | — | `.ico` | ICO | falta |
 | I6 | Cápsula vertical de la Deck | C8, L1, A4 | noche | `portrait` | 896×1152 → 768×1152 → 600×900 | PNG | pedido (aprobada el 2026-11-12, decisión 3) |

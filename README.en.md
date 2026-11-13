@@ -108,6 +108,7 @@ python3 -m gimg compose my-project fauna/red-howler banner 1 --template poster  
 python3 -m gimg templates my-project banner           # the profile's composition templates
 python3 -m gimg measure image.png --project my-project   # palette, contrast and distance to the brand
 python3 -m gimg sheet --out sheet.png a.png b.png     # contact sheet to review a round
+python3 -m gimg export a.png a.webp --size 960x540   # copy to WebP, ICO or BMP (the delivery stays PNG)
 python3 -m gimg brand matte logo.png                  # removes the flat background: logo-alpha.png (the original is untouched)
 python3 -m gimg brand trace logo-alpha.png --mode color|mono|silhouette   # PNG to SVG (--palette, --colors, --matte)
 python3 -m gimg brand wordmark TARKOR --font Cinzel.ttf -o wordmark.svg   # the name as paths, no <text> (--weight, --spacing)

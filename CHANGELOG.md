@@ -31,6 +31,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   whole lockup in `currentColor`, as the family's sheets ask).
 - Example profiles for the channels the brand sheets ask for: `lateral` 704×1344 (Windows installer), `linkedin`
   1584×396, `discord` 960×540 and `panorama` 1600×900 in `examples/tarkor/`, and `icon` 512×512 in `examples/toveriai/`.
+- `gimg export IMAGE OUT`: copies a delivered PNG to lossless WebP, ICO (one PNG per side, 16 to 256) or 24-bit BMP
+  without alpha (over `--background`), or to a PNG of another size; `--size` crops around the centre and scales
+  down, never up. Pure-Python encoders; the delivery stays the PNG with its provenance.
 - English translation of the local API: `docs/en/api.md`; the API doc test now checks both languages.
 - Logo system (`gimg brand`, D37): `matte` removes the flat background of a generated emblem (`--holes` also empties
   what is enclosed), `trace` turns it into an SVG with the brand palette or in one ink, `wordmark` turns the name into
