@@ -107,6 +107,7 @@ python3 -m gimg queue cancel 3
 python3 -m gimg compose my-project fauna/red-howler banner 1 --template poster   # recompose without generating
 python3 -m gimg templates my-project banner           # the profile's composition templates
 python3 -m gimg measure image.png --project my-project   # palette, contrast and distance to the brand
+python3 -m gimg measure image.png --family "wood=#1b130c,#332415" --family "gold=#b8862b,#f2c45a"   # % of pixels per colour family (+ other)
 python3 -m gimg sheet --out sheet.png a.png b.png     # contact sheet to review a round
 python3 -m gimg export a.png a.webp --size 960x540   # copy to WebP, ICO or BMP (the delivery stays PNG)
 python3 -m gimg export a.png b.png --crop 64,0,768,1152 --size 600x900   # declared crop (X,Y,W,H of the original), then scale down

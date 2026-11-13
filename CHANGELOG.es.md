@@ -9,6 +9,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Sin publicar]
 
+### Añadido
+
+- `gimg measure --family NOMBRE=#hex,#hex,...` (repetible) reparte los píxeles por familia de color (color más cercano,
+  ΔE76 < 15, el resto como `otros`), para comprobar reglas como el 60/30/10. Clave `families` nueva en el JSON y error
+  `measure.bad_family`.
+
 ### Cambiado
 
 - La interfaz es clara por defecto (antes oscura); el tema oscuro sigue disponible. Paleta por roles de la hoja de

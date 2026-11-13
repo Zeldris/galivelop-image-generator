@@ -37,7 +37,7 @@ Gravedad: **C** contradice (dos fuentes dicen cosas distintas), **D** desfasado 
 | A14 | C | World-Maker-Fantasy, `.claude/gw/gw-media-content.md` (`3a10a3fa`) | Tarjetas con la paleta del Portal (`#06121c`, `#0c1d2b`, `#1b3447`, `#eaf4fa`, `#1aa6df`), DejaVu/Liberation Sans, 1600×900 | La hoja pide noche + oro y Cinzel e Inter fuera del juego | Entrega al juego, punto 5 |
 | A15 | D | `hoja.md` §13 l.232 | «Este repo, f2-motor `5460d2c`»; paleta de 10 hex | `brand.palette` de `examples/tarkor/galivelop-images.json` tiene 16 hex; rama actual `3c04dd1` | Tabla de fuentes (§18) |
 | A16 | H | `hoja.md` decisión 7 | Steam: solo cabecera y cápsula principal | El Instalador pide además, para Steam Deck: cápsula vertical 600×900 (I6), horizontal 920×430, fondo 1920×620, logo 1280×720 transparente, icono 256² (doc 13 §3) | Pregunta 3; filas «pedido» en la matriz |
-| A17 | H | `hoja.md` §12 | «60/30/10 a ojo» | `gimg/measure.py` solo mide la cuota de paleta: `DELTA_E = 15.0` (l.25), distancia euclídea en Lab (l.83-84), `palette_share` (l.170). No hay medida por familia | Reglas con fórmula en §16; la medida por familia es hueco de gimg |
+| A17 | H | `hoja.md` §12 | «60/30/10 a ojo» | `gimg/measure.py` solo mide la cuota de paleta: `DELTA_E = 15.0` (l.25), distancia euclídea en Lab (l.83-84), `palette_share` (l.170). Entonces no había medida por familia | Reglas con fórmula en §16; la medida por familia ya existe: `gimg measure --family` (hueco 5) |
 
 ## Huecos de gimg (no se implementan aquí)
 
@@ -52,8 +52,9 @@ Gravedad: **C** contradice (dos fuentes dicen cosas distintas), **D** desfasado 
    - 896×1152 → 768×1152 → 600×900: `gimg export in.png out.png --crop 64,0,768,1152 --size 600x900`.
    - 1024×576 → 1024×478 → 920×430: `gimg export in.png out.png --crop 0,49,1024,478 --size 920x430`.
 4. Sin perfiles para LinkedIn 1584×396, Discord 960×540 y tarjeta 16:9 1600×900.
-5. `gimg measure` no reparte los píxeles por familia (madera, hierro, oro, cristal): la regla 60/30/10 no se puede
-   comprobar con un comando.
+5. ~~`gimg measure` no reparte los píxeles por familia~~ **Resuelto:** `gimg measure --family NOMBRE=#hex,...` (repetible)
+   reparte los píxeles por familia y el resto a `otros`. Para 60/30/10 de Tarkor:
+   `python3 -m gimg measure pieza.png --family "madera-noche=#1b130c,#332415,#46311d,#5c4126,#0f1428,#1a2140" --family "hierro-piedra=#0e0b08,#171310,#221c16,#3a342d,#6b6257" --family "oro=#ffe9a8,#f2c45a,#b8862b,#7a5a1e,#5a3a14"`.
 6. Sin comprobación de luminancia media (I4 pide < 40 de 255) ni de contraste WCAG entre un texto y su fondo.
 7. `piezas.py` no centra el lockup en un tercio dado de la imagen (I1: tercio superior).
 
@@ -62,7 +63,7 @@ Gravedad: **C** contradice (dos fuentes dicen cosas distintas), **D** desfasado 
 Eran siete preguntas; la persona las respondió el mismo día y están aplicadas en `hoja.md` §16 y §17.
 
 1. **Tolerancia de color:** ΔE76 ≤ 15 en imagen generada; hex exacto en CSS y SVG.
-2. **60/30/10:** el «30» queda sin cota hasta que gimg mida por familia.
+2. **60/30/10:** el «30» queda sin cota hasta que se fije (gimg ya mide por familia: `gimg measure --family`).
 3. **Steam Deck:** sí a la cápsula vertical I6 y al icono 256²; lo demás son recortes de E4 y E5.
 4. **UX-40:** se pide al juego que la fusione en `main` antes de recibir imágenes.
 5. **`castle`:** vetada.
