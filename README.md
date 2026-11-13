@@ -111,9 +111,10 @@ python3 -m gimg templates mi-proyecto banner          # plantillas de composici√
 python3 -m gimg measure imagen.png --project mi-proyecto   # paleta, contraste y distancia a la marca
 python3 -m gimg sheet --out hoja.png a.png b.png      # hoja de contactos para revisar una ronda
 python3 -m gimg brand matte logo.png                  # quita el fondo plano: logo-alpha.png (el original no se toca)
-python3 -m gimg brand trace logo-alpha.png --mode color|mono|silhouette   # PNG a SVG (--palette, --colors, --matte)
+python3 -m gimg brand trace logo-alpha.png --mode color|mono|silhouette   # PNG a SVG (--palette, --colors, --matte, --ink-only [--paper #HEX]: una sola tinta con currentColor)
 python3 -m gimg brand wordmark TARKOR --font Cinzel.ttf -o wordmark.svg   # el nombre a trazos, sin <text> (--weight, --spacing)
 python3 -m gimg brand lockup emblema.svg wordmark.svg --layout h|v   # emblema y nombre en un SVG (--cap, --gap, --width, --margin, --color, -o)
+python3 -m gimg brand overlay base.svg motivo.svg -o salida.svg   # el motivo centrado sobre la base (--fit 0.5, --box x,y,w,h, --recolor #HEX, --skip-rect)
 python3 -m gimg brand system emblema.png --name Tarkor --font Cinzel.ttf --out-dir marca/   # los siete archivos del logo (--weight, --spacing, --palette, --colors, --text, --cap, --gap, --width, --force pisa)
 python3 -m gimg doctor                                # comprueba el motor, los modelos y las herramientas (--verify)
 python3 -m gimg serve                                 # servicio local en 127.0.0.1:8737 (--detach, --status, --stop, --port, --idle-min)

@@ -116,8 +116,15 @@ def parse_palette(text) -> list:
 
 
 def trace(src, out=None, mode: str = "color", palette=None, colors=None, dp_tol: float = 1.2, min_island: float = 12,
-          matte: bool = False, **opts) -> dict:
-    """Write the SVG of `src`; ``opts`` go to `trace.to_svg` (``color``, ``max_side``, ``title``...)."""
+          matte: bool = False, ink_only: bool = False, paper=None, **opts) -> dict:
+    """Write the SVG of `src`; ``opts`` go to `trace.to_svg` (``color``, ``max_side``, ``title``...).
+
+    ``ink_only``: one ``currentColor`` path with every colour but the paper (``paper``, default the palette colour closest to white).
+    """
+    if paper and not ink_only:
+        raise GimgError("brand.bad_option", reason="--paper only goes with --ink-only")
+    if ink_only:
+        opts.update(ink_only=True, paper=paper)
     if mode not in MODES:
         raise GimgError("brand.bad_option", reason="mode must be one of %s (got %r)" % (", ".join(MODES), mode))
     if palette and colors is not None:
@@ -431,6 +438,138 @@ def lockup(emblem, wordmark, out=None, layout: str = "h", cap: float = 0.45, gap
            % (_num(w), _num(h), "<title>%s</title>" % _trace.clean_title(title) if title else "", "".join(parts)))
     _write(out, svg.encode("utf-8"))
     return {"out": out, "layout": layout, "size": [round(w, 1), round(h, 1)], "paths": svg.count("<path"),
+            "bytes": len(svg.encode("utf-8"))}
+
+
+# ---------- overlay ----------
+
+_SVG_NS = "http://www.w3.org/2000/svg"
+_HEXCOLOR = re.compile(r"#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}")
+_URL_REF = re.compile(r"url\(\s*(['\"]?)#([^)'\"\s]+)\1\s*\)")
+_PAINT = re.compile(r"(?P<k>(?:^|;)\s*(?:fill|stroke)\s*:\s*)(?P<v>[^;]*)", re.I)
+_BAD_TAGS = ("script", "foreignobject", "image", "animate", "set", "animatetransform", "animatemotion")
+
+
+def _local(tag) -> str:
+    return tag.rsplit("}", 1)[-1].lower() if isinstance(tag, str) else ""
+
+
+def _overlay_motif(path, box, recolor, skip_rect):
+    """``(root, (x, y, w, h))``: the motif's element tree, cleaned and with the ids prefixed, and the box it is placed by."""
+    from xml.etree import ElementTree as ET
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            text = fh.read(32 * 1024 * 1024)
+        root = ET.fromstring(text)
+    except (OSError, UnicodeDecodeError) as exc:
+        raise GimgError("brand.bad_overlay_svg", path=str(path), reason=str(getattr(exc, "strerror", None) or exc))
+    except ET.ParseError as exc:
+        raise GimgError("brand.bad_overlay_svg", path=str(path), reason="it is not well-formed XML (%s)" % exc)
+    if _local(root.tag) != "svg":
+        raise GimgError("brand.bad_overlay_svg", path=str(path), reason="the root element is not <svg>")
+    if box is None:
+        m = re.fullmatch(r"\s*(\S+)[ ,]+(\S+)[ ,]+(\S+)[ ,]+(\S+)\s*", root.get("viewBox", ""))
+        try:
+            box = tuple(float(v) for v in m.groups()) if m else None
+        except ValueError:
+            box = None
+        if box is None:
+            raise GimgError("brand.bad_overlay_svg", path=str(path), reason="it has no usable viewBox (give --box x,y,w,h)")
+    if not all(math.isfinite(v) for v in box) or not (box[2] > 0 and box[3] > 0):
+        raise GimgError("brand.bad_overlay_svg", path=str(path), reason="the box has no area")
+    ids = {el.get("id") for el in root.iter() if el.get("id")}
+
+    def fix(value):
+        return _URL_REF.sub(lambda m: "url(#mo-%s)" % m.group(2) if m.group(2) in ids else m.group(0), value)
+
+    def paint(value):
+        return value if value.strip().lower() in ("none", "") else recolor
+
+    for parent in list(root.iter()):
+        for child in list(parent):
+            tag = _local(child.tag)
+            if tag in _BAD_TAGS:
+                raise GimgError("brand.bad_overlay_svg", path=str(path), reason="it has <%s>: only shapes, groups and gradients" % tag)
+            if (skip_rect and tag == "rect") or (recolor and tag in ("lineargradient", "radialgradient")):
+                parent.remove(child)
+    for el in root.iter():
+        for name in list(el.attrib):
+            val = el.attrib[name]
+            if name.lower().startswith("on"):
+                raise GimgError("brand.bad_overlay_svg", path=str(path), reason="it has event handlers")
+            if name == "id":
+                val = "mo-" + val
+            elif name.rsplit("}", 1)[-1] == "href":
+                if not val.startswith("#"):
+                    raise GimgError("brand.bad_overlay_svg", path=str(path), reason="it links outside itself")
+                val = "#mo-" + val[1:] if val[1:] in ids else val
+            else:
+                val = fix(val)
+            if recolor and name in ("fill", "stroke"):
+                val = paint(val)
+            if recolor and name == "style":
+                val = _PAINT.sub(lambda m: m.group("k") + paint(m.group("v")), val)
+            el.set(name, val)
+        if _local(el.tag) == "style" and el.text:
+            el.text = fix(el.text)
+    return root, box
+
+
+def overlay(base, motif, out=None, fit: float = 0.5, box=None, recolor=None, skip_rect: bool = False) -> dict:
+    """Write `base` unchanged plus the `motif` SVG placed centred on its viewBox, in a nested ``<svg>``.
+
+    The motif's box (its viewBox, or `box` = ``(x, y, w, h)`` in its units) is scaled uniformly so that its longer side is
+    ``fit`` x the base's viewBox width. ``recolor`` (``#rgb``/``#rrggbb``) paints every fill and stroke that is not ``none``;
+    ``skip_rect`` drops the motif's ``<rect>``. The motif's ids get the prefix ``mo-``.
+    """
+    if not 0 < fit <= 10:
+        raise GimgError("brand.bad_option", reason="fit must be above 0 and at most 10 (got %s)" % fit)
+    if recolor is not None and not _HEXCOLOR.fullmatch(str(recolor)):
+        raise GimgError("brand.bad_option", reason="recolor %r is not #rgb or #rrggbb" % (recolor,))
+    if isinstance(box, str):
+        try:
+            box = tuple(float(v) for v in box.split(","))
+        except ValueError:
+            box = ()
+        if len(box) != 4:
+            raise GimgError("brand.bad_option", reason="box must be x,y,w,h (four numbers)")
+    out = str(out or "overlay.svg")
+    for src in (base, motif):
+        _check_out(src, out)
+    try:
+        with open(base, "r", encoding="utf-8") as fh:
+            text = fh.read(32 * 1024 * 1024)
+    except (OSError, UnicodeDecodeError) as exc:
+        raise GimgError("brand.bad_overlay_svg", path=str(base), reason=str(getattr(exc, "strerror", None) or exc))
+    m = _SVG.match(text)
+    vb = _VIEWBOX.search(m.group(1)) if m else None
+    if not vb:
+        raise GimgError("brand.bad_overlay_svg", path=str(base), reason="not an SVG with a viewBox")
+    vx, vy, vw, vh = (float(v) for v in vb.groups())
+    if not all(math.isfinite(v) for v in (vx, vy, vw, vh)) or not (vw > 0 and vh > 0):
+        raise GimgError("brand.bad_overlay_svg", path=str(base), reason="the viewBox has no area")
+    root, (bx, by, bw, bh) = _overlay_motif(motif, box, recolor, skip_rect)
+    s = fit * vw / max(bw, bh)
+    w, h = bw * s, bh * s
+    x, y = vx + (vw - w) / 2, vy + (vh - h) / 2
+    from xml.etree import ElementTree as ET
+    ET.register_namespace("", _SVG_NS)
+    ET.register_namespace("xlink", "http://www.w3.org/1999/xlink")
+    for attr in ("x", "y", "width", "height", "viewBox", "preserveAspectRatio", "role"):
+        root.attrib.pop(attr, None)
+    root.set("x", _num(x))
+    root.set("y", _num(y))
+    root.set("width", _num(w))
+    root.set("height", _num(h))
+    root.set("viewBox", " ".join(_num(v) for v in (bx, by, bw, bh)))
+    root.set("overflow", "visible")
+    if recolor:
+        root.set("fill", recolor)  # what the motif leaves unpainted is black by default: it takes the colour too
+    nested = ET.tostring(root, encoding="unicode")
+    end = text.rindex("</svg>")
+    svg = text[:end] + nested + text[end:]
+    _write(out, svg.encode("utf-8"))
+    return {"out": out, "size": [round(vw, 1), round(vh, 1)], "scale": round(s, 6), "box": [round(x, 3), round(y, 3), round(w, 3), round(h, 3)],
             "bytes": len(svg.encode("utf-8"))}
 
 

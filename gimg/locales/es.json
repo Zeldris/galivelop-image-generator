@@ -861,5 +861,17 @@
   "cli.out.queue_already_paused": "La cola ya estaba en pausa.",
   "cli.out.queue_resumed": "Cola reanudada (el servicio, si está vivo, relanza el trabajador en unos segundos; si no, `gimg work`).",
   "cli.out.queue_not_paused": "La cola no estaba en pausa.",
-  "cli.out.queue_paused_note": "La cola está en pausa (`gimg queue resume` la reanuda)."
+  "cli.out.queue_paused_note": "La cola está en pausa (`gimg queue resume` la reanuda).",
+  "cli.cmd.brand_overlay": "coloca un SVG de motivo centrado sobre un SVG base (la base no se toca)",
+  "cli.arg.brand_overlay_base": "SVG base (conserva su contenido; su viewBox fija el tamaño)",
+  "cli.arg.brand_overlay_motif": "SVG del motivo que se coloca sobre la base",
+  "cli.arg.brand_overlay_out": "SVG de salida (por defecto overlay.svg)",
+  "cli.arg.brand_fit": "lado mayor de la caja del motivo, como fracción del ancho de la base (por defecto 0,5)",
+  "cli.arg.brand_box": "x,y,w,h en las unidades del motivo: la parte del motivo que se coloca (por defecto su viewBox)",
+  "cli.arg.brand_recolor": "pinta con este color todo relleno y trazo del motivo que no sea none (#rgb o #rrggbb)",
+  "cli.arg.brand_skip_rect": "quita los <rect> del motivo (su cuadrado de fondo)",
+  "cli.arg.brand_ink_only": "SVG de una sola tinta: el color del papel queda transparente y el resto, un trazado con fill=currentColor",
+  "cli.arg.brand_paper": "con --ink-only, el color del papel (por defecto: el de la paleta más cercano al blanco; si no, blanco)",
+  "cli.out.brand_overlay": "{out}: {width}x{height}, motivo en {box} (escala {scale}), {bytes} bytes",
+  "error.brand.bad_overlay_svg": "«{path}» no sirve para el overlay: {reason}"
 }

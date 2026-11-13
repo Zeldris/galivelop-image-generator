@@ -259,7 +259,8 @@ def _path_data(m, W: int, H: int, sx: float, sy: float, dp_tol: float, min_islan
 
 def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, ncolores: int = 4, bg_tol: int = 128,
            smooth_passes: int = 2, dp_tol: float = 1.2, min_island: float = 12, curves: bool = True,
-           corner_deg: float = 55.0, max_side: int = 512, color: str = "currentColor", ink=None, title: str = "") -> str:
+           corner_deg: float = 55.0, max_side: int = 512, color: str = "currentColor", ink=None, title: str = "", ink_only: bool = False,
+           paper=None) -> str:
     """The SVG text of the RGBA image (see the module docstring for the steps and every option)."""
     if width < 1 or height < 1 or len(rgba) != width * height * 4:
         raise ValueError("%d bytes do not fit a %dx%d RGBA image" % (len(rgba), width, height))
@@ -273,6 +274,15 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
         raise ValueError("color: %r is not #rgb, #rrggbb or a color name such as currentColor" % (color,))
     pal_hex = list(palette) if palette else (extract_palette(width, height, rgba, ncolores, bg_tol) if mode != "silueta" else [])
     pal = [parse_hex(h) for h in pal_hex]
+    paper_i = None
+    if ink_only:
+        # the paper colour (given, else the palette colour closest to white, else white) joins the palette so its pixels get its label
+        want = parse_hex(paper) if paper else (min(pal, key=lambda c: _d2(c, (255, 255, 255))) if pal else (255, 255, 255))
+        if want not in pal:
+            pal.append(want)
+        paper_i = pal.index(want)
+    elif paper:
+        raise ValueError("paper only goes with ink_only")
     pal_hex = [_hex(c) for c in pal]
     cache = {}
 
@@ -298,7 +308,9 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
         return '<path fill=%s fill-rule="evenodd" d="%s"/>' % (quoteattr(fill), d) if d else ""
 
     layers = []
-    if mode == "silueta":
+    if ink_only:  # one path, every colour but the paper: the paper becomes holes
+        layers.append(layer("currentColor", lambda v: v >= 0 and v != paper_i))
+    elif mode == "silueta":
         layers.append(layer(color, lambda v: v >= 0))
     elif mode == "mono":
         if ink is None:

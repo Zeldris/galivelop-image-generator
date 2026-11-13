@@ -861,5 +861,17 @@
   "cli.out.queue_already_paused": "The queue was already paused.",
   "cli.out.queue_resumed": "Queue resumed (the service, if alive, relaunches the worker in a few seconds; otherwise `gimg work`).",
   "cli.out.queue_not_paused": "The queue was not paused.",
-  "cli.out.queue_paused_note": "The queue is paused (`gimg queue resume` resumes it)."
+  "cli.out.queue_paused_note": "The queue is paused (`gimg queue resume` resumes it).",
+  "cli.cmd.brand_overlay": "places a motif SVG centred over a base SVG (the base stays as it is)",
+  "cli.arg.brand_overlay_base": "base SVG (it keeps its content; its viewBox sets the size)",
+  "cli.arg.brand_overlay_motif": "motif SVG to place over the base",
+  "cli.arg.brand_overlay_out": "output SVG (default overlay.svg)",
+  "cli.arg.brand_fit": "longer side of the motif box as a fraction of the base width (default 0.5)",
+  "cli.arg.brand_box": "x,y,w,h in the motif's units: the part of the motif to place (default its viewBox)",
+  "cli.arg.brand_recolor": "paint every fill and stroke of the motif that is not none with this color (#rgb or #rrggbb)",
+  "cli.arg.brand_skip_rect": "drop the motif's <rect> elements (its background square)",
+  "cli.arg.brand_ink_only": "one-ink SVG: the paper color becomes transparent and the rest one path with fill=currentColor",
+  "cli.arg.brand_paper": "with --ink-only, the paper color (default: the palette color closest to white, else white)",
+  "cli.out.brand_overlay": "{out}: {width}x{height}, motif at {box} (scale {scale}), {bytes} bytes",
+  "error.brand.bad_overlay_svg": "'{path}' does not work for the overlay: {reason}"
 }
