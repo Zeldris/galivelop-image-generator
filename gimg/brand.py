@@ -392,6 +392,87 @@ def _num(v: float) -> str:
     return ("%.3f" % v).rstrip("0").rstrip(".")
 
 
+_HEXCOLOR = re.compile(r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})")
+ROSE_POINTS = (4, 8, 16)
+_ROSE_LEN = {0: 1.0, 1: 0.62, 2: 0.4}  # arm length (fraction of R) by order: main, diagonal, third order
+_ROSE_BASE, _ROSE_HALF = 0.3, 0.16  # kite: side vertices at this fraction of the arm along it, this far to each side
+
+
+def _rose_color(name: str, value, allow_none: bool = False) -> str:
+    v = str(value).strip()
+    if v.lower() == "currentcolor":
+        return "currentColor"
+    if allow_none and v.lower() == "none":
+        return "none"
+    if _HEXCOLOR.fullmatch(v):
+        return v.lower()
+    raise _bad("%s must be #rgb, #rrggbb%s or currentColor (got %r)" % (name, ", none" if allow_none else "", value))
+
+
+def rose(out, png_out=None, size: int = 1024, points: int = 8, stroke: float = 0.02, ink: str = "#13212b",
+         accent: str = "#0072a8", ring: bool = True, ticks: int = 32, margin: float = 0.08, paper: str = "#fbfcfd") -> dict:
+    """A geometric compass rose drawn by code as an exact SVG (``0 0 S S``): kite arms split along their axis (one half
+    filled, the other outline only, same turning direction on all), a small centre circle, an optional ring and radial
+    ticks, one stroke width throughout, no text. `ink` fills the main arms, `accent` the rest; ``currentColor`` makes it
+    one-ink. Every arm is a closed ``<path class="arm">`` (the filled half is a ``class="half"`` path over it)."""
+    def number(name, v, ok, rule):
+        if isinstance(v, bool) or not isinstance(v, (int, float)) or not ok(v):
+            raise _bad("%s must be %s (got %r)" % (name, rule, v))
+        return v
+    number("size", size, lambda v: v == int(v) and 64 <= v <= 8192, "a whole number from 64 to 8192")
+    if points not in ROSE_POINTS or isinstance(points, bool):
+        raise _bad("points must be one of 4, 8 or 16 (got %r)" % (points,))
+    number("stroke", stroke, lambda v: 0 < v < 0.1, "greater than 0 and under 0.1")
+    number("margin", margin, lambda v: 0 <= v < 0.4, "from 0 up to (not including) 0.4")
+    number("ticks", ticks, lambda v: v == int(v) and 0 <= v <= 360, "a whole number from 0 to 360")
+    ink, accent = _rose_color("ink", ink), _rose_color("accent", accent)
+    paper = _rose_color("paper", paper, allow_none=True)
+    size, ticks = int(size), int(ticks)
+    c, big_r = size / 2, size / 2 * (1 - 2 * margin)
+    arms = []  # (angle in degrees, order) from the smallest arms to the main ones, so the main ones paint on top
+    for order, step, first in ((2, 45, 22.5), (1, 90, 45), (0, 90, 0)):
+        if order == 2 and points < 16 or order == 1 and points < 8:
+            continue
+        arms += [(first + step * i - 90, order) for i in range(int(360 // step))]
+    body = []
+    for ang, order in arms:
+        length = big_r * _ROSE_LEN[order]
+        color = ink if order == 0 else accent
+        a = math.radians(ang)
+        ux, uy = math.cos(a), math.sin(a)
+        px, py = -uy, ux
+
+        def pt(along, side):
+            return "%s %s" % (_num(c + along * ux + side * px), _num(c + along * uy + side * py))
+        base, half = _ROSE_BASE * length, _ROSE_HALF * length
+        c0, tip, v1, v2 = pt(0, 0), pt(length, 0), pt(base, half), pt(base, -half)
+        body.append('<path class="arm" fill="none" stroke="%s" d="M%s L%s L%s L%s Z"/>' % (color, c0, v1, tip, v2))
+        body.append('<path class="half" fill="%s" stroke="%s" d="M%s L%s L%s Z"/>' % (color, color, c0, v1, tip))
+    if ring:
+        body.append('<circle class="ring" cx="%s" cy="%s" r="%s" fill="none" stroke="%s"/>' % (_num(c), _num(c), _num(0.72 * big_r), ink))
+    for i in range(ticks):
+        a = math.radians((i + 0.5) * 360 / ticks - 90)
+        cs, sn = math.cos(a), math.sin(a)
+        body.append('<path class="tick" fill="none" stroke="%s" d="M%s %s L%s %s"/>' % (
+            ink, _num(c + 0.84 * big_r * cs), _num(c + 0.84 * big_r * sn), _num(c + 0.92 * big_r * cs), _num(c + 0.92 * big_r * sn)))
+    body.append('<circle class="hub" cx="%s" cy="%s" r="%s" fill="%s" stroke="%s"/>' % (_num(c), _num(c), _num(0.06 * big_r), paper, ink))
+    svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" role="img"><title>Compass rose</title>'
+           '<g stroke-width="%s" stroke-linecap="round" stroke-linejoin="round">%s</g></svg>\n'
+           % (size, size, _num(stroke * size), "".join(body)))
+    out = str(out)
+    if png_out and shutil.which(TOOL) is None:
+        raise GimgError("brand.tool_missing", tool=TOOL)
+    _write(out, svg.encode("utf-8"))
+    if png_out:
+        if os.path.exists(str(png_out)):
+            os.unlink(str(png_out))
+        _rsvg([TOOL, "-w", str(size), "-h", str(size), "-o", str(png_out), out], dict(os.environ))
+        if not os.path.exists(str(png_out)):
+            raise GimgError("brand.tool_failed", tool=TOOL, reason="no output")
+    return {"out": out, "png": str(png_out) if png_out else None, "size": size, "bytes": len(svg.encode("utf-8")),
+            "arms": points}
+
+
 def _place(piece: dict, x: float, y: float, scale: float) -> str:
     """`piece` drawn with its ink box's corner at ``(x, y)`` and scaled by `scale`."""
     x0, y0 = piece["box"][:2]
@@ -445,7 +526,6 @@ def lockup(emblem, wordmark, out=None, layout: str = "h", cap: float = 0.45, gap
 # ---------- overlay ----------
 
 _SVG_NS = "http://www.w3.org/2000/svg"
-_HEXCOLOR = re.compile(r"#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}")
 _URL_REF = re.compile(r"url\(\s*(['\"]?)#([^)'\"\s]+)\1\s*\)")
 _PAINT = re.compile(r"(?P<k>(?:^|;)\s*(?:fill|stroke)\s*:\s*)(?P<v>[^;]*)", re.I)
 _BAD_TAGS = ("script", "foreignobject", "image", "animate", "set", "animatetransform", "animatemotion")
