@@ -77,7 +77,7 @@ solo en el cierre, ningún color fuera de las tintas, comprobación antes de enc
 3. **Qué tono del acento va en la frase de paleta.** **Recomendación:** el hondo `#16827c` en piezas claras y el vivo
    `#0e9a93` en la versión oscura, que es la relación del alga del Portal en claro (≥ 4,5:1 sobre el papel). En oscuro
    el Portal pide ≥ 7:1 a su alga y el vivo da 5,23: el método no calcula un tono más claro y aquí no se inventa.
-4. **Motivo de iconos y logo.** La persona cerró la portada (el barco) y quitó de ella la rama con anillo. **Símbolo del logo: decidido por la persona (2026-11-12)**: monograma «GD» en una tinta sobre el cuadrado con chaflán en el hondo `#16827c`; **dependencia:** orden nueva en `gimg brand` que monte el cuadrado con chaflán. **Sigue abierto** el icono de proyecto. **Recomendación:** la terminal con la rama que vuelve.
+4. **Motivo de iconos y logo.** La persona cerró la portada (el barco) y quitó de ella la rama con anillo. **Símbolo del logo: decidido por la persona (2026-11-12)**: monograma «GD» en una tinta sobre el cuadrado con chaflán en el hondo `#16827c`; **orden:** `gimg brand square GD.svg --fill '#16827c' --ink '#ffffff'` monta el cuadrado con chaflán. **Sigue abierto** el icono de proyecto. **Recomendación:** la terminal con la rama que vuelve.
 5. **Los SVG de `logos/`.** (Decidido por la persona, 2026-11-12: históricos, no se copian.) Los nueve son de la identidad anterior: baldosa con degradado y `rx` 30, nombre en Sora,
    `#2BB3A3`; no cumplen las reglas 2 y 3 del Portal y no salieron de gimg. **Recomendación:** dejarlos como histórico,
    no copiarlos al repo de developer y generar el logo nuevo con gimg («Recursos»).

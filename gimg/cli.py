@@ -131,6 +131,14 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--margin", "cli.arg.brand_margin", type=float, default=0.0),
          opt("--color", "cli.arg.brand_ink", metavar="COLOR"),
          opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"), *props)
+    leaf(g, "square", "cli.cmd.brand_square", arg("drawing", "cli.arg.brand_drawing_svg"),
+         opt("--fill", "cli.arg.brand_fill", required=True, metavar="#RRGGBB"),
+         opt("--ink", "cli.arg.brand_ink_hex", required=True, metavar="#RRGGBB"),
+         opt("--chamfer", "cli.arg.brand_chamfer", type=float, default=28),
+         opt("--pad", "cli.arg.brand_pad", type=float, default=24),
+         opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"),
+         opt("--png", "cli.arg.brand_png_sizes", metavar="512,128,32"),
+         opt("--force", "cli.arg.brand_force_square", action="store_true"))
     leaf(g, "system", "cli.cmd.brand_system", arg("image", "cli.arg.brand_png"),
          opt("--name", "cli.arg.brand_name", required=True),
          opt("--font", "cli.arg.brand_font", required=True, metavar="TTF"),
@@ -274,6 +282,21 @@ def _brand(args, sub, out: _Out) -> None:
         res = brand.lockup(args.emblem, args.wordmark, args.out, args.layout, args.cap, args.gap, args.width, args.margin,
                            args.color)
         key = "cli.out.brand_lockup"
+    elif sub == "square":
+        try:
+            sides = [int(v) for v in args.png.split(",")] if args.png else []
+        except ValueError:
+            raise GimgError("brand.bad_square", reason="--png is a list of whole numbers, like 512,128,32")
+        res = brand.square(args.drawing, args.out, args.fill, args.ink, args.chamfer, args.pad, sides, args.force)
+        if out.as_json:
+            out.data(res)
+            return
+        out.line("cli.out.brand_square", **res)
+        for path in res["pngs"]:
+            out.line("cli.out.brand_file", path=path)
+        if res["contrast"] < 4.5:
+            out.line("cli.out.brand_square_low", contrast=res["contrast"])
+        return
     elif sub == "system":
         res = brand.system(args.image, args.name, args.font, args.out_dir, args.weight, args.spacing, args.palette,
                            args.colors, args.text, args.cap, args.gap, args.width, args.force, args.holes,

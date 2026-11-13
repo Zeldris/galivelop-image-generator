@@ -886,5 +886,16 @@
   "cli.out.queue_already_paused": "The queue was already paused.",
   "cli.out.queue_resumed": "Queue resumed (the service, if alive, relaunches the worker in a few seconds; otherwise `gimg work`).",
   "cli.out.queue_not_paused": "The queue was not paused.",
-  "cli.out.queue_paused_note": "The queue is paused (`gimg queue resume` resumes it)."
+  "cli.out.queue_paused_note": "The queue is paused (`gimg queue resume` resumes it).",
+  "cli.cmd.brand_square": "builds the symbol: a flat square with a chamfered top right corner and the SVG drawing inside, in one ink",
+  "cli.arg.brand_drawing_svg": "the drawing SVG (the one from `brand trace` or `brand wordmark`)",
+  "cli.arg.brand_fill": "square color, #RRGGBB",
+  "cli.arg.brand_ink_hex": "drawing color, #RRGGBB",
+  "cli.arg.brand_chamfer": "chamfer in units of 128 (0-64; default 28)",
+  "cli.arg.brand_pad": "inner margin in units of 128 (0-48; default 24)",
+  "cli.arg.brand_png_sizes": "PNG sides, comma separated (needs rsvg-convert)",
+  "cli.arg.brand_force_square": "overwrite files that already exist",
+  "cli.out.brand_square": "{out}: square {fill}, ink {ink}, contrast {contrast}:1",
+  "cli.out.brand_square_low": "warning: contrast {contrast}:1 is under 4.5:1 (WCAG AA for text)",
+  "error.brand.bad_square": "invalid square: {reason}"
 }

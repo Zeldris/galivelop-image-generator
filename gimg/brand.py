@@ -29,7 +29,7 @@ import unicodedata
 from pathlib import Path
 from xml.sax.saxutils import escape
 
-from . import fsutil, matte as _matte, png, trace as _trace
+from . import fsutil, matte as _matte, measure, png, trace as _trace
 from .errors import GimgError
 
 TOOL = "rsvg-convert"
@@ -443,6 +443,67 @@ def _fit(piece: dict, x: float, y: float, w: float, h: float, ink=None) -> str:
     inner = '<svg x="%s" y="%s" width="%s" height="%s" viewBox="%s %s %s %s">%s</svg>' % (
         _num(x + (w - pw) / 2), _num(y + (h - ph) / 2), _num(pw), _num(ph), _num(vx), _num(vy), _num(vw), _num(vh), piece["inner"])
     return '<g color="%s">%s</g>' % (ink, inner) if ink else inner
+
+
+SQUARE = 128
+_PAINT = re.compile(r'\b(fill|stroke)="([^"]*)"')
+
+
+def _square_ink(inner: str, ink: str) -> str:
+    """`inner` with every fill and stroke that paints (not ``none``) turned into `ink`; unpainted paths inherit it."""
+    return '<g fill="%s">%s</g>' % (ink, _PAINT.sub(lambda m: m.group(0) if m.group(2).strip() == "none" else '%s="%s"' % (m.group(1), ink), inner))
+
+
+def square(drawing, out=None, fill=None, ink=None, chamfer: int = 28, pad: int = 24, pngs=None, force: bool = False) -> dict:
+    """The family symbol: a flat `fill` square of 128 with a 45-degree `chamfer` cut off its top right corner and the SVG
+    `drawing` (paths only, as `trace` / `wordmark` make them) fitted inside `pad`, all of it in the one color `ink`.
+
+    `pngs` are sides in pixels: each also gets ``<out stem>-<side>.png`` (needs rsvg-convert). Returns the files, the colors
+    and the WCAG contrast of `ink` on `fill`; `brand.exists` if a file is there and not `force`."""
+    if isinstance(chamfer, bool) or not isinstance(chamfer, (int, float)) or not (0 <= chamfer <= 64):
+        raise GimgError("brand.bad_square", reason="chamfer must be a number from 0 to 64 (got %r)" % (chamfer,))
+    if isinstance(pad, bool) or not isinstance(pad, (int, float)) or not (0 <= pad <= 48):
+        raise GimgError("brand.bad_square", reason="pad must be a number from 0 to 48 (got %r)" % (pad,))
+    colors = []
+    for name, value in (("fill", fill), ("ink", ink)):
+        if not re.fullmatch(r"#[0-9a-fA-F]{6}", str(value or "")):
+            raise GimgError("brand.bad_square", reason="%s must be #rrggbb (got %r)" % (name, value))
+        colors.append(str(value).lower())
+    fill, ink = colors
+    sides = []
+    for side in (pngs or ()):
+        if isinstance(side, bool) or not isinstance(side, int) or not (1 <= side <= 8192):
+            raise GimgError("brand.bad_square", reason="a PNG side is a whole number from 1 to 8192 (got %r)" % (side,))
+        if side not in sides:
+            sides.append(side)
+    out = _check_out(drawing, out or default_out(drawing, "-square", ".svg"))
+    files = {side: str(Path(out).with_name("%s-%d.png" % (Path(out).stem, side))) for side in sides}
+    clash = [f for f in (out, *files.values()) if os.path.exists(f)]
+    if clash and not force:
+        raise GimgError("brand.exists", folder=os.path.dirname(os.path.abspath(out)), files=", ".join(os.path.basename(f) for f in clash))
+    piece = _read_svg(drawing)
+    x0, y0, x1, y1 = piece["box"]
+    bw, bh, room = x1 - x0, y1 - y0, SQUARE - 2 * pad
+    if bw <= 0 or bh <= 0:
+        raise GimgError("brand.bad_svg", path=str(drawing), reason="the drawing has no ink")
+    if room <= 0:
+        raise GimgError("brand.bad_square", reason="pad leaves no room for the drawing")
+    k = min(room / bw, room / bh)
+    art = _place(dict(piece, inner=_square_ink(piece["inner"], ink)), (SQUARE - bw * k) / 2, (SQUARE - bh * k) / 2, k)
+    d = "M0 0 H%s L%d %s V%d H0 Z" % (_num(SQUARE - chamfer), SQUARE, _num(chamfer), SQUARE)
+    svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" role="img"><path fill="%s" d="%s"/>%s</svg>\n'
+           % (SQUARE, SQUARE, fill, d, art))
+    if sides and shutil.which(TOOL) is None:
+        raise GimgError("brand.tool_missing", tool=TOOL)
+    _write(out, svg.encode("utf-8"))
+    for side, path in files.items():
+        if os.path.exists(path):
+            os.unlink(path)
+        _rsvg([TOOL, "-w", str(side), "-h", str(side), "-o", path, out], dict(os.environ))
+        if not os.path.exists(path):
+            raise GimgError("brand.tool_failed", tool=TOOL, reason="no output")
+    contrast = measure.contrast_ratio(measure.luminance(measure.parse_hex(ink)), measure.luminance(measure.parse_hex(fill)))
+    return {"out": out, "pngs": list(files.values()), "fill": fill, "ink": ink, "contrast": round(contrast, 2)}
 
 
 def _contact_svg(pieces: dict) -> tuple:

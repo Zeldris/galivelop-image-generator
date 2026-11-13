@@ -36,6 +36,10 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
   24 bits sin alfa (sobre `--background`), o a un PNG de otro tamaño; `--size` recorta al centro y reduce, nunca
   amplía. Codificadores en Python puro; la entrega sigue siendo el PNG con su procedencia.
 - Traducción al inglés de la API local: `docs/en/api.md`; el test de la documentación de la API comprueba los dos idiomas.
+- `gimg brand square DIBUJO.svg --fill #RRGGBB --ink #RRGGBB`: el símbolo de familia, un cuadrado plano con chaflán a
+  45° (28/128 por defecto) en la esquina superior derecha y el dibujo de `trace`/`wordmark` encajado dentro en una tinta;
+  con `--png 512,128,32` escribe además un PNG por lado y dice el contraste de la tinta sobre el fondo (aviso por
+  debajo de 4,5:1).
 - Sistema de logo (`gimg brand`, D37): `matte` recorta el fondo plano de un emblema generado (`--holes` vacía también
   lo encerrado), `trace` lo vectoriza a SVG con la paleta de la marca o en una tinta, `wordmark` convierte el nombre
   en trazados con una fuente instalada, `lockup` compone emblema y nombre en horizontal o vertical y `system` hace

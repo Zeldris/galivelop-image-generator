@@ -420,7 +420,7 @@ cada producto los escriben con el mismo método (punto 1).
    `src/data/productos/galivelop-voice-generator.json` l.5 de `#C9467A` a `#D9467A` (`7fc0357`, 2026-11-12; `docs/propuestas/portal/entrega-hoja-2026-11-12.md`, cambio 14). Developer: vivo `#0E9A93`, hondo `#16827c`; `#2BB3A3` es histórico.
 6. **Símbolo de los productos `galivelop-*`:** monograma de iniciales en una tinta sobre el cuadrado con chaflán en el tono hondo del
    acento (GV, GD, GW, IG). Los logos anteriores (degradado, `rx` 30, Sora) son históricos y no se copian a sus repos.
-   **Dependencia:** una orden nueva en `gimg brand` que monte el cuadrado con chaflán.
+   **Orden:** `gimg brand square` monta el cuadrado con chaflán (`--fill` el hondo, `--ink` la tinta, chaflán 28 por defecto).
 
 ---
 
