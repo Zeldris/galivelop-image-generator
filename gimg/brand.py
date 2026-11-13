@@ -192,7 +192,7 @@ def fit(src, out=None, anchor: str = "right", min_x=None, max_x=None, margin: fl
         data[3::4] = b"\xff" * (width * height)
     else:
         sw, sh = max(1, int(round(width * s))), max(1, int(round(height * s)))
-        data = _fit_compose(width, height, rgba, ink, sw, sh, dx, dy, feather, feather_y)
+        data = _fit_compose(width, height, rgba, ink, sw, sh, dx, dy, feather, feather_y, margin)
     _write(out, png.rgba_bytes(width, height, bytes(data)))
     after = [round(box[0] * s + dx, 1), round(box[1] * s + dy, 1), round(box[2] * s + dx, 1), round(box[3] * s + dy, 1)]
     return {"src": str(src), "out": out, "size": [width, height], "paper": "#%02x%02x%02x" % ink, "box": box,
@@ -210,23 +210,27 @@ def _fit_ramp(i, size, edge_lo, edge_hi, span):
     return a
 
 
-def _fit_compose(width, height, rgba, paper, sw, sh, dx, dy, feather, feather_y) -> bytearray:
-    """The canvas of `paper` with `rgba` scaled to ``sw x sh`` (bilinear) at ``(dx, dy)``, faded where its edges are inside."""
+def _fit_compose(width, height, rgba, paper, sw, sh, dx, dy, feather, feather_y, margin=0) -> bytearray:
+    """The canvas of `paper` with `rgba` scaled to ``sw x sh`` (bilinear) at ``(dx, dy)``, faded where its edges are inside.
+
+    An edge within `margin` px of the canvas edge counts as on it: no fade, and the image is stretched (clamped sampling) to the edge."""
     out = bytearray(bytes((paper[0], paper[1], paper[2], 255)) * (width * height))
     xr, yr = width / sw, height / sh  # source pixels per scaled one
+    x_lo, x_hi = (0 if dx <= margin else dx), (width if dx + sw >= width - margin else dx + sw)
+    y_lo, y_hi = (0 if dy <= margin else dy), (height if dy + sh >= height - margin else dy + sh)
     cols = []  # per canvas column: x, byte offset of the left tap and of the right one, weight of the right, alpha
-    for x in range(max(0, dx), min(width, dx + sw)):
+    for x in range(x_lo, x_hi):
         u = (x - dx + 0.5) * xr - 0.5
         i0 = max(0, min(width - 1, int(math.floor(u))))
         i1 = min(width - 1, i0 + 1)
         cols.append((x, i0 * 4, i1 * 4, min(1.0, max(0.0, u - i0)),
-                     _fit_ramp(x - dx, sw, dx > 0, dx + sw < width, feather)))
-    for y in range(max(0, dy), min(height, dy + sh)):
+                     _fit_ramp(x - dx, sw, x_lo > 0, x_hi < width, feather)))
+    for y in range(y_lo, y_hi):
         v = (y - dy + 0.5) * yr - 0.5
         j0 = max(0, min(height - 1, int(math.floor(v))))
         j1 = min(height - 1, j0 + 1)
         w2 = min(1.0, max(0.0, v - j0))
-        ay = _fit_ramp(y - dy, sh, dy > 0, dy + sh < height, feather_y)
+        ay = _fit_ramp(y - dy, sh, y_lo > 0, y_hi < height, feather_y)
         r0, r1, base = j0 * width * 4, j1 * width * 4, y * width * 4
         for x, a0, a1, w1, ax in cols:
             alpha = ax * ay

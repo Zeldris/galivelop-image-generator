@@ -94,6 +94,17 @@ class FitTests(BrandBase):
         self.assertNotEqual(edge, INK_ON_LIGHT)  # inside the ramp (the image starts at x 0 of itself: paper there)
         self.assertEqual(edge, tuple(round(p + (i - p) * 10.5 / 20) for p, i in zip(LIGHT, INK_ON_LIGHT)))
 
+    def test_an_edge_near_the_canvas_edge_is_not_faded_nor_left_as_a_strip(self):
+        band_png(self.src, rect=(10, 0, 160, 40))  # ink to the right edge: scaled to the zone, the image ends 8 px short of the canvas
+        code, out, err = self.fit("--min-x", "60", "--margin", "8", "--paper", "#f0ecdc", "--feather", "40", "--feather-y", "0", "--json")
+        self.assertEqual(code, 0, err)
+        res = json.loads(out)
+        end = res["shift"][0] + round(W * res["scale"])
+        self.assertTrue(0 < W - end <= 8, end)
+        w, h, rgba = png.read_rgba(self.out)
+        for x in range(W - 4, W):  # ink next to the right edge keeps its color, with no paper strip
+            self.assertEqual(px(rgba, w, x, 20), INK_ON_LIGHT)
+
     def test_dark_paper_is_found_with_auto(self):
         band_png(self.src, paper=DARK, ink=INK_ON_DARK)
         code, out, err = self.fit("--min-x", "100", "--margin", "8", "--feather", "0", "--json")
