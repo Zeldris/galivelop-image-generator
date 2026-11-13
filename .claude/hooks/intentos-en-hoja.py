@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """Gancho PreToolUse de Read: al leer suelto un `.png` de intentos (`.../attempts/q...`) no bloquea, avisa de que
 conviene revisarlos en una hoja de contactos (`gimg sheet`). 44 imágenes sueltas arrastraron 4-5 M de tokens
-(`.claude/gw/gw-opt-tokens.md`, sesión c7c2a076).
+(`.claude/gw/gw-opt-tokens.md`, sesión c7c2a076). Avisa igual con las capturas del scratchpad (28 sueltas, ~2,2 M en
+la revisión de la interfaz de `ccr-85e9d14e-zt7p8b`), salvo que el nombre diga que ya es una hoja.
 
 Lee el JSON del gancho en la entrada estándar; ante cualquier error deja pasar.
 """
 import json
 import sys
 
-AVISO = ('Leer intentos sueltos se arrastra en cada llamada: para revisarlos, una hoja: '
+AVISO = ('Cada imagen suelta (intento o captura) se arrastra en cada llamada: para revisarlas, una hoja: '
          '`gimg sheet IMAGEN... --out hoja.png` (una hoja de 6 cuesta como una imagen).')
 
 
@@ -17,7 +18,9 @@ def decision(datos):
     if datos.get('tool_name') != 'Read' or not isinstance(ruta, str):
         return None
     ruta = ruta.replace('\\', '/')
-    if ruta.lower().endswith('.png') and '/attempts/q' in ruta:
+    nombre = ruta.rsplit('/', 1)[-1].lower()
+    captura = '/scratchpad/' in ruta and 'hoja' not in nombre and 'sheet' not in nombre
+    if nombre.endswith('.png') and ('/attempts/q' in ruta or captura):
         return {'hookSpecificOutput': {'hookEventName': 'PreToolUse', 'additionalContext': AVISO}}
     return None
 

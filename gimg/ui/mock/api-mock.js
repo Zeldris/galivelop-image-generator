@@ -166,8 +166,7 @@ export async function transport(method, url, body) {
       if (!r3) {
         const prof = u.searchParams.get('profile'); const chosen = u.searchParams.get('chosen');
         if (chosen !== null && chosen !== '' && chosen !== 'true' && chosen !== 'false') return err(400, 'api.bad_param', `Parámetro «chosen» no válido: ${chosen}`, { name: 'chosen' });
-        return ok((ordersOf[r1] || []).filter((o) => (!prof || o.profile === prof) && (chosen === null || chosen === '' || (chosen === 'true') === (o.chosen !== null)))
-          .map((o) => ({ key: o.key, profile: o.profile, chosen: o.chosen, attempts: o.attempts.length, lastAttempt: o.attempts.length ? o.attempts[o.attempts.length - 1].id : null, updatedAt: o.updatedAt })));
+        return ok((ordersOf[r1] || []).filter((o) => (!prof || o.profile === prof) && (chosen === null || chosen === '' || (chosen === 'true') === (o.chosen !== null))));   // como el servicio: los pedidos enteros, con sus intentos
       }
       const order = findOrder(r1, r3, r4);
       if (!order) return err(404, 'order.not_found', `No hay pedido «${r4}» con el perfil «${r3}»`, { key: r4, profile: r3 });
@@ -235,9 +234,7 @@ function picture(seed, w, h, label, raw) {
   const c = document.createElement('canvas'); c.width = Math.min(w, 640); c.height = Math.round(c.width * h / w);
   const g = c.getContext('2d');
   const rnd = mulberry(seed);
-  const grad = g.createLinearGradient(0, 0, c.width, c.height);
-  grad.addColorStop(0, '#06121c'); grad.addColorStop(1, `hsl(${250 + rnd() * 30} 70% ${18 + rnd() * 14}%)`);
-  g.fillStyle = grad; g.fillRect(0, 0, c.width, c.height);
+  g.fillStyle = `hsl(${205 + rnd() * 10} 55% ${7 + rnd() * 6}%)`; g.fillRect(0, 0, c.width, c.height);   // color plano: la marca no usa degradados
   for (let i = 0; i < 24; i += 1) {
     g.strokeStyle = `hsl(${255 + rnd() * 20} 80% ${55 + rnd() * 25}% / ${0.25 + rnd() * 0.5})`; g.lineWidth = 1 + rnd() * 3;
     g.beginPath(); const x = rnd() * c.width; g.moveTo(x, c.height); g.bezierCurveTo(x + (rnd() - 0.5) * 200, c.height * 0.6, x + (rnd() - 0.5) * 200, c.height * 0.3, x + (rnd() - 0.5) * 100, -10); g.stroke();

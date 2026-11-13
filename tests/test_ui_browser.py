@@ -243,7 +243,7 @@ class OrderScreen(UiBase):
     """The order: attempts, verdicts, choosing, retouching, compare, lightbox, texts, editor. One order per scenario."""
 
     KEYS = ("fondos/voto", "fondos/elegir", "fondos/comparar", "fondos/retoque", "fondos/textos", "fondos/editor",
-            "fondos/volver", "fondos/plantilla", "fondos/guardar", "fondos/atajos")
+            "fondos/volver", "fondos/plantilla", "fondos/guardar", "fondos/atajos", "fondos/estrecho")
 
     @classmethod
     def prepare(cls):
@@ -422,6 +422,91 @@ class OrderScreen(UiBase):
         self.page.wait("!document.querySelector('dialog.editor')")
         a = [x for x in self.data(key)["attempts"] if x["id"] == 2][0]
         self.assertEqual(a["compose"]["layout"], {"title1": {"x": 43, "y": 50, "w": 500, "h": 60}})
+        self.no_problems()
+
+    def test_editor_on_a_narrow_screen_shows_the_whole_image_and_no_overlap(self):
+        # A una columna (≤1000 px), la escena con `overflow: hidden` era un contenedor desplazable: su fila encogía (la
+        # imagen salía cortada; a 360 px, 18 px de alto) y la ayuda de debajo pisaba la lista de elementos.
+        self.page.ws.close()
+        self.page = self.browser.new_page(width=768, height=900)
+        self.open_editor("fondos/estrecho")
+        self.page.key("ArrowDown", shift=True)
+        box = lambda s: self.js("(() => { const r = document.querySelector(%s).getBoundingClientRect();"
+                                " return [r.top, r.bottom, r.height]; })()" % json.dumps(s))
+        stage, img, main, side = box(".ed-stage"), box(".ed-img"), box(".ed-main"), box(".ed-side")
+        self.assertGreater(img[2], 300)
+        self.assertAlmostEqual(stage[2], img[2], delta=1, msg="la escena corta la imagen")
+        self.assertAlmostEqual(stage[0], img[0], delta=1, msg="la imagen se desplazó dentro de la escena")
+        last = self.js("document.querySelector('.ed-main').lastElementChild.getBoundingClientRect().bottom")
+        self.assertLessEqual(last, main[1] + 1, "la ayuda se sale de su columna")
+        self.assertLessEqual(main[1], side[0], "la ayuda pisa la lista de elementos")
+        self.no_problems()
+
+    # Sondeo de maquetación: la página no se desplaza a lo ancho, nada visible sale del ancho de la ventana y ningún
+    # elemento en flujo pisa a su hermano siguiente. Devuelve la lista de problemas legibles.
+    FIT_PROBE = r"""(() => {
+      const W = innerWidth, out = [];
+      const name = e => e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') + [...e.classList].map(c => '.' + c).join('');
+      const shown = e => { const r = e.getBoundingClientRect(), cs = getComputedStyle(e);
+        return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && !e.closest('.sr-only'); };
+      if (document.documentElement.scrollWidth > W + 1) out.push('página ' + document.documentElement.scrollWidth + ' px de ancho');
+      const clipped = e => { for (let a = e.parentElement; a; a = a.parentElement) {
+        const o = getComputedStyle(a).overflowX; if (o !== 'visible') return true; } return false; };
+      for (const e of document.querySelectorAll('body *')) {
+        if (!shown(e)) continue;
+        const r = e.getBoundingClientRect();
+        if ((r.right > W + 1 || r.left < -1) && !clipped(e)) out.push(name(e) + ' sale del ancho (' + Math.round(r.left) + '..' + Math.round(r.right) + ')');
+        const n = e.nextElementSibling, cs = getComputedStyle(e);
+        if (!n || !shown(n) || cs.position === 'absolute' || cs.position === 'fixed' || cs.display === 'contents') continue;
+        const ns = getComputedStyle(n); if (ns.position === 'absolute' || ns.position === 'fixed') continue;
+        const q = n.getBoundingClientRect();
+        const dx = Math.min(r.right, q.right) - Math.max(r.left, q.left), dy = Math.min(r.bottom, q.bottom) - Math.max(r.top, q.top);
+        if (dx > 2 && dy > 2) out.push(name(e) + ' pisa a ' + name(n));
+      }
+      // contenido que se sale de su caja y pisa al hermano siguiente de la caja
+      for (const e of document.querySelectorAll('body *')) {
+        const p = e.parentElement, n = p && p.nextElementSibling;
+        if (!shown(e) || !n || !shown(n) || getComputedStyle(p).overflowY !== 'visible') continue;
+        const cs = getComputedStyle(e), ns = getComputedStyle(n);
+        if (['absolute', 'fixed'].includes(cs.position) || ['absolute', 'fixed'].includes(ns.position)) continue;
+        const r = e.getBoundingClientRect(), q = n.getBoundingClientRect();
+        const dx = Math.min(r.right, q.right) - Math.max(r.left, q.left), dy = Math.min(r.bottom, q.bottom) - Math.max(r.top, q.top);
+        if (dx > 2 && dy > 2) out.push(name(e) + ' se sale de ' + name(p) + ' y pisa a ' + name(n));
+      }
+      // cajas que recortan (hidden/clip) con contenido más alto que ellas: algo queda cortado
+      for (const e of document.querySelectorAll('body *')) {
+        const o = getComputedStyle(e).overflowY;
+        if (shown(e) && e.clientHeight > 2 && (o === 'hidden' || o === 'clip') && e.scrollHeight > e.clientHeight + 2)
+          out.push(name(e) + ' corta su contenido (' + e.scrollHeight + ' > ' + e.clientHeight + ')');
+      }
+      return [...new Set(out)].slice(0, 12);
+    })()"""
+
+    def test_main_screens_fit_at_360_768_and_1280(self):
+        # Retro R2 (2026-11-13): la imagen cortada del editor solo se vio a mano; este barrido hace de red a tres anchos.
+        screens = [
+            ("proyectos", lambda: self.open("/", "document.querySelector('a.project-card')")),
+            ("pedidos", lambda: self.open("/p/tarkor/pedidos", "document.querySelector('a.order-row')")),
+            ("piezas", lambda: self.open("/p/tarkor/piezas", "document.querySelector('.piece-card')")),
+            ("pedido", lambda: self.order("fondos/voto")),
+            ("nuevo pedido", lambda: (self.open("/p/tarkor/piezas", "document.querySelector('.piece-card')"),
+                                      self.click(".piece-card button[data-slot=new-order]"),
+                                      self.page.wait("document.querySelector('dialog.new-order[open]')"))),
+            ("atajos", lambda: (self.open("/", "document.querySelector('a.project-card')"), self.click("#help"),
+                                self.page.wait("document.querySelector('#shortcuts[open] dt')"))),
+            ("editor", lambda: self.open_editor("fondos/estrecho")),
+        ]
+        for width in (360, 768, 1280):
+            self.page.ws.close()
+            self.page = self.browser.new_page(width=width, height=800)
+            for label, go in screens:
+                with self.subTest(width=width, screen=label):
+                    try:
+                        go()
+                        self.page.pump(0.2)
+                        self.assertEqual(self.js(self.FIT_PROBE), [])
+                    finally:   # un diálogo modal abierto inutilizaría las pantallas siguientes
+                        self.js("document.querySelectorAll('dialog[open]').forEach(d => d.close())")
         self.no_problems()
 
     def test_editor_goes_back_to_the_template(self):
