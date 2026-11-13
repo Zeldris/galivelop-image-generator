@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/31-portada-workflow",
+  "profile": "portada",
+  "seed": 3101,
+  "count": 3,
+  "prompt": "A commit history drawn as a plotted route across an engraved sea chart between two code editor windows. The lower third of the sheet is plain flat off-white paper, open and unmarked; hatching and wave lines only in the upper two thirds. At the left, a small editor window closing, its pane half folded shut; a fine line leaves it and crosses the charted water through a few round nodes to a larger editor window standing wide open at the right. Both windows hold only short horizontal strokes of varying length, as abstract lines of code. The last node, just before the open window, is larger and carries a bold check mark in the accent ink. Richly detailed engraved antique nautical chart style, like a fine sea chart printed in two inks: many layers of fine lines and hatching, line density increasing in the darker areas to give depth and tone, lines of several weights, crisp and sharp, intricate but calm, premium print quality, high detail, elegant; behind the motif, a calm sea of wave lines and bathymetric contours in flat tonal bands of cerulean. No photographic rendering, no glow, no gradient, no text, no letters, no numbers, no watermark, full-bleed edge to edge, no border, no frame. Palette strictly limited to medium cerulean ocean blue #0072a8 and its tints and shades, off-white #fbfcfd, ink grey #13212b and a touch of cobalt blue #3d6fd9, on the check mark and its node."
+}

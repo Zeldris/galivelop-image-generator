@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/32-portada-gvig",
+  "profile": "portada",
+  "seed": 3201,
+  "count": 3,
+  "prompt": "A contact sheet of blank image proofs fanned out on an engraved sea chart, like printer's proofs spread on a chart table, seen from above. The lower third of the sheet is plain flat off-white paper, open and unmarked; hatching and wave lines only in the upper two thirds. Several rectangular proof cards of plain paper, each a thin ink outline around an open unmarked picture area with small registration marks at its corners, overlap in a loose fan, each slightly rotated over the next. One card lies on top, a little larger and set straight: its outline is much thicker and drawn in the accent ink, and it carries a bold check mark in one corner. Richly detailed engraved antique nautical chart style, like a fine sea chart printed in two inks: many layers of fine lines and hatching, line density increasing in the darker areas to give depth and tone, lines of several weights, crisp and sharp, intricate but calm, premium print quality, high detail, elegant; behind the motif, a calm sea of wave lines and bathymetric contours in flat tonal bands of cerulean. No photographic rendering, no glow, no gradient, no text, no letters, no numbers, no watermark, full-bleed edge to edge, no border, no frame. Palette strictly limited to medium cerulean ocean blue #0072a8 and its tints and shades, off-white #fbfcfd, ink grey #13212b and a touch of violet #7c5cd6, on the thick outline of the chosen card and its check mark."
+}
