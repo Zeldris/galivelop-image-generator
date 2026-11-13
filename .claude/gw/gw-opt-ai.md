@@ -109,7 +109,10 @@ de más de 570 s tuvieron memoria libre mínima < 4,2 GB; con 4,9-5,6 GB libres,
 - **A2** (2026-11-12): antes de una tanda larga, cerrar lo que come memoria compartida (navegador con la interfaz,
   sesiones paralelas).
 - **A1, aprobada a prueba** (2026-11-12): iconos a 768² (295 s frente a 551 s). Se aplica solo si, en la prueba con 25a,
-  25c y 26a, la persona no ve diferencia, también en el SVG a 24 px. Prueba pendiente.
+  25c y 26a, la persona no ve diferencia, también en el SVG a 24 px. **Prueba lanzada el 2026-11-13** (perfil
+  `prueba768` de `examples/portal/`, pedidos en `piloto/opt-ai/a1/`, misma semilla que q799, q803 y q839: q872-874).
+- **Ronda del 13-11, aprobadas por la persona (2026-11-13):** figuras geométricas por código (`gimg brand rose`, para
+  la 04b) y `gimg brand fit` para encajar el motivo de una banda en su zona; las dos, en curso.
 - No se propone: bajar Z-Image a menos de 8 pasos ni `--taesd` en la imagen final (calidad).
 - `flux3-klein-q8` sigue con ajustes en `steam-deck-libre.json` sin estar instalado (1 llamada fallida el 2026-11-10);
   se deja: es una configuración puesta a propósito y no estorba.
