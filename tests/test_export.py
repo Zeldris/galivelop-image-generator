@@ -190,6 +190,101 @@ class WebpTests(Base):
                     self.assertEqual(ffmpeg_rgba(path), bytes(data))
 
 
+def indice(width, height):
+    """Cada pixel lleva su columna y su fila: R = x, G = y (opaco)."""
+    data = bytearray()
+    for y in range(height):
+        for x in range(width):
+            data += bytes((x, y, 7, 255))
+    return data
+
+
+class CropTests(Base):
+    def test_recorte_exacto_de_pixeles(self):
+        src = self.source(10, 8, indice(10, 8))
+        res = export.export(src, self.tmp / "o.png", crop="2,3,4,2")
+        self.assertEqual(res["crop"], [2, 3, 4, 2])
+        self.assertEqual(res["sizes"], [(4, 2)])
+        w, h, rgba = png.read_rgba(self.tmp / "o.png")
+        self.assertEqual((w, h), (4, 2))
+        self.assertEqual(rgba, bytearray(indice(10, 8)[(3 * 10 + 2) * 4:(3 * 10 + 6) * 4]
+                                         + indice(10, 8)[(4 * 10 + 2) * 4:(4 * 10 + 6) * 4]))
+
+    def test_sin_recorte_no_hay_clave(self):
+        src = self.source(4, 4, ruido(4, 4))
+        self.assertNotIn("crop", export.export(src, self.tmp / "o.png"))
+
+    def test_recorte_y_luego_tamano(self):
+        # 8x4 -> recorte a 4x4 desde x=4 -> 2x2: promedio de cada bloque 2x2 de las columnas 4..7.
+        src = self.source(8, 4, indice(8, 4))
+        export.export(src, self.tmp / "o.png", size="2x2", crop="4,0,4,4")
+        w, h, rgba = png.read_rgba(self.tmp / "o.png")
+        self.assertEqual((w, h), (2, 2))
+        self.assertEqual(list(rgba[0:4]), [round(4.5), round(0.5), 7, 255])
+        self.assertEqual(list(rgba[4:8]), [round(6.5), round(0.5), 7, 255])
+
+    def test_recorte_para_ico_antes_del_cuadrado(self):
+        src = self.source(16, 8, indice(16, 8))
+        res = export.export(src, self.tmp / "o.ico", icon_sizes="4", crop="8,0,8,8")
+        self.assertEqual(res["crop"], [8, 0, 8, 8])
+        self.assertEqual(res["sizes"], [(4, 4)])
+
+    def test_caja_fuera(self):
+        src = self.source(10, 8, ruido(10, 8))
+        exc = self.error(src, self.tmp / "o.png", crop="8,0,4,4")
+        self.assertEqual(exc.code, "export.crop_outside")
+        self.assertIn("10x8", exc.message("es"))
+        self.assertEqual(self.error(src, self.tmp / "o.png", crop="0,5,2,4").code, "export.crop_outside")
+
+    def test_formato_malo(self):
+        src = self.source(4, 4, ruido(4, 4))
+        for texto in ("1,2,3", "a,b,c,d", "0,0,0,4", "0,0,4,0", "-1,0,2,2", "0,0,2,2,2", ""):
+            with self.subTest(texto=texto):
+                self.assertEqual(self.error(src, self.tmp / "o.png", crop=texto).code, "export.bad_crop")
+        self.assertIn("X,Y,W,H", self.error(src, self.tmp / "o.png", crop="x").message("en"))
+
+
+class AnchorTests(Base):
+    def columnas(self, ancho, alto, **kw):
+        src = self.source(ancho, alto, indice(ancho, alto))
+        export.export(src, self.tmp / "o.png", force=True, **kw)
+        return png.read_rgba(self.tmp / "o.png")
+
+    def test_top_bottom_y_center_toman_filas_distintas(self):
+        # 4x8 a 4x4 (sin reducir): quedan las filas 0-3, 4-7 o 2-5.
+        for anchor, primera in (("top", 0), ("bottom", 4), ("center", 2), (None, 2)):
+            with self.subTest(anchor=anchor):
+                w, h, rgba = self.columnas(4, 8, size="4x4", anchor=anchor)
+                self.assertEqual((w, h), (4, 4))
+                self.assertEqual([rgba[(y * 4) * 4 + 1] for y in range(4)], [primera + y for y in range(4)])
+
+    def test_left_y_right(self):
+        for anchor, primera in (("left", 0), ("right", 4), ("center", 2)):
+            with self.subTest(anchor=anchor):
+                w, h, rgba = self.columnas(8, 4, size="4x4", anchor=anchor)
+                self.assertEqual([rgba[x * 4] for x in range(4)], [primera + x for x in range(4)])
+
+    def test_esquina(self):
+        w, h, rgba = self.columnas(8, 4, size="4x4", anchor="bottom-right")
+        self.assertEqual((rgba[0], rgba[1]), (4, 0))
+        w, h, rgba = self.columnas(4, 8, size="4x4", anchor="bottom-left")
+        self.assertEqual((rgba[0], rgba[1]), (0, 4))
+
+    def test_ancla_con_recorte_se_mueve_dentro_de_la_caja(self):
+        w, h, rgba = self.columnas(8, 8, size="4x2", crop="2,2,4,4", anchor="top")
+        self.assertEqual((rgba[0], rgba[1]), (2, 2))
+
+    def test_ancla_mala(self):
+        src = self.source(4, 4, ruido(4, 4))
+        exc = self.error(src, self.tmp / "o.png", size="2x2", anchor="arriba")
+        self.assertEqual(exc.code, "export.bad_anchor")
+        self.assertIn("top-left", exc.message("es"))
+
+    def test_center_no_cambia_el_resultado_de_fit(self):
+        data = degradado(37, 23)
+        self.assertEqual(export.fit(37, 23, data, 10, 10), export.fit(37, 23, data, 10, 10, (0.5, 0.5)))
+
+
 class CommandTests(Base):
     def run_cli(self, *argv):
         out, err = io.StringIO(), io.StringIO()
@@ -204,6 +299,20 @@ class CommandTests(Base):
         res = json.loads(out)
         self.assertEqual((res["format"], res["sizes"]), ("png", [[32, 32]]))
         self.assertEqual(png.read_rgba(self.tmp / "o.png")[:2], (32, 32))
+
+    def test_crop_y_anchor_por_la_orden(self):
+        src = self.source(16, 8, indice(16, 8))
+        dst = self.tmp / "o.png"
+        code, out, err = self.run_cli("--json", "export", str(src), str(dst), "--crop", "4,0,8,8", "--size", "4x2",
+                                      "--anchor", "top")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(json.loads(out)["crop"], [4, 0, 8, 8])
+        code, out, err = self.run_cli("export", str(src), str(self.tmp / "p.png"), "--crop", "4,0,8,8")
+        self.assertEqual(code, 0, err)
+        self.assertIn("4,0,8,8", out)
+        code, out, err = self.run_cli("export", str(src), str(self.tmp / "q.png"), "--crop", "9,0,8,8")
+        self.assertNotEqual(code, 0)
+        self.assertIn("16x8", out + err)
 
     def test_extension_desconocida(self):
         src = self.source(4, 4, ruido(4, 4))

@@ -43,8 +43,14 @@ Gravedad: **C** contradice (dos fuentes dicen cosas distintas), **D** desfasado 
 
 1. Sin perfil `lateral` 704×1344 (I1).
 2. Sin salida BMP de 24 bits sin alfa (I1, I2), ni WebP (I3, I4), ni ICO con varios tamaños (I5/E14).
-3. Sin recorte ni reducción declarados: 704×1344 → 164×314 y 328×628; 1536×512 → 1536×384; 896×1152 → 768×1152 → 600×900;
-   1024×576 → 1024×478 → 920×430.
+3. ~~Sin recorte ni reducción declarados~~ **Hecho** (2026-11-13): `gimg export --crop X,Y,W,H` (caja del original,
+   antes de `--size`) y `--anchor` (`center` por defecto, `top`, `bottom`, `left`, `right`, esquinas). El resultado
+   lleva `crop`. Las cadenas, como órdenes repetibles:
+   - 704×1344 → 164×314 y 328×628: `gimg export lateral.png out.bmp --size 164x314` y `--size 328x628`.
+   - 1536×512 → 1536×384: `gimg export in.png out.webp --size 1536x384` (al centro: 64 px por arriba y por abajo;
+     `--anchor top` o `--crop 0,64,1536,384` si se quiere otra caja).
+   - 896×1152 → 768×1152 → 600×900: `gimg export in.png out.png --crop 64,0,768,1152 --size 600x900`.
+   - 1024×576 → 1024×478 → 920×430: `gimg export in.png out.png --crop 0,49,1024,478 --size 920x430`.
 4. Sin perfiles para LinkedIn 1584×396, Discord 960×540 y tarjeta 16:9 1600×900.
 5. `gimg measure` no reparte los píxeles por familia (madera, hierro, oro, cristal): la regla 60/30/10 no se puede
    comprobar con un comando.

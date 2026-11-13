@@ -513,7 +513,7 @@ Clases y líneas de `frontend/src/index.css` en `c858a150` (rama `claude/marca-i
 | Contenido | Reglas | Perfil | Salida | Formato | Estado | Fuente |
 |---|---|---|---|---|---|---|
 | Cápsula principal y cabecera (E4) | C8, L8 | `capsula` | 1024×576 → 616×353 y 460×215 (231×87 sale de la cabecera) | PNG | pedido (`orders/marca/e04-capsula.json`); rechazada q352 y q353, se rehace | sección 12 |
-| Cápsula horizontal de la Deck | C8, L8 | `capsula` | 1024×576 → 1024×478 → 920×430 | PNG | falta: recorte de E4 (decisión 3); recorte, hueco | doc 13 §3 D |
+| Cápsula horizontal de la Deck | C8, L8 | `capsula` | 1024×576 → 1024×478 → 920×430 | PNG | falta: recorte de E4 (decisión 3); `gimg export --crop 0,49,1024,478 --size 920x430` | doc 13 §3 D |
 | Cápsula vertical | A4 | `portrait` | 600×900 (I6); 374×448 en la tienda | PNG | pedido (decisión 3) | doc 13 §3 D; `peticiones.md` E4 |
 | Fondo (E5) | C8, sin logo | `cabecera` | 3840×1240; 1920×620 en la Deck | PNG | pedido; escalado, hueco | `peticiones.md` E5 |
 | Logo | L1, L3 | — | 1280×720 transparente | PNG | falta: es `tarkor-lockup-v.svg` rasterizado | doc 13 §3 D |

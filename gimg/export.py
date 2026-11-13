@@ -3,7 +3,10 @@ another size. Stdlib only (D6): the encoders are written here.
 
 The delivered image stays a PNG (it carries the provenance chunk); an export is a copy for one destination.
 
-- **Size:** ``--size WxH`` crops the source to the target's proportion, centred (``cover``), and scales it down by
+- **Crop:** ``--crop X,Y,W,H`` takes that box of the original (pixels) first, before anything else: a declared,
+  repeatable crop instead of a hand-made copy.
+- **Size:** ``--size WxH`` crops the source to the target's proportion (``cover``), by default centred (``--anchor``
+  puts the box at the top, bottom, left or right, or in a corner: ``top-left``), and scales it down by
   area average on premultiplied alpha. Scaling up is refused: the source should be generated bigger.
 - **WebP:** lossless (VP8L): subtract-green, one predictor for the whole image (the best of four, measured on a sample
   of rows) and prefix codes on literals, without backward references nor colour cache. Smaller than raw, about the
@@ -42,6 +45,41 @@ def _parse_size(text) -> tuple:
     return int(match.group(1)), int(match.group(2))
 
 
+def _parse_crop(text) -> tuple:
+    try:
+        box = tuple(int(v) for v in str(text).split(","))
+    except ValueError:
+        box = ()
+    if len(box) != 4 or box[2] <= 0 or box[3] <= 0 or box[0] < 0 or box[1] < 0:
+        raise GimgError("export.bad_crop", value=text)
+    return box
+
+
+ANCHORS = ("center", "top", "bottom", "left", "right", "top-left", "top-right", "bottom-left", "bottom-right")
+
+
+def _parse_anchor(text) -> tuple:
+    """``(fx, fy)``: where the crop box sits along the slack, 0 = start, 0.5 = centre, 1 = end."""
+    name = str(text).strip().lower()
+    if name not in ANCHORS:
+        raise GimgError("export.bad_anchor", value=text, anchors=", ".join(ANCHORS))
+    parts = name.split("-")
+    fx = 0.0 if "left" in parts else 1.0 if "right" in parts else 0.5
+    fy = 0.0 if "top" in parts else 1.0 if "bottom" in parts else 0.5
+    return fx, fy
+
+
+def crop_box(width: int, height: int, rgba, box) -> bytearray:
+    """The pixels of `box` (x, y, w, h) of `rgba`; `export.crop_outside` if it leaves the image."""
+    x, y, w, h = box
+    if x + w > width or y + h > height:
+        raise GimgError("export.crop_outside", crop=",".join(str(v) for v in box), width=width, height=height)
+    out = bytearray()
+    for row in range(y, y + h):
+        out += rgba[(row * width + x) * 4:(row * width + x + w) * 4]
+    return out
+
+
 def _parse_icon_sizes(text) -> tuple:
     try:
         sizes = tuple(sorted({int(part) for part in str(text).split(",") if part.strip()}))
@@ -75,16 +113,17 @@ def _taps(src_len: int, start: float, span: float, dst_len: int) -> list:
     return out
 
 
-def fit(width: int, height: int, rgba, dst_w: int, dst_h: int) -> bytearray:
-    """`rgba` cropped to the proportion of ``dst_w x dst_h`` (centred) and scaled down to it by area average."""
+def fit(width: int, height: int, rgba, dst_w: int, dst_h: int, anchor=(0.5, 0.5)) -> bytearray:
+    """`rgba` cropped to the proportion of ``dst_w x dst_h`` (centred unless `anchor` = ``(fx, fy)`` says otherwise)
+    and scaled down to it by area average."""
     if (dst_w, dst_h) == (width, height):
         return bytearray(rgba)
     scale = max(dst_w / width, dst_h / height)
     if scale > 1 + 1e-9:
         raise GimgError("export.upscale", width=width, height=height, target="%dx%d" % (dst_w, dst_h))
     span_x, span_y = dst_w / scale, dst_h / scale
-    cols = _taps(width, (width - span_x) / 2, span_x, dst_w)
-    rows = _taps(height, (height - span_y) / 2, span_y, dst_h)
+    cols = _taps(width, (width - span_x) * anchor[0], span_x, dst_w)
+    rows = _taps(height, (height - span_y) * anchor[1], span_y, dst_h)
     alpha = rgba[3::4]
     planes = [[c * a for c, a in zip(rgba[k::4], alpha)] for k in range(3)] + [list(alpha)]
     needed = sorted({j for taps in rows for j, _ in taps})
@@ -410,8 +449,13 @@ def _format_of(out) -> str:
     return ext
 
 
-def export(image, out, size=None, icon_sizes=None, background=BACKGROUND, force: bool = False) -> dict:
-    """Write `image` (a PNG) to `out` in the format of its extension and return ``{"out", "format", "sizes", "bytes"}``.
+def export(image, out, size=None, icon_sizes=None, background=BACKGROUND, force: bool = False,
+           crop=None, anchor=None) -> dict:
+    """Write `image` (a PNG) to `out` in the format of its extension and return ``{"out", "format", "sizes", "bytes"}``
+    (plus ``"crop": [x, y, w, h]`` when `crop` is given).
+
+    `crop` (``"X,Y,W,H"``, pixels of the original) is applied first; `anchor` (``center`` by default, ``top``,
+    ``bottom``, ``left``, ``right`` or a corner) says where `size`'s crop box sits when the proportion changes.
 
     `size` (``"WxH"``) crops and scales the image (WebP, BMP, PNG); `icon_sizes` (``"16,32,…"``) are the sides of an
     ICO (by default ``ICON_SIZES`` up to the source's smaller side). An existing `out` is kept unless `force`."""
@@ -424,22 +468,27 @@ def export(image, out, size=None, icon_sizes=None, background=BACKGROUND, force:
     bg = _parse_color(background)
     target = _parse_size(size) if size is not None else None
     sides = _parse_icon_sizes(icon_sizes) if icon_sizes is not None else None
+    box = _parse_crop(crop) if crop is not None else None
+    anchor_xy = _parse_anchor(anchor) if anchor is not None else (0.5, 0.5)
     if os.path.exists(out) and os.path.exists(image) and os.path.samefile(image, out):
         raise GimgError("export.out_is_input", path=out)
     if os.path.exists(out) and not force:
         raise GimgError("export.exists", path=out)
     width, height, rgba = png.read_rgba(image)
+    if box is not None:
+        rgba = crop_box(width, height, rgba, box)
+        width, height = box[2], box[3]
     if fmt == "ico":
         side = min(width, height)
         if sides is None:
             sides = tuple(s for s in ICON_SIZES if s <= side) or (side,)
         big = max(sides)
-        square = fit(width, height, rgba, big, big)
+        square = fit(width, height, rgba, big, big, anchor_xy)
         images = [(s, square if s == big else fit(big, big, square, s, s)) for s in sides]
         blob, sizes = ico_bytes(images), [(s, s) for s in sides]
     else:
         if target is not None:
-            rgba = fit(width, height, rgba, *target)
+            rgba = fit(width, height, rgba, *target, anchor_xy)
             width, height = target
         sizes = [(width, height)]
         if fmt == "webp":
@@ -460,7 +509,10 @@ def export(image, out, size=None, icon_sizes=None, background=BACKGROUND, force:
         with contextlib.suppress(OSError):
             os.unlink(tmp)
         raise
-    return {"out": out, "format": fmt, "sizes": sizes, "bytes": len(blob)}
+    res = {"out": out, "format": fmt, "sizes": sizes, "bytes": len(blob)}
+    if box is not None:
+        res["crop"] = list(box)
+    return res
 
 
 def _umask() -> int:

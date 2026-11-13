@@ -153,6 +153,8 @@ def _build(lang: str) -> argparse.ArgumentParser:
     leaf(top, "export", "cli.cmd.export", arg("image", "cli.arg.export_image", metavar="PNG"),
          arg("out", "cli.arg.export_out", metavar="OUT"),
          opt("--size", "cli.arg.export_size", metavar="WxH"),
+         opt("--crop", "cli.arg.export_crop", metavar="X,Y,W,H"),
+         opt("--anchor", "cli.arg.export_anchor", metavar="center|top|bottom|left|right"),
          opt("--icon-sizes", "cli.arg.export_icon_sizes", metavar="16,32,…"),
          opt("--background", "cli.arg.export_background", default=export.BACKGROUND, metavar="#RRGGBB"),
          opt("--force", "cli.arg.export_force", action="store_true"))
@@ -356,12 +358,15 @@ def _run(args, out: _Out) -> int:
             for i, path in enumerate(res["images"], 1):
                 out.line("cli.out.sheet_item", index=i, path=path)
     elif cmd == "export":
-        res = export.export(args.image, args.out, args.size, args.icon_sizes, args.background, args.force)
+        res = export.export(args.image, args.out, args.size, args.icon_sizes, args.background, args.force,
+                           args.crop, args.anchor)
         if out.as_json:
             out.data(res)
         else:
             out.line("cli.out.export_done", out=res["out"], format=res["format"].upper(), bytes=res["bytes"],
                      sizes=", ".join("%dx%d" % s for s in res["sizes"]))
+            if "crop" in res:
+                out.line("cli.out.export_crop", crop=",".join(str(v) for v in res["crop"]))
     elif cmd == "queue":
         _queue(args, sub, out)
     elif cmd == "serve":
