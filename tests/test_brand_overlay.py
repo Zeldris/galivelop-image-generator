@@ -134,6 +134,13 @@ class OverlayTests(BrandBase):
         self.assertIn("stroke:#ABCDEF;fill:none", text)
         self.assertIn('fill="none"', text)
 
+    def test_recolor_current_color_leaves_a_single_ink_motif(self):
+        self.run_overlay("--recolor", "currentcolor", "--skip-rect")
+        text = self.out.read_text()
+        self.assertIn('stroke="currentColor"', text)
+        self.assertNotIn("#FFFFFF", text)
+        self.assertNotIn("currentcolor", text)
+
     def test_skip_rect_drops_the_background_square(self):
         self.run_overlay("--skip-rect")
         text = self.out.read_text()
@@ -174,7 +181,7 @@ class OverlayTests(BrandBase):
         self.assertIn("it has <script>", err)
 
     def test_bad_options_say_which(self):
-        for extra, msg in ((("--recolor", "red"), "is not #rgb or #rrggbb"), (("--box", "1,2,3"), "box must be x,y,w,h"),
+        for extra, msg in ((("--recolor", "red"), "is not #rgb, #rrggbb or currentColor"), (("--box", "1,2,3"), "box must be x,y,w,h"),
                            (("--fit", "0"), "fit must be above 0")):
             code, err = self.run_overlay(*extra, ok=False)
             self.assertEqual(code, 1)

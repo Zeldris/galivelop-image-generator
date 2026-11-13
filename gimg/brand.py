@@ -519,13 +519,15 @@ def overlay(base, motif, out=None, fit: float = 0.5, box=None, recolor=None, ski
     """Write `base` unchanged plus the `motif` SVG placed centred on its viewBox, in a nested ``<svg>``.
 
     The motif's box (its viewBox, or `box` = ``(x, y, w, h)`` in its units) is scaled uniformly so that its longer side is
-    ``fit`` x the base's viewBox width. ``recolor`` (``#rgb``/``#rrggbb``) paints every fill and stroke that is not ``none``;
+    ``fit`` x the base's viewBox width. ``recolor`` (``#rgb``/``#rrggbb``/``currentColor``) paints every fill and stroke that is not ``none``;
     ``skip_rect`` drops the motif's ``<rect>``. The motif's ids get the prefix ``mo-``.
     """
     if not 0 < fit <= 10:
         raise GimgError("brand.bad_option", reason="fit must be above 0 and at most 10 (got %s)" % fit)
-    if recolor is not None and not _HEXCOLOR.fullmatch(str(recolor)):
-        raise GimgError("brand.bad_option", reason="recolor %r is not #rgb or #rrggbb" % (recolor,))
+    if recolor is not None and str(recolor).lower() == "currentcolor":
+        recolor = "currentColor"
+    elif recolor is not None and not _HEXCOLOR.fullmatch(str(recolor)):
+        raise GimgError("brand.bad_option", reason="recolor %r is not #rgb, #rrggbb or currentColor" % (recolor,))
     if isinstance(box, str):
         try:
             box = tuple(float(v) for v in box.split(","))
