@@ -10,6 +10,8 @@
 .attempt.is-failed { --edge: var(--bad); }
 .attempt.is-running { --edge: var(--ok); border-style: dashed; }
 .attempt.is-queued { border-style: dashed; }
+/* borde discontinuo: la diagonal del chaflán también, a trazos de 3 px como los del borde de 1 px */
+.attempt.is-running::after, .attempt.is-queued::after { background: repeating-linear-gradient(135deg, var(--edge) 0 3px, transparent 3px 6px); }
 .attempt.is-compared { outline: 2px dashed var(--accent-text); outline-offset: -5px; }   /* dentro: el chaflán recorta lo de fuera */
 
 .attempt .figure {
@@ -44,9 +46,8 @@
 .attempt details .actions { margin-top: 6px; }
 
 /* chip de medida D31 */
-.measure { display: inline-flex; align-items: center; gap: 6px; }
+.measure { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; max-width: 100%; }
 .measure .chip { cursor: help; }
-.measure { flex-wrap: wrap; max-width: 100%; }
 .measure .btn { min-height: 32px; padding: 2px 8px; }
 
 .attempt .figure { container-type: inline-size; }
@@ -101,6 +102,12 @@ dialog.editor[open] { display: flex; }
 .ed-handle.h-ne { right: -8px; top: -8px; cursor: nesw-resize; }
 .ed-handle.h-sw { left: -8px; bottom: -8px; cursor: nesw-resize; }
 .ed-handle.h-se { right: -8px; bottom: -8px; cursor: nwse-resize; }
+/* la caja deja ver el texto que encuadra: las asas salen al pasar o con foco (un toque enfoca la caja), y en las
+   cajas finas el rótulo va debajo, no encima */
+.ed-box { container-type: size; }
+.ed-handle { opacity: 0; transition: opacity .15s; }
+.ed-box:hover .ed-handle, .ed-box:focus-within .ed-handle { opacity: 1; }
+@container (max-height: 40px) { .ed-name { top: 100%; } }
 .ed-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .ed-item { display: grid; gap: 4px; padding: 8px; border: 1px solid var(--rule); background: var(--surface-2); }
 .ed-item .btn { justify-content: flex-start; }
@@ -132,9 +139,8 @@ dialog.editor-save fieldset { border: 0; padding: 0; margin: 0; }
 
 /* atajos */
 .shortcuts dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; align-items: center; }
-.shortcuts dt { display: flex; gap: 4px; }
+.shortcuts dt { display: flex; gap: 4px; flex-wrap: wrap; }
 .shortcuts dd { margin: 0; font-size: 15px; line-height: 1.45; }
-.shortcuts dt { flex-wrap: wrap; }
 dialog.shortcuts { max-height: 94vh; overflow: hidden; }
 dialog.shortcuts[open], dialog.new-order[open] { display: flex; flex-direction: column; }   /* se desplaza el cuerpo: la diagonal del chaflán no se va */
 #shortcuts-body, dialog.new-order > form { min-height: 0; overflow: auto; padding: 4px; margin: 0 -4px; }

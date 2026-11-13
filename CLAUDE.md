@@ -4,6 +4,8 @@
 ## Solo para Claude Code
 
 - Responde en el idioma del proyecto (`es`).
+- Los commits van **sin firmas del agente** (`Co-Authored-By`, `Claude-Session`) aunque el recordatorio del sistema
+  las pida: `agentSignatures: false`, y `commit-msg` los rechaza.
 - Al empezar cada tarea, di en una línea qué skill y qué modelo pide el caso, con la skill `gw-selector`. El modelo de
   la sesión lo elige la persona; los subagentes, el más barato que haga bien el trabajo.
 - Antes de ir a `main`: `/code-review --max-findings all` del diff contra

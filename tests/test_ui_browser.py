@@ -618,6 +618,25 @@ class QueueDrawer(UiBase):
         self.no_problems()
 
 
+    def test_pause_and_resume(self):
+        """R1, leve: the drawer pauses and resumes the queue; the pill says so, also after a poll."""
+        self.addCleanup(run_cli, "queue", "resume")  # the mark lives in the shared data folder
+        self.open("/", "document.querySelector('.queue-pill')")
+        self.click(".queue-pill")
+        self.page.wait("document.querySelector('[data-fid=pause]')")
+        self.assertEqual(self.js("document.querySelector('[data-fid=pause]').getAttribute('aria-pressed')"), "false")
+        self.click("[data-fid=pause]")
+        self.page.wait("document.querySelector('.queue-pill.is-paused')")
+        self.assertIn("en pausa", self.js("document.querySelector('.queue-pill').textContent"))
+        self.assertIs(self.api("GET", "/api/health")["paused"], True)
+        self.page.wait("document.querySelector('[data-fid=pause]').getAttribute('aria-pressed') === 'true'")
+        self.click("[data-fid=pause]")
+        self.page.wait("!document.querySelector('.queue-pill.is-paused')")
+        self.assertIs(self.api("GET", "/api/health")["paused"], False)
+        run_cli("queue", "pause")  # paused from the CLI: the next poll shows it
+        self.page.wait("document.querySelector('.queue-pill.is-paused')", timeout=10)
+        self.no_problems()
+
 class BrandShop(UiBase):
     """«Sistema de logo» in the Marca tab: steps stay disabled with their reason until the piece exists, and the origin
     can come from the URL (`?src=profile|key|attempt`). The steps that need the tools (matte on a real flat background,

@@ -7,7 +7,7 @@
 - `lockup(emblem, wordmark, out=None, layout="h"|"v")`: the emblem SVG and the wordmark SVG in one, as paths only (proportions of
   the sheet: wordmark height 0.45 and gap 0.25 of the emblem diameter in ``h``; width 1.6 in ``v``).
 - `system(src, name, font, out_dir)`: the seven files of the logo system (matte, traces, wordmark, both lockups, contact sheet).
-- `wordmark(text, font, out=None, weight=800, spacing=0.12)`: `text` set in the font file `font` and turned into paths, with no
+- `wordmark(text, font, out=None, weight=800, spacing=SPACING)`: `text` set in the font file `font` and turned into paths, with no
   ``<text>`` and no need for the font afterwards. ``rsvg-convert`` draws the text big in black; the result is cropped
   to the ink and traced in mono mode. The font reaches ``rsvg-convert`` through a throwaway fontconfig file that adds a
   copy of it to the system fonts (a variable font gets the weight asked for).
@@ -29,7 +29,7 @@ import unicodedata
 from pathlib import Path
 from xml.sax.saxutils import escape
 
-from . import fsutil, matte as _matte, png, trace as _trace
+from . import fsutil, matte as _matte, measure, png, trace as _trace
 from .errors import GimgError
 
 TOOL = "rsvg-convert"
@@ -39,6 +39,7 @@ FONT_PX = 260
 MAX_PIXELS = 1 << 24  # the limit of `png.read_rgba`
 PAD_PX = 6
 MIN_TRANSPARENT = 0.02  # a matte that frees less than this found no flat background
+SPACING = 0.01  # em between letters: the family's tracking (Big Shoulders Display 800, hojas de docs/marcas/)
 MODES = {"color": "color", "mono": "mono", "silhouette": "silueta", "silueta": "silueta"}
 
 
@@ -219,7 +220,7 @@ def _crop(width: int, height: int, rgba, pad: int):
     return w, h, res
 
 
-def wordmark(text: str, font, out=None, weight: int = 800, spacing: float = 0.12, title: str = "") -> dict:
+def wordmark(text: str, font, out=None, weight: int = 800, spacing: float = SPACING, title: str = "") -> dict:
     """Write the SVG of `text` in `font`, as paths (see the module docstring). ``spacing`` is in em."""
     text = " ".join("".join(ch for ch in str(text) if ch.isspace() or unicodedata.category(ch) != "Cc").split())
     if not text:
@@ -444,6 +445,67 @@ def _fit(piece: dict, x: float, y: float, w: float, h: float, ink=None) -> str:
     return '<g color="%s">%s</g>' % (ink, inner) if ink else inner
 
 
+SQUARE = 128
+_PAINT = re.compile(r'(?<![\w:.-])(fill|stroke)="([^"]*)"')
+
+
+def _square_ink(inner: str, ink: str) -> str:
+    """`inner` with every fill and stroke that paints (not ``none``) turned into `ink`; unpainted paths inherit it."""
+    return '<g fill="%s">%s</g>' % (ink, _PAINT.sub(lambda m: m.group(0) if m.group(2).strip() == "none" else '%s="%s"' % (m.group(1), ink), inner))
+
+
+def square(drawing, out=None, fill=None, ink=None, chamfer: int = 28, pad: int = 24, pngs=None, force: bool = False) -> dict:
+    """The family symbol: a flat `fill` square of 128 with a 45-degree `chamfer` cut off its top right corner and the SVG
+    `drawing` (paths only, as `trace` / `wordmark` make them) fitted inside `pad`, all of it in the one color `ink`.
+
+    `pngs` are sides in pixels: each also gets ``<out stem>-<side>.png`` (needs rsvg-convert). Returns the files, the colors
+    and the WCAG contrast of `ink` on `fill`; `brand.exists` if a file is there and not `force`."""
+    if isinstance(chamfer, bool) or not isinstance(chamfer, (int, float)) or not (0 <= chamfer <= 64):
+        raise GimgError("brand.bad_square", reason="chamfer must be a number from 0 to 64 (got %r)" % (chamfer,))
+    if isinstance(pad, bool) or not isinstance(pad, (int, float)) or not (0 <= pad <= 48):
+        raise GimgError("brand.bad_square", reason="pad must be a number from 0 to 48 (got %r)" % (pad,))
+    colors = []
+    for name, value in (("fill", fill), ("ink", ink)):
+        if not re.fullmatch(r"#[0-9a-fA-F]{6}", str(value or "")):
+            raise GimgError("brand.bad_square", reason="%s must be #rrggbb (got %r)" % (name, value))
+        colors.append(str(value).lower())
+    fill, ink = colors
+    sides = []
+    for side in (pngs or ()):
+        if isinstance(side, bool) or not isinstance(side, int) or not (1 <= side <= 8192):
+            raise GimgError("brand.bad_square", reason="a PNG side is a whole number from 1 to 8192 (got %r)" % (side,))
+        if side not in sides:
+            sides.append(side)
+    out = _check_out(drawing, out or default_out(drawing, "-square", ".svg"))
+    files = {side: str(Path(out).with_name("%s-%d.png" % (Path(out).stem, side))) for side in sides}
+    clash = [f for f in (out, *files.values()) if os.path.exists(f)]
+    if clash and not force:
+        raise GimgError("brand.exists", folder=os.path.dirname(os.path.abspath(out)), files=", ".join(os.path.basename(f) for f in clash))
+    piece = _read_svg(drawing)
+    x0, y0, x1, y1 = piece["box"]
+    bw, bh, room = x1 - x0, y1 - y0, SQUARE - 2 * pad
+    if bw <= 0 or bh <= 0:
+        raise GimgError("brand.bad_svg", path=str(drawing), reason="the drawing has no ink")
+    if room <= 0:
+        raise GimgError("brand.bad_square", reason="pad leaves no room for the drawing")
+    k = min(room / bw, room / bh)
+    art = _place(dict(piece, inner=_square_ink(piece["inner"], ink)), (SQUARE - bw * k) / 2, (SQUARE - bh * k) / 2, k)
+    d = "M0 0 H%s L%d %s V%d H0 Z" % (_num(SQUARE - chamfer), SQUARE, _num(chamfer), SQUARE)
+    svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" role="img"><path fill="%s" d="%s"/>%s</svg>\n'
+           % (SQUARE, SQUARE, fill, d, art))
+    if sides and shutil.which(TOOL) is None:
+        raise GimgError("brand.tool_missing", tool=TOOL)
+    _write(out, svg.encode("utf-8"))
+    for side, path in files.items():
+        if os.path.exists(path):
+            os.unlink(path)
+        _rsvg([TOOL, "-w", str(side), "-h", str(side), "-o", path, out], dict(os.environ))
+        if not os.path.exists(path):
+            raise GimgError("brand.tool_failed", tool=TOOL, reason="no output")
+    contrast = measure.contrast_ratio(measure.luminance(measure.parse_hex(ink)), measure.luminance(measure.parse_hex(fill)))
+    return {"out": out, "pngs": list(files.values()), "fill": fill, "ink": ink, "contrast": round(contrast, 2)}
+
+
 def _contact_svg(pieces: dict) -> tuple:
     """The SVG text and ``(width, height)`` of the contact sheet: every piece on light and on dark, then the small sizes."""
     col, row, margin, last = 640, 200, 40, 180
@@ -505,13 +567,16 @@ def check_targets(targets: dict, out_dir, force: bool = False, src=None) -> list
     return clash
 
 
-def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = 0.12, palette=None, colors=None, text=None,
-           cap: float = 0.45, gap: float = 0.25, width: float = 1.6, force: bool = False, holes: bool = False) -> dict:
+def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = SPACING, palette=None, colors=None, text=None,
+           cap: float = 0.45, gap: float = 0.25, width: float = 1.6, force: bool = False, holes: bool = False,
+           margin: float = 0.0, mono: bool = False) -> dict:
     """The logo system of `name` from the emblem PNG `src`, in `out_dir`: ``<slug>-emblema-alpha.png``, ``-emblema.svg``,
     ``-emblema-mono.svg``, ``-wordmark.svg``, ``-lockup-h.svg``, ``-lockup-v.svg`` and ``-contactos.png`` (see `SYSTEM_FILES`).
 
     Everything is built in a throwaway folder and copied in at the end, so a failure while working leaves `out_dir` as it
     was (only an I/O failure in the final copy can leave some files); a file already there is ``brand.exists`` unless `force`. The wordmark text is `text`, else `name` in capitals.
+    The lockups take ``margin`` (see `lockup`) and, with `mono`, the one-ink emblem instead of the color one: the whole
+    lockup in ``currentColor``, as the family's sheets ask.
     """
     t0 = time.monotonic()
     slug = slugify(name)
@@ -530,6 +595,8 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = 0.
         raise GimgError("brand.text_too_long", max=MAX_TEXT)
     if not isinstance(weight, int) or not 1 <= weight <= 1000 or not -0.5 <= spacing <= 2:
         raise GimgError("brand.bad_option", reason="weight 1-1000 and spacing between -0.5 and 2 em")
+    if not 0 <= margin <= 2:
+        raise GimgError("brand.bad_option", reason="margin 0-2 (in emblem diameters)")
     if len(os.path.basename(next(iter(targets.values()))).encode("utf-8")) > 255:
         raise GimgError("brand.bad_name", name=str(name))
     try:
@@ -546,20 +613,21 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = 0.
             raise GimgError("brand.no_matte", path=str(src), transparent=round(m["transparent"] * 100, 1))
         title = str(name).strip()
         color = trace(t["emblema-alpha.png"], t["emblema.svg"], "color", palette, colors, title=title)
-        mono = trace(t["emblema-alpha.png"], t["emblema-mono.svg"], "mono", title=title)
+        one_ink = trace(t["emblema-alpha.png"], t["emblema-mono.svg"], "mono", title=title)
         word = wordmark(line, font, t["wordmark.svg"], weight, spacing, title=title)
-        lh = lockup(t["emblema.svg"], t["wordmark.svg"], t["lockup-h.svg"], "h", cap, gap, width, title=title)
-        lv = lockup(t["emblema.svg"], t["wordmark.svg"], t["lockup-v.svg"], "v", cap, gap, width, title=title)
+        emblem = t["emblema-mono.svg" if mono else "emblema.svg"]
+        lh = lockup(emblem, t["wordmark.svg"], t["lockup-h.svg"], "h", cap, gap, width, margin, title=title)
+        lv = lockup(emblem, t["wordmark.svg"], t["lockup-v.svg"], "v", cap, gap, width, margin, title=title)
         sheet_size = contact_sheet(t, tmp)
         for key in SYSTEM_FILES:
             with open(t[key], "rb") as fh:
                 _write(targets[key], fh.read())
     files = {key: targets[key] for key in SYSTEM_FILES}
     return {"src": str(src), "name": str(name).strip(), "slug": slug, "out_dir": str(out_dir), "files": files,
-            "paths": {"emblem": color["paths"], "mono": mono["paths"], "wordmark": word["paths"], "lockup_h": lh["paths"],
+            "paths": {"emblem": color["paths"], "mono": one_ink["paths"], "wordmark": word["paths"], "lockup_h": lh["paths"],
                       "lockup_v": lv["paths"]},
             "contact_size": list(sheet_size), "overwritten": sorted(clash), "seconds": round(time.monotonic() - t0, 1)}
 
 
-__all__ = ["contact_sheet", "targets_of", "check_targets", "matte", "trace", "wordmark", "lockup", "system", "slugify", "parse_palette", "default_out", "MODES", "LAYOUTS",
+__all__ = ["contact_sheet", "targets_of", "check_targets", "matte", "trace", "wordmark", "lockup", "system", "slugify", "parse_palette", "default_out", "MODES", "SPACING", "LAYOUTS",
            "SYSTEM_FILES", "TOOL"]

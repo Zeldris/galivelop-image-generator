@@ -109,12 +109,17 @@ python3 -m gimg queue cancel 3
 python3 -m gimg compose mi-proyecto fauna/red-howler banner 1 --template cartel   # recompone sin generar
 python3 -m gimg templates mi-proyecto banner          # plantillas de composición del perfil
 python3 -m gimg measure imagen.png --project mi-proyecto   # paleta, contraste y distancia a la marca
+python3 -m gimg measure imagen.png --family "madera=#1b130c,#332415" --family "oro=#b8862b,#f2c45a"   # % de píxeles por familia de color (+ otros)
 python3 -m gimg sheet --out hoja.png a.png b.png      # hoja de contactos para revisar una ronda
+python3 -m gimg export a.png a.webp --size 960x540  # copia a WebP, ICO o BMP (la entrega sigue en PNG)
+python3 -m gimg export a.png b.png --crop 64,0,768,1152 --size 600x900   # recorte declarado (X,Y,W,H del original) y luego reducción
+python3 -m gimg export a.png b.png --size 1536x384 --anchor top   # recorte de la proporción arriba|abajo|izquierda|derecha (o top-left…), por defecto al centro
 python3 -m gimg brand matte logo.png                  # quita el fondo plano: logo-alpha.png (el original no se toca)
 python3 -m gimg brand trace logo-alpha.png --mode color|mono|silhouette   # PNG a SVG (--palette, --colors, --matte)
 python3 -m gimg brand wordmark TARKOR --font Cinzel.ttf -o wordmark.svg   # el nombre a trazos, sin <text> (--weight, --spacing)
 python3 -m gimg brand lockup emblema.svg wordmark.svg --layout h|v   # emblema y nombre en un SVG (--cap, --gap, --width, --margin, --color, -o)
-python3 -m gimg brand system emblema.png --name Tarkor --font Cinzel.ttf --out-dir marca/   # los siete archivos del logo (--weight, --spacing, --palette, --colors, --text, --cap, --gap, --width, --force pisa)
+python3 -m gimg brand square ig.svg --fill '#7C5CD6' --ink '#fbfcfd' --png 512,128,32   # el símbolo: cuadrado con chaflán 28/128 y el dibujo en una tinta (--chamfer, --pad, -o, --force)
+python3 -m gimg brand system emblema.png --name Tarkor --font Cinzel.ttf --out-dir marca/   # los siete archivos del logo (--weight, --spacing, --palette, --colors, --text, --cap, --gap, --width, --margin, --mono para el lockup en una tinta, --force pisa)
 python3 -m gimg doctor                                # comprueba el motor, los modelos y las herramientas (--verify)
 python3 -m gimg serve                                 # servicio local en 127.0.0.1:8737 (--detach, --status, --stop, --port, --idle-min)
 python3 -m gimg ui                                    # abre la interfaz en el navegador (arranca el servicio si hace falta; --no-browser)

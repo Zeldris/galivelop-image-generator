@@ -15,6 +15,7 @@ primer hex de 8 bits con contraste WCAG 2.x >= 4,5:1, medido sobre el hex ya red
 se baja C de 0,005 en 0,005 sin tocar h. Si el vivo ya cumple en un tema, ese tono es el vivo.
 """
 import math
+import re
 import sys
 
 PAPEL, PAPEL_OSCURO, BLANCO, TINTA, TINTA_OSCURA = "#fbfcfd", "#0d171e", "#ffffff", "#13212b", "#e6eef3"
@@ -22,6 +23,9 @@ PASO, UMBRAL, EPS = 0.005, 4.5, 1e-6
 
 
 def _rgb(hexa):
+    if not re.fullmatch(r"#?[0-9A-Fa-f]{6}", hexa):
+        print("hex no válido: %s (se espera #RRGGBB)" % hexa, file=sys.stderr)
+        sys.exit(2)
     h = hexa.lstrip("#")
     return [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
 

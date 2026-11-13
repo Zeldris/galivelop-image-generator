@@ -34,7 +34,8 @@ INTENDED_500 = {
     "sheet.out_is_input", "sheet.tool_missing", "sheet.tool_failed", "sheet.timeout", "api.unexpected",
     "serve.start_failed",
     # brand.*: faults of the machine, not of the request (the rest of brand.* has its 4xx)
-    "brand.out_is_input", "brand.tool_missing", "brand.tool_failed", "brand.timeout", "brand.write_failed",
+    "brand.out_is_input", "brand.tool_missing", "brand.tool_failed", "brand.timeout", "brand.write_failed", "export.write_failed",
+    "export.out_is_input",
 }
 
 

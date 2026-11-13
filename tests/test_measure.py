@@ -67,6 +67,21 @@ class MathTests(unittest.TestCase):
         self.assertEqual(res["pct"], 50.0)
         self.assertEqual(res["by_color"], {"#ff0000": 50.0, "#00ff00": 0.0})
 
+    def test_familias_reparto_exacto_y_otros(self):
+        rojo, azul, verde = (255, 0, 0), (0, 0, 255), (0, 255, 0)
+        fams = [("calida", [rojo, (250, 5, 5)]), ("fria", [azul])]
+        pix = [rojo] * 40 + [(250, 5, 5)] * 10 + [azul] * 30 + [verde] * 20
+        res = measure.family_share(pix, fams)
+        self.assertEqual(res["by_family"], {"calida": 50.0, "fria": 30.0})
+        self.assertEqual(list(res["by_family"]), ["calida", "fria"])
+        self.assertEqual(res["other"], 20.0)
+        self.assertEqual(res["deltaE"], measure.DELTA_E)
+
+    def test_familias_pixel_va_al_color_mas_cercano_de_todas(self):
+        fams = [("a", [(0, 0, 0)]), ("b", [(255, 255, 255)])]
+        res = measure.family_share([(250, 250, 250)] * 4, fams)
+        self.assertEqual(res["by_family"], {"a": 0.0, "b": 100.0})
+
     def test_contraste_blanco_sobre_negro_21(self):
         res = measure.contrast([(0, 0, 0)] * 10, (255, 255, 255))
         self.assertEqual(res, {"mean": 21.0, "p10": 21.0, "p90": 21.0, "worst": 21.0})
@@ -90,6 +105,18 @@ class ParseTests(Base):
     def test_hex_malo(self):
         for bad in ("#12345", "#1234567", "rojo", "#ggg000", "#112233\n#445566", ""):
             self.assertEqual(self.code(measure.parse_hex, bad), "measure.bad_hex", bad)
+
+    def test_familias_validas(self):
+        self.assertEqual(measure.parse_families(["madera=#000000,ffffff", " oro =#b8862b"]),
+                         [("madera", [(0, 0, 0), (255, 255, 255)]), ("oro", [(184, 134, 43)])])
+
+    def test_familias_malas(self):
+        for bad in (["=#000000"], ["x"], ["x="], ["x=,"], ["a=#000000", "a=#ffffff"], ["other=#000000"]):
+            self.assertEqual(self.code(measure.parse_families, bad), "measure.bad_family", bad)
+        self.assertEqual(self.code(measure.parse_families, ["a=rojo"]), "measure.bad_hex")
+
+    def test_medir_con_familia_mala_falla_antes_de_ffmpeg(self):
+        self.assertEqual(self.code(measure.measure, "x.png", families=["a="]), "measure.bad_family")
 
     def test_zona_valida(self):
         self.assertEqual(measure.parse_zone("1,2,30,40"), (1, 2, 30, 40))
@@ -324,6 +351,30 @@ class CliTests(Base):
         self.assertEqual(set(data), {"image", "yavg", "satavg", "palette", "emd", "contrast"})
         self.assertAlmostEqual(data["palette"]["pct"], 100.0, delta=1)
         self.assertEqual(data["contrast"]["worst"], 21.0)
+
+    def test_family_dos_familias_en_texto_y_json(self):
+        half_png(self.tmp / "h.png", "black", "white", "200x100")
+        args = ("measure", str(self.tmp / "h.png"), "--family", "noche=#000000", "--family", "hueso=#ffffff")
+        code, out, _ = self.run_cli(*args, "--json")
+        self.assertEqual(code, 0)
+        fam = json.loads(out)["families"]
+        self.assertEqual(list(fam["by_family"]), ["noche", "hueso"])
+        self.assertAlmostEqual(fam["by_family"]["noche"], 50.0, delta=1)
+        self.assertAlmostEqual(fam["by_family"]["hueso"], 50.0, delta=1)
+        self.assertEqual(fam["other"], 0.0)
+        code, out, _ = self.run_cli(*args)
+        self.assertEqual(code, 0)
+        self.assertIn("noche:", out)
+        self.assertIn("hueso:", out)
+        self.assertRegex(out, r"other: 0\.0 %")
+
+    def test_family_mala_da_el_codigo(self):
+        code, _, err = self.run_cli("measure", "x.png", "--family", "solo-nombre", "--lang", "en")
+        self.assertEqual(code, 1)
+        self.assertIn('"solo-nombre" is not a NAME=#rrggbb,... family', err)
+        code, _, err = self.run_cli("measure", "x.png", "--family", "solo-nombre", "--lang", "es")
+        self.assertEqual(code, 1)
+        self.assertIn("«solo-nombre» no es una familia", err)
 
     def test_project_mide_con_la_paleta_de_la_marca(self):
         env = mock.patch.dict(os.environ, {"GIMG_CONFIG_HOME": str(self.tmp / "cfg"),

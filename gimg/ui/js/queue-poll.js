@@ -17,11 +17,15 @@ function emit(event, entry) { for (const fn of listeners[event]) fn(entry); }
 
 export async function refreshNow() {
   let entries;
+  // la pausa se lee en GET /api/health, a la vez que la cola; si no responde, se queda lo último sabido
+  const health = api.health().then((hth) => { if (hth && typeof hth.paused === 'boolean' && hth.paused !== store.get('queuePaused')) store.set('queuePaused', hth.paused); }, () => {});
   try {
     entries = await api.queue();
   } catch (e) {
     if (!(e instanceof OfflineError)) console.warn('queue', e);
     return false;
+  } finally {
+    await health;
   }
   if (!Array.isArray(entries)) return false;
   const next = new Map();

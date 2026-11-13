@@ -471,5 +471,26 @@ class TarkorOgE3Tests(unittest.TestCase):
             self.assertTrue((ROOT / p["logo"]).is_file(), p["logo"])
 
 
+class ChannelProfileTests(unittest.TestCase):
+    """The profiles the brand sheets asked for (hojas-repos gaps): each one delivers the size of its channel."""
+
+    WANTED = {
+        "tarkor": {"lateral": (704, 1344), "linkedin": (1584, 396), "discord": (960, 540), "panorama": (1600, 900)},
+        "toveriai": {"icon": (512, 512)},
+    }
+
+    def test_delivered_sizes(self):
+        for project, wanted in self.WANTED.items():
+            profiles = read("examples/%s/galivelop-images.json" % project)["profiles"]
+            for name, size in wanted.items():
+                with self.subTest(project=project, profile=name):
+                    cfg = profiles[name]
+                    self.assertEqual(compose.target_size(cfg), size)
+                    self.assertEqual((cfg["width"] % 64, cfg["height"] % 64), (0, 0))
+                    self.assertLessEqual(cfg["width"] * cfg["height"], 1048576)
+                    gen, out = cfg["width"] / cfg["height"], size[0] / size[1]
+                    self.assertLess(abs(gen - out) / out, 0.05, "the crop to the target loses over 5 %")
+
+
 if __name__ == "__main__":
     unittest.main()

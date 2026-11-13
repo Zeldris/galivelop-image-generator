@@ -294,7 +294,7 @@ sombra ni redondeo; se genera con gimg sobre croma `#00ff00` y se vectoriza con 
 
 | Pieza | Qué es | Regla | De quién | Hoy |
 |---|---|---|---|---|
-| Símbolo | **Decidido por la persona (2026-11-12): monograma «IG» en una tinta (`#fbfcfd`) sobre el cuadrado con chaflán en el hondo**; sustituye a la rejilla 2×2, que pasa a histórico junto a los logos anteriores (degradado, `rx` 30, Sora), no se copian a repos. **Dependencia:** orden nueva en `gimg brand` que monte el cuadrado con chaflán | cuadrado `#7C5CD6`, chaflán 28/128, «IG» de trazo 12/128 en `#fbfcfd` (4,69:1 sobre el cuadrado) | la forma del cuadrado, heredada; el dibujo, propio | `logos/galivelop-image-generator-b.svg`: `#5B34C9`, `rx` 28, a mano (R1) |
+| Símbolo | **Decidido por la persona (2026-11-12): monograma «IG» en una tinta (`#fbfcfd`) sobre el cuadrado con chaflán en el hondo**; sustituye a la rejilla 2×2, que pasa a histórico junto a los logos anteriores (degradado, `rx` 30, Sora), no se copian a repos. **Orden:** `gimg brand square` ya monta el cuadrado con chaflán | cuadrado `#7C5CD6`, chaflán 28/128, «IG» de trazo 12/128 en `#fbfcfd` (4,69:1 sobre el cuadrado) | la forma del cuadrado, heredada; el dibujo, propio | `logos/galivelop-image-generator-b.svg`: `#5B34C9`, `rx` 28, a mano (R1) |
 | Símbolo de una tinta | la rejilla sin cuadrado, para papel | `currentColor` (tinta `#13212b` o `#e6eef3`); la celda elegida, rellena en la misma tinta. Es `emblema-mono.svg` de `gimg brand system` | propio | `…-b-linea.svg` con la celda en `#8B5CF6` (R2) |
 | Favicon | el símbolo | el mismo archivo que el símbolo; mínimo 16 px | propio | `gimg/ui/assets/gvig.svg` |
 | Wordmark | «GALIVELOP IG» | Big Shoulders Display 800, mayúsculas, tracking 0,01 em, en `currentColor`, **nunca en el acento** | heredado | no hay (R3) |
@@ -324,9 +324,8 @@ gimg brand lockup simbolo.svg wordmark.svg --layout v --width 1.6 --gap 0.25 --m
 Dos celdas encendidas ya no dicen eso. **Propio frente a la regla de iconos:** la familia pide iconos sin relleno y con
 los interiores huecos; la celda rellena es la única excepción y solo en el símbolo, porque es su significado.
 
-**Lo que `gimg` no hace todavía** (va a la entrega): no hay orden que ponga el dibujo trazado sobre el cuadrado con
-chaflán (`gimg brand` tiene `matte`, `trace`, `wordmark`, `lockup` y `system`, `gimg/cli.py` l.104-144), y
-`gimg brand system` no tiene `--margin`. Hasta que exista, el símbolo con cuadrado no puede nacer entero de gimg.
+**Lo que `gimg` hace y no hace:** el cuadrado con chaflán lo monta `gimg brand square IG.svg --fill '#7C5CD6' --ink '#fbfcfd' --png 512,128,32`
+(chaflán 28, margen 24 por defecto); `gimg brand system` ya tiene `--margin` y `--mono`.
 
 ## 5. Tipografía
 

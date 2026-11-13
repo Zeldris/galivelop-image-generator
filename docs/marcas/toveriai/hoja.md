@@ -338,7 +338,7 @@ que la persona tiene que aprobar según el plan.
 De los catorce de la plantilla, le afectan: roles de la paleta (`brand.palette` no distingue el acento único de las piezas
 genéricas del semáforo del IMI), zona reservada (solo en prompt y en `componer.py`, y con tres fracciones distintas según el
 formato), velo y logo en la pieza (solo en `componer.py`), palabras vetadas sin campo (y un prompt histórico con negaciones),
-`avatar` sin perfil (lo hace `piezas.py`) e `icon` sin poder declararse (la web no tiene manifest ni apple-touch-icon: sería la
+`avatar` sin perfil (lo hace `piezas.py`) e `icon` declarado desde el 2026-11-13 (1024² → 512²; la web no tiene manifest ni apple-touch-icon: sería la
 primera pieza útil), **varias variantes de logo** (lockup claro y oscuro obligan a dos plantillas; solo existe el claro),
 tipografía sin licencia ni ruta declaradas (aunque el repo de toVeriAI sí las aloja), imágenes de marca para la EMD sin lista (el
 favicon con alfa se mide mal y la portada del Portal es casi blanca), idiomas y textos por idioma (la web publica en cinco; las

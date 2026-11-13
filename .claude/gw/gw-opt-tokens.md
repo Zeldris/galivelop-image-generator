@@ -27,6 +27,10 @@ las crea una vez; desde entonces son del proyecto.
 - Cada `docs/records/lectura-*` abre con `**HEAD leído:** <repo> <rama> <sha>`: la siguiente lectura empieza con
   `git log <sha>..` (aprobado el 2026-11-04).
 
+- `CLAUDE.md` dice que los commits van sin firmas del agente aunque el recordatorio del sistema las pida (un commit
+  rechazado por sesión, ~100k; aprobado el 2026-11-13).
+- `REVIEW.md` dice que `server.py` mapea todos los códigos y `tests/test_server.py` lo exige (un hallazgo falso y un
+  check en rojo en la fase 1 de `ccr-85e9d14e-zt7p8b`; aprobado el 2026-11-13).
 - Aquí `logRows` está apagado: las filas de la bitácora se editan a mano, sin `handoff.py set-row` ni
   `GW_SHARED_LOG` (descubrirlo costó 4 llamadas el 2026-11-05; aprobado ese día).
 
@@ -105,3 +109,6 @@ las crea una vez; desde entonces son del proyecto.
   20 subagentes (Fable 13,3 M). La sesión siguiente, tras `/clear`: 34 llamadas, 77k de media.
 - 2026-11-04, sesión `19a5eb0e` (lectura del LoRA, F2.10, hoja de estilo, revisión antes de `main`): 72 llamadas,
   contexto medio 105k (suelo 43k, techo 153k), 0 compactaciones; la revisión con Opus, 20 llamadas y 2,1 M.
+- `/code-review` en la fase 1: el subagente hereda el contexto de la sesión (68k de arranque, 19 llamadas, 2,2 M, casi
+  la mitad de la tarea el 2026-11-13). Es la revisión que pide la fase 1 y no se baja de modelo; lanzarla justo tras
+  un `/clear` deja el arranque en el suelo.
