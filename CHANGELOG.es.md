@@ -9,6 +9,16 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Sin publicar]
 
+### Cambiado
+
+- `gimg brand lockup` ya no pisa un archivo que exista: da `brand.exists` salvo con `--force` (como `system` y `square`).
+
+### Corregido
+
+- `gimg brand square --force --png`: si un PNG falla a medias, los archivos anteriores quedan intactos (SVG y PNG se
+  escriben con nombres temporales y se renombran al final).
+- La interfaz: una respuesta de `/api/health` lanzada antes de pausar o reanudar la cola ya no devuelve el estado viejo.
+
 ## [0.5.0] - 2026-11-13
 
 ### Añadido

@@ -213,10 +213,12 @@ async function clearQueue(project, n) {
 /** «Pausar cola» / «Reanudar cola»: lo que corre termina; el foco se queda en el mismo botón. */
 async function togglePause(on) {
   try {
+    const { refreshNow, notePauseChange } = await import('../queue-poll.js');
+    notePauseChange(); // un health en vuelo desde antes del clic no pisa lo que se pide
     await api.pauseQueue(on);
+    notePauseChange(); // ni uno lanzado mientras el servicio aún no había cambiado
     store.set('queuePaused', on);
     toast(t(on ? 'ui.queue.pausedToast' : 'ui.queue.resumedToast'));
-    const { refreshNow } = await import('../queue-poll.js');
     await refreshNow();
   } catch (err) { toastError(describeError(err, t)); }
 }
