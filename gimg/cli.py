@@ -120,7 +120,7 @@ def _build(lang: str) -> argparse.ArgumentParser:
     leaf(g, "wordmark", "cli.cmd.brand_wordmark", arg("text", "cli.arg.brand_text"),
          opt("--font", "cli.arg.brand_font", required=True, metavar="TTF"),
          opt("--weight", "cli.arg.brand_weight", type=int, default=800),
-         opt("--spacing", "cli.arg.brand_spacing", type=float, default=0.12),
+         opt("--spacing", "cli.arg.brand_spacing", type=float, default=brand.SPACING),
          opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"))
     props = (opt("--cap", "cli.arg.brand_cap", type=float, default=0.45),
              opt("--gap", "cli.arg.brand_gap", type=float, default=0.25),
@@ -136,11 +136,13 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--font", "cli.arg.brand_font", required=True, metavar="TTF"),
          opt("--out-dir", "cli.arg.brand_out_dir", required=True, metavar="DIR"),
          opt("--weight", "cli.arg.brand_weight", type=int, default=800),
-         opt("--spacing", "cli.arg.brand_spacing", type=float, default=0.12),
+         opt("--spacing", "cli.arg.brand_spacing", type=float, default=brand.SPACING),
          opt("--palette", "cli.arg.brand_palette", metavar="#HEX,#HEX"),
          opt("--colors", "cli.arg.brand_colors", type=int, metavar="N"),
          opt("--text", "cli.arg.brand_wordmark_text"),
          opt("--holes", "cli.arg.brand_holes", action="store_true"),
+         opt("--margin", "cli.arg.brand_margin", type=float, default=0.0),
+         opt("--mono", "cli.arg.brand_mono_lockup", action="store_true"),
          opt("--force", "cli.arg.brand_force", action="store_true"), *props)
 
     leaf(top, "sheet", "cli.cmd.sheet", arg("images", "cli.arg.sheet_images", nargs="*", metavar="IMAGE"),
@@ -267,7 +269,8 @@ def _brand(args, sub, out: _Out) -> None:
         key = "cli.out.brand_lockup"
     elif sub == "system":
         res = brand.system(args.image, args.name, args.font, args.out_dir, args.weight, args.spacing, args.palette,
-                           args.colors, args.text, args.cap, args.gap, args.width, args.force, args.holes)
+                           args.colors, args.text, args.cap, args.gap, args.width, args.force, args.holes,
+                           args.margin, args.mono)
         if out.as_json:
             out.data(res)
             return

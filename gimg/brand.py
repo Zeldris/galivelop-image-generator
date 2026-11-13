@@ -7,7 +7,7 @@
 - `lockup(emblem, wordmark, out=None, layout="h"|"v")`: the emblem SVG and the wordmark SVG in one, as paths only (proportions of
   the sheet: wordmark height 0.45 and gap 0.25 of the emblem diameter in ``h``; width 1.6 in ``v``).
 - `system(src, name, font, out_dir)`: the seven files of the logo system (matte, traces, wordmark, both lockups, contact sheet).
-- `wordmark(text, font, out=None, weight=800, spacing=0.12)`: `text` set in the font file `font` and turned into paths, with no
+- `wordmark(text, font, out=None, weight=800, spacing=SPACING)`: `text` set in the font file `font` and turned into paths, with no
   ``<text>`` and no need for the font afterwards. ``rsvg-convert`` draws the text big in black; the result is cropped
   to the ink and traced in mono mode. The font reaches ``rsvg-convert`` through a throwaway fontconfig file that adds a
   copy of it to the system fonts (a variable font gets the weight asked for).
@@ -39,6 +39,7 @@ FONT_PX = 260
 MAX_PIXELS = 1 << 24  # the limit of `png.read_rgba`
 PAD_PX = 6
 MIN_TRANSPARENT = 0.02  # a matte that frees less than this found no flat background
+SPACING = 0.01  # em between letters: the family's tracking (Big Shoulders Display 800, hojas de docs/marcas/)
 MODES = {"color": "color", "mono": "mono", "silhouette": "silueta", "silueta": "silueta"}
 
 
@@ -219,7 +220,7 @@ def _crop(width: int, height: int, rgba, pad: int):
     return w, h, res
 
 
-def wordmark(text: str, font, out=None, weight: int = 800, spacing: float = 0.12, title: str = "") -> dict:
+def wordmark(text: str, font, out=None, weight: int = 800, spacing: float = SPACING, title: str = "") -> dict:
     """Write the SVG of `text` in `font`, as paths (see the module docstring). ``spacing`` is in em."""
     text = " ".join("".join(ch for ch in str(text) if ch.isspace() or unicodedata.category(ch) != "Cc").split())
     if not text:
@@ -505,13 +506,16 @@ def check_targets(targets: dict, out_dir, force: bool = False, src=None) -> list
     return clash
 
 
-def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = 0.12, palette=None, colors=None, text=None,
-           cap: float = 0.45, gap: float = 0.25, width: float = 1.6, force: bool = False, holes: bool = False) -> dict:
+def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = SPACING, palette=None, colors=None, text=None,
+           cap: float = 0.45, gap: float = 0.25, width: float = 1.6, force: bool = False, holes: bool = False,
+           margin: float = 0.0, mono: bool = False) -> dict:
     """The logo system of `name` from the emblem PNG `src`, in `out_dir`: ``<slug>-emblema-alpha.png``, ``-emblema.svg``,
     ``-emblema-mono.svg``, ``-wordmark.svg``, ``-lockup-h.svg``, ``-lockup-v.svg`` and ``-contactos.png`` (see `SYSTEM_FILES`).
 
     Everything is built in a throwaway folder and copied in at the end, so a failure while working leaves `out_dir` as it
     was (only an I/O failure in the final copy can leave some files); a file already there is ``brand.exists`` unless `force`. The wordmark text is `text`, else `name` in capitals.
+    The lockups take ``margin`` (see `lockup`) and, with `mono`, the one-ink emblem instead of the color one: the whole
+    lockup in ``currentColor``, as the family's sheets ask.
     """
     t0 = time.monotonic()
     slug = slugify(name)
@@ -530,6 +534,8 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = 0.
         raise GimgError("brand.text_too_long", max=MAX_TEXT)
     if not isinstance(weight, int) or not 1 <= weight <= 1000 or not -0.5 <= spacing <= 2:
         raise GimgError("brand.bad_option", reason="weight 1-1000 and spacing between -0.5 and 2 em")
+    if not 0 <= margin <= 2:
+        raise GimgError("brand.bad_option", reason="margin 0-2 (in emblem diameters)")
     if len(os.path.basename(next(iter(targets.values()))).encode("utf-8")) > 255:
         raise GimgError("brand.bad_name", name=str(name))
     try:
@@ -546,20 +552,21 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = 0.
             raise GimgError("brand.no_matte", path=str(src), transparent=round(m["transparent"] * 100, 1))
         title = str(name).strip()
         color = trace(t["emblema-alpha.png"], t["emblema.svg"], "color", palette, colors, title=title)
-        mono = trace(t["emblema-alpha.png"], t["emblema-mono.svg"], "mono", title=title)
+        one_ink = trace(t["emblema-alpha.png"], t["emblema-mono.svg"], "mono", title=title)
         word = wordmark(line, font, t["wordmark.svg"], weight, spacing, title=title)
-        lh = lockup(t["emblema.svg"], t["wordmark.svg"], t["lockup-h.svg"], "h", cap, gap, width, title=title)
-        lv = lockup(t["emblema.svg"], t["wordmark.svg"], t["lockup-v.svg"], "v", cap, gap, width, title=title)
+        emblem = t["emblema-mono.svg" if mono else "emblema.svg"]
+        lh = lockup(emblem, t["wordmark.svg"], t["lockup-h.svg"], "h", cap, gap, width, margin, title=title)
+        lv = lockup(emblem, t["wordmark.svg"], t["lockup-v.svg"], "v", cap, gap, width, margin, title=title)
         sheet_size = contact_sheet(t, tmp)
         for key in SYSTEM_FILES:
             with open(t[key], "rb") as fh:
                 _write(targets[key], fh.read())
     files = {key: targets[key] for key in SYSTEM_FILES}
     return {"src": str(src), "name": str(name).strip(), "slug": slug, "out_dir": str(out_dir), "files": files,
-            "paths": {"emblem": color["paths"], "mono": mono["paths"], "wordmark": word["paths"], "lockup_h": lh["paths"],
+            "paths": {"emblem": color["paths"], "mono": one_ink["paths"], "wordmark": word["paths"], "lockup_h": lh["paths"],
                       "lockup_v": lv["paths"]},
             "contact_size": list(sheet_size), "overwritten": sorted(clash), "seconds": round(time.monotonic() - t0, 1)}
 
 
-__all__ = ["contact_sheet", "targets_of", "check_targets", "matte", "trace", "wordmark", "lockup", "system", "slugify", "parse_palette", "default_out", "MODES", "LAYOUTS",
+__all__ = ["contact_sheet", "targets_of", "check_targets", "matte", "trace", "wordmark", "lockup", "system", "slugify", "parse_palette", "default_out", "MODES", "SPACING", "LAYOUTS",
            "SYSTEM_FILES", "TOOL"]

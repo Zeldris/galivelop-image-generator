@@ -17,6 +17,8 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Logo y favicon redibujados (hoja de marca r9): baldosa plana, lockups claro y oscuro y versiones en línea.
 - El nombre visible del producto es «Galivelop IG» (GVIG) en el README y en `cli.description` (D38); el repositorio,
   el paquete y la orden siguen siendo `galivelop-image-generator` y `gimg`.
+- `gimg brand wordmark` y `system`, y el taller «Sistema de logo», espacian las letras 0,01 em por defecto (antes
+  0,12), el de la familia.
 
 ### Añadido
 
@@ -25,6 +27,8 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
   lo avisa. Al reanudar, el servicio relanza el trabajador en su siguiente latido (unos segundos). En pausa, lo que
   espera en cola no mantiene vivo el servicio, y `gimg queue resume` lo vuelve a arrancar si queda algo en cola. El
   cajón de la cola de la interfaz tiene el botón «Pausar cola» / «Reanudar cola» y la pastilla dice «en pausa».
+- `gimg brand system --margin` (espacio libre alrededor de los dos lockups) y `--mono` (lockups con el emblema en una
+  tinta: todo el lockup en `currentColor`, como piden las hojas de la familia).
 - Traducción al inglés de la API local: `docs/en/api.md`; el test de la documentación de la API comprueba los dos idiomas.
 - Sistema de logo (`gimg brand`, D37): `matte` recorta el fondo plano de un emblema generado (`--holes` vacía también
   lo encerrado), `trace` lo vectoriza a SVG con la paleta de la marca o en una tinta, `wordmark` convierte el nombre

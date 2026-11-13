@@ -576,6 +576,43 @@ class SystemTests(BrandBase):
         self.assertEqual(alpha[3], 0)
 
     @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
+    def test_mono_and_margin_reach_both_lockups(self):
+        code, _, err = self.system("--mono", "--margin", "0.25")
+        self.assertEqual(code, 0, err)
+        for layout in ("h", "v"):
+            with self.subTest(layout=layout):
+                ref = self.tmp / ("ref-%s.svg" % layout)
+                brand.lockup(self.out / "tarkor-emblema-mono.svg", self.out / "tarkor-wordmark.svg", ref, layout,
+                             margin=0.25, title="Tarkor")
+                got = (self.out / ("tarkor-lockup-%s.svg" % layout)).read_text()
+                self.assertEqual(got, ref.read_text())
+        self.assertNotEqual((self.out / "tarkor-emblema-mono.svg").read_text(),
+                            (self.out / "tarkor-emblema.svg").read_text())  # else the check above proves nothing
+        plain = self.tmp / "plain"
+        self.assertEqual(self.run_cli("brand", "system", str(self.src), "--name", "Tarkor", "--font", FONT,
+                                      "--out-dir", str(plain))[0], 0)
+        ref = self.tmp / "ref-color.svg"
+        brand.lockup(plain / "tarkor-emblema.svg", plain / "tarkor-wordmark.svg", ref, "h", title="Tarkor")
+        self.assertEqual((plain / "tarkor-lockup-h.svg").read_text(), ref.read_text())
+
+    def test_a_margin_out_of_range_is_refused_with_its_reason(self):
+        code, _, err = self.system("--margin", "3")
+        self.assertEqual(code, 1)
+        self.assertIn("margin 0-2", err)
+
+    @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
+    def test_the_default_spacing_is_the_family_one(self):
+        self.assertEqual(brand.SPACING, 0.01)
+        code, out, err = self.run_cli("brand", "wordmark", "AVE", "--font", FONT, "-o", str(self.tmp / "d.svg"), "--json")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(json.loads(out)["spacing"], 0.01)
+        code, out, _ = self.system("--json")
+        self.assertEqual(code, 0)
+        made = (self.out / "tarkor-wordmark.svg").read_text()
+        brand.wordmark("TARKOR", FONT, str(self.tmp / "ref.svg"), spacing=0.01, title="Tarkor")
+        self.assertEqual(made, (self.tmp / "ref.svg").read_text())
+
+    @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
     def test_text_output_lists_the_files(self):
         code, out, _ = self.system()
         self.assertEqual(code, 0)

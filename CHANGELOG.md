@@ -17,6 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Logo and favicon redrawn (r9 brand sheet): flat tile, light and dark lockups and line versions.
 - The product's visible name is "Galivelop IG" (GVIG) in the README and in `cli.description` (D38); the repository,
   the package and the command stay `galivelop-image-generator` and `gimg`.
+- `gimg brand wordmark` and `system`, and the "Logo system" workshop, space the letters 0.01 em by default (it was
+  0.12), the family's tracking.
 
 ### Added
 
@@ -25,6 +27,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   so. On resume the service relaunches the worker at its next beat (a few seconds). While paused, what is queued does
   not keep the service alive, and `gimg queue resume` starts it again if anything is still queued. The queue drawer
   of the interface has a "Pause queue" / "Resume queue" button and the queue pill says "paused".
+- `gimg brand system --margin` (free space around both lockups) and `--mono` (lockups with the one-ink emblem: the
+  whole lockup in `currentColor`, as the family's sheets ask).
 - English translation of the local API: `docs/en/api.md`; the API doc test now checks both languages.
 - Logo system (`gimg brand`, D37): `matte` removes the flat background of a generated emblem (`--holes` also empties
   what is enclosed), `trace` turns it into an SVG with the brand palette or in one ink, `wordmark` turns the name into

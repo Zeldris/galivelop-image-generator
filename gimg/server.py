@@ -19,6 +19,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote
 
 from . import __version__, brandshop, build_id, compose, delivery, doctor, i18n, measure, models, orders, paths, projects, queue
+from .brand import SPACING as _WORDMARK_SPACING
 from .errors import GimgError
 
 API_VERSION = 1
@@ -935,7 +936,7 @@ def brand_wordmark(req):
     if text is not None and not isinstance(text, str):
         raise GimgError("api.bad_param", name="text")
     font = _str_field(body, "font")
-    opts = {"weight": _int(body, "weight", 800), "spacing": _number(body, "spacing", 0.12)}
+    opts = {"weight": _int(body, "weight", 800), "spacing": _number(body, "spacing", _WORDMARK_SPACING)}
     with _heavy():  # rsvg-convert
         return brandshop.wordmark(project, name, font, text, **opts)
 
