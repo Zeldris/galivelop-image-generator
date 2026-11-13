@@ -16,3 +16,4 @@ Lo que el generador no saca bien después de dos o tres intentos se apunta aquí
 | Círculo medio relleno («en curso», 26b): sale una luna creciente con degradado y un aro más grueso que el 26a | q811, q812 | Mismo aro del 26a con tres puntos dentro («…»), el motivo del visto que sí sale |
 | Círculo de línea discontinua («pendiente», 26c): sale un aro macizo con otro discontinuo dentro | q813, q814 | Mismo aro del 26a, vacío: la serie queda visto, «…» y vacío |
 | Ramas de commit muy pálidas a la derecha (banda 29): sale una gráfica de bolsa o ramas de planta con hojas | q819, q820 | Cabo de barco enrollado con el chicote lanzado a la izquierda, «echar un cabo» (29b) |
+| Mar que se funde en papel arriba (30c): el corte mar/papel se lee como horizonte | q840 | Mar grabado a sangre en toda la imagen, como las 06 aprobadas |
