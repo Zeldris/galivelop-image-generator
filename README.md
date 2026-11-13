@@ -109,6 +109,7 @@ python3 -m gimg queue cancel 3
 python3 -m gimg compose mi-proyecto fauna/red-howler banner 1 --template cartel   # recompone sin generar
 python3 -m gimg templates mi-proyecto banner          # plantillas de composición del perfil
 python3 -m gimg measure imagen.png --project mi-proyecto   # paleta, contraste y distancia a la marca
+python3 -m gimg measure imagen.png --family "madera=#1b130c,#332415" --family "oro=#b8862b,#f2c45a"   # % de píxeles por familia de color (+ otros)
 python3 -m gimg sheet --out hoja.png a.png b.png      # hoja de contactos para revisar una ronda
 python3 -m gimg brand matte logo.png                  # quita el fondo plano: logo-alpha.png (el original no se toca)
 python3 -m gimg brand trace logo-alpha.png --mode color|mono|silhouette   # PNG a SVG (--palette, --colors, --matte)

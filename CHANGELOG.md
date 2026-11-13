@@ -9,6 +9,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- `gimg measure --family NAME=#hex,#hex,...` (repeatable) splits the pixels by colour family (nearest colour, ΔE76 < 15,
+  the rest as `other`), to check rules such as 60/30/10. New `families` key in the JSON and error `measure.bad_family`.
+
 ### Changed
 
 - The interface is light by default (it was dark); the dark theme stays available. Palette by roles from the r9 brand

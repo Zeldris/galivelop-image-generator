@@ -97,7 +97,9 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--dest", "cli.arg.template_dest", choices=("local", "project"), default="local"))
 
     leaf(top, "measure", "cli.cmd.measure", arg("image", "cli.arg.image_path"),
-         opt("--palette", "cli.arg.palette"), opt("--project", "cli.arg.measure_project", metavar="PROJECT"),
+         opt("--palette", "cli.arg.palette"),
+         opt("--family", "cli.arg.family", action="append", default=[], metavar="NAME=#RRGGBB,..."),
+         opt("--project", "cli.arg.measure_project", metavar="PROJECT"),
          opt("--refs", "cli.arg.refs", nargs="+", default=[], metavar="IMAGE"),
          opt("--zone", "cli.arg.zone", metavar="X,Y,W,H"), opt("--text", "cli.arg.text_color", metavar="#RRGGBB"))
 
@@ -493,7 +495,7 @@ def _measure(args, out: _Out) -> None:
         if not brand or not brand.get("palette"):
             raise GimgError("measure.no_brand_palette", name=args.project)
         palette = brand["palette"]
-    res = measure.measure(args.image, palette, args.refs, args.zone, args.text)
+    res = measure.measure(args.image, palette, args.refs, args.zone, args.text, args.family)
     if out.as_json:
         out.data(res)
         return
@@ -504,6 +506,12 @@ def _measure(args, out: _Out) -> None:
         out.line("cli.out.measure_palette", pct=p["pct"], delta=p["deltaE"], count=len(p["colors"]))
         for color, pct in p["by_color"].items():
             out.line("cli.out.measure_palette_color", color=color, pct=pct)
+    if "families" in res:
+        f = res["families"]
+        out.line("cli.out.measure_families", delta=f["deltaE"], count=len(f["by_family"]))
+        for name, pct in f["by_family"].items():
+            out.line("cli.out.measure_family", name=name, pct=pct)
+        out.line("cli.out.measure_family_other", pct=f["other"])
     for e in res.get("emd", ()):
         out.line("cli.out.measure_emd", **e)
     if "emd_median" in res:
