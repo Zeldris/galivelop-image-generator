@@ -165,6 +165,16 @@ class OrderTests(unittest.TestCase):
         self.assertNotIn("negative", orders.get("proj", "a", "banner"))
         self.assertNotIn("negative", orders.attempt_specs("proj", "a", "banner")[0])
 
+    def test_whitespace_only_negative_is_none_and_others_are_trimmed(self):
+        self.new_order(negative="  \n ")
+        self.assertNotIn("negative", orders.get("proj", "a", "banner"))
+        self.assertNotIn("negative", orders.attempt_specs("proj", "a", "banner")[0])
+        self.assertNotIn("negative", orders.attempt_specs("proj", "a", "banner", negative="   ")[0])
+        self.assertEqual(orders.attempt_specs("proj", "a", "banner", negative=" no hands ")[0]["negative"], "no hands")
+        self.assertEqual(orders.check_order("proj", self.order(negative=" \t"))[0].get("negative", ""), "")
+        orders.submit("proj", self.order(negative=" blurry "))
+        self.assertEqual(orders.get("proj", "a", "banner")["negative"], "blurry")
+
     def test_negative_too_long_or_wrong_type_is_rejected(self):
         self.assertEqual(self.code(orders.submit, "proj", self.order(negative="x" * 4001)), "order.invalid")
         self.assertEqual(self.code(orders.submit, "proj", self.order(negative=3)), "order.invalid")

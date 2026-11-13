@@ -1,7 +1,7 @@
 /* Panel «Nuevo pedido» (F4d, D22): un `dialog` modal para crear un pedido desde la interfaz.
    - Campos: clave, perfil, prompt, prompt negativo (opcional), textos de la composición (`compose.fields` del perfil), plantilla, modelo, semilla
-     (vacía = al azar), borrador y número de intentos seguidos. «Copiar de…» rellena prompt, textos, semilla, borrador y
-     parámetros (pasos, cfg, sampler) desde un pedido existente del mismo perfil.
+     (vacía = al azar), borrador y número de intentos seguidos. «Copiar de…» rellena prompt, textos, semilla, borrador,
+     prompt negativo y parámetros (pasos, cfg, sampler) desde un pedido existente del mismo perfil.
    - Modelo: GET /api/models; los que la máquina no permite salen deshabilitados, con su motivo (`reason.message`).
    - Palabras vetadas (`brand.bannedWords`): aviso en vivo bajo el prompt, nunca bloquea.
    - Envía POST /api/projects/{p}/orders (`template` y `model` solo si difieren del perfil) y, si sale bien, abre el

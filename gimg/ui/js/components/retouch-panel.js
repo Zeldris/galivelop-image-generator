@@ -49,9 +49,10 @@ export function retouchPanel(ctx, { onSubmit }) {
     const text = prompt.value;
     const hit = bannedWord(text, banned);
     replace(promptHint, hit ? h('span.field-error', {}, t('ui.retouch.bannedWord', { w: hit })) : t('ui.retouch.chars', { n: text.length, max: MAX_PROMPT }));
-    dirty.hidden = text === (order.prompt || '');
+    dirty.hidden = text === (order.prompt || '') && negative.value.trim() === (order.negative || '');
   };
   prompt.addEventListener('input', checkPrompt);
+  negative.addEventListener('input', checkPrompt);
   checkPrompt();
 
   const spec = (extra = {}) => {

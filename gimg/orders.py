@@ -146,6 +146,11 @@ def _profile(config: dict, profile: str) -> dict:
     return found
 
 
+def _neg(value) -> str:
+    """The negative prompt trimmed; whitespace-only (or absent) is none (``""``)."""
+    return value.strip() if isinstance(value, str) else ""
+
+
 def _check_fields(prompt=None, params=None, seed=None, negative=None) -> None:
     """Validate loose fields (overrides) with the order schema, through a dummy order."""
     probe = {"key": "x", "profile": "x", "prompt": "x" if prompt is None else prompt}
@@ -223,8 +228,8 @@ def submit(project: str, order: dict) -> dict:
         "strength": order.get("strength"),
         "text": dict(order.get("text", {})),
     }
-    if order.get("negative"):
-        fields["negative"] = order["negative"]
+    if _neg(order.get("negative")):
+        fields["negative"] = _neg(order["negative"])
     path = _order_file(project, key, profile)
     with fsutil.lock(path):
         now = _now()
@@ -236,7 +241,7 @@ def submit(project: str, order: dict) -> dict:
             record = {"key": key, "profile": profile, "createdAt": now, "attempts": [],
                       "chosen": None, "chosenHistory": []}
         record.update(fields)
-        if not order.get("negative"):  # only orders with a negative carry the key, so stored orders keep their shape
+        if not _neg(order.get("negative")):  # only orders with a negative carry the key, so stored orders keep their shape
             record.pop("negative", None)
         record["updatedAt"] = now
         fsutil.write_json(path, record)
@@ -257,7 +262,7 @@ def check_order(project: str, order: dict) -> list:
                  "params": copy.deepcopy(order.get("params", {})), "seed": order.get("seed"),
                  "draft": bool(order.get("draft", False)), "initImage": order.get("initImage"),
                  "strength": order.get("strength"), "text": dict(order.get("text", {})),
-                 "negative": order.get("negative", "")}
+                 "negative": _neg(order.get("negative"))}
     specs = build_specs(candidate, profile_cfg, order.get("count", 1))
     from . import limits
     machine = limits.load_machine()
@@ -350,7 +355,7 @@ def build_specs(order: dict, profile_cfg: dict, count: int = 1, *, seed=None, pr
     max_prompt = schema.load_schema("order")["properties"]["prompt"]["maxLength"]
     if len(text) > max_prompt:
         raise GimgError("order.prompt_too_long", length=len(text), max=max_prompt)
-    neg = order.get("negative", "") if negative is None else negative
+    neg = _neg(order.get("negative") if negative is None else negative)
     base = base_seed
     return [{
         "seed": _rng.randrange(SEED_LIMIT) if base is None else base + i,

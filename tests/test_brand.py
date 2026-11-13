@@ -826,6 +826,31 @@ class SquareTests(BrandBase):
             self.assertEqual(path.read_text(), text)
         self.assertEqual(set(self.tmp.iterdir()), before)  # no temporary files left
 
+    def test_a_failed_final_rename_restores_every_old_file(self):
+        old = {self.out: "old svg", self.tmp / "sq-64.png": "old 64", self.tmp / "sq-32.png": "old 32"}
+        for path, text in old.items():
+            path.write_text(text)
+        before = set(self.tmp.iterdir())
+
+        def fake_rsvg(argv, env):
+            Path(argv[argv.index("-o") + 1]).write_bytes(b"new png")
+
+        real = os.replace
+
+        def flaky(src, dst, *a, **k):
+            if str(dst) == str(self.tmp / "sq-32.png") and str(src).endswith(".png.tmp"):
+                raise OSError(28, "No space left")
+            return real(src, dst, *a, **k)
+
+        with mock.patch.object(brand, "_rsvg", fake_rsvg), mock.patch.object(brand.shutil, "which", return_value="/x"), \
+                mock.patch.object(brand.os, "replace", flaky):
+            exc = self.code(pngs=[64, 32], force=True)
+        self.assertEqual(exc.code, "brand.write_failed")
+        self.assertIn("No space left", str(exc))
+        for path, text in old.items():
+            self.assertEqual(path.read_text(), text)  # the SVG and the first PNG were not left new
+        self.assertEqual(set(self.tmp.iterdir()), before)  # no temporaries or backups left
+
     def test_default_output_sits_next_to_the_drawing(self):
         res = brand.square(self.draw, None, "#7C5CD6", "#fbfcfd")
         self.assertEqual(res["out"], str(self.tmp / "ig-square.svg"))

@@ -9,6 +9,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Optional negative prompt: order field `negative` (empty or whitespace-only is the same as absent), `gimg attempt new
+  --negative`, API field `negative` for new attempts, and "Negative prompt" fields in the interface (new order and
+  retouch). It is passed to `sd-cli` as `--negative-prompt` and kept in the attempt and in the delivery manifest.
+
 ### Changed
 
 - `gimg brand lockup` no longer overwrites an existing file: it gives `brand.exists` unless `--force` is passed (like

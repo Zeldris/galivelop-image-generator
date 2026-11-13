@@ -515,16 +515,17 @@ def square(drawing, out=None, fill=None, ink=None, chamfer: int = 28, pad: int =
         except OSError as exc:
             raise GimgError("brand.write_failed", path=str(out), reason=str(exc.strerror or exc))
         for side, path in files.items():
-            tmp_png = os.path.join(folder, ".brand-%d-%d.png.tmp" % (os.getpid(), side))
+            try:
+                fd_png, tmp_png = tempfile.mkstemp(dir=folder, prefix=".brand-", suffix=".png.tmp")
+                fsutil.honour_umask(fd_png)
+                os.close(fd_png)
+            except OSError as exc:
+                raise GimgError("brand.write_failed", path=str(path), reason=str(exc.strerror or exc))
             staged[tmp_png] = path
             _rsvg([TOOL, "-f", "png", "-w", str(side), "-h", str(side), "-o", tmp_png, tmp_svg], dict(os.environ))
-            if not os.path.exists(tmp_png):
+            if os.path.getsize(tmp_png) == 0:
                 raise GimgError("brand.tool_failed", tool=TOOL, reason="no output")
-        for tmp, final in staged.items():
-            try:
-                os.replace(tmp, final)
-            except OSError as exc:
-                raise GimgError("brand.write_failed", path=str(final), reason=str(exc.strerror or exc))
+        _commit(staged)
     finally:
         for tmp in staged:
             try:
@@ -533,6 +534,39 @@ def square(drawing, out=None, fill=None, ink=None, chamfer: int = 28, pad: int =
                 pass
     contrast = measure.contrast_ratio(measure.luminance(measure.parse_hex(ink)), measure.luminance(measure.parse_hex(fill)))
     return {"out": out, "pngs": list(files.values()), "fill": fill, "ink": ink, "contrast": round(contrast, 2)}
+
+
+def _commit(staged: dict) -> None:
+    """Move every temporary onto its final path, all or nothing as far as practical: an existing target is first moved
+    to a backup; if any rename fails, the new files are removed and the backups put back (``brand.write_failed``)."""
+    backups, placed = {}, []  # final path -> backup path; final paths already holding the new file
+    try:
+        for tmp, final in staged.items():
+            if os.path.lexists(final):
+                fd, backup = tempfile.mkstemp(dir=os.path.dirname(os.path.abspath(final)), prefix=".brand-", suffix=".bak")
+                os.close(fd)
+                backups[final] = backup
+                os.replace(final, backup)
+            os.replace(tmp, final)
+            placed.append(final)
+    except OSError as exc:
+        for final in placed:
+            try:
+                os.unlink(final)
+            except OSError:
+                pass
+        for final, backup in backups.items():
+            try:
+                os.replace(backup, final)
+            except OSError:
+                pass
+        raise GimgError("brand.write_failed", path=str(final), reason=str(exc.strerror or exc))
+    finally:
+        for backup in backups.values():
+            try:
+                os.unlink(backup)
+            except OSError:
+                pass
 
 
 def _contact_svg(pieces: dict) -> tuple:

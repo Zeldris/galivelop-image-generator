@@ -471,6 +471,8 @@ class F4dUi(unittest.TestCase):
     def test_attempts_can_carry_a_model_and_blocked_ones_are_disabled(self):
         retouch = self.comp("retouch-panel.js")
         self.assertIn("s.model = modelSel.value", retouch)
+        self.assertIn("negative.value.trim() === (order.negative || '')", retouch)  # the «changed» mark sees the negative
+        self.assertIn("negative.addEventListener('input', checkPrompt)", retouch)
         self.assertIn("disabled: m.allowed === false", retouch)
         self.assertIn("api.models()", self.comp("order-view.js"))
 
