@@ -55,8 +55,8 @@ for l in sys.stdin:
 Filtra por modelo presente y por `ts` desde `DESDE`; sin `DESDE`, la ronda arrastra rondas anteriores.
 
 ```gw-opt-ai
-log: piloto/opt-ai/ronda-2026-11-12.jsonl
-previous: piloto/opt-ai/ronda-2026-11-11.jsonl
+log: piloto/opt-ai/ronda-2026-11-13.jsonl
+previous: piloto/opt-ai/ronda-2026-11-12.jsonl
 exclude_tasks: warmup
 cold_ms: 100
 ```
