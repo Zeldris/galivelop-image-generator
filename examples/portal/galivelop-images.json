@@ -19,8 +19,8 @@
   },
   "profiles": {
     "cuadrado": {
-      "width": 1024,
-      "height": 1024,
+      "width": 768,
+      "height": 768,
       "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
@@ -224,20 +224,6 @@
       "model": "zimage-turbo-q6",
       "targetWidth": 1200,
       "targetHeight": 80,
-      "draft": {
-        "scale": 0.5,
-        "steps": 4
-      }
-    },
-    "prueba768": {
-      "width": 768,
-      "height": 768,
-      "steps": 8,
-      "cfg": 1.0,
-      "sampler": "euler",
-      "model": "zimage-turbo-q6",
-      "targetWidth": 1024,
-      "targetHeight": 1024,
       "draft": {
         "scale": 0.5,
         "steps": 4

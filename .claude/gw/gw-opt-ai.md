@@ -110,7 +110,7 @@ de más de 570 s tuvieron memoria libre mínima < 4,2 GB; con 4,9-5,6 GB libres,
   sesiones paralelas).
 - **A1, aprobada a prueba** (2026-11-12): iconos a 768² (295 s frente a 551 s). Se aplica solo si, en la prueba con 25a,
   25c y 26a, la persona no ve diferencia, también en el SVG a 24 px. **Prueba lanzada el 2026-11-13** (perfil
-  `prueba768` de `examples/portal/`, pedidos en `piloto/opt-ai/a1/`, misma semilla que q799, q803 y q839: q872-874). **Resultado:** 302-306 s frente a 548-567 s (−45 %); a 24 px en SVG (`trace --ink-only`) se leen igual. Falta el visto de la persona.
+  `prueba768` de `examples/portal/`, pedidos en `piloto/opt-ai/a1/`, misma semilla que q799, q803 y q839: q872-874). **Resultado:** 302-306 s frente a 548-567 s (−45 %); a 24 px en SVG (`trace --ink-only`) se leen igual. **Aplicada (2026-11-13), por marca:** el perfil `cuadrado` del Portal genera a 768² y entrega a 1024; las demás marcas siguen con sus medidas hasta probarlo; `prueba768` retirado.
 - **Ronda del 13-11, aprobadas por la persona (2026-11-13):** figuras geométricas por código (`gimg brand rose`, para
   la 04b) y `gimg brand fit` para encajar el motivo de una banda en su zona; las dos, fusionadas en `hojas-repos` el 2026-11-13.
 - No se propone: bajar Z-Image a menos de 8 pasos ni `--taesd` en la imagen final (calidad).
