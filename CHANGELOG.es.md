@@ -16,7 +16,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - `gimg brand overlay BASE MOTIVO`: coloca un SVG de motivo sobre un SVG base sin tocarla (`--fit`, `--box x,y,w,h`,
   `--recolor #hex|currentColor`, `--skip-rect`); los `id` del motivo llevan prefijo para no chocar.
 - `gimg brand rose`: rosa de los vientos dibujada por código en SVG exacto (`--points 4|8|16`, un solo grosor,
-  `--ink`/`--accent` en hex o `currentColor` para una sola tinta, `--png` con rsvg-convert).
+  `--ink`/`--accent` en hex o `currentColor` para una sola tinta, `--png` con rsvg-convert); con `--paper none`, el centro queda hueco (máscara).
 - `gimg brand fit`: reencuadra una imagen para que el motivo caiga en una zona (`--anchor`, `--min-x`, `--max-x`); el
   resto es papel y los bordes de la imagen movida se funden con él (`--feather`, `--feather-y`).
 

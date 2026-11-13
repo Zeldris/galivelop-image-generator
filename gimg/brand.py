@@ -586,6 +586,11 @@ def rose(out, png_out=None, size: int = 1024, points: int = 8, stroke: float = 0
         c0, tip, v1, v2 = pt(0, 0), pt(length, 0), pt(base, half), pt(base, -half)
         body.append('<path class="arm" fill="none" stroke="%s" d="M%s L%s L%s L%s Z"/>' % (color, c0, v1, tip, v2))
         body.append('<path class="half" fill="%s" stroke="%s" d="M%s L%s L%s Z"/>' % (color, color, c0, v1, tip))
+    hub_r = _num(0.06 * big_r)
+    if paper == "none":  # nothing paints the hub over the arms: cut it out of them so it stays an open hole
+        body = ['<defs><mask id="rose-hub" maskUnits="userSpaceOnUse" x="0" y="0" width="%d" height="%d">'
+                '<rect width="%d" height="%d" fill="#fff"/><circle cx="%s" cy="%s" r="%s" fill="#000"/></mask></defs>'
+                '<g mask="url(#rose-hub)">%s</g>' % (size, size, size, size, _num(c), _num(c), hub_r, "".join(body))]
     if ring:
         body.append('<circle class="ring" cx="%s" cy="%s" r="%s" fill="none" stroke="%s"/>' % (_num(c), _num(c), _num(0.72 * big_r), ink))
     for i in range(ticks):
@@ -593,7 +598,7 @@ def rose(out, png_out=None, size: int = 1024, points: int = 8, stroke: float = 0
         cs, sn = math.cos(a), math.sin(a)
         body.append('<path class="tick" fill="none" stroke="%s" d="M%s %s L%s %s"/>' % (
             ink, _num(c + 0.84 * big_r * cs), _num(c + 0.84 * big_r * sn), _num(c + 0.92 * big_r * cs), _num(c + 0.92 * big_r * sn)))
-    body.append('<circle class="hub" cx="%s" cy="%s" r="%s" fill="%s" stroke="%s"/>' % (_num(c), _num(c), _num(0.06 * big_r), paper, ink))
+    body.append('<circle class="hub" cx="%s" cy="%s" r="%s" fill="%s" stroke="%s"/>' % (_num(c), _num(c), hub_r, paper, ink))
     svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" role="img"><title>Compass rose</title>'
            '<g stroke-width="%s" stroke-linecap="round" stroke-linejoin="round">%s</g></svg>\n'
            % (size, size, _num(stroke * size), "".join(body)))

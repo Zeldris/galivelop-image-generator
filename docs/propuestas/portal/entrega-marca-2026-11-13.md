@@ -7,7 +7,7 @@ sigue valiendo. Desde aquí no se toca ese repo: esta nota dice qué hay y qué 
 la persona la pasa entera. Los iconos traen su SVG en `svg/` (se usa el SVG; el PNG queda de respaldo). Todo
 aprobado por la persona; el intento de origen de cada una está en el `LEEME.md` de la carpeta.
 
-**Revisión del Portal (2026-11-13):** 26a, 26b, 29 y 05b ya están rehechas (abajo, en «Rehecho tras la revisión»); la rosa 04b sigue pendiente.
+**Revisión del Portal (2026-11-13):** 26a, 26b, 29, 05b y la rosa 04b ya están rehechas (abajo, en «Rehecho tras la revisión»).
 
 ## Nuevo en este lote
 
@@ -24,6 +24,7 @@ aprobado por la persona; el intento de origen de cada una está en el `LEEME.md`
 | `26a-marcador-hecho` | hito hecho: el aro de 26c con un visto del mismo grosor | PNG, PNG de 64 px (`-64`) y SVG |
 | `26b-marcador-en-curso` | hito en curso: el aro de 26c con tres puntos macizos y centrados | PNG, PNG de 64 px (`-64`) y SVG |
 | `05b-sello-taller` | sello de taller: dos anillos con marcas de grados y el monograma GV de `public/marca/gv-logo.svg`, sin texto | PNG + SVG, y `svg/05b-sello-taller-tinta.svg` de una sola tinta (`currentColor`, sin papel) |
+| `04b-rosa-vientos` | rosa de los vientos (ficha 4): ocho puntas, un solo grosor, contorno continuo, dibujada por código (SVG exacto de ~5 KB) | PNG + SVG, y `svg/04b-rosa-vientos-tinta.svg` de una sola tinta (`currentColor`, sin papel, centro hueco) |
 | `29-banda-participar` | banda Participar: cabo de x≈1050 en adelante, sin la rayita | PNG 1600×400 |
 | `29-banda-participar-oscura` | la misma banda sobre el fondo noche (#0d171e), dibujada para oscuro | PNG 1600×400 |
 
@@ -47,6 +48,4 @@ Los 26a, 26b y 26c llevan el mismo aro exacto (el de 26c, copiado por gimg), as�
 
 ## Pendiente
 
-- **04b rosa de los vientos** (ficha 4, primera entrega): de ocho puntas, en línea simple, con un solo grosor y el contorno
-  continuo; SVG sin escalones, de menos de ~15 KB, que se vea bien a 512 px, y su versión de una sola tinta.
 - **10b** y las **versiones oscuras** de 10, 18, 19, 27 y 28.

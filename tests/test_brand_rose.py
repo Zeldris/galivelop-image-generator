@@ -40,6 +40,23 @@ class RoseTests(BrandBase):
         for hexcolor in ("#13212b", "#0072a8"):
             self.assertNotIn(hexcolor, svg)
 
+    def test_without_paper_the_hub_is_a_real_hole(self):
+        """With `--paper none` nothing paints the hub white, so the arms are masked out under it instead."""
+        root = ET.fromstring(self.make("--ink", "currentColor", "--accent", "currentColor", "--paper", "none"))
+        hub = next(c for c in root.iter(SVG + "circle") if c.get("class") == "hub")
+        masked = [g for g in root.iter(SVG + "g") if g.get("mask")]
+        self.assertEqual(len(masked), 1)
+        mask_id = re.fullmatch(r"url\(#([\w-]+)\)", masked[0].get("mask")).group(1)
+        mask = next(m for m in root.iter(SVG + "mask") if m.get("id") == mask_id)
+        hole = [c for c in mask.iter(SVG + "circle") if c.get("fill") == "#000"]
+        self.assertEqual([(c.get("cx"), c.get("cy"), c.get("r")) for c in hole], [(hub.get("cx"), hub.get("cy"), hub.get("r"))])
+        inside = {p.get("class") for p in masked[0].iter(SVG + "path")}
+        self.assertEqual(inside, {"arm", "half"})
+        self.assertNotIn(hub, list(masked[0].iter()))
+
+    def test_with_paper_there_is_no_mask(self):
+        self.assertNotIn("<mask", self.make())
+
     def test_size_budget(self):
         self.assertLess(len(self.make("--points", "8").encode()), 15 * 1024)
 
