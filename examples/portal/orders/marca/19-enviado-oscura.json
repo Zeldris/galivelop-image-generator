@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/19-enviado-oscura",
+  "profile": "formulario",
+  "seed": 2,
+  "count": 3,
+  "prompt": "A paper boat leaving a quay, its wake drawn as three thin lines, pale light #e6eef3 lines on flat deep dark sky blue #0b5e88, a dark background drawn with light lines, like a white line engraving on dark blue paper, the boat and the quay drawn in outline and fine hatching only, their insides dark like the background. No white or pale paper areas, no light background anywhere. Richly detailed engraved antique nautical chart style, like a fine sea chart printed in light ink on dark blue paper: many layers of fine light lines and hatching, line density increasing in the lighter areas to give depth and tone, lines of several weights, crisp and sharp, intricate but calm, premium print quality, high detail, elegant. No photographic rendering, no glow, no text, no letters, no numbers, no watermark, no border, no frame. Palette strictly limited to deep dark sky blue #0b5e88 for the whole background, pale light lines #e6eef3, medium cerulean ocean blue #0072a8 and a touch of seaweed green #5d7a6a."
+}
