@@ -392,12 +392,13 @@ def _place(piece: dict, x: float, y: float, scale: float) -> str:
 
 
 def lockup(emblem, wordmark, out=None, layout: str = "h", cap: float = 0.45, gap: float = 0.25, width: float = 1.6,
-           margin: float = 0.0, color=None, title: str = "") -> dict:
+           margin: float = 0.0, color=None, title: str = "", force: bool = False) -> dict:
     """Write one SVG with the `emblem` and the `wordmark` (both SVG files of this module), as paths only.
 
     The diameter D is the longer side of the emblem's ink box. ``h``: the wordmark's height is ``cap`` x D, ``gap`` x D to the
     right of the emblem, both centered vertically. ``v``: the wordmark's width is ``width`` x D, ``gap`` x D under the emblem,
     both centered horizontally. ``margin`` (x D) is free space around. ``color`` replaces ``currentColor`` in the wordmark.
+    ``brand.exists`` if `out` is there and not `force`.
     """
     if layout not in LAYOUTS:
         raise GimgError("brand.bad_option", reason="layout must be one of %s (got %r)" % (", ".join(LAYOUTS), layout))
@@ -406,6 +407,8 @@ def lockup(emblem, wordmark, out=None, layout: str = "h", cap: float = 0.45, gap
     out = str(out or "lockup-%s.svg" % layout)
     for src in (emblem, wordmark):
         _check_out(src, out)
+    if os.path.lexists(out) and not force:
+        raise GimgError("brand.exists", folder=os.path.dirname(os.path.abspath(out)), files=os.path.basename(out))
     em, wm = _read_svg(emblem), _read_svg(wordmark)
     if color:
         if not re.fullmatch(r"#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}|[A-Za-z]{3,20}", str(color)):
@@ -495,13 +498,39 @@ def square(drawing, out=None, fill=None, ink=None, chamfer: int = 28, pad: int =
            % (SQUARE, SQUARE, fill, d, art))
     if sides and shutil.which(TOOL) is None:
         raise GimgError("brand.tool_missing", tool=TOOL)
-    _write(out, svg.encode("utf-8"))
-    for side, path in files.items():
-        if os.path.exists(path):
-            os.unlink(path)
-        _rsvg([TOOL, "-w", str(side), "-h", str(side), "-o", path, out], dict(os.environ))
-        if not os.path.exists(path):
-            raise GimgError("brand.tool_failed", tool=TOOL, reason="no output")
+    # All or nothing: the SVG and every PNG are made under temporary names next to their targets and only renamed at the end.
+    staged = {}  # temporary path -> final path
+    try:
+        folder = os.path.dirname(os.path.abspath(out))
+        try:
+            os.makedirs(folder, exist_ok=True)
+            fd, tmp_svg = tempfile.mkstemp(dir=folder, prefix=".brand-", suffix=".svg.tmp")
+        except OSError as exc:
+            raise GimgError("brand.write_failed", path=str(out), reason=str(exc.strerror or exc))
+        staged[tmp_svg] = out
+        try:
+            fsutil.honour_umask(fd)
+            with os.fdopen(fd, "wb") as fh:
+                fh.write(svg.encode("utf-8"))
+        except OSError as exc:
+            raise GimgError("brand.write_failed", path=str(out), reason=str(exc.strerror or exc))
+        for side, path in files.items():
+            tmp_png = os.path.join(folder, ".brand-%d-%d.png.tmp" % (os.getpid(), side))
+            staged[tmp_png] = path
+            _rsvg([TOOL, "-f", "png", "-w", str(side), "-h", str(side), "-o", tmp_png, tmp_svg], dict(os.environ))
+            if not os.path.exists(tmp_png):
+                raise GimgError("brand.tool_failed", tool=TOOL, reason="no output")
+        for tmp, final in staged.items():
+            try:
+                os.replace(tmp, final)
+            except OSError as exc:
+                raise GimgError("brand.write_failed", path=str(final), reason=str(exc.strerror or exc))
+    finally:
+        for tmp in staged:
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
     contrast = measure.contrast_ratio(measure.luminance(measure.parse_hex(ink)), measure.luminance(measure.parse_hex(fill)))
     return {"out": out, "pngs": list(files.values()), "fill": fill, "ink": ink, "contrast": round(contrast, 2)}
 
@@ -616,8 +645,8 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = SP
         one_ink = trace(t["emblema-alpha.png"], t["emblema-mono.svg"], "mono", title=title)
         word = wordmark(line, font, t["wordmark.svg"], weight, spacing, title=title)
         emblem = t["emblema-mono.svg" if mono else "emblema.svg"]
-        lh = lockup(emblem, t["wordmark.svg"], t["lockup-h.svg"], "h", cap, gap, width, margin, title=title)
-        lv = lockup(emblem, t["wordmark.svg"], t["lockup-v.svg"], "v", cap, gap, width, margin, title=title)
+        lh = lockup(emblem, t["wordmark.svg"], t["lockup-h.svg"], "h", cap, gap, width, margin, title=title, force=True)
+        lv = lockup(emblem, t["wordmark.svg"], t["lockup-v.svg"], "v", cap, gap, width, margin, title=title, force=True)
         sheet_size = contact_sheet(t, tmp)
         for key in SYSTEM_FILES:
             with open(t[key], "rb") as fh:
