@@ -137,5 +137,84 @@ class RemoveBgTests(unittest.TestCase):
             matte.remove_bg(2, 2, px, border=0)
 
 
+class ChromaKeyTests(unittest.TestCase):
+    """The pure chroma backgrounds of a cut-out sheet (map pieces, plan F2.8): green #00ff00 and magenta #ff00ff."""
+
+    CHROMA = {"green": (0, 255, 0), "magenta": (255, 0, 255)}
+    SUBJECTS = {"red": (200, 40, 40), "gold": (184, 134, 43), "stone": (58, 52, 45)}
+
+    def test_both_chroma_backgrounds_clear_and_keep_the_subject(self):
+        for cname, bg in self.CHROMA.items():
+            for sname, fg in self.SUBJECTS.items():
+                with self.subTest(chroma=cname, subject=sname):
+                    w, h, px = disc(bg=bg, fg=fg)
+                    self.assertEqual(matte.border_color(w, h, px), bg)
+                    out = matte.remove_bg(w, h, px)
+                    self.assertEqual(at(out, w, 0, 0)[3], 0)
+                    self.assertEqual(at(out, w, 20, 2)[3], 0)
+                    self.assertEqual(at(out, w, 20, 20), fg + (255,))
+                    self.assertEqual(at(px, w, 0, 0), bg + (255,), "the input must not be touched")
+
+    def test_edge_has_no_halo_of_the_chroma_color(self):
+        for cname, bg in self.CHROMA.items():
+            with self.subTest(chroma=cname):
+                w, h, px = disc(size=60, radius=24, bg=bg)
+                out = matte.remove_bg(w, h, px)
+                partial = [at(out, w, x, y) for y in range(h) for x in range(w) if 0 < at(out, w, x, y)[3] < 255]
+                self.assertTrue(partial, "the soft edge must keep some partial alpha")
+                for r, g, b, a in (q for q in partial if q[3] >= 128):  # a nearly clear pixel hardly shows
+                    # despilled: the edge color is the subject's, not a mix with the chroma
+                    self.assertLess(math.dist((r, g, b), FG), 60, "edge pixel %r still carries the chroma" % ((r, g, b, a),))
+
+    def test_mixed_subject_with_saturated_tones_keeps_every_inner_pixel(self):
+        mixes = {"green": (0, 255, 0), "magenta": (255, 0, 255)}
+        subjects = {"green": ((0, 125, 0), (184, 134, 43)), "magenta": ((255, 105, 180), (40, 30, 50))}  # leaf+gold; pink+dark
+        for cname, bg in mixes.items():
+            with self.subTest(chroma=cname):
+                size = 60
+                px = bytearray()
+                for y in range(size):
+                    for x in range(size):
+                        inside = 10 <= x < 50 and 10 <= y < 50
+                        px += bytes(subjects[cname][x >= 30] if inside else bg) + b"\xff"
+                out = matte.remove_bg(size, size, px)
+                soft = [(x, y) for y in range(14, 46) for x in range(14, 46) if at(out, size, x, y)[3] != 255]
+                self.assertEqual(soft, [], "the subject lost pixels more than 3 px inside")
+                self.assertEqual(at(out, size, 2, 2)[3], 0)
+
+    def test_dark_outline_and_bright_rim_on_chroma_stay_opaque_with_their_color(self):
+        gold = (200, 160, 0)
+        for name, ring in (("outline", (20, 20, 20)), ("rim", (255, 250, 200))):
+            with self.subTest(ring=name):
+                size = 60
+                px = bytearray()
+                for y in range(size):
+                    for x in range(size):
+                        edge = min(x - 10, 49 - x, y - 10, 49 - y)  # 0 on the subject's outer pixel
+                        inside = edge >= 0
+                        px += bytes(ring if inside and edge < 2 else gold if inside else (0, 255, 0)) + b"\xff"
+                out = matte.remove_bg(size, size, px)
+                for x in (10, 11, 30):  # the ring pixels of one row, then the gold behind them
+                    self.assertEqual(at(out, size, x, 30), (ring if x < 12 else gold) + (255,))
+
+    def test_brand_matte_command_reads_and_writes_files_for_both(self):
+        import os
+        import tempfile
+        from pathlib import Path
+
+        from gimg import brand, png
+        for cname, bg in self.CHROMA.items():
+            with self.subTest(chroma=cname), tempfile.TemporaryDirectory() as d:
+                w, h, px = disc(bg=bg)
+                src = os.path.join(d, "pieza.png")
+                Path(src).write_bytes(png.rgba_bytes(w, h, px))
+                res = brand.matte(src)
+                self.assertEqual(res["background"], "#%02x%02x%02x" % bg)
+                self.assertGreater(res["transparent"], 0.4)
+                ow, oh, out = png.read_rgba(res["out"])
+                self.assertEqual(at(out, ow, 0, 0)[3], 0)
+                self.assertEqual(at(out, ow, 20, 20), FG + (255,))
+
+
 if __name__ == "__main__":
     unittest.main()
