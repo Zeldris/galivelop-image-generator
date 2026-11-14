@@ -342,6 +342,8 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
         elif any(not isinstance(j, int) or not 0 <= j < len(pal) for j in ink):
             raise ValueError("ink: every index must be a color of the palette (0-%d)" % (len(pal) - 1))
         layers.append(layer(color, lambda v, s=frozenset(ink): v in s, True))
+        if counts and not layers[-1]:  # a drawing went in and nothing came out: say it, never an empty SVG
+            raise ValueError("mono: no ink left (every ink color was left out or smoothed away): pass ink or use mode color")
     else:
         order = sorted(counts, key=lambda j: -counts[j])
         if order:

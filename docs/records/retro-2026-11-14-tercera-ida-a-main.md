@@ -1,6 +1,7 @@
 # Retro 2026-11-14: tercera ida a `main` de `ccr-85e9d14e-zt7p8b` (gancho de hojas y fase 1)
 
-**Estado:** pendiente de la persona.
+**Estado:** decidida el 2026-11-14 (la persona delegó la decisión: «lo que consideres mejor»): R1 aprobada y
+aplicada; W1 y W2 aprobadas, quedan aquí para `gw-harvest`.
 
 Fase 2 de la ida a `main`, tras el arreglo del gancho de hojas (`87feeb8`), la fase 1 (14 hallazgos, SHIP WITH FIXES:
 2 medios arreglados en `34f6031`; los leves en «Pendiente» de la bitácora) y `gw-opt-tokens` (aprobado y aplicado en

@@ -297,6 +297,14 @@ class ToSvgTests(unittest.TestCase):
         self.assertEqual(len(ps), 1, "an empty SVG would mean every color was taken for paper")
         self.assertEqual(evenodd_area(ps[0].get("d"), 40), 40 * 20)
 
+    def test_mono_refuses_an_empty_result_with_its_reason(self):
+        img = canvas(20, 20, (250, 250, 250, 255))
+        fill(img, 5, 5, 15, 15, (20, 20, 20, 255))
+        pal = ["#fafafa", "#141414", "#c00000"]  # the only ink, red, is not in the drawing
+        with self.assertRaisesRegex(ValueError, "no ink left"):
+            trace.to_svg(*img, "mono", palette=pal, ink=[2], smooth_passes=0)
+        self.assertEqual(paths(trace.to_svg(*canvas(8, 8), "mono")), [], "an empty drawing still gives an empty SVG")
+
     def test_thin_lines_are_only_restored_in_mono(self):
         img = canvas(60, 20)
         fill(img, 3, 10, 57, 11, (0, 0, 0, 255))
