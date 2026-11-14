@@ -727,7 +727,7 @@ class Contrast(unittest.TestCase):
             if re.search(r"clip-path\s*:\s*polygon", body):
                 chamfered |= {t for s in sel.split(",") if "::" not in s for t in tokens(subject(s))}
         extra = re.findall(r"'[a-z]*((?:\.[a-z-]+)*\.card(?:\.[a-z-]+)*)'", js)  # h('article.card.attempt')
-        extra += ["." + c.replace(" ", ".") for c in re.findall(r"class(?:Name)?\s*[:=]\s*['\"`]([^'\"`]*\bcard\b[^'\"`]*)['\"`]", js)]
+        extra += ["." + c.replace(" ", ".") for c in re.findall(r"class(?:Name)?\s*[:=]\s*['\"`]((?:[^'\"`]*[^\w'\"`-])?card(?![\w-])[^'\"`]*)['\"`]", js)]
         extra += ["." + c for c in re.findall(r"classList\.(?:add|toggle)\(\s*'card'(?:\s*,\s*'([a-z -]+)')?", js)]
         for combo in extra:
             chamfered |= {"." + c for c in combo.split(".") if c.strip() and c.strip() != "card"}
@@ -736,10 +736,13 @@ class Contrast(unittest.TestCase):
             problems.append("faltan elementos con chaflán: %s" % sorted(chamfered))
         state = lambda one: tuple(re.findall(r":[a-z-]+", subject(one)))
         for i, (sel, body) in enumerate(rules):
-            if not re.search(r"(^|;)\s*outline\s*:", body):
+            shorthand = re.search(r"(^|;)\s*outline\s*:", body)
+            if not shorthand and not re.search(r"(^|;)\s*outline-offset\s*:", body):
                 continue
             for one in sel.split(","):
-                if not tokens(subject(one)) & chamfered or negative(body):
+                # `outline` pinta en el sujeto; un `outline-offset` suelto (longhand) también en el hijo de un chaflán
+                hit = tokens(subject(one)) if shorthand else set().union(*map(tokens, re.split(r"\s+|>|\+|~", one.strip())))
+                if not hit & chamfered or negative(body):
                     continue
                 inherited = any(negative(b) and state(o) == state(one) and tokens(subject(o)) & tokens(subject(one))
                                 for j, (s2, b) in enumerate(rules) if j != i for o in s2.split(","))
@@ -776,6 +779,14 @@ class Contrast(unittest.TestCase):
         self.assertEqual(self.chamfer_outline_problems(inherited, js), [])
         bad = ok + ".card:hover { outline: 1px solid; }"
         self.assertEqual([p.split(":")[0] for p in self.chamfer_outline_problems(bad, js)], [".card"])
+        # `outline-offset` suelto sobre un hijo de un chaflán (como `.attempt .figure .open:focus-visible`)
+        longhand = ok + ".attempt .figure .open:focus-visible { outline-offset: -4px; }"
+        self.assertEqual(self.chamfer_outline_problems(longhand, js), [])
+        bad = ok + ".attempt .figure .open:focus-visible { outline-offset: 4px; }"
+        self.assertEqual([p.split(":")[0] for p in self.chamfer_outline_problems(bad, js)], [".attempt .figure .open"])
+        # una clase con guion (`project-card`) no es `card`
+        problems = self.chamfer_outline_problems(late, js + " h('a', {class: 'project-card halo'}); y = {class: 'piece-card halo'}")
+        self.assertEqual(problems, [])
         # un desfase positivo propio sigue fallando
         bad = ok + ".attempt:hover { outline: 1px solid; outline-offset: 3px; }"
         self.assertEqual([p.split(":")[0] for p in self.chamfer_outline_problems(bad, js)], [".attempt"])
