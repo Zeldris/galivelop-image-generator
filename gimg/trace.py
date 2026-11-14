@@ -137,14 +137,13 @@ def _majority(m, W: int, H: int, passes: int):
 STROKE_MIN = 3  # mono: a run of erased one-pixel ink shorter than this is noise (a burr, a speck), not a stroke
 
 
-def _thin(orig, smooth, W: int, H: int, strokes: set):
+def _thin(orig, smooth, W: int, H: int):
     """`smooth` plus the one-pixel-wide strokes of `orig` that the majority filter erased (a stroke must survive it).
 
     The candidates are the pixels of `orig` that the filter erased and that lie in no 2x2 block of ink (so they are not
     the corner of a thick shape). Of those, only the 8-connected runs of `STROKE_MIN` pixels or more come back: a stroke
     of any shape (straight, L, T, diagonal, with its tips), never an isolated burr or speck. A pixel that was not ink in
-    `orig` is never added, so a diagonal comes back as one-pixel squares touching at the corners; their pixels go into
-    `strokes` so that `_path_data` keeps them whatever `min_island` is."""
+    `orig` is never added, so a diagonal comes back as one-pixel squares touching at the corners, and each step is closed with one orthogonal"""
     def on(y, x):
         return 0 <= y < H and 0 <= x < W and orig[y][x]
 
@@ -170,7 +169,11 @@ def _thin(orig, smooth, W: int, H: int, strokes: set):
         if len(run) >= STROKE_MIN:
             for y, x in run:
                 out[y][x] = 1
-                strokes.add((y, x))
+            members = set(run)
+            for y, x in run:  # close each diagonal step with the corner pixel, so the stroke is one connected staircase
+                for dy, dx in ((1, 1), (1, -1)):
+                    if (y + dy, x + dx) in members and not on(y + dy, x) and not on(y, x + dx):
+                        out[y][x + dx] = 1
     return out
 
 
@@ -294,16 +297,12 @@ def _smooth(p: list, corner_deg: float) -> str:
     return s + "Z"
 
 
-def _path_data(m, W: int, H: int, sx: float, sy: float, dp_tol: float, min_island: float, curves: bool, corner_deg: float,
-               strokes=frozenset()) -> str:
+def _path_data(m, W: int, H: int, sx: float, sy: float, dp_tol: float, min_island: float, curves: bool, corner_deg: float) -> str:
     out = []
     for loop in _loops(m, W, H):
-        area = abs(_area(loop))
-        # a one-pixel square of a thin stroke (a diagonal) is no island: the stroke is drawn whole
-        stroke_px = area == 1 and (min(p[1] for p in loop), min(p[0] for p in loop)) in strokes
-        if area < min_island and not stroke_px:
+        if abs(_area(loop)) < min_island:
             continue
-        q = _drop_straight(loop) if stroke_px else _dp_closed(_drop_straight(loop), dp_tol)
+        q = _dp_closed(_drop_straight(loop), dp_tol)
         if len(q) < 3:
             continue
         q = [(x * sx, y * sy) for x, y in q]
@@ -318,7 +317,7 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
            corner_deg: float = 55.0, max_side: int = 512, color: str = "currentColor", ink=None, title: str = "", notes=None) -> str:
     """The SVG text of the RGBA image (see the module docstring for the steps and every option).
 
-    `notes`, a list, gets the warnings (Spanish text) instead of them going to `warnings.warn`."""
+    `notes`, a list, gets the warnings as ``(locale key, params)`` pairs; none goes to `warnings.warn`."""
     if width < 1 or height < 1 or len(rgba) != width * height * 4:
         raise ValueError("%d bytes do not fit a %dx%d RGBA image" % (len(rgba), width, height))
     if mode not in MODES:
@@ -353,10 +352,12 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
     def layer(fill, keep, mono=False):
         raw = [[1 if keep(v) else 0 for v in row] for row in grid]
         m = _majority(raw, W, H, smooth_passes)
-        strokes = set()
-        if mono and smooth_passes:
-            m = _thin(raw, m, W, H, strokes)
-        d = _path_data(m, W, H, sx, sy, dp_tol, min_island, curves, corner_deg, strokes)
+        if mono:
+            if smooth_passes:
+                m = _thin(raw, m, W, H)
+            else:  # nothing was erased, but a one-pixel diagonal still needs its steps closed
+                m = [[a | b for a, b in zip(r1, r2)] for r1, r2 in zip(raw, _thin(raw, [[0] * W for _ in range(H)], W, H))]
+        d = _path_data(m, W, H, sx, sy, dp_tol, min_island, curves, corner_deg)
         return '<path fill=%s fill-rule="evenodd" d="%s"/>' % (quoteattr(fill), d) if d else ""
 
     layers = []
@@ -391,9 +392,7 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
         if by_border and notes is not None and counts:
             share = sum(counts[j] for j in ink if j in counts) / sum(counts.values())
             if share >= INK_WARN:
-                notes.append("mono: la tinta cubre el %d %% de la imagen, así que puede que se haya tomado un marco o el fondo "
-                             "por tinta (el papel es cada color que ocupa el %d %% del borde): quita antes el fondo (matte), "
-                             "indica la tinta a mano o usa el modo color" % (round(share * 100), PAPER_SHARE * 100))
+                notes.append(("brand.trace_ink_share", {"share": round(share * 100), "paper": round(PAPER_SHARE * 100)}))
         layers.append(layer(color, lambda v, s=frozenset(ink): v in s, True))
         if counts and not layers[-1]:  # a drawing went in and nothing came out: say it, never an empty SVG
             raise ValueError("mono: no ink left (every ink color was left out or smoothed away): remove the "

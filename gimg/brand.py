@@ -30,7 +30,7 @@ import unicodedata
 from pathlib import Path
 from xml.sax.saxutils import escape
 
-from . import fsutil, matte as _matte, measure, png, trace as _trace
+from . import fsutil, i18n, matte as _matte, measure, png, trace as _trace
 from .errors import GimgError
 
 TOOL = "rsvg-convert"
@@ -122,8 +122,8 @@ def parse_palette(text) -> list:
 
 
 def trace(src, out=None, mode: str = "color", palette=None, colors=None, dp_tol: float = 1.2, min_island: float = 12,
-          matte: bool = False, **opts) -> dict:
-    """Write the SVG of `src`; ``opts`` go to `trace.to_svg` (``color``, ``max_side``, ``title``...)."""
+          matte: bool = False, lang=None, **opts) -> dict:
+    """Write the SVG of `src` (`lang`: language of the warnings); ``opts`` go to `trace.to_svg` (``color``, ``max_side``, ``title``...)."""
     if mode not in MODES:
         raise GimgError("brand.bad_option", reason="mode must be one of %s (got %r)" % (", ".join(MODES), mode))
     if palette and colors is not None:
@@ -144,7 +144,7 @@ def trace(src, out=None, mode: str = "color", palette=None, colors=None, dp_tol:
     _write(out, svg.encode("utf-8"))
     return {"src": str(src), "out": out, "size": [width, height], "mode": mode, "paths": svg.count("<path"),
             "bytes": len(svg.encode("utf-8")), "matted": bool(matte),
-            "opaque_background": not had_alpha and not matte, "warnings": notes}
+            "opaque_background": not had_alpha and not matte, "warnings": [i18n.t(key, lang, **params) for key, params in notes]}
 
 
 # ---------- wordmark ----------

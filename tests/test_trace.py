@@ -390,8 +390,8 @@ class ToSvgTests(unittest.TestCase):
                 self.assertEqual(len(ps), 1)
                 self.assertEqual(evenodd_area(ps[0].get("d"), 40), area)  # tips included, nothing added
         d = "".join(p.get("d") for p in paths(trace.to_svg(*diag, "mono", dp_tol=0, min_island=0, curves=False)))
-        self.assertGreaterEqual(d.count("M"), 25, "the diagonal survives as its pixels")
-        self.assertLessEqual(evenodd_area(d, 40), 30, "and is not widened beyond the original")
+        self.assertEqual(d.count("M"), 1, "the diagonal is one staircase")
+        self.assertLessEqual(evenodd_area(d, 40), 60, "and is at most two pixels wide")
 
     def test_mono_does_not_bring_back_burrs_or_specks_next_to_a_thick_block(self):
         img = canvas(30, 20)
@@ -414,8 +414,10 @@ class ToSvgTests(unittest.TestCase):
         notes = []
         trace.to_svg(*img, "mono", ncolores=2, notes=notes)
         self.assertEqual(len(notes), 1)
-        self.assertIn("puede que se haya tomado un marco o el fondo por tinta", notes[0])
-        self.assertTrue(notes[0].startswith("mono: la tinta cubre el 7"), notes[0])
+        key, params = notes[0]
+        self.assertEqual(key, "brand.trace_ink_share")
+        self.assertEqual(params["paper"], 20)
+        self.assertGreaterEqual(params["share"], 70)
         ok = canvas(40, 40, (250, 250, 250, 255))
         fill(ok, 10, 10, 20, 20, (20, 20, 20, 255))
         notes = []
@@ -440,14 +442,17 @@ class ToSvgTests(unittest.TestCase):
             warnings.simplefilter("error")
             trace.to_svg(*img, "mono", ncolores=2)
 
-    def test_mono_diagonal_of_one_pixel_survives_a_default_min_island(self):
+    def test_mono_diagonal_of_one_pixel_is_one_connected_staircase(self):
         diag = canvas(40, 40)
         for i in range(30):
             fill(diag, 5 + i, 5 + i, 6 + i, 6 + i, (0, 0, 0, 255))
-        for kw in ({}, {"min_island": 2}, {"min_island": 12, "dp_tol": 1.2, "curves": True}):
-            with self.subTest(kw):
-                d = "".join(p.get("d") for p in paths(trace.to_svg(*diag, "mono", **kw)))
-                self.assertGreaterEqual(d.count("M"), 30, "every pixel of the diagonal is drawn")
+        for passes in (2, 0):
+            with self.subTest(smooth_passes=passes):
+                ps = paths(trace.to_svg(*diag, "mono", smooth_passes=passes, curves=False, dp_tol=0))
+                d = "".join(p.get("d") for p in ps)
+                self.assertEqual(d.count("M"), 1, "one outline: the steps are joined, not 30 loose squares")
+                self.assertGreaterEqual(evenodd_area(d, 40), 30)
+                self.assertLessEqual(evenodd_area(d, 40), 60)
 
     def test_color_and_silueta_refuse_an_empty_svg_too(self):
         img = canvas(20, 20)

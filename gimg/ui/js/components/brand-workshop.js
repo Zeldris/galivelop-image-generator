@@ -266,8 +266,7 @@ export function brandWorkshop(project, cfg) {
       if (wText.value.trim()) body.text = wText.value.trim();
       const r = await api.brandWordmark(project, body);
       await reload();
-      done(wordOut, k('wordDone', { family: (r && r.family) || body.font, paths: r && r.paths !== undefined ? r.paths : '?' }),
-      ...((r && r.warnings) || []).map((w) => h('p.notice.notice-warn.small', { role: 'status' }, w)));
+      done(wordOut, k('wordDone', { family: (r && r.family) || body.font, paths: r && r.paths !== undefined ? r.paths : '?' }));
     }, wordOut, { primary: true }),
     wordOut, wordView);
 
@@ -284,8 +283,7 @@ export function brandWorkshop(project, cfg) {
   const lockup = (layout) => async () => {
     const r = await api.brandLockup(project, { name: nameInput.value, layout, cap: numOf(cap, 0.45), gap: numOf(gap, 0.25), width: numOf(width, 1.6) });
     await reload();
-    done(lockOut, k('lockDone', { layout: k(`layout.${layout}`), paths: r && r.paths !== undefined ? r.paths : '?' }),
-      ...((r && r.warnings) || []).map((w) => h('p.notice.notice-warn.small', { role: 'status' }, w)));
+    done(lockOut, k('lockDone', { layout: k(`layout.${layout}`), paths: r && r.paths !== undefined ? r.paths : '?' }));
   };
   const step5 = h('div.stack', {},
     h('div.cols-3', {}, field('shop-cap', k('cap'), cap, k('capHint')), field('shop-gap', k('gap'), gap, k('gapHint')), field('shop-width', k('width'), width, k('widthHint'))),

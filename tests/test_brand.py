@@ -239,9 +239,11 @@ class TraceWarningTests(BrandBase):
         return src
 
     def test_the_dark_frame_warning_comes_back_in_the_result_in_spanish(self):
-        res = brand.trace(self._frame(), None, "mono", colors=2)
+        res = brand.trace(self._frame(), None, "mono", colors=2, lang="es")
         self.assertEqual(len(res["warnings"]), 1)
-        self.assertIn("puede que se haya tomado un marco o el fondo por tinta", res["warnings"][0])
+        self.assertIn("el interior o el fondo se hayan tomado por tinta", res["warnings"][0])
+        en = brand.trace(self._frame(), None, "mono", colors=2, lang="en")["warnings"][0]
+        self.assertIn("the inside or the background may have been taken for ink", en)
 
     def test_a_clean_trace_has_no_warnings(self):
         src = self.tmp / "logo.png"
@@ -251,7 +253,7 @@ class TraceWarningTests(BrandBase):
     def test_the_cli_prints_the_warning_on_stderr(self):
         code, out, err = self.run_cli("brand", "trace", str(self._frame()), "--mode", "mono", "--colors", "2")
         self.assertEqual(code, 0)
-        self.assertIn("puede que se haya tomado un marco o el fondo por tinta", err)
+        self.assertIn("the inside or the background may have been taken for ink", err)  # GIMG_LANG=en
         code, out, err = self.run_cli("brand", "trace", str(self._frame()), "--mode", "mono", "--colors", "2", "--json")
         self.assertEqual(json.loads(out)["warnings"][0][:5], "mono:")
 

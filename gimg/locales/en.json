@@ -758,6 +758,7 @@
   "cli.out.brand_trace": "{out}: {width}x{height}, mode {mode}, {paths} paths, {bytes} bytes",
   "cli.out.brand_wordmark": "{out}: \"{text}\" in {family} weight {weight}, {width}x{height}, {paths} path, {bytes} bytes",
   "cli.out.brand_opaque": "the PNG has no transparency: if it has a background, repeat with --matte",
+  "brand.trace_ink_share": "mono: the ink covers {share}% of the image, so the inside or the background may have been taken for ink and the frame for paper (paper is each color on {paper}% of the border): remove the background first (matte), pass the ink by hand or use color mode",
   "error.brand.bad_option": "invalid option: {reason}",
   "error.brand.out_is_input": "the output \"{path}\" is the original itself: pick another -o so it is not overwritten",
   "error.brand.tool_missing": "the tool \"{tool}\" is missing for the name as paths (install it; \"gimg doctor\" says how)",
