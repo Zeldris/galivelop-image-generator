@@ -498,7 +498,13 @@ _NAMED = {"black": "#000000", "white": "#ffffff", "red": "#ff0000", "lime": "#00
           "navy": "#000080", "orange": "#ffa500"}
 _RGB = re.compile(r"rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)")
 _SHAPE = re.compile(r"<(path|rect|circle|ellipse|polygon|polyline|line)\b([^>]*)>")
-_GROUP_FILL = re.compile(r"<g\b[^>]*(?<![\w:.-])fill\s*[=:]", re.I)
+_TAG = re.compile(r"<(/?)(g|path|rect|circle|ellipse|polygon|polyline|line)\b([^>]*)>")
+_CLASS = re.compile(r'(?<![\w:.-])class\s*=')
+
+
+def _has_fill(attrs: str) -> bool:
+    return (any(m.group(1) == "fill" for m in _PAINT.finditer(attrs))
+            or any(d.group(1) == "fill" for st in _STYLE.finditer(attrs) for d in _DECL.finditer(st.group(1))))
 
 
 def _norm_color(value: str) -> str:
@@ -515,18 +521,22 @@ def _norm_color(value: str) -> str:
 def _paint_colors(inner: str) -> set:
     """The distinct colors that `inner` paints with (attributes and ``style`` declarations), as `_norm_color` writes them;
     ``none``, ``currentColor`` and strokes that are not there do not count, but a shape with no ``fill`` at all paints the
-    default black (unless a ``<g>`` sets a fill for it: then it is not counted)."""
+    default black (unless a ``<g>`` around it sets a fill, or it has a ``class`` or the drawing a ``<style>``: then it is not counted)."""
     found = [m.group(2) for m in _PAINT.finditer(inner)]
     for st in _STYLE.finditer(inner):
         found += [m.group(3) for m in _DECL.finditer(st.group(1))]
     colors = {_norm_color(v) for v in found if v.strip().lower() not in _NO_PAINT}
-    if not _GROUP_FILL.search(inner):
-        for shape in _SHAPE.finditer(inner):
-            attrs = shape.group(2)
-            fills = [m.group(2) for m in _PAINT.finditer(attrs) if m.group(1) == "fill"]
-            for st in _STYLE.finditer(attrs):
-                fills += [m.group(3) for m in _DECL.finditer(st.group(1)) if m.group(1) == "fill"]
-            if not fills:
+    if "<style" not in inner.lower():  # with a stylesheet the color may come from CSS: not counted
+        groups = []  # one flag per open <g>: does it set a fill its shapes inherit?
+        for m in _TAG.finditer(inner):
+            closing, tag, attrs = m.groups()
+            if tag == "g":
+                if closing:
+                    if groups:
+                        groups.pop()
+                elif not attrs.rstrip().endswith("/"):
+                    groups.append(_has_fill(attrs))
+            elif not closing and not any(groups) and not _has_fill(attrs) and not _CLASS.search(attrs):
                 colors.add("#000000")
     return colors
 

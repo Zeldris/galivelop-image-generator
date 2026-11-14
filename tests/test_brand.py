@@ -914,6 +914,14 @@ class SquareTests(BrandBase):
         self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/><path fill="none" stroke="#123456" d="M0 0L9 0L9 5Z"/>')
         self.assertNotIn("flattened", self.make(force=True))
 
+    def test_the_implicit_black_only_goes_to_shapes_outside_a_group_with_fill(self):
+        self._draw('<g fill="#ff0000"><path d="M0 0L40 0L40 20Z"/></g><path d="M0 0L9 0L9 5Z"/>')
+        self.assertEqual(self.make()["flattened"], 2)
+        self._draw('<g fill="#ff0000"><g><path d="M0 0L40 0L40 20Z"/></g><path d="M0 0L5 0L5 5Z"/></g>')
+        self.assertNotIn("flattened", self.make(force=True))
+        self._draw('<path fill="#ff0000" class="a" d="M0 0L40 0L40 20Z"/><path class="b" d="M0 0L9 0L9 5Z"/>')
+        self.assertNotIn("flattened", self.make(force=True))
+
     def test_two_paint_colors_are_flattened_and_one_is_not(self):
         self._draw('<path fill="#ABC" d="M0 0L40 0L40 20Z"/><path style="fill:#aabbcc" d="M0 0L5 0L5 5Z"/>'
                    '<path fill="none" stroke="currentColor" d="M0 0L9 0L9 5Z"/><path fill="#aabbcc" d="M0 0L7 0L7 7Z"/>')
