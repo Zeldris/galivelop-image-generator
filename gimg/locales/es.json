@@ -337,7 +337,7 @@
   "error.measure.bad_zone": "«{value}» no es una zona x,y,w,h de enteros con ancho y alto positivos",
   "error.measure.zone_outside": "la zona {zone} se sale de la imagen ({width}x{height})",
   "cli.cmd.tile": "hace repetible una textura PNG sin costura (desplaza media pieza y funde la cruz) y, si se pide, saca la vista 4×4 para comprobarla",
-  "cli.arg.tile_image": "PNG de origen (solo se lee)",
+  "cli.arg.tile_image": "PNG de origen (solo se lee; hasta 2048×2048 px)",
   "cli.arg.tile_out": "PNG de salida (por defecto, junto al original con el sufijo -tile)",
   "cli.arg.tile_blend": "anchura de la fusión a cada lado de la cruz, como fracción del lado, de 0 (sin incluir) a 0,5 (por defecto 0,25)",
   "cli.arg.tile_preview": "guarda también la vista de 4×4 piezas para comprobar que no se ve la costura",
