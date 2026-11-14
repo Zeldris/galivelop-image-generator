@@ -95,10 +95,16 @@ las crea una vez; desde entonces son del proyecto.
   «Comprobar» (aprobado el 2026-11-14; `79c75ecd` gastó ~5 llamadas, ~0,5 M, esperando con el gancho de parada).
 - Tope de 30 llamadas en el encargo de cada subagente: en `.claude/gw/gw-orchestrate-dealer.md` (aprobado el
   2026-11-13).
+- Subagentes en paralelo: solo los tests de su módulo; la suite completa, en `merge-branch.sh`; esperas con un
+  `Monitor` y dentro del tope de 30: en `.claude/gw/gw-orchestrate-dealer.md` (aprobado el 2026-11-14).
 
 ## Referencias medidas
 
 <!-- Cifras medidas con las que comparar: fecha, sesión, contexto medio, llamadas, total. -->
+- 2026-11-14, `ccr-85e9d14e-zt7p8b` desde `2c608ed` (cuarta tanda de leves y su fase 1), sesión `ec96ac04`: principal
+  30 llamadas, 3,4 M (114k de media, suelo 87k, techo 150k); revisión Opus 10 llamadas, 0,94 M; 3 subagentes Sonnet
+  115 llamadas, 10,2 M (el de `tile`, 76 llamadas y 7,1 M, ~40 esperando la suite). Total 155 llamadas, 14,5 M.
+  6 vueltas del gancho de parada en la principal (~0,7 M); la regla de subir antes de cerrar el turno, rechazada.
 - 2026-11-14, `ccr-85e9d14e-zt7p8b` desde `1c178d3` (gancho de hojas y fase 1 de la tercera ida a `main`, arreglos en la
   principal), sesión `79c75ecd`: principal 27 llamadas, 2,76 M (102k de media, suelo 87k, techo 116k); revisión Opus 10
   llamadas, 0,9 M (arranque 69k). Total 37 llamadas, 3,7 M.

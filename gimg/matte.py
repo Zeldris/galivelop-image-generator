@@ -18,20 +18,24 @@ Distances are Euclidean in RGB, from 0 to about 441. `t1` has to be larger than 
 subject it drifts 32-35 away from the border color, so a smaller `t0` cuts the flood short and leaves opaque green
 patches; the shapes that matter (gold, brown) are far beyond 110.
 
-A pure chroma key (a border color with a channel of 200 or more and another of 60 or less, as ``#00ff00`` green or
-``#ff00ff`` magenta) is 250-350 away from any subject, so an edge pixel that is a third subject is already past `t1`
-and would stay opaque with two thirds of chroma in it (a halo). Only the strip of `CHROMA_BAND` pixels next to the
-removed background is fixed: each pixel there that is a mix of the background and the color of the subject pixels
-around it (further in, outside the strip) takes that color and, as coverage, the share of the way from the background to
-it; any other pixel (an outline or a rim of its own) is kept. The rest of the subject is not
-touched, whatever its color.
+A chroma key is a border color within `CHROMA_REACH` (90) of pure green ``#00ff00`` or magenta ``#ff00ff`` (so the
+near-green of FLUX counts; red, yellow, blue and cyan backgrounds do not). A subject is 250-350 away from it, so an
+edge pixel that is a third subject is already past `t1` and would stay opaque with two thirds of chroma in it (a
+halo). Only the strip of `CHROMA_BAND` pixels next to the removed background is fixed: each pixel there that is a
+mix of the background and the color of the subject pixels around it (further in, outside the strip) takes that color
+and, as coverage, the share of the way from the background to it; any other pixel (an outline or a rim of its own)
+is kept. The rest of the subject is not
+touched, whatever its color. The fix only reaches the strip of the background that was removed: a hole already in the
+input (a region of background closed off by the subject) is not touched unless ``holes=True`` removes it, as the
+default keeps such regions as the subject's own, and a pixel already transparent in the input counts as removed.
 """
 from __future__ import annotations
 
 import math
 from statistics import median
 
-CHROMA_HIGH, CHROMA_LOW = 200, 60  # a border with a channel >= HIGH and another <= LOW is a chroma key (#00ff00)
+CHROMA_KEYS = ((0, 255, 0), (255, 0, 255))  # green and magenta
+CHROMA_REACH = 90   # a border this close (RGB distance) to one of them is a key, as FLUX's near-green (40,230,70)
 CHROMA_BAND = 2  # pixels from the removed background that the chroma edge fix reaches
 CHROMA_WINDOW = 3  # radius of the window whose subject pixels give the edge's own color
 MAX_GROW = 32  # pixels the flood may grow over the soft edge; each pass walks the whole image
@@ -125,9 +129,30 @@ def remove_bg(width: int, height: int, rgba, t0: float = 60, t1: float = 110, bo
         for c in range(3):
             out[i + c] = max(0, min(255, int((rgba[i + c] - (1 - a) * bg[c]) / a)))  # despill
         out[i + 3] = min(rgba[i + 3], int(a * 255))
-    if max(bg) >= CHROMA_HIGH and min(bg) <= CHROMA_LOW:
+    if _is_chroma(bg):
         _chroma_edge(width, height, rgba, out, seen, dist, bg, t0)
     return out
+
+
+def _neighbors(k, width, n):
+    x = k % width
+    if x:
+        yield k - 1
+    if x < width - 1:
+        yield k + 1
+    if k >= width:
+        yield k - width
+    if k < n - width:
+        yield k + width
+
+
+def _touches(mask, k, width, n) -> bool:
+    return any(mask[j] for j in _neighbors(k, width, n))
+
+
+def _is_chroma(bg) -> bool:
+    """True for a background within `CHROMA_REACH` of pure green or magenta; red, yellow, blue and cyan are not keys."""
+    return any(math.dist(bg, key) <= CHROMA_REACH for key in CHROMA_KEYS)
 
 
 def _chroma_edge(width, height, rgba, out, seen, dist, bg, t0) -> None:
@@ -135,18 +160,24 @@ def _chroma_edge(width, height, rgba, out, seen, dist, bg, t0) -> None:
     n = width * height
     clear = bytearray(1 if out[k * 4 + 3] == 0 else 0 for k in range(n))
     band = bytearray(n)
-    edge = clear
-    for _ in range(CHROMA_BAND):
-        grown = bytearray(edge)
-        for k in range(n):
-            if edge[k]:
-                continue
-            x = k % width
-            if (x and edge[k - 1]) or (x < width - 1 and edge[k + 1]) or (k >= width and edge[k - width]) \
-                    or (k < n - width and edge[k + width]):
-                grown[k] = 1
-                band[k] = 1
-        edge = grown
+    ring = []  # the strip is walked ring by ring from the pixels that touch the removed background: one scan only
+    for k in range(n):
+        if not clear[k] and _touches(clear, k, width, n):
+            ring.append(k)
+    for step in range(CHROMA_BAND):
+        for k in ring:
+            band[k] = 1
+        if step + 1 == CHROMA_BAND:
+            break
+        nxt = []
+        for k in ring:
+            for j in _neighbors(k, width, n):
+                if not clear[j] and not band[j]:
+                    band[j] = 2  # queued; promoted to 1 when its ring is taken
+                    nxt.append(j)
+        for k in nxt:
+            band[k] = 0
+        ring = nxt
     r = CHROMA_WINDOW
     for k in range(n):
         if not band[k] or rgba[k * 4 + 3] < 128:
