@@ -763,7 +763,12 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing=None, palet
             raise GimgError("brand.no_matte", path=str(src), transparent=round(m["transparent"] * 100, 1))
         title = str(name).strip()
         color = trace(t["emblema-alpha.png"], t["emblema.svg"], "color", palette, colors, title=title)
-        one_ink = trace(t["emblema-alpha.png"], t["emblema-mono.svg"], "mono", title=title)
+        try:
+            one_ink = trace(t["emblema-alpha.png"], t["emblema-mono.svg"], "mono", title=title)
+        except GimgError as exc:  # no ink left: only the lockups that use it stop; otherwise its silhouette
+            if mono or exc.code != "brand.bad_option":
+                raise
+            one_ink = trace(t["emblema-alpha.png"], t["emblema-mono.svg"], "silhouette", title=title)
         word = wordmark(line, font, t["wordmark.svg"], weight, spacing, title=title, _family=family)
         emblem = t["emblema-mono.svg" if mono else "emblema.svg"]
         lh = lockup(emblem, t["wordmark.svg"], t["lockup-h.svg"], "h", cap, gap, width, margin, title=title, force=True)

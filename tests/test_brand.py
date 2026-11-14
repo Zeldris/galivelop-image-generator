@@ -701,6 +701,23 @@ class SystemTests(BrandBase):
         self.assertEqual(res["spacing"], 0.12)
 
     @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
+    def test_system_without_mono_survives_a_mono_trace_with_no_ink(self):
+        real = brand._trace.to_svg
+
+        def no_ink(w, h, rgba, mode="color", **kw):
+            if mode == "mono" and "ncolores" not in kw:  # the emblem, not the wordmark (ncolores=1)
+                raise ValueError("mono: no ink left")
+            return real(w, h, rgba, mode, **kw)
+
+        with mock.patch("gimg.brand._trace.to_svg", no_ink):
+            res = brand.system(self.src, "Tarkor", FONT, self.out)
+            self.assertIn("<path", (self.out / "tarkor-emblema-mono.svg").read_text())  # its silhouette
+            with self.assertRaises(GimgError) as cm:
+                brand.system(self.src, "Tarkor", FONT, self.tmp / "m", mono=True)
+        self.assertEqual(res["paths"]["mono"], 1)
+        self.assertIn("no ink left", cm.exception.params["reason"])
+
+    @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
     def test_system_reads_the_font_family_once(self):
         with mock.patch("gimg.brand._font_family", wraps=brand._font_family) as read:
             brand.system(self.src, "Tarkor", FONT, self.out)

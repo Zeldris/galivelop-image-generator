@@ -18,6 +18,7 @@ in `ink` (indexes). Default: every color but the darkest or, in an image with no
 the paper (each color on at least 20% of the border, so a two-color background is all paper; with a gradient where
 none reaches 20%, the darkest is left out as before). A dark frame that fills the border is taken for paper: pass `ink`
 by hand (API) or remove the background first (``--matte``). One-pixel straight lines survive the smoothing (mono only).
+A drawing that leaves no ink raises ValueError (``no ink left``) instead of an empty SVG; an empty drawing still gives one.
 `mode="silueta"` is one path over the whole opaque shape.
 `title` loses control characters. A bad option (also a `color` that is not ``#rgb``, ``#rrggbb`` or a name) raises
 ``ValueError``.
@@ -343,7 +344,8 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
             raise ValueError("ink: every index must be a color of the palette (0-%d)" % (len(pal) - 1))
         layers.append(layer(color, lambda v, s=frozenset(ink): v in s, True))
         if counts and not layers[-1]:  # a drawing went in and nothing came out: say it, never an empty SVG
-            raise ValueError("mono: no ink left (every ink color was left out or smoothed away): pass ink or use mode color")
+            raise ValueError("mono: no ink left (every ink color was left out or smoothed away): remove the "
+                             "background first (--matte), lower min_island or use mode color")
     else:
         order = sorted(counts, key=lambda j: -counts[j])
         if order:
