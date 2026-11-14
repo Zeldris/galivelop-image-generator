@@ -19,7 +19,9 @@ from __future__ import annotations
 
 import contextlib
 import errno
+import hashlib
 import os
+import sys
 import tempfile
 import uuid
 from pathlib import Path
@@ -56,6 +58,24 @@ def _mix(p, q, m: float):
     return tuple(int((p[c] * ap + q[c] * aq) / a + 0.5) for c in range(3)) + (int(a + 0.5),)
 
 
+def _mix_into(dst: bytearray, other, spots) -> None:
+    """`_mix` of ``dst`` with ``other`` at each ``(byte offset, weight)`` of `spots`, written into ``dst`` (the same
+    arithmetic as `_mix`, inlined: it is the hot loop, a call and two slices per pixel cost a third of the time)."""
+    for i, m in spots:
+        a3, b3 = dst[i + 3], other[i + 3]
+        ap, aq = a3 * (1 - m), b3 * m
+        a = ap + aq
+        if a <= 0:
+            if m >= 0.5:
+                dst[i], dst[i + 1], dst[i + 2] = other[i], other[i + 1], other[i + 2]
+            dst[i + 3] = 0
+            continue
+        dst[i] = int((dst[i] * ap + other[i] * aq) / a + 0.5)
+        dst[i + 1] = int((dst[i + 1] * ap + other[i + 1] * aq) / a + 0.5)
+        dst[i + 2] = int((dst[i + 2] * ap + other[i + 2] * aq) / a + 0.5)
+        dst[i + 3] = int(a + 0.5)
+
+
 def tileable(width: int, height: int, rgba, blend: float = 0.25) -> bytearray:
     """RGBA copy of `rgba` that repeats with no seam (see the module docstring); the input is not touched."""
     if len(rgba) != width * height * 4:
@@ -77,9 +97,7 @@ def tileable(width: int, height: int, rgba, blend: float = 0.25) -> bytearray:
         base = y * row_bytes
         row = bytes(rgba[base:base + row_bytes])
         rolled = bytearray(row[cut:] + row[:cut])
-        for x in live:
-            m, i = wx[x], x * 4
-            rolled[i:i + 4] = bytes(_mix(rolled[i:i + 4], row[i:i + 4], m))
+        _mix_into(rolled, row, [(x * 4, wx[x]) for x in live])
         mid[base:base + row_bytes] = rolled
     # Pass 2, y: the same on the result of pass 1, so the borders of both axes are already continuous.
     out = bytearray(len(rgba))
@@ -91,8 +109,7 @@ def tileable(width: int, height: int, rgba, blend: float = 0.25) -> bytearray:
         if m > 0:
             row = mid[base:base + row_bytes]
             rolled = bytearray(rolled)
-            for i in range(0, row_bytes, 4):
-                rolled[i:i + 4] = bytes(_mix(rolled[i:i + 4], row[i:i + 4], m))
+            _mix_into(rolled, row, [(i, m) for i in range(0, row_bytes, 4)])
         out[base:base + row_bytes] = rolled
     return out
 
@@ -111,6 +128,39 @@ def repeat(width: int, height: int, rgba, nx: int = PREVIEW_GRID, ny: int = PREV
 def default_out(src) -> str:
     p = Path(src)
     return str(p.with_name(p.stem + "-tile.png"))
+
+
+def _backup_prefix(path) -> str:
+    """Name start of the copy of `path` moved aside while it is replaced: it carries a short hash of the target's file
+    name, so a copy left by a killed run can be matched to its target."""
+    return ".gimg-bak-" + hashlib.sha1(os.path.basename(str(path)).encode("utf-8", "surrogateescape")).hexdigest()[:12] + "-"
+
+
+def recover_backups(paths) -> list:
+    """Deal with copies ``.gimg-bak-*`` left beside each of `paths` by a run that was killed half way (SIGKILL, power):
+    if the target is missing, the copy is the original and is put back; if the target exists, the copy is left where
+    it is and reported (it may be the only copy of an original that the half-done run replaced: nothing is deleted
+    that cannot be told apart from a leftover of a finished run). Returns what it did, one text per copy."""
+    done = []
+    for path in paths:
+        folder, prefix = os.path.dirname(os.path.abspath(path)), _backup_prefix(path)
+        try:
+            names = sorted(n for n in os.listdir(folder) if n.startswith(prefix))
+        except OSError:
+            continue
+        for name in names:
+            bak = os.path.join(folder, name)
+            try:
+                if os.path.lexists(path):
+                    done.append("kept %s: the file replaced by an interrupted run; %s is in place, delete the copy if "
+                                "you do not need it" % (bak, path))
+                else:
+                    os.replace(bak, path)
+                    done.append("restored %s from %s (left by an interrupted run)" % (path, bak))
+            except OSError as exc:
+                raise GimgError("tile.write_failed", path=str(path),
+                                reason="cannot recover %s: %s" % (bak, exc.strerror or exc))
+    return done
 
 
 def _stage(path: str, data: bytes) -> str:
@@ -150,20 +200,27 @@ def _publish(files) -> None:
         for tmp, path in staged:
             backup = None
             if os.path.lexists(path):
-                backup = os.path.join(os.path.dirname(os.path.abspath(path)), ".gimg-bak-" + uuid.uuid4().hex)
+                backup = os.path.join(os.path.dirname(os.path.abspath(path)), _backup_prefix(path) + uuid.uuid4().hex)
                 os.replace(path, backup)
             done.append((path, backup))
             os.replace(tmp, path)
     except BaseException as exc:
+        failed = []  # rollback steps that did not work: said, never hidden behind the original error
         for p, backup in reversed(done):
-            with contextlib.suppress(OSError):
+            try:
                 if backup:
                     os.replace(backup, p)
                 else:
                     os.unlink(p)
-        done = []
+            except OSError as rb:
+                what = "put back %s from %s" % (p, backup) if backup else "remove %s" % p
+                failed.append("%s: %s" % (what, rb.strerror or rb))
+        done = []  # a backup that could not be put back stays on disk: the next run restores it (`recover_backups`)
+        note = "; rollback incomplete (" + "; ".join(failed) + ")" if failed else ""
         if isinstance(exc, OSError):
-            raise GimgError("tile.write_failed", path=str(path), reason=str(exc.strerror or exc))
+            raise GimgError("tile.write_failed", path=str(path), reason=str(exc.strerror or exc) + note)
+        if note:
+            print("gimg tile: " + note[2:], file=sys.stderr)
         raise
     finally:
         for tmp, _ in staged:
@@ -176,8 +233,11 @@ def _publish(files) -> None:
 
 
 def _same_file(a: str, b: str) -> bool:
-    if os.path.exists(a) and os.path.exists(b):
-        return os.path.samefile(a, b)
+    try:
+        if os.path.exists(a) and os.path.exists(b):
+            return os.path.samefile(a, b)
+    except OSError as exc:  # a path that cannot be read (no permission on a folder, a loop of links)
+        raise GimgError("tile.write_failed", path=str(a), reason=str(exc.strerror or exc))
     return os.path.normcase(os.path.abspath(a)) == os.path.normcase(os.path.abspath(b))
 
 
@@ -194,7 +254,9 @@ def tile(src, out=None, blend: float = 0.25, preview=None, preview_side: int = 2
     """Write the seamless copy of the PNG `src` (and the 4x4 view in `preview`); returns the written paths and the size."""
     if not MIN_PREVIEW <= preview_side <= MAX_PREVIEW:
         raise GimgError("tile.bad_preview_side", value=preview_side, low=MIN_PREVIEW, high=MAX_PREVIEW)
-    out = _check_target(src, out or default_out(src), force)
+    out = out or default_out(src)
+    recovered = recover_backups([out] + ([preview] if preview is not None else []))
+    out = _check_target(src, out, force)
     if preview is not None:
         preview = _check_target(src, preview, force)
         if _same_file(preview, out):
@@ -218,4 +280,6 @@ def tile(src, out=None, blend: float = 0.25, preview=None, preview_side: int = 2
         res["preview"] = preview
         res["preview_size"] = [pw * PREVIEW_GRID, ph * PREVIEW_GRID]
     _publish(files)
+    if recovered:
+        res["recovered"] = recovered
     return res

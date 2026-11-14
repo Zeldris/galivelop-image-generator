@@ -258,6 +258,97 @@ class TileCommandTests(unittest.TestCase):
         self.assertEqual(os.stat(real_file).st_mode & 0o777, 0o640)
         self.assertEqual(sorted(os.listdir(self.dir.name)), ["o.png", "real.png", "tex.png", "v.png"])
 
+    def test_an_unreadable_target_is_refused_naming_its_path(self):
+        out = os.path.join(self.dir.name, "o.png")
+        Path(out).write_bytes(b"old")
+
+        def denied(a, b):
+            raise PermissionError(13, "Permission denied", a)
+
+        with mock.patch("gimg.tile.os.path.samefile", denied), self.assertRaises(GimgError) as cm:
+            tile.tile(self.src, out=out, force=True)
+        self.assertEqual(cm.exception.code, "tile.write_failed")
+        self.assertEqual(cm.exception.params["path"], out)
+        self.assertIn("Permission denied", cm.exception.params["reason"])
+        self.assertEqual(Path(out).read_bytes(), b"old")
+
+    def test_a_copy_left_by_a_killed_run_is_put_back_when_the_target_is_missing(self):
+        out = os.path.join(self.dir.name, "o.png")
+        orphan = tile._backup_prefix(out) + "0" * 32
+        Path(self.dir.name, orphan).write_bytes(b"the original")
+        with self.assertRaises(GimgError) as cm:  # the original is back, so it is not overwritten without --force
+            tile.tile(self.src, out=out)
+        self.assertEqual(cm.exception.code, "tile.exists")
+        self.assertEqual(Path(out).read_bytes(), b"the original")
+        self.assertEqual(sorted(os.listdir(self.dir.name)), ["o.png", "tex.png"])
+        res = tile.tile(self.src, out=out, force=True)
+        self.assertEqual(res["out"], out)
+
+    def test_a_copy_left_beside_a_target_in_place_is_kept_and_reported(self):
+        out = os.path.join(self.dir.name, "o.png")
+        Path(out).write_bytes(b"new, already in place")
+        Path(self.dir.name, tile._backup_prefix(out) + "1" * 32).write_bytes(b"old")
+        other = Path(self.dir.name, tile._backup_prefix(os.path.join(self.dir.name, "x.png")) + "2" * 32)
+        other.write_bytes(b"belongs to another target")
+        res = tile.tile(self.src, out=out, force=True)
+        self.assertEqual(len(res["recovered"]), 1)
+        self.assertIn("kept", res["recovered"][0])
+        self.assertTrue(other.exists(), "a copy of another target is not touched")
+        self.assertEqual(Path(self.dir.name, tile._backup_prefix(out) + "1" * 32).read_bytes(), b"old",
+                         "an original that may be the only copy is never deleted")
+
+    def test_a_failed_rollback_is_reported_with_the_original_error_and_keeps_the_copy(self):
+        out, view = os.path.join(self.dir.name, "o.png"), os.path.join(self.dir.name, "v.png")
+        Path(out).write_bytes(b"old texture")
+        Path(view).write_bytes(b"old view")
+        real = os.replace
+
+        def flaky(a, b):
+            if b == view and ".gimg-tile-" in a:
+                raise OSError(28, "No space left on device", a)
+            if ".gimg-bak-" in a:  # the rollback cannot put the old file back
+                raise OSError(5, "Input/output error", a)
+            return real(a, b)
+
+        with mock.patch("gimg.tile.os.replace", flaky), self.assertRaises(GimgError) as cm:
+            tile.tile(self.src, out=out, preview=view, preview_side=32, force=True)
+        reason = cm.exception.params["reason"]
+        self.assertIn("No space left", reason)
+        self.assertIn("rollback incomplete", reason)
+        self.assertIn("Input/output error", reason)
+        self.assertIn(out, reason)
+        baks = [n for n in os.listdir(self.dir.name) if n.startswith(".gimg-bak-")]
+        self.assertEqual(len(baks), 2, "the old files stay on disk for the next run")
+        self.assertEqual(Path(self.dir.name, [n for n in baks if n.startswith(tile._backup_prefix(out))][0]).read_bytes(),
+                         b"old texture")
+        res = tile.tile(self.src, out=os.path.join(self.dir.name, "z.png"))  # untouched targets: copies stay
+        self.assertNotIn("recovered", res)
+        os.unlink(out)  # the new file in place was lost too: the next run restores the original first
+        with self.assertRaises(GimgError) as cm2:
+            tile.tile(self.src, out=out)
+        self.assertEqual(cm2.exception.code, "tile.exists")
+        self.assertEqual(Path(out).read_bytes(), b"old texture")
+
+    def test_odd_and_tiny_sizes(self):
+        for w, h in ((1, 1), (3, 5), (7, 7), (7, 64)):
+            src = os.path.join(self.dir.name, "s%dx%d.png" % (w, h))
+            Path(src).write_bytes(png.rgba_bytes(w, h, bytes((9, 9, 9, 255)) * (w * h)))
+            with self.assertRaises(GimgError) as cm:
+                tile.tile(src)
+            self.assertEqual(cm.exception.code, "tile.bad_option")
+            self.assertIn("at least %d px" % tile.MIN_SIDE, cm.exception.params["reason"])
+            self.assertIn("%dx%d" % (w, h), cm.exception.params["reason"])
+            self.assertFalse(os.path.exists(tile.default_out(src)))
+        for w, h in ((8, 8), (9, 9), (11, 8), (15, 9), (13, 17)):
+            tw, th, px = texture(w, h)
+            out = tile.tileable(tw, th, px)
+            self.assertEqual(len(out), w * h * 4)
+            self.assertTrue(all(out[3::4][i] == 255 for i in range(w * h)))
+            src = os.path.join(self.dir.name, "t%dx%d.png" % (w, h))
+            Path(src).write_bytes(png.rgba_bytes(tw, th, px))
+            res = tile.tile(src, preview_side=16)
+            self.assertEqual(res["size"], [w, h])
+
     def test_an_input_over_the_pixel_limit_is_refused_with_its_reason(self):
         with mock.patch.object(tile, "MAX_PIXELS", 96 * 64 - 1), mock.patch.object(
                 png, "read_rgba", side_effect=AssertionError("decoded")) as read, self.assertRaises(GimgError) as cm:
