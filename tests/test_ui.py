@@ -708,33 +708,105 @@ class Contrast(unittest.TestCase):
             self.assertIn(token, css, token)
         self.assertIn("clip-path", re.search(r"\.card \{[^}]*\}", css, re.S).group(0))
 
-    def test_outlines_on_chamfered_elements_stay_inside(self):
+    @staticmethod
+    def chamfer_outline_problems(css, js):
         """Retro R1 (2026-11-13): un contorno con desfase positivo sobre un elemento con chaflán lo recorta el
-        `clip-path`. Elementos con chaflán: los que llevan `clip-path` en el CSS y las clases que el JS pone junto a
-        `.card`. Toda regla con `outline` cuyo sujeto sea uno de ellos lleva `outline-offset` negativo."""
-        css = re.sub(r"/\*.*?\*/", "", "".join(read(UI / "css" / n) for n in ("base.css", "layout.css", "components.css")), flags=re.S)
+        `clip-path`. Elementos con chaflán: los que llevan `clip-path: polygon` en el CSS y las clases que el JS pone
+        junto a `.card` (en `h('…card…')`, en `class: '…'` o con `classList`). Devuelve los problemas: toda regla con
+        `outline` cuyo sujeto sea uno de ellos necesita un `outline-offset` negativo, propio o heredado de otra regla
+        del mismo sujeto y estado; y el `:focus-visible` global (desfase positivo) no puede llegar a un `.card`
+        sin una regla de foco propia con desfase negativo."""
+        css = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
         rules = re.findall(r"([^{}]+)\{([^{}]*)\}", css)
+        negative = lambda body: (lambda m: bool(m) and m.group(1).strip().startswith(("-", "calc(-")))(
+            re.search(r"outline-offset\s*:\s*([^;]+)", body))
         tokens = lambda compound: set(re.findall(r"^[a-z]+|\.[a-zA-Z_-]+", re.sub(r":[a-z-]+(\([^)]*\))?", "", compound)))
+        subject = lambda one: re.split(r"\s+|>|\+|~", one.strip())[-1]
         chamfered = set()
         for sel, body in rules:
             if re.search(r"clip-path\s*:\s*polygon", body):
-                chamfered |= {t for s in sel.split(",") if "::" not in s for t in tokens(re.split(r"\s+|>|\+|~", s.strip())[-1])}
-        js = "".join(read(f) for f in (UI / "js").rglob("*.js"))
-        for combo in re.findall(r"'[a-z]*((?:\.[a-z-]+)*\.card(?:\.[a-z-]+)*)'", js):
-            chamfered |= {"." + c for c in combo.split(".") if c and c != "card"}
-        self.assertTrue({".card", "dialog", ".attempt"} <= chamfered, chamfered)
-        seen = 0
-        for sel, body in rules:
-            if not re.search(r"(^|;)\s*outline(-offset)?\s*:", body):
+                chamfered |= {t for s in sel.split(",") if "::" not in s for t in tokens(subject(s))}
+        extra = re.findall(r"'[a-z]*((?:\.[a-z-]+)*\.card(?:\.[a-z-]+)*)'", js)  # h('article.card.attempt')
+        extra += ["." + c.replace(" ", ".") for c in re.findall(r"class(?:Name)?\s*[:=]\s*['\"`]((?:[^'\"`]*[^\w'\"`-])?card(?![\w-])[^'\"`]*)['\"`]", js)]
+        extra += ["." + c for c in re.findall(r"classList\.(?:add|toggle)\(\s*'card'(?:\s*,\s*'([a-z -]+)')?", js)]
+        for combo in extra:
+            chamfered |= {"." + c for c in combo.split(".") if c.strip() and c.strip() != "card"}
+        problems = []
+        if not {".card", "dialog", ".attempt"} <= chamfered:
+            problems.append("faltan elementos con chaflán: %s" % sorted(chamfered))
+        state = lambda one: tuple(re.findall(r":[a-z-]+", subject(one)))
+        for i, (sel, body) in enumerate(rules):
+            shorthand = re.search(r"(^|;)\s*outline\s*:", body)
+            if not shorthand and not re.search(r"(^|;)\s*outline-offset\s*:", body):
                 continue
             for one in sel.split(","):
-                subject = re.split(r"\s+|>|\+|~", one.strip())[-1]
-                if not tokens(subject) & chamfered:
+                # `outline` pinta en el sujeto; un `outline-offset` suelto (longhand) también en el hijo de un chaflán
+                hit = tokens(subject(one)) if shorthand else set().union(*map(tokens, re.split(r"\s+|>|\+|~", one.strip())))
+                if not hit & chamfered or negative(body):
                     continue
-                seen += 1
-                m = re.search(r"outline-offset\s*:\s*([^;]+)", body)
-                self.assertTrue(m and m.group(1).strip().startswith(("-", "calc(-")), f"{one.strip()}: {body.strip()}")
-        self.assertGreaterEqual(seen, 2)
+                inherited = any(negative(b) and state(o) == state(one) and tokens(subject(o)) & tokens(subject(one))
+                                for j, (s2, b) in enumerate(rules) if j != i for o in s2.split(","))
+                if not inherited:
+                    problems.append("%s: %s" % (one.strip(), body.strip()))
+        if re.search(r"(^|[\s,}])\s*:focus-visible\s*$", "\n".join(sel.strip() for sel, _ in rules), re.M):
+            if not any(".card" in o and ":focus-visible" in o and negative(b) for s2, b in rules for o in s2.split(",")):
+                problems.append("`:focus-visible` global con desfase positivo y ninguna regla `.card:focus-visible` negativa")
+        return problems
+
+    def test_outlines_on_chamfered_elements_stay_inside(self):
+        css = "".join(read(UI / "css" / n) for n in ("base.css", "layout.css", "components.css"))
+        js = "".join(read(f) for f in (UI / "js").rglob("*.js"))
+        self.assertEqual(self.chamfer_outline_problems(css, js), [])
+
+    def test_the_chamfer_outline_check_catches_each_gap(self):
+        """Cada hueco del test anterior, probado con CSS y JS de juguete: el análisis tiene que dar su motivo."""
+        base = (".card { clip-path: polygon(0 0, 100% 0, 100% 100%); } dialog { clip-path: polygon(0 0, 1px 1px); } "
+                ".attempt { clip-path: polygon(0 0, 2px 2px); } :focus-visible { outline: 2px solid red; outline-offset: 2px; } ")
+        js = "h('article.card.attempt')"
+        ok = base + ".card:focus-visible { outline-offset: calc(-1 * 2px); }"
+        self.assertEqual(self.chamfer_outline_problems(ok, js), [])
+        # 1. el `:focus-visible` global llega a un `.card` sin regla propia
+        self.assertTrue(any("global" in p for p in self.chamfer_outline_problems(base, js)))
+        # 2. una clase puesta fuera de `h('…card…')`
+        late = ok + ".halo:hover { outline: 2px solid; outline-offset: 2px; }"
+        self.assertEqual(self.chamfer_outline_problems(late, js), [])
+        problems = self.chamfer_outline_problems(late, js + " x.className = 'card halo'; y = {class: 'card halo'}")
+        self.assertEqual([p.split(":")[0] for p in problems], [".halo"])
+        problems = self.chamfer_outline_problems(late, js + " x.classList.add('card', 'halo')")
+        self.assertEqual([p.split(":")[0] for p in problems], [".halo"])
+        # 3. desfase heredado: la regla del estado no repite el desfase, pero otra del mismo sujeto y estado sí
+        inherited = ok + ".card:hover { outline: 1px solid; } .card:hover { outline-offset: -2px; }"
+        self.assertEqual(self.chamfer_outline_problems(inherited, js), [])
+        bad = ok + ".card:hover { outline: 1px solid; }"
+        self.assertEqual([p.split(":")[0] for p in self.chamfer_outline_problems(bad, js)], [".card"])
+        # `outline-offset` suelto sobre un hijo de un chaflán (como `.attempt .figure .open:focus-visible`)
+        longhand = ok + ".attempt .figure .open:focus-visible { outline-offset: -4px; }"
+        self.assertEqual(self.chamfer_outline_problems(longhand, js), [])
+        bad = ok + ".attempt .figure .open:focus-visible { outline-offset: 4px; }"
+        self.assertEqual([p.split(":")[0] for p in self.chamfer_outline_problems(bad, js)], [".attempt .figure .open"])
+        # una clase con guion (`project-card`) no es `card`
+        problems = self.chamfer_outline_problems(late, js + " h('a', {class: 'project-card halo'}); y = {class: 'piece-card halo'}")
+        self.assertEqual(problems, [])
+        # un desfase positivo propio sigue fallando
+        bad = ok + ".attempt:hover { outline: 1px solid; outline-offset: 3px; }"
+        self.assertEqual([p.split(":")[0] for p in self.chamfer_outline_problems(bad, js)], [".attempt"])
+
+    def test_the_scrolling_dialog_bodies_do_not_shift_their_content(self):
+        """El cuerpo de la ayuda y el formulario llevan `padding` para que el contorno de foco no lo recorte el
+        `overflow: auto`; un margen solo lateral dejaba el contenido 4 px más abajo. El margen negativo cancela el
+        relleno arriba y a los lados: el contenido queda donde estaría sin ellos. (Abajo no se cancela: un margen negativo ahí metería el cuerpo
+        bajo el pie, que lo pisaría.)"""
+        css = re.sub(r"/\*.*?\*/", "", read(UI / "css" / "components.css"), flags=re.S)
+        body = next(b for sel, b in re.findall(r"([^{}]+)\{([^{}]*)\}", css)
+                    if "#shortcuts-body" in sel and "dialog.new-order > form" in sel)
+        def sides(prop):
+            vals = re.search(r"(?:^|;)\s*%s\s*:\s*([^;]+)" % prop, body).group(1).split()
+            top, right, bottom, left = {1: lambda: vals * 4, 2: lambda: vals * 2, 3: lambda: vals + [vals[1]], 4: lambda: vals}[len(vals)]()
+            return [float(v[:-2]) if v.endswith("px") else float(v) for v in (top, right, bottom, left)]
+        padding, margin = sides("padding"), sides("margin")
+        net = [p + m for p, m in zip(padding, margin)]
+        self.assertEqual([net[0], net[1], net[3]], [0, 0, 0], body)
+        self.assertGreaterEqual(margin[2], 0, body)
 
     def test_review_fixes_of_buttons_focus_and_selects(self):
         """Revisión de r10: el hover primario no cambia el relleno (--accent-text bajo blanco es 3,4:1 en oscuro), las
