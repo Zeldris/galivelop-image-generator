@@ -125,7 +125,22 @@ class UiBase(unittest.TestCase):
         self.addCleanup(self.close_page)
 
     def close_page(self):
-        self.page.ws.close()
+        self.shut(self.page)
+
+    def shut(self, page):
+        """Closes the tab itself (Chromium keeps it alive when only its socket closes), then the socket."""
+        try:
+            page.call("Page.close")
+        except Exception:   # the tab may be gone already
+            pass
+        page.ws.close()
+        if page in self.browser.pages:
+            self.browser.pages.remove(page)
+
+    def replace_page(self, width, height):
+        """Closes the current tab (not only its socket: Chromium keeps the tab alive) and opens one with that size."""
+        self.shut(self.page)
+        self.page = self.browser.new_page(width=width, height=height)
 
     # helpers ---------------------------------------------------------------------------------------------------
     def open(self, route="/", wait="document.querySelector('#main h1')"):
@@ -427,8 +442,7 @@ class OrderScreen(UiBase):
     def test_editor_on_a_narrow_screen_shows_the_whole_image_and_no_overlap(self):
         # A una columna (≤1000 px), la escena con `overflow: hidden` era un contenedor desplazable: su fila encogía (la
         # imagen salía cortada; a 360 px, 18 px de alto) y la ayuda de debajo pisaba la lista de elementos.
-        self.page.ws.close()
-        self.page = self.browser.new_page(width=768, height=900)
+        self.replace_page(768, 900)
         self.open_editor("fondos/estrecho")
         self.page.key("ArrowDown", shift=True)
         box = lambda s: self.js("(() => { const r = document.querySelector(%s).getBoundingClientRect();"
@@ -452,35 +466,39 @@ class OrderScreen(UiBase):
       if (document.documentElement.scrollWidth > W + 1) out.push('página ' + document.documentElement.scrollWidth + ' px de ancho');
       const clipped = e => { for (let a = e.parentElement; a; a = a.parentElement) {
         const o = getComputedStyle(a).overflowX; if (o !== 'visible') return true; } return false; };
-      for (const e of document.querySelectorAll('body *')) {
+      const side = (e, n) => !n || ['absolute', 'fixed'].includes(getComputedStyle(n).position) ||
+        ['absolute', 'fixed'].includes(getComputedStyle(e).position);
+      const overlap = (r, q) => Math.min(r.right, q.right) - Math.max(r.left, q.left) > 2 &&
+        Math.min(r.bottom, q.bottom) - Math.max(r.top, q.top) > 2;
+      for (const e of document.querySelectorAll('body *')) {   // una sola pasada por el DOM
         if (!shown(e)) continue;
-        const r = e.getBoundingClientRect();
+        const r = e.getBoundingClientRect(), cs = getComputedStyle(e);
         if ((r.right > W + 1 || r.left < -1) && !clipped(e)) out.push(name(e) + ' sale del ancho (' + Math.round(r.left) + '..' + Math.round(r.right) + ')');
-        const n = e.nextElementSibling, cs = getComputedStyle(e);
-        if (!n || !shown(n) || cs.position === 'absolute' || cs.position === 'fixed' || cs.display === 'contents') continue;
-        const ns = getComputedStyle(n); if (ns.position === 'absolute' || ns.position === 'fixed') continue;
-        const q = n.getBoundingClientRect();
-        const dx = Math.min(r.right, q.right) - Math.max(r.left, q.left), dy = Math.min(r.bottom, q.bottom) - Math.max(r.top, q.top);
-        if (dx > 2 && dy > 2) out.push(name(e) + ' pisa a ' + name(n));
-      }
-      // contenido que se sale de su caja y pisa al hermano siguiente de la caja
-      for (const e of document.querySelectorAll('body *')) {
-        const p = e.parentElement, n = p && p.nextElementSibling;
-        if (!shown(e) || !n || !shown(n) || getComputedStyle(p).overflowY !== 'visible') continue;
-        const cs = getComputedStyle(e), ns = getComputedStyle(n);
-        if (['absolute', 'fixed'].includes(cs.position) || ['absolute', 'fixed'].includes(ns.position)) continue;
-        const r = e.getBoundingClientRect(), q = n.getBoundingClientRect();
-        const dx = Math.min(r.right, q.right) - Math.max(r.left, q.left), dy = Math.min(r.bottom, q.bottom) - Math.max(r.top, q.top);
-        if (dx > 2 && dy > 2) out.push(name(e) + ' se sale de ' + name(p) + ' y pisa a ' + name(n));
-      }
-      // cajas que recortan (hidden/clip) con contenido más alto que ellas: algo queda cortado
-      for (const e of document.querySelectorAll('body *')) {
-        const o = getComputedStyle(e).overflowY;
-        if (shown(e) && e.clientHeight > 2 && (o === 'hidden' || o === 'clip') && e.scrollHeight > e.clientHeight + 2)
+        // un hermano siguiente en flujo no lo pisa
+        const n = e.nextElementSibling;
+        if (n && shown(n) && cs.display !== 'contents' && !side(e, n) && overlap(r, n.getBoundingClientRect()))
+          out.push(name(e) + ' pisa a ' + name(n));
+        // contenido que se sale de su caja y pisa al hermano siguiente de la caja
+        const p = e.parentElement, pn = p && p.nextElementSibling;
+        if (pn && shown(pn) && getComputedStyle(p).overflowY === 'visible' && !side(e, pn) && overlap(r, pn.getBoundingClientRect()))
+          out.push(name(e) + ' se sale de ' + name(p) + ' y pisa a ' + name(pn));
+        // cajas que recortan (hidden/clip) con contenido más alto que ellas: algo queda cortado
+        if (e.clientHeight > 2 && (cs.overflowY === 'hidden' || cs.overflowY === 'clip') && e.scrollHeight > e.clientHeight + 2)
           out.push(name(e) + ' corta su contenido (' + e.scrollHeight + ' > ' + e.clientHeight + ')');
+        // cajas con `overflow: auto/scroll` cuyo contenido se sale a lo ancho (salvo las pestañas, que se desplazan a propósito)
+        if (['auto', 'scroll'].includes(cs.overflowX) && e.scrollWidth > e.clientWidth + 1 && !e.matches('.tabs'))
+          out.push(name(e) + ' se desplaza a lo ancho (' + e.scrollWidth + ' > ' + e.clientWidth + ')');
       }
       return [...new Set(out)].slice(0, 12);
     })()"""
+
+    def test_the_fit_probe_sees_what_sticks_out_of_an_auto_overflow_box(self):
+        # (el hijo se estiliza por CSSOM: la CSP no deja `style=""` en el HTML)
+        self.open("/", "document.querySelector('a.project-card')")
+        self.js("""(() => { const d = document.createElement('div'); d.id = 'probe-box'; d.style.cssText = 'overflow:auto;width:100px';
+            const c = document.createElement('div'); c.style.cssText = 'width:300px;height:10px';
+            d.append(c); document.body.append(d); return true; })()""")
+        self.assertEqual([p for p in self.js(self.FIT_PROBE) if "probe-box" in p], ["div#probe-box se desplaza a lo ancho (300 > 100)"])
 
     def test_main_screens_fit_at_360_768_and_1280(self):
         # Retro R2 (2026-11-13): la imagen cortada del editor solo se vio a mano; este barrido hace de red a tres anchos.
@@ -497,8 +515,7 @@ class OrderScreen(UiBase):
             ("editor", lambda: self.open_editor("fondos/estrecho")),
         ]
         for width in (360, 768, 1280):
-            self.page.ws.close()
-            self.page = self.browser.new_page(width=width, height=800)
+            self.replace_page(width, 800)
             for label, go in screens:
                 with self.subTest(width=width, screen=label):
                     try:
@@ -643,12 +660,15 @@ class QueueDrawer(UiBase):
         self.open("/", "document.querySelector('.queue-pill')")
         self.js("""import('/ui/js/api.js').then(m => { window.__api = m.api; window.__real = m.api.queueState;
             window.__pending = []; m.api.queueState = () => new Promise(res => window.__pending.push(res)); return true; })""")
-        self.js("import('/ui/js/queue-poll.js').then(m => { window.__poll = m.refreshNow(); return true; })")
-        self.page.wait("window.__pending.length >= 1")  # the old answer is held back: paused false
+        # refreshNow() asks for the queue synchronously, so the resolver pushed during that call is the old answer;
+        # any other pending one comes from the poll timer and is not the one to hold back
+        self.js("""import('/ui/js/queue-poll.js').then(m => { const n = window.__pending.length; window.__poll = m.refreshNow();
+            window.__old = window.__pending[n]; return window.__pending.length === n + 1 && typeof window.__old === 'function'; })""")
+        self.assertTrue(self.js("typeof window.__old === 'function'"))  # the old answer is held back: paused false
         self.click(".queue-pill")
         self.click("[data-fid=pause]")
         self.page.wait("document.querySelector('.queue-pill.is-paused')")
-        self.js("window.__pending.slice(1).forEach(res => res({entries: [], paused: true})); window.__pending[0]({entries: [], paused: false})")  # arrives after the click
+        self.js("window.__pending.filter(res => res !== window.__old).forEach(res => res({entries: [], paused: true})); window.__old({entries: [], paused: false})")  # arrives after the click
         self.js("window.__poll.then(() => true)")  # the first refresh is done, with the stale answer last
         self.js("window.__api.queueState = window.__real; true")
         self.page.pump(0.3)
