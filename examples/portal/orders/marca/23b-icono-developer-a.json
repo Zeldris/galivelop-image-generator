@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/23b-icono-developer-a",
+  "profile": "icono",
+  "seed": 2341,
+  "count": 3,
+  "prompt": "A minimal flat line icon, centred, seen straight on: a symmetrical pair of tall curly braces facing each other, the left brace opening to the right and the right brace opening to the left, each brace drawn as one single continuous smooth curved stroke with a soft rounded point at mid height aiming outwards, and exactly one small solid round dot floating in the exact centre of the empty space between them. The two braces are mirror images of each other, the same height, standing upright, and the gap between them is about as wide as one brace is tall divided by two; the dot is about twice the stroke weight in diameter. Three elements in total: two braces and one dot. Simple line register: one single uniform stroke weight everywhere, thick and bold, rounded line caps and rounded joins, open outlines only, no fill except the small dot, the background colour shows through every shape. The whole icon is drawn in one single colour, deep teal #0E9A93, and nothing else. The background is a perfectly flat, plain, uniform pure chroma key green #00ff00 filling the whole square, with no gradient, no texture, no vignette and no shadow. Generous empty margin all around, the icon takes about two thirds of the square, balanced, geometric, clean vector look, legible at very small size. No shading, no hatching, no drop shadow, no glow, no highlights, no facets, no 3D, no perspective, no photographic rendering, no second colour in the icon, no thin lines, no extra details, no ornaments, no text, no letters, no numbers, no watermark, no border, no frame."
+}

@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/23b-icono-developer-b",
+  "profile": "icono",
+  "seed": 2351,
+  "count": 3,
+  "prompt": "A minimal flat line icon, centred, seen straight on: a vertical stack of exactly three identical horizontal rounded rectangles, like three building blocks piled one on top of another. Each block is a wide pill-cornered rectangle outline, about three times as wide as it is tall, with strongly rounded corners. The three blocks are the same size, perfectly horizontal, separated by a small even gap equal to the stroke weight. The bottom block and the middle block are aligned exactly one above the other; the top block is shifted to the right by about one quarter of its width, so it overhangs the stack on the right side, as a piece being slid into place. Three shapes in total and nothing inside them. Simple line register: one single uniform stroke weight everywhere, thick and bold, rounded line caps and rounded joins, open outlines only, no fill, the background colour shows through every shape. The whole icon is drawn in one single colour, deep teal #0E9A93, and nothing else. The background is a perfectly flat, plain, uniform pure chroma key green #00ff00 filling the whole square, with no gradient, no texture, no vignette and no shadow. Generous empty margin all around, the icon takes about two thirds of the square, balanced, geometric, clean vector look, legible at very small size. No shading, no hatching, no drop shadow, no glow, no highlights, no facets, no 3D, no perspective, no photographic rendering, no second colour in the icon, no thin lines, no extra details, no ornaments, no text, no letters, no numbers, no watermark, no border, no frame."
+}
