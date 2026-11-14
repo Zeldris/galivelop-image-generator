@@ -182,10 +182,18 @@ class IntentosEnHojaTests(unittest.TestCase):
             Path(objetivo).write_text('x')
             antes = time.time() - 2 * 24 * 3600
             os.utime(objetivo, (antes, antes))
-            os.symlink(objetivo, os.path.join(carpeta, 'gimg-captura-enlace'))
+            enlace = os.path.join(carpeta, 'gimg-captura-enlace')
+            os.symlink(objetivo, enlace)
             intentos_en_hoja.decision({'tool_name': 'Read', 'session_id': 's',
                                        'tool_input': {'file_path': '/tmp/c/scratchpad/a.png'}}, carpeta)
             self.assertTrue(os.path.exists(objetivo))
+            # con os.stat (siguiendo el enlace) el destino viejo haria borrar el propio enlace
+            self.assertTrue(os.path.islink(enlace))
+
+    def test_la_clave_prefiere_session_id_luego_transcript_y_por_ultimo_ppid(self):
+        self.assertEqual(intentos_en_hoja._clave({'session_id': 'a', 'transcript_path': 't'}), 'a')
+        self.assertEqual(intentos_en_hoja._clave({'transcript_path': 't'}), 't')
+        self.assertEqual(intentos_en_hoja._clave({}), 'ppid-%d' % os.getppid())
 
     def test_avisa_tambien_con_jpg_y_webp(self):
         for ext in ('jpg', 'JPEG', 'webp'):

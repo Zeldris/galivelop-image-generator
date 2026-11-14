@@ -717,6 +717,9 @@ class Contrast(unittest.TestCase):
         del mismo sujeto y estado; y el `:focus-visible` global (desfase positivo) no puede llegar a un `.card`
         sin una regla de foco propia con desfase negativo."""
         css = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
+        # LIMITACION conocida: este regex aplana los bloques `@media`/`@supports` (sus reglas internas cuentan como si
+        # fueran globales), asi que una regla de foco dentro de un `@media` que no aplica se evalua de mas: solo
+        # puede dar rojo de mas, nunca verde de mas. Si salta por eso, mover la regla fuera del `@media`.
         rules = re.findall(r"([^{}]+)\{([^{}]*)\}", css)
         negative = lambda body: (lambda m: bool(m) and m.group(1).strip().startswith(("-", "calc(-")))(
             re.search(r"outline-offset\s*:\s*([^;]+)", body))
@@ -874,6 +877,7 @@ class Contrast(unittest.TestCase):
         body = next(b for sel, b in re.findall(r"([^{}]+)\{([^{}]*)\}", css)
                     if "#shortcuts-body" in sel and "dialog.new-order > form" in sel)
         def sides(prop):
+            # Supuestos explicitos: 1em = 1rem = 16 px (no se evalua el tamano de fuente real) y `auto` = 0.
             raw = re.search(r"(?:^|;)\s*%s\s*:\s*([^;]+)" % prop, body).group(1)
             vals = raw.split()
             if "!important" in raw or "(" in raw or not 1 <= len(vals) <= 4:
@@ -881,7 +885,9 @@ class Contrast(unittest.TestCase):
             top, right, bottom, left = {1: lambda: vals * 4, 2: lambda: vals * 2, 3: lambda: vals + [vals[1]], 4: lambda: vals}[len(vals)]()
             def px(v):
                 if v == "auto":
-                    return 0.0   # `auto` no suma ni resta en este cálculo
+                    if prop == "padding":
+                        self.fail("`padding: auto` no es valido")
+                    return 0.0   # `auto` = 0 solo para el margen lateral; si importara de verdad, `sides()` habria que cambiarla
                 if v.endswith("rem"):
                     return float(v[:-3]) * 16   # base de 16 px
                 if v.endswith("em"):
