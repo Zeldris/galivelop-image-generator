@@ -748,34 +748,60 @@ class Contrast(unittest.TestCase):
                                 for j, (s2, b) in enumerate(rules) if j != i for o in s2.split(","))
                 if not inherited:
                     problems.append("%s: %s" % (one.strip(), body.strip()))
-        # el foco de un `.card`: gana la regla de mayor especificidad y, a igual especificidad, la posterior
+        # el foco de un elemento con chaflán: por cada declaración gana `!important`, luego la mayor especificidad y,
+        # a igual especificidad, la posterior. Entra toda regla cuyo selector acabe en `:focus`/`:focus-visible` y cuyo
+        # sujeto sea universal o lleve una clase/etiqueta con chaflán (también compuestos, `:is()`, `:not()`);
+        # con ancestros (descendientes) o `#id`/`[attr]` solo cuenta lo que empeora (desfase positivo o anillo quitado)
         def specificity(one):
-            one = re.sub(r"::[a-z-]+", " ", one)
+            one = re.sub(r"::[a-z-]+|:where\([^()]*\)", " ", one)
+            one = re.sub(r":(?:is|not|has)\(([^()]*)\)", r" \1 ", one)   # aprox.: suma los argumentos
             return (len(re.findall(r"#[\w-]+", one)),
-                    len(re.findall(r"\.[\w-]+|\[[^\]]*\]|:(?!where)[a-z-]+", re.sub(r"#[\w-]+", "", one))),
+                    len(re.findall(r"\.[\w-]+|\[[^\]]*\]|:[a-z-]+", re.sub(r"#[\w-]+", "", one))),
                     len(re.findall(r"(?:^|[\s>+~])[a-z][\w-]*", one)))
-        focus = []
+
+        def split_subject(one):
+            depth, cut = 0, 0
+            for pos, ch in enumerate(one):
+                depth += ch == "(" or ch == "["
+                depth -= ch == ")" or ch == "]"
+                if depth == 0 and ch in " >+~":
+                    cut = pos + 1
+            return one[cut:].strip(), bool(one[:cut].strip())
+        entries = []   # (important, specificity, orden, propiedad, valor, solo_empeora, sujeto)
         for i, (sel, body) in enumerate(rules):
-            for one in sel.split(","):
+            for one in re.split(r",(?![^()]*\))", sel):
                 one = one.strip()
-                if re.fullmatch(r"(\.card)?:focus(-visible)?", one) and (one != ":focus" or ":focus-visible" in css):
-                    focus.append((specificity(one), i, one, body))
-        offset, removed = None, False
-        for _, _, one, body in sorted(focus, key=lambda f: f[:2]):
-            for prop, value in re.findall(r"(?:^|;)\s*(outline(?:-style|-width|-color|-offset)?)\s*:\s*([^;]+)", body):
-                value = value.strip()
+                if not re.search(r":focus(-visible)?$", one):
+                    continue
+                subject, ancestors = split_subject(one)
+                names = set(re.findall(r"\.[\w-]+", subject)) | set(re.findall(r"^[a-z][\w-]*", subject))
+                opaque = bool(re.search(r"#[\w-]|\[", subject))
+                if names and not names & chamfered and not opaque:
+                    continue
+                for prop, value in re.findall(r"(?:^|;)\s*(outline(?:-style|-width|-color|-offset)?)\s*:\s*([^;]+)", body):
+                    important = "!important" in value
+                    value = value.replace("!important", "").strip()
+                    entries.append((important, specificity(one), i, prop, value, ancestors or opaque, names))
+        for target in sorted(chamfered):
+            offset, removed = None, False
+            for important, _, _, prop, value, only_worse, names in sorted(entries, key=lambda e: e[:3]):
+                if names and target not in names and not (".card" in names and target == ".card"):
+                    continue
                 if prop == "outline-offset":
-                    offset = value
-                elif prop in ("outline", "outline-style", "outline-width"):
-                    removed = bool(re.search(r"(^|\s)(none|0(px)?)(\s|$)", value))
-                elif prop == "outline-color":
-                    removed = value == "transparent"
-        if any(f[2] == ":focus-visible" for f in focus):
-            if offset is None or not offset.startswith(("-", "calc(-")):
-                problems.append("`:focus-visible` global con desfase positivo y ninguna regla `.card:focus-visible` negativa "
-                                "que gane en la cascada (el desfase que queda es %r)" % offset)
+                    bad = not value.startswith(("-", "calc(-"))
+                    if not only_worse or bad:
+                        offset = value
+                elif prop in ("outline", "outline-style", "outline-width", "outline-color"):
+                    gone = (value == "transparent") if prop == "outline-color" else bool(re.search(r"(^|\s)(none|0(px)?)(\s|$)", value))
+                    if not only_worse or gone:
+                        removed = gone
             if removed:
-                problems.append("el anillo de `:focus-visible` de un `.card` lo quita una regla de la cascada")
+                problems.append("el anillo de `:focus-visible` de `%s` lo quita una regla de la cascada" % target)
+            if target == ".card" and any(e[6] == set() and e[3] == "outline-offset" for e in entries):
+                if offset is None or not offset.startswith(("-", "calc(-")):
+                    problems.append("`:focus-visible` global con desfase positivo y ninguna regla `.card:focus-visible` negativa "
+                                    "que gane en la cascada (el desfase que queda es %r)" % offset)
+        return problems
         return problems
 
     def test_outlines_on_chamfered_elements_stay_inside(self):
@@ -819,6 +845,18 @@ class Contrast(unittest.TestCase):
         for later in (".card:focus-visible { outline-offset: 4px; }", ".card:focus-visible { outline: none; }",
                       ".card:focus-visible { outline-style: none; }", ".card:focus-visible { outline-width: 0; }"):
             self.assertTrue(self.chamfer_outline_problems(ok + later, js), later)
+        # selectores de foco que no son `.card:focus-visible` a secas: compuestos, `:is()`, descendientes, `!important`
+        for later in (".card.attempt:focus-visible { outline: none; }", ":is(.card):focus-visible { outline: none; }",
+                      ".card:not(.x):focus-visible { outline: none; }", "main .card:focus-visible { outline-offset: 4px; }",
+                      ".attempt:focus-visible { outline-width: 0; }", ":focus-visible { outline-offset: 4px !important; }",
+                      ".card:focus { outline: none; }", "dialog:focus-visible { outline: none; }"):
+            self.assertTrue(self.chamfer_outline_problems(ok + later, js), later)
+        # un descendiente de otra cosa o una clase sin chaflán no cuentan
+        self.assertEqual(self.chamfer_outline_problems(ok + ".other:focus-visible { outline: none; }", js), [])
+        self.assertEqual(self.chamfer_outline_problems(ok + ".tabs :focus-visible { outline-offset: -3px; }", js), [])
+        # una regla con `!important` negativa sí rescata frente a una normal posterior
+        self.assertEqual(self.chamfer_outline_problems(base + ".card:focus-visible { outline-offset: -2px !important; } "
+                                                       ".card:focus-visible { outline-offset: 4px; }", js), [])
         # una regla global posterior pero menos específica no pisa la del `.card`
         self.assertEqual(self.chamfer_outline_problems(ok + ":focus-visible { outline-offset: 4px; }", js), [])
         # y una global posterior que quita el anillo sí lo quita
@@ -836,7 +874,10 @@ class Contrast(unittest.TestCase):
         body = next(b for sel, b in re.findall(r"([^{}]+)\{([^{}]*)\}", css)
                     if "#shortcuts-body" in sel and "dialog.new-order > form" in sel)
         def sides(prop):
-            vals = re.search(r"(?:^|;)\s*%s\s*:\s*([^;]+)" % prop, body).group(1).split()
+            raw = re.search(r"(?:^|;)\s*%s\s*:\s*([^;]+)" % prop, body).group(1)
+            vals = raw.split()
+            if "!important" in raw or "(" in raw or not 1 <= len(vals) <= 4:
+                self.fail("`%s: %s`: `sides()` no sabe evaluar `!important`, `calc()` ni más de cuatro valores" % (prop, raw.strip()))
             top, right, bottom, left = {1: lambda: vals * 4, 2: lambda: vals * 2, 3: lambda: vals + [vals[1]], 4: lambda: vals}[len(vals)]()
             def px(v):
                 if v == "auto":
