@@ -736,7 +736,7 @@
   "cli.arg.brand_text": "el nombre de la marca",
   "cli.arg.brand_font": "archivo de la fuente (.ttf u .otf)",
   "cli.arg.brand_weight": "peso de la fuente, 1-1000 (por defecto 800; una fuente variable lo aplica)",
-  "cli.arg.brand_spacing": "espaciado entre letras en em (por defecto 0.01, el de la familia)",
+  "cli.arg.brand_spacing": "espaciado entre letras en em (por defecto 0.01 con Big Shoulders Display y 0.12 con otra fuente)",
   "cli.arg.brand_mono_lockup": "los lockups con el emblema mono: todo el lockup en currentColor, como piden las hojas de la familia",
   "cli.out.brand_matte": "{out}: {width}x{height}, fondo {background}, {transparent} transparente",
   "cli.out.brand_trace": "{out}: {width}x{height}, modo {mode}, {paths} trazados, {bytes} bytes",
@@ -913,5 +913,6 @@
   "cli.arg.brand_force_square": "pisa los archivos que ya existan",
   "cli.out.brand_square": "{out}: cuadrado {fill}, tinta {ink}, contraste {contrast}:1",
   "cli.out.brand_square_low": "aviso: el contraste {contrast}:1 está por debajo de 4,5:1 (WCAG AA para texto)",
+  "cli.out.brand_square_flat": "aviso: el dibujo traía {count} colores y todos pasan a la tinta",
   "error.brand.bad_square": "cuadrado no válido: {reason}"
 }

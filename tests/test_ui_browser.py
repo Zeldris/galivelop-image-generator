@@ -637,23 +637,36 @@ class QueueDrawer(UiBase):
         self.page.wait("document.querySelector('.queue-pill.is-paused')", timeout=10)
         self.no_problems()
 
-    def test_a_health_answer_from_before_the_click_does_not_undo_the_pause(self):
-        """A GET /api/health launched before «Pausar cola» and answered after it must not put the old value back."""
+    def test_a_queue_answer_from_before_the_click_does_not_undo_the_pause(self):
+        """A GET /api/queue launched before «Pausar cola» and answered after it must not put the old pause back."""
         self.addCleanup(run_cli, "queue", "resume")
         self.open("/", "document.querySelector('.queue-pill')")
-        self.js("""import('/ui/js/api.js').then(m => { window.__api = m.api; window.__real = m.api.health;
-            window.__pending = []; m.api.health = () => new Promise(res => window.__pending.push(res)); return true; })""")
+        self.js("""import('/ui/js/api.js').then(m => { window.__api = m.api; window.__real = m.api.queueState;
+            window.__pending = []; m.api.queueState = () => new Promise(res => window.__pending.push(res)); return true; })""")
         self.js("import('/ui/js/queue-poll.js').then(m => { window.__poll = m.refreshNow(); return true; })")
-        self.page.wait("window.__pending.length === 1")  # the old answer is held back: paused false
+        self.page.wait("window.__pending.length >= 1")  # the old answer is held back: paused false
         self.click(".queue-pill")
         self.click("[data-fid=pause]")
         self.page.wait("document.querySelector('.queue-pill.is-paused')")
-        self.js("window.__pending.slice(1).forEach(res => res({paused: true})); window.__pending[0]({paused: false})")  # arrives after the click
+        self.js("window.__pending.slice(1).forEach(res => res({entries: [], paused: true})); window.__pending[0]({entries: [], paused: false})")  # arrives after the click
         self.js("window.__poll.then(() => true)")  # the first refresh is done, with the stale answer last
-        self.js("window.__api.health = window.__real; true")
+        self.js("window.__api.queueState = window.__real; true")
         self.page.pump(0.3)
         self.assertTrue(self.js("!!document.querySelector('.queue-pill.is-paused')"))
         self.assertIs(self.api("GET", "/api/health")["paused"], True)
+        self.no_problems()
+
+    def test_a_queue_answer_without_the_header_keeps_the_last_known_pause(self):
+        self.addCleanup(run_cli, "queue", "resume")
+        self.open("/", "document.querySelector('.queue-pill')")
+        run_cli("queue", "pause")
+        self.page.wait("document.querySelector('.queue-pill.is-paused')", timeout=10)
+        self.js("""import('/ui/js/api.js').then(m => { window.__api = m.api; window.__real = m.api.queueState;
+            m.api.queueState = async () => ({entries: [], paused: null}); return true; })""")
+        self.js("import('/ui/js/queue-poll.js').then(m => m.refreshNow())")
+        self.js("window.__api.queueState = window.__real; true")
+        self.page.pump(0.3)
+        self.assertTrue(self.js("!!document.querySelector('.queue-pill.is-paused')"))
         self.no_problems()
 
 

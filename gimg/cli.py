@@ -122,7 +122,7 @@ def _build(lang: str) -> argparse.ArgumentParser:
     leaf(g, "wordmark", "cli.cmd.brand_wordmark", arg("text", "cli.arg.brand_text"),
          opt("--font", "cli.arg.brand_font", required=True, metavar="TTF"),
          opt("--weight", "cli.arg.brand_weight", type=int, default=800),
-         opt("--spacing", "cli.arg.brand_spacing", type=float, default=brand.SPACING),
+         opt("--spacing", "cli.arg.brand_spacing", type=float),
          opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"))
     props = (opt("--cap", "cli.arg.brand_cap", type=float, default=0.45),
              opt("--gap", "cli.arg.brand_gap", type=float, default=0.25),
@@ -147,7 +147,7 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--font", "cli.arg.brand_font", required=True, metavar="TTF"),
          opt("--out-dir", "cli.arg.brand_out_dir", required=True, metavar="DIR"),
          opt("--weight", "cli.arg.brand_weight", type=int, default=800),
-         opt("--spacing", "cli.arg.brand_spacing", type=float, default=brand.SPACING),
+         opt("--spacing", "cli.arg.brand_spacing", type=float),
          opt("--palette", "cli.arg.brand_palette", metavar="#HEX,#HEX"),
          opt("--colors", "cli.arg.brand_colors", type=int, metavar="N"),
          opt("--text", "cli.arg.brand_wordmark_text"),
@@ -301,6 +301,8 @@ def _brand(args, sub, out: _Out) -> None:
             out.line("cli.out.brand_file", path=path)
         if res["contrast"] < 4.5:
             out.line("cli.out.brand_square_low", contrast=res["contrast"])
+        if res.get("flattened"):
+            out.line("cli.out.brand_square_flat", count=res["flattened"])
         return
     elif sub == "system":
         res = brand.system(args.image, args.name, args.font, args.out_dir, args.weight, args.spacing, args.palette,
