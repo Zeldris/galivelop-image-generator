@@ -91,12 +91,17 @@ las crea una vez; desde entonces son del proyecto.
 - `/clear` también entre dos tareas de la misma sesión y siempre al volver tras más de 1 h de pausa (la caché caducó
   y el contexto se reescribe entero): `0cacc78c` encadenó la release v0.5.0 y la tarea de leves, 70 llamadas a 126k
   de media frente a un suelo de 88k, ~1,9 M de más (aprobado el 2026-11-13, como regla, sin gancho).
+- `check.sh` (~4 min) en primer plano con tiempo límite de 6 min, o en segundo plano sin cerrar el turno: en `AGENTS.md`,
+  «Comprobar» (aprobado el 2026-11-14; `79c75ecd` gastó ~5 llamadas, ~0,5 M, esperando con el gancho de parada).
 - Tope de 30 llamadas en el encargo de cada subagente: en `.claude/gw/gw-orchestrate-dealer.md` (aprobado el
   2026-11-13).
 
 ## Referencias medidas
 
 <!-- Cifras medidas con las que comparar: fecha, sesión, contexto medio, llamadas, total. -->
+- 2026-11-14, `ccr-85e9d14e-zt7p8b` desde `1c178d3` (gancho de hojas y fase 1 de la tercera ida a `main`, arreglos en la
+  principal), sesión `79c75ecd`: principal 27 llamadas, 2,76 M (102k de media, suelo 87k, techo 116k); revisión Opus 10
+  llamadas, 0,9 M (arranque 69k). Total 37 llamadas, 3,7 M.
 - 2026-11-14, `ccr-85e9d14e-zt7p8b` desde `d2913d1` (fase 1 de la segunda ida a `main` y sus arreglos), sesión
   `66f16e48`: principal 21 llamadas, 2,2 M (106k de media, suelo 88k, techo 120k); revisión Opus 10 llamadas, 0,9 M;
   arreglos Sonnet 26 llamadas, 2,4 M (arranque 69k). Total 57 llamadas, 5,5 M.
