@@ -526,10 +526,58 @@ class LockupTests(BrandBase):
         self.assertEqual(code, 0)
         self.assertIn("<path", out.read_text())
 
+    def test_a_failure_while_writing_leaves_no_half_file_and_keeps_the_old_one(self):
+        out = self.tmp / "l.svg"
+        out.write_text("mine")
+        real = os.replace
+
+        def failing(src, dst, *a, **kw):
+            if str(dst) == str(out):
+                raise OSError(28, "No space left on device")
+            return real(src, dst, *a, **kw)
+
+        with mock.patch("gimg.brand.os.replace", failing), self.assertRaises(GimgError) as cm:
+            brand.lockup(self.emblem, self.word, out, force=True)
+        self.assertEqual(cm.exception.code, "brand.write_failed")
+        self.assertIn("No space left", str(cm.exception.params["reason"]))
+        self.assertEqual(out.read_text(), "mine")
+        self.assertEqual(sorted(p.name for p in self.tmp.iterdir()), ["e.svg", "l.svg", "w.svg"])  # no .brand-*.tmp
+
+    def test_force_over_a_symlink_replaces_the_link_and_never_writes_through_it(self):
+        victim, out = self.tmp / "victim.txt", self.tmp / "l.svg"
+        victim.write_text("precious")
+        out.symlink_to(victim)
+        code, err, _ = self.lock()
+        self.assertEqual(code, 1)
+        self.assertIn("l.svg", err)  # without --force the link counts as there, as a dangling one does
+        code, _, _ = self.lock("--force")
+        self.assertEqual(code, 0)
+        self.assertEqual(victim.read_text(), "precious")
+        self.assertFalse(out.is_symlink())
+        self.assertIn("<path", out.read_text())
+
+    def test_a_symlink_to_the_emblem_is_the_input_even_with_force(self):
+        out = self.tmp / "l.svg"
+        out.symlink_to(self.emblem)
+        before = self.emblem.read_text()
+        code, err, _ = self.lock("--force")
+        self.assertEqual(code, 1)
+        self.assertIn("is the original itself", err)
+        self.assertEqual(self.emblem.read_text(), before)
+
     def test_text_output_line(self):
         code, out, _ = self.run_cli("brand", "lockup", str(self.emblem), str(self.word), "-o", str(self.tmp / "t.svg"))
         self.assertEqual(code, 0)
         self.assertIn("layout h, 485.0x100.0, 2 paths", out)
+
+
+class DefaultSpacingTests(unittest.TestCase):
+    def test_big_shoulders_in_its_display_variable_and_sc_forms_get_the_tight_tracking(self):
+        for family in ("Big Shoulders Display", "big  shoulders display", "Big Shoulders", "BIG SHOULDERS",
+                       "Big Shoulders Display SC", "Big Shoulders SC"):
+            self.assertEqual(brand.default_spacing(family), brand.SPACING, family)
+        for family in ("Big Shoulders Text", "Big Shoulders Inline Display", "Big Shoulders Stencil", "Shoulders", "Literata"):
+            self.assertEqual(brand.default_spacing(family), brand.SPACING_OTHER, family)
 
 
 class SlugTests(unittest.TestCase):
@@ -651,6 +699,37 @@ class SystemTests(BrandBase):
         other = str(Path(brand.__file__).parent / "ui" / "fonts" / "Literata.ttf")
         res = brand.system(self.src, "Tarkor", other, self.out)
         self.assertEqual(res["spacing"], 0.12)
+
+    @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
+    def test_system_reads_the_font_family_once(self):
+        with mock.patch("gimg.brand._font_family", wraps=brand._font_family) as read:
+            brand.system(self.src, "Tarkor", FONT, self.out)
+        self.assertEqual(read.call_count, 1)
+        with mock.patch("gimg.brand._font_family", wraps=brand._font_family) as read:
+            brand.wordmark("AVE", FONT, str(self.tmp / "w.svg"))
+        self.assertEqual(read.call_count, 1)
+
+    @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
+    def test_a_failure_in_the_final_copy_leaves_no_half_file(self):
+        real, seen = os.replace, []
+
+        def failing(src, dst, *a, **kw):
+            if os.path.dirname(str(dst)) == str(self.out):
+                seen.append(dst)
+                if len(seen) == 3:
+                    raise OSError(28, "No space left on device")
+            return real(src, dst, *a, **kw)
+
+        with mock.patch("gimg.brand.os.replace", failing), self.assertRaises(GimgError) as cm:
+            brand.system(self.src, "Tarkor", FONT, self.out)
+        self.assertEqual(cm.exception.code, "brand.write_failed")
+        self.assertIn("No space left", str(cm.exception.params["reason"]))
+        names = sorted(p.name for p in self.out.iterdir())
+        self.assertFalse([n for n in names if n.endswith(".tmp")], names)  # nothing under a temporary name
+        self.assertEqual(len(names), 2)  # the two copied before the failure, whole; the failed one is not there
+        self.assertNotIn(os.path.basename(seen[2]), names)
+        for n in names:
+            self.assertGreater((self.out / n).stat().st_size, 0)
 
     @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
     def test_text_output_lists_the_files(self):
@@ -816,9 +895,36 @@ class SquareTests(BrandBase):
         self.assertIn('style="fill:transparent;stroke:Transparent"', text)
         self.assertEqual(text.count("#fbfcfd"), 2)  # the group, and the one stroke that paints
 
+    def test_important_stays_on_a_declaration_that_is_rewritten(self):
+        self._draw('<path style="fill:#123456 !important;stroke:red!important;stroke-width:2" d="M0 0L40 0L40 20Z"/>'
+                   '<path style="fill:none !important" d="M0 0L5 0L5 5Z"/>')
+        self.make()
+        text = self.out.read_text()
+        self.assertIn('style="fill:#fbfcfd !important;stroke:#fbfcfd!important;stroke-width:2"', text)
+        self.assertIn('style="fill:none !important"', text)
+
+    def test_equivalent_colors_count_once_and_a_shape_without_fill_is_black(self):
+        self._draw('<path fill="red" d="M0 0L40 0L40 20Z"/><path style="fill:#F00" d="M0 0L5 0L5 5Z"/>'
+                   '<path fill="#ff0000" d="M0 0L9 0L9 5Z"/><path fill="rgb(255, 0, 0)" d="M0 0L7 0L7 7Z"/>')
+        self.assertNotIn("flattened", self.make())
+        self._draw('<path fill="#000" d="M0 0L40 0L40 20Z"/><path fill="Black" d="M0 0L5 0L5 5Z"/><path d="M0 0L9 0L9 5Z"/>')
+        self.assertNotIn("flattened", self.make(force=True))
+        self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/><path d="M0 0L9 0L9 5Z"/>')  # the second one is black
+        self.assertEqual(self.make(force=True)["flattened"], 2)
+        self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/><path fill="none" stroke="#123456" d="M0 0L9 0L9 5Z"/>')
+        self.assertNotIn("flattened", self.make(force=True))
+
+    def test_the_implicit_black_only_goes_to_shapes_outside_a_group_with_fill(self):
+        self._draw('<g fill="#ff0000"><path d="M0 0L40 0L40 20Z"/></g><path d="M0 0L9 0L9 5Z"/>')
+        self.assertEqual(self.make()["flattened"], 2)
+        self._draw('<g fill="#ff0000"><g><path d="M0 0L40 0L40 20Z"/></g><path d="M0 0L5 0L5 5Z"/></g>')
+        self.assertNotIn("flattened", self.make(force=True))
+        self._draw('<path fill="#ff0000" class="a" d="M0 0L40 0L40 20Z"/><path class="b" d="M0 0L9 0L9 5Z"/>')
+        self.assertNotIn("flattened", self.make(force=True))
+
     def test_two_paint_colors_are_flattened_and_one_is_not(self):
         self._draw('<path fill="#ABC" d="M0 0L40 0L40 20Z"/><path style="fill:#aabbcc" d="M0 0L5 0L5 5Z"/>'
-                   '<path fill="none" stroke="currentColor" d="M0 0L9 0L9 5Z"/><path d="M0 0L7 0L7 7Z"/>')
+                   '<path fill="none" stroke="currentColor" d="M0 0L9 0L9 5Z"/><path fill="#aabbcc" d="M0 0L7 0L7 7Z"/>')
         self.assertNotIn("flattened", self.make())
         self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/><path style="fill:#fedcba" d="M0 0L5 0L5 5Z"/>')
         self.assertEqual(self.make(force=True)["flattened"], 2)

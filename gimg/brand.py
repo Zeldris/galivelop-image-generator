@@ -42,7 +42,7 @@ PAD_PX = 6
 MIN_TRANSPARENT = 0.02  # a matte that frees less than this found no flat background
 SPACING = 0.01  # em between letters: the family's tracking (Big Shoulders Display 800, hojas de docs/marcas/)
 SPACING_OTHER = 0.12  # em between letters for any other font
-SPACING_FAMILY = "big shoulders display"
+SPACING_FAMILIES = ("big shoulders display", "big shoulders")
 MODES = {"color": "color", "mono": "mono", "silhouette": "silueta", "silueta": "silueta"}
 
 
@@ -183,8 +183,12 @@ def _font_family(font) -> str:
 
 
 def default_spacing(family) -> float:
-    """The tracking in em when none is given: `SPACING` for Big Shoulders Display, `SPACING_OTHER` for any other family."""
-    return SPACING if " ".join(str(family).split()).lower() == SPACING_FAMILY else SPACING_OTHER
+    """The tracking in em when none is given: `SPACING` for Big Shoulders Display (also the variable "Big Shoulders" and the
+    "SC" variants, case and spacing aside), `SPACING_OTHER` for any other family."""
+    name = " ".join(str(family).split()).lower()
+    if name.endswith(" sc"):
+        name = name[:-3]
+    return SPACING if name in SPACING_FAMILIES else SPACING_OTHER
 
 
 def _fontconfig(folder: str) -> str:
@@ -238,7 +242,7 @@ def _crop(width: int, height: int, rgba, pad: int):
     return w, h, res
 
 
-def wordmark(text: str, font, out=None, weight: int = 800, spacing=None, title: str = "") -> dict:
+def wordmark(text: str, font, out=None, weight: int = 800, spacing=None, title: str = "", *, _family=None) -> dict:
     """Write the SVG of `text` in `font`, as paths (see the module docstring). ``spacing`` is in em; ``None`` is the family's (`default_spacing`)."""
     text = " ".join("".join(ch for ch in str(text) if ch.isspace() or unicodedata.category(ch) != "Cc").split())
     if not text:
@@ -247,7 +251,7 @@ def wordmark(text: str, font, out=None, weight: int = 800, spacing=None, title: 
         raise GimgError("brand.text_too_long", max=MAX_TEXT)
     if not isinstance(weight, int) or not 1 <= weight <= 1000 or (spacing is not None and not -0.5 <= spacing <= 2):
         raise GimgError("brand.bad_option", reason="weight 1-1000 and spacing between -0.5 and 2 em")
-    family = _font_family(font)
+    family = _family if _family is not None else _font_family(font)  # `_family`: the caller already read it (`system`)
     if spacing is None:
         spacing = default_spacing(family)
     out = _check_out(font, out or "wordmark.svg")
@@ -466,7 +470,7 @@ def _fit(piece: dict, x: float, y: float, w: float, h: float, ink=None) -> str:
 SQUARE = 128
 _PAINT = re.compile(r'(?<![\w:.-])(fill|stroke)="([^"]*)"')
 _STYLE = re.compile(r'(?<![\w:.-])style="([^"]*)"')
-_DECL = re.compile(r'(?<![\w-])(fill|stroke)(\s*:\s*)([^;]*)')
+_DECL = re.compile(r'(?<![\w-])(fill|stroke)(\s*:\s*)([^;!]*)(!\s*important)?')
 _NO_PAINT = ("", "none", "currentcolor", "inherit", "transparent")
 
 
@@ -478,25 +482,63 @@ def _square_ink(inner: str, ink: str) -> str:
     """`inner` with every fill and stroke that paints (not ``none``) turned into `ink`, as attributes and as declarations
     of a ``style`` attribute; unpainted paths inherit it."""
     def decl(m):
-        return m.group(0) if not _paints(m.group(3)) else "%s%s%s" % (m.group(1), m.group(2), ink)
+        if not _paints(m.group(3)):
+            return m.group(0)
+        important = m.group(4)  # `!important` stays, with the space it had before it
+        return "%s%s%s%s" % (m.group(1), m.group(2), ink, (m.group(3)[len(m.group(3).rstrip()):] + important) if important else "")
 
     out = _STYLE.sub(lambda m: 'style="%s"' % _DECL.sub(decl, m.group(1)), inner)
     out = _PAINT.sub(lambda m: m.group(0) if not _paints(m.group(2)) else '%s="%s"' % (m.group(1), ink), out)
     return '<g fill="%s">%s</g>' % (ink, out)
 
 
+_NAMED = {"black": "#000000", "white": "#ffffff", "red": "#ff0000", "lime": "#00ff00", "blue": "#0000ff", "yellow": "#ffff00",
+          "cyan": "#00ffff", "aqua": "#00ffff", "magenta": "#ff00ff", "fuchsia": "#ff00ff", "gray": "#808080", "grey": "#808080",
+          "silver": "#c0c0c0", "maroon": "#800000", "olive": "#808000", "green": "#008000", "purple": "#800080", "teal": "#008080",
+          "navy": "#000080", "orange": "#ffa500"}
+_RGB = re.compile(r"rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)")
+_SHAPE = re.compile(r"<(path|rect|circle|ellipse|polygon|polyline|line)\b([^>]*)>")
+_TAG = re.compile(r"<(/?)(g|path|rect|circle|ellipse|polygon|polyline|line)\b([^>]*)>")
+_CLASS = re.compile(r'(?<![\w:.-])class\s*=')
+
+
+def _has_fill(attrs: str) -> bool:
+    return (any(m.group(1) == "fill" for m in _PAINT.finditer(attrs))
+            or any(d.group(1) == "fill" for st in _STYLE.finditer(attrs) for d in _DECL.finditer(st.group(1))))
+
+
 def _norm_color(value: str) -> str:
+    """`value` as lowercase ``#rrggbb`` when it is a hex color, a basic CSS color name or ``rgb(r, g, b)``; anything else, lowercased."""
     v = value.strip().lower()
-    return "#" + "".join(c * 2 for c in v[1:]) if re.fullmatch(r"#[0-9a-f]{3}", v) else v
+    if re.fullmatch(r"#[0-9a-f]{3}", v):
+        return "#" + "".join(c * 2 for c in v[1:])
+    rgb = _RGB.fullmatch(v)
+    if rgb and all(int(n) <= 255 for n in rgb.groups()):
+        return "#%02x%02x%02x" % tuple(int(n) for n in rgb.groups())
+    return _NAMED.get(v, v)
 
 
 def _paint_colors(inner: str) -> set:
-    """The distinct colors that `inner` paints with (attributes and ``style`` declarations), normalized; ``none``,
-    ``currentColor`` and unpainted paths do not count."""
+    """The distinct colors that `inner` paints with (attributes and ``style`` declarations), as `_norm_color` writes them;
+    ``none``, ``currentColor`` and strokes that are not there do not count, but a shape with no ``fill`` at all paints the
+    default black (unless a ``<g>`` around it sets a fill, or it has a ``class`` or the drawing a ``<style>``: then it is not counted)."""
     found = [m.group(2) for m in _PAINT.finditer(inner)]
     for st in _STYLE.finditer(inner):
         found += [m.group(3) for m in _DECL.finditer(st.group(1))]
-    return {_norm_color(v) for v in found if v.strip().lower() not in _NO_PAINT}
+    colors = {_norm_color(v) for v in found if v.strip().lower() not in _NO_PAINT}
+    if "<style" not in inner.lower():  # with a stylesheet the color may come from CSS: not counted
+        groups = []  # one flag per open <g>: does it set a fill its shapes inherit?
+        for m in _TAG.finditer(inner):
+            closing, tag, attrs = m.groups()
+            if tag == "g":
+                if closing:
+                    if groups:
+                        groups.pop()
+                elif not attrs.rstrip().endswith("/"):
+                    groups.append(_has_fill(attrs))
+            elif not closing and not any(groups) and not _has_fill(attrs) and not _CLASS.search(attrs):
+                colors.add("#000000")
+    return colors
 
 
 def square(drawing, out=None, fill=None, ink=None, chamfer: int = 28, pad: int = 24, pngs=None, force: bool = False) -> dict:
@@ -722,7 +764,7 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing=None, palet
         title = str(name).strip()
         color = trace(t["emblema-alpha.png"], t["emblema.svg"], "color", palette, colors, title=title)
         one_ink = trace(t["emblema-alpha.png"], t["emblema-mono.svg"], "mono", title=title)
-        word = wordmark(line, font, t["wordmark.svg"], weight, spacing, title=title)
+        word = wordmark(line, font, t["wordmark.svg"], weight, spacing, title=title, _family=family)
         emblem = t["emblema-mono.svg" if mono else "emblema.svg"]
         lh = lockup(emblem, t["wordmark.svg"], t["lockup-h.svg"], "h", cap, gap, width, margin, title=title, force=True)
         lv = lockup(emblem, t["wordmark.svg"], t["lockup-v.svg"], "v", cap, gap, width, margin, title=title, force=True)
