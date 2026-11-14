@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from unittest import mock
 
 from gimg import cli, png, tile
 from gimg.errors import GimgError
@@ -116,6 +117,19 @@ class TileableTests(unittest.TestCase):
                 self.assertEqual(bytes(out[a:a + w * 4]), bytes(px[y * w * 4:(y + 1) * w * 4]))
 
 
+class BlendEdgeTests(unittest.TestCase):
+    def test_blend_half_leaves_the_borders_of_the_piece_untouched_so_they_repeat(self):
+        for n in (64, 65, 96):
+            for w in (tile._weights(n, 0.5 * n), tile._weights(n, 0.25 * n)):
+                self.assertEqual((w[0], w[-1]), (0.0, 0.0), n)
+        w, h, px = texture(64, 64)
+        out = tile.tileable(w, h, px, 0.5)
+        step = inner_step(w, h, px)
+        for axis in ("x", "y"):
+            self.assertLessEqual(wrap_edge(w, h, out, axis), 2 * step, axis)
+        self.assertGreater(wrap_edge(w, h, px, "x"), 10 * step)
+
+
 class TileCommandTests(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.TemporaryDirectory()
@@ -176,6 +190,70 @@ class TileCommandTests(unittest.TestCase):
             tile.tile(self.src, out=fresh, preview=os.path.join(blocked, "v.png"))
         self.assertEqual(cm.exception.code, "tile.write_failed")
         self.assertFalse(os.path.exists(fresh), "the texture must not be left without its view")
+
+    def test_a_failing_second_replace_puts_back_what_was_there(self):
+        out, view = os.path.join(self.dir.name, "o.png"), os.path.join(self.dir.name, "v.png")
+        Path(out).write_bytes(b"old texture")
+        Path(view).write_bytes(b"old view")
+        real = os.replace
+
+        def flaky(a, b):
+            if b == view and ".gimg-tile-" in a:  # the new view taking its place; the error names the source, as real ones do
+                raise OSError(28, "No space left on device", a)
+            return real(a, b)
+
+        with mock.patch("gimg.tile.os.replace", flaky), self.assertRaises(GimgError) as cm:
+            tile.tile(self.src, out=out, preview=view, preview_side=32, force=True)
+        self.assertEqual(cm.exception.code, "tile.write_failed")
+        self.assertIn("No space", cm.exception.params["reason"])
+        self.assertEqual(cm.exception.params["path"], view, "the error names the target, not the temporary")
+        self.assertEqual(Path(out).read_bytes(), b"old texture")
+        self.assertEqual(Path(view).read_bytes(), b"old view")
+        self.assertEqual(sorted(os.listdir(self.dir.name)), ["o.png", "tex.png", "v.png"], "no temporary left behind")
+
+    def test_a_failing_second_replace_removes_the_new_first_file(self):
+        out, view = os.path.join(self.dir.name, "o.png"), os.path.join(self.dir.name, "v.png")
+        real = os.replace
+
+        def flaky(a, b):
+            if b == view and ".gimg-tile-" in a:  # the new view taking its place; the error names the source, as real ones do
+                raise OSError(28, "No space left on device", a)
+            return real(a, b)
+
+        with mock.patch("gimg.tile.os.replace", flaky), self.assertRaises(GimgError):
+            tile.tile(self.src, out=out, preview=view, preview_side=32)
+        self.assertEqual(sorted(os.listdir(self.dir.name)), ["tex.png"])
+
+    def test_rollback_keeps_a_symlinked_target_and_its_mode(self):
+        real_file = os.path.join(self.dir.name, "real.png")
+        out, view = os.path.join(self.dir.name, "o.png"), os.path.join(self.dir.name, "v.png")
+        Path(real_file).write_bytes(b"old texture")
+        os.chmod(real_file, 0o640)
+        os.symlink(real_file, out)
+        Path(view).write_bytes(b"old view")
+        real = os.replace
+
+        def flaky(a, b):
+            if b == view and ".gimg-tile-" in a:
+                raise OSError(28, "No space left on device", a)
+            return real(a, b)
+
+        with mock.patch("gimg.tile.os.replace", flaky), self.assertRaises(GimgError):
+            tile.tile(self.src, out=out, preview=view, preview_side=32, force=True)
+        self.assertTrue(os.path.islink(out))
+        self.assertEqual(Path(out).read_bytes(), b"old texture")
+        self.assertEqual(os.stat(real_file).st_mode & 0o777, 0o640)
+        self.assertEqual(sorted(os.listdir(self.dir.name)), ["o.png", "real.png", "tex.png", "v.png"])
+
+    def test_an_input_over_the_pixel_limit_is_refused_with_its_reason(self):
+        with mock.patch.object(tile, "MAX_PIXELS", 96 * 64 - 1), mock.patch.object(
+                png, "read_rgba", side_effect=AssertionError("decoded")) as read, self.assertRaises(GimgError) as cm:
+            tile.tile(self.src)
+        read.assert_not_called()
+        self.assertEqual(cm.exception.code, "tile.too_big")
+        self.assertFalse(os.path.exists(tile.default_out(self.src)))
+        tile.tile(self.src)  # the real limit lets it through
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -12,13 +12,15 @@ border added. The blend is done with premultiplied alpha, so a clear pixel does 
 `repeat(width, height, rgba, nx, ny)` is `nx` x `ny` copies of the piece, for the view that proves the result.
 `tile(src, out=None, blend=0.25, preview=None, preview_side=256, force=False)` is the command: it writes the seamless PNG
 (by default next to `src`, with ``-tile`` before the extension) and, if asked, the 4x4 view with each piece scaled down
-to `preview_side` px on its longer side (the view of a 1024 px piece at full size would be 4096 px). The source is never written.
+to `preview_side` px on its longer side (the view of a 1024 px piece at full size would be 4096 px). The source is never written. The input is
+at most `MAX_PIXELS` (2048x2048 px, checked from the header before decoding): the pure-Python blend takes ~2 s per megapixel.
 """
 from __future__ import annotations
 
 import contextlib
 import os
 import tempfile
+import uuid
 from pathlib import Path
 
 from . import export, fsutil, png
@@ -26,6 +28,7 @@ from .errors import GimgError
 
 MAX_BLEND = 0.5
 MIN_SIDE = 8  # a smaller piece has no room for a blend
+MAX_PIXELS = 1 << 22  # 2048x2048: pure Python spends ~2 s per megapixel; `png.read_rgba` alone allows 1 << 24
 PREVIEW_GRID = 4
 MIN_PREVIEW, MAX_PREVIEW = 8, 1024
 
@@ -38,7 +41,9 @@ def _smooth(t: float) -> float:
 def _weights(n: int, f: float) -> list:
     """Weight of the original along one axis: 1 at the seam of the rolled image (between n//2 - 1 and n//2), 0 at `f` px."""
     s = n // 2
-    return [_smooth(1 - abs(i + 0.5 - s) / f) for i in range(n)]
+    w = [_smooth(1 - abs(i + 0.5 - s) / f) for i in range(n)]
+    w[0] = w[-1] = 0.0  # the borders of the rolled image already join: with blend 0.5 the formula leaves them above 0
+    return w
 
 
 def _mix(p, q, m: float):
@@ -129,19 +134,40 @@ def _stage(path: str, data: bytes) -> str:
 
 
 def _publish(files) -> None:
-    """Write every ``(path, data)`` or none: all are staged first, so a failure on any leaves no output behind."""
-    staged = []
+    """Write every ``(path, data)`` or none: all are staged first; each existing target is moved aside (same folder, so
+    a symlink and its permissions stay as they were) before the new file takes its place, and if anything fails the
+    ones already in place are put back (the old file, or nothing if there was none)."""
+    staged, done = [], []  # done: (path, backup or None)
+    path = None
     try:
         for path, data in files:
             staged.append((_stage(path, data), path))
         for tmp, path in staged:
+            backup = None
+            if os.path.lexists(path):
+                backup = os.path.join(os.path.dirname(os.path.abspath(path)), ".gimg-bak-" + uuid.uuid4().hex)
+                os.replace(path, backup)
+            done.append((path, backup))
             os.replace(tmp, path)
-    except OSError as exc:
-        raise GimgError("tile.write_failed", path=str(path), reason=str(exc.strerror or exc))
+    except BaseException as exc:
+        for p, backup in reversed(done):
+            with contextlib.suppress(OSError):
+                if backup:
+                    os.replace(backup, p)
+                else:
+                    os.unlink(p)
+        done = []
+        if isinstance(exc, OSError):
+            raise GimgError("tile.write_failed", path=str(path), reason=str(exc.strerror or exc))
+        raise
     finally:
         for tmp, _ in staged:
             with contextlib.suppress(OSError):
                 os.unlink(tmp)
+        for _, backup in done:
+            if backup:
+                with contextlib.suppress(OSError):
+                    os.unlink(backup)
 
 
 def _same_file(a: str, b: str) -> bool:
@@ -168,6 +194,9 @@ def tile(src, out=None, blend: float = 0.25, preview=None, preview_side: int = 2
         preview = _check_target(src, preview, force)
         if _same_file(preview, out):
             raise GimgError("tile.same_outputs", path=out)
+    width, height = png.size(src)  # the header only: an image over the limit is refused before it is inflated
+    if width * height > MAX_PIXELS:
+        raise GimgError("tile.too_big", width=width, height=height, max=MAX_PIXELS)
     width, height, rgba = png.read_rgba(src)
     try:
         result = tileable(width, height, rgba, blend)

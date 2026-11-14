@@ -49,7 +49,7 @@ _EXACT = {
     405: ("api.method_not_allowed",), 411: ("api.length_required",), 413: ("api.body_too_large",),
     415: ("api.content_type",),
     409: ("compose.template_exists", "compose.busy", "measure.busy", "api.heavy_busy", "compose.nothing_to_do", "compose.no_attempts", "serve.already_running", "serve.port_busy", "serve.not_running", "order.discard_chosen",
-          "order.history_empty", "queue.not_cancellable", "queue.not_movable", "delivery.target_taken", "brand.exists", "brand.missing_piece", "export.exists", "tile.exists"),
+          "order.history_empty", "queue.not_cancellable", "queue.not_movable", "delivery.target_taken", "brand.exists", "brand.missing_piece", "export.exists"),
     400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "compose.template_unknown", "compose.element_unknown", "compose.bad_layout", "compose.bad_element", "compose.templates_dir_missing", "api.bad_json",
           "api.bad_param", "brand.no_matte", "brand.dir_missing", "brand.no_palette", "brand.font_unknown", "brand.empty_text", "brand.text_too_long", "brand.empty_wordmark", "brand.wordmark_no_fit", "brand.font_unreadable", "brand.bad_square",
           "export.size_not_for_ico", "export.icon_sizes_only_ico", "export.upscale", "export.too_big",
