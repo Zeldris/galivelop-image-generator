@@ -14,3 +14,8 @@ Las lee la skill `orchestrate-dealer` antes de repartir. Son de este proyecto; s
 - **Un subagente que escribe código** va en worktree (`isolation: "worktree"`) o, si va en la carpeta principal, la
   sesión principal no termina su turno hasta su aviso: el gancho de parada ve el árbol a medias y pide commit
   (una vuelta de ~110k; aprobado el 2026-11-14).
+- **Subagentes en paralelo no corren la suite completa**: en su encargo, solo los tests de su módulo
+  (`python3 -m unittest tests.test_<mod>`) y el `bash -n` de los ganchos; la suite entera la corre `merge-branch.sh` al
+  fusionar, una rama detrás de otra. Un comando largo se espera con un solo `Monitor` con tiempo límite, nunca con
+  `sleep` en bucle, y las esperas cuentan para el tope de 30 (aprobado el 2026-11-14: con tres suites a la vez, el
+  subagente de `tile` esperó ~40 de sus 76 llamadas, ~3,5 M, y la suite acabó matada).
