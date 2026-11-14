@@ -211,6 +211,19 @@ class TileCommandTests(unittest.TestCase):
         self.assertEqual(Path(view).read_bytes(), b"old view")
         self.assertEqual(sorted(os.listdir(self.dir.name)), ["o.png", "tex.png", "v.png"], "no temporary left behind")
 
+    def test_a_folder_in_the_target_is_refused_and_left_intact(self):
+        out, view = os.path.join(self.dir.name, "o.png"), os.path.join(self.dir.name, "v.png")
+        os.makedirs(os.path.join(out, "inner"))
+        Path(view).write_bytes(b"old view")
+        with self.assertRaises(GimgError) as cm:
+            tile.tile(self.src, out=out, preview=view, preview_side=32, force=True)
+        self.assertEqual(cm.exception.code, "tile.write_failed")
+        self.assertIn("directory", cm.exception.params["reason"].lower())
+        self.assertEqual(cm.exception.params["path"], out)
+        self.assertTrue(os.path.isdir(os.path.join(out, "inner")))
+        self.assertEqual(Path(view).read_bytes(), b"old view")
+        self.assertEqual(sorted(os.listdir(self.dir.name)), ["o.png", "tex.png", "v.png"], "nothing moved or left behind")
+
     def test_a_failing_second_replace_removes_the_new_first_file(self):
         out, view = os.path.join(self.dir.name, "o.png"), os.path.join(self.dir.name, "v.png")
         real = os.replace

@@ -13,11 +13,12 @@ border added. The blend is done with premultiplied alpha, so a clear pixel does 
 `tile(src, out=None, blend=0.25, preview=None, preview_side=256, force=False)` is the command: it writes the seamless PNG
 (by default next to `src`, with ``-tile`` before the extension) and, if asked, the 4x4 view with each piece scaled down
 to `preview_side` px on its longer side (the view of a 1024 px piece at full size would be 4096 px). The source is never written. The input is
-at most `MAX_PIXELS` (2048x2048 px, checked from the header before decoding): the pure-Python blend takes ~2 s per megapixel.
+at most `MAX_PIXELS` (4,194,304 px in total, like 2048x2048; checked from the header before decoding): the pure-Python blend takes ~2 s per megapixel.
 """
 from __future__ import annotations
 
 import contextlib
+import errno
 import os
 import tempfile
 import uuid
@@ -28,7 +29,7 @@ from .errors import GimgError
 
 MAX_BLEND = 0.5
 MIN_SIDE = 8  # a smaller piece has no room for a blend
-MAX_PIXELS = 1 << 22  # 2048x2048: pure Python spends ~2 s per megapixel; `png.read_rgba` alone allows 1 << 24
+MAX_PIXELS = 1 << 22  # 4,194,304 px in total (2048x2048 is the square that fits): pure Python spends ~2 s per megapixel; `png.read_rgba` alone allows 1 << 24
 PREVIEW_GRID = 4
 MIN_PREVIEW, MAX_PREVIEW = 8, 1024
 
@@ -134,12 +135,16 @@ def _stage(path: str, data: bytes) -> str:
 
 
 def _publish(files) -> None:
-    """Write every ``(path, data)`` or none: all are staged first; each existing target is moved aside (same folder, so
-    a symlink and its permissions stay as they were) before the new file takes its place, and if anything fails the
-    ones already in place are put back (the old file, or nothing if there was none)."""
+    """Write every ``(path, data)`` or none: all are staged first; a target that is a folder is refused before
+    anything is staged. Each existing target is moved aside (same folder) before the new file takes its place: on
+    success a symlink is replaced by the new regular file (what it pointed at is not touched); if anything fails the
+    ones already in place are put back (the old file, or nothing if there was none), a symlink and its mode as they were."""
     staged, done = [], []  # done: (path, backup or None)
     path = None
     try:
+        for path, _ in files:
+            if os.path.isdir(path) and not os.path.islink(path):
+                raise OSError(errno.EISDIR, "Is a directory")
         for path, data in files:
             staged.append((_stage(path, data), path))
         for tmp, path in staged:

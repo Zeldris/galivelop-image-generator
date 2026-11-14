@@ -115,7 +115,7 @@ python3 -m gimg sheet --out hoja.png a.png b.png      # hoja de contactos para r
 python3 -m gimg export a.png a.webp --size 960x540  # copia a WebP, ICO o BMP (la entrega sigue en PNG)
 python3 -m gimg export a.png b.png --crop 64,0,768,1152 --size 600x900   # recorte declarado (X,Y,W,H del original) y luego reducción
 python3 -m gimg export a.png b.png --size 1536x384 --anchor top   # recorte de la proporción arriba|abajo|izquierda|derecha (o top-left…), por defecto al centro
-python3 -m gimg tile textura.png --preview vista.png   # textura sin costura (hasta 2048×2048 px): textura-tile.png y la vista 4×4 (--blend, --preview-side, -o, --force)
+python3 -m gimg tile textura.png --preview vista.png   # textura sin costura (hasta 4,2 Mpx en total, p. ej. 2048×2048): textura-tile.png y la vista 4×4 (--blend, --preview-side, -o, --force)
 python3 -m gimg brand matte logo.png                  # quita el fondo plano: logo-alpha.png (el original no se toca)
 python3 -m gimg brand trace logo-alpha.png --mode color|mono|silhouette   # PNG a SVG (--palette, --colors, --matte; en mono, sin transparencia, el papel es todo color que ocupe >= 20 % del borde y lo demás es tinta; con un marco oscuro que llena el borde, quita antes el fondo con --matte o usa el modo color: la CLI no elige la tinta, solo la API `ink=`)
 python3 -m gimg brand wordmark TARKOR --font Cinzel.ttf -o wordmark.svg   # el nombre a trazos, sin <text> (--weight, --spacing)
