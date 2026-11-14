@@ -27,11 +27,13 @@ from __future__ import annotations
 
 import math
 import re
+import warnings
 from collections import defaultdict
 from xml.sax.saxutils import escape, quoteattr
 
 MODES = ("color", "mono", "silueta")
 PAPER_SHARE = 0.2  # mono, opaque image: a color on at least this share of the border is paper, not ink
+INK_WARN = 0.6  # mono, opaque image, ink picked by the border rule: ink over this share of the image earns a warning
 MAX_COLORS = 64  # `ncolores` cap: the palette pick costs O(k^2 * points)
 _CONTROL = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 _COLOR = re.compile(r"^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}|[A-Za-z]{3,20})$")  # hex, a name or currentColor
@@ -69,10 +71,13 @@ def extract_palette(width: int, height: int, rgba, n: int, bg_tol: int = 128) ->
     """`n` hex colors of the opaque pixels (k-means over a sample, start from the most frequent color)."""
     count = defaultdict(int)
     step = max(1, (width * height) // 20000)
-    for k in range(0, width * height, step):
-        i = k * 4
-        if rgba[i + 3] >= bg_tol:
-            count[(rgba[i], rgba[i + 1], rgba[i + 2])] += 1
+    for st in ((step, 1) if step > 1 else (1,)):  # the sample saw no opaque pixel: look at every one before giving up
+        for k in range(0, width * height, st):
+            i = k * 4
+            if rgba[i + 3] >= bg_tol:
+                count[(rgba[i], rgba[i + 1], rgba[i + 2])] += 1
+        if count:
+            break
     if not count:
         return []
     pts = list(count.items())
@@ -129,17 +134,30 @@ def _majority(m, W: int, H: int, passes: int):
 
 
 def _thin(orig, smooth, W: int, H: int):
-    """`smooth` plus the one-pixel-wide lines of `orig` that the majority filter erased (a stroke must survive it)."""
-    def on(y, x):
-        return 0 <= y < H and 0 <= x < W and orig[y][x]
+    """`smooth` plus the one-pixel-wide strokes of `orig` that the majority filter erased (a stroke must survive it).
+
+    A pixel is restored when it was erased, is not inside any 2x2 block of ink (so it is not the corner of a thick
+    shape) and has one to three ink neighbours (a stroke end, a straight run, an L, a T or a diagonal). A diagonal
+    step gets the pixel beside it too, so the outline does not break into one-pixel islands."""
+    def on(m, y, x):
+        return 0 <= y < H and 0 <= x < W and m[y][x]
+
+    def in_block(y, x):
+        return any(all(on(orig, y0 + i, x0 + j) for i in (0, 1) for j in (0, 1))
+                   for y0 in (y - 1, y) for x0 in (x - 1, x))
     out = [row[:] for row in smooth]
+    back = []
     for y in range(H):
         for x in range(W):
-            if orig[y][x] and not smooth[y][x]:
-                horiz = on(y, x - 1) and on(y, x + 1) and not on(y - 1, x) and not on(y + 1, x)
-                vert = on(y - 1, x) and on(y + 1, x) and not on(y, x - 1) and not on(y, x + 1)
-                if horiz or vert:
+            if orig[y][x] and not smooth[y][x] and not in_block(y, x):
+                near = sum(1 for dy in (-1, 0, 1) for dx in (-1, 0, 1) if (dy or dx) and on(orig, y + dy, x + dx))
+                if 1 <= near <= 3:
                     out[y][x] = 1
+                    back.append((y, x))
+    for y, x in back:
+        for dx in (-1, 1):  # a diagonal neighbour below with nothing orthogonal between: bridge it
+            if on(orig, y + 1, x + dx) and not on(out, y, x + dx) and not on(out, y + 1, x):
+                out[y][x + dx] = 1
     return out
 
 
@@ -325,6 +343,13 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
     if mode == "silueta":
         layers.append(layer(color, lambda v: v >= 0))
     elif mode == "mono":
+        if ink is not None and len(ink) == 0:
+            raise ValueError("ink: the list is empty: pass at least one palette index or leave it out")
+        opaque = bool(counts) and -1 not in {v for row in grid for v in row}
+        if ink is None and opaque and len(counts) == 1:
+            raise ValueError("mono: the image is one opaque color, so there is no drawing to trace: remove the "
+                             "background first (--matte), use mode silueta or pass a transparent image")
+        auto = ink is None
         if ink is None and counts and -1 not in {v for row in grid for v in row} and len(pal) > 1:
             # an opaque image (strokes on paper): the paper is every color that fills >= PAPER_SHARE of the border
             edge = defaultdict(int)
@@ -342,6 +367,13 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
             ink = [j for j in range(len(pal)) if j != dark]
         elif any(not isinstance(j, int) or not 0 <= j < len(pal) for j in ink):
             raise ValueError("ink: every index must be a color of the palette (0-%d)" % (len(pal) - 1))
+        if auto and opaque and counts:
+            share = sum(counts[j] for j in ink if j in counts) / sum(counts.values())
+            if share >= INK_WARN:
+                warnings.warn("mono: the ink covers %d%% of the image, so a frame or the background may have been taken "
+                              "for ink (the paper is each color on %d%% of the border): remove the background first "
+                              "(--matte), pass `ink` by hand or use mode color" % (round(share * 100), PAPER_SHARE * 100),
+                              UserWarning, stacklevel=2)
         layers.append(layer(color, lambda v, s=frozenset(ink): v in s, True))
         if counts and not layers[-1]:  # a drawing went in and nothing came out: say it, never an empty SVG
             raise ValueError("mono: no ink left (every ink color was left out or smoothed away): remove the "
@@ -351,5 +383,8 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
         if order:
             layers.append(layer(pal_hex[order[0]], lambda v: v >= 0))  # the silhouette, under the rest
             layers += [layer(pal_hex[j], lambda v, j=j: v == j) for j in order[1:]]
+    if mode != "mono" and counts and not any(layers):  # a drawing went in and no outline survived: say it
+        raise ValueError("%s: no shape left (every outline is smaller than min_island or was smoothed away): lower "
+                         "min_island or smooth_passes" % mode)
     head = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" role="img">' % (width, height)
     return head + ("<title>%s</title>" % clean_title(title) if title else "") + "".join(layers) + "</svg>\n"

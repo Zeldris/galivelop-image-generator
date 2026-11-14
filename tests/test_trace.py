@@ -237,7 +237,7 @@ class ToSvgTests(unittest.TestCase):
         empty = trace.to_svg(w, h, px)  # all background
         self.assertEqual(paths(empty), [])
         full = canvas(8, 8, GOLD + (255,))
-        for mode in trace.MODES:
+        for mode in ("color", "silueta"):
             self.assertEqual(len(paths(trace.to_svg(*full, mode, min_island=1))), 1, mode)
         one = trace.to_svg(1, 1, bytearray(GOLD + (255,)), min_island=0, dp_tol=0)
         self.assertEqual(len(paths(one)), 1)
@@ -253,7 +253,7 @@ class ToSvgTests(unittest.TestCase):
 
     def test_title_is_escaped(self):
         w, h, px = canvas(2, 2, GOLD + (255,))
-        root = ElementTree.fromstring(trace.to_svg(w, h, px, "silueta", title='a<b & "c"'))
+        root = ElementTree.fromstring(trace.to_svg(w, h, px, "silueta", title='a<b & "c"', min_island=1))
         self.assertEqual(root.find(NS + "title").text, 'a<b & "c"')
 
     def test_mono_keeps_the_hole_of_a_stroke_ring_and_a_hollow_square(self):
@@ -309,7 +309,8 @@ class ToSvgTests(unittest.TestCase):
         img = canvas(60, 20)
         fill(img, 3, 10, 57, 11, (0, 0, 0, 255))
         for mode in ("color", "silueta"):
-            self.assertEqual(paths(trace.to_svg(*img, mode, ncolores=1)), [], mode)
+            with self.assertRaisesRegex(ValueError, "no shape left"):  # a bare 1 px line is smoothed away outside mono
+                trace.to_svg(*img, mode, ncolores=1)
 
     def test_ring_with_a_hole_renders_as_a_ring_with_evenodd(self):
         img = canvas(24, 24)
@@ -365,9 +366,69 @@ class ToSvgTests(unittest.TestCase):
     def test_a_side_shorter_than_the_reduction_factor_still_traces(self):
         for w, h in ((3, 2000), (1, 600), (2000, 2)):
             img = canvas(w, h, (10, 20, 30, 255))
-            svg = trace.to_svg(w, h, img[2], max_side=100)
+            svg = trace.to_svg(w, h, img[2], max_side=100, min_island=0, smooth_passes=0, dp_tol=0)
             self.assertIn('viewBox="0 0 %d %d"' % (w, h), svg)
             ElementTree.fromstring(svg)  # well-formed, and no IndexError on the way
+
+    # ---- leves de la fase 3 (R1) y de la tercera tanda ----
+
+    def test_mono_keeps_l_t_diagonal_strokes_and_the_tips(self):
+        def mono(img):
+            return paths(trace.to_svg(*img, "mono", dp_tol=0.5, min_island=2, curves=False))
+        l_img = canvas(40, 40)
+        fill(l_img, 5, 5, 6, 30, (0, 0, 0, 255))
+        fill(l_img, 5, 29, 30, 30, (0, 0, 0, 255))
+        t_img = canvas(40, 40)
+        fill(t_img, 5, 10, 35, 11, (0, 0, 0, 255))
+        fill(t_img, 20, 10, 21, 35, (0, 0, 0, 255))
+        diag = canvas(40, 40)
+        for i in range(30):
+            fill(diag, 5 + i, 5 + i, 6 + i, 6 + i, (0, 0, 0, 255))
+        for name, img, need in (("L", l_img, 45), ("T", t_img, 50), ("diagonal", diag, 30)):
+            with self.subTest(name):
+                ps = mono(img)
+                self.assertEqual(len(ps), 1)
+                self.assertGreaterEqual(evenodd_area(ps[0].get("d"), 40), need)
+        d = mono(l_img)[0].get("d")  # the tips keep their pixel: the stroke is 25 + 25 - 1 long
+        self.assertGreaterEqual(evenodd_area(d, 40), 49)
+
+    def test_mono_refuses_a_single_opaque_color_instead_of_a_filled_rectangle(self):
+        with self.assertRaisesRegex(ValueError, "one opaque color"):
+            trace.to_svg(*canvas(8, 8, GOLD + (255,)), "mono")
+        self.assertEqual(len(paths(trace.to_svg(*canvas(8, 8, GOLD + (255,)), "mono", ink=[0], min_island=1))), 1)
+
+    def test_mono_warns_when_the_ink_is_most_of_the_image(self):
+        img = canvas(40, 40, (20, 20, 20, 255))  # dark frame, light inside: the light is taken for ink
+        fill(img, 3, 3, 37, 37, (240, 240, 240, 255))
+        with self.assertWarnsRegex(UserWarning, "frame or the background"):
+            trace.to_svg(*img, "mono", ncolores=2)
+        ok = canvas(40, 40, (250, 250, 250, 255))
+        fill(ok, 10, 10, 20, 20, (20, 20, 20, 255))
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            trace.to_svg(*ok, "mono", ncolores=2)
+
+    def test_color_and_silueta_refuse_an_empty_svg_too(self):
+        img = canvas(20, 20)
+        fill(img, 5, 5, 15, 15, GOLD + (255,))
+        for mode in ("color", "silueta"):
+            with self.assertRaisesRegex(ValueError, "no shape left"):
+                trace.to_svg(*img, mode, min_island=100000)
+        self.assertEqual(paths(trace.to_svg(*canvas(8, 8), "color")), [], "an empty drawing still gives an empty SVG")
+
+    def test_a_sample_that_misses_the_opaque_pixels_still_gives_a_palette(self):
+        img = canvas(400, 400)
+        fill(img, 3, 3, 4, 4, GOLD + (255,))  # one opaque pixel, off the 1-in-8 sample
+        self.assertEqual(trace.extract_palette(*img[:2], img[2], 2), ["#b8862b"])
+        svg = trace.to_svg(*img, "color", min_island=0, smooth_passes=0, dp_tol=0)
+        self.assertEqual(len(paths(svg)), 1)
+
+    def test_an_explicit_empty_ink_has_its_own_error(self):
+        img = canvas(20, 20)
+        fill(img, 5, 5, 15, 15, GOLD + (255,))
+        with self.assertRaisesRegex(ValueError, "ink: the list is empty"):
+            trace.to_svg(*img, "mono", ink=[])
 
 
 if __name__ == "__main__":
