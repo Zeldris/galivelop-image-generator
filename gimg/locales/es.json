@@ -351,6 +351,7 @@
   "error.tile.bad_option": "opción de «gimg tile» no válida: {reason}",
   "error.tile.bad_preview_side": "--preview-side {value} no vale: de {low} a {high} px",
   "error.tile.write_failed": "no se pudo escribir «{path}»: {reason}",
+  "error.tile.too_big": "la imagen es de {width}x{height} y «gimg tile» admite hasta {max} píxeles: redúcela antes",
   "cli.cmd.export": "copia una imagen entregada (PNG) a WebP sin pérdida, ICO, BMP de 24 bits o PNG de otro tamaño, según la extensión de la salida; la entrega sigue siendo el PNG",
   "cli.arg.export_image": "PNG de origen (solo se lee)",
   "cli.arg.export_out": "archivo de salida: .webp, .ico, .bmp o .png",

@@ -26,6 +26,7 @@ from .errors import GimgError
 
 MAX_BLEND = 0.5
 MIN_SIDE = 8  # a smaller piece has no room for a blend
+MAX_PIXELS = 1 << 22  # 2048x2048: pure Python spends ~2 s per megapixel; `png.read_rgba` alone allows 1 << 24
 PREVIEW_GRID = 4
 MIN_PREVIEW, MAX_PREVIEW = 8, 1024
 
@@ -38,7 +39,9 @@ def _smooth(t: float) -> float:
 def _weights(n: int, f: float) -> list:
     """Weight of the original along one axis: 1 at the seam of the rolled image (between n//2 - 1 and n//2), 0 at `f` px."""
     s = n // 2
-    return [_smooth(1 - abs(i + 0.5 - s) / f) for i in range(n)]
+    w = [_smooth(1 - abs(i + 0.5 - s) / f) for i in range(n)]
+    w[0] = w[-1] = 0.0  # the borders of the rolled image already join: with blend 0.5 the formula leaves them above 0
+    return w
 
 
 def _mix(p, q, m: float):
@@ -129,19 +132,43 @@ def _stage(path: str, data: bytes) -> str:
 
 
 def _publish(files) -> None:
-    """Write every ``(path, data)`` or none: all are staged first, so a failure on any leaves no output behind."""
-    staged = []
+    """Write every ``(path, data)`` or none: all are staged first, and if a later `os.replace` fails the ones already
+    in place are put back (the previous file from a copy kept aside, or removed when there was none)."""
+    staged, done = [], []  # done: (path, backup or None)
     try:
         for path, data in files:
             staged.append((_stage(path, data), path))
         for tmp, path in staged:
-            os.replace(tmp, path)
-    except OSError as exc:
-        raise GimgError("tile.write_failed", path=str(path), reason=str(exc.strerror or exc))
+            backup = None
+            if os.path.isfile(path):
+                with open(path, "rb") as fh:
+                    backup = _stage(path, fh.read())
+            try:
+                os.replace(tmp, path)
+            except BaseException:
+                if backup:
+                    with contextlib.suppress(OSError):
+                        os.unlink(backup)
+                raise
+            done.append((path, backup))
+    except BaseException as exc:
+        for path, backup in reversed(done):
+            with contextlib.suppress(OSError):
+                if backup:
+                    os.replace(backup, path)
+                else:
+                    os.unlink(path)
+        if isinstance(exc, OSError):
+            raise GimgError("tile.write_failed", path=str(exc.filename or path), reason=str(exc.strerror or exc))
+        raise
     finally:
         for tmp, _ in staged:
             with contextlib.suppress(OSError):
                 os.unlink(tmp)
+        for _, backup in done:
+            if backup:
+                with contextlib.suppress(OSError):
+                    os.unlink(backup)
 
 
 def _same_file(a: str, b: str) -> bool:
@@ -169,6 +196,8 @@ def tile(src, out=None, blend: float = 0.25, preview=None, preview_side: int = 2
         if _same_file(preview, out):
             raise GimgError("tile.same_outputs", path=out)
     width, height, rgba = png.read_rgba(src)
+    if width * height > MAX_PIXELS:
+        raise GimgError("tile.too_big", width=width, height=height, max=MAX_PIXELS)
     try:
         result = tileable(width, height, rgba, blend)
     except ValueError as exc:
