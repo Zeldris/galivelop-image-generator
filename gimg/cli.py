@@ -406,6 +406,9 @@ def _run(args, out: _Out) -> int:
             if "preview" in res:
                 out.line("cli.out.tile_preview", path=res["preview"], width=res["preview_size"][0],
                          height=res["preview_size"][1])
+            for item in res.get("recovered", ()):
+                out.line("cli.out.tile_recovery_restored" if item["action"] == "restored" else "cli.out.tile_recovery_kept",
+                         path=item["path"], backup=item["backup"])
     elif cmd == "export":
         res = export.export(args.image, args.out, args.size, args.icon_sizes, args.background, args.force,
                            args.crop, args.anchor)
@@ -743,6 +746,8 @@ def main(argv=None) -> int:
         return _run(args, out)
     except GimgError as exc:
         print(exc.message(lang), file=sys.stderr)
+        for item in getattr(exc, "recovered", ()):
+            print(tile.describe_recovery(item, lang), file=sys.stderr)
     except KeyboardInterrupt:
         return 130
     except Exception as exc:
