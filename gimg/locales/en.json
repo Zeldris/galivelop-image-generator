@@ -913,5 +913,6 @@
   "cli.arg.brand_force_square": "overwrite files that already exist",
   "cli.out.brand_square": "{out}: square {fill}, ink {ink}, contrast {contrast}:1",
   "cli.out.brand_square_low": "warning: contrast {contrast}:1 is under 4.5:1 (WCAG AA for text)",
+  "cli.out.brand_square_flat": "warning: the drawing had {count} colors and all of them are now the ink",
   "error.brand.bad_square": "invalid square: {reason}"
 }

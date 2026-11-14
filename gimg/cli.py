@@ -301,6 +301,8 @@ def _brand(args, sub, out: _Out) -> None:
             out.line("cli.out.brand_file", path=path)
         if res["contrast"] < 4.5:
             out.line("cli.out.brand_square_low", contrast=res["contrast"])
+        if res.get("flattened"):
+            out.line("cli.out.brand_square_flat", count=res["flattened"])
         return
     elif sub == "system":
         res = brand.system(args.image, args.name, args.font, args.out_dir, args.weight, args.spacing, args.palette,

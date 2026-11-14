@@ -460,16 +460,44 @@ def _fit(piece: dict, x: float, y: float, w: float, h: float, ink=None) -> str:
 
 SQUARE = 128
 _PAINT = re.compile(r'(?<![\w:.-])(fill|stroke)="([^"]*)"')
+_STYLE = re.compile(r'(?<![\w:.-])style="([^"]*)"')
+_DECL = re.compile(r'(?<![\w-])(fill|stroke)(\s*:\s*)([^;]*)')
+_NO_PAINT = ("", "none", "currentcolor", "inherit", "transparent")
+
+
+def _paints(value: str) -> bool:
+    return value.strip().lower() not in ("", "none")
 
 
 def _square_ink(inner: str, ink: str) -> str:
-    """`inner` with every fill and stroke that paints (not ``none``) turned into `ink`; unpainted paths inherit it."""
-    return '<g fill="%s">%s</g>' % (ink, _PAINT.sub(lambda m: m.group(0) if m.group(2).strip() == "none" else '%s="%s"' % (m.group(1), ink), inner))
+    """`inner` with every fill and stroke that paints (not ``none``) turned into `ink`, as attributes and as declarations
+    of a ``style`` attribute; unpainted paths inherit it."""
+    def decl(m):
+        return m.group(0) if not _paints(m.group(3)) else "%s%s%s" % (m.group(1), m.group(2), ink)
+
+    out = _STYLE.sub(lambda m: 'style="%s"' % _DECL.sub(decl, m.group(1)), inner)
+    out = _PAINT.sub(lambda m: m.group(0) if not _paints(m.group(2)) else '%s="%s"' % (m.group(1), ink), out)
+    return '<g fill="%s">%s</g>' % (ink, out)
+
+
+def _norm_color(value: str) -> str:
+    v = value.strip().lower()
+    return "#" + "".join(c * 2 for c in v[1:]) if re.fullmatch(r"#[0-9a-f]{3}", v) else v
+
+
+def _paint_colors(inner: str) -> set:
+    """The distinct colors that `inner` paints with (attributes and ``style`` declarations), normalized; ``none``,
+    ``currentColor`` and unpainted paths do not count."""
+    found = [m.group(2) for m in _PAINT.finditer(inner)]
+    for st in _STYLE.finditer(inner):
+        found += [m.group(3) for m in _DECL.finditer(st.group(1))]
+    return {_norm_color(v) for v in found if v.strip().lower() not in _NO_PAINT}
 
 
 def square(drawing, out=None, fill=None, ink=None, chamfer: int = 28, pad: int = 24, pngs=None, force: bool = False) -> dict:
     """The family symbol: a flat `fill` square of 128 with a 45-degree `chamfer` cut off its top right corner and the SVG
-    `drawing` (paths only, as `trace` / `wordmark` make them) fitted inside `pad`, all of it in the one color `ink`.
+    `drawing` (paths only, as `trace` / `wordmark` make them) fitted inside `pad`, all of it in the one color `ink`
+    (``fill`` / ``stroke`` attributes and ``style`` declarations alike; ``flattened`` in the result counts the paint colors it had, if more than one).
 
     `pngs` are sides in pixels: each also gets ``<out stem>-<side>.png`` (needs rsvg-convert). Returns the files, the colors
     and the WCAG contrast of `ink` on `fill`; `brand.exists` if a file is there and not `force`."""
@@ -502,6 +530,7 @@ def square(drawing, out=None, fill=None, ink=None, chamfer: int = 28, pad: int =
     if room <= 0:
         raise GimgError("brand.bad_square", reason="pad leaves no room for the drawing")
     k = min(room / bw, room / bh)
+    flattened = len(_paint_colors(piece["inner"]))
     art = _place(dict(piece, inner=_square_ink(piece["inner"], ink)), (SQUARE - bw * k) / 2, (SQUARE - bh * k) / 2, k)
     d = "M0 0 H%s L%d %s V%d H0 Z" % (_num(SQUARE - chamfer), SQUARE, _num(chamfer), SQUARE)
     svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" role="img"><path fill="%s" d="%s"/>%s</svg>\n'
@@ -543,7 +572,10 @@ def square(drawing, out=None, fill=None, ink=None, chamfer: int = 28, pad: int =
             except OSError:
                 pass
     contrast = measure.contrast_ratio(measure.luminance(measure.parse_hex(ink)), measure.luminance(measure.parse_hex(fill)))
-    return {"out": out, "pngs": list(files.values()), "fill": fill, "ink": ink, "contrast": round(contrast, 2)}
+    res = {"out": out, "pngs": list(files.values()), "fill": fill, "ink": ink, "contrast": round(contrast, 2)}
+    if flattened > 1:
+        res["flattened"] = flattened  # the drawing had this many paint colors: all of them are now the ink
+    return res
 
 
 def _commit(staged: dict) -> None:

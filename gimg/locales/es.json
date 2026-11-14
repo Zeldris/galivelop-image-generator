@@ -913,5 +913,6 @@
   "cli.arg.brand_force_square": "pisa los archivos que ya existan",
   "cli.out.brand_square": "{out}: cuadrado {fill}, tinta {ink}, contraste {contrast}:1",
   "cli.out.brand_square_low": "aviso: el contraste {contrast}:1 está por debajo de 4,5:1 (WCAG AA para texto)",
+  "cli.out.brand_square_flat": "aviso: el dibujo traía {count} colores y todos pasan a la tinta",
   "error.brand.bad_square": "cuadrado no válido: {reason}"
 }

@@ -782,6 +782,38 @@ class SquareTests(BrandBase):
         self.assertEqual((res["fill"], res["ink"]), ("#7c5cd6", "#fbfcfd"))
         self.assertAlmostEqual(res["contrast"], 4.69, places=1)
 
+    def _draw(self, body):
+        self.draw.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20">%s</svg>\n' % body)
+
+    def test_style_declarations_that_paint_become_the_ink_and_none_stays(self):
+        self._draw('<path style="fill:#123456;stroke : #ABCDEF; fill-opacity:.5; stroke-width:2" d="M0 0L40 0L40 20L0 20Z"/>'
+                   '<path style="fill:none;stroke:none" d="M0 0L5 0L5 5Z"/>')
+        res = self.make()
+        text = self.out.read_text()
+        self.assertNotIn("#123456", text)
+        self.assertNotIn("#abcdef", text.lower())
+        self.assertIn('style="fill:#fbfcfd;stroke : #fbfcfd; fill-opacity:.5; stroke-width:2"', text)
+        self.assertIn('style="fill:none;stroke:none"', text)
+        self.assertEqual(res["flattened"], 2)
+
+    def test_two_paint_colors_are_flattened_and_one_is_not(self):
+        self._draw('<path fill="#ABC" d="M0 0L40 0L40 20Z"/><path style="fill:#aabbcc" d="M0 0L5 0L5 5Z"/>'
+                   '<path fill="none" stroke="currentColor" d="M0 0L9 0L9 5Z"/><path d="M0 0L7 0L7 7Z"/>')
+        self.assertNotIn("flattened", self.make())
+        self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/><path style="fill:#fedcba" d="M0 0L5 0L5 5Z"/>')
+        self.assertEqual(self.make(force=True)["flattened"], 2)
+
+    def test_the_cli_warns_when_colors_were_flattened_and_not_otherwise(self):
+        self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/><path fill="#fedcba" d="M0 0L5 0L5 5Z"/>')
+        code, out, err = self.run_cli("brand", "square", str(self.draw), "--fill", "#7C5CD6", "--ink", "#fbfcfd", "-o", str(self.out))
+        self.assertEqual(code, 0, err)
+        self.assertIn("2 colors", out)
+        self.assertIn("warning", out)
+        self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/>')
+        code, out, err = self.run_cli("brand", "square", str(self.draw), "--fill", "#7C5CD6", "--ink", "#fbfcfd", "-o", str(self.out), "--force")
+        self.assertEqual(code, 0, err)
+        self.assertNotIn("colors", out)
+
     def test_another_chamfer_changes_the_path(self):
         self.make(chamfer=40)
         self.assertIn('d="M0 0 H88 L128 40 V128 H0 Z"', self.out.read_text())
