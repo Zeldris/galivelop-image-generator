@@ -1064,6 +1064,12 @@ class SquareTests(BrandBase):
         brand._paint_colors(*(lambda p: (p["inner"], p["root"]))(brand._read_svg(self.draw)))
         self.assertLess(time.monotonic() - start, 5)
 
+    def test_a_stroke_only_root_or_group_keeps_the_implicit_black_of_a_shape_without_fill(self):
+        shape = '<path d="M0 0h1v1z"/>'
+        self.assertEqual(brand._paint_colors(shape, 'stroke="#ff0000"'), {"#000000", "#ff0000"})
+        self.assertEqual(brand._paint_colors('<g stroke="#ff0000">' + shape + "</g>"), {"#000000", "#ff0000"})
+        self.assertEqual(brand._paint_colors(shape, 'fill="#00ff00" stroke="#ff0000"'), {"#00ff00", "#ff0000"})
+
     def test_root_attributes_in_single_quotes_are_copied(self):
         self.draw.write_text("<svg xmlns='http://www.w3.org/2000/svg' viewBox=\"0 0 40 20\" fill='#f00' stroke='#00f' stroke-width='3'>"
                              "<path d='M0 0L40 0L40 20Z'/></svg>\n")

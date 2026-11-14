@@ -142,8 +142,9 @@ def _thin(orig, smooth, W: int, H: int):
 
     The candidates are the pixels of `orig` that the filter erased and that lie in no 2x2 block of ink (so they are not
     the corner of a thick shape). Of those, only the 8-connected runs of `STROKE_MIN` pixels or more come back: a stroke
-    of any shape (straight, L, T, diagonal, with its tips), never an isolated burr or speck. A pixel that was not ink in
-    `orig` is never added, so a diagonal comes back as one-pixel squares touching at the corners, and each step is closed with one orthogonal"""
+    of any shape (straight, L, T, diagonal, with its tips), never an isolated burr or speck. Every pixel it adds was ink in
+    `orig`, except the corner pixels that close each diagonal step: a diagonal comes back as a staircase of one-pixel
+    squares, each step closed with one orthogonal corner so the stroke stays 4-connected."""
     def on(y, x):
         return 0 <= y < H and 0 <= x < W and orig[y][x]
 
