@@ -1,9 +1,11 @@
 """Ganchos de sesión: el rechazo de lecturas enteras (el aviso de presupuesto de compactaciones es del flujo desde la v0.5.0)."""
 import importlib.util
+import os
 import re
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -65,7 +67,7 @@ class IntentosEnHojaTests(unittest.TestCase):
         self.assertNotIn('permissionDecision', h)
 
     def test_avisa_tambien_con_capturas_del_scratchpad(self):
-        d = intentos_en_hoja.decision({'tool_name': 'Read', 'tool_input': {'file_path': '/tmp/c/scratchpad/r2/pedidos-d-dark.png'}})
+        d = intentos_en_hoja.decision({'tool_name': 'Read', 'tool_input': {'file_path': '/x/attempts/q2-d-dark.png'}})
         self.assertIn('gimg sheet', d['hookSpecificOutput']['additionalContext'])
 
     def test_la_primera_captura_de_la_sesion_pasa_y_avisa_desde_la_segunda(self):
@@ -77,6 +79,29 @@ class IntentosEnHojaTests(unittest.TestCase):
             self.assertIn('gimg sheet', leer('/tmp/c/scratchpad/dos.png')['hookSpecificOutput']['additionalContext'])
             self.assertIsNone(leer('/tmp/c/scratchpad/otra.png', 's2'))
             self.assertIn('gimg sheet', leer('/x/attempts/q9.png', 's3')['hookSpecificOutput']['additionalContext'])
+
+    def test_sin_session_id_se_comporta_igual_con_clave_de_reserva(self):
+        with tempfile.TemporaryDirectory() as carpeta:
+            datos = lambda ruta: {'tool_name': 'Read', 'tool_input': {'file_path': ruta}}  # noqa: E731
+            self.assertIsNone(intentos_en_hoja.decision(datos('/tmp/c/scratchpad/una.png'), carpeta))
+            self.assertIn('gimg sheet', intentos_en_hoja.decision(
+                datos('/tmp/c/scratchpad/dos.png'), carpeta)['hookSpecificOutput']['additionalContext'])
+
+    def test_las_marcas_viejas_se_borran_y_las_recientes_no(self):
+        with tempfile.TemporaryDirectory() as carpeta:
+            vieja = os.path.join(carpeta, 'gimg-captura-vieja')
+            reciente = os.path.join(carpeta, 'gimg-captura-reciente')
+            ajena = os.path.join(carpeta, 'otra-cosa')
+            for ruta in (vieja, reciente, ajena):
+                open(ruta, 'w').close()
+            antes = time.time() - 2 * 24 * 3600
+            os.utime(vieja, (antes, antes))
+            os.utime(ajena, (antes, antes))
+            intentos_en_hoja.decision({'tool_name': 'Read', 'session_id': 's',
+                                       'tool_input': {'file_path': '/tmp/c/scratchpad/a.png'}}, carpeta)
+            self.assertFalse(os.path.exists(vieja))
+            self.assertTrue(os.path.exists(reciente))
+            self.assertTrue(os.path.exists(ajena))
 
     def test_avisa_tambien_con_jpg_y_webp(self):
         for ext in ('jpg', 'JPEG', 'webp'):
