@@ -36,8 +36,8 @@ INTENDED_500 = {
     # brand.*: faults of the machine, not of the request (the rest of brand.* has its 4xx)
     "brand.out_is_input", "brand.tool_missing", "brand.tool_failed", "brand.timeout", "brand.write_failed", "export.write_failed",
     "export.out_is_input",
-    # tile.*: `gimg tile` is only a command (no API route), so its file errors never reach a status
-    "tile.exists", "tile.out_is_input", "tile.same_outputs", "tile.write_failed",
+    # tile.*: like export.*, faults of the machine or of the names; `tile.exists` is a 409
+    "tile.out_is_input", "tile.same_outputs", "tile.write_failed",
 }
 
 

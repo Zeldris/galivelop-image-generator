@@ -84,6 +84,28 @@ class TileableTests(unittest.TestCase):
                 tile.tileable(w, h, px, blend=bad)
             self.assertIn("blend", str(cm.exception))
 
+    def test_too_small_blend_or_image_is_refused_not_faked(self):
+        w, h, px = texture(64, 64)
+        for blend in (0.001, 1e-9):
+            with self.assertRaises(ValueError) as cm:
+                tile.tileable(w, h, px, blend=blend)
+            self.assertIn("at least 1 px", str(cm.exception))
+        w, h, px = texture(4, 4)
+        with self.assertRaises(ValueError) as cm:
+            tile.tileable(w, h, px)
+        self.assertIn("at least %d px" % tile.MIN_SIDE, str(cm.exception))
+
+    def test_transparent_pixels_do_not_bleed_their_hidden_color(self):
+        w, h = 32, 32
+        px = bytearray()
+        for y in range(h):
+            for x in range(w):
+                px += bytes((0, 0, 255, 0)) if x < w // 2 else bytes((255, 0, 0, 255))
+        out = tile.tileable(w, h, px)
+        for i in range(0, len(out), 4):
+            if out[i + 3] > 0:
+                self.assertEqual(tuple(out[i:i + 3]), (255, 0, 0), "a blue tint came from fully transparent pixels")
+
     def test_repeat_is_a_grid_of_copies(self):
         w, h, px = texture(8, 6)
         out = tile.repeat(w, h, px, 4, 4)
@@ -138,6 +160,22 @@ class TileCommandTests(unittest.TestCase):
         self.assertEqual(cm.exception.code, "tile.exists")
         tile.tile(self.src, out=out, force=True)
 
+
+    def test_outputs_that_are_one_file_and_a_failing_view_leave_nothing_half_written(self):
+        link = os.path.join(self.dir.name, "link.png")
+        out = os.path.join(self.dir.name, "o.png")
+        Path(out).write_bytes(b"")
+        os.symlink(out, link)
+        with self.assertRaises(GimgError) as cm:
+            tile.tile(self.src, out=out, preview=link, force=True)
+        self.assertEqual(cm.exception.code, "tile.same_outputs")
+        blocked = os.path.join(self.dir.name, "nofolder")
+        Path(blocked).write_text("a file where a folder should be")
+        fresh = os.path.join(self.dir.name, "fresh.png")
+        with self.assertRaises(GimgError) as cm:
+            tile.tile(self.src, out=fresh, preview=os.path.join(blocked, "v.png"))
+        self.assertEqual(cm.exception.code, "tile.write_failed")
+        self.assertFalse(os.path.exists(fresh), "the texture must not be left without its view")
 
 if __name__ == "__main__":
     unittest.main()

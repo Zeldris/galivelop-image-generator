@@ -7,7 +7,7 @@ centre is continuous there: ``out = S * (1 - m) + O * m``, with ``m`` 1 on the c
 at ``blend`` of the side on each side of it. It is done one axis after the other (x, then y on that result): blending both
 at once would bring the original's mismatched borders in along the bar of the cross. ``blend`` is in
 ``(0, 0.5]``. A larger ``blend`` hides the join better and ghosts more of the picture; there is no scale, mark or
-border added. Alpha is kept from the pixels used (the blend mixes it like a color).
+border added. The blend is done with premultiplied alpha, so a clear pixel does not tint its neighbours.
 
 `repeat(width, height, rgba, nx, ny)` is `nx` x `ny` copies of the piece, for the view that proves the result.
 `tile(src, out=None, blend=0.25, preview=None, preview_side=256, force=False)` is the command: it writes the seamless PNG
@@ -25,6 +25,7 @@ from . import export, fsutil, png
 from .errors import GimgError
 
 MAX_BLEND = 0.5
+MIN_SIDE = 8  # a smaller piece has no room for a blend
 PREVIEW_GRID = 4
 MIN_PREVIEW, MAX_PREVIEW = 8, 1024
 
@@ -40,12 +41,25 @@ def _weights(n: int, f: float) -> list:
     return [_smooth(1 - abs(i + 0.5 - s) / f) for i in range(n)]
 
 
+def _mix(p, q, m: float):
+    """`p` * (1 - m) + `q` * m as RGBA 4-sequences, mixed with premultiplied alpha (a clear pixel has no color to give)."""
+    ap, aq = p[3] * (1 - m), q[3] * m
+    a = ap + aq
+    if a <= 0:
+        return (p[0], p[1], p[2], 0) if m < 0.5 else (q[0], q[1], q[2], 0)
+    return tuple(int((p[c] * ap + q[c] * aq) / a + 0.5) for c in range(3)) + (int(a + 0.5),)
+
+
 def tileable(width: int, height: int, rgba, blend: float = 0.25) -> bytearray:
     """RGBA copy of `rgba` that repeats with no seam (see the module docstring); the input is not touched."""
-    if len(rgba) != width * height * 4 or width < 2 or height < 2:
-        raise ValueError("%d bytes do not fit a %dx%d RGBA image of at least 2x2" % (len(rgba), width, height))
+    if len(rgba) != width * height * 4:
+        raise ValueError("%d bytes do not fit a %dx%d RGBA image" % (len(rgba), width, height))
+    if min(width, height) < MIN_SIDE:
+        raise ValueError("the image must be at least %d px on each side (it is %dx%d)" % (MIN_SIDE, width, height))
     if not 0 < blend <= MAX_BLEND:
         raise ValueError("blend must be above 0 and at most %s (got %s)" % (MAX_BLEND, blend))
+    if blend * min(width, height) < 1:
+        raise ValueError("blend x the shorter side must be at least 1 px (got %s x %d)" % (blend, min(width, height)))
     sx, sy = width // 2, height // 2
     wx, wy = _weights(width, blend * width), _weights(height, blend * height)
     row_bytes = width * 4
@@ -59,8 +73,7 @@ def tileable(width: int, height: int, rgba, blend: float = 0.25) -> bytearray:
         rolled = bytearray(row[cut:] + row[:cut])
         for x in live:
             m, i = wx[x], x * 4
-            for c in range(4):
-                rolled[i + c] = int(rolled[i + c] * (1 - m) + row[i + c] * m + 0.5)
+            rolled[i:i + 4] = bytes(_mix(rolled[i:i + 4], row[i:i + 4], m))
         mid[base:base + row_bytes] = rolled
     # Pass 2, y: the same on the result of pass 1, so the borders of both axes are already continuous.
     out = bytearray(len(rgba))
@@ -70,7 +83,9 @@ def tileable(width: int, height: int, rgba, blend: float = 0.25) -> bytearray:
         m = wy[y]
         if m > 0:
             row = mid[base:base + row_bytes]
-            rolled = bytearray(int(a * (1 - m) + b * m + 0.5) for a, b in zip(rolled, row))
+            rolled = bytearray(rolled)
+            for i in range(0, row_bytes, 4):
+                rolled[i:i + 4] = bytes(_mix(rolled[i:i + 4], row[i:i + 4], m))
         out[base:base + row_bytes] = rolled
     return out
 
@@ -91,7 +106,8 @@ def default_out(src) -> str:
     return str(p.with_name(p.stem + "-tile.png"))
 
 
-def _write(path: str, data: bytes) -> None:
+def _stage(path: str, data: bytes) -> str:
+    """Write `data` to a temporary file next to `path` and return its name (`os.replace` puts it in place)."""
     folder = os.path.dirname(os.path.abspath(path))
     try:
         os.makedirs(folder, exist_ok=True)
@@ -102,18 +118,40 @@ def _write(path: str, data: bytes) -> None:
         fsutil.honour_umask(fd)
         with os.fdopen(fd, "wb") as fh:
             fh.write(data)
-        os.replace(tmp, path)
     except BaseException as exc:
         with contextlib.suppress(OSError):
             os.unlink(tmp)
         if isinstance(exc, OSError):
             raise GimgError("tile.write_failed", path=str(path), reason=str(exc.strerror or exc))
         raise
+    return tmp
+
+
+def _publish(files) -> None:
+    """Write every ``(path, data)`` or none: all are staged first, so a failure on any leaves no output behind."""
+    staged = []
+    try:
+        for path, data in files:
+            staged.append((_stage(path, data), path))
+        for tmp, path in staged:
+            os.replace(tmp, path)
+    except OSError as exc:
+        raise GimgError("tile.write_failed", path=str(path), reason=str(exc.strerror or exc))
+    finally:
+        for tmp, _ in staged:
+            with contextlib.suppress(OSError):
+                os.unlink(tmp)
+
+
+def _same_file(a: str, b: str) -> bool:
+    if os.path.exists(a) and os.path.exists(b):
+        return os.path.samefile(a, b)
+    return os.path.normcase(os.path.abspath(a)) == os.path.normcase(os.path.abspath(b))
 
 
 def _check_target(src, path, force) -> str:
     path = str(path)
-    if os.path.exists(path) and os.path.exists(str(src)) and os.path.samefile(path, str(src)):
+    if _same_file(path, str(src)):
         raise GimgError("tile.out_is_input", path=path)
     if os.path.exists(path) and not force:
         raise GimgError("tile.exists", path=path)
@@ -127,21 +165,22 @@ def tile(src, out=None, blend: float = 0.25, preview=None, preview_side: int = 2
     out = _check_target(src, out or default_out(src), force)
     if preview is not None:
         preview = _check_target(src, preview, force)
-        if os.path.abspath(preview) == os.path.abspath(out):
+        if _same_file(preview, out):
             raise GimgError("tile.same_outputs", path=out)
     width, height, rgba = png.read_rgba(src)
     try:
         result = tileable(width, height, rgba, blend)
     except ValueError as exc:
         raise GimgError("tile.bad_option", reason=str(exc))
-    _write(out, png.rgba_bytes(width, height, result))
+    files = [(out, png.rgba_bytes(width, height, result))]
     res = {"src": str(src), "out": out, "size": [width, height], "blend": blend}
     if preview is not None:
         scale = min(1.0, preview_side / max(width, height))
         pw, ph = max(1, round(width * scale)), max(1, round(height * scale))
         small = export.fit(width, height, result, pw, ph) if (pw, ph) != (width, height) else result
         grid = repeat(pw, ph, small)
-        _write(preview, png.rgba_bytes(pw * PREVIEW_GRID, ph * PREVIEW_GRID, grid))
+        files.append((preview, png.rgba_bytes(pw * PREVIEW_GRID, ph * PREVIEW_GRID, grid)))
         res["preview"] = preview
         res["preview_size"] = [pw * PREVIEW_GRID, ph * PREVIEW_GRID]
+    _publish(files)
     return res

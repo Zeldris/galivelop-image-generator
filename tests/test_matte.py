@@ -166,6 +166,22 @@ class ChromaKeyTests(unittest.TestCase):
                     # despilled: the edge color is the subject's, not a mix with the chroma
                     self.assertLess(math.dist((r, g, b), FG), 60, "edge pixel %r still carries the chroma" % ((r, g, b, a),))
 
+    def test_mixed_subject_with_saturated_tones_keeps_every_inner_pixel(self):
+        mixes = {"green": (0, 255, 0), "magenta": (255, 0, 255)}
+        subjects = {"green": ((0, 125, 0), (184, 134, 43)), "magenta": ((255, 105, 180), (40, 30, 50))}  # leaf+gold; pink+dark
+        for cname, bg in mixes.items():
+            with self.subTest(chroma=cname):
+                size = 60
+                px = bytearray()
+                for y in range(size):
+                    for x in range(size):
+                        inside = 10 <= x < 50 and 10 <= y < 50
+                        px += bytes(subjects[cname][x >= 30] if inside else bg) + b"\xff"
+                out = matte.remove_bg(size, size, px)
+                soft = [(x, y) for y in range(14, 46) for x in range(14, 46) if at(out, size, x, y)[3] != 255]
+                self.assertEqual(soft, [], "the subject lost pixels more than 3 px inside")
+                self.assertEqual(at(out, size, 2, 2)[3], 0)
+
     def test_brand_matte_command_reads_and_writes_files_for_both(self):
         import os
         import tempfile
