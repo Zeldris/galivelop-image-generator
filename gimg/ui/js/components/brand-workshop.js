@@ -226,7 +226,8 @@ export function brandWorkshop(project, cfg) {
     }
     const r = await api.brandTrace(project, body);
     await reload();
-    done(traceOut, k('traceDone', { mode: k(`mode.${mode}`), paths: r && r.paths !== undefined ? r.paths : '?' }));
+    done(traceOut, k('traceDone', { mode: k(`mode.${mode}`), paths: r && r.paths !== undefined ? r.paths : '?' }),
+      ...((r && r.warnings) || []).map((w) => h('p.notice.notice-warn.small', { role: 'status' }, w)));
   };
   const step3 = h('div.stack', {},
     h('div.cols-4', {}, field('shop-colorsrc', k('colorsFrom'), colorSrc), field('shop-colors', k('colors'), colorsN, k('colorsHint')),
