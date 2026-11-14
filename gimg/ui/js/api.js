@@ -149,7 +149,6 @@ export const api = {
   measure: (p, profile, key, id, opts) => get(paths.measure(p, profile, key, id, opts)),
   choose: (p, profile, key, attempt) => post(paths.choose(p, profile, key), { attempt }),
   undo: (p, profile, key) => post(paths.undo(p, profile, key), {}),
-  queue: (state) => get(paths.queue(state)),
   /** La cola y la pausa, de la cabecera `X-Queue-Paused` de la misma respuesta: {entries, paused} (`paused` es null si falta). */
   queueState: async (state) => {
     const { json, header } = await getWithHeaders(paths.queue(state));

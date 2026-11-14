@@ -214,7 +214,7 @@ async function clearQueue(project, n) {
 async function togglePause(on) {
   try {
     const { refreshNow, notePauseChange } = await import('../queue-poll.js');
-    notePauseChange(); // un health en vuelo desde antes del clic no pisa lo que se pide
+    notePauseChange(); // un sondeo de la cola en vuelo desde antes del clic no pisa lo que se pide
     await api.pauseQueue(on);
     notePauseChange(); // ni uno lanzado mientras el servicio aún no había cambiado
     store.set('queuePaused', on);
