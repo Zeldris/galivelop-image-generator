@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Gancho PreToolUse de Read: al leer suelto un `.png` de intentos (`.../attempts/q...`) no bloquea, avisa de que
 conviene revisarlos en una hoja de contactos (`gimg sheet`). 44 imágenes sueltas arrastraron 4-5 M de tokens
-(`.claude/gw/gw-opt-tokens.md`, sesión c7c2a076). Avisa igual con las capturas del scratchpad (28 sueltas, ~2,2 M en
-la revisión de la interfaz de `ccr-85e9d14e-zt7p8b`), salvo que el nombre diga que ya es una hoja; la primera
-captura suelta de cada sesión pasa sin aviso (mirar una sola es legítimo) y avisa desde la segunda (con o sin `session_id`); las marcas de más de un día se limpian. Vale para
-`.png`, `.jpg`, `.jpeg` y `.webp`.
+(`.claude/gw/gw-opt-tokens.md`, sesión c7c2a076). Avisa igual con las capturas del scratchpad (28 sueltas,
+~2,2 M en la revisión de la interfaz de `ccr-85e9d14e-zt7p8b`), salvo que el nombre diga que ya es una hoja; la primera
+captura suelta de cada sesión pasa sin aviso (mirar una sola es legítimo) y avisa desde la segunda (con o sin
+`session_id`); las marcas de más de un día se limpian. Vale para `.png`, `.jpg`, `.jpeg` y `.webp`.
 
 Lee el JSON del gancho en la entrada estándar; ante cualquier error deja pasar.
 """
@@ -44,18 +44,27 @@ def _limpiar(carpeta):
             pass
 
 
-def _primera_captura(datos, carpeta):
-    """True la primera vez que se ve una captura suelta en la sesión (lo apunta en `carpeta`).
+def _clave(datos):
+    """Clave de la sesión: `session_id`; si falta, `transcript_path` (estable por sesión); si falta, el proceso padre.
 
-    Sin `session_id` la clave de reserva es el proceso padre (el Claude Code que lanza el gancho: el mismo en toda la
-    sesión), así que se comporta igual que con uno."""
-    sesion = str(datos.get('session_id') or '') or 'ppid-%d' % os.getppid()
+    El ppid es solo una reserva y falla abierto: con un shell intermedio o en Windows cambia en cada llamada y la
+    primera captura pasa siempre sin aviso (no rompe nada); un PID reutilizado en menos de un día hereda la marca."""
+    return (str(datos.get('session_id') or '') or str(datos.get('transcript_path') or '')
+            or 'ppid-%d' % os.getppid())
+
+
+def _primera_captura(datos, carpeta):
+    """True la primera vez que se ve una captura suelta en la sesión (lo apunta en `carpeta`)."""
     carpeta = carpeta or tempfile.gettempdir()
     _limpiar(carpeta)
-    marca = os.path.join(carpeta, PREFIJO + hashlib.sha256(sesion.encode()).hexdigest()[:16])
+    marca = os.path.join(carpeta, PREFIJO + hashlib.sha256(_clave(datos).encode()).hexdigest()[:16])
     try:
         os.close(os.open(marca, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600))
     except OSError:
+        try:
+            os.utime(marca)  # la marca se usa: una sesión larga no la pierde en la limpieza
+        except OSError:
+            pass
         return False
     return True
 

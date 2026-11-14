@@ -165,6 +165,13 @@ class ChromaKeyTests(unittest.TestCase):
                 matte.remove_bg(w, h, px)
                 self.assertEqual(fix.called, corre)
 
+    def test_near_green_and_the_reach_limit(self):
+        for bg, esperado in (((40, 230, 70), True), ((43, 227, 70), True), ((90, 255, 0), True),
+                             ((91, 255, 0), False), ((0, 255, 91), False), ((255, 90, 255), True),
+                             ((255, 91, 255), False), ((0, 160, 0), False), ((255, 0, 0), False), ((255, 255, 0), False)):
+            with self.subTest(bg=bg):
+                self.assertEqual(matte._is_chroma(bg), esperado)
+
     def test_edge_has_no_halo_of_the_chroma_color(self):
         for cname, bg in self.CHROMA.items():
             with self.subTest(chroma=cname):

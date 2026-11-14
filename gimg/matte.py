@@ -18,13 +18,13 @@ Distances are Euclidean in RGB, from 0 to about 441. `t1` has to be larger than 
 subject it drifts 32-35 away from the border color, so a smaller `t0` cuts the flood short and leaves opaque green
 patches; the shapes that matter (gold, brown) are far beyond 110.
 
-A pure chroma key (a border color that is ``#00ff00`` green or ``#ff00ff`` magenta: two channels of 60 or less and the
-third of 200 or more, or two of 200 or more and the third of 60 or less with red and blue the high pair; red, yellow,
-blue and cyan backgrounds are not keys) is 250-350 away from any subject, so an edge pixel that is a third subject is already past `t1`
-and would stay opaque with two thirds of chroma in it (a halo). Only the strip of `CHROMA_BAND` pixels next to the
-removed background is fixed: each pixel there that is a mix of the background and the color of the subject pixels
-around it (further in, outside the strip) takes that color and, as coverage, the share of the way from the background to
-it; any other pixel (an outline or a rim of its own) is kept. The rest of the subject is not
+A chroma key is a border color within `CHROMA_REACH` (90) of pure green ``#00ff00`` or magenta ``#ff00ff`` (so the
+near-green of FLUX counts; red, yellow, blue and cyan backgrounds do not). A subject is 250-350 away from it, so an
+edge pixel that is a third subject is already past `t1` and would stay opaque with two thirds of chroma in it (a
+halo). Only the strip of `CHROMA_BAND` pixels next to the removed background is fixed: each pixel there that is a
+mix of the background and the color of the subject pixels around it (further in, outside the strip) takes that color
+and, as coverage, the share of the way from the background to it; any other pixel (an outline or a rim of its own)
+is kept. The rest of the subject is not
 touched, whatever its color. The fix only reaches the strip of the background that was removed: a hole already in the
 input (a region of background closed off by the subject) is not touched unless ``holes=True`` removes it, as the
 default keeps such regions as the subject's own, and a pixel already transparent in the input counts as removed.
@@ -34,7 +34,8 @@ from __future__ import annotations
 import math
 from statistics import median
 
-CHROMA_HIGH, CHROMA_LOW = 200, 60  # a border with a channel >= HIGH and another <= LOW is a chroma key (#00ff00)
+CHROMA_KEYS = ((0, 255, 0), (255, 0, 255))  # green and magenta
+CHROMA_REACH = 90   # a border this close (RGB distance) to one of them is a key, as FLUX's near-green (40,230,70)
 CHROMA_BAND = 2  # pixels from the removed background that the chroma edge fix reaches
 CHROMA_WINDOW = 3  # radius of the window whose subject pixels give the edge's own color
 MAX_GROW = 32  # pixels the flood may grow over the soft edge; each pass walks the whole image
@@ -150,10 +151,8 @@ def _touches(mask, k, width, n) -> bool:
 
 
 def _is_chroma(bg) -> bool:
-    """True for a green (#00ff00) or magenta (#ff00ff) key: a red, yellow, blue or cyan background is not one."""
-    r, g, b = bg
-    return (g >= CHROMA_HIGH and r <= CHROMA_LOW and b <= CHROMA_LOW) or \
-        (r >= CHROMA_HIGH and b >= CHROMA_HIGH and g <= CHROMA_LOW)
+    """True for a background within `CHROMA_REACH` of pure green or magenta; red, yellow, blue and cyan are not keys."""
+    return any(math.dist(bg, key) <= CHROMA_REACH for key in CHROMA_KEYS)
 
 
 def _chroma_edge(width, height, rgba, out, seen, dist, bg, t0) -> None:

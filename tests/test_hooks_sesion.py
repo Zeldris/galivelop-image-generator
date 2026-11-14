@@ -87,6 +87,33 @@ class IntentosEnHojaTests(unittest.TestCase):
             self.assertIn('gimg sheet', intentos_en_hoja.decision(
                 datos('/tmp/c/scratchpad/dos.png'), carpeta)['hookSpecificOutput']['additionalContext'])
 
+    def test_la_clave_sin_session_id_depende_de_transcript_y_de_ppid(self):
+        from unittest import mock
+        ruta = '/tmp/c/scratchpad/a.png'
+        def primera(carpeta, **extra):
+            datos = {'tool_name': 'Read', 'tool_input': {'file_path': ruta}, **extra}
+            return intentos_en_hoja.decision(datos, carpeta) is None
+        with tempfile.TemporaryDirectory() as c:  # transcript distintos: marcas distintas; el mismo: la misma
+            self.assertTrue(primera(c, transcript_path='/t/1.jsonl'))
+            self.assertTrue(primera(c, transcript_path='/t/2.jsonl'))
+            self.assertFalse(primera(c, transcript_path='/t/1.jsonl'))
+        with tempfile.TemporaryDirectory() as c:  # sin transcript: el ppid
+            with mock.patch.object(os, 'getppid', return_value=111):
+                self.assertTrue(primera(c))
+                self.assertFalse(primera(c))
+            with mock.patch.object(os, 'getppid', return_value=222):
+                self.assertTrue(primera(c))
+
+    def test_usar_la_marca_renueva_su_mtime(self):
+        with tempfile.TemporaryDirectory() as c:
+            datos = {'tool_name': 'Read', 'session_id': 's', 'tool_input': {'file_path': '/tmp/c/scratchpad/a.png'}}
+            intentos_en_hoja.decision(datos, c)
+            marca = os.path.join(c, os.listdir(c)[0])
+            antes = time.time() - 3600
+            os.utime(marca, (antes, antes))
+            intentos_en_hoja.decision(datos, c)
+            self.assertGreater(os.path.getmtime(marca), antes + 1800)
+
     def test_las_marcas_viejas_se_borran_y_las_recientes_no(self):
         with tempfile.TemporaryDirectory() as carpeta:
             vieja = os.path.join(carpeta, 'gimg-captura-vieja')
