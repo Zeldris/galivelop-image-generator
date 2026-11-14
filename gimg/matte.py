@@ -14,13 +14,16 @@ is taken from the border pixels that are not. `border_color` gives the backgroun
 Distances are Euclidean in RGB, from 0 to about 441. `t1` has to be larger than `t0`, both not negative. The defaults
 (`t0=60`, `t1=110`) are for the background of FLUX, which is green but not flat: it has a gradient, and next to the
 subject it drifts 32-35 away from the border color, so a smaller `t0` cuts the flood short and leaves opaque green
-patches; the shapes that matter (gold, brown) are far beyond 110.
+patches; the shapes that matter (gold, brown) are far beyond 110. A pure chroma key (a border color with a channel of 200 or more and another of 60 or less, as `#00ff00` green or `#ff00ff` magenta) widens `t1` to
+`CHROMA_SPAN` of the subject's typical distance, because there the soft edge is far wider than 110 (see `remove_bg`).
 """
 from __future__ import annotations
 
 import math
 from statistics import median
 
+CHROMA_HIGH, CHROMA_LOW = 200, 60  # a border color with a channel >= HIGH and another <= LOW is a chroma key (#00ff00, #ff00ff)
+CHROMA_SPAN = 0.8  # the soft edge of a chroma key reaches this fraction of the subject's typical distance to it
 MAX_GROW = 32  # pixels the flood may grow over the soft edge; each pass walks the whole image
 
 
@@ -80,6 +83,13 @@ def remove_bg(width: int, height: int, rgba, t0: float = 60, t1: float = 110, bo
             stack.append(k - width)
         if k < n - width:
             stack.append(k + width)
+    if max(bg) >= CHROMA_HIGH and min(bg) <= CHROMA_LOW:
+        # A pure chroma key is 250-350 away from any subject, so a soft-edge pixel that is a third subject is already
+        # past `t1` and would stay opaque with two thirds of chroma in it (a halo). The soft edge is widened to a
+        # fraction of the typical distance of the subject's pixels, so those pixels get partial alpha and despill.
+        far = sorted(d for k, d in enumerate(dist) if not seen[k] and d > 0)
+        if far:
+            t1 = max(t1, CHROMA_SPAN * far[len(far) // 2])
     if holes:  # a flood seeded from every background-like pixel: the regions closed off from the border too
         for k in range(n):
             if dist[k] < t0:

@@ -113,6 +113,7 @@ python3 -m gimg sheet --out sheet.png a.png b.png     # contact sheet to review 
 python3 -m gimg export a.png a.webp --size 960x540   # copy to WebP, ICO or BMP (the delivery stays PNG)
 python3 -m gimg export a.png b.png --crop 64,0,768,1152 --size 600x900   # declared crop (X,Y,W,H of the original), then scale down
 python3 -m gimg export a.png b.png --size 1536x384 --anchor top   # where the proportion crop sits: top|bottom|left|right (or top-left…), centre by default
+python3 -m gimg tile texture.png --preview view.png   # seamless texture: texture-tile.png and the 4x4 view (--blend, --preview-side, -o, --force)
 python3 -m gimg brand matte logo.png                  # removes the flat background: logo-alpha.png (the original is untouched)
 python3 -m gimg brand trace logo-alpha.png --mode color|mono|silhouette   # PNG to SVG (--palette, --colors, --matte)
 python3 -m gimg brand wordmark TARKOR --font Cinzel.ttf -o wordmark.svg   # the name as paths, no <text> (--weight, --spacing)
