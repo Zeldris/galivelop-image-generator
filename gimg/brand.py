@@ -507,11 +507,16 @@ def _square_ink(inner: str, ink: str, root: str = "") -> str:
         text = _STYLE.sub(lambda m: 'style="%s"' % _DECL.sub(decl, m.group(1)), text)
         return _PAINT.sub(lambda m: m.group(0) if not _paints(m.group(2)) else '%s="%s"' % (m.group(1), ink), text)
 
-    kept = " ".join('%s="%s"' % (n, v) for n, v in _ROOT_ATTR.findall(root) if n == "style" or n.startswith(("fill", "stroke")))
+    kept = " ".join('%s="%s"' % (n, v.replace('"', "&quot;")) for n, v in _root_attrs(root) if n == "style" or n.startswith(("fill", "stroke")))
     return "<g %s%s>%s</g>" % ("" if _has_fill(kept) else 'fill="%s" ' % ink, recolor(kept), recolor(inner))
 
 
-_ROOT_ATTR = re.compile(r'(?<![\w:.-])([\w-]+)="([^"]*)"')
+_ROOT_ATTR = re.compile(r"""(?<![\w:.-])([\w-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')""")
+
+
+def _root_attrs(root: str) -> list:
+    """The ``(name, value)`` pairs of the root's attributes, written with double or single quotes."""
+    return [(n, d if d or not q else q) for n, d, q in _ROOT_ATTR.findall(root)]
 
 
 _NAMED = {"black": "#000000", "white": "#ffffff", "red": "#ff0000", "lime": "#00ff00", "blue": "#0000ff", "yellow": "#ffff00",
@@ -519,8 +524,12 @@ _NAMED = {"black": "#000000", "white": "#ffffff", "red": "#ff0000", "lime": "#00
           "silver": "#c0c0c0", "maroon": "#800000", "olive": "#808000", "green": "#008000", "purple": "#800080", "teal": "#008080",
           "navy": "#000080", "orange": "#ffa500"}
 _NUM = r"[-+]?(?:\d+\.?\d*|\.\d+)"
-_RGB = re.compile(r"rgba?\(\s*(%s)(%%?)\s*[,\s]\s*(%s)(%%?)\s*[,\s]\s*(%s)(%%?)\s*(?:[,/]\s*(%s)(%%?)\s*)?\)" % ((_NUM,) * 4))
-_HSL = re.compile(r"hsla?\(\s*(%s)(?:deg)?\s*[,\s]\s*(%s)%%\s*[,\s]\s*(%s)%%\s*(?:[,/]\s*(%s)(%%?)\s*)?\)" % ((_NUM,) * 4))
+_C = r"(%s)(%%?)" % _NUM
+_RGB = tuple(re.compile(r"rgba?\(\s*%s\)" % body.replace("{c}", _C)) for body in (  # the comma form or the space form with `/`, never mixed
+    r"{c}\s*,\s*{c}\s*,\s*{c}\s*(?:,\s*{c}\s*)?", r"{c}\s+{c}\s+{c}\s*(?:/\s*{c}\s*)?"))
+_HSL = tuple(re.compile(r"hsla?\(\s*%s\)" % body.replace("{c}", _C).replace("{n}", _NUM)) for body in (
+    r"({n})(deg|grad|rad|turn)?\s*,\s*({n})%\s*,\s*({n})%\s*(?:,\s*{c}\s*)?", r"({n})(deg|grad|rad|turn)?\s+({n})%\s+({n})%\s*(?:/\s*{c}\s*)?"))
+_HUE = {None: 1.0, "deg": 1.0, "grad": 0.9, "rad": 180 / math.pi, "turn": 360.0}
 _SHAPE = re.compile(r"<(path|rect|circle|ellipse|polygon|polyline|line)\b([^>]*)>")
 _TAG = re.compile(r"<(/?)(g|path|rect|circle|ellipse|polygon|polyline|line)\b([^>]*)>")
 _CLASS = re.compile(r'(?<![\w:.-])class\s*=')
@@ -549,22 +558,24 @@ def _norm_color(value: str) -> str:
         v = "#" + "".join(c * 2 for c in v[1:])
     if re.fullmatch(r"#[0-9a-f]{8}", v):
         return v[:7] if v.endswith("ff") else v
-    rgb = _RGB.fullmatch(v)
-    if rgb:
-        g = rgb.groups()
-        chans = [float(g[i]) * (2.55 if g[i + 1] else 1) for i in (0, 2, 4)]
-        if all(math.isfinite(c) and -0.5 <= c < 255.5 for c in chans):
+    for pat in _RGB:
+        rgb = pat.fullmatch(v)
+        if rgb:
+            g = rgb.groups()  # out of range channels are clamped, as CSS (and rsvg) do
+            chans = [float(g[i]) * (2.55 if g[i + 1] else 1) for i in (0, 2, 4)]
             return _hex_alpha([round(min(max(c, 0), 255)) for c in chans], _alpha_of(g[6], g[7]))
-    hsl = _HSL.fullmatch(v)
-    if hsl:
-        if not math.isfinite(float(hsl.group(1))):
-            return v
-        h, sat, light = float(hsl.group(1)) % 360, min(max(float(hsl.group(2)), 0), 100) / 100, min(max(float(hsl.group(3)), 0), 100) / 100
-        c = (1 - abs(2 * light - 1)) * sat
-        x = c * (1 - abs((h / 60) % 2 - 1))
-        r, g2, b = [(c, x, 0), (x, c, 0), (0, c, x), (0, x, c), (x, 0, c), (c, 0, x)][int(h // 60) % 6]
-        m = light - c / 2
-        return _hex_alpha([round((n + m) * 255) for n in (r, g2, b)], _alpha_of(hsl.group(4), hsl.group(5)))
+    for pat in _HSL:
+        hsl = pat.fullmatch(v)
+        if hsl:
+            h = float(hsl.group(1)) * _HUE[hsl.group(2)] % 360
+            if not math.isfinite(h):
+                return v
+            sat, light = min(max(float(hsl.group(3)), 0), 100) / 100, min(max(float(hsl.group(4)), 0), 100) / 100
+            c = (1 - abs(2 * light - 1)) * sat
+            x = c * (1 - abs((h / 60) % 2 - 1))
+            r, g2, b = [(c, x, 0), (x, c, 0), (0, c, x), (0, x, c), (x, 0, c), (c, 0, x)][int(h // 60) % 6]
+            m = light - c / 2
+            return _hex_alpha([round((n + m) * 255) for n in (r, g2, b)], _alpha_of(hsl.group(5), hsl.group(6)))
     return _NAMED.get(v, v)
 
 
@@ -573,16 +584,25 @@ def _paint_colors(inner: str, root: str = "") -> set:
     ``none``, ``currentColor`` and strokes that are not there do not count, but a shape with no ``fill`` at all paints the
     default black (unless a ``<g>`` or the root (`root`: the attributes of ``<svg>``) sets a fill, or it has a ``class`` or the
     drawing a ``<style>``: then it is not counted); a ``<line>`` has no area, so it only paints by its stroke."""
-    found = [m.group(2) for m in _PAINT.finditer(inner + " " + root)]
-    for st in _STYLE.finditer(inner + " " + root):
+    root = " ".join('%s="%s"' % (n, v.replace('"', "&quot;")) for n, v in _root_attrs(root))  # single quotes too
+    inner, root = _mute(inner), _mute_attrs(root)
+    found = [m.group(2) for m in _PAINT.finditer(inner)]
+    for st in _STYLE.finditer(inner):
         found += [m.group(3) for m in _DECL.finditer(st.group(1))]
     colors = set()
     for v in found:
         n = _norm_color(v)
         if v.strip().lower() not in _NO_PAINT and not _invisible(n):
             colors.add(n[:7] if re.fullmatch(r"#[0-9a-f]{8}", n) else n)  # alpha aside: same color
+    root_paint = {}  # property -> value the root sets; it counts only if a shape inherits it (rsvg: stroke too)
+    for m in _PAINT.finditer(root):
+        root_paint[m.group(1)] = m.group(2)
+    for st in _STYLE.finditer(root):
+        for m in _DECL.finditer(st.group(1)):
+            root_paint[m.group(1)] = m.group(3)
+    inherited = set()
     if "<style" not in inner.lower():  # with a stylesheet the color may come from CSS: not counted
-        groups = [_has_fill(root)]  # one flag per open <g> (the first, the root): does it set a fill its shapes inherit?
+        groups = [{p for p in ("fill", "stroke") if _sets(root, p)}]  # one set per open <g> (the first, the root): what its shapes inherit
         for m in _TAG.finditer(inner):
             closing, tag, attrs = m.groups()
             if tag == "g":
@@ -590,10 +610,59 @@ def _paint_colors(inner: str, root: str = "") -> set:
                     if groups:
                         groups.pop()
                 elif not attrs.rstrip().endswith("/"):
-                    groups.append(_has_fill(attrs))
-            elif not closing and tag != "line" and not any(groups) and not _has_fill(attrs) and not _CLASS.search(attrs):
-                colors.add("#000000")
+                    groups.append({p for p in ("fill", "stroke") if _sets(attrs, p)})
+            elif not closing:
+                above = set().union(*groups[1:]) if len(groups) > 1 else set()
+                for prop in ("fill", "stroke"):
+                    if not _sets(attrs, prop) and prop not in above and not _CLASS.search(attrs):
+                        inherited.add(prop)
+                if tag != "line" and not any(groups) and not _has_fill(attrs) and not _CLASS.search(attrs):
+                    colors.add("#000000")
+    else:
+        inherited = {"fill", "stroke"}
+    for prop, v in root_paint.items():
+        n = _norm_color(v)
+        if prop in inherited and v.strip().lower() not in _NO_PAINT and not _invisible(n):
+            colors.add(n[:7] if re.fullmatch(r"#[0-9a-f]{8}", n) else n)
     return colors
+
+
+def _sets(attrs: str, prop: str) -> bool:
+    return (any(m.group(1) == prop for m in _PAINT.finditer(attrs))
+            or any(d.group(1) == prop for st in _STYLE.finditer(attrs) for d in _DECL.finditer(st.group(1))))
+
+
+def _zero(attrs: str, name: str) -> bool:
+    """Does the attribute (or ``style`` declaration) `name` of `attrs` say 0 (or ``0%``)?"""
+    for m in re.finditer(r'(?<![\w:.-])%s\s*=\s*"\s*([^"]*?)\s*"' % re.escape(name), attrs):
+        if re.fullmatch(r"[-+]?0*\.?0*%?", m.group(1)) and re.search(r"\d", m.group(1)) and float(m.group(1).rstrip("%") or 0) <= 0:
+            return True
+    for st in _STYLE.finditer(attrs):
+        for m in re.finditer(r"(?<![\w-])%s\s*:\s*([^;!]*)" % re.escape(name), st.group(1)):
+            if re.fullmatch(r"\s*[-+]?(?:\d+\.?\d*|\.\d+)%?\s*", m.group(1)) and float(m.group(1).strip().rstrip("%")) <= 0:
+                return True
+    return False
+
+
+def _mute_attrs(attrs: str) -> str:
+    """`attrs` with the paints that ``fill-opacity`` / ``stroke-opacity`` 0 make invisible turned into ``none``."""
+    for prop in ("fill", "stroke"):
+        if _zero(attrs, prop + "-opacity"):
+            attrs = _PAINT.sub(lambda m, prop=prop: '%s="none"' % prop if m.group(1) == prop else m.group(0), attrs)
+            attrs = _STYLE.sub(lambda m, prop=prop: 'style="%s"' % re.sub(r"(?<![\w-])%s(\s*:\s*)[^;]*" % prop, r"%s\g<1>none" % prop, m.group(1)), attrs)
+            attrs += ' %s="none"' % prop
+    return attrs
+
+
+def _mute(inner: str) -> str:
+    """`inner` as far as paint counting goes: shapes and groups with ``opacity`` 0 are gone, and ``fill-opacity`` /
+    ``stroke-opacity`` 0 turn that paint into ``none`` (a partial opacity is like the alpha of a color: the same ink)."""
+    inner = re.sub(r"<g\b([^>]*)>.*?</g>", lambda m: "" if _zero(m.group(1), "opacity") else m.group(0), inner, flags=re.S | re.I)
+    def tag(m):
+        if _zero(m.group(3), "opacity"):
+            return ""
+        return "<%s%s>" % (m.group(2), _mute_attrs(m.group(3)))
+    return _TAG.sub(lambda m: tag(m) if m.group(2) != "g" and not m.group(1) else m.group(0), inner)
 
 
 def square(drawing, out=None, fill=None, ink=None, chamfer: int = 28, pad: int = 24, pngs=None, force: bool = False) -> dict:
