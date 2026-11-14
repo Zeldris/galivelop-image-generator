@@ -101,7 +101,7 @@ class MatteTraceTests(BrandApiBase):
 
     def test_trace_color_and_mono(self):
         self.matte()
-        self.trace("color", colors=2)
+        self.assertEqual(self.trace("color", colors=2)["warnings"], [])
         self.trace("mono")
         self.assertTrue((self.shop() / (SLUG + "-emblema.svg")).read_text().startswith("<svg"))
         self.assertTrue((self.shop() / (SLUG + "-emblema-mono.svg")).is_file())

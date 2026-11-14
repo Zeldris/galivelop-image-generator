@@ -131,19 +131,20 @@ def trace(src, out=None, mode: str = "color", palette=None, colors=None, dp_tol:
     out = _check_out(src, out or default_out(src, "", ".svg"))
     width, height, rgba = png.read_rgba(src)
     had_alpha = not _opaque(rgba)
+    notes = []
     try:
         if matte:
             rgba = _matte.remove_bg(width, height, rgba)
         if colors is not None:
             opts["ncolores"] = colors
         svg = _trace.to_svg(width, height, rgba, MODES[mode], palette=parse_palette(palette) if palette else None,
-                            dp_tol=dp_tol, min_island=min_island, **opts)
+                            dp_tol=dp_tol, min_island=min_island, notes=notes, **opts)
     except ValueError as exc:
         raise _bad(exc)
     _write(out, svg.encode("utf-8"))
     return {"src": str(src), "out": out, "size": [width, height], "mode": mode, "paths": svg.count("<path"),
             "bytes": len(svg.encode("utf-8")), "matted": bool(matte),
-            "opaque_background": not had_alpha and not matte}
+            "opaque_background": not had_alpha and not matte, "warnings": notes}
 
 
 # ---------- wordmark ----------

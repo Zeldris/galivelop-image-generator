@@ -292,6 +292,9 @@ def _brand(args, sub, out: _Out) -> None:
         res = brand.trace(args.image, args.out, args.mode, args.palette, args.colors, args.dp_tol, args.min_island,
                           args.matte)
         key = "cli.out.brand_trace"
+        if not out.as_json:
+            for note in res["warnings"]:
+                print(note, file=sys.stderr)
     elif sub == "lockup":
         res = brand.lockup(args.emblem, args.wordmark, args.out, args.layout, args.cap, args.gap, args.width, args.margin,
                            args.color, force=args.force)

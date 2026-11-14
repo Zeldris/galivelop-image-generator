@@ -411,14 +411,43 @@ class ToSvgTests(unittest.TestCase):
     def test_mono_warns_when_the_ink_is_most_of_the_image(self):
         img = canvas(40, 40, (20, 20, 20, 255))  # dark frame, light inside: the light is taken for ink
         fill(img, 3, 3, 37, 37, (240, 240, 240, 255))
-        with self.assertWarnsRegex(UserWarning, "frame or the background"):
-            trace.to_svg(*img, "mono", ncolores=2)
+        notes = []
+        trace.to_svg(*img, "mono", ncolores=2, notes=notes)
+        self.assertEqual(len(notes), 1)
+        self.assertIn("puede que se haya tomado un marco o el fondo por tinta", notes[0])
+        self.assertTrue(notes[0].startswith("mono: la tinta cubre el 7"), notes[0])
         ok = canvas(40, 40, (250, 250, 250, 255))
         fill(ok, 10, 10, 20, 20, (20, 20, 20, 255))
+        notes = []
+        trace.to_svg(*ok, "mono", ncolores=2, notes=notes)
+        self.assertEqual(notes, [])
+
+    def test_mono_does_not_warn_when_the_darkest_rule_picked_the_ink(self):
+        # dark on the top half of the border, light on the bottom half: both are paper, so no border rule applies and the
+        # darkest color is dropped; the light drawing is no "frame taken for ink" even when it fills most of the image
+        img = canvas(40, 40, (240, 240, 240, 255))
+        fill(img, 0, 0, 40, 4, (20, 20, 20, 255))
+        notes = []
+        svg = trace.to_svg(*img, "mono", ncolores=2, notes=notes)
+        self.assertEqual(notes, [])
+        self.assertIn("<path", svg)
+
+    def test_mono_without_a_notes_list_warns_nowhere(self):
         import warnings
+        img = canvas(40, 40, (20, 20, 20, 255))
+        fill(img, 3, 3, 37, 37, (240, 240, 240, 255))
         with warnings.catch_warnings():
             warnings.simplefilter("error")
-            trace.to_svg(*ok, "mono", ncolores=2)
+            trace.to_svg(*img, "mono", ncolores=2)
+
+    def test_mono_diagonal_of_one_pixel_survives_a_default_min_island(self):
+        diag = canvas(40, 40)
+        for i in range(30):
+            fill(diag, 5 + i, 5 + i, 6 + i, 6 + i, (0, 0, 0, 255))
+        for kw in ({}, {"min_island": 2}, {"min_island": 12, "dp_tol": 1.2, "curves": True}):
+            with self.subTest(kw):
+                d = "".join(p.get("d") for p in paths(trace.to_svg(*diag, "mono", **kw)))
+                self.assertGreaterEqual(d.count("M"), 30, "every pixel of the diagonal is drawn")
 
     def test_color_and_silueta_refuse_an_empty_svg_too(self):
         img = canvas(20, 20)

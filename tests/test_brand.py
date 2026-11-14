@@ -227,6 +227,35 @@ class TraceTests(BrandBase):
         self.assertIn("#fac81e", svg)
 
 
+class TraceWarningTests(BrandBase):
+    def _frame(self):
+        src = self.tmp / "frame.png"
+        rgba = bytearray()
+        for y in range(40):
+            for x in range(40):
+                inside = 3 <= x < 37 and 3 <= y < 37
+                rgba += bytes((240, 240, 240, 255) if inside else (20, 20, 20, 255))
+        src.write_bytes(png.rgba_bytes(40, 40, rgba))
+        return src
+
+    def test_the_dark_frame_warning_comes_back_in_the_result_in_spanish(self):
+        res = brand.trace(self._frame(), None, "mono", colors=2)
+        self.assertEqual(len(res["warnings"]), 1)
+        self.assertIn("puede que se haya tomado un marco o el fondo por tinta", res["warnings"][0])
+
+    def test_a_clean_trace_has_no_warnings(self):
+        src = self.tmp / "logo.png"
+        square_png(src, bg=(0, 0, 0), size=24, alpha=0)
+        self.assertEqual(brand.trace(src, None, "silhouette")["warnings"], [])
+
+    def test_the_cli_prints_the_warning_on_stderr(self):
+        code, out, err = self.run_cli("brand", "trace", str(self._frame()), "--mode", "mono", "--colors", "2")
+        self.assertEqual(code, 0)
+        self.assertIn("puede que se haya tomado un marco o el fondo por tinta", err)
+        code, out, err = self.run_cli("brand", "trace", str(self._frame()), "--mode", "mono", "--colors", "2", "--json")
+        self.assertEqual(json.loads(out)["warnings"][0][:5], "mono:")
+
+
 class WordmarkTests(BrandBase):
     @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
     def test_wordmark_is_paths_without_text(self):
