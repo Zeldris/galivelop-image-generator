@@ -155,6 +155,23 @@ class ChromaKeyTests(unittest.TestCase):
                     self.assertEqual(at(out, w, 20, 20), fg + (255,))
                     self.assertEqual(at(px, w, 0, 0), bg + (255,), "the input must not be touched")
 
+    def test_chroma_fix_runs_only_for_green_and_magenta_backgrounds(self):
+        from unittest import mock
+        casos = {"green": ((0, 255, 0), True), "magenta": ((255, 0, 255), True), "red": ((255, 0, 0), False),
+                 "yellow": ((255, 255, 0), False), "blue": ((0, 0, 255), False), "cyan": ((0, 255, 255), False)}
+        for name, (bg, corre) in casos.items():
+            with self.subTest(bg=name), mock.patch.object(matte, "_chroma_edge") as fix:
+                w, h, px = disc(bg=bg, fg=(120, 120, 120))
+                matte.remove_bg(w, h, px)
+                self.assertEqual(fix.called, corre)
+
+    def test_near_green_and_the_reach_limit(self):
+        for bg, esperado in (((40, 230, 70), True), ((43, 227, 70), True), ((90, 255, 0), True),
+                             ((91, 255, 0), False), ((0, 255, 91), False), ((255, 90, 255), True),
+                             ((255, 91, 255), False), ((0, 160, 0), False), ((255, 0, 0), False), ((255, 255, 0), False)):
+            with self.subTest(bg=bg):
+                self.assertEqual(matte._is_chroma(bg), esperado)
+
     def test_edge_has_no_halo_of_the_chroma_color(self):
         for cname, bg in self.CHROMA.items():
             with self.subTest(chroma=cname):
