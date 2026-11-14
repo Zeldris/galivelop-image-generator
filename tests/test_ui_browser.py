@@ -129,11 +129,7 @@ class UiBase(unittest.TestCase):
 
     def shut(self, page):
         """Closes the tab itself (Chromium keeps it alive when only its socket closes), then the socket."""
-        try:
-            page.call("Page.close")
-        except Exception:   # the tab may be gone already
-            pass
-        page.ws.close()
+        page.close()
         if page in self.browser.pages:
             self.browser.pages.remove(page)
 
@@ -658,18 +654,18 @@ class QueueDrawer(UiBase):
         """A GET /api/queue launched before «Pausar cola» and answered after it must not put the old pause back."""
         self.addCleanup(run_cli, "queue", "resume")
         self.open("/", "document.querySelector('.queue-pill')")
-        self.js("""import('/ui/js/api.js').then(m => { window.__api = m.api; window.__real = m.api.queueState;
-            window.__pending = []; m.api.queueState = () => new Promise(res => window.__pending.push(res)); return true; })""")
+        self.assertTrue(self.js("""import('/ui/js/api.js').then(m => { window.__api = m.api; window.__real = m.api.queueState;
+            window.__pending = []; m.api.queueState = () => new Promise(res => window.__pending.push(res)); return true; })"""))
         # refreshNow() asks for the queue synchronously, so the resolver pushed during that call is the old answer;
         # any other pending one comes from the poll timer and is not the one to hold back
-        self.js("""import('/ui/js/queue-poll.js').then(m => { const n = window.__pending.length; window.__poll = m.refreshNow();
-            window.__old = window.__pending[n]; return window.__pending.length === n + 1 && typeof window.__old === 'function'; })""")
+        self.assertTrue(self.js("""import('/ui/js/queue-poll.js').then(m => { const n = window.__pending.length; window.__poll = m.refreshNow();
+            window.__old = window.__pending[n]; return window.__pending.length === n + 1 && typeof window.__old === 'function'; })"""))
         self.assertTrue(self.js("typeof window.__old === 'function'"))  # the old answer is held back: paused false
         self.click(".queue-pill")
         self.click("[data-fid=pause]")
         self.page.wait("document.querySelector('.queue-pill.is-paused')")
         self.js("window.__pending.filter(res => res !== window.__old).forEach(res => res({entries: [], paused: true})); window.__old({entries: [], paused: false})")  # arrives after the click
-        self.js("window.__poll.then(() => true)")  # the first refresh is done, with the stale answer last
+        self.assertTrue(self.js("window.__poll.then(() => true)"))  # the first refresh is done, with the stale answer last
         self.js("window.__api.queueState = window.__real; true")
         self.page.pump(0.3)
         self.assertTrue(self.js("!!document.querySelector('.queue-pill.is-paused')"))
@@ -681,8 +677,8 @@ class QueueDrawer(UiBase):
         self.open("/", "document.querySelector('.queue-pill')")
         run_cli("queue", "pause")
         self.page.wait("document.querySelector('.queue-pill.is-paused')", timeout=10)
-        self.js("""import('/ui/js/api.js').then(m => { window.__api = m.api; window.__real = m.api.queueState;
-            m.api.queueState = async () => ({entries: [], paused: null}); return true; })""")
+        self.assertTrue(self.js("""import('/ui/js/api.js').then(m => { window.__api = m.api; window.__real = m.api.queueState;
+            m.api.queueState = async () => ({entries: [], paused: null}); return true; })"""))
         self.js("import('/ui/js/queue-poll.js').then(m => m.refreshNow())")
         self.js("window.__api.queueState = window.__real; true")
         self.page.pump(0.3)

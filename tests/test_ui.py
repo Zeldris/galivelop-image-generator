@@ -748,9 +748,34 @@ class Contrast(unittest.TestCase):
                                 for j, (s2, b) in enumerate(rules) if j != i for o in s2.split(","))
                 if not inherited:
                     problems.append("%s: %s" % (one.strip(), body.strip()))
-        if re.search(r"(^|[\s,}])\s*:focus-visible\s*$", "\n".join(sel.strip() for sel, _ in rules), re.M):
-            if not any(".card" in o and ":focus-visible" in o and negative(b) for s2, b in rules for o in s2.split(",")):
-                problems.append("`:focus-visible` global con desfase positivo y ninguna regla `.card:focus-visible` negativa")
+        # el foco de un `.card`: gana la regla de mayor especificidad y, a igual especificidad, la posterior
+        def specificity(one):
+            one = re.sub(r"::[a-z-]+", " ", one)
+            return (len(re.findall(r"#[\w-]+", one)),
+                    len(re.findall(r"\.[\w-]+|\[[^\]]*\]|:(?!where)[a-z-]+", re.sub(r"#[\w-]+", "", one))),
+                    len(re.findall(r"(?:^|[\s>+~])[a-z][\w-]*", one)))
+        focus = []
+        for i, (sel, body) in enumerate(rules):
+            for one in sel.split(","):
+                one = one.strip()
+                if re.fullmatch(r"(\.card)?:focus(-visible)?", one) and (one != ":focus" or ":focus-visible" in css):
+                    focus.append((specificity(one), i, one, body))
+        offset, removed = None, False
+        for _, _, one, body in sorted(focus, key=lambda f: f[:2]):
+            for prop, value in re.findall(r"(?:^|;)\s*(outline(?:-style|-width|-color|-offset)?)\s*:\s*([^;]+)", body):
+                value = value.strip()
+                if prop == "outline-offset":
+                    offset = value
+                elif prop in ("outline", "outline-style", "outline-width"):
+                    removed = bool(re.search(r"(^|\s)(none|0(px)?)(\s|$)", value))
+                elif prop == "outline-color":
+                    removed = value == "transparent"
+        if any(f[2] == ":focus-visible" for f in focus):
+            if offset is None or not offset.startswith(("-", "calc(-")):
+                problems.append("`:focus-visible` global con desfase positivo y ninguna regla `.card:focus-visible` negativa "
+                                "que gane en la cascada (el desfase que queda es %r)" % offset)
+            if removed:
+                problems.append("el anillo de `:focus-visible` de un `.card` lo quita una regla de la cascada")
         return problems
 
     def test_outlines_on_chamfered_elements_stay_inside(self):
@@ -790,6 +815,17 @@ class Contrast(unittest.TestCase):
         # un desfase positivo propio sigue fallando
         bad = ok + ".attempt:hover { outline: 1px solid; outline-offset: 3px; }"
         self.assertEqual([p.split(":")[0] for p in self.chamfer_outline_problems(bad, js)], [".attempt"])
+        # la cascada: una regla de foco posterior que devuelve el desfase positivo o quita el anillo hace fallar
+        for later in (".card:focus-visible { outline-offset: 4px; }", ".card:focus-visible { outline: none; }",
+                      ".card:focus-visible { outline-style: none; }", ".card:focus-visible { outline-width: 0; }"):
+            self.assertTrue(self.chamfer_outline_problems(ok + later, js), later)
+        # una regla global posterior pero menos específica no pisa la del `.card`
+        self.assertEqual(self.chamfer_outline_problems(ok + ":focus-visible { outline-offset: 4px; }", js), [])
+        # y una global posterior que quita el anillo sí lo quita
+        self.assertTrue(self.chamfer_outline_problems(ok + ":focus-visible { outline: none; }", js))
+        # una regla de foco anterior de un `.card` cuyo desfase negativo sí gana
+        self.assertEqual(self.chamfer_outline_problems(base + ".card:focus-visible { outline-offset: 4px; } "
+                                                       ".card:focus-visible { outline-offset: -2px; }", js), [])
 
     def test_the_scrolling_dialog_bodies_do_not_shift_their_content(self):
         """El cuerpo de la ayuda y el formulario llevan `padding` para que el contorno de foco no lo recorte el
@@ -802,7 +838,20 @@ class Contrast(unittest.TestCase):
         def sides(prop):
             vals = re.search(r"(?:^|;)\s*%s\s*:\s*([^;]+)" % prop, body).group(1).split()
             top, right, bottom, left = {1: lambda: vals * 4, 2: lambda: vals * 2, 3: lambda: vals + [vals[1]], 4: lambda: vals}[len(vals)]()
-            return [float(v[:-2]) if v.endswith("px") else float(v) for v in (top, right, bottom, left)]
+            def px(v):
+                if v == "auto":
+                    return 0.0   # `auto` no suma ni resta en este cálculo
+                if v.endswith("rem"):
+                    return float(v[:-3]) * 16   # base de 16 px
+                if v.endswith("em"):
+                    return float(v[:-2]) * 16   # sin tamaño de fuente propio a mano: la misma base
+                if v.endswith("px"):
+                    return float(v[:-2])
+                try:
+                    return float(v)
+                except ValueError:
+                    self.fail("`%s: %s`: unidad que `sides()` no sabe convertir (%r)" % (prop, " ".join(vals), v))
+            return [px(v) for v in (top, right, bottom, left)]
         padding, margin = sides("padding"), sides("margin")
         net = [p + m for p, m in zip(padding, margin)]
         self.assertEqual([net[0], net[1], net[3]], [0, 0, 0], body)

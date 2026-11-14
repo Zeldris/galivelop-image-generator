@@ -195,6 +195,14 @@ class Page:
             raise CdpError("evaluate failed: %s" % ((d.get("exception") or {}).get("description") or d.get("text")))
         return res["result"].get("value")
 
+    def close(self):
+        """Closes the tab itself (Chromium keeps it alive when only its socket closes), then the socket."""
+        try:
+            self.call("Page.close", timeout=5)
+        except Exception:   # the tab may be gone already
+            pass
+        self.ws.close()
+
     def goto(self, url):
         self.call("Page.navigate", {"url": url})
         self.wait("document.readyState === 'complete'")
@@ -317,7 +325,7 @@ class Browser:
             except Exception:
                 pass
         for page in self.pages:
-            page.ws.close()
+            page.ws.close()   # Browser.close above already took the tabs down
         if self.ws:
             self.ws.close()
         if self.proc:
