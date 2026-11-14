@@ -718,7 +718,7 @@
   "ui.retouch.modelCurrent": "The current one ({id})",
   "cli.cmd.brand": "brand process: remove the background, turn into SVG and the name as paths",
   "cli.cmd.brand_matte": "remove the flat background of a PNG and save it with transparency (the original is not touched)",
-  "cli.cmd.brand_trace": "turn a PNG into a vector SVG (color, mono or silhouette)",
+  "cli.cmd.brand_trace": "turn a PNG into a vector SVG (color, mono or silhouette); in mono without transparency the paper is every color filling at least 20% of the border; if a dark frame fills the border, use --matte or color mode",
   "cli.cmd.brand_wordmark": "the brand name in a font, turned into paths (an SVG with no text and no dependency on the font)",
   "cli.arg.brand_png": "input PNG (only read)",
   "cli.arg.brand_out_matte": "output PNG (default: next to the original with the suffix -alpha)",

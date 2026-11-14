@@ -280,6 +280,22 @@ class ToSvgTests(unittest.TestCase):
                 self.assertGreaterEqual(evenodd_area(d, 60), 40)
                 self.assertEqual(d.count("M"), 1)
 
+    def test_mono_two_color_paper_is_not_ink(self):
+        img = canvas(40, 40, (250, 250, 250, 255))
+        fill(img, 20, 0, 40, 40, (200, 215, 245, 255))  # half light, half blue background
+        fill(img, 6, 6, 34, 34, (20, 20, 20, 255))
+        fill(img, 10, 10, 30, 30, (250, 250, 250, 255))
+        ps = paths(trace.to_svg(*img, "mono", ncolores=3, smooth_passes=0, curves=False, dp_tol=0, min_island=1))
+        self.assertEqual(len(ps), 1)
+        d = ps[0].get("d")
+        self.assertEqual(evenodd_area(d, 40), 28 * 28 - 20 * 20)
+
+    def test_thin_lines_are_only_restored_in_mono(self):
+        img = canvas(60, 20)
+        fill(img, 3, 10, 57, 11, (0, 0, 0, 255))
+        for mode in ("color", "silueta"):
+            self.assertEqual(paths(trace.to_svg(*img, mode, ncolores=1)), [], mode)
+
     def test_ring_with_a_hole_renders_as_a_ring_with_evenodd(self):
         img = canvas(24, 24)
         fill(img, 2, 2, 22, 22, GOLD + (255,))
