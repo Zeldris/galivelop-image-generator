@@ -576,6 +576,8 @@ class DefaultSpacingTests(unittest.TestCase):
         for family in ("Big Shoulders Display", "big  shoulders display", "Big Shoulders", "BIG SHOULDERS",
                        "Big Shoulders Display SC", "Big Shoulders SC"):
             self.assertEqual(brand.default_spacing(family), brand.SPACING, family)
+        for family in ("Big Shoulders Display Bold", "Big Shoulders Display ExtraBold", "Big Shoulders Black", "big shoulders  display  light sc"):
+            self.assertEqual(brand.default_spacing(family), brand.SPACING, family)
         for family in ("Big Shoulders Text", "Big Shoulders Inline Display", "Big Shoulders Stencil", "Shoulders", "Literata"):
             self.assertEqual(brand.default_spacing(family), brand.SPACING_OTHER, family)
 
@@ -938,6 +940,32 @@ class SquareTests(BrandBase):
         self.assertNotIn("flattened", self.make(force=True))
         self._draw('<path fill="#ff0000" class="a" d="M0 0L40 0L40 20Z"/><path class="b" d="M0 0L9 0L9 5Z"/>')
         self.assertNotIn("flattened", self.make(force=True))
+
+    def test_alpha_and_hsl_colors_are_normalized_like_the_others(self):
+        for value, want in (("#f00f", "#ff0000"), ("#FF0000FF", "#ff0000"), ("rgba(255, 0, 0, 1)", "#ff0000"),
+                            ("rgb(255 0 0 / 100%)", "#ff0000"), ("hsl(0, 100%, 50%)", "#ff0000"), ("hsla(120, 100%, 50%, 1)", "#00ff00"),
+                            ("rgba(0, 0, 0, 0.5)", "#00000080"), ("#0008", "#00000088")):
+            self.assertEqual(brand._norm_color(value), want, value)
+        self._draw('<path fill="red" d="M0 0L40 0L40 20Z"/><path fill="rgba(255,0,0,1)" d="M0 0L5 0L5 5Z"/>'
+                   '<path fill="hsl(0,100%,50%)" d="M0 0L9 0L9 5Z"/><path fill="#f00f" d="M0 0L7 0L7 7Z"/>'
+                   '<path style="fill:#ff0000ff" d="M0 0L6 0L6 6Z"/>')
+        self.assertNotIn("flattened", self.make())
+
+    def test_the_root_fill_is_inherited_and_a_line_has_no_fill(self):
+        self.draw.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20" fill="#123456">'
+                             '<path d="M0 0L40 0L40 20Z"/><path fill="#123456" d="M0 0L9 0L9 5Z"/></svg>\n')
+        self.assertNotIn("flattened", self.make())
+        self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/><line x1="0" y1="0" x2="40" y2="20"/>')
+        self.assertNotIn("flattened", self.make(force=True))
+        self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/><line x1="0" y1="0" x2="40" y2="20" stroke="#fedcba"/>')
+        self.assertEqual(self.make(force=True)["flattened"], 2)
+
+    def test_a_bang_that_is_not_important_stays_inside_the_value(self):
+        self._draw('<path style="fill:#123456 !x;stroke-width:2" d="M0 0L40 0L40 20Z"/>')
+        self.make()
+        text = self.out.read_text()
+        self.assertIn('style="fill:#fbfcfd;stroke-width:2"', text)
+        self.assertNotIn("!x", text)
 
     def test_two_paint_colors_are_flattened_and_one_is_not(self):
         self._draw('<path fill="#ABC" d="M0 0L40 0L40 20Z"/><path style="fill:#aabbcc" d="M0 0L5 0L5 5Z"/>'

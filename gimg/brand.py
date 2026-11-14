@@ -43,6 +43,8 @@ MIN_TRANSPARENT = 0.02  # a matte that frees less than this found no flat backgr
 SPACING = 0.01  # em between letters: the family's tracking (Big Shoulders Display 800, hojas de docs/marcas/)
 SPACING_OTHER = 0.12  # em between letters for any other font
 SPACING_FAMILIES = ("big shoulders display", "big shoulders")
+SPACING_SUFFIXES = ("sc", "variable", "thin", "extralight", "light", "regular", "medium", "semibold", "bold", "extrabold",
+                    "black", "italic")  # trailing words of a family name that are not a different design
 MODES = {"color": "color", "mono": "mono", "silhouette": "silueta", "silueta": "silueta"}
 
 
@@ -183,12 +185,14 @@ def _font_family(font) -> str:
 
 
 def default_spacing(family) -> float:
-    """The tracking in em when none is given: `SPACING` for Big Shoulders Display (also the variable "Big Shoulders" and the
-    "SC" variants, case and spacing aside), `SPACING_OTHER` for any other family."""
-    name = " ".join(str(family).split()).lower()
-    if name.endswith(" sc"):
-        name = name[:-3]
-    return SPACING if name in SPACING_FAMILIES else SPACING_OTHER
+    """The tracking in em when none is given: `SPACING` for Big Shoulders Display (also the variable "Big Shoulders", the
+    "SC" variants and a weight or style that a static file carries in its family name, such as "Big Shoulders Display
+    ExtraBold", case and spacing aside), `SPACING_OTHER` for any other family. Other cuts of the superfamily ("Text",
+    "Inline Display", "Stencil") are other designs, with no sheet in `docs/marcas/`: they keep `SPACING_OTHER`."""
+    words = " ".join(str(family).split()).lower().split(" ")
+    while len(words) > 1 and words[-1] in SPACING_SUFFIXES:
+        words.pop()
+    return SPACING if " ".join(words) in SPACING_FAMILIES else SPACING_OTHER
 
 
 def _fontconfig(folder: str) -> str:
@@ -342,7 +346,7 @@ def _read_svg(path) -> dict:
     if not all(math.isfinite(v) for v in nums) or not (w > 0 and h > 0):
         raise GimgError("brand.bad_svg", path=str(path), reason="the viewBox has no area")
     inner = _TITLE.sub("", m.group(2))
-    return {"vb": (x, y, w, h), "inner": inner, "box": _ink_box(inner) or (x, y, x + w, y + h)}
+    return {"vb": (x, y, w, h), "inner": inner, "root": m.group(1), "box": _ink_box(inner) or (x, y, x + w, y + h)}
 
 
 def _bez(p0, p1, p2, p3):
@@ -470,7 +474,7 @@ def _fit(piece: dict, x: float, y: float, w: float, h: float, ink=None) -> str:
 SQUARE = 128
 _PAINT = re.compile(r'(?<![\w:.-])(fill|stroke)="([^"]*)"')
 _STYLE = re.compile(r'(?<![\w:.-])style="([^"]*)"')
-_DECL = re.compile(r'(?<![\w-])(fill|stroke)(\s*:\s*)([^;!]*)(!\s*important)?')
+_DECL = re.compile(r'(?<![\w-])(fill|stroke)(\s*:\s*)((?:[^;!]|!(?!\s*important))*)(!\s*important)?')
 _NO_PAINT = ("", "none", "currentcolor", "inherit", "transparent")
 
 
@@ -496,7 +500,9 @@ _NAMED = {"black": "#000000", "white": "#ffffff", "red": "#ff0000", "lime": "#00
           "cyan": "#00ffff", "aqua": "#00ffff", "magenta": "#ff00ff", "fuchsia": "#ff00ff", "gray": "#808080", "grey": "#808080",
           "silver": "#c0c0c0", "maroon": "#800000", "olive": "#808000", "green": "#008000", "purple": "#800080", "teal": "#008080",
           "navy": "#000080", "orange": "#ffa500"}
-_RGB = re.compile(r"rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)")
+_NUM = r"[-+]?(?:\d+\.?\d*|\.\d+)"
+_RGB = re.compile(r"rgba?\(\s*(%s)(%%?)\s*[,\s]\s*(%s)(%%?)\s*[,\s]\s*(%s)(%%?)\s*(?:[,/]\s*(%s)(%%?)\s*)?\)" % ((_NUM,) * 4))
+_HSL = re.compile(r"hsla?\(\s*(%s)(?:deg)?\s*[,\s]\s*(%s)%%\s*[,\s]\s*(%s)%%\s*(?:[,/]\s*(%s)(%%?)\s*)?\)" % ((_NUM,) * 4))
 _SHAPE = re.compile(r"<(path|rect|circle|ellipse|polygon|polyline|line)\b([^>]*)>")
 _TAG = re.compile(r"<(/?)(g|path|rect|circle|ellipse|polygon|polyline|line)\b([^>]*)>")
 _CLASS = re.compile(r'(?<![\w:.-])class\s*=')
@@ -507,27 +513,52 @@ def _has_fill(attrs: str) -> bool:
             or any(d.group(1) == "fill" for st in _STYLE.finditer(attrs) for d in _DECL.finditer(st.group(1))))
 
 
+def _hex_alpha(rgb, alpha) -> str:
+    """``#rrggbb``, or ``#rrggbbaa`` when `alpha` (0-1) is not fully opaque."""
+    a = round(min(max(alpha, 0.0), 1.0) * 255)
+    return "#%02x%02x%02x" % tuple(rgb) + ("" if a == 255 else "%02x" % a)
+
+
+def _alpha_of(num, pct) -> float:
+    return 1.0 if num is None else float(num) / (100 if pct else 1)
+
+
 def _norm_color(value: str) -> str:
-    """`value` as lowercase ``#rrggbb`` when it is a hex color, a basic CSS color name or ``rgb(r, g, b)``; anything else, lowercased."""
+    """`value` as lowercase ``#rrggbb`` (``#rrggbbaa`` if it is not opaque) when it is a hex color (3, 4, 6 or 8 digits), a
+    basic CSS color name, ``rgb()`` / ``rgba()`` or ``hsl()`` / ``hsla()``; anything else, lowercased."""
     v = value.strip().lower()
-    if re.fullmatch(r"#[0-9a-f]{3}", v):
-        return "#" + "".join(c * 2 for c in v[1:])
+    if re.fullmatch(r"#[0-9a-f]{3,4}", v):
+        v = "#" + "".join(c * 2 for c in v[1:])
+    if re.fullmatch(r"#[0-9a-f]{8}", v):
+        return v[:7] if v.endswith("ff") else v
     rgb = _RGB.fullmatch(v)
-    if rgb and all(int(n) <= 255 for n in rgb.groups()):
-        return "#%02x%02x%02x" % tuple(int(n) for n in rgb.groups())
+    if rgb:
+        g = rgb.groups()
+        chans = [float(g[i]) * (2.55 if g[i + 1] else 1) for i in (0, 2, 4)]
+        if all(-0.5 <= c < 255.5 for c in chans):
+            return _hex_alpha([round(min(max(c, 0), 255)) for c in chans], _alpha_of(g[6], g[7]))
+    hsl = _HSL.fullmatch(v)
+    if hsl:
+        h, sat, light = float(hsl.group(1)) % 360, min(max(float(hsl.group(2)), 0), 100) / 100, min(max(float(hsl.group(3)), 0), 100) / 100
+        c = (1 - abs(2 * light - 1)) * sat
+        x = c * (1 - abs((h / 60) % 2 - 1))
+        r, g2, b = [(c, x, 0), (x, c, 0), (0, c, x), (0, x, c), (x, 0, c), (c, 0, x)][int(h // 60) % 6]
+        m = light - c / 2
+        return _hex_alpha([round((n + m) * 255) for n in (r, g2, b)], _alpha_of(hsl.group(4), hsl.group(5)))
     return _NAMED.get(v, v)
 
 
-def _paint_colors(inner: str) -> set:
+def _paint_colors(inner: str, root: str = "") -> set:
     """The distinct colors that `inner` paints with (attributes and ``style`` declarations), as `_norm_color` writes them;
     ``none``, ``currentColor`` and strokes that are not there do not count, but a shape with no ``fill`` at all paints the
-    default black (unless a ``<g>`` around it sets a fill, or it has a ``class`` or the drawing a ``<style>``: then it is not counted)."""
-    found = [m.group(2) for m in _PAINT.finditer(inner)]
-    for st in _STYLE.finditer(inner):
+    default black (unless a ``<g>`` or the root (`root`: the attributes of ``<svg>``) sets a fill, or it has a ``class`` or the
+    drawing a ``<style>``: then it is not counted); a ``<line>`` has no area, so it only paints by its stroke."""
+    found = [m.group(2) for m in _PAINT.finditer(inner + " " + root)]
+    for st in _STYLE.finditer(inner + " " + root):
         found += [m.group(3) for m in _DECL.finditer(st.group(1))]
     colors = {_norm_color(v) for v in found if v.strip().lower() not in _NO_PAINT}
     if "<style" not in inner.lower():  # with a stylesheet the color may come from CSS: not counted
-        groups = []  # one flag per open <g>: does it set a fill its shapes inherit?
+        groups = [_has_fill(root)]  # one flag per open <g> (the first, the root): does it set a fill its shapes inherit?
         for m in _TAG.finditer(inner):
             closing, tag, attrs = m.groups()
             if tag == "g":
@@ -536,7 +567,7 @@ def _paint_colors(inner: str) -> set:
                         groups.pop()
                 elif not attrs.rstrip().endswith("/"):
                     groups.append(_has_fill(attrs))
-            elif not closing and not any(groups) and not _has_fill(attrs) and not _CLASS.search(attrs):
+            elif not closing and tag != "line" and not any(groups) and not _has_fill(attrs) and not _CLASS.search(attrs):
                 colors.add("#000000")
     return colors
 
@@ -577,7 +608,7 @@ def square(drawing, out=None, fill=None, ink=None, chamfer: int = 28, pad: int =
     if room <= 0:
         raise GimgError("brand.bad_square", reason="pad leaves no room for the drawing")
     k = min(room / bw, room / bh)
-    flattened = len(_paint_colors(piece["inner"]))
+    flattened = len(_paint_colors(piece["inner"], piece["root"]))
     art = _place(dict(piece, inner=_square_ink(piece["inner"], ink)), (SQUARE - bw * k) / 2, (SQUARE - bh * k) / 2, k)
     d = "M0 0 H%s L%d %s V%d H0 Z" % (_num(SQUARE - chamfer), SQUARE, _num(chamfer), SQUARE)
     svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" role="img"><path fill="%s" d="%s"/>%s</svg>\n'
