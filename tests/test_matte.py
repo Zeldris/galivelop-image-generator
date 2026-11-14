@@ -214,6 +214,27 @@ class ChromaKeyTests(unittest.TestCase):
                 for x in (10, 11, 30):  # the ring pixels of one row, then the gold behind them
                     self.assertEqual(at(out, size, x, 30), (ring if x < 12 else gold) + (255,))
 
+    def test_band_rings_equal_the_simple_dilation(self):
+        import random
+        def simple(clear, w, h):  # CHROMA_BAND whole-image dilations, as before the one-scan optimization
+            n, edge, band = w * h, bytearray(clear), bytearray(w * h)
+            for _ in range(matte.CHROMA_BAND):
+                grown = bytearray(edge)
+                for k in range(n):
+                    x = k % w
+                    if not edge[k] and ((x and edge[k - 1]) or (x < w - 1 and edge[k + 1])
+                                        or (k >= w and edge[k - w]) or (k < n - w and edge[k + w])):
+                        grown[k] = 1
+                        band[k] = 1
+                edge = grown
+            return band
+        rnd = random.Random(7)
+        for w, h in ((1, 1), (1, 9), (7, 5), (23, 17)):
+            for density in (0.05, 0.3, 0.7):
+                clear = bytearray(1 if rnd.random() < density else 0 for _ in range(w * h))
+                with self.subTest(w=w, h=h, density=density):
+                    self.assertEqual(matte._band(clear, w, w * h), simple(clear, w, h))
+
     def test_brand_matte_command_reads_and_writes_files_for_both(self):
         import os
         import tempfile
