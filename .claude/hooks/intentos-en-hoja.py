@@ -8,9 +8,11 @@ captura suelta de cada sesión pasa sin aviso (mirar una sola es legítimo) y av
 
 Lee el JSON del gancho en la entrada estándar; ante cualquier error deja pasar.
 """
+import getpass
 import hashlib
 import json
 import os
+import stat
 import sys
 import tempfile
 import time
@@ -38,7 +40,8 @@ def _limpiar(carpeta):
             continue
         ruta = os.path.join(carpeta, nombre)
         try:
-            if os.path.getmtime(ruta) < limite:
+            st = os.lstat(ruta)  # sin seguir symlinks: un enlace ajeno no se mira ni se borra
+            if stat.S_ISREG(st.st_mode) and st.st_mtime < limite:
                 os.remove(ruta)
         except OSError:
             pass
@@ -53,19 +56,52 @@ def _clave(datos):
             or 'ppid-%d' % os.getppid())
 
 
+def _carpeta_propia():
+    """Carpeta por usuario en el directorio temporal compartido (REVIEW.md): se crea con 700 y se rechaza si es un
+    symlink, de otro usuario o con permisos de grupo/otros. Devuelve su ruta o None."""
+    uid = os.getuid() if hasattr(os, 'getuid') else None
+    quien = str(uid) if uid is not None else getpass.getuser()
+    carpeta = os.path.join(tempfile.gettempdir(), 'gimg-capturas-' + quien)
+    try:
+        try:
+            os.mkdir(carpeta, 0o700)
+        except FileExistsError:
+            pass
+        st = os.lstat(carpeta)
+    except OSError:
+        return None
+    if not stat.S_ISDIR(st.st_mode) or (uid is not None and (st.st_uid != uid or st.st_mode & 0o077)):
+        return None
+    return carpeta
+
+
+def _tocar(marca):
+    """Renueva el mtime de la marca sin seguir symlinks (no toca el destino de un enlace plantado)."""
+    if os.utime in os.supports_follow_symlinks:
+        os.utime(marca, follow_symlinks=False)
+    elif stat.S_ISREG(os.lstat(marca).st_mode):
+        os.utime(marca)
+
+
 def _primera_captura(datos, carpeta):
-    """True la primera vez que se ve una captura suelta en la sesión (lo apunta en `carpeta`)."""
-    carpeta = carpeta or tempfile.gettempdir()
+    """True la primera vez que se ve una captura suelta en la sesión (lo apunta en `carpeta`). Si la carpeta no es
+    de fiar o no se puede escribir, falla abierto: True, sin tocar nada."""
+    carpeta = carpeta or _carpeta_propia()
+    if carpeta is None:
+        return True
     _limpiar(carpeta)
     marca = os.path.join(carpeta, PREFIJO + hashlib.sha256(_clave(datos).encode()).hexdigest()[:16])
     try:
-        os.close(os.open(marca, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600))
-    except OSError:
+        # O_EXCL no sigue symlinks: una marca plantada falla en vez de tocar su destino
+        os.close(os.open(marca, os.O_CREAT | os.O_EXCL | os.O_WRONLY | getattr(os, 'O_NOFOLLOW', 0), 0o600))
+    except FileExistsError:
         try:
-            os.utime(marca)  # la marca se usa: una sesión larga no la pierde en la limpieza
+            _tocar(marca)  # la marca se usa: una sesión larga no la pierde en la limpieza
         except OSError:
             pass
         return False
+    except OSError:
+        return True
     return True
 
 

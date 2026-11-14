@@ -362,7 +362,7 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
             raise ValueError("mono: the image is one opaque color, so there is no drawing to trace: remove the "
                              "background first (matte), use mode silueta or pass a transparent image")
         auto = ink is None
-        if ink is None and counts and -1 not in {v for row in grid for v in row} and len(pal) > 1:
+        if ink is None and opaque and len(pal) > 1:
             # an opaque image (strokes on paper): the paper is every color that fills >= PAPER_SHARE of the border
             edge = defaultdict(int)
             for x in range(W):
