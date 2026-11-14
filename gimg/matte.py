@@ -21,8 +21,9 @@ patches; the shapes that matter (gold, brown) are far beyond 110.
 A pure chroma key (a border color with a channel of 200 or more and another of 60 or less, as ``#00ff00`` green or
 ``#ff00ff`` magenta) is 250-350 away from any subject, so an edge pixel that is a third subject is already past `t1`
 and would stay opaque with two thirds of chroma in it (a halo). Only the strip of `CHROMA_BAND` pixels next to the
-removed background is fixed: each pixel there takes the color of the subject pixels around it (further in, outside the
-strip) and its coverage is the share of the way from the background to that color; the rest of the subject is not
+removed background is fixed: each pixel there that is a mix of the background and the color of the subject pixels
+around it (further in, outside the strip) takes that color and, as coverage, the share of the way from the background to
+it; any other pixel (an outline or a rim of its own) is kept. The rest of the subject is not
 touched, whatever its color.
 """
 from __future__ import annotations
@@ -170,6 +171,9 @@ def _chroma_edge(width, height, rgba, out, seen, dist, bg, t0) -> None:
         c = sum((rgba[i + t] - bg[t]) * v[t] for t in range(3)) / vv
         c = max(0.0, min(1.0, c))
         if c >= 0.98:
+            continue
+        resid = math.sqrt(sum((rgba[i + t] - bg[t] - c * v[t]) ** 2 for t in range(3)))
+        if resid >= t0 / 2:  # not a mix of the background and this subject: an outline or a rim of its own, kept
             continue
         for t in range(3):
             out[i + t] = max(0, min(255, int(round(f[t]))))

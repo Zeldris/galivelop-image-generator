@@ -182,6 +182,21 @@ class ChromaKeyTests(unittest.TestCase):
                 self.assertEqual(soft, [], "the subject lost pixels more than 3 px inside")
                 self.assertEqual(at(out, size, 2, 2)[3], 0)
 
+    def test_dark_outline_and_bright_rim_on_chroma_stay_opaque_with_their_color(self):
+        gold = (200, 160, 0)
+        for name, ring in (("outline", (20, 20, 20)), ("rim", (255, 250, 200))):
+            with self.subTest(ring=name):
+                size = 60
+                px = bytearray()
+                for y in range(size):
+                    for x in range(size):
+                        edge = min(x - 10, 49 - x, y - 10, 49 - y)  # 0 on the subject's outer pixel
+                        inside = edge >= 0
+                        px += bytes(ring if inside and edge < 2 else gold if inside else (0, 255, 0)) + b"\xff"
+                out = matte.remove_bg(size, size, px)
+                for x in (10, 11, 30):  # the ring pixels of one row, then the gold behind them
+                    self.assertEqual(at(out, size, x, 30), (ring if x < 12 else gold) + (255,))
+
     def test_brand_matte_command_reads_and_writes_files_for_both(self):
         import os
         import tempfile
