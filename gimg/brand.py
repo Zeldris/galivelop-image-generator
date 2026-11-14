@@ -493,18 +493,25 @@ def _invisible(norm: str) -> bool:
     return bool(re.fullmatch(r"#[0-9a-f]{6}00", norm))
 
 
-def _square_ink(inner: str, ink: str) -> str:
+def _square_ink(inner: str, ink: str, root: str = "") -> str:
     """`inner` with every fill and stroke that paints (not ``none``) turned into `ink`, as attributes and as declarations
-    of a ``style`` attribute; unpainted paths inherit it."""
+    of a ``style`` attribute; unpainted paths inherit it. The paint attributes of the root ``<svg>`` (`root`: its attributes:
+    ``fill``, ``stroke``, ``stroke-width``, ``style``...) go on the wrapping ``<g>``, recolored the same way, so open strokes stay strokes."""
     def decl(m):
         if not _paints(m.group(3)):
             return m.group(0)
         important = m.group(4)  # `!important` stays, with the space it had before it
         return "%s%s%s%s" % (m.group(1), m.group(2), ink, (m.group(3)[len(m.group(3).rstrip()):] + important) if important else "")
 
-    out = _STYLE.sub(lambda m: 'style="%s"' % _DECL.sub(decl, m.group(1)), inner)
-    out = _PAINT.sub(lambda m: m.group(0) if not _paints(m.group(2)) else '%s="%s"' % (m.group(1), ink), out)
-    return '<g fill="%s">%s</g>' % (ink, out)
+    def recolor(text):
+        text = _STYLE.sub(lambda m: 'style="%s"' % _DECL.sub(decl, m.group(1)), text)
+        return _PAINT.sub(lambda m: m.group(0) if not _paints(m.group(2)) else '%s="%s"' % (m.group(1), ink), text)
+
+    kept = " ".join('%s="%s"' % (n, v) for n, v in _ROOT_ATTR.findall(root) if n == "style" or n.startswith(("fill", "stroke")))
+    return "<g %s%s>%s</g>" % ("" if _has_fill(kept) else 'fill="%s" ' % ink, recolor(kept), recolor(inner))
+
+
+_ROOT_ATTR = re.compile(r'(?<![\w:.-])([\w-]+)="([^"]*)"')
 
 
 _NAMED = {"black": "#000000", "white": "#ffffff", "red": "#ff0000", "lime": "#00ff00", "blue": "#0000ff", "yellow": "#ffff00",
@@ -569,8 +576,11 @@ def _paint_colors(inner: str, root: str = "") -> set:
     found = [m.group(2) for m in _PAINT.finditer(inner + " " + root)]
     for st in _STYLE.finditer(inner + " " + root):
         found += [m.group(3) for m in _DECL.finditer(st.group(1))]
-    colors = {_norm_color(v)[:7] if re.fullmatch(r"#[0-9a-f]{8}", _norm_color(v)) else _norm_color(v)  # alpha aside: same color
-              for v in found if v.strip().lower() not in _NO_PAINT and not _invisible(_norm_color(v))}
+    colors = set()
+    for v in found:
+        n = _norm_color(v)
+        if v.strip().lower() not in _NO_PAINT and not _invisible(n):
+            colors.add(n[:7] if re.fullmatch(r"#[0-9a-f]{8}", n) else n)  # alpha aside: same color
     if "<style" not in inner.lower():  # with a stylesheet the color may come from CSS: not counted
         groups = [_has_fill(root)]  # one flag per open <g> (the first, the root): does it set a fill its shapes inherit?
         for m in _TAG.finditer(inner):
@@ -623,7 +633,7 @@ def square(drawing, out=None, fill=None, ink=None, chamfer: int = 28, pad: int =
         raise GimgError("brand.bad_square", reason="pad leaves no room for the drawing")
     k = min(room / bw, room / bh)
     flattened = len(_paint_colors(piece["inner"], piece["root"]))
-    art = _place(dict(piece, inner=_square_ink(piece["inner"], ink)), (SQUARE - bw * k) / 2, (SQUARE - bh * k) / 2, k)
+    art = _place(dict(piece, inner=_square_ink(piece["inner"], ink, piece["root"])), (SQUARE - bw * k) / 2, (SQUARE - bh * k) / 2, k)
     d = "M0 0 H%s L%d %s V%d H0 Z" % (_num(SQUARE - chamfer), SQUARE, _num(chamfer), SQUARE)
     svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" role="img"><path fill="%s" d="%s"/>%s</svg>\n'
            % (SQUARE, SQUARE, fill, d, art))

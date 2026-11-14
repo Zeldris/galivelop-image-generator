@@ -910,6 +910,20 @@ class SquareTests(BrandBase):
         self.assertIn('style="fill:none;stroke:none"', text)
         self.assertEqual(res["flattened"], 2)
 
+    def test_the_paint_of_the_root_svg_stays_on_the_art_recolored_to_the_ink(self):
+        self.draw.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20" fill="none" stroke="#c00" stroke-width="3">'
+                             '<path d="M0 0L40 20"/></svg>\n')
+        self.make()
+        text = self.out.read_text()
+        self.assertIn('<g fill="none" stroke="#fbfcfd" stroke-width="3">', text)  # an open stroke is not turned into a filled blob
+        self.assertNotIn("#c00", text)
+        self.draw.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20" style="fill:none;stroke:#c00">'
+                             '<path d="M0 0L40 20"/></svg>\n')
+        self.make(force=True)
+        text = self.out.read_text()
+        self.assertIn('<g style="fill:none;stroke:#fbfcfd">', text)
+        self.assertNotIn('fill="#fbfcfd"', text)
+
     def test_transparent_fills_and_strokes_stay_unpainted(self):
         self._draw('<path fill="transparent" stroke="#123456" d="M0 0L40 0L40 20Z"/>'
                    '<path style="fill:transparent;stroke:Transparent" d="M0 0L5 0L5 5Z"/>')
