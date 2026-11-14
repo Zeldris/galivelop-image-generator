@@ -673,7 +673,8 @@ class QueueDrawer(UiBase):
 class BrandShop(UiBase):
     """«Sistema de logo» in the Marca tab: steps stay disabled with their reason until the piece exists, and the origin
     can come from the URL (`?src=profile|key|attempt`). The steps that need the tools (matte on a real flat background,
-    rsvg) are covered by tests/test_brand.py and the API tests; no step is run here."""
+    rsvg) are covered by tests/test_brand.py and the API tests; no step is run here. This class is also where the browser
+    tests of the workshop form live."""
 
     @classmethod
     def prepare(cls):
@@ -697,6 +698,25 @@ class BrandShop(UiBase):
         self.open("/p/tarkor/marca?src=" + src, "document.querySelector('#brand-shop input[name=shop-attempt]:checked')")
         self.page.wait("![...document.querySelectorAll('#brand-shop .shop-action button')].find(b => b.textContent === 'Quitar fondo').disabled")
         self.assertTrue(self.disabled("Pasar a SVG en color"))  # still needs the matte
+        self.no_problems()
+
+    def test_the_wordmark_spacing_is_sent_only_when_the_field_has_a_value(self):
+        self.open("/p/tarkor/marca", "document.querySelector('#shop-wspacing')")
+        self.js("""import('/ui/js/api.js').then(m => { window.__api = m.api; window.__real = m.api.brandWordmark; window.__bodies = [];
+            m.api.brandWordmark = (project, body) => { window.__bodies.push(body); return Promise.resolve({}); }; return true; })""")
+        self.addCleanup(lambda: self.js("window.__api.brandWordmark = window.__real; true"))
+        self.assertEqual(self.js("document.getElementById('shop-wspacing').value"), "")
+        self.js("""const f = document.getElementById('shop-wfont'); f.value = 'Inter'; f.dispatchEvent(new Event('input', {bubbles: true})); true""")
+        go = """[...document.querySelectorAll('#brand-shop .shop-action button')].find(b => /wordmark/i.test(b.textContent))"""
+        self.page.wait("!(%s).disabled" % go)
+        self.js("(%s).click(); true" % go)
+        self.page.wait("window.__bodies.length === 1")
+        self.assertFalse(self.js("'spacing' in window.__bodies[0]"))
+        self.js("const s = document.getElementById('shop-wspacing'); s.value = '0.05'; s.dispatchEvent(new Event('input', {bubbles: true})); true")
+        self.page.wait("!(%s).disabled" % go)
+        self.js("(%s).click(); true" % go)
+        self.page.wait("window.__bodies.length === 2")
+        self.assertEqual(self.js("window.__bodies[1].spacing"), 0.05)
         self.no_problems()
 
     def seed_shop(self, slug):
