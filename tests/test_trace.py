@@ -384,13 +384,24 @@ class ToSvgTests(unittest.TestCase):
         diag = canvas(40, 40)
         for i in range(30):
             fill(diag, 5 + i, 5 + i, 6 + i, 6 + i, (0, 0, 0, 255))
-        for name, img, need in (("L", l_img, 45), ("T", t_img, 50), ("diagonal", diag, 30)):
+        for name, img, area in (("L", l_img, 49), ("T", t_img, 54)):
             with self.subTest(name):
                 ps = mono(img)
                 self.assertEqual(len(ps), 1)
-                self.assertGreaterEqual(evenodd_area(ps[0].get("d"), 40), need)
-        d = mono(l_img)[0].get("d")  # the tips keep their pixel: the stroke is 25 + 25 - 1 long
-        self.assertGreaterEqual(evenodd_area(d, 40), 49)
+                self.assertEqual(evenodd_area(ps[0].get("d"), 40), area)  # tips included, nothing added
+        d = "".join(p.get("d") for p in paths(trace.to_svg(*diag, "mono", dp_tol=0, min_island=0, curves=False)))
+        self.assertGreaterEqual(d.count("M"), 25, "the diagonal survives as its pixels")
+        self.assertLessEqual(evenodd_area(d, 40), 30, "and is not widened beyond the original")
+
+    def test_mono_does_not_bring_back_burrs_or_specks_next_to_a_thick_block(self):
+        img = canvas(30, 20)
+        fill(img, 3, 8, 27, 18, (0, 0, 0, 255))
+        for x in (3, 5, 8, 10, 12, 15):  # burrs on top of the block: "#.#..#.#.#..#...#"
+            fill(img, x, 7, x + 1, 8, (0, 0, 0, 255))
+        fill(img, 20, 2, 21, 3, (0, 0, 0, 255))  # a lone speck
+        d = paths(trace.to_svg(*img, "mono", dp_tol=0, min_island=0, curves=False, smooth_passes=1))[0].get("d")
+        self.assertEqual(d.count("M"), 1)
+        self.assertLessEqual(evenodd_area(d, 30), 24 * 10)
 
     def test_mono_refuses_a_single_opaque_color_instead_of_a_filled_rectangle(self):
         with self.assertRaisesRegex(ValueError, "one opaque color"):

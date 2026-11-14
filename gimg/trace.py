@@ -17,8 +17,10 @@
 in `ink` (indexes). Default: every color but the darkest or, in an image with no transparent pixel, every color but
 the paper (each color on at least 20% of the border, so a two-color background is all paper; with a gradient where
 none reaches 20%, the darkest is left out as before). A dark frame that fills the border is taken for paper: pass `ink`
-by hand (API) or remove the background first (``--matte``). One-pixel straight lines survive the smoothing (mono only).
-A drawing that leaves no ink raises ValueError (``no ink left``) instead of an empty SVG; an empty drawing still gives one.
+by hand (API) or remove the background first (matte). One-pixel strokes of 3 pixels or more (straight, L, T, diagonal)
+survive the smoothing (mono only; a diagonal comes back as separate pixels, so it needs a low `min_island`).
+A drawing that leaves no ink raises ValueError (``no ink left``) instead of an empty SVG; `color` and `silueta` raise it too
+(``no shape left``) when no outline survives `min_island`; an empty (transparent) drawing still gives an empty SVG.
 `mode="silueta"` is one path over the whole opaque shape.
 `title` loses control characters. A bad option (also a `color` that is not ``#rgb``, ``#rrggbb`` or a name) raises
 ``ValueError``.
@@ -133,31 +135,41 @@ def _majority(m, W: int, H: int, passes: int):
     return m
 
 
+STROKE_MIN = 3  # mono: a run of erased one-pixel ink shorter than this is noise (a burr, a speck), not a stroke
+
+
 def _thin(orig, smooth, W: int, H: int):
     """`smooth` plus the one-pixel-wide strokes of `orig` that the majority filter erased (a stroke must survive it).
 
-    A pixel is restored when it was erased, is not inside any 2x2 block of ink (so it is not the corner of a thick
-    shape) and has one to three ink neighbours (a stroke end, a straight run, an L, a T or a diagonal). A diagonal
-    step gets the pixel beside it too, so the outline does not break into one-pixel islands."""
-    def on(m, y, x):
-        return 0 <= y < H and 0 <= x < W and m[y][x]
+    The candidates are the pixels of `orig` that the filter erased and that lie in no 2x2 block of ink (so they are not
+    the corner of a thick shape). Of those, only the 8-connected runs of `STROKE_MIN` pixels or more come back: a stroke
+    of any shape (straight, L, T, diagonal, with its tips), never an isolated burr or speck. A pixel that was not ink in
+    `orig` is never added, so a diagonal comes back as separate one-pixel squares (kept only with a low `min_island`)."""
+    def on(y, x):
+        return 0 <= y < H and 0 <= x < W and orig[y][x]
 
     def in_block(y, x):
-        return any(all(on(orig, y0 + i, x0 + j) for i in (0, 1) for j in (0, 1))
-                   for y0 in (y - 1, y) for x0 in (x - 1, x))
+        return any(all(on(y0 + i, x0 + j) for i in (0, 1) for j in (0, 1)) for y0 in (y - 1, y) for x0 in (x - 1, x))
+    cand = {(y, x) for y in range(H) for x in range(W) if orig[y][x] and not smooth[y][x] and not in_block(y, x)}
     out = [row[:] for row in smooth]
-    back = []
-    for y in range(H):
-        for x in range(W):
-            if orig[y][x] and not smooth[y][x] and not in_block(y, x):
-                near = sum(1 for dy in (-1, 0, 1) for dx in (-1, 0, 1) if (dy or dx) and on(orig, y + dy, x + dx))
-                if 1 <= near <= 3:
-                    out[y][x] = 1
-                    back.append((y, x))
-    for y, x in back:
-        for dx in (-1, 1):  # a diagonal neighbour below with nothing orthogonal between: bridge it
-            if on(orig, y + 1, x + dx) and not on(out, y, x + dx) and not on(out, y + 1, x):
-                out[y][x + dx] = 1
+    seen = set()
+    for start in cand:
+        if start in seen:
+            continue
+        run, todo = [], [start]
+        seen.add(start)
+        while todo:
+            y, x = todo.pop()
+            run.append((y, x))
+            for dy in (-1, 0, 1):
+                for dx in (-1, 0, 1):
+                    q = (y + dy, x + dx)
+                    if q in cand and q not in seen:
+                        seen.add(q)
+                        todo.append(q)
+        if len(run) >= STROKE_MIN:
+            for y, x in run:
+                out[y][x] = 1
     return out
 
 
@@ -348,7 +360,7 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
         opaque = bool(counts) and -1 not in {v for row in grid for v in row}
         if ink is None and opaque and len(counts) == 1:
             raise ValueError("mono: the image is one opaque color, so there is no drawing to trace: remove the "
-                             "background first (--matte), use mode silueta or pass a transparent image")
+                             "background first (matte), use mode silueta or pass a transparent image")
         auto = ink is None
         if ink is None and counts and -1 not in {v for row in grid for v in row} and len(pal) > 1:
             # an opaque image (strokes on paper): the paper is every color that fills >= PAPER_SHARE of the border
@@ -372,12 +384,12 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
             if share >= INK_WARN:
                 warnings.warn("mono: the ink covers %d%% of the image, so a frame or the background may have been taken "
                               "for ink (the paper is each color on %d%% of the border): remove the background first "
-                              "(--matte), pass `ink` by hand or use mode color" % (round(share * 100), PAPER_SHARE * 100),
+                              "(matte), pass `ink` by hand or use mode color" % (round(share * 100), PAPER_SHARE * 100),
                               UserWarning, stacklevel=2)
         layers.append(layer(color, lambda v, s=frozenset(ink): v in s, True))
         if counts and not layers[-1]:  # a drawing went in and nothing came out: say it, never an empty SVG
             raise ValueError("mono: no ink left (every ink color was left out or smoothed away): remove the "
-                             "background first (--matte), lower min_island or use mode color")
+                             "background first (matte), lower min_island or use mode color")
     else:
         order = sorted(counts, key=lambda j: -counts[j])
         if order:
