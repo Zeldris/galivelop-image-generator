@@ -718,7 +718,7 @@
   "ui.retouch.modelCurrent": "El actual ({id})",
   "cli.cmd.brand": "proceso de marca: quitar fondo, pasar a SVG y nombre a trazos",
   "cli.cmd.brand_matte": "quita el fondo plano de un PNG y lo guarda con transparencia (el original no se toca)",
-  "cli.cmd.brand_trace": "pasa un PNG a SVG vectorial (color, mono o silueta)",
+  "cli.cmd.brand_trace": "pasa un PNG a SVG vectorial (color, mono o silueta); en mono sin transparencia el papel es todo color que ocupe al menos el 20 % del borde; si un marco oscuro llena el borde, usa --matte o el modo color",
   "cli.cmd.brand_wordmark": "el nombre de la marca con una fuente, pasado a trazos (SVG sin texto ni dependencia de la fuente)",
   "cli.arg.brand_png": "PNG de entrada (solo se lee)",
   "cli.arg.brand_out_matte": "PNG de salida (por defecto, junto al original con el sufijo -alpha)",
