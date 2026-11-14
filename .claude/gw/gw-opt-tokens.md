@@ -97,6 +97,9 @@ las crea una vez; desde entonces son del proyecto.
 ## Referencias medidas
 
 <!-- Cifras medidas con las que comparar: fecha, sesión, contexto medio, llamadas, total. -->
+- 2026-11-14, `ccr-85e9d14e-zt7p8b` desde `d2913d1` (fase 1 de la segunda ida a `main` y sus arreglos), sesión
+  `66f16e48`: principal 21 llamadas, 2,2 M (106k de media, suelo 88k, techo 120k); revisión Opus 10 llamadas, 0,9 M;
+  arreglos Sonnet 26 llamadas, 2,4 M (arranque 69k). Total 57 llamadas, 5,5 M.
 - 2026-11-13, `ccr-85e9d14e-zt7p8b` desde `529468b` (release v0.5.0, leves sin equipo, fase 1), sesiones `0cacc78c` y
   `6e5628a7`: principal 123 llamadas, ~15 M (126k y 117k de media, techos 162/149k, 0 compactaciones); 4 subagentes,
   113 llamadas, ~12,3 M, arranque 66-69k. Suelo tras `/clear`: 85-88k (en octubre, 38-45k), casi todo herramientas y

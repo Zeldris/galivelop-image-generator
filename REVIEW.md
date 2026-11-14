@@ -26,6 +26,9 @@ creada.
 - Un dato que ya vive en un sitio (un archivo de configuración, uno de datos, una constante) no se repite a mano en
   el código, la documentación ni el README; si hay que repetirlo, todas las copias cambian en el mismo commit.
   (criterio)
+- Un valor por defecto que cambia (de una opción, de un campo de la API): en el mismo commit, `grep` del valor viejo
+  en `docs/` y los README y se corrigen las menciones que lo dan como defecto (no los ejemplos que lo pasan a mano).
+  (criterio; la doc de `spacing` siguió en 0,01 el 2026-11-14)
 - La configuración del flujo vive solo en `.claude/gw.json` y solo la lee `.claude/gw/scripts/config.py`. (criterio)
 
 ## Ganchos y scripts

@@ -616,17 +616,41 @@ class SystemTests(BrandBase):
         self.assertEqual(code, 1)
         self.assertIn("margin 0-2", err)
 
-    @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
+    @unittest.skipUnless(shutil.which("rsvg-convert"), "needs rsvg-convert")
     def test_the_default_spacing_is_the_family_one(self):
         self.assertEqual(brand.SPACING, 0.01)
-        code, out, err = self.run_cli("brand", "wordmark", "AVE", "--font", FONT, "-o", str(self.tmp / "d.svg"), "--json")
+        big = str(Path(brand.__file__).parent / "ui" / "fonts" / "BigShouldersDisplay.ttf")
+        code, out, err = self.run_cli("brand", "wordmark", "AVE", "--font", big, "-o", str(self.tmp / "d.svg"), "--json")
         self.assertEqual(code, 0, err)
         self.assertEqual(json.loads(out)["spacing"], 0.01)
-        code, out, _ = self.system("--json")
+        code, out, _ = self.run_cli("brand", "system", str(self.src), "--name", "Tarkor", "--font", big, "--out-dir",
+                                    str(self.out), "--json")
         self.assertEqual(code, 0)
+        self.assertEqual(json.loads(out)["spacing"], 0.01)
         made = (self.out / "tarkor-wordmark.svg").read_text()
-        brand.wordmark("TARKOR", FONT, str(self.tmp / "ref.svg"), spacing=0.01, title="Tarkor")
+        brand.wordmark("TARKOR", big, str(self.tmp / "ref.svg"), spacing=0.01, title="Tarkor")
         self.assertEqual(made, (self.tmp / "ref.svg").read_text())
+
+    @unittest.skipUnless(shutil.which("rsvg-convert"), "needs rsvg-convert")
+    def test_the_default_spacing_depends_on_the_font_family(self):
+        fonts = Path(brand.__file__).parent / "ui" / "fonts"
+        big, other = str(fonts / "BigShouldersDisplay.ttf"), str(fonts / "Literata.ttf")
+        self.assertEqual(brand.wordmark("AVE", big, str(self.tmp / "b.svg"))["spacing"], 0.01)
+        self.assertEqual(brand.wordmark("AVE", other, str(self.tmp / "o.svg"))["spacing"], 0.12)
+        self.assertEqual(brand.wordmark("AVE", other, str(self.tmp / "e.svg"), spacing=0.3)["spacing"], 0.3)
+        self.assertEqual(brand.wordmark("AVE", big, str(self.tmp / "f.svg"), spacing=0.0)["spacing"], 0.0)
+        code, out, err = self.run_cli("brand", "wordmark", "AVE", "--font", other, "-o", str(self.tmp / "c.svg"), "--json")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(json.loads(out)["spacing"], 0.12)
+        code, out, err = self.run_cli("brand", "wordmark", "AVE", "--font", other, "--spacing", "0.05", "-o",
+                                      str(self.tmp / "d.svg"), "--json")
+        self.assertEqual(json.loads(out)["spacing"], 0.05)
+
+    @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
+    def test_system_resolves_the_default_spacing_with_the_font(self):
+        other = str(Path(brand.__file__).parent / "ui" / "fonts" / "Literata.ttf")
+        res = brand.system(self.src, "Tarkor", other, self.out)
+        self.assertEqual(res["spacing"], 0.12)
 
     @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
     def test_text_output_lists_the_files(self):
@@ -684,6 +708,17 @@ class SystemTests(BrandBase):
                                     "--out-dir", str(self.out))
         self.assertEqual(code, 1)
         self.assertIn("nope.ttf", err)
+        self.assertFalse(self.out.exists())
+
+    def test_a_corrupt_font_fails_with_font_unreadable_before_the_work(self):
+        bad = self.tmp / "bad.ttf"
+        bad.write_bytes(b"this is not a font at all")
+        with mock.patch.object(brand, "matte", side_effect=AssertionError("matte ran")), \
+                mock.patch.object(brand.shutil, "which", return_value=None):
+            with self.assertRaises(GimgError) as cm:
+                brand.system(self.src, "Tarkor", str(bad), self.out)
+        self.assertEqual(cm.exception.code, "brand.font_unreadable")
+        self.assertIn("not a TrueType or OpenType font", cm.exception.params["reason"])
         self.assertFalse(self.out.exists())
 
     def test_a_name_with_no_ascii_letters_is_refused_with_its_reason(self):
@@ -757,6 +792,47 @@ class SquareTests(BrandBase):
         self.assertEqual(res["pngs"], [])
         self.assertEqual((res["fill"], res["ink"]), ("#7c5cd6", "#fbfcfd"))
         self.assertAlmostEqual(res["contrast"], 4.69, places=1)
+
+    def _draw(self, body):
+        self.draw.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20">%s</svg>\n' % body)
+
+    def test_style_declarations_that_paint_become_the_ink_and_none_stays(self):
+        self._draw('<path style="fill:#123456;stroke : #ABCDEF; fill-opacity:.5; stroke-width:2" d="M0 0L40 0L40 20L0 20Z"/>'
+                   '<path style="fill:none;stroke:none" d="M0 0L5 0L5 5Z"/>')
+        res = self.make()
+        text = self.out.read_text()
+        self.assertNotIn("#123456", text)
+        self.assertNotIn("#abcdef", text.lower())
+        self.assertIn('style="fill:#fbfcfd;stroke : #fbfcfd; fill-opacity:.5; stroke-width:2"', text)
+        self.assertIn('style="fill:none;stroke:none"', text)
+        self.assertEqual(res["flattened"], 2)
+
+    def test_transparent_fills_and_strokes_stay_unpainted(self):
+        self._draw('<path fill="transparent" stroke="#123456" d="M0 0L40 0L40 20Z"/>'
+                   '<path style="fill:transparent;stroke:Transparent" d="M0 0L5 0L5 5Z"/>')
+        self.make()
+        text = self.out.read_text()
+        self.assertIn('fill="transparent"', text)
+        self.assertIn('style="fill:transparent;stroke:Transparent"', text)
+        self.assertEqual(text.count("#fbfcfd"), 2)  # the group, and the one stroke that paints
+
+    def test_two_paint_colors_are_flattened_and_one_is_not(self):
+        self._draw('<path fill="#ABC" d="M0 0L40 0L40 20Z"/><path style="fill:#aabbcc" d="M0 0L5 0L5 5Z"/>'
+                   '<path fill="none" stroke="currentColor" d="M0 0L9 0L9 5Z"/><path d="M0 0L7 0L7 7Z"/>')
+        self.assertNotIn("flattened", self.make())
+        self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/><path style="fill:#fedcba" d="M0 0L5 0L5 5Z"/>')
+        self.assertEqual(self.make(force=True)["flattened"], 2)
+
+    def test_the_cli_warns_when_colors_were_flattened_and_not_otherwise(self):
+        self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/><path fill="#fedcba" d="M0 0L5 0L5 5Z"/>')
+        code, out, err = self.run_cli("brand", "square", str(self.draw), "--fill", "#7C5CD6", "--ink", "#fbfcfd", "-o", str(self.out))
+        self.assertEqual(code, 0, err)
+        self.assertIn("2 colors", out)
+        self.assertIn("warning", out)
+        self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/>')
+        code, out, err = self.run_cli("brand", "square", str(self.draw), "--fill", "#7C5CD6", "--ink", "#fbfcfd", "-o", str(self.out), "--force")
+        self.assertEqual(code, 0, err)
+        self.assertNotIn("colors", out)
 
     def test_another_chamfer_changes_the_path(self):
         self.make(chamfer=40)

@@ -11,7 +11,7 @@ let timer = null;
 let known = new Map(); // id -> state del último sondeo
 let running = false;
 
-// Contador de cambios de pausa hechos desde aquí (el botón): un GET /api/health lanzado antes de un cambio no debe
+// Contador de cambios de pausa hechos desde aquí (el botón): un GET /api/queue lanzado antes de un cambio no debe
 // reescribir `queuePaused` con el valor viejo si responde después.
 let pauseGen = 0;
 export function notePauseChange() { pauseGen += 1; }
@@ -22,18 +22,15 @@ function emit(event, entry) { for (const fn of listeners[event]) fn(entry); }
 
 export async function refreshNow() {
   let entries;
-  // la pausa se lee en GET /api/health, a la vez que la cola; si no responde, se queda lo último sabido
+  // la pausa viene en la cabecera X-Queue-Paused de la misma respuesta de la cola; si falta, se queda lo último sabido
   const gen = pauseGen;
-  const health = api.health().then((hth) => {
-    if (gen === pauseGen && hth && typeof hth.paused === 'boolean' && hth.paused !== store.get('queuePaused')) store.set('queuePaused', hth.paused);
-  }, () => {});
   try {
-    entries = await api.queue();
+    const res = await api.queueState();
+    entries = res.entries;
+    if (gen === pauseGen && typeof res.paused === 'boolean' && res.paused !== store.get('queuePaused')) store.set('queuePaused', res.paused);
   } catch (e) {
     if (!(e instanceof OfflineError)) console.warn('queue', e);
     return false;
-  } finally {
-    await health;
   }
   if (!Array.isArray(entries)) return false;
   const next = new Map();

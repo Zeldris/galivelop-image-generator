@@ -5,7 +5,7 @@
    que espera (POST /api/queue/clear, con confirmación; nunca toca lo que corre). El orden de la fila es el de
    `position` (si la entrada no la trae, su id), que es de donde toma el trabajador.
    R1: «Pausar cola» / «Reanudar cola» (POST /api/queue/pause|resume): en pausa, lo que corre termina y no empieza
-   nada más; la pastilla lo dice («en pausa») y el estado se lee en `paused` de GET /api/health (queue-poll.js). */
+   nada más; la pastilla lo dice («en pausa») y el estado se lee en la cabecera `X-Queue-Paused` de GET /api/queue (queue-poll.js). */
 
 import { h, mmss, replace } from '../dom.js';
 import * as i18n from '../i18n.js';
@@ -214,7 +214,7 @@ async function clearQueue(project, n) {
 async function togglePause(on) {
   try {
     const { refreshNow, notePauseChange } = await import('../queue-poll.js');
-    notePauseChange(); // un health en vuelo desde antes del clic no pisa lo que se pide
+    notePauseChange(); // un sondeo de la cola en vuelo desde antes del clic no pisa lo que se pide
     await api.pauseQueue(on);
     notePauseChange(); // ni uno lanzado mientras el servicio aún no había cambiado
     store.set('queuePaused', on);

@@ -7,10 +7,11 @@
 - `lockup(emblem, wordmark, out=None, layout="h"|"v")`: the emblem SVG and the wordmark SVG in one, as paths only (proportions of
   the sheet: wordmark height 0.45 and gap 0.25 of the emblem diameter in ``h``; width 1.6 in ``v``).
 - `system(src, name, font, out_dir)`: the seven files of the logo system (matte, traces, wordmark, both lockups, contact sheet).
-- `wordmark(text, font, out=None, weight=800, spacing=SPACING)`: `text` set in the font file `font` and turned into paths, with no
+- `wordmark(text, font, out=None, weight=800, spacing=None)`: `text` set in the font file `font` and turned into paths, with no
   ``<text>`` and no need for the font afterwards. ``rsvg-convert`` draws the text big in black; the result is cropped
   to the ink and traced in mono mode. The font reaches ``rsvg-convert`` through a throwaway fontconfig file that adds a
-  copy of it to the system fonts (a variable font gets the weight asked for).
+  copy of it to the system fonts (a variable font gets the weight asked for). ``spacing=None`` is the family's tracking:
+  `SPACING` (0.01 em) for Big Shoulders Display and `SPACING_OTHER` (0.12 em) for any other font; a given value always wins.
 
 Each returns a dict (``out`` is the written path) and raises `GimgError` (``brand.*``): the ``ValueError`` of the
 modules below becomes ``brand.bad_option``. Stdlib plus ``rsvg-convert`` (only for the wordmark), called without a shell.
@@ -40,6 +41,8 @@ MAX_PIXELS = 1 << 24  # the limit of `png.read_rgba`
 PAD_PX = 6
 MIN_TRANSPARENT = 0.02  # a matte that frees less than this found no flat background
 SPACING = 0.01  # em between letters: the family's tracking (Big Shoulders Display 800, hojas de docs/marcas/)
+SPACING_OTHER = 0.12  # em between letters for any other font
+SPACING_FAMILY = "big shoulders display"
 MODES = {"color": "color", "mono": "mono", "silhouette": "silueta", "silueta": "silueta"}
 
 
@@ -169,6 +172,21 @@ def _name_table(data: bytes, path) -> str:
         raise GimgError("brand.font_unreadable", path=str(path), reason=str(exc))
 
 
+def _font_family(font) -> str:
+    """The family of the font file `font`; a file that cannot be opened or parsed is ``brand.font_unreadable``."""
+    try:
+        with open(font, "rb") as fh:
+            data = fh.read(64 * 1024 * 1024)
+    except OSError as exc:
+        raise GimgError("brand.font_unreadable", path=str(font), reason=str(exc.strerror or exc))
+    return _name_table(data, font)
+
+
+def default_spacing(family) -> float:
+    """The tracking in em when none is given: `SPACING` for Big Shoulders Display, `SPACING_OTHER` for any other family."""
+    return SPACING if " ".join(str(family).split()).lower() == SPACING_FAMILY else SPACING_OTHER
+
+
 def _fontconfig(folder: str) -> str:
     conf = os.path.join(folder, "fonts.conf")
     posix = lambda p: escape(Path(p).as_posix())
@@ -220,21 +238,18 @@ def _crop(width: int, height: int, rgba, pad: int):
     return w, h, res
 
 
-def wordmark(text: str, font, out=None, weight: int = 800, spacing: float = SPACING, title: str = "") -> dict:
-    """Write the SVG of `text` in `font`, as paths (see the module docstring). ``spacing`` is in em."""
+def wordmark(text: str, font, out=None, weight: int = 800, spacing=None, title: str = "") -> dict:
+    """Write the SVG of `text` in `font`, as paths (see the module docstring). ``spacing`` is in em; ``None`` is the family's (`default_spacing`)."""
     text = " ".join("".join(ch for ch in str(text) if ch.isspace() or unicodedata.category(ch) != "Cc").split())
     if not text:
         raise GimgError("brand.empty_text")
     if len(text) > MAX_TEXT:
         raise GimgError("brand.text_too_long", max=MAX_TEXT)
-    if not isinstance(weight, int) or not 1 <= weight <= 1000 or not -0.5 <= spacing <= 2:
+    if not isinstance(weight, int) or not 1 <= weight <= 1000 or (spacing is not None and not -0.5 <= spacing <= 2):
         raise GimgError("brand.bad_option", reason="weight 1-1000 and spacing between -0.5 and 2 em")
-    try:
-        with open(font, "rb") as fh:
-            data = fh.read(64 * 1024 * 1024)
-    except OSError as exc:
-        raise GimgError("brand.font_unreadable", path=str(font), reason=str(exc.strerror or exc))
-    family = _name_table(data, font)
+    family = _font_family(font)
+    if spacing is None:
+        spacing = default_spacing(family)
     out = _check_out(font, out or "wordmark.svg")
     gap = spacing * FONT_PX
     canvas_w = int(len(text) * (FONT_PX * 1.3 + gap)) + FONT_PX
@@ -450,16 +465,44 @@ def _fit(piece: dict, x: float, y: float, w: float, h: float, ink=None) -> str:
 
 SQUARE = 128
 _PAINT = re.compile(r'(?<![\w:.-])(fill|stroke)="([^"]*)"')
+_STYLE = re.compile(r'(?<![\w:.-])style="([^"]*)"')
+_DECL = re.compile(r'(?<![\w-])(fill|stroke)(\s*:\s*)([^;]*)')
+_NO_PAINT = ("", "none", "currentcolor", "inherit", "transparent")
+
+
+def _paints(value: str) -> bool:
+    return value.strip().lower() not in ("", "none", "transparent")
 
 
 def _square_ink(inner: str, ink: str) -> str:
-    """`inner` with every fill and stroke that paints (not ``none``) turned into `ink`; unpainted paths inherit it."""
-    return '<g fill="%s">%s</g>' % (ink, _PAINT.sub(lambda m: m.group(0) if m.group(2).strip() == "none" else '%s="%s"' % (m.group(1), ink), inner))
+    """`inner` with every fill and stroke that paints (not ``none``) turned into `ink`, as attributes and as declarations
+    of a ``style`` attribute; unpainted paths inherit it."""
+    def decl(m):
+        return m.group(0) if not _paints(m.group(3)) else "%s%s%s" % (m.group(1), m.group(2), ink)
+
+    out = _STYLE.sub(lambda m: 'style="%s"' % _DECL.sub(decl, m.group(1)), inner)
+    out = _PAINT.sub(lambda m: m.group(0) if not _paints(m.group(2)) else '%s="%s"' % (m.group(1), ink), out)
+    return '<g fill="%s">%s</g>' % (ink, out)
+
+
+def _norm_color(value: str) -> str:
+    v = value.strip().lower()
+    return "#" + "".join(c * 2 for c in v[1:]) if re.fullmatch(r"#[0-9a-f]{3}", v) else v
+
+
+def _paint_colors(inner: str) -> set:
+    """The distinct colors that `inner` paints with (attributes and ``style`` declarations), normalized; ``none``,
+    ``currentColor`` and unpainted paths do not count."""
+    found = [m.group(2) for m in _PAINT.finditer(inner)]
+    for st in _STYLE.finditer(inner):
+        found += [m.group(3) for m in _DECL.finditer(st.group(1))]
+    return {_norm_color(v) for v in found if v.strip().lower() not in _NO_PAINT}
 
 
 def square(drawing, out=None, fill=None, ink=None, chamfer: int = 28, pad: int = 24, pngs=None, force: bool = False) -> dict:
     """The family symbol: a flat `fill` square of 128 with a 45-degree `chamfer` cut off its top right corner and the SVG
-    `drawing` (paths only, as `trace` / `wordmark` make them) fitted inside `pad`, all of it in the one color `ink`.
+    `drawing` (paths only, as `trace` / `wordmark` make them) fitted inside `pad`, all of it in the one color `ink`
+    (``fill`` / ``stroke`` attributes and ``style`` declarations alike; ``flattened`` in the result counts the paint colors it had, if more than one).
 
     `pngs` are sides in pixels: each also gets ``<out stem>-<side>.png`` (needs rsvg-convert). Returns the files, the colors
     and the WCAG contrast of `ink` on `fill`; `brand.exists` if a file is there and not `force`."""
@@ -492,6 +535,7 @@ def square(drawing, out=None, fill=None, ink=None, chamfer: int = 28, pad: int =
     if room <= 0:
         raise GimgError("brand.bad_square", reason="pad leaves no room for the drawing")
     k = min(room / bw, room / bh)
+    flattened = len(_paint_colors(piece["inner"]))
     art = _place(dict(piece, inner=_square_ink(piece["inner"], ink)), (SQUARE - bw * k) / 2, (SQUARE - bh * k) / 2, k)
     d = "M0 0 H%s L%d %s V%d H0 Z" % (_num(SQUARE - chamfer), SQUARE, _num(chamfer), SQUARE)
     svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" role="img"><path fill="%s" d="%s"/>%s</svg>\n'
@@ -533,7 +577,10 @@ def square(drawing, out=None, fill=None, ink=None, chamfer: int = 28, pad: int =
             except OSError:
                 pass
     contrast = measure.contrast_ratio(measure.luminance(measure.parse_hex(ink)), measure.luminance(measure.parse_hex(fill)))
-    return {"out": out, "pngs": list(files.values()), "fill": fill, "ink": ink, "contrast": round(contrast, 2)}
+    res = {"out": out, "pngs": list(files.values()), "fill": fill, "ink": ink, "contrast": round(contrast, 2)}
+    if flattened > 1:
+        res["flattened"] = flattened  # the drawing had this many paint colors: all of them are now the ink
+    return res
 
 
 def _commit(staged: dict) -> None:
@@ -630,7 +677,7 @@ def check_targets(targets: dict, out_dir, force: bool = False, src=None) -> list
     return clash
 
 
-def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = SPACING, palette=None, colors=None, text=None,
+def system(src, name: str, font, out_dir, weight: int = 800, spacing=None, palette=None, colors=None, text=None,
            cap: float = 0.45, gap: float = 0.25, width: float = 1.6, force: bool = False, holes: bool = False,
            margin: float = 0.0, mono: bool = False) -> dict:
     """The logo system of `name` from the emblem PNG `src`, in `out_dir`: ``<slug>-emblema-alpha.png``, ``-emblema.svg``,
@@ -656,17 +703,15 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = SP
         raise GimgError("brand.empty_text")
     if len(line) > MAX_TEXT:
         raise GimgError("brand.text_too_long", max=MAX_TEXT)
-    if not isinstance(weight, int) or not 1 <= weight <= 1000 or not -0.5 <= spacing <= 2:
+    if not isinstance(weight, int) or not 1 <= weight <= 1000 or (spacing is not None and not -0.5 <= spacing <= 2):
         raise GimgError("brand.bad_option", reason="weight 1-1000 and spacing between -0.5 and 2 em")
     if not 0 <= margin <= 2:
         raise GimgError("brand.bad_option", reason="margin 0-2 (in emblem diameters)")
     if len(os.path.basename(next(iter(targets.values()))).encode("utf-8")) > 255:
         raise GimgError("brand.bad_name", name=str(name))
-    try:
-        with open(font, "rb"):
-            pass
-    except OSError as exc:
-        raise GimgError("brand.font_unreadable", path=str(font), reason=str(exc.strerror or exc))
+    family = _font_family(font)  # an unreadable font fails here, before the matte and the traces
+    if spacing is None:
+        spacing = default_spacing(family)
     if shutil.which(TOOL) is None:  # after the caller's own mistakes: those are reported with or without the tool
         raise GimgError("brand.tool_missing", tool=TOOL)
     with tempfile.TemporaryDirectory(prefix="gimg-brand-") as tmp:
@@ -686,11 +731,11 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = SP
             with open(t[key], "rb") as fh:
                 _write(targets[key], fh.read())
     files = {key: targets[key] for key in SYSTEM_FILES}
-    return {"src": str(src), "name": str(name).strip(), "slug": slug, "out_dir": str(out_dir), "files": files,
+    return {"src": str(src), "name": str(name).strip(), "slug": slug, "out_dir": str(out_dir), "files": files, "spacing": spacing,
             "paths": {"emblem": color["paths"], "mono": one_ink["paths"], "wordmark": word["paths"], "lockup_h": lh["paths"],
                       "lockup_v": lv["paths"]},
             "contact_size": list(sheet_size), "overwritten": sorted(clash), "seconds": round(time.monotonic() - t0, 1)}
 
 
-__all__ = ["contact_sheet", "targets_of", "check_targets", "matte", "trace", "wordmark", "lockup", "system", "slugify", "parse_palette", "default_out", "MODES", "SPACING", "LAYOUTS",
+__all__ = ["contact_sheet", "targets_of", "check_targets", "matte", "trace", "wordmark", "lockup", "system", "slugify", "parse_palette", "default_out", "MODES", "SPACING", "SPACING_OTHER", "default_spacing", "LAYOUTS",
            "SYSTEM_FILES", "TOOL"]

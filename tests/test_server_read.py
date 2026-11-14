@@ -223,6 +223,18 @@ class QueueTests(ReadBase):
         self.assertEqual(len(self.ok_json("/api/queue?state=queued")), 2)
         self.assertEqual(self.ok_json("/api/queue?state=done"), [])
 
+    def test_the_pause_travels_in_a_header_and_the_body_stays_a_list(self):
+        self.addCleanup(queue.resume)
+        queue.resume()
+        resp, payload = self.get("/api/queue")
+        self.assertEqual(resp.getheader("X-Queue-Paused"), "0")
+        self.assertIsInstance(json.loads(payload), list)
+        queue.pause()
+        resp, payload = self.get("/api/queue?state=done")
+        self.assertEqual(resp.getheader("X-Queue-Paused"), "1")
+        self.assertEqual(json.loads(payload), [])
+        self.assertIs(self.ok_json("/api/health")["paused"], True)
+
     def test_failed_entry_has_error_text_like_the_cli(self):
         self.make_order(work=False)
         os.environ["GIMG_FAKE_FAIL"] = "1"

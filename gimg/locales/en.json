@@ -736,7 +736,7 @@
   "cli.arg.brand_text": "the brand name",
   "cli.arg.brand_font": "font file (.ttf or .otf)",
   "cli.arg.brand_weight": "font weight, 1-1000 (default 800; a variable font applies it)",
-  "cli.arg.brand_spacing": "letter spacing in em (default 0.01, the family's)",
+  "cli.arg.brand_spacing": "letter spacing in em (default 0.01 for Big Shoulders Display, 0.12 for any other font)",
   "cli.arg.brand_mono_lockup": "the lockups with the mono emblem: the whole lockup in currentColor, as the family's sheets ask",
   "cli.out.brand_matte": "{out}: {width}x{height}, background {background}, {transparent} transparent",
   "cli.out.brand_trace": "{out}: {width}x{height}, mode {mode}, {paths} paths, {bytes} bytes",
@@ -845,7 +845,8 @@
   "ui.brand.shop.wfontNone": "Type an installed family.",
   "ui.brand.shop.wweight": "Weight",
   "ui.brand.shop.wspacing": "Spacing",
-  "ui.brand.shop.wspacingHint": "As a fraction of the body size.",
+  "ui.brand.shop.wspacingAuto": "Automatic",
+  "ui.brand.shop.wspacingHint": "Empty: set by the font (0.01 Big Shoulders Display, 0.12 any other). As a fraction of the body size.",
   "ui.brand.shop.wordGo": "Draw wordmark",
   "ui.brand.shop.wordDone": "Wordmark ready with {family} ({paths} paths).",
   "ui.brand.shop.s5": "Lockups",
@@ -913,5 +914,6 @@
   "cli.arg.brand_force_square": "overwrite files that already exist",
   "cli.out.brand_square": "{out}: square {fill}, ink {ink}, contrast {contrast}:1",
   "cli.out.brand_square_low": "warning: contrast {contrast}:1 is under 4.5:1 (WCAG AA for text)",
+  "cli.out.brand_square_flat": "warning: the drawing had {count} colors and all of them are now the ink",
   "error.brand.bad_square": "invalid square: {reason}"
 }

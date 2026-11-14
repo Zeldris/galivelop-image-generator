@@ -4,7 +4,7 @@
 const state = {
   queue: [],            // entradas de GET /api/queue, tal cual
   queueAt: null,        // Date.now() del último sondeo bueno
-  queuePaused: false,   // `paused` de GET /api/health (gimg queue pause)
+  queuePaused: false,   // cabecera `X-Queue-Paused` de GET /api/queue (gimg queue pause)
   showRaw: false,       // galería: ver el fondo crudo en vez de la compuesta
   filters: {},          // por proyecto: {profile, state}
 };
