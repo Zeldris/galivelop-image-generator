@@ -1013,6 +1013,26 @@ class SquareTests(BrandBase):
         self._draw('<path fill="#f00" d="M0 0L40 0L40 20Z"/><path fill-opacity="0" d="M0 0L5 0L5 5Z"/>')  # no default black either
         self.assertNotIn("flattened", self.make(force=True))
 
+    def test_opacity_zero_groups_nest_and_inherit(self):
+        for body in ('<g><g opacity="0"><path fill="#0f0" d="M0 0L9 0L9 9Z"/></g><path fill="#f00" d="M0 0L40 0L40 20Z"/></g>',
+                     '<g opacity="0"><g><path fill="#0f0" d="M0 0L9 0L9 9Z"/></g><path fill="#f00" d="M0 0L9 0L9 5Z"/></g>'
+                     '<path fill="#00f" d="M0 0L40 0L40 20Z"/>',
+                     '<g fill-opacity="0"><path fill="#0f0" d="M0 0L9 0L9 9Z"/></g><path fill="#00f" d="M0 0L40 0L40 20Z"/>',
+                     '<path fill="#00f" d="M0 0L40 0L40 20Z"/><path opacity="-1" fill="#0f0" d="M0 0L9 0L9 9Z"/>',
+                     '<path fill="#00f" d="M0 0L40 0L40 20Z"/><path fill="#0f0" opacity="0" d="M0 0L9 0L9 9Z"/ >'):
+            self._draw(body)
+            self.assertNotIn("flattened", self.make(force=True), body)
+        self.draw.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20" fill-opacity="0">'
+                             '<path fill="#0f0" d="M0 0L9 0L9 9Z"/><path fill="#00f" fill-opacity="1" d="M0 0L40 0L40 20Z"/></svg>\n')
+        self.assertNotIn("flattened", self.make(force=True))
+
+    def test_thousands_of_unclosed_groups_are_fast(self):
+        import time
+        self._draw('<g opacity="1">' * 20000 + '<path fill="#f00" d="M0 0L40 0L40 20Z"/>')
+        start = time.monotonic()
+        brand._paint_colors(*(lambda p: (p["inner"], p["root"]))(brand._read_svg(self.draw)))
+        self.assertLess(time.monotonic() - start, 5)
+
     def test_root_attributes_in_single_quotes_are_copied(self):
         self.draw.write_text("<svg xmlns='http://www.w3.org/2000/svg' viewBox=\"0 0 40 20\" fill='#f00' stroke='#00f' stroke-width='3'>"
                              "<path d='M0 0L40 0L40 20Z'/></svg>\n")

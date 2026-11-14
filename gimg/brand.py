@@ -507,11 +507,17 @@ def _square_ink(inner: str, ink: str, root: str = "") -> str:
         text = _STYLE.sub(lambda m: 'style="%s"' % _DECL.sub(decl, m.group(1)), text)
         return _PAINT.sub(lambda m: m.group(0) if not _paints(m.group(2)) else '%s="%s"' % (m.group(1), ink), text)
 
-    kept = " ".join('%s="%s"' % (n, v.replace('"', "&quot;")) for n, v in _root_attrs(root) if n == "style" or n.startswith(("fill", "stroke")))
+    kept = _root_text(root, ("fill", "stroke"))
     return "<g %s%s>%s</g>" % ("" if _has_fill(kept) else 'fill="%s" ' % ink, recolor(kept), recolor(inner))
 
 
 _ROOT_ATTR = re.compile(r"""(?<![\w:.-])([\w-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')""")
+
+
+def _root_text(root: str, only=None) -> str:
+    """The root's attributes (`only`: those named ``style`` or starting with one of these) rewritten with double quotes."""
+    return " ".join('%s="%s"' % (n, v.replace('"', "&quot;")) for n, v in _root_attrs(root)
+                    if only is None or n == "style" or n.startswith(tuple(only)))
 
 
 def _root_attrs(root: str) -> list:
@@ -584,8 +590,8 @@ def _paint_colors(inner: str, root: str = "") -> set:
     ``none``, ``currentColor`` and strokes that are not there do not count, but a shape with no ``fill`` at all paints the
     default black (unless a ``<g>`` or the root (`root`: the attributes of ``<svg>``) sets a fill, or it has a ``class`` or the
     drawing a ``<style>``: then it is not counted); a ``<line>`` has no area, so it only paints by its stroke."""
-    root = " ".join('%s="%s"' % (n, v.replace('"', "&quot;")) for n, v in _root_attrs(root))  # single quotes too
-    inner, root = _mute(inner), _mute_attrs(root)
+    root = _root_text(root)  # single quotes too
+    inner, root = _mute(inner, root), _mute_attrs(root)
     found = [m.group(2) for m in _PAINT.finditer(inner)]
     for st in _STYLE.finditer(inner):
         found += [m.group(3) for m in _DECL.finditer(st.group(1))]
@@ -632,43 +638,68 @@ def _sets(attrs: str, prop: str) -> bool:
             or any(d.group(1) == prop for st in _STYLE.finditer(attrs) for d in _DECL.finditer(st.group(1))))
 
 
-def _zero(attrs: str, name: str) -> bool:
-    """Does the attribute (or ``style`` declaration) `name` of `attrs` say 0 (or ``0%``)?"""
-    for m in re.finditer(r'(?<![\w:.-])%s\s*=\s*"\s*([^"]*?)\s*"' % re.escape(name), attrs):
-        if re.fullmatch(r"[-+]?0*\.?0*%?", m.group(1)) and re.search(r"\d", m.group(1)) and float(m.group(1).rstrip("%") or 0) <= 0:
-            return True
+def _opacity(attrs: str, name: str):
+    """The number (``50%`` is .5) that the attribute or ``style`` declaration `name` of `attrs` gives (the last one wins), or None."""
+    found = [a or b for a, b in re.findall(r"""(?<![\w:.-])%s\s*=\s*(?:"([^"]*)"|'([^']*)')""" % re.escape(name), attrs)]
     for st in _STYLE.finditer(attrs):
-        for m in re.finditer(r"(?<![\w-])%s\s*:\s*([^;!]*)" % re.escape(name), st.group(1)):
-            if re.fullmatch(r"\s*[-+]?(?:\d+\.?\d*|\.\d+)%?\s*", m.group(1)) and float(m.group(1).strip().rstrip("%")) <= 0:
-                return True
-    return False
+        found += [m.group(1) for m in re.finditer(r"(?<![\w-])%s\s*:\s*([^;!]*)" % re.escape(name), st.group(1))]
+    value = None
+    for raw in found:
+        raw = raw.strip()
+        try:
+            value = float(raw.rstrip("%")) / (100 if raw.endswith("%") else 1)
+        except ValueError:
+            pass
+    return value
 
 
-def _mute_attrs(attrs: str) -> str:
-    """`attrs` with the paints that ``fill-opacity`` / ``stroke-opacity`` 0 make invisible turned into ``none``."""
-    for prop in ("fill", "stroke"):
-        if _zero(attrs, prop + "-opacity"):
+def _mute_attrs(attrs: str, fill0: bool = False, stroke0: bool = False) -> str:
+    """`attrs` with the paints that ``fill-opacity`` / ``stroke-opacity`` 0 (own, or inherited: `fill0`, `stroke0`) make
+    invisible turned into ``none``."""
+    attrs = attrs.rstrip()
+    if attrs.endswith("/"):
+        attrs = attrs[:-1]
+    for prop, inherited in (("fill", fill0), ("stroke", stroke0)):
+        own = _opacity(attrs, prop + "-opacity")
+        if (own <= 0) if own is not None else inherited:
             attrs = _PAINT.sub(lambda m, prop=prop: '%s="none"' % prop if m.group(1) == prop else m.group(0), attrs)
             attrs = _STYLE.sub(lambda m, prop=prop: 'style="%s"' % re.sub(r"(?<![\w-])%s(\s*:\s*)[^;]*" % prop, r"%s\g<1>none" % prop, m.group(1)), attrs)
             attrs += ' %s="none"' % prop
     return attrs
 
 
-def _mute(inner: str) -> str:
-    """`inner` as far as paint counting goes: shapes and groups with ``opacity`` 0 are gone, and ``fill-opacity`` /
-    ``stroke-opacity`` 0 turn that paint into ``none`` (a partial opacity is like the alpha of a color: the same ink)."""
-    inner = re.sub(r"<g\b([^>]*)>.*?</g>", lambda m: "" if _zero(m.group(1), "opacity") else m.group(0), inner, flags=re.S | re.I)
-    def tag(m):
-        if _zero(m.group(3), "opacity"):
-            return ""
-        return "<%s%s>" % (m.group(2), _mute_attrs(m.group(3)))
-    return _TAG.sub(lambda m: tag(m) if m.group(2) != "g" and not m.group(1) else m.group(0), inner)
+def _mute(inner: str, root: str = "") -> str:
+    """`inner` as far as paint counting goes, in one pass with a stack of the open ``<g>``: shapes under ``opacity`` 0
+    (own, a group's or the root's) are gone, and ``fill-opacity`` / ``stroke-opacity`` 0, inherited too, turn that paint
+    into ``none`` (a partial opacity is like the alpha of a color: the same ink)."""
+    def state(attrs, up):
+        o = _opacity(attrs, "opacity")
+        fo, so = _opacity(attrs, "fill-opacity"), _opacity(attrs, "stroke-opacity")
+        return (up[0] or (o is not None and o <= 0), up[1] if fo is None else fo <= 0, up[2] if so is None else so <= 0)
+    stack = [state(root, (False, False, False))]
+    out, last = [], 0
+    for m in _TAG.finditer(inner):
+        closing, tag, attrs = m.groups()
+        if tag == "g":
+            if closing:
+                if len(stack) > 1:
+                    stack.pop()
+            elif not attrs.rstrip().endswith("/"):
+                stack.append(state(attrs, stack[-1]))
+        elif not closing:
+            out.append(inner[last:m.start()])
+            last = m.end()
+            muted, fill0, stroke0 = state(attrs, stack[-1])
+            if not muted:
+                out.append("<%s%s>" % (tag, _mute_attrs(attrs, fill0, stroke0)))
+    out.append(inner[last:])
+    return "".join(out)
 
 
 def square(drawing, out=None, fill=None, ink=None, chamfer: int = 28, pad: int = 24, pngs=None, force: bool = False) -> dict:
     """The family symbol: a flat `fill` square of 128 with a 45-degree `chamfer` cut off its top right corner and the SVG
     `drawing` (paths only, as `trace` / `wordmark` make them) fitted inside `pad`, all of it in the one color `ink`
-    (``fill`` / ``stroke`` attributes and ``style`` declarations alike; ``flattened`` in the result counts the paint colors it had, if more than one).
+    (``fill`` / ``stroke`` attributes and ``style`` declarations alike; a paint with ``opacity`` / ``fill-opacity`` / ``stroke-opacity`` 0 is invisible and does not count as ink; ``flattened`` in the result counts the paint colors it had, if more than one).
 
     `pngs` are sides in pixels: each also gets ``<out stem>-<side>.png`` (needs rsvg-convert). Returns the files, the colors
     and the WCAG contrast of `ink` on `fill`; `brand.exists` if a file is there and not `force`."""
