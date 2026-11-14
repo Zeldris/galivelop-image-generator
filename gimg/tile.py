@@ -79,7 +79,8 @@ def tileable(width: int, height: int, rgba, blend: float = 0.25) -> bytearray:
     out = bytearray(len(rgba))
     for y in range(height):
         base = y * row_bytes
-        rolled = mid[((y - sy) % height) * row_bytes:][:row_bytes]
+        src = ((y - sy) % height) * row_bytes
+        rolled = mid[src:src + row_bytes]
         m = wy[y]
         if m > 0:
             row = mid[base:base + row_bytes]

@@ -290,6 +290,13 @@ class ToSvgTests(unittest.TestCase):
         d = ps[0].get("d")
         self.assertEqual(evenodd_area(d, 40), 28 * 28 - 20 * 20)
 
+    def test_mono_with_every_color_on_the_border_falls_back_to_the_darkest_rule(self):
+        img = canvas(40, 40, (250, 250, 250, 255))
+        fill(img, 0, 0, 40, 20, (20, 20, 20, 255))  # half dark, half light: both are >= 20% of the border
+        ps = paths(trace.to_svg(*img, "mono", ncolores=2, smooth_passes=0, curves=False, dp_tol=0, min_island=1))
+        self.assertEqual(len(ps), 1, "an empty SVG would mean every color was taken for paper")
+        self.assertEqual(evenodd_area(ps[0].get("d"), 40), 40 * 20)
+
     def test_thin_lines_are_only_restored_in_mono(self):
         img = canvas(60, 20)
         fill(img, 3, 10, 57, 11, (0, 0, 0, 255))

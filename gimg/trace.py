@@ -334,7 +334,7 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
                 edge[grid[y][0]] += 1
                 edge[grid[y][W - 1]] += 1
             paper = {j for j, n in edge.items() if n >= PAPER_SHARE * sum(edge.values())}
-            if paper:
+            if paper and len(paper) < len(pal):  # every color on the border: no paper to tell, darkest rule
                 ink = [j for j in range(len(pal)) if j not in paper]
         if ink is None:
             dark = min(range(len(pal)), key=lambda j: sum(pal[j]) * 1.0) if len(pal) > 1 else -1
