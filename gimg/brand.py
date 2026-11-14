@@ -7,10 +7,11 @@
 - `lockup(emblem, wordmark, out=None, layout="h"|"v")`: the emblem SVG and the wordmark SVG in one, as paths only (proportions of
   the sheet: wordmark height 0.45 and gap 0.25 of the emblem diameter in ``h``; width 1.6 in ``v``).
 - `system(src, name, font, out_dir)`: the seven files of the logo system (matte, traces, wordmark, both lockups, contact sheet).
-- `wordmark(text, font, out=None, weight=800, spacing=SPACING)`: `text` set in the font file `font` and turned into paths, with no
+- `wordmark(text, font, out=None, weight=800, spacing=None)`: `text` set in the font file `font` and turned into paths, with no
   ``<text>`` and no need for the font afterwards. ``rsvg-convert`` draws the text big in black; the result is cropped
   to the ink and traced in mono mode. The font reaches ``rsvg-convert`` through a throwaway fontconfig file that adds a
-  copy of it to the system fonts (a variable font gets the weight asked for).
+  copy of it to the system fonts (a variable font gets the weight asked for). ``spacing=None`` is the family's tracking:
+  `SPACING` (0.01 em) for Big Shoulders Display and `SPACING_OTHER` (0.12 em) for any other font; a given value always wins.
 
 Each returns a dict (``out`` is the written path) and raises `GimgError` (``brand.*``): the ``ValueError`` of the
 modules below becomes ``brand.bad_option``. Stdlib plus ``rsvg-convert`` (only for the wordmark), called without a shell.
@@ -40,6 +41,8 @@ MAX_PIXELS = 1 << 24  # the limit of `png.read_rgba`
 PAD_PX = 6
 MIN_TRANSPARENT = 0.02  # a matte that frees less than this found no flat background
 SPACING = 0.01  # em between letters: the family's tracking (Big Shoulders Display 800, hojas de docs/marcas/)
+SPACING_OTHER = 0.12  # em between letters for any other font
+SPACING_FAMILY = "big shoulders display"
 MODES = {"color": "color", "mono": "mono", "silhouette": "silueta", "silueta": "silueta"}
 
 
@@ -169,6 +172,11 @@ def _name_table(data: bytes, path) -> str:
         raise GimgError("brand.font_unreadable", path=str(path), reason=str(exc))
 
 
+def default_spacing(family) -> float:
+    """The tracking in em when none is given: `SPACING` for Big Shoulders Display, `SPACING_OTHER` for any other family."""
+    return SPACING if " ".join(str(family).split()).lower() == SPACING_FAMILY else SPACING_OTHER
+
+
 def _fontconfig(folder: str) -> str:
     conf = os.path.join(folder, "fonts.conf")
     posix = lambda p: escape(Path(p).as_posix())
@@ -220,14 +228,14 @@ def _crop(width: int, height: int, rgba, pad: int):
     return w, h, res
 
 
-def wordmark(text: str, font, out=None, weight: int = 800, spacing: float = SPACING, title: str = "") -> dict:
-    """Write the SVG of `text` in `font`, as paths (see the module docstring). ``spacing`` is in em."""
+def wordmark(text: str, font, out=None, weight: int = 800, spacing=None, title: str = "") -> dict:
+    """Write the SVG of `text` in `font`, as paths (see the module docstring). ``spacing`` is in em; ``None`` is the family's (`default_spacing`)."""
     text = " ".join("".join(ch for ch in str(text) if ch.isspace() or unicodedata.category(ch) != "Cc").split())
     if not text:
         raise GimgError("brand.empty_text")
     if len(text) > MAX_TEXT:
         raise GimgError("brand.text_too_long", max=MAX_TEXT)
-    if not isinstance(weight, int) or not 1 <= weight <= 1000 or not -0.5 <= spacing <= 2:
+    if not isinstance(weight, int) or not 1 <= weight <= 1000 or (spacing is not None and not -0.5 <= spacing <= 2):
         raise GimgError("brand.bad_option", reason="weight 1-1000 and spacing between -0.5 and 2 em")
     try:
         with open(font, "rb") as fh:
@@ -235,6 +243,8 @@ def wordmark(text: str, font, out=None, weight: int = 800, spacing: float = SPAC
     except OSError as exc:
         raise GimgError("brand.font_unreadable", path=str(font), reason=str(exc.strerror or exc))
     family = _name_table(data, font)
+    if spacing is None:
+        spacing = default_spacing(family)
     out = _check_out(font, out or "wordmark.svg")
     gap = spacing * FONT_PX
     canvas_w = int(len(text) * (FONT_PX * 1.3 + gap)) + FONT_PX
@@ -630,7 +640,7 @@ def check_targets(targets: dict, out_dir, force: bool = False, src=None) -> list
     return clash
 
 
-def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = SPACING, palette=None, colors=None, text=None,
+def system(src, name: str, font, out_dir, weight: int = 800, spacing=None, palette=None, colors=None, text=None,
            cap: float = 0.45, gap: float = 0.25, width: float = 1.6, force: bool = False, holes: bool = False,
            margin: float = 0.0, mono: bool = False) -> dict:
     """The logo system of `name` from the emblem PNG `src`, in `out_dir`: ``<slug>-emblema-alpha.png``, ``-emblema.svg``,
@@ -656,17 +666,22 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = SP
         raise GimgError("brand.empty_text")
     if len(line) > MAX_TEXT:
         raise GimgError("brand.text_too_long", max=MAX_TEXT)
-    if not isinstance(weight, int) or not 1 <= weight <= 1000 or not -0.5 <= spacing <= 2:
+    if not isinstance(weight, int) or not 1 <= weight <= 1000 or (spacing is not None and not -0.5 <= spacing <= 2):
         raise GimgError("brand.bad_option", reason="weight 1-1000 and spacing between -0.5 and 2 em")
     if not 0 <= margin <= 2:
         raise GimgError("brand.bad_option", reason="margin 0-2 (in emblem diameters)")
     if len(os.path.basename(next(iter(targets.values()))).encode("utf-8")) > 255:
         raise GimgError("brand.bad_name", name=str(name))
     try:
-        with open(font, "rb"):
-            pass
+        with open(font, "rb") as fh:
+            head = fh.read(64 * 1024 * 1024)
     except OSError as exc:
         raise GimgError("brand.font_unreadable", path=str(font), reason=str(exc.strerror or exc))
+    if spacing is None:
+        try:
+            spacing = default_spacing(_name_table(head, font))
+        except GimgError:  # the wordmark reports the unreadable font; here the file name stands for the family
+            spacing = default_spacing(Path(font).stem)
     if shutil.which(TOOL) is None:  # after the caller's own mistakes: those are reported with or without the tool
         raise GimgError("brand.tool_missing", tool=TOOL)
     with tempfile.TemporaryDirectory(prefix="gimg-brand-") as tmp:
@@ -686,11 +701,11 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = SP
             with open(t[key], "rb") as fh:
                 _write(targets[key], fh.read())
     files = {key: targets[key] for key in SYSTEM_FILES}
-    return {"src": str(src), "name": str(name).strip(), "slug": slug, "out_dir": str(out_dir), "files": files,
+    return {"src": str(src), "name": str(name).strip(), "slug": slug, "out_dir": str(out_dir), "files": files, "spacing": spacing,
             "paths": {"emblem": color["paths"], "mono": one_ink["paths"], "wordmark": word["paths"], "lockup_h": lh["paths"],
                       "lockup_v": lv["paths"]},
             "contact_size": list(sheet_size), "overwritten": sorted(clash), "seconds": round(time.monotonic() - t0, 1)}
 
 
-__all__ = ["contact_sheet", "targets_of", "check_targets", "matte", "trace", "wordmark", "lockup", "system", "slugify", "parse_palette", "default_out", "MODES", "SPACING", "LAYOUTS",
+__all__ = ["contact_sheet", "targets_of", "check_targets", "matte", "trace", "wordmark", "lockup", "system", "slugify", "parse_palette", "default_out", "MODES", "SPACING", "SPACING_OTHER", "default_spacing", "LAYOUTS",
            "SYSTEM_FILES", "TOOL"]

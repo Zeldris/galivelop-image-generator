@@ -616,17 +616,41 @@ class SystemTests(BrandBase):
         self.assertEqual(code, 1)
         self.assertIn("margin 0-2", err)
 
-    @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
+    @unittest.skipUnless(shutil.which("rsvg-convert"), "needs rsvg-convert")
     def test_the_default_spacing_is_the_family_one(self):
         self.assertEqual(brand.SPACING, 0.01)
-        code, out, err = self.run_cli("brand", "wordmark", "AVE", "--font", FONT, "-o", str(self.tmp / "d.svg"), "--json")
+        big = str(Path(brand.__file__).parent / "ui" / "fonts" / "BigShouldersDisplay.ttf")
+        code, out, err = self.run_cli("brand", "wordmark", "AVE", "--font", big, "-o", str(self.tmp / "d.svg"), "--json")
         self.assertEqual(code, 0, err)
         self.assertEqual(json.loads(out)["spacing"], 0.01)
-        code, out, _ = self.system("--json")
+        code, out, _ = self.run_cli("brand", "system", str(self.src), "--name", "Tarkor", "--font", big, "--out-dir",
+                                    str(self.out), "--json")
         self.assertEqual(code, 0)
+        self.assertEqual(json.loads(out)["spacing"], 0.01)
         made = (self.out / "tarkor-wordmark.svg").read_text()
-        brand.wordmark("TARKOR", FONT, str(self.tmp / "ref.svg"), spacing=0.01, title="Tarkor")
+        brand.wordmark("TARKOR", big, str(self.tmp / "ref.svg"), spacing=0.01, title="Tarkor")
         self.assertEqual(made, (self.tmp / "ref.svg").read_text())
+
+    @unittest.skipUnless(shutil.which("rsvg-convert"), "needs rsvg-convert")
+    def test_the_default_spacing_depends_on_the_font_family(self):
+        fonts = Path(brand.__file__).parent / "ui" / "fonts"
+        big, other = str(fonts / "BigShouldersDisplay.ttf"), str(fonts / "Literata.ttf")
+        self.assertEqual(brand.wordmark("AVE", big, str(self.tmp / "b.svg"))["spacing"], 0.01)
+        self.assertEqual(brand.wordmark("AVE", other, str(self.tmp / "o.svg"))["spacing"], 0.12)
+        self.assertEqual(brand.wordmark("AVE", other, str(self.tmp / "e.svg"), spacing=0.3)["spacing"], 0.3)
+        self.assertEqual(brand.wordmark("AVE", big, str(self.tmp / "f.svg"), spacing=0.0)["spacing"], 0.0)
+        code, out, err = self.run_cli("brand", "wordmark", "AVE", "--font", other, "-o", str(self.tmp / "c.svg"), "--json")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(json.loads(out)["spacing"], 0.12)
+        code, out, err = self.run_cli("brand", "wordmark", "AVE", "--font", other, "--spacing", "0.05", "-o",
+                                      str(self.tmp / "d.svg"), "--json")
+        self.assertEqual(json.loads(out)["spacing"], 0.05)
+
+    @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
+    def test_system_resolves_the_default_spacing_with_the_font(self):
+        other = str(Path(brand.__file__).parent / "ui" / "fonts" / "Literata.ttf")
+        res = brand.system(self.src, "Tarkor", other, self.out)
+        self.assertEqual(res["spacing"], 0.12)
 
     @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
     def test_text_output_lists_the_files(self):
