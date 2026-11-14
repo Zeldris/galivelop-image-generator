@@ -14,7 +14,8 @@
    islands has none).
 
 `mode="mono"` is one path of one color (`color`, ``currentColor`` by default) over the pixels of the palette entries
-in `ink` (indexes; default every color but the darkest). `mode="silueta"` is one path over the whole opaque shape.
+in `ink` (indexes; default every color but the darkest, or, in an image with no transparent pixel, every color but
+the paper: the one along most of the border). One-pixel lines survive the smoothing. `mode="silueta"` is one path over the whole opaque shape.
 `title` loses control characters. A bad option (also a `color` that is not ``#rgb``, ``#rrggbb`` or a name) raises
 ``ValueError``.
 """
@@ -120,6 +121,21 @@ def _majority(m, W: int, H: int, passes: int):
             out.append(row)
         m = out
     return m
+
+
+def _thin(orig, smooth, W: int, H: int):
+    """`smooth` plus the one-pixel-wide lines of `orig` that the majority filter erased (a stroke must survive it)."""
+    def on(y, x):
+        return 0 <= y < H and 0 <= x < W and orig[y][x]
+    out = [row[:] for row in smooth]
+    for y in range(H):
+        for x in range(W):
+            if orig[y][x] and not smooth[y][x]:
+                horiz = on(y, x - 1) and on(y, x + 1) and not on(y - 1, x) and not on(y + 1, x)
+                vert = on(y - 1, x) and on(y + 1, x) and not on(y, x - 1) and not on(y, x + 1)
+                if horiz or vert:
+                    out[y][x] = 1
+    return out
 
 
 # ---------- outlines ----------
@@ -293,7 +309,8 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
                 counts[v] += 1
 
     def layer(fill, keep):
-        m = _majority([[1 if keep(v) else 0 for v in row] for row in grid], W, H, smooth_passes)
+        raw = [[1 if keep(v) else 0 for v in row] for row in grid]
+        m = _thin(raw, _majority(raw, W, H, smooth_passes), W, H) if smooth_passes else raw
         d = _path_data(m, W, H, sx, sy, dp_tol, min_island, curves, corner_deg)
         return '<path fill=%s fill-rule="evenodd" d="%s"/>' % (quoteattr(fill), d) if d else ""
 
@@ -301,6 +318,17 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
     if mode == "silueta":
         layers.append(layer(color, lambda v: v >= 0))
     elif mode == "mono":
+        if ink is None and counts and -1 not in {v for row in grid for v in row} and len(pal) > 1:
+            # an opaque image (strokes on paper): the paper is the colour of most of the border, everything else is ink
+            edge = defaultdict(int)
+            for x in range(W):
+                edge[grid[0][x]] += 1
+                edge[grid[H - 1][x]] += 1
+            for y in range(H):
+                edge[grid[y][0]] += 1
+                edge[grid[y][W - 1]] += 1
+            paper = max(edge, key=edge.get)
+            ink = [j for j in range(len(pal)) if j != paper]
         if ink is None:
             dark = min(range(len(pal)), key=lambda j: sum(pal[j]) * 1.0) if len(pal) > 1 else -1
             ink = [j for j in range(len(pal)) if j != dark]

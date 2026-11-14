@@ -256,6 +256,30 @@ class ToSvgTests(unittest.TestCase):
         root = ElementTree.fromstring(trace.to_svg(w, h, px, "silueta", title='a<b & "c"'))
         self.assertEqual(root.find(NS + "title").text, 'a<b & "c"')
 
+    def test_mono_keeps_the_hole_of_a_stroke_ring_and_a_hollow_square(self):
+        for bg in ((0, 0, 0, 0), (250, 250, 250, 255)):  # transparent, or strokes on opaque paper
+            for name, (x0, x1) in (("ring", (4, 36)), ("square", (6, 34))):
+                img = canvas(40, 40, bg)
+                fill(img, x0, x0, x1, x1, (20, 20, 20, 255))
+                fill(img, x0 + 4, x0 + 4, x1 - 4, x1 - 4, bg)
+                with self.subTest(name=name, bg=bg[3]):
+                    ps = paths(trace.to_svg(*img, "mono", smooth_passes=0, curves=False, dp_tol=0, min_island=1))
+                    self.assertEqual(len(ps), 1)
+                    d = ps[0].get("d")
+                    self.assertEqual(ps[0].get("fill-rule"), "evenodd")
+                    self.assertEqual(d.count("M"), 2, "outer and inner outline, not a filled block")
+                    side = x1 - x0
+                    self.assertEqual(evenodd_area(d, 40), side * side - (side - 8) ** 2)
+
+    def test_mono_keeps_a_one_pixel_line_through_the_smoothing(self):
+        for bg in ((0, 0, 0, 0), (255, 255, 255, 255)):
+            img = canvas(60, 20, bg)
+            fill(img, 3, 10, 57, 11, (0, 0, 0, 255))
+            with self.subTest(bg=bg[3]):
+                d = paths(trace.to_svg(*img, "mono", dp_tol=0.5, min_island=2, curves=False))[0].get("d")
+                self.assertGreaterEqual(evenodd_area(d, 60), 40)
+                self.assertEqual(d.count("M"), 1)
+
     def test_ring_with_a_hole_renders_as_a_ring_with_evenodd(self):
         img = canvas(24, 24)
         fill(img, 2, 2, 22, 22, GOLD + (255,))
