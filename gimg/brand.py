@@ -172,6 +172,16 @@ def _name_table(data: bytes, path) -> str:
         raise GimgError("brand.font_unreadable", path=str(path), reason=str(exc))
 
 
+def _font_family(font) -> str:
+    """The family of the font file `font`; a file that cannot be opened or parsed is ``brand.font_unreadable``."""
+    try:
+        with open(font, "rb") as fh:
+            data = fh.read(64 * 1024 * 1024)
+    except OSError as exc:
+        raise GimgError("brand.font_unreadable", path=str(font), reason=str(exc.strerror or exc))
+    return _name_table(data, font)
+
+
 def default_spacing(family) -> float:
     """The tracking in em when none is given: `SPACING` for Big Shoulders Display, `SPACING_OTHER` for any other family."""
     return SPACING if " ".join(str(family).split()).lower() == SPACING_FAMILY else SPACING_OTHER
@@ -237,12 +247,7 @@ def wordmark(text: str, font, out=None, weight: int = 800, spacing=None, title: 
         raise GimgError("brand.text_too_long", max=MAX_TEXT)
     if not isinstance(weight, int) or not 1 <= weight <= 1000 or (spacing is not None and not -0.5 <= spacing <= 2):
         raise GimgError("brand.bad_option", reason="weight 1-1000 and spacing between -0.5 and 2 em")
-    try:
-        with open(font, "rb") as fh:
-            data = fh.read(64 * 1024 * 1024)
-    except OSError as exc:
-        raise GimgError("brand.font_unreadable", path=str(font), reason=str(exc.strerror or exc))
-    family = _name_table(data, font)
+    family = _font_family(font)
     if spacing is None:
         spacing = default_spacing(family)
     out = _check_out(font, out or "wordmark.svg")
@@ -466,7 +471,7 @@ _NO_PAINT = ("", "none", "currentcolor", "inherit", "transparent")
 
 
 def _paints(value: str) -> bool:
-    return value.strip().lower() not in ("", "none")
+    return value.strip().lower() not in ("", "none", "transparent")
 
 
 def _square_ink(inner: str, ink: str) -> str:
@@ -704,16 +709,9 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing=None, palet
         raise GimgError("brand.bad_option", reason="margin 0-2 (in emblem diameters)")
     if len(os.path.basename(next(iter(targets.values()))).encode("utf-8")) > 255:
         raise GimgError("brand.bad_name", name=str(name))
-    try:
-        with open(font, "rb") as fh:
-            head = fh.read(64 * 1024 * 1024)
-    except OSError as exc:
-        raise GimgError("brand.font_unreadable", path=str(font), reason=str(exc.strerror or exc))
+    family = _font_family(font)  # an unreadable font fails here, before the matte and the traces
     if spacing is None:
-        try:
-            spacing = default_spacing(_name_table(head, font))
-        except GimgError:  # the wordmark reports the unreadable font; here the file name stands for the family
-            spacing = default_spacing(Path(font).stem)
+        spacing = default_spacing(family)
     if shutil.which(TOOL) is None:  # after the caller's own mistakes: those are reported with or without the tool
         raise GimgError("brand.tool_missing", tool=TOOL)
     with tempfile.TemporaryDirectory(prefix="gimg-brand-") as tmp:

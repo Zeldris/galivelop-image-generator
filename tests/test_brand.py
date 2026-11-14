@@ -710,6 +710,17 @@ class SystemTests(BrandBase):
         self.assertIn("nope.ttf", err)
         self.assertFalse(self.out.exists())
 
+    def test_a_corrupt_font_fails_with_font_unreadable_before_the_work(self):
+        bad = self.tmp / "bad.ttf"
+        bad.write_bytes(b"this is not a font at all")
+        with mock.patch.object(brand, "matte", side_effect=AssertionError("matte ran")), \
+                mock.patch.object(brand.shutil, "which", return_value=None):
+            with self.assertRaises(GimgError) as cm:
+                brand.system(self.src, "Tarkor", str(bad), self.out)
+        self.assertEqual(cm.exception.code, "brand.font_unreadable")
+        self.assertIn("not a TrueType or OpenType font", cm.exception.params["reason"])
+        self.assertFalse(self.out.exists())
+
     def test_a_name_with_no_ascii_letters_is_refused_with_its_reason(self):
         code, _, err = self.system(name="日本")
         self.assertEqual(code, 1)
@@ -795,6 +806,15 @@ class SquareTests(BrandBase):
         self.assertIn('style="fill:#fbfcfd;stroke : #fbfcfd; fill-opacity:.5; stroke-width:2"', text)
         self.assertIn('style="fill:none;stroke:none"', text)
         self.assertEqual(res["flattened"], 2)
+
+    def test_transparent_fills_and_strokes_stay_unpainted(self):
+        self._draw('<path fill="transparent" stroke="#123456" d="M0 0L40 0L40 20Z"/>'
+                   '<path style="fill:transparent;stroke:Transparent" d="M0 0L5 0L5 5Z"/>')
+        self.make()
+        text = self.out.read_text()
+        self.assertIn('fill="transparent"', text)
+        self.assertIn('style="fill:transparent;stroke:Transparent"', text)
+        self.assertEqual(text.count("#fbfcfd"), 2)  # the group, and the one stroke that paints
 
     def test_two_paint_colors_are_flattened_and_one_is_not(self):
         self._draw('<path fill="#ABC" d="M0 0L40 0L40 20Z"/><path style="fill:#aabbcc" d="M0 0L5 0L5 5Z"/>'
