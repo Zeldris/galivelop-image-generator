@@ -44,7 +44,7 @@ SPACING = 0.01  # em between letters: the family's tracking (Big Shoulders Displ
 SPACING_OTHER = 0.12  # em between letters for any other font
 SPACING_FAMILIES = ("big shoulders display", "big shoulders")
 SPACING_SUFFIXES = ("sc", "variable", "thin", "extralight", "light", "regular", "medium", "semibold", "bold", "extrabold",
-                    "black", "italic")  # trailing words of a family name that are not a different design
+                    "black", "italic", "heavy", "demibold", "ultralight", "ultrabold")  # trailing words of a family name that are not a different design
 MODES = {"color": "color", "mono": "mono", "silhouette": "silueta", "silueta": "silueta"}
 
 
@@ -187,11 +187,16 @@ def _font_family(font) -> str:
 def default_spacing(family) -> float:
     """The tracking in em when none is given: `SPACING` for Big Shoulders Display (also the variable "Big Shoulders", the
     "SC" variants and a weight or style that a static file carries in its family name, such as "Big Shoulders Display
-    ExtraBold", case and spacing aside), `SPACING_OTHER` for any other family. Other cuts of the superfamily ("Text",
+    ExtraBold", "Extra Bold", "Display-Bold" or "Display 800", case and spacing aside), `SPACING_OTHER` for any other family. Other cuts of the superfamily ("Text",
     "Inline Display", "Stencil") are other designs, with no sheet in `docs/marcas/`: they keep `SPACING_OTHER`."""
-    words = " ".join(str(family).split()).lower().split(" ")
-    while len(words) > 1 and words[-1] in SPACING_SUFFIXES:
-        words.pop()
+    words = str(family).lower().replace("-", " ").split()
+    while len(words) > 1:
+        if len(words) > 2 and words[-2] + words[-1] in SPACING_SUFFIXES:  # "extra bold", "semi bold"
+            del words[-2:]
+        elif words[-1] in SPACING_SUFFIXES or (words[-1].isdigit() and 100 <= int(words[-1]) <= 900 and int(words[-1]) % 100 == 0):
+            words.pop()
+        else:
+            break
     return SPACING if " ".join(words) in SPACING_FAMILIES else SPACING_OTHER
 
 
@@ -324,7 +329,7 @@ def slugify(name: str) -> str:
 
 
 def _read_svg(path) -> dict:
-    """``{"vb": (x, y, w, h), "inner": str, "box": (x0, y0, x1, y1)}`` of a traced SVG; ``brand.bad_svg`` if it is not one."""
+    """``{"vb": (x, y, w, h), "inner": str, "root": str (the attributes of ``<svg>``), "box": (x0, y0, x1, y1)}`` of a traced SVG; ``brand.bad_svg`` if it is not one."""
     try:
         with open(path, "r", encoding="utf-8") as fh:
             text = fh.read(32 * 1024 * 1024)
@@ -479,7 +484,13 @@ _NO_PAINT = ("", "none", "currentcolor", "inherit", "transparent")
 
 
 def _paints(value: str) -> bool:
-    return value.strip().lower() not in ("", "none", "transparent")
+    """False for no paint, ``transparent`` and any color with alpha 0 (``rgba(…, 0)``, ``#0000``, ``hsla(…, 0)``)."""
+    v = value.strip().lower()
+    return v not in ("", "none", "transparent") and not _invisible(_norm_color(v))
+
+
+def _invisible(norm: str) -> bool:
+    return bool(re.fullmatch(r"#[0-9a-f]{6}00", norm))
 
 
 def _square_ink(inner: str, ink: str) -> str:
@@ -535,10 +546,12 @@ def _norm_color(value: str) -> str:
     if rgb:
         g = rgb.groups()
         chans = [float(g[i]) * (2.55 if g[i + 1] else 1) for i in (0, 2, 4)]
-        if all(-0.5 <= c < 255.5 for c in chans):
+        if all(math.isfinite(c) and -0.5 <= c < 255.5 for c in chans):
             return _hex_alpha([round(min(max(c, 0), 255)) for c in chans], _alpha_of(g[6], g[7]))
     hsl = _HSL.fullmatch(v)
     if hsl:
+        if not math.isfinite(float(hsl.group(1))):
+            return v
         h, sat, light = float(hsl.group(1)) % 360, min(max(float(hsl.group(2)), 0), 100) / 100, min(max(float(hsl.group(3)), 0), 100) / 100
         c = (1 - abs(2 * light - 1)) * sat
         x = c * (1 - abs((h / 60) % 2 - 1))
@@ -556,7 +569,8 @@ def _paint_colors(inner: str, root: str = "") -> set:
     found = [m.group(2) for m in _PAINT.finditer(inner + " " + root)]
     for st in _STYLE.finditer(inner + " " + root):
         found += [m.group(3) for m in _DECL.finditer(st.group(1))]
-    colors = {_norm_color(v) for v in found if v.strip().lower() not in _NO_PAINT}
+    colors = {_norm_color(v)[:7] if re.fullmatch(r"#[0-9a-f]{8}", _norm_color(v)) else _norm_color(v)  # alpha aside: same color
+              for v in found if v.strip().lower() not in _NO_PAINT and not _invisible(_norm_color(v))}
     if "<style" not in inner.lower():  # with a stylesheet the color may come from CSS: not counted
         groups = [_has_fill(root)]  # one flag per open <g> (the first, the root): does it set a fill its shapes inherit?
         for m in _TAG.finditer(inner):

@@ -578,6 +578,11 @@ class DefaultSpacingTests(unittest.TestCase):
             self.assertEqual(brand.default_spacing(family), brand.SPACING, family)
         for family in ("Big Shoulders Display Bold", "Big Shoulders Display ExtraBold", "Big Shoulders Black", "big shoulders  display  light sc"):
             self.assertEqual(brand.default_spacing(family), brand.SPACING, family)
+        for family in ("Big Shoulders Display Heavy", "Big Shoulders Display Demibold", "Big Shoulders Display Extra Bold",
+                       "Big Shoulders Display Semi Bold", "Big Shoulders Display-Bold", "Big Shoulders Display 800", "Big Shoulders 100"):
+            self.assertEqual(brand.default_spacing(family), brand.SPACING, family)
+        for family in ("Big Shoulders Stencil Bold", "Big Shoulders Text Extra Bold", "Big Shoulders Display 850"):
+            self.assertEqual(brand.default_spacing(family), brand.SPACING_OTHER, family)
         for family in ("Big Shoulders Text", "Big Shoulders Inline Display", "Big Shoulders Stencil", "Shoulders", "Literata"):
             self.assertEqual(brand.default_spacing(family), brand.SPACING_OTHER, family)
 
@@ -950,6 +955,25 @@ class SquareTests(BrandBase):
                    '<path fill="hsl(0,100%,50%)" d="M0 0L9 0L9 5Z"/><path fill="#f00f" d="M0 0L7 0L7 7Z"/>'
                    '<path style="fill:#ff0000ff" d="M0 0L6 0L6 6Z"/>')
         self.assertNotIn("flattened", self.make())
+
+    def test_a_huge_hue_does_not_crash_and_stays_raw(self):
+        raw = "hsl(%s,50%%,50%%)" % ("9" * 400)
+        self.assertEqual(brand._norm_color(raw), raw)
+        self._draw('<path fill="%s" d="M0 0L40 0L40 20Z"/>' % raw)
+        self.make()
+
+    def test_alpha_zero_paints_nothing_and_a_translucent_color_counts_as_its_opaque_one(self):
+        for value in ("rgba(0,0,0,0)", "#0000", "#12345600", "hsla(10,50%,50%,0)"):
+            self.assertFalse(brand._paints(value), value)
+        self.assertTrue(brand._paints("rgba(0,0,0,0.5)"))
+        self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/><path fill="rgba(1,2,3,0)" stroke="#0000" d="M0 0L9 0L9 5Z"/>')
+        res = self.make()
+        text = self.out.read_text()
+        self.assertNotIn("flattened", res)
+        self.assertIn('fill="rgba(1,2,3,0)"', text)
+        self.assertIn('stroke="#0000"', text)
+        self._draw('<path fill="#ff0000" d="M0 0L40 0L40 20Z"/><path fill="rgba(255,0,0,0.5)" d="M0 0L9 0L9 5Z"/>')
+        self.assertNotIn("flattened", self.make(force=True))
 
     def test_the_root_fill_is_inherited_and_a_line_has_no_fill(self):
         self.draw.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20" fill="#123456">'
