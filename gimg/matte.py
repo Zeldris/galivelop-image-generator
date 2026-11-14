@@ -8,7 +8,7 @@ connected to the border), grows the flood up to `grow` pixels over the soft edge
 that edge a partial alpha, ``(distance - t0) / (t1 - t0)``, with the background tint taken out of its color
 (despill), so the edge has no halo of the background color. With ``holes=True`` every region **not connected to the
 border** whose pixels are closer than `t0` to the background color is background too (a ring of background enclosed
-by the shape, as in an emblem with an open ring), with the same grow and despill; by default such a region is kept.
+by the shape, as in an emblem with an open ring), with the same grow and despill; by default such a region is kept (unless it touches a pixel already transparent in the input).
 It returns a new RGBA ``bytearray``; the input is not
 touched. A pixel whose own alpha is under 128 is background (and ends fully transparent), and the border color
 is taken from the border pixels that are not. `border_color` gives the background color alone.
@@ -25,9 +25,10 @@ halo). Only the strip of `CHROMA_BAND` pixels next to the removed background is 
 mix of the background and the color of the subject pixels around it (further in, outside the strip) takes that color
 and, as coverage, the share of the way from the background to it; any other pixel (an outline or a rim of its own)
 is kept. The rest of the subject is not
-touched, whatever its color. The fix only reaches the strip of the background that was removed: a hole already in the
-input (a region of background closed off by the subject) is not touched unless ``holes=True`` removes it, as the
-default keeps such regions as the subject's own, and a pixel already transparent in the input counts as removed.
+touched, whatever its color. The fix only reaches the strip of the background that was removed: a region of
+opaque background closed off by the subject is not touched unless ``holes=True`` removes it, as the default keeps
+such regions as the subject's own; a pixel already transparent in the input counts as removed and, like the border,
+seeds the flood, so a ring of background around a transparent hole of the input is emptied without `holes`.
 """
 from __future__ import annotations
 
@@ -83,6 +84,7 @@ def remove_bg(width: int, height: int, rgba, t0: float = 60, t1: float = 110, bo
         stack += [x, (height - 1) * width + x]
     for y in range(height):
         stack += [y * width, y * width + width - 1]
+    stack += [k for k in range(n) if rgba[k * 4 + 3] < 128]  # a hole already in the input seeds the flood too
     while stack:
         k = stack.pop()
         if seen[k] or dist[k] >= t0:

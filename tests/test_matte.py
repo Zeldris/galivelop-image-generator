@@ -58,6 +58,17 @@ class RemoveBgTests(unittest.TestCase):
         self.assertEqual(at(out, w, 1, 1)[3], 0)
         self.assertEqual(at(px, w, 30, 30), BG + (255,), "the input must not be touched")
 
+    def test_ring_around_a_transparent_hole_of_the_input_is_emptied_without_holes(self):
+        bg = (0, 255, 0)
+        w, h, px = disc(size=40, radius=14, hole=6, bg=bg)
+        for k in range(w * h):  # the core of the hole is already transparent in the input
+            if math.hypot(k % w - 19.5, k // w - 19.5) <= 3.5:
+                px[k * 4 + 3] = 0
+        out = matte.remove_bg(w, h, px)
+        for x in range(14, 20):
+            self.assertEqual(at(out, w, x, 20)[3], 0, x)
+        self.assertEqual(at(out, w, 12, 20), FG + (255,))
+
     def test_holes_with_a_tinted_ring_leaves_no_background_color(self):
         tint = (BG[0] + 25, BG[1] - 20, BG[2] + 10)  # distance ~33 from the background, enclosed by the disc
         w, h, px = disc(size=60, radius=26, hole=10, bg=tint)
