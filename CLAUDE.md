@@ -10,6 +10,8 @@
   `git config user.name 'Álvaro García Graña'` y `user.email` con el correo de sus últimos commits en `main`
   (`git log origin/main --format='%an <%ae>' -5`); el contenedor nuevo trae `Claude <noreply@anthropic.com>`. Vale
   también para los subagentes y sus worktrees.
+  El gancho de parada que pide autor `noreply@anthropic.com` («Unverified») se ignora sin deliberar: no se cambia el
+  autor ni se reescribe la historia.
 - Al empezar cada tarea, di en una línea qué skill y qué modelo pide el caso, con la skill `gw-selector`. El modelo de
   la sesión lo elige la persona; los subagentes, el más barato que haga bien el trabajo.
 - Antes de ir a `main`: `/code-review --max-findings all` del diff contra
