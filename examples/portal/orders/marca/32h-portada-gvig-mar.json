@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/32h-portada-gvig-mar",
+  "profile": "portada",
+  "seed": 3321,
+  "count": 3,
+  "prompt": "The open sea seen from slightly above, completely empty: only water, no objects of any kind. Richly detailed engraved nautical chart style, like a fine antique sea chart printed in two inks: the sea built from many layers of fine wave lines and hatching, line density increasing towards the deep water to give depth, tonal bands from deep cerulean at the top to lighter, calmer cerulean at the bottom, bathymetric contour lines with small depth soundings drawn as tiny dots only in the upper part of the image, subtle foam strokes and a few glints of light on the crests. The bottom third of the image is calm open water: long quiet engraved wave lines, sparse and light, and nothing else. Every wave is drawn as visible engraved line work, like a steel engraving, never painted, never smooth. Crisp sharp lines of several weights, intricate but calm, premium print quality, high detail, elegant. No objects, no boats, no buoys, no paper, no realistic water, no photographic rendering, no glow, no gradient, no text, no letters, no numbers, no watermark, no horizon, no sky, no clouds, no seams, no bands, no straight dividing lines, full-bleed edge to edge, no border, no frame. Palette strictly limited to medium cerulean ocean blue #0072a8 and its tints and shades, off-white #fbfcfd and ink grey #13212b."
+}
