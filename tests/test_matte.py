@@ -1,5 +1,6 @@
 import math
 import unittest
+from unittest import mock
 
 from gimg import matte
 
@@ -68,6 +69,20 @@ class RemoveBgTests(unittest.TestCase):
         for x in range(14, 20):
             self.assertEqual(at(out, w, x, 20)[3], 0, x)
         self.assertEqual(at(out, w, 12, 20), FG + (255,))
+
+    def test_transparent_hole_of_an_already_cut_input_keeps_a_dark_core(self):
+        ink = (20, 20, 20)
+        w, h, px = disc(size=40, radius=14, fg=(184, 134, 43), bg=(0, 0, 0))
+        for k in range(w * h):
+            x, y = k % w, k // w
+            r = math.hypot(x - 19.5, y - 19.5)
+            if 2.5 < r <= 8:
+                px[k * 4:k * 4 + 3] = bytes(ink)
+            if r > 14.5 or r <= 2.5:  # the border is all transparent, and so is a hole inside the dark core
+                px[k * 4:k * 4 + 4] = bytes((0, 0, 0, 0))
+        out = matte.remove_bg(w, h, px)
+        self.assertEqual(at(out, w, 19, 14), ink + (255,))
+        self.assertEqual(at(out, w, 10, 20), (184, 134, 43, 255))
 
     def test_holes_with_a_tinted_ring_leaves_no_background_color(self):
         tint = (BG[0] + 25, BG[1] - 20, BG[2] + 10)  # distance ~33 from the background, enclosed by the disc
@@ -240,11 +255,13 @@ class ChromaKeyTests(unittest.TestCase):
                 edge = grown
             return band
         rnd = random.Random(7)
-        for w, h in ((1, 1), (1, 9), (7, 5), (23, 17)):
-            for density in (0.05, 0.3, 0.7):
-                clear = bytearray(1 if rnd.random() < density else 0 for _ in range(w * h))
-                with self.subTest(w=w, h=h, density=density):
-                    self.assertEqual(matte._band(clear, w, w * h), simple(clear, w, h))
+        for cb in (1, 2, 3, 4):
+            for w, h in ((1, 1), (1, 9), (7, 5), (23, 17)):
+                for density in (0.05, 0.3, 0.7):
+                    clear = bytearray(1 if rnd.random() < density else 0 for _ in range(w * h))
+                    with self.subTest(band=cb, w=w, h=h, density=density), \
+                            mock.patch.object(matte, "CHROMA_BAND", cb):
+                        self.assertEqual(matte._band(clear, w, w * h), simple(clear, w, h))
 
     def test_brand_matte_command_reads_and_writes_files_for_both(self):
         import os

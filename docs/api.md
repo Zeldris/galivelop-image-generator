@@ -399,7 +399,7 @@ curl -s $B/api/projects/mi-proyecto/brand
 ### POST /api/projects/{p}/brand/matte
 
 Quita el fondo plano de un intento del proyecto. Campos: `name` (nombre de la marca), `source`
-(`{"profile", "key", "attempt"}`, resuelto como `attempt_image`), `tol` (60), `soft` (110), `border` (6), `grow` (3, de 0 a 32), `holes` (false: con `true` también se vacían las regiones de color de fondo no conectadas al borde, como un anillo encerrado).
+(`{"profile", "key", "attempt"}`, resuelto como `attempt_image`), `tol` (60), `soft` (110), `border` (6), `grow` (3, de 0 a 32), `holes` (false: con `true` también se vacían las regiones de color de fondo no conectadas al borde, como un anillo encerrado; en cualquier caso, un píxel ya transparente de la entrada vacía lo conectado a él, si el borde tiene color opaco).
 Escribe `emblema-alpha.png` y devuelve lo que `gimg brand matte`. Errores: `api.bad_param`, `brand.bad_name`,
 `brand.empty_text`, `brand.no_matte`, `order.attempt_unknown` (404), `api.not_found` (404), `project.unknown`.
 
