@@ -113,6 +113,13 @@ de más de 570 s tuvieron memoria libre mínima < 4,2 GB; con 4,9-5,6 GB libres,
   `prueba768` de `examples/portal/`, pedidos en `piloto/opt-ai/a1/`, misma semilla que q799, q803 y q839: q872-874). **Resultado:** 302-306 s frente a 548-567 s (−45 %); a 24 px en SVG (`trace --ink-only`) se leen igual. **Aplicada (2026-11-13), por marca:** el perfil `cuadrado` del Portal genera a 768² y entrega a 1024; las demás marcas siguen con sus medidas hasta probarlo; `prueba768` retirado.
 - **Ronda del 13-11, aprobadas por la persona (2026-11-13):** figuras geométricas por código (`gimg brand rose`, para
   la 04b) y `gimg brand fit` para encajar el motivo de una banda en su zona; las dos, fusionadas en `hojas-repos` el 2026-11-13.
+- **Ronda del 14-11 (`ronda-2026-11-14`), aprobadas por la persona el 2026-11-14, sin aplicar todavía:**
+  - **P1:** el perfil `icono` del Portal genera a 768² y entrega a 1024, como A1 (550 s frente a 291 s, −47 %). Antes,
+    prueba: `23b-icono-voz` con la misma semilla a 768² frente a su intento a 1024², en hoja y en SVG a 24 px (que no
+    se pierdan trazos finos ni las esquinas rectas); después, `/code-review low` del cambio y `measure.py`.
+  - **P2:** tiempo aceptable de las portadas 1344×768 en `steam-deck-libre`: p95 ≤ 10,5 min (630 s; medido p50 566 s,
+    p95 600 s, n=42). Se pasa a «Tiempos aceptables» al aplicarla.
+  - Memoria libre mínima de 2,7-2,8 GB en la ronda (+19 s de mediana en portadas con < 4,2 GB): lo cubre A2.
 - No se propone: bajar Z-Image a menos de 8 pasos ni `--taesd` en la imagen final (calidad).
 - `flux3-klein-q8` sigue con ajustes en `steam-deck-libre.json` sin estar instalado (1 llamada fallida el 2026-11-10);
   se deja: es una configuración puesta a propósito y no estorba.
