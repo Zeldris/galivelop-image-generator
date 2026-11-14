@@ -494,3 +494,17 @@ class ChannelProfileTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MapPieceProfileTests(unittest.TestCase):
+    """Plan F2.8 punto 8c: the map's `cartela` (1024x512) and `banda` (1024x256), both generated at their delivered size."""
+
+    def test_cartela_and_banda(self):
+        profiles = read("examples/tarkor/galivelop-images.json")["profiles"]
+        for name, size in {"cartela": (1024, 512), "banda": (1024, 256)}.items():
+            with self.subTest(profile=name):
+                cfg = profiles[name]
+                self.assertEqual((cfg["width"], cfg["height"]), size)
+                self.assertEqual(compose.target_size(cfg), size)
+                self.assertLessEqual(cfg["width"] * cfg["height"], 1048576)
+                self.assertEqual((cfg["cfg"], cfg["sampler"]), (1.0, "euler"))

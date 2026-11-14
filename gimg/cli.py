@@ -7,7 +7,7 @@ import os
 import sys
 import traceback
 
-from . import __version__, brand, compose, delivery, doctor, export, i18n, measure, orders, projects, queue, service, sheet, worker
+from . import __version__, brand, compose, delivery, doctor, export, i18n, measure, orders, projects, queue, service, sheet, tile, worker
 from .errors import GimgError
 
 LANGS = ("es", "en")
@@ -24,24 +24,27 @@ def _build(lang: str) -> argparse.ArgumentParser:
     def t(key, **params):
         return i18n.t(key, lang, **params)
 
+    def h(key):  # argparse reads `%` in help as a format (3.14 checks it when the parser is built)
+        return t(key).replace("%", "%%")
+
     common = argparse.ArgumentParser(add_help=False)
-    common.add_argument("--lang", choices=LANGS, default=argparse.SUPPRESS, help=t("cli.help.lang"))
-    common.add_argument("--json", action="store_true", default=argparse.SUPPRESS, help=t("cli.help.json"))
+    common.add_argument("--lang", choices=LANGS, default=argparse.SUPPRESS, help=h("cli.help.lang"))
+    common.add_argument("--json", action="store_true", default=argparse.SUPPRESS, help=h("cli.help.json"))
 
     parser = argparse.ArgumentParser(prog="gimg", description=t("cli.description"), parents=[common])
     top = parser.add_subparsers(dest="cmd", metavar="<command>", required=True)
 
     def leaf(group, name, help_key, *args):
-        p = group.add_parser(name, help=t(help_key), description=t(help_key), parents=[common])
+        p = group.add_parser(name, help=h(help_key), description=t(help_key), parents=[common])
         for flags, kwargs in args:
             kwargs = dict(kwargs)
             if "help" in kwargs:
-                kwargs["help"] = t(kwargs["help"])
+                kwargs["help"] = h(kwargs["help"])
             p.add_argument(*flags, **kwargs)
         return p
 
     def group(parent, name, help_key):
-        p = parent.add_parser(name, help=t(help_key), description=t(help_key), parents=[common])
+        p = parent.add_parser(name, help=h(help_key), description=t(help_key), parents=[common])
         return p.add_subparsers(dest="sub", metavar="<command>", required=True)
 
     def arg(name, help_key, **kw):
@@ -67,8 +70,8 @@ def _build(lang: str) -> argparse.ArgumentParser:
     lst = leaf(g, "list", "cli.cmd.order_list", project,
                opt("--profile", "cli.arg.profile_filter"))
     mutex = lst.add_mutually_exclusive_group()
-    mutex.add_argument("--chosen", action="store_true", help=t("cli.arg.chosen"))
-    mutex.add_argument("--unchosen", action="store_true", help=t("cli.arg.unchosen"))
+    mutex.add_argument("--chosen", action="store_true", help=h("cli.arg.chosen"))
+    mutex.add_argument("--unchosen", action="store_true", help=h("cli.arg.unchosen"))
     leaf(g, "show", "cli.cmd.order_show", project, okey, oprofile)
 
     g = group(top, "attempt", "cli.cmd.attempt")
@@ -161,6 +164,12 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--columns", "cli.arg.sheet_columns", type=int, default=sheet.DEFAULT_COLUMNS),
          opt("--width", "cli.arg.sheet_width", type=int, default=sheet.DEFAULT_WIDTH))
 
+    leaf(top, "tile", "cli.cmd.tile", arg("image", "cli.arg.tile_image", metavar="PNG"),
+         opt("-o", "cli.arg.tile_out", dest="out", metavar="PNG"),
+         opt("--blend", "cli.arg.tile_blend", type=float, default=0.25),
+         opt("--preview", "cli.arg.tile_preview", metavar="PNG"),
+         opt("--preview-side", "cli.arg.tile_preview_side", type=int, default=256),
+         opt("--force", "cli.arg.tile_force", action="store_true"))
     leaf(top, "export", "cli.cmd.export", arg("image", "cli.arg.export_image", metavar="PNG"),
          arg("out", "cli.arg.export_out", metavar="OUT"),
          opt("--size", "cli.arg.export_size", metavar="WxH"),
@@ -183,9 +192,9 @@ def _build(lang: str) -> argparse.ArgumentParser:
     serve = leaf(top, "serve", "cli.cmd.serve", opt("--port", "cli.arg.serve_port", type=int),
                  opt("--idle-min", "cli.arg.serve_idle", type=int, metavar="N"))
     mode = serve.add_mutually_exclusive_group()
-    mode.add_argument("--detach", action="store_true", help=t("cli.arg.serve_detach"))
-    mode.add_argument("--status", action="store_true", help=t("cli.arg.serve_status"))
-    mode.add_argument("--stop", action="store_true", help=t("cli.arg.serve_stop"))
+    mode.add_argument("--detach", action="store_true", help=h("cli.arg.serve_detach"))
+    mode.add_argument("--status", action="store_true", help=h("cli.arg.serve_status"))
+    mode.add_argument("--stop", action="store_true", help=h("cli.arg.serve_stop"))
     leaf(top, "ui", "cli.cmd.ui", opt("--no-browser", "cli.arg.no_browser", action="store_true"))
     leaf(top, "doctor", "cli.cmd.doctor", opt("--verify", "cli.arg.verify", action="store_true"))
     leaf(top, "version", "cli.cmd.version")
@@ -385,6 +394,15 @@ def _run(args, out: _Out) -> int:
                      columns=res["columns"], count=len(res["images"]))
             for i, path in enumerate(res["images"], 1):
                 out.line("cli.out.sheet_item", index=i, path=path)
+    elif cmd == "tile":
+        res = tile.tile(args.image, args.out, args.blend, args.preview, args.preview_side, args.force)
+        if out.as_json:
+            out.data(res)
+        else:
+            out.line("cli.out.tile_done", out=res["out"], width=res["size"][0], height=res["size"][1])
+            if "preview" in res:
+                out.line("cli.out.tile_preview", path=res["preview"], width=res["preview_size"][0],
+                         height=res["preview_size"][1])
     elif cmd == "export":
         res = export.export(args.image, args.out, args.size, args.icon_sizes, args.background, args.force,
                            args.crop, args.anchor)

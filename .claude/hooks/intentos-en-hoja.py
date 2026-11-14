@@ -2,25 +2,49 @@
 """Gancho PreToolUse de Read: al leer suelto un `.png` de intentos (`.../attempts/q...`) no bloquea, avisa de que
 conviene revisarlos en una hoja de contactos (`gimg sheet`). 44 imágenes sueltas arrastraron 4-5 M de tokens
 (`.claude/gw/gw-opt-tokens.md`, sesión c7c2a076). Avisa igual con las capturas del scratchpad (28 sueltas, ~2,2 M en
-la revisión de la interfaz de `ccr-85e9d14e-zt7p8b`), salvo que el nombre diga que ya es una hoja.
+la revisión de la interfaz de `ccr-85e9d14e-zt7p8b`), salvo que el nombre diga que ya es una hoja; la primera
+captura suelta de cada sesión pasa sin aviso (mirar una sola es legítimo) y avisa desde la segunda. Vale para
+`.png`, `.jpg`, `.jpeg` y `.webp`.
 
 Lee el JSON del gancho en la entrada estándar; ante cualquier error deja pasar.
 """
+import hashlib
 import json
+import os
 import sys
+import tempfile
 
 AVISO = ('Cada imagen suelta (intento o captura) se arrastra en cada llamada: para revisarlas, una hoja: '
          '`gimg sheet IMAGEN... --out hoja.png` (una hoja de 6 cuesta como una imagen).')
 
 
-def decision(datos):
+IMAGENES = ('.png', '.jpg', '.jpeg', '.webp')
+
+
+def _primera_captura(datos, carpeta):
+    """True la primera vez que se ve una captura suelta en la sesión (lo apunta en `carpeta`)."""
+    sesion = str(datos.get('session_id') or '')
+    if not sesion:
+        return False
+    marca = os.path.join(carpeta or tempfile.gettempdir(),
+                         'gimg-captura-' + hashlib.sha256(sesion.encode()).hexdigest()[:16])
+    try:
+        os.close(os.open(marca, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600))
+    except OSError:
+        return False
+    return True
+
+
+def decision(datos, carpeta=None):
     ruta = (datos.get('tool_input') or {}).get('file_path')
     if datos.get('tool_name') != 'Read' or not isinstance(ruta, str):
         return None
     ruta = ruta.replace('\\', '/')
     nombre = ruta.rsplit('/', 1)[-1].lower()
+    if not nombre.endswith(IMAGENES):
+        return None
     captura = '/scratchpad/' in ruta and 'hoja' not in nombre and 'sheet' not in nombre
-    if nombre.endswith('.png') and ('/attempts/q' in ruta or captura):
+    if '/attempts/q' in ruta or (captura and not _primera_captura(datos, carpeta)):
         return {'hookSpecificOutput': {'hookEventName': 'PreToolUse', 'additionalContext': AVISO}}
     return None
 

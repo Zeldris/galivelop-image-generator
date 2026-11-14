@@ -68,6 +68,21 @@ class IntentosEnHojaTests(unittest.TestCase):
         d = intentos_en_hoja.decision({'tool_name': 'Read', 'tool_input': {'file_path': '/tmp/c/scratchpad/r2/pedidos-d-dark.png'}})
         self.assertIn('gimg sheet', d['hookSpecificOutput']['additionalContext'])
 
+    def test_la_primera_captura_de_la_sesion_pasa_y_avisa_desde_la_segunda(self):
+        with tempfile.TemporaryDirectory() as carpeta:
+            def leer(ruta, sesion='s1'):
+                return intentos_en_hoja.decision(
+                    {'tool_name': 'Read', 'session_id': sesion, 'tool_input': {'file_path': ruta}}, carpeta)
+            self.assertIsNone(leer('/tmp/c/scratchpad/una.png'))
+            self.assertIn('gimg sheet', leer('/tmp/c/scratchpad/dos.png')['hookSpecificOutput']['additionalContext'])
+            self.assertIsNone(leer('/tmp/c/scratchpad/otra.png', 's2'))
+            self.assertIn('gimg sheet', leer('/x/attempts/q9.png', 's3')['hookSpecificOutput']['additionalContext'])
+
+    def test_avisa_tambien_con_jpg_y_webp(self):
+        for ext in ('jpg', 'JPEG', 'webp'):
+            d = intentos_en_hoja.decision({'tool_name': 'Read', 'tool_input': {'file_path': f'/x/attempts/q1.{ext}'}})
+            self.assertIn('gimg sheet', d['hookSpecificOutput']['additionalContext'], ext)
+
     def test_calla_en_lo_demas(self):
         for datos in ({'tool_name': 'Read', 'tool_input': {'file_path': '/x/aprobadas/01.png'}},
                       {'tool_name': 'Read', 'tool_input': {'file_path': '/x/attempts/q1.json'}},

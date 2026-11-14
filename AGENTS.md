@@ -51,6 +51,8 @@ Cada sesión puede correr en un contenedor temporal: **lo que no está subido no
   (`.github/workflows/check.yml`) en cada push fuera de `main` y en cada pull request.
 - **Antes de subir, pásalo con `bash .claude/gw/scripts/check.sh`**: corre el check y, si sale en verde, lo apunta; el
   `pre-push` no lo repite sobre el mismo árbol (`GW_CHECK_CACHE=0` lo desactiva).
+  Tarda ~4 min: en primer plano con un tiempo límite de 6 min, o en segundo plano esperando el aviso **sin cerrar el
+  turno** (cerrarlo con cambios sin subir hace volver al gancho de parada).
 - **Lo comprobable lo hace un script**, no un agente: las skills y guías solo deciden lo que exige criterio. Si una
   regla se sigue rompiendo, se convierte en una comprobación.
 - **Lo que depende de una máquina concreta no se da por probado con tests** (otro sistema operativo, un dispositivo,
