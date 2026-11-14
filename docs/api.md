@@ -423,7 +423,7 @@ curl -s -X POST $B/api/projects/mi-proyecto/brand/trace -H 'Content-Type: applic
 ### POST /api/projects/{p}/brand/wordmark
 
 Dibuja el nombre a trazos. Campos: `name`, `font` (familia instalada, p. ej. `Cinzel`; se resuelve con `fc-match`, nunca
-una ruta), `text` (por defecto el nombre en mayúsculas), `weight` (800), `spacing` (0,01). Escribe `wordmark.svg`. Errores:
+una ruta), `text` (por defecto el nombre en mayúsculas), `weight` (800), `spacing` (según la familia: 0,01 Big Shoulders Display, 0,12 las demás). Escribe `wordmark.svg`. Errores:
 `brand.font_unknown`, `brand.font_unreadable`, `brand.tool_missing` (500), `brand.wordmark_no_fit`, `brand.text_too_long`.
 
 ```sh

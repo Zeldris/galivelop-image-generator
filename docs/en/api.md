@@ -434,7 +434,7 @@ curl -s -X POST $B/api/projects/mi-proyecto/brand/trace -H 'Content-Type: applic
 ### POST /api/projects/{p}/brand/wordmark
 
 Draws the name as outlines. Fields: `name`, `font` (an installed family, e.g. `Cinzel`; resolved with `fc-match`, never
-a path), `text` (defaults to the name in capitals), `weight` (800), `spacing` (0.01). Writes `wordmark.svg`. Errors:
+a path), `text` (defaults to the name in capitals), `weight` (800), `spacing` (by family: 0.01 Big Shoulders Display, 0.12 any other). Writes `wordmark.svg`. Errors:
 `brand.font_unknown`, `brand.font_unreadable`, `brand.tool_missing` (500), `brand.wordmark_no_fit`,
 `brand.text_too_long`.
 
