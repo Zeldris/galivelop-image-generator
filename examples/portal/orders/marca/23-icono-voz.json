@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/23-icono-voz",
+  "profile": "icono",
+  "seed": 2321,
+  "count": 3,
+  "prompt": "A minimal flat line icon, centred, seen straight on: an upright rounded microphone capsule on a short stem with a small flat base, held in a curved cradle, with two curved sound arcs on each side of the capsule. Simple line register: one single uniform stroke weight everywhere, thick and bold, rounded line caps and rounded joins, open outlines only, no fill, the background colour shows through every shape. The whole icon is drawn in one single colour, rose pink #D9467A, and nothing else. The background is a perfectly flat, plain, uniform pure chroma key green #00ff00 filling the whole square, with no gradient, no texture, no vignette and no shadow. Generous empty margin all around, the icon takes about two thirds of the square, balanced, geometric, clean vector look, legible at very small size. No shading, no hatching, no drop shadow, no glow, no highlights, no facets, no 3D, no perspective, no photographic rendering, no second colour in the icon, no thin lines, no extra details, no ornaments, no text, no letters, no numbers, no watermark, no border, no frame."
+}
