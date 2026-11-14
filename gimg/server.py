@@ -608,7 +608,7 @@ def queue_list(req):
             if estimate is not None:
                 item["estimateMs"] = estimate
         out.append(item)
-    return out
+    return Reply(200, out, json=True, headers={"X-Queue-Paused": "1" if queue.is_paused() else "0"})
 
 
 @route("GET", "/api/queue/{id}/preview")

@@ -311,7 +311,8 @@ curl -s "$B/api/projects/mi-proyecto/profiles/og/assets/template?id=claro"
 ### GET /api/queue
 
 The queue: each entry with `progress`, `errorText` and `estimateMs` where applicable (without the preview path). Query:
-`state=queued|running|done|failed|cancelled`. Error: `queue.bad_state`.
+`state=queued|running|done|failed|cancelled`. Error: `queue.bad_state`. The response carries the header
+`X-Queue-Paused: 1|0` (whether the queue is paused, as `paused` of `/api/health`); the body is still the list.
 
 ```sh
 curl -s "$B/api/queue?state=running"
