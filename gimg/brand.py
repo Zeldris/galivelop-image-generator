@@ -543,8 +543,7 @@ _CLASS = re.compile(r'(?<![\w:.-])class\s*=')
 
 
 def _has_fill(attrs: str) -> bool:
-    return (any(m.group(1) == "fill" for m in _PAINT.finditer(attrs))
-            or any(d.group(1) == "fill" for st in _STYLE.finditer(attrs) for d in _DECL.finditer(st.group(1))))
+    return _sets(attrs, "fill")
 
 
 def _hex_alpha(rgb, alpha) -> str:
@@ -593,8 +592,12 @@ def _paint_colors(inner: str, root: str = "") -> set:
     drawing a ``<style>``: then it is not counted); a ``<line>`` has no area, so it only paints by its stroke."""
     root = _root_text(root)  # single quotes too
     inner, root = _mute(inner, root), _mute_attrs(root)
-    found = [m.group(2) for m in _PAINT.finditer(inner)]
-    for st in _STYLE.finditer(inner):
+    has_css = "<style" in inner.lower()  # with a stylesheet the color may come from CSS: not counted
+    # A <g> fill paints only through the shapes that inherit it (below), not by itself: a group of lines paints no fill.
+    flat = inner if has_css else _TAG.sub(lambda m: m.group(0) if m.group(1) or m.group(2) != "g"
+                                          else "<g%s>" % _mute_attrs(m.group(3), True), inner)
+    found = [m.group(2) for m in _PAINT.finditer(flat)]
+    for st in _STYLE.finditer(flat):
         found += [m.group(3) for m in _DECL.finditer(st.group(1))]
     colors = set()
     for v in found:
@@ -608,8 +611,10 @@ def _paint_colors(inner: str, root: str = "") -> set:
         for m in _DECL.finditer(st.group(1)):
             root_paint[m.group(1)] = m.group(3)
     inherited = set()
-    if "<style" not in inner.lower():  # with a stylesheet the color may come from CSS: not counted
-        groups = [{p for p in ("fill", "stroke") if _sets(root, p)}]  # one set per open <g> (the first, the root): what its shapes inherit
+    if not has_css:
+        def paints(attrs):
+            return {p: _paint_value(attrs, p) for p in ("fill", "stroke") if _sets(attrs, p)}
+        groups = [paints(root)]  # one dict per open <g> (the first, the root): what its shapes inherit
         for m in _TAG.finditer(inner):
             closing, tag, attrs = m.groups()
             if tag == "g":
@@ -617,14 +622,20 @@ def _paint_colors(inner: str, root: str = "") -> set:
                     if groups:
                         groups.pop()
                 elif not attrs.rstrip().endswith("/"):
-                    groups.append({p for p in ("fill", "stroke") if _sets(attrs, p)})
+                    groups.append(paints(attrs))
             elif not closing:
                 above = set().union(*groups[1:]) if len(groups) > 1 else set()
                 for prop in ("fill", "stroke") if tag != "line" else ("stroke",):  # a <line> has no area: an inherited fill paints nothing
                     if not _sets(attrs, prop) and prop not in above and not _CLASS.search(attrs):
                         inherited.add(prop)
-                if tag != "line" and not any("fill" in g for g in groups) and not _has_fill(attrs) and not _CLASS.search(attrs):
-                    colors.add("#000000")
+                if tag != "line" and not _has_fill(attrs) and not _CLASS.search(attrs):
+                    near = next((g["fill"] for g in reversed(groups[1:]) if "fill" in g), None)  # the nearest <g> fill
+                    if near is not None:
+                        n = _norm_color(near)
+                        if near.strip().lower() not in _NO_PAINT and not _invisible(n):
+                            colors.add(n[:7] if re.fullmatch(r"#[0-9a-f]{8}", n) else n)
+                    elif not any("fill" in g for g in groups):
+                        colors.add("#000000")
     else:
         inherited = {"fill", "stroke"}
     for prop, v in root_paint.items():
@@ -634,9 +645,15 @@ def _paint_colors(inner: str, root: str = "") -> set:
     return colors
 
 
+def _paint_value(attrs: str, prop: str):
+    """The value that the attribute or ``style`` declaration `prop` of `attrs` gives (a declaration wins, the last one wins), or None."""
+    found = [m.group(2) for m in _PAINT.finditer(attrs) if m.group(1) == prop]
+    found += [d.group(3) for st in _STYLE.finditer(attrs) for d in _DECL.finditer(st.group(1)) if d.group(1) == prop]
+    return found[-1] if found else None
+
+
 def _sets(attrs: str, prop: str) -> bool:
-    return (any(m.group(1) == prop for m in _PAINT.finditer(attrs))
-            or any(d.group(1) == prop for st in _STYLE.finditer(attrs) for d in _DECL.finditer(st.group(1))))
+    return _paint_value(attrs, prop) is not None
 
 
 def _opacity(attrs: str, name: str):
@@ -692,7 +709,7 @@ def _mute(inner: str, root: str = "") -> str:
             last = m.end()
             muted, fill0, stroke0 = state(attrs, stack[-1])
             if not muted:
-                out.append("<%s%s>" % (tag, _mute_attrs(attrs, fill0, stroke0)))
+                out.append("<%s%s>" % (tag, _mute_attrs(attrs, fill0 or tag == "line", stroke0)))  # a <line> has no area: no fill paints
     out.append(inner[last:])
     return "".join(out)
 

@@ -1034,6 +1034,16 @@ class SquareTests(BrandBase):
         self.draw.write_text(svg % '<g stroke="#f00"><path fill="#f00" d="M0 0L40 0L40 20Z"/></g>')
         self.assertNotIn("flattened", self.make(force=True))
 
+    def test_a_fill_that_only_a_line_would_get_is_not_a_color(self):
+        """A <line> has no area: its fill (own, a group's or the root's) paints nothing, so it is not a flattened color."""
+        line = '<line x1="0" y1="0" x2="40" y2="20" stroke="#f00"%s/>'
+        for body in (line % ' fill="#00f"', '<g fill="#00f">' + line % "" + "</g>",
+                     '<g fill="#00f"><g>' + line % "" + "</g></g>", line % ' style="fill:#00f"'):
+            self._draw(body)
+            self.assertNotIn("flattened", self.make(force=True), body)
+        self.assertEqual(brand._paint_colors(line % "", 'fill="#00f"'), {"#ff0000"})
+        self.assertEqual(brand._paint_colors('<g fill="#00f">' + line % "" + '<path d="M0 0h1v1z"/></g>'), {"#ff0000", "#0000ff"})
+
     def test_zero_opacity_is_not_ink_and_partial_opacity_is_the_same_color(self):
         self._draw('<path fill="#f00" d="M0 0L40 0L40 20Z"/><path fill="#00f" fill-opacity="0" d="M0 0L5 0L5 5Z"/>'
                    '<path fill="#0f0" opacity="0" d="M0 0L6 0L6 6Z"/><path style="fill:#0ff;fill-opacity:0" d="M0 0L7 0L7 7Z"/>'
