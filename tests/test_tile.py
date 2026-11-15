@@ -450,6 +450,65 @@ class TileCommandTests(unittest.TestCase):
         self.assertIn("no se pudo borrar", so)
         self.assertIn("Device or resource busy", so)
 
+    def test_a_copy_that_could_not_be_deleted_is_marked_and_a_later_run_never_restores_or_keeps_it(self):
+        out = os.path.join(self.dir.name, "o.png")
+        Path(out).write_bytes(b"old texture")
+        real = os.unlink
+
+        def flaky(p, *a, **k):
+            if ".gimg-bak-" in os.fspath(p) or ".gimg-stale-" in os.fspath(p):
+                raise OSError(16, "Device or resource busy", p)
+            return real(p, *a, **k)
+
+        with mock.patch("gimg.tile.os.unlink", flaky):
+            res = tile.tile(self.src, out=out, force=True)
+        [item] = res["stale_backups"]
+        self.assertTrue(os.path.basename(item["backup"]).startswith(".gimg-stale-"))
+        self.assertEqual(Path(item["backup"]).read_bytes(), b"old texture")
+        self.assertEqual([n for n in os.listdir(self.dir.name) if n.startswith(".gimg-bak-")], [])
+        new = Path(out).read_bytes()
+        os.utime(item["backup"], (0, 0))
+        with mock.patch("gimg.tile.os.unlink", flaky):  # still busy: said as stale, not as a possible original
+            [rec] = tile.recover_backups([out])
+        self.assertEqual((rec["action"], rec["backup"]), ("stale", item["backup"]))
+        self.assertIn("sobrante", tile.describe_recovery(rec, "es"))
+        os.unlink(out)  # even with the target missing, a marked copy is not put back
+        with mock.patch("gimg.tile.os.unlink", flaky):
+            [rec] = tile.recover_backups([out])
+        self.assertEqual(rec["action"], "stale")
+        self.assertFalse(os.path.exists(out))
+        self.assertEqual(tile.recover_backups([out]), [])  # the copy is deleted now that it can be
+        self.assertFalse(os.path.exists(item["backup"]))
+        self.assertNotEqual(new, b"old texture")
+
+    def test_every_recovery_action_has_its_text_in_both_languages(self):
+        for lang in ("es", "en"):
+            for action in ("restored", "kept", "stale"):
+                text = tile.describe_recovery({"action": action, "path": "P", "backup": "B"}, lang)
+                self.assertNotIn("cli.out.tile_recovery_", text)
+                self.assertIn("B", text)
+
+    def test_a_copy_that_cannot_even_be_renamed_keeps_its_name(self):
+        out = os.path.join(self.dir.name, "o.png")
+        Path(out).write_bytes(b"old texture")
+        real_unlink, real_replace = os.unlink, os.replace
+
+        def busy(p, *a, **k):
+            if ".gimg-bak-" in os.fspath(p):
+                raise OSError(16, "Device or resource busy", p)
+            return real_unlink(p, *a, **k)
+
+        def no_rename(a, b):
+            if ".gimg-stale-" in os.fspath(b):
+                raise OSError(13, "Permission denied", a)
+            return real_replace(a, b)
+
+        with mock.patch("gimg.tile.os.unlink", busy), mock.patch("gimg.tile.os.replace", no_rename):
+            res = tile.tile(self.src, out=out, force=True)
+        [item] = res["stale_backups"]
+        self.assertTrue(os.path.basename(item["backup"]).startswith(".gimg-bak-"))
+        self.assertEqual(Path(item["backup"]).read_bytes(), b"old texture")
+
     def test_an_existing_output_without_force_is_refused_before_decoding_or_blending(self):
         out = os.path.join(self.dir.name, "o.png")
         Path(out).write_bytes(b"keep me")
