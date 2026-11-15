@@ -7,7 +7,7 @@
 - `lockup(emblem, wordmark, out=None, layout="h"|"v")`: the emblem SVG and the wordmark SVG in one, as paths only (proportions of
   the sheet: wordmark height 0.45 and gap 0.25 of the emblem diameter in ``h``; width 1.6 in ``v``).
 - `system(src, name, font, out_dir)`: the seven files of the logo system (matte, traces, wordmark, both lockups, contact sheet).
-- `wordmark(text, font, out=None, weight=800, spacing=None)`: `text` set in the font file `font` and turned into paths, with no
+- `wordmark(text, font, out=None, weight=DEFAULT_WEIGHT (800), spacing=None)`: `text` set in the font file `font` and turned into paths, with no
   ``<text>`` and no need for the font afterwards. ``rsvg-convert`` draws the text big in black; the result is cropped
   to the ink and traced in mono mode. The font reaches ``rsvg-convert`` through a throwaway fontconfig file that adds a
   copy of it to the system fonts (a variable font gets the weight asked for). ``spacing=None`` is the family's tracking:
@@ -40,6 +40,7 @@ FONT_PX = 260
 MAX_PIXELS = 1 << 24  # the limit of `png.read_rgba`
 PAD_PX = 6
 MIN_TRANSPARENT = 0.02  # a matte that frees less than this found no flat background
+DEFAULT_WEIGHT = 800  # CSS weight of the wordmark when none is asked: the family's ExtraBold
 SPACING = 0.01  # em between letters: the family's tracking (Big Shoulders Display 800, hojas de docs/marcas/)
 SPACING_OTHER = 0.12  # em between letters for any other font
 SPACING_FAMILIES = ("big shoulders display", "big shoulders")
@@ -88,7 +89,6 @@ def write_file(path: str, data: bytes) -> None:
         raise
 
 
-_write = write_file  # the name this module has always used
 
 
 def _opaque(rgba) -> bool:
@@ -106,7 +106,7 @@ def matte(src, out=None, tol: float = 60, soft: float = 110, border: int = 6, gr
         data = png.rgba_bytes(width, height, res)
     except ValueError as exc:
         raise _bad(exc)
-    _write(out, data)
+    write_file(out, data)
     clear = sum(1 for a in res[3::4] if a == 0)
     return {"src": str(src), "out": out, "size": [width, height], "background": "#%02x%02x%02x" % bg,
             "transparent": round(clear / (width * height), 4)}
@@ -155,7 +155,7 @@ def trace(src, out=None, mode: str = "color", palette=None, colors=None, dp_tol:
                             dp_tol=dp_tol, min_island=min_island, notes=notes, **opts)
     except ValueError as exc:
         raise _bad(exc)
-    _write(out, svg.encode("utf-8"))
+    write_file(out, svg.encode("utf-8"))
     return {"src": str(src), "out": out, "size": [width, height], "mode": mode, "paths": svg.count("<path"),
             "bytes": len(svg.encode("utf-8")), "matted": bool(matte),
             "opaque_background": not had_alpha and not matte, "warnings": [i18n.t(key, lang, **params) for key, params in notes]}
@@ -266,7 +266,7 @@ def _crop(width: int, height: int, rgba, pad: int):
     return w, h, res
 
 
-def wordmark(text: str, font, out=None, weight: int = 800, spacing=None, title: str = "", *, _family=None) -> dict:
+def wordmark(text: str, font, out=None, weight: int = DEFAULT_WEIGHT, spacing=None, title: str = "", *, _family=None) -> dict:
     """Write the SVG of `text` in `font`, as paths (see the module docstring). ``spacing`` is in em; ``None`` is the family's (`default_spacing`)."""
     text = " ".join("".join(ch for ch in str(text) if ch.isspace() or unicodedata.category(ch) != "Cc").split())
     if not text:
@@ -311,7 +311,7 @@ def wordmark(text: str, font, out=None, weight: int = 800, spacing=None, title: 
                             title=title or text)
     except ValueError as exc:
         raise _bad(exc)
-    _write(out, res.encode("utf-8"))
+    write_file(out, res.encode("utf-8"))
     return {"out": str(out), "text": text, "font": str(font), "family": family, "weight": weight, "spacing": spacing,
             "size": [w, h], "paths": res.count("<path"), "bytes": len(res.encode("utf-8"))}
 
@@ -475,7 +475,7 @@ def lockup(emblem, wordmark, out=None, layout: str = "h", cap: float = 0.45, gap
     w, h = total_w + 2 * pad, total_h + 2 * pad
     svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %s %s" role="img">%s%s</svg>\n'
            % (_num(w), _num(h), "<title>%s</title>" % _trace.clean_title(title) if title else "", "".join(parts)))
-    _write(out, svg.encode("utf-8"))
+    write_file(out, svg.encode("utf-8"))
     return {"out": out, "layout": layout, "size": [round(w, 1), round(h, 1)], "paths": svg.count("<path"),
             "bytes": len(svg.encode("utf-8"))}
 
@@ -608,7 +608,7 @@ def _paint_colors(inner: str, root: str = "") -> set:
     has_css = "<style" in inner.lower()  # with a stylesheet the color may come from CSS: not counted
     # A <g> fill paints only through the shapes that inherit it (below), not by itself: a group of lines paints no fill.
     flat = inner if has_css else _TAG.sub(lambda m: m.group(0) if m.group(1) or m.group(2) != "g"
-                                          else "<g%s>" % _mute_attrs(m.group(3), True), inner)
+                                          else "<g%s>" % _no_fill(_mute_attrs(m.group(3))), inner)
     found = [m.group(2) for m in _PAINT.finditer(flat)]
     for st in _STYLE.finditer(flat):
         found += [m.group(3) for m in _DECL.finditer(st.group(1))]
@@ -626,7 +626,7 @@ def _paint_colors(inner: str, root: str = "") -> set:
     inherited = set()
     if not has_css:
         def paints(attrs):
-            return {p: _paint_value(attrs, p) for p in ("fill", "stroke") if _sets(attrs, p)}
+            return {p: _paint_value(attrs, p) for p in ("fill", "stroke") if _own_paint(attrs, p)}
         groups = [paints(root)]  # one dict per open <g> (the first, the root): what its shapes inherit
         for m in _TAG.finditer(inner):
             closing, tag, attrs = m.groups()
@@ -639,9 +639,9 @@ def _paint_colors(inner: str, root: str = "") -> set:
             elif not closing:
                 above = set().union(*groups[1:]) if len(groups) > 1 else set()
                 for prop in ("fill", "stroke") if tag != "line" else ("stroke",):  # a <line> has no area: an inherited fill paints nothing
-                    if not _sets(attrs, prop) and prop not in above and not _CLASS.search(attrs):
+                    if not _own_paint(attrs, prop) and prop not in above and not _CLASS.search(attrs):
                         inherited.add(prop)
-                if tag != "line" and not _has_fill(attrs) and not _CLASS.search(attrs):
+                if tag != "line" and not _own_paint(attrs, "fill") and not _CLASS.search(attrs):
                     near = next((g["fill"] for g in reversed(groups[1:]) if "fill" in g), None)  # the nearest <g> fill
                     if near is not None:
                         n = _norm_color(near)
@@ -667,6 +667,13 @@ def _paint_value(attrs: str, prop: str):
 
 def _sets(attrs: str, prop: str) -> bool:
     return _paint_value(attrs, prop) is not None
+
+
+def _own_paint(attrs: str, prop: str) -> bool:
+    """Whether `attrs` gives `prop` a value of its own: ``inherit`` / ``unset`` (both inherited properties) take the parent's,
+    so they climb the stack of ``<g>`` up to the root as if the attribute were not there."""
+    value = _paint_value(attrs, prop)
+    return value is not None and value.strip().lower() not in ("inherit", "unset")
 
 
 def _opacity(attrs: str, name: str):
@@ -699,6 +706,13 @@ def _mute_attrs(attrs: str, fill0: bool = False, stroke0: bool = False) -> str:
     return attrs
 
 
+def _no_fill(attrs: str) -> str:
+    """`attrs` with its ``fill`` (attribute and ``style`` declaration) turned into ``none``: the element paints no fill itself."""
+    attrs = _PAINT.sub(lambda m: 'fill="none"' if m.group(1) == "fill" else m.group(0), attrs)
+    attrs = _STYLE.sub(lambda m: 'style="%s"' % re.sub(r"(?<![\w-])fill(\s*:\s*)[^;]*", r"fill\g<1>none", m.group(1)), attrs)
+    return attrs
+
+
 def _mute(inner: str, root: str = "") -> str:
     """`inner` as far as paint counting goes, in one pass with a stack of the open ``<g>``: shapes under ``opacity`` 0
     (own, a group's or the root's) are gone, and ``fill-opacity`` / ``stroke-opacity`` 0, inherited too, turn that paint
@@ -722,7 +736,10 @@ def _mute(inner: str, root: str = "") -> str:
             last = m.end()
             muted, fill0, stroke0 = state(attrs, stack[-1])
             if not muted:
-                out.append("<%s%s>" % (tag, _mute_attrs(attrs, fill0 or tag == "line", stroke0)))  # a <line> has no area: no fill paints
+                kept = _mute_attrs(attrs, fill0, stroke0)
+                if tag == "line":  # a <line> has no area: no fill paints, whatever its own fill-opacity says
+                    kept = _no_fill(kept)
+                out.append("<%s%s>" % (tag, kept))
     out.append(inner[last:])
     return "".join(out)
 
@@ -905,7 +922,7 @@ def check_targets(targets: dict, out_dir, force: bool = False, src=None) -> list
     return clash
 
 
-def system(src, name: str, font, out_dir, weight: int = 800, spacing=None, palette=None, colors=None, text=None,
+def system(src, name: str, font, out_dir, weight: int = DEFAULT_WEIGHT, spacing=None, palette=None, colors=None, text=None,
            cap: float = 0.45, gap: float = 0.25, width: float = 1.6, force: bool = False, holes: bool = False,
            margin: float = 0.0, mono: bool = False) -> dict:
     """The logo system of `name` from the emblem PNG `src`, in `out_dir`: ``<slug>-emblema-alpha.png``, ``-emblema.svg``,
@@ -960,7 +977,7 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing=None, palet
         sheet_size = contact_sheet(t, tmp)
         for key in SYSTEM_FILES:
             with open(t[key], "rb") as fh:
-                _write(targets[key], fh.read())
+                write_file(targets[key], fh.read())
     files = {key: targets[key] for key in SYSTEM_FILES}
     return {"src": str(src), "name": str(name).strip(), "slug": slug, "out_dir": str(out_dir), "files": files, "spacing": spacing,
             "paths": {"emblem": color["paths"], "mono": one_ink["paths"], "wordmark": word["paths"], "lockup_h": lh["paths"],

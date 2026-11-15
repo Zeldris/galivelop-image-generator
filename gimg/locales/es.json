@@ -934,7 +934,6 @@
   "cli.arg.brand_chamfer": "chaflán en unidades de 128 (0-64; por defecto 28)",
   "cli.arg.brand_pad": "margen interior en unidades de 128 (0-48; por defecto 24)",
   "cli.arg.brand_png_sizes": "lados de los PNG, separados por comas (necesita rsvg-convert)",
-  "cli.arg.brand_force_square": "pisa los archivos que ya existan",
   "cli.out.brand_square": "{out}: cuadrado {fill}, tinta {ink}, contraste {contrast}:1",
   "cli.out.brand_square_low": "aviso: el contraste {contrast}:1 está por debajo de 4,5:1 (WCAG AA para texto)",
   "cli.out.brand_square_flat": "aviso: el dibujo traía {count} colores y todos pasan a la tinta",

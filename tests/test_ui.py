@@ -927,7 +927,8 @@ class Contrast(unittest.TestCase):
 
 
 class BrandWorkshopLimits(unittest.TestCase):
-    """The fields of the brand workshop use the limits that the server validates (no value the UI allows is refused)."""
+    """Each field of the brand workshop, taken on its own, stays within the range that the server validates (a combination of
+    fields can still be refused: a tolerance from the soft edge up, for one, is for `matte.remove_bg`)."""
     JS = read(UI / "js" / "components" / "brand-workshop.js")
 
     def field(self, id_):

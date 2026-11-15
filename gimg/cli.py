@@ -124,7 +124,7 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--matte", "cli.arg.brand_matte", action="store_true"))
     leaf(g, "wordmark", "cli.cmd.brand_wordmark", arg("text", "cli.arg.brand_text"),
          opt("--font", "cli.arg.brand_font", required=True, metavar="TTF"),
-         opt("--weight", "cli.arg.brand_weight", type=int, default=800),
+         opt("--weight", "cli.arg.brand_weight", type=int, default=brand.DEFAULT_WEIGHT),
          opt("--spacing", "cli.arg.brand_spacing", type=float),
          opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"))
     props = (opt("--cap", "cli.arg.brand_cap", type=float, default=0.45),
@@ -144,12 +144,12 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--pad", "cli.arg.brand_pad", type=float, default=24),
          opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"),
          opt("--png", "cli.arg.brand_png_sizes", metavar="512,128,32"),
-         opt("--force", "cli.arg.brand_force_square", action="store_true"))
+         opt("--force", "cli.arg.brand_force", action="store_true"))
     leaf(g, "system", "cli.cmd.brand_system", arg("image", "cli.arg.brand_png"),
          opt("--name", "cli.arg.brand_name", required=True),
          opt("--font", "cli.arg.brand_font", required=True, metavar="TTF"),
          opt("--out-dir", "cli.arg.brand_out_dir", required=True, metavar="DIR"),
-         opt("--weight", "cli.arg.brand_weight", type=int, default=800),
+         opt("--weight", "cli.arg.brand_weight", type=int, default=brand.DEFAULT_WEIGHT),
          opt("--spacing", "cli.arg.brand_spacing", type=float),
          opt("--palette", "cli.arg.brand_palette", metavar="#HEX,#HEX"),
          opt("--colors", "cli.arg.brand_colors", type=int, metavar="N"),

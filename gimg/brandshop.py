@@ -118,31 +118,32 @@ def resolve_font(family, weight=None) -> str:
     family = family.strip()
     pattern = _escape(family)
     if weight is not None:
-        if isinstance(weight, bool) or not isinstance(weight, int):
-            raise GimgError("brand.bad_option", reason="weight 1-1000")
+        brand._check_weight_spacing(weight, None)  # the error and message that wordmark gives
         pattern += ":weight=%d" % fc_weight(weight)
     exe = shutil.which("fc-match")
     if exe is None:
         raise GimgError("brand.tool_missing", tool="fc-match")
     try:
-        done = subprocess.run([exe, "-f", "%{file}\\n%{family}\\n", pattern], capture_output=True, text=True,
+        done = subprocess.run([exe, "-f", "%{file}\\n%{family}\\n%{index}\\n", pattern], capture_output=True, text=True,
                               errors="replace", timeout=FC_TIMEOUT_S, stdin=subprocess.DEVNULL)
     except (OSError, subprocess.SubprocessError) as exc:
         raise GimgError("brand.tool_failed", tool="fc-match", reason=str(getattr(exc, "strerror", None) or exc)[:300])
     lines = done.stdout.split("\n")
-    if done.returncode != 0 or len(lines) < 2 or not lines[0]:
+    if done.returncode != 0 or len(lines) < 3 or not lines[0]:
         raise GimgError("brand.font_unknown", font=family)
     if family.lower() not in {n.strip().lower() for n in lines[1].split(",")}:
         raise GimgError("brand.font_unknown", font=family)
     if not lines[0].lower().endswith(FONT_SUFFIXES):
         raise GimgError("brand.font_unreadable", path=lines[0], reason="not a .ttf, .otf, .ttc or .otc file")
+    if lines[2].strip() not in ("", "0"):  # brand reads the names of face 0 of a collection: the family would not be this one
+        raise GimgError("brand.font_unreadable", path=lines[0], reason="the face is number %s of a font collection: only a face 0 is read" % lines[2].strip())
     return lines[0]
 
 
 def wordmark(project: str, name: str, font: str, text=None, **opts) -> dict:
     slug = slug_of(name)
     line = text if text else name.strip().upper()
-    result = brand.wordmark(line, resolve_font(font, opts.get("weight")), piece(project, slug, "wordmark.svg"), title=name.strip(), **opts)
+    result = brand.wordmark(line, resolve_font(font, opts.get("weight") or brand.DEFAULT_WEIGHT), piece(project, slug, "wordmark.svg"), title=name.strip(), **opts)
     _stale(project, slug, "wordmark.svg")
     return result
 

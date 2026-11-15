@@ -18,19 +18,19 @@ def _stub(dest_index):
     return run
 
 
-def _fc_match(file, family="Cinzel"):
-    """A fake `subprocess.run` of fc-match that records its argv and answers `file` and `family`."""
+def _fc_match(file, family="Cinzel", index="0"):
+    """A fake `subprocess.run` of fc-match that records its argv and answers `file`, `family` and the face `index`."""
     calls = []
 
     def run(argv, **kw):
         calls.append(argv)
-        return subprocess.CompletedProcess(argv, 0, "%s\n%s\n" % (file, family), "")
+        return subprocess.CompletedProcess(argv, 0, "%s\n%s\n%s\n" % (file, family, index), "")
     return run, calls
 
 
 class ResolveFontTests(unittest.TestCase):
-    def resolve(self, file, family="Cinzel", **kw):
-        run, calls = _fc_match(file, family)
+    def resolve(self, file, family="Cinzel", index="0", **kw):
+        run, calls = _fc_match(file, family, index)
         with mock.patch.object(brandshop.shutil, "which", lambda n: "/usr/bin/" + n), \
                 mock.patch.object(brandshop.subprocess, "run", run):
             return brandshop.resolve_font(family, **kw), calls
@@ -62,6 +62,27 @@ class ResolveFontTests(unittest.TestCase):
         with self.assertRaises(GimgError) as ctx:
             self.resolve("/f/Cinzel.ttf", weight="bold")
         self.assertEqual(ctx.exception.code, "brand.bad_option")
+
+    def test_the_weight_is_checked_as_wordmark_does_before_fc_match_runs(self):
+        for weight in (0, 1001, 400.5, "bold"):
+            run, calls = _fc_match("/f/Cinzel.ttf")
+            with mock.patch.object(brandshop.shutil, "which", lambda n: "/usr/bin/" + n), \
+                    mock.patch.object(brandshop.subprocess, "run", run), self.assertRaises(GimgError) as ctx:
+                brandshop.resolve_font("Cinzel", weight)
+            self.assertEqual(ctx.exception.code, "brand.bad_option", weight)
+            self.assertEqual(ctx.exception.params["reason"], "weight 1-1000 and spacing between -0.5 and 2 em", weight)
+            self.assertEqual(calls, [], weight)
+
+    def test_a_face_that_is_not_number_0_of_a_collection_is_refused(self):
+        run, calls = _fc_match("/f/Cinzel.ttc", index="2")
+        with mock.patch.object(brandshop.shutil, "which", lambda n: "/usr/bin/" + n), \
+                mock.patch.object(brandshop.subprocess, "run", run):
+            with self.assertRaises(GimgError) as ctx:
+                brandshop.resolve_font("Cinzel")
+        self.assertEqual(ctx.exception.code, "brand.font_unreadable")
+        self.assertIn("number 2", ctx.exception.params["reason"])
+        self.assertIn("%{index}", calls[0][2])
+        self.assertEqual(self.resolve("/f/Cinzel.ttc", index="0")[0], "/f/Cinzel.ttc")
 
 
 class DerivedPiecesTests(BrandApiBase):
@@ -101,7 +122,7 @@ class DerivedPiecesTests(BrandApiBase):
         with mock.patch.object(brand, "wordmark", _stub(2)), mock.patch.object(brandshop, "resolve_font", fake):
             brandshop.wordmark(NAME, "Mi Marca", "Cinzel", weight=600)
             brandshop.wordmark(NAME, "Mi Marca", "Cinzel")
-        self.assertEqual(seen, [("Cinzel", 600), ("Cinzel", None)])
+        self.assertEqual(seen, [("Cinzel", 600), ("Cinzel", brand.DEFAULT_WEIGHT)])  # no weight: the one brand.wordmark draws at
 
     def test_redoing_the_matte_drops_everything_drawn_from_it(self):
         self.seed()

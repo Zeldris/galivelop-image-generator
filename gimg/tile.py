@@ -216,9 +216,9 @@ def recover_backups(paths) -> list:
     If the target is missing, the oldest copy is the original and is put back; if the target exists, the copies are
     left where they are and reported (one may be the only copy of an original that the half-done run replaced:
     nothing is deleted that cannot be told apart from a leftover of a finished run). Returns one dict per copy,
-    ``{"action": "restored" | "kept" | "stale", "backup": ..., "path": ...}``. A copy marked as a leftover of a
-    finished run (`_mark_stale`) is never restored: it is deleted, and reported as ``"stale"`` only if that fails; if a copy cannot be put back, the `GimgError`
-    carries in ``recovered`` what was already done."""
+    ``{"action": "restored" | "kept" | "stale", "backup": ..., "path": ...}``. A copy marked as a leftover of a finished run
+    (`_mark_stale`) is never restored: it is deleted, and reported as ``"stale"`` only if that fails.
+    If a copy cannot be put back, the `GimgError` carries in ``recovered`` what was already done."""
     done, now = [], time.time_ns()
     for path in paths:
         folder, prefix = os.path.dirname(os.path.abspath(path)), _backup_prefix(path)

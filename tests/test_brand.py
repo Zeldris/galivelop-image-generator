@@ -1082,6 +1082,20 @@ class SquareTests(BrandBase):
         self.assertEqual(brand._paint_colors(line % "", 'fill="#00f"'), {"#ff0000"})
         self.assertEqual(brand._paint_colors('<g fill="#00f">' + line % "" + '<path d="M0 0h1v1z"/></g>'), {"#ff0000", "#0000ff"})
 
+    def test_an_inherit_fill_climbs_the_groups_to_the_one_that_gives_it(self):
+        path = '<path d="M0 0"/>'
+        self.assertEqual(brand._paint_colors('<g fill="red"><g fill="inherit">' + path + "</g></g>"), {"#ff0000"})
+        self.assertEqual(brand._paint_colors('<g fill="red"><g style="fill:unset">' + path + "</g></g>"), {"#ff0000"})
+        self.assertEqual(brand._paint_colors('<g fill="inherit">' + path + "</g>", 'fill="#00f"'), {"#0000ff"})
+        self.assertEqual(brand._paint_colors('<g fill="red"><path fill="inherit" d="M0 0"/></g>'), {"#ff0000"})
+        self.assertEqual(brand._paint_colors('<g fill="inherit">' + path + "</g>"), {"#000000"})
+
+    def test_no_fill_paints_through_a_line_even_with_its_own_fill_opacity(self):
+        line = '<line x1="0" y1="0" x2="40" y2="20" stroke="#00f"%s/>'
+        self.assertEqual(brand._paint_colors('<g fill="red" fill-opacity="1">' + line % "" + "</g>"), {"#0000ff"})
+        self.assertEqual(brand._paint_colors(line % ' fill="red" fill-opacity="1"'), {"#0000ff"})
+        self.assertEqual(brand._paint_colors(line % ' style="fill:red;fill-opacity:1"'), {"#0000ff"})
+
     def test_zero_opacity_is_not_ink_and_partial_opacity_is_the_same_color(self):
         self._draw('<path fill="#f00" d="M0 0L40 0L40 20Z"/><path fill="#00f" fill-opacity="0" d="M0 0L5 0L5 5Z"/>'
                    '<path fill="#0f0" opacity="0" d="M0 0L6 0L6 6Z"/><path style="fill:#0ff;fill-opacity:0" d="M0 0L7 0L7 7Z"/>'
