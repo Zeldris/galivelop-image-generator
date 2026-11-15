@@ -364,62 +364,67 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
         d = _path_data(m, W, H, sx, sy, dp_tol, island, curves, corner_deg)
         return '<path fill=%s fill-rule="evenodd" d="%s"/>' % (quoteattr(fill), d) if d else ""
 
-    def build(relaxed):
-        nonlocal ink
-        layers = []
-        if mode == "silueta":
-            layers.append(layer(color, lambda v: v >= 0, relaxed=relaxed))
-        elif mode == "mono":
-            if ink is not None and len(ink) == 0:
-                raise ValueError("ink: the list is empty: pass at least one palette index or leave it out")
-            opaque = bool(counts) and -1 not in {v for row in grid for v in row}
-            if ink is None and opaque and len(counts) == 1:
-                raise ValueError("mono: the image is one opaque color, so there is no drawing to trace: remove the "
-                                 "background first (matte), use mode silueta or pass a transparent image")
-            by_border = False
-            if ink is None and opaque and len(pal) > 1:
-                # an opaque image (strokes on paper): the paper is every color that fills >= PAPER_SHARE of the border
-                edge = defaultdict(int)
-                for x in range(W):
-                    edge[grid[0][x]] += 1
-                    edge[grid[H - 1][x]] += 1
-                for y in range(H):
-                    edge[grid[y][0]] += 1
-                    edge[grid[y][W - 1]] += 1
-                paper = {j for j, n in edge.items() if n >= PAPER_SHARE * sum(edge.values())}
-                if paper and len(paper) < len(pal):  # every color on the border: no paper to tell, darkest rule
-                    ink = [j for j in range(len(pal)) if j not in paper]
-                    by_border = True
-            if ink is None:
-                dark = min(range(len(pal)), key=lambda j: sum(pal[j]) * 1.0) if len(pal) > 1 else -1
-                ink = [j for j in range(len(pal)) if j != dark]
-            elif any(not isinstance(j, int) or not 0 <= j < len(pal) for j in ink):
-                raise ValueError("ink: every index must be a color of the palette (0-%d)" % (len(pal) - 1))
-            if by_border and notes is not None and counts:
-                share = sum(counts[j] for j in ink if j in counts) / sum(counts.values())
-                if share >= INK_WARN:
-                    notes.append(("brand.trace_ink_share", {"share": round(share * 100), "paper": round(PAPER_SHARE * 100)}))
-            layers.append(layer(color, lambda v, s=frozenset(ink): v in s, True, relaxed))
-            if counts and not layers[-1]:  # a drawing went in and nothing came out: say it, never an empty SVG
-                raise ValueError("mono: no ink left (every ink color was left out or smoothed away): remove the "
-                                 "background first (matte), lower min_island or use mode color")
-        else:
-            order = sorted(counts, key=lambda j: -counts[j])
-            if order:
-                layers.append(layer(pal_hex[order[0]], lambda v: v >= 0, relaxed=relaxed))  # the silhouette, under the rest
-                layers += [layer(pal_hex[j], lambda v, j=j: v == j, relaxed=relaxed) for j in order[1:]]
-        if mode != "mono" and counts and not any(layers):  # a drawing went in and no outline survived: say it
-            raise ValueError("%s: no shape left (every outline is smaller than min_island or was smoothed away): lower "
-                             "min_island or smooth_passes" % mode)
-        return layers
+    mono_ink = None
+    if mode == "mono":
+        if ink is not None and len(ink) == 0:
+            raise ValueError("ink: the list is empty: pass at least one palette index or leave it out")
+        opaque = bool(counts) and -1 not in {v for row in grid for v in row}
+        if ink is None and opaque and len(counts) == 1:
+            raise ValueError("mono: the image is one opaque color, so there is no drawing to trace: remove the "
+                             "background first (matte), use mode silueta or pass a transparent image")
+        by_border = False
+        if ink is None and opaque and len(pal) > 1:
+            # an opaque image (strokes on paper): the paper is every color that fills >= PAPER_SHARE of the border
+            edge = defaultdict(int)
+            for x in range(W):
+                edge[grid[0][x]] += 1
+                edge[grid[H - 1][x]] += 1
+            for y in range(H):
+                edge[grid[y][0]] += 1
+                edge[grid[y][W - 1]] += 1
+            paper = {j for j, n in edge.items() if n >= PAPER_SHARE * sum(edge.values())}
+            if paper and len(paper) < len(pal):  # every color on the border: no paper to tell, darkest rule
+                ink = [j for j in range(len(pal)) if j not in paper]
+                by_border = True
+        if ink is None:
+            dark = min(range(len(pal)), key=lambda j: sum(pal[j]) * 1.0) if len(pal) > 1 else -1
+            ink = [j for j in range(len(pal)) if j != dark]
+        elif any(not isinstance(j, int) or not 0 <= j < len(pal) for j in ink):
+            raise ValueError("ink: every index must be a color of the palette (0-%d)" % (len(pal) - 1))
+        if by_border and notes is not None and counts:
+            share = sum(counts[j] for j in ink if j in counts) / sum(counts.values())
+            if share >= INK_WARN:
+                notes.append(("brand.trace_ink_share", {"share": round(share * 100), "paper": round(PAPER_SHARE * 100)}))
+        mono_ink = frozenset(ink)
 
-    try:
-        layers = build(False)
-    except ValueError:
-        if factor == 1 or not counts:
-            raise
+    def build(relaxed):
+        """The layers of the drawing (`[]` or only empty ones when nothing survives)."""
+        if mode == "silueta":
+            return [layer(color, lambda v: v >= 0, relaxed=relaxed)]
+        if mode == "mono":
+            return [layer(color, lambda v: v in mono_ink, True, relaxed)]
+        order = sorted(counts, key=lambda j: -counts[j])
+        if not order:
+            return []
+        layers = [layer(pal_hex[order[0]], lambda v: v >= 0, relaxed=relaxed)]  # the silhouette, under the rest
+        return layers + [layer(pal_hex[j], lambda v, j=j: v == j, relaxed=relaxed) for j in order[1:]]
+
+    layers = build(False)
+    if counts and not any(layers) and factor > 1:
         # nothing survived the reduction: a small shape is a few reduced pixels, so retry once without the smoothing
         # and with `min_island` as the same area at full size
         layers = build(True)
+        if notes is not None and any(layers):
+            notes.append(("brand.trace_relaxed", {"factor": factor, "min_island": round(max(1.0, min_island / (factor * factor)), 2)}))
+        retried = True
+    else:
+        retried = False
+    if counts and not any(layers):  # a drawing went in and nothing came out: say it, never an empty SVG
+        hint = "raise max_side or lower min_island" if retried else "lower min_island or smooth_passes, or raise max_side"
+        if mode == "mono":
+            raise ValueError("mono: no ink left (every ink color was left out or smoothed away): remove the "
+                             "background first (matte), %s or use mode color" % hint)
+        raise ValueError("%s: no shape left (every outline is smaller than min_island or was smoothed away): %s"
+                         % (mode, hint))
     head = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" role="img">' % (width, height)
     return head + ("<title>%s</title>" % clean_title(title) if title else "") + "".join(layers) + "</svg>\n"
