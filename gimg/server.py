@@ -19,7 +19,6 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote
 
 from . import __version__, brandshop, build_id, compose, delivery, doctor, i18n, measure, models, orders, paths, projects, queue
-from .brand import SPACING as _WORDMARK_SPACING
 from .errors import GimgError
 
 API_VERSION = 1
@@ -609,7 +608,7 @@ def queue_list(req):
             if estimate is not None:
                 item["estimateMs"] = estimate
         out.append(item)
-    return out
+    return Reply(200, out, json=True, headers={"X-Queue-Paused": "1" if queue.is_paused() else "0"})
 
 
 @route("GET", "/api/queue/{id}/preview")
@@ -700,7 +699,7 @@ def order_text(req):
 
 @route("POST", _ORD + "/attempts")
 def attempt_new(req):
-    q, body = req.params, _fields(req.body, ("count", "seed", "prompt", "steps", "cfg", "sampler", "draft", "template", "model"))
+    q, body = req.params, _fields(req.body, ("count", "seed", "prompt", "negative", "steps", "cfg", "sampler", "draft", "template", "model"))
     model = body.get("model")
     if model is not None and not isinstance(model, str):
         raise GimgError("api.bad_param", name="model")
@@ -710,7 +709,8 @@ def attempt_new(req):
     overrides = {k: body[k] for k in ("steps", "cfg", "sampler") if body.get(k) is not None}
     entries, provider = queue.new_attempts(q["p"], q["key"], q["profile"], body.get("count", 1),
                                            seed=body.get("seed"), prompt=body.get("prompt"), params=overrides,
-                                           draft=draft, template=_template_param(body.get("template")), model=model)
+                                           draft=draft, template=_template_param(body.get("template")), model=model,
+                                           negative=body.get("negative"))
     _after_enqueue()
     return Reply(202, queue.queued_view(entries, provider, req.lang), json=True)
 
@@ -848,6 +848,8 @@ _BRAND = "/api/projects/{p}/brand"
 def _number(body: dict, name: str, default):
     """A JSON number (not a bool) of the body, else `default`; the range is the brand function's business."""
     value = body.get(name, default)
+    if value is None and default is None:
+        return None
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise GimgError("api.bad_param", name=name)
     return value
@@ -926,7 +928,7 @@ def brand_trace(req):
         if not palette:
             raise GimgError("brand.no_palette", project=project)
     with _heavy():
-        return brandshop.trace(project, name, mode, palette, colors=colors, **opts)
+        return brandshop.trace(project, name, mode, palette, colors=colors, lang=req.lang, **opts)
 
 
 @route("POST", _BRAND + "/wordmark")
@@ -938,7 +940,7 @@ def brand_wordmark(req):
     if text is not None and not isinstance(text, str):
         raise GimgError("api.bad_param", name="text")
     font = _str_field(body, "font")
-    opts = {"weight": _int(body, "weight", 800), "spacing": _number(body, "spacing", _WORDMARK_SPACING)}
+    opts = {"weight": _int(body, "weight", 800), "spacing": _number(body, "spacing", None)}
     with _heavy():  # rsvg-convert
         return brandshop.wordmark(project, name, font, text, **opts)
 

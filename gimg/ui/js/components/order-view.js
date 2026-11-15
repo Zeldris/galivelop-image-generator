@@ -86,11 +86,11 @@ export async function orderView(host, route) {
     },
     recreate: (a) => retouch.load(a),
     vary: (a) => retouch.vary(a),
-    copyParams: (a) => copy(JSON.stringify({ seed: a.seed, prompt: a.prompt === null || a.prompt === undefined ? a.prompt : stripStyle(a.prompt, profileCfg.style), ...(a.params || {}) }, null, 2), t('ui.attempt.copied')),
+    copyParams: (a) => copy(JSON.stringify({ seed: a.seed, prompt: a.prompt === null || a.prompt === undefined ? a.prompt : stripStyle(a.prompt, profileCfg.style), ...(a.negative ? { negative: a.negative } : {}), ...(a.params || {}) }, null, 2), t('ui.attempt.copied')),
     copyError: (e) => copy(e.errorText || JSON.stringify(e.error), t('ui.attempt.copied')),
     retry: guard(async (e) => {
       const text = e.prompt === null || e.prompt === undefined ? null : stripStyle(e.prompt, profileCfg.style);
-      await submit({ count: 1, seed: e.seed, draft: Boolean(e.draft), ...(text !== null && text !== (ctx.order.prompt || '') ? { prompt: text } : {}), ...(e.template ? { template: e.template } : {}), ...pick(e.params, ['steps', 'cfg', 'sampler']),
+      await submit({ count: 1, seed: e.seed, draft: Boolean(e.draft), ...(text !== null && text !== (ctx.order.prompt || '') ? { prompt: text } : {}), ...((e.negative || '') !== (ctx.order.negative || '') ? { negative: e.negative || '' } : {}), ...(e.template ? { template: e.template } : {}), ...pick(e.params, ['steps', 'cfg', 'sampler']),
         ...(e.params && e.params.model && e.params.model !== (ctx.order.params || {}).model && e.params.model !== profileCfg.model ? { model: e.params.model } : {}) }); // F4d: el modelo del intento, si no es el del pedido ni el del perfil
     }),
     cancel: guard(async (e) => { await api.cancel(e.id); toast(t('ui.queue.cancelled', { id: e.id })); await poll.refreshNow(); }),

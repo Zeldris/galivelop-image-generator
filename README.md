@@ -75,6 +75,7 @@ Un pedido pide una imagen con una clave y un perfil:
 - `key`: identifica la imagen dentro del proyecto; puede llevar subcarpetas.
 - `profile`: perfil de la configuración del proyecto que se aplica.
 - `prompt`: descripción de la imagen.
+- `negative`: prompt negativo, opcional (qué no debe salir); vacío es lo mismo que ausente. Se pasa a `sd-cli` como `--negative-prompt` y queda en los metadatos del intento. Sirve el bloque negativo de la hoja de estilo de cada marca.
 - `references`: imágenes de referencia (el perfil de máquina limita cuántas).
 - `seed`: semilla, para repetir un resultado.
 
@@ -114,9 +115,10 @@ python3 -m gimg sheet --out hoja.png a.png b.png      # hoja de contactos para r
 python3 -m gimg export a.png a.webp --size 960x540  # copia a WebP, ICO o BMP (la entrega sigue en PNG)
 python3 -m gimg export a.png b.png --crop 64,0,768,1152 --size 600x900   # recorte declarado (X,Y,W,H del original) y luego reducción
 python3 -m gimg export a.png b.png --size 1536x384 --anchor top   # recorte de la proporción arriba|abajo|izquierda|derecha (o top-left…), por defecto al centro
+python3 -m gimg tile textura.png --preview vista.png   # textura sin costura (hasta 4,2 Mpx en total, p. ej. 2048×2048): textura-tile.png y la vista 4×4 (--blend, --preview-side, -o, --force)
 python3 -m gimg brand matte logo.png                  # quita el fondo plano: logo-alpha.png (el original no se toca)
 python3 -m gimg brand fit banda.png -o banda-fit.png --anchor right --min-x 1000   # reencuadra: el motivo cae en la zona, el resto es papel con los bordes fundidos (--max-x, --margin, --paper, --tol, --feather, --feather-y, --max-scale, --json)
-python3 -m gimg brand trace logo-alpha.png --mode color|mono|silhouette   # PNG a SVG (--palette, --colors, --matte, --ink-only [--paper #HEX]: una sola tinta con currentColor)
+python3 -m gimg brand trace logo-alpha.png --mode color|mono|silhouette   # PNG a SVG (--palette, --colors, --matte, --ink-only [--paper #HEX]; en mono, sin transparencia, el papel es todo color que ocupe >= 20 % del borde y lo demás es tinta; con un marco oscuro que llena el borde, quita antes el fondo con --matte o usa el modo color: la CLI no elige la tinta, solo la API `ink=`)
 python3 -m gimg brand wordmark TARKOR --font Cinzel.ttf -o wordmark.svg   # el nombre a trazos, sin <text> (--weight, --spacing)
 python3 -m gimg brand lockup emblema.svg wordmark.svg --layout h|v   # emblema y nombre en un SVG (--cap, --gap, --width, --margin, --color, -o)
 python3 -m gimg brand overlay base.svg motivo.svg -o salida.svg   # el motivo centrado sobre la base (--fit 0.5, --box x,y,w,h, --recolor #HEX|currentColor, --skip-rect)

@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+from unittest import mock
 from xml.etree import ElementTree
 from xml.sax.saxutils import escape
 from pathlib import Path
@@ -224,6 +225,37 @@ class TraceTests(BrandBase):
         svg = (self.tmp / "logo.svg").read_text().lower()
         self.assertIn("#145a28", svg)
         self.assertIn("#fac81e", svg)
+
+
+class TraceWarningTests(BrandBase):
+    def _frame(self):
+        src = self.tmp / "frame.png"
+        rgba = bytearray()
+        for y in range(40):
+            for x in range(40):
+                inside = 3 <= x < 37 and 3 <= y < 37
+                rgba += bytes((240, 240, 240, 255) if inside else (20, 20, 20, 255))
+        src.write_bytes(png.rgba_bytes(40, 40, rgba))
+        return src
+
+    def test_the_dark_frame_warning_comes_back_in_the_result_in_spanish(self):
+        res = brand.trace(self._frame(), None, "mono", colors=2, lang="es")
+        self.assertEqual(len(res["warnings"]), 1)
+        self.assertIn("el interior o el fondo se hayan tomado por tinta", res["warnings"][0])
+        en = brand.trace(self._frame(), None, "mono", colors=2, lang="en")["warnings"][0]
+        self.assertIn("the inside or the background may have been taken for ink", en)
+
+    def test_a_clean_trace_has_no_warnings(self):
+        src = self.tmp / "logo.png"
+        square_png(src, bg=(0, 0, 0), size=24, alpha=0)
+        self.assertEqual(brand.trace(src, None, "silhouette")["warnings"], [])
+
+    def test_the_cli_prints_the_warning_on_stderr(self):
+        code, out, err = self.run_cli("brand", "trace", str(self._frame()), "--mode", "mono", "--colors", "2")
+        self.assertEqual(code, 0)
+        self.assertIn("the inside or the background may have been taken for ink", err)  # GIMG_LANG=en
+        code, out, err = self.run_cli("brand", "trace", str(self._frame()), "--mode", "mono", "--colors", "2", "--json")
+        self.assertEqual(json.loads(out)["warnings"][0][:5], "mono:")
 
 
 class WordmarkTests(BrandBase):
@@ -455,7 +487,7 @@ class LockupTests(BrandBase):
         for name in ("A one = b", "x id = y", "R&D onload = 1 <text>"):
             for piece in (self.emblem, self.word):
                 piece.write_text(path_svg(100, 50, title=escape(name)))  # as gimg writes a title
-            brand.lockup(self.emblem, self.word, self.tmp / "l.svg", title=name)
+            brand.lockup(self.emblem, self.word, self.tmp / "l.svg", title=name, force=True)
             self.assertEqual(ElementTree.fromstring((self.tmp / "l.svg").read_text()).find(ns + "title").text, name)
 
     def test_a_forbidden_attribute_is_still_refused_next_to_a_title(self):
@@ -510,10 +542,80 @@ class LockupTests(BrandBase):
         self.assertEqual(brand._read_svg(out)["box"], tuple(float(v) for v in re.search(
             r'viewBox="([^"]+)"', out.read_text()).group(1).split()[:2]) + (485.0, 100.0))
 
+    def test_lockup_does_not_overwrite_without_force(self):
+        code, _, out = self.lock()
+        self.assertEqual(code, 0)
+        out.write_text("mine")
+        code, err, _ = self.lock()
+        self.assertEqual(code, 1)
+        self.assertIn("l.svg", err)
+        self.assertEqual(out.read_text(), "mine")
+        with self.assertRaises(GimgError) as cm:
+            brand.lockup(self.emblem, self.word, out)
+        self.assertEqual(cm.exception.code, "brand.exists")
+        code, _, _ = self.lock("--force")
+        self.assertEqual(code, 0)
+        self.assertIn("<path", out.read_text())
+
+    def test_a_failure_while_writing_leaves_no_half_file_and_keeps_the_old_one(self):
+        out = self.tmp / "l.svg"
+        out.write_text("mine")
+        real = os.replace
+
+        def failing(src, dst, *a, **kw):
+            if str(dst) == str(out):
+                raise OSError(28, "No space left on device")
+            return real(src, dst, *a, **kw)
+
+        with mock.patch("gimg.brand.os.replace", failing), self.assertRaises(GimgError) as cm:
+            brand.lockup(self.emblem, self.word, out, force=True)
+        self.assertEqual(cm.exception.code, "brand.write_failed")
+        self.assertIn("No space left", str(cm.exception.params["reason"]))
+        self.assertEqual(out.read_text(), "mine")
+        self.assertEqual(sorted(p.name for p in self.tmp.iterdir()), ["e.svg", "l.svg", "w.svg"])  # no .brand-*.tmp
+
+    def test_force_over_a_symlink_replaces_the_link_and_never_writes_through_it(self):
+        victim, out = self.tmp / "victim.txt", self.tmp / "l.svg"
+        victim.write_text("precious")
+        out.symlink_to(victim)
+        code, err, _ = self.lock()
+        self.assertEqual(code, 1)
+        self.assertIn("l.svg", err)  # without --force the link counts as there, as a dangling one does
+        code, _, _ = self.lock("--force")
+        self.assertEqual(code, 0)
+        self.assertEqual(victim.read_text(), "precious")
+        self.assertFalse(out.is_symlink())
+        self.assertIn("<path", out.read_text())
+
+    def test_a_symlink_to_the_emblem_is_the_input_even_with_force(self):
+        out = self.tmp / "l.svg"
+        out.symlink_to(self.emblem)
+        before = self.emblem.read_text()
+        code, err, _ = self.lock("--force")
+        self.assertEqual(code, 1)
+        self.assertIn("is the original itself", err)
+        self.assertEqual(self.emblem.read_text(), before)
+
     def test_text_output_line(self):
         code, out, _ = self.run_cli("brand", "lockup", str(self.emblem), str(self.word), "-o", str(self.tmp / "t.svg"))
         self.assertEqual(code, 0)
         self.assertIn("layout h, 485.0x100.0, 2 paths", out)
+
+
+class DefaultSpacingTests(unittest.TestCase):
+    def test_big_shoulders_in_its_display_variable_and_sc_forms_get_the_tight_tracking(self):
+        for family in ("Big Shoulders Display", "big  shoulders display", "Big Shoulders", "BIG SHOULDERS",
+                       "Big Shoulders Display SC", "Big Shoulders SC"):
+            self.assertEqual(brand.default_spacing(family), brand.SPACING, family)
+        for family in ("Big Shoulders Display Bold", "Big Shoulders Display ExtraBold", "Big Shoulders Black", "big shoulders  display  light sc"):
+            self.assertEqual(brand.default_spacing(family), brand.SPACING, family)
+        for family in ("Big Shoulders Display Heavy", "Big Shoulders Display Demibold", "Big Shoulders Display Extra Bold",
+                       "Big Shoulders Display Semi Bold", "Big Shoulders Display-Bold", "Big Shoulders Display 800", "Big Shoulders 100"):
+            self.assertEqual(brand.default_spacing(family), brand.SPACING, family)
+        for family in ("Big Shoulders Stencil Bold", "Big Shoulders Text Extra Bold", "Big Shoulders Display 850"):
+            self.assertEqual(brand.default_spacing(family), brand.SPACING_OTHER, family)
+        for family in ("Big Shoulders Text", "Big Shoulders Inline Display", "Big Shoulders Stencil", "Shoulders", "Literata"):
+            self.assertEqual(brand.default_spacing(family), brand.SPACING_OTHER, family)
 
 
 class SlugTests(unittest.TestCase):
@@ -600,17 +702,89 @@ class SystemTests(BrandBase):
         self.assertEqual(code, 1)
         self.assertIn("margin 0-2", err)
 
-    @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
+    @unittest.skipUnless(shutil.which("rsvg-convert"), "needs rsvg-convert")
     def test_the_default_spacing_is_the_family_one(self):
         self.assertEqual(brand.SPACING, 0.01)
-        code, out, err = self.run_cli("brand", "wordmark", "AVE", "--font", FONT, "-o", str(self.tmp / "d.svg"), "--json")
+        big = str(Path(brand.__file__).parent / "ui" / "fonts" / "BigShouldersDisplay.ttf")
+        code, out, err = self.run_cli("brand", "wordmark", "AVE", "--font", big, "-o", str(self.tmp / "d.svg"), "--json")
         self.assertEqual(code, 0, err)
         self.assertEqual(json.loads(out)["spacing"], 0.01)
-        code, out, _ = self.system("--json")
+        code, out, _ = self.run_cli("brand", "system", str(self.src), "--name", "Tarkor", "--font", big, "--out-dir",
+                                    str(self.out), "--json")
         self.assertEqual(code, 0)
+        self.assertEqual(json.loads(out)["spacing"], 0.01)
         made = (self.out / "tarkor-wordmark.svg").read_text()
-        brand.wordmark("TARKOR", FONT, str(self.tmp / "ref.svg"), spacing=0.01, title="Tarkor")
+        brand.wordmark("TARKOR", big, str(self.tmp / "ref.svg"), spacing=0.01, title="Tarkor")
         self.assertEqual(made, (self.tmp / "ref.svg").read_text())
+
+    @unittest.skipUnless(shutil.which("rsvg-convert"), "needs rsvg-convert")
+    def test_the_default_spacing_depends_on_the_font_family(self):
+        fonts = Path(brand.__file__).parent / "ui" / "fonts"
+        big, other = str(fonts / "BigShouldersDisplay.ttf"), str(fonts / "Literata.ttf")
+        self.assertEqual(brand.wordmark("AVE", big, str(self.tmp / "b.svg"))["spacing"], 0.01)
+        self.assertEqual(brand.wordmark("AVE", other, str(self.tmp / "o.svg"))["spacing"], 0.12)
+        self.assertEqual(brand.wordmark("AVE", other, str(self.tmp / "e.svg"), spacing=0.3)["spacing"], 0.3)
+        self.assertEqual(brand.wordmark("AVE", big, str(self.tmp / "f.svg"), spacing=0.0)["spacing"], 0.0)
+        code, out, err = self.run_cli("brand", "wordmark", "AVE", "--font", other, "-o", str(self.tmp / "c.svg"), "--json")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(json.loads(out)["spacing"], 0.12)
+        code, out, err = self.run_cli("brand", "wordmark", "AVE", "--font", other, "--spacing", "0.05", "-o",
+                                      str(self.tmp / "d.svg"), "--json")
+        self.assertEqual(json.loads(out)["spacing"], 0.05)
+
+    @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
+    def test_system_resolves_the_default_spacing_with_the_font(self):
+        other = str(Path(brand.__file__).parent / "ui" / "fonts" / "Literata.ttf")
+        res = brand.system(self.src, "Tarkor", other, self.out)
+        self.assertEqual(res["spacing"], 0.12)
+
+    @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
+    def test_system_without_mono_survives_a_mono_trace_with_no_ink(self):
+        real = brand._trace.to_svg
+
+        def no_ink(w, h, rgba, mode="color", **kw):
+            if mode == "mono" and "ncolores" not in kw:  # the emblem, not the wordmark (ncolores=1)
+                raise ValueError("mono: no ink left")
+            return real(w, h, rgba, mode, **kw)
+
+        with mock.patch("gimg.brand._trace.to_svg", no_ink):
+            res = brand.system(self.src, "Tarkor", FONT, self.out)
+            self.assertIn("<path", (self.out / "tarkor-emblema-mono.svg").read_text())  # its silhouette
+            with self.assertRaises(GimgError) as cm:
+                brand.system(self.src, "Tarkor", FONT, self.tmp / "m", mono=True)
+        self.assertEqual(res["paths"]["mono"], 1)
+        self.assertIn("no ink left", cm.exception.params["reason"])
+
+    @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
+    def test_system_reads_the_font_family_once(self):
+        with mock.patch("gimg.brand._font_family", wraps=brand._font_family) as read:
+            brand.system(self.src, "Tarkor", FONT, self.out)
+        self.assertEqual(read.call_count, 1)
+        with mock.patch("gimg.brand._font_family", wraps=brand._font_family) as read:
+            brand.wordmark("AVE", FONT, str(self.tmp / "w.svg"))
+        self.assertEqual(read.call_count, 1)
+
+    @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
+    def test_a_failure_in_the_final_copy_leaves_no_half_file(self):
+        real, seen = os.replace, []
+
+        def failing(src, dst, *a, **kw):
+            if os.path.dirname(str(dst)) == str(self.out):
+                seen.append(dst)
+                if len(seen) == 3:
+                    raise OSError(28, "No space left on device")
+            return real(src, dst, *a, **kw)
+
+        with mock.patch("gimg.brand.os.replace", failing), self.assertRaises(GimgError) as cm:
+            brand.system(self.src, "Tarkor", FONT, self.out)
+        self.assertEqual(cm.exception.code, "brand.write_failed")
+        self.assertIn("No space left", str(cm.exception.params["reason"]))
+        names = sorted(p.name for p in self.out.iterdir())
+        self.assertFalse([n for n in names if n.endswith(".tmp")], names)  # nothing under a temporary name
+        self.assertEqual(len(names), 2)  # the two copied before the failure, whole; the failed one is not there
+        self.assertNotIn(os.path.basename(seen[2]), names)
+        for n in names:
+            self.assertGreater((self.out / n).stat().st_size, 0)
 
     @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
     def test_text_output_lists_the_files(self):
@@ -668,6 +842,17 @@ class SystemTests(BrandBase):
                                     "--out-dir", str(self.out))
         self.assertEqual(code, 1)
         self.assertIn("nope.ttf", err)
+        self.assertFalse(self.out.exists())
+
+    def test_a_corrupt_font_fails_with_font_unreadable_before_the_work(self):
+        bad = self.tmp / "bad.ttf"
+        bad.write_bytes(b"this is not a font at all")
+        with mock.patch.object(brand, "matte", side_effect=AssertionError("matte ran")), \
+                mock.patch.object(brand.shutil, "which", return_value=None):
+            with self.assertRaises(GimgError) as cm:
+                brand.system(self.src, "Tarkor", str(bad), self.out)
+        self.assertEqual(cm.exception.code, "brand.font_unreadable")
+        self.assertIn("not a TrueType or OpenType font", cm.exception.params["reason"])
         self.assertFalse(self.out.exists())
 
     def test_a_name_with_no_ascii_letters_is_refused_with_its_reason(self):
@@ -742,6 +927,206 @@ class SquareTests(BrandBase):
         self.assertEqual((res["fill"], res["ink"]), ("#7c5cd6", "#fbfcfd"))
         self.assertAlmostEqual(res["contrast"], 4.69, places=1)
 
+    def _draw(self, body):
+        self.draw.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20">%s</svg>\n' % body)
+
+    def test_style_declarations_that_paint_become_the_ink_and_none_stays(self):
+        self._draw('<path style="fill:#123456;stroke : #ABCDEF; fill-opacity:.5; stroke-width:2" d="M0 0L40 0L40 20L0 20Z"/>'
+                   '<path style="fill:none;stroke:none" d="M0 0L5 0L5 5Z"/>')
+        res = self.make()
+        text = self.out.read_text()
+        self.assertNotIn("#123456", text)
+        self.assertNotIn("#abcdef", text.lower())
+        self.assertIn('style="fill:#fbfcfd;stroke : #fbfcfd; fill-opacity:.5; stroke-width:2"', text)
+        self.assertIn('style="fill:none;stroke:none"', text)
+        self.assertEqual(res["flattened"], 2)
+
+    def test_the_paint_of_the_root_svg_stays_on_the_art_recolored_to_the_ink(self):
+        self.draw.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20" fill="none" stroke="#c00" stroke-width="3">'
+                             '<path d="M0 0L40 20"/></svg>\n')
+        self.make()
+        text = self.out.read_text()
+        self.assertIn('<g fill="none" stroke="#fbfcfd" stroke-width="3">', text)  # an open stroke is not turned into a filled blob
+        self.assertNotIn("#c00", text)
+        self.draw.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20" style="fill:none;stroke:#c00">'
+                             '<path d="M0 0L40 20"/></svg>\n')
+        self.make(force=True)
+        text = self.out.read_text()
+        self.assertIn('<g style="fill:none;stroke:#fbfcfd">', text)
+        self.assertNotIn('fill="#fbfcfd"', text)
+
+    def test_transparent_fills_and_strokes_stay_unpainted(self):
+        self._draw('<path fill="transparent" stroke="#123456" d="M0 0L40 0L40 20Z"/>'
+                   '<path style="fill:transparent;stroke:Transparent" d="M0 0L5 0L5 5Z"/>')
+        self.make()
+        text = self.out.read_text()
+        self.assertIn('fill="transparent"', text)
+        self.assertIn('style="fill:transparent;stroke:Transparent"', text)
+        self.assertEqual(text.count("#fbfcfd"), 2)  # the group, and the one stroke that paints
+
+    def test_important_stays_on_a_declaration_that_is_rewritten(self):
+        self._draw('<path style="fill:#123456 !important;stroke:red!important;stroke-width:2" d="M0 0L40 0L40 20Z"/>'
+                   '<path style="fill:none !important" d="M0 0L5 0L5 5Z"/>')
+        self.make()
+        text = self.out.read_text()
+        self.assertIn('style="fill:#fbfcfd !important;stroke:#fbfcfd!important;stroke-width:2"', text)
+        self.assertIn('style="fill:none !important"', text)
+
+    def test_equivalent_colors_count_once_and_a_shape_without_fill_is_black(self):
+        self._draw('<path fill="red" d="M0 0L40 0L40 20Z"/><path style="fill:#F00" d="M0 0L5 0L5 5Z"/>'
+                   '<path fill="#ff0000" d="M0 0L9 0L9 5Z"/><path fill="rgb(255, 0, 0)" d="M0 0L7 0L7 7Z"/>')
+        self.assertNotIn("flattened", self.make())
+        self._draw('<path fill="#000" d="M0 0L40 0L40 20Z"/><path fill="Black" d="M0 0L5 0L5 5Z"/><path d="M0 0L9 0L9 5Z"/>')
+        self.assertNotIn("flattened", self.make(force=True))
+        self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/><path d="M0 0L9 0L9 5Z"/>')  # the second one is black
+        self.assertEqual(self.make(force=True)["flattened"], 2)
+        self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/><path fill="none" stroke="#123456" d="M0 0L9 0L9 5Z"/>')
+        self.assertNotIn("flattened", self.make(force=True))
+
+    def test_the_implicit_black_only_goes_to_shapes_outside_a_group_with_fill(self):
+        self._draw('<g fill="#ff0000"><path d="M0 0L40 0L40 20Z"/></g><path d="M0 0L9 0L9 5Z"/>')
+        self.assertEqual(self.make()["flattened"], 2)
+        self._draw('<g fill="#ff0000"><g><path d="M0 0L40 0L40 20Z"/></g><path d="M0 0L5 0L5 5Z"/></g>')
+        self.assertNotIn("flattened", self.make(force=True))
+        self._draw('<path fill="#ff0000" class="a" d="M0 0L40 0L40 20Z"/><path class="b" d="M0 0L9 0L9 5Z"/>')
+        self.assertNotIn("flattened", self.make(force=True))
+
+    def test_alpha_and_hsl_colors_are_normalized_like_the_others(self):
+        for value, want in (("#f00f", "#ff0000"), ("#FF0000FF", "#ff0000"), ("rgba(255, 0, 0, 1)", "#ff0000"),
+                            ("rgb(255 0 0 / 100%)", "#ff0000"), ("hsl(0, 100%, 50%)", "#ff0000"), ("hsla(120, 100%, 50%, 1)", "#00ff00"),
+                            ("rgba(0, 0, 0, 0.5)", "#00000080"), ("#0008", "#00000088")):
+            self.assertEqual(brand._norm_color(value), want, value)
+        self._draw('<path fill="red" d="M0 0L40 0L40 20Z"/><path fill="rgba(255,0,0,1)" d="M0 0L5 0L5 5Z"/>'
+                   '<path fill="hsl(0,100%,50%)" d="M0 0L9 0L9 5Z"/><path fill="#f00f" d="M0 0L7 0L7 7Z"/>'
+                   '<path style="fill:#ff0000ff" d="M0 0L6 0L6 6Z"/>')
+        self.assertNotIn("flattened", self.make())
+
+    def test_a_huge_hue_does_not_crash_and_stays_raw(self):
+        raw = "hsl(%s,50%%,50%%)" % ("9" * 400)
+        self.assertEqual(brand._norm_color(raw), raw)
+        self._draw('<path fill="%s" d="M0 0L40 0L40 20Z"/>' % raw)
+        self.make()
+
+    def test_rgb_and_hsl_take_one_separator_style_not_a_mix(self):
+        for value, want in (("rgb(255 0 0 / .5)", "#ff000080"), ("rgb(255,0,0,.5)", "#ff000080"), ("hsl(0 100% 50%)", "#ff0000")):
+            self.assertEqual(brand._norm_color(value), want, value)
+        for raw in ("rgb(255,0 0)", "rgb(255 0 0,.5)", "rgb(255,0,0/.5)", "hsl(0,100% 50%)"):
+            self.assertEqual(brand._norm_color(raw), raw, raw)  # not a color: left as written
+
+    def test_out_of_range_channels_are_clamped_like_css(self):
+        for value, want in (("rgb(300,0,0)", "#ff0000"), ("rgb(-5,0,0)", "#000000"), ("rgb(0,0,120%)", "#0000ff"),
+                            ("hsl(0,100%,120%)", "#ffffff"), ("rgba(0,0,0,2)", "#000000")):
+            self.assertEqual(brand._norm_color(value), want, value)
+        self._draw('<path fill="rgb(300,0,0)" d="M0 0L40 0L40 20Z"/><path fill="#f00" d="M0 0L5 0L5 5Z"/>')
+        self.assertNotIn("flattened", self.make())
+
+    def test_hsl_hue_units(self):
+        for value, want in (("hsl(0.5turn 100% 50%)", "#00ffff"), ("hsl(200grad,100%,50%)", "#00ffff"),
+                            ("hsl(1rad 100% 50%)", "#fff400"), ("hsl(180deg 100% 50%)", "#00ffff"), ("hsl(1turn 100% 50%)", "#ff0000")):
+            self.assertEqual(brand._norm_color(value), want, value)
+
+    def test_a_root_stroke_counts_only_when_a_shape_inherits_it(self):
+        svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20" stroke="#00f">%s</svg>\n'
+        self.draw.write_text(svg % '<path fill="#f00" d="M0 0L40 0L40 20Z"/>')
+        self.assertEqual(self.make()["flattened"], 2)  # fill and the inherited stroke
+        self.draw.write_text(svg % '<path fill="#f00" stroke="none" d="M0 0L40 0L40 20Z"/>')
+        self.assertNotIn("flattened", self.make(force=True))
+        self.draw.write_text(svg % '<g stroke="#f00"><path fill="#f00" d="M0 0L40 0L40 20Z"/></g>')
+        self.assertNotIn("flattened", self.make(force=True))
+
+    def test_zero_opacity_is_not_ink_and_partial_opacity_is_the_same_color(self):
+        self._draw('<path fill="#f00" d="M0 0L40 0L40 20Z"/><path fill="#00f" fill-opacity="0" d="M0 0L5 0L5 5Z"/>'
+                   '<path fill="#0f0" opacity="0" d="M0 0L6 0L6 6Z"/><path style="fill:#0ff;fill-opacity:0" d="M0 0L7 0L7 7Z"/>'
+                   '<g opacity="0"><path fill="#ff0" d="M0 0L8 0L8 8Z"/></g>')
+        self.assertNotIn("flattened", self.make())
+        self._draw('<path fill="#f00" d="M0 0L40 0L40 20Z"/><path fill="#f00" fill-opacity=".5" d="M0 0L5 0L5 5Z"/>')
+        self.assertNotIn("flattened", self.make(force=True))
+        self._draw('<path fill="#f00" d="M0 0L40 0L40 20Z"/><path fill-opacity="0" d="M0 0L5 0L5 5Z"/>')  # no default black either
+        self.assertNotIn("flattened", self.make(force=True))
+
+    def test_opacity_zero_groups_nest_and_inherit(self):
+        for body in ('<g><g opacity="0"><path fill="#0f0" d="M0 0L9 0L9 9Z"/></g><path fill="#f00" d="M0 0L40 0L40 20Z"/></g>',
+                     '<g opacity="0"><g><path fill="#0f0" d="M0 0L9 0L9 9Z"/></g><path fill="#f00" d="M0 0L9 0L9 5Z"/></g>'
+                     '<path fill="#00f" d="M0 0L40 0L40 20Z"/>',
+                     '<g fill-opacity="0"><path fill="#0f0" d="M0 0L9 0L9 9Z"/></g><path fill="#00f" d="M0 0L40 0L40 20Z"/>',
+                     '<path fill="#00f" d="M0 0L40 0L40 20Z"/><path opacity="-1" fill="#0f0" d="M0 0L9 0L9 9Z"/>',
+                     '<path fill="#00f" d="M0 0L40 0L40 20Z"/><path fill="#0f0" opacity="0" d="M0 0L9 0L9 9Z"/ >'):
+            self._draw(body)
+            self.assertNotIn("flattened", self.make(force=True), body)
+        self.draw.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20" fill-opacity="0">'
+                             '<path fill="#0f0" d="M0 0L9 0L9 9Z"/><path fill="#00f" fill-opacity="1" d="M0 0L40 0L40 20Z"/></svg>\n')
+        self.assertNotIn("flattened", self.make(force=True))
+
+    def test_thousands_of_unclosed_groups_are_fast(self):
+        import time
+        self._draw('<g opacity="1">' * 20000 + '<path fill="#f00" d="M0 0L40 0L40 20Z"/>')
+        start = time.monotonic()
+        brand._paint_colors(*(lambda p: (p["inner"], p["root"]))(brand._read_svg(self.draw)))
+        self.assertLess(time.monotonic() - start, 5)
+
+    def test_a_stroke_only_root_or_group_keeps_the_implicit_black_of_a_shape_without_fill(self):
+        shape = '<path d="M0 0h1v1z"/>'
+        self.assertEqual(brand._paint_colors(shape, 'stroke="#ff0000"'), {"#000000", "#ff0000"})
+        self.assertEqual(brand._paint_colors('<g stroke="#ff0000">' + shape + "</g>"), {"#000000", "#ff0000"})
+        self.assertEqual(brand._paint_colors(shape, 'fill="#00ff00" stroke="#ff0000"'), {"#00ff00", "#ff0000"})
+
+    def test_root_attributes_in_single_quotes_are_copied(self):
+        self.draw.write_text("<svg xmlns='http://www.w3.org/2000/svg' viewBox=\"0 0 40 20\" fill='#f00' stroke='#00f' stroke-width='3'>"
+                             "<path d='M0 0L40 0L40 20Z'/></svg>\n")
+        res = self.make()
+        text = self.out.read_text()
+        self.assertEqual(res["flattened"], 2)
+        self.assertIn('stroke-width="3"', text)
+        self.assertIn('fill="#fbfcfd" stroke="#fbfcfd"', text)
+        self.assertNotIn("#f00", text.replace("#fff", ""))
+
+    def test_alpha_zero_paints_nothing_and_a_translucent_color_counts_as_its_opaque_one(self):
+        for value in ("rgba(0,0,0,0)", "#0000", "#12345600", "hsla(10,50%,50%,0)"):
+            self.assertFalse(brand._paints(value), value)
+        self.assertTrue(brand._paints("rgba(0,0,0,0.5)"))
+        self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/><path fill="rgba(1,2,3,0)" stroke="#0000" d="M0 0L9 0L9 5Z"/>')
+        res = self.make()
+        text = self.out.read_text()
+        self.assertNotIn("flattened", res)
+        self.assertIn('fill="rgba(1,2,3,0)"', text)
+        self.assertIn('stroke="#0000"', text)
+        self._draw('<path fill="#ff0000" d="M0 0L40 0L40 20Z"/><path fill="rgba(255,0,0,0.5)" d="M0 0L9 0L9 5Z"/>')
+        self.assertNotIn("flattened", self.make(force=True))
+
+    def test_the_root_fill_is_inherited_and_a_line_has_no_fill(self):
+        self.draw.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20" fill="#123456">'
+                             '<path d="M0 0L40 0L40 20Z"/><path fill="#123456" d="M0 0L9 0L9 5Z"/></svg>\n')
+        self.assertNotIn("flattened", self.make())
+        self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/><line x1="0" y1="0" x2="40" y2="20"/>')
+        self.assertNotIn("flattened", self.make(force=True))
+        self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/><line x1="0" y1="0" x2="40" y2="20" stroke="#fedcba"/>')
+        self.assertEqual(self.make(force=True)["flattened"], 2)
+
+    def test_a_bang_that_is_not_important_stays_inside_the_value(self):
+        self._draw('<path style="fill:#123456 !x;stroke-width:2" d="M0 0L40 0L40 20Z"/>')
+        self.make()
+        text = self.out.read_text()
+        self.assertIn('style="fill:#fbfcfd;stroke-width:2"', text)
+        self.assertNotIn("!x", text)
+
+    def test_two_paint_colors_are_flattened_and_one_is_not(self):
+        self._draw('<path fill="#ABC" d="M0 0L40 0L40 20Z"/><path style="fill:#aabbcc" d="M0 0L5 0L5 5Z"/>'
+                   '<path fill="none" stroke="currentColor" d="M0 0L9 0L9 5Z"/><path fill="#aabbcc" d="M0 0L7 0L7 7Z"/>')
+        self.assertNotIn("flattened", self.make())
+        self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/><path style="fill:#fedcba" d="M0 0L5 0L5 5Z"/>')
+        self.assertEqual(self.make(force=True)["flattened"], 2)
+
+    def test_the_cli_warns_when_colors_were_flattened_and_not_otherwise(self):
+        self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/><path fill="#fedcba" d="M0 0L5 0L5 5Z"/>')
+        code, out, err = self.run_cli("brand", "square", str(self.draw), "--fill", "#7C5CD6", "--ink", "#fbfcfd", "-o", str(self.out))
+        self.assertEqual(code, 0, err)
+        self.assertIn("2 colors", out)
+        self.assertIn("warning", out)
+        self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/>')
+        code, out, err = self.run_cli("brand", "square", str(self.draw), "--fill", "#7C5CD6", "--ink", "#fbfcfd", "-o", str(self.out), "--force")
+        self.assertEqual(code, 0, err)
+        self.assertNotIn("colors", out)
+
     def test_another_chamfer_changes_the_path(self):
         self.make(chamfer=40)
         self.assertIn('d="M0 0 H88 L128 40 V128 H0 Z"', self.out.read_text())
@@ -786,6 +1171,54 @@ class SquareTests(BrandBase):
         self.assertEqual(self.out.read_text(), "mine")
         self.make(force=True)
         self.assertIn("<path", self.out.read_text())
+
+    @unittest.skipUnless(shutil.which("rsvg-convert"), "needs rsvg-convert")
+    def test_force_is_all_or_nothing_when_a_png_fails_midway(self):
+        old = {self.out: "old svg", self.tmp / "sq-64.png": "old 64", self.tmp / "sq-32.png": "old 32"}
+        for path, text in old.items():
+            path.write_text(text)
+        before = set(self.tmp.iterdir())
+        real, calls = brand._rsvg, []
+
+        def flaky(argv, env):
+            calls.append(argv)
+            if len(calls) == 2:
+                raise GimgError("brand.tool_failed", tool="rsvg-convert", reason="boom")
+            return real(argv, env)
+
+        with mock.patch.object(brand, "_rsvg", flaky):
+            exc = self.code(pngs=[64, 32], force=True)
+        self.assertEqual(exc.code, "brand.tool_failed")
+        self.assertIn("boom", str(exc))
+        self.assertEqual(len(calls), 2)
+        for path, text in old.items():
+            self.assertEqual(path.read_text(), text)
+        self.assertEqual(set(self.tmp.iterdir()), before)  # no temporary files left
+
+    def test_a_failed_final_rename_restores_every_old_file(self):
+        old = {self.out: "old svg", self.tmp / "sq-64.png": "old 64", self.tmp / "sq-32.png": "old 32"}
+        for path, text in old.items():
+            path.write_text(text)
+        before = set(self.tmp.iterdir())
+
+        def fake_rsvg(argv, env):
+            Path(argv[argv.index("-o") + 1]).write_bytes(b"new png")
+
+        real = os.replace
+
+        def flaky(src, dst, *a, **k):
+            if str(dst) == str(self.tmp / "sq-32.png") and str(src).endswith(".png.tmp"):
+                raise OSError(28, "No space left")
+            return real(src, dst, *a, **k)
+
+        with mock.patch.object(brand, "_rsvg", fake_rsvg), mock.patch.object(brand.shutil, "which", return_value="/x"), \
+                mock.patch.object(brand.os, "replace", flaky):
+            exc = self.code(pngs=[64, 32], force=True)
+        self.assertEqual(exc.code, "brand.write_failed")
+        self.assertIn("No space left", str(exc))
+        for path, text in old.items():
+            self.assertEqual(path.read_text(), text)  # the SVG and the first PNG were not left new
+        self.assertEqual(set(self.tmp.iterdir()), before)  # no temporaries or backups left
 
     def test_default_output_sits_next_to_the_drawing(self):
         res = brand.square(self.draw, None, "#7C5CD6", "#fbfcfd")

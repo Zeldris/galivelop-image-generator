@@ -11,6 +11,8 @@
 #   - Runs scripts/private-check.py (when the project has it) on the commits each ref pushes: key formats, e-mail
 #     addresses not allowed and the private names of the local .claude/gw.local.json, in their added lines, added
 #     paths and messages; privateCheck: false in the pushed commit's config turns it off. Fails closed.
+#   - With `agentSignatures: false` in the pushed commit's config, refuses pushed commits whose author or committer is
+#     noreply@anthropic.com (local change of this project).
 #   - Reads .claude/gw.json as each pushed commit has it (never the working tree's); a pushed commit without a valid
 #     one is refused.
 #   - Runs every `check` command of that config on the commit being pushed (a temporary worktree when it is not
@@ -276,6 +278,14 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     if [ -f "$scripts/private-check.py" ]; then  # an older project without it: skipped, like the optional scripts
       printf '%s\n' "$new" | python3 "$scripts/private-check.py" --root "$root" --rev "$local_sha" --commits - \
         || fail "the push carries private data or a key (above); remove it from those commits and push again: git rebase -i $remote/${remote_ref#refs/heads/}"
+    fi
+    # With agentSignatures: false (the pushed commit's config), no commit may go out under the agent's identity
+    # (local change of this project, proposed to the workflow; commit-msg checks the same when committing).
+    if [ "$(python3 "$config" --root "$root" --rev "$local_sha" get agentSignatures 2>/dev/null)" = false ]; then
+      # shellcheck disable=SC2086  # one sha per word
+      agent="$(git log --no-walk=unsorted --format='%h %ae %ce' $new | awk 'tolower($2) == "noreply@anthropic.com" || tolower($3) == "noreply@anthropic.com" { print $1 }')"
+      [ -z "$agent" ] || fail "commit(s) authored or committed as the agent (noreply@anthropic.com), which this project forbids (agentSignatures: false): $(printf '%s' "$agent" | tr '\n' ' ')" \
+        "set the person's identity (git config user.name/user.email) and redo them: git rebase --exec 'git commit --amend --no-edit --reset-author' $remote/${remote_ref#refs/heads/}"
     fi
   fi
 

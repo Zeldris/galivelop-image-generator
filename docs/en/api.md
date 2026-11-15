@@ -164,7 +164,7 @@ curl -s -X PUT -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/o
 ### POST /api/projects/{p}/orders/{profile}/{key}/attempts
 
 More attempts (another seed, a prompt tweak, several in a row, draft). Body, all optional: `{"count", "seed",
-"prompt", "steps", "cfg", "sampler", "draft", "template", "model"}` (`template`: id of a template from
+"prompt", "negative", "steps", "cfg", "sampler", "draft", "template", "model"}` (`negative`: a retouched negative prompt; `""` removes it; `template`: id of a template from
 `GET …/profiles/{profile}/templates`, the one for the new attempts; without it, `default`; `model`: id from
 `GET /api/models` that replaces the profile's in these attempts, like `gimg attempt new --model`). Response 202:
 `{"entries", "estimateMs"}`; each entry carries its `template`. Errors: `order.count_invalid`,
@@ -311,7 +311,8 @@ curl -s "$B/api/projects/mi-proyecto/profiles/og/assets/template?id=claro"
 ### GET /api/queue
 
 The queue: each entry with `progress`, `errorText` and `estimateMs` where applicable (without the preview path). Query:
-`state=queued|running|done|failed|cancelled`. Error: `queue.bad_state`.
+`state=queued|running|done|failed|cancelled`. Error: `queue.bad_state`. The response carries the header
+`X-Queue-Paused: 1|0` (whether the queue is paused, as `paused` of `/api/health`); the body is still the list.
 
 ```sh
 curl -s "$B/api/queue?state=running"
@@ -433,7 +434,7 @@ curl -s -X POST $B/api/projects/mi-proyecto/brand/trace -H 'Content-Type: applic
 ### POST /api/projects/{p}/brand/wordmark
 
 Draws the name as outlines. Fields: `name`, `font` (an installed family, e.g. `Cinzel`; resolved with `fc-match`, never
-a path), `text` (defaults to the name in capitals), `weight` (800), `spacing` (0.01). Writes `wordmark.svg`. Errors:
+a path), `text` (defaults to the name in capitals), `weight` (800), `spacing` (by family: 0.01 Big Shoulders Display, 0.12 any other). Writes `wordmark.svg`. Errors:
 `brand.font_unknown`, `brand.font_unreadable`, `brand.tool_missing` (500), `brand.wordmark_no_fit`,
 `brand.text_too_long`.
 

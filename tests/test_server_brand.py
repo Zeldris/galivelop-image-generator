@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from urllib.parse import quote
 
-from gimg import brand, orders, paths
+from gimg import brand, orders, paths, png
 from tests.test_brand import FONT, HAS_WORDMARK, square_png
 from tests.test_server_read import NAME
 from tests.test_server_write import WriteBase
@@ -101,10 +101,23 @@ class MatteTraceTests(BrandApiBase):
 
     def test_trace_color_and_mono(self):
         self.matte()
-        self.trace("color", colors=2)
+        self.assertEqual(self.trace("color", colors=2)["warnings"], [])
         self.trace("mono")
         self.assertTrue((self.shop() / (SLUG + "-emblema.svg")).read_text().startswith("<svg"))
         self.assertTrue((self.shop() / (SLUG + "-emblema-mono.svg")).is_file())
+
+    def test_trace_warnings_come_in_the_language_of_the_request(self):
+        self.matte()
+        img = [(20, 20, 20, 255)] * 1600  # dark frame, light inside: the light is taken for ink and the trace warns
+        for y in range(3, 37):
+            for x in range(3, 37):
+                img[y * 40 + x] = (240, 240, 240, 255)
+        (self.shop() / (SLUG + "-emblema-alpha.png")).write_bytes(
+            png.rgba_bytes(40, 40, b"".join(bytes(p) for p in img)))
+        for lang, text in (("en", "the ink covers"), ("es", "la tinta cubre")):
+            body = self.ok("POST", BASE + "/trace?lang=" + lang, {"name": "Mi Marca", "mode": "mono"})
+            self.assertEqual(len(body["warnings"]), 1, body)
+            self.assertIn(text, body["warnings"][0])
 
     def test_trace_use_palette(self):
         self.matte()

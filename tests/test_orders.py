@@ -153,6 +153,47 @@ class OrderTests(unittest.TestCase):
         self.write_cfg()
         self.assertEqual(len(orders.attempt_specs("proj", "a", "banner")[0]["prompt"]), limit - 3)
 
+    def test_negative_reaches_the_specs_and_only_when_not_empty(self):
+        self.new_order(negative="blurry, text")
+        self.assertEqual(orders.get("proj", "a", "banner")["negative"], "blurry, text")
+        spec = orders.attempt_specs("proj", "a", "banner", 2)
+        self.assertEqual([s["negative"] for s in spec], ["blurry, text"] * 2)  # no profile style appended to it
+        self.assertEqual(orders.attempt_specs("proj", "a", "banner", negative="no hands")[0]["negative"], "no hands")
+        self.assertNotIn("negative", orders.attempt_specs("proj", "a", "banner", negative="")[0])
+        self.assertEqual(orders.get("proj", "a", "banner")["negative"], "blurry, text")  # a retouch does not store it
+        orders.submit("proj", self.order(negative=""))  # resubmitting without one clears it
+        self.assertNotIn("negative", orders.get("proj", "a", "banner"))
+        self.assertNotIn("negative", orders.attempt_specs("proj", "a", "banner")[0])
+
+    def test_whitespace_only_negative_is_none_and_others_are_trimmed(self):
+        self.new_order(negative="  \n ")
+        self.assertNotIn("negative", orders.get("proj", "a", "banner"))
+        self.assertNotIn("negative", orders.attempt_specs("proj", "a", "banner")[0])
+        self.assertNotIn("negative", orders.attempt_specs("proj", "a", "banner", negative="   ")[0])
+        self.assertEqual(orders.attempt_specs("proj", "a", "banner", negative=" no hands ")[0]["negative"], "no hands")
+        self.assertEqual(orders.check_order("proj", self.order(negative=" \t"))[0].get("negative", ""), "")
+        orders.submit("proj", self.order(negative=" blurry "))
+        self.assertEqual(orders.get("proj", "a", "banner")["negative"], "blurry")
+
+    def test_negative_too_long_or_wrong_type_is_rejected(self):
+        self.assertEqual(self.code(orders.submit, "proj", self.order(negative="x" * 4001)), "order.invalid")
+        self.assertEqual(self.code(orders.submit, "proj", self.order(negative=3)), "order.invalid")
+        self.new_order()
+        self.assertEqual(self.code(orders.attempt_specs, "proj", "a", "banner", negative="x" * 4001), "order.invalid")
+        self.assertEqual(self.code(orders.check_order, "proj", self.order(negative="x" * 4001)), "order.invalid")
+
+    def test_check_order_candidate_carries_the_negative(self):
+        specs = orders.check_order("proj", self.order(negative="blurry"))
+        self.assertEqual(specs[0]["negative"], "blurry")
+
+    def test_attempt_record_keeps_the_negative_only_when_given(self):
+        self.new_order()
+        orders.add_attempt("proj", "a", "banner", dict(self.spec(1), negative="blurry"))
+        orders.add_attempt("proj", "a", "banner", dict(self.spec(2), negative=None))
+        attempts = orders.get("proj", "a", "banner")["attempts"]
+        self.assertEqual(attempts[0]["negative"], "blurry")
+        self.assertNotIn("negative", attempts[1])
+
     def test_retouch_does_not_change_order(self):
         self.new_order(seed=3)
         before = orders.get("proj", "a", "banner")

@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/21-patron-gve",
+  "profile": "patron",
+  "seed": 2141,
+  "count": 2,
+  "draft": false,
+  "prompt": "Seamless repeating pattern of survey marks on a flat solid off-white #fbfcfd paper ground: thin ink grey bathymetric contour lines of one fine even weight flowing gently from side to side, and between them small depth soundings drawn as tiny round dots and tiny plus-shaped tick marks, evenly spread over the whole surface, low and uniform contrast so captions placed on top stay readable, calm and regular, the same density everywhere. Flat two-ink print, crisp and sharp, seen straight on. No waves, no crests, no foam, no hatching, no shading, no compass rose, no photographic rendering, no gradients, no glow, no text, no letters, no numbers, no digits, no watermark, no border, no frame. Palette strictly limited to off-white #fbfcfd, ink grey #13212b and medium cerulean ocean blue #0072a8."
+}

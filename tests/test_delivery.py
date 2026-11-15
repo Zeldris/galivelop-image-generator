@@ -50,6 +50,16 @@ class DeliveryTests(DeliveryBase):
                                       "engineVersion", "attemptId", "chosenAt"})
         self.assertEqual(entry["params"]["width"], 1280)
 
+    def test_manifest_records_the_negative_only_when_the_attempt_has_one(self):
+        self.push(key="n", count=1, seed=5, negative="blurry, text")
+        worker.run()
+        (att,) = orders.get("proj", "n", "banner")["attempts"]
+        delivery.choose("proj", "n", "banner", att["id"])
+        self.assertEqual(self.manifest()["images"]["n"]["banner"]["negative"], "blurry, text")
+        one, _ = self.attempts()
+        delivery.choose("proj", "a", "banner", one)
+        self.assertNotIn("negative", self.manifest()["images"]["a"]["banner"])
+
     def test_manifest_format(self):
         one, _ = self.attempts()
         delivery.choose("proj", "a", "banner", one)

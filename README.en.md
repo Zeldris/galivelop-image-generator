@@ -63,7 +63,7 @@ Each project keeps a `galivelop-images.json` file in its repo (D12):
 - `name`: project name.
 - `delivery.dir`: delivery dir, relative to the project repo.
 - `delivery.template`: name of the delivered file; `{key}` is the order key and `{profile}` the profile.
-- `profiles`: named generation profiles (size, steps, `cfg`, sampler and model).
+- `profiles`: named generation profiles (size, steps, `cfg`, sampler and model; `tileable`: `"xy"`, `"x"` or `"y"` asks for a seamless texture, `--circular`/`--circularx`/`--circulary` of sd-cli).
 
 An order asks for one image by key and profile:
 
@@ -74,6 +74,7 @@ An order asks for one image by key and profile:
 - `key`: identifies the image inside the project; it may include subfolders.
 - `profile`: profile from the project config to apply.
 - `prompt`: description of the image.
+- `negative`: negative prompt, optional (what must not appear); empty is the same as absent. It is passed to `sd-cli` as `--negative-prompt` and kept in the attempt's metadata. Use it for the negative block of each brand's style sheet.
 - `references`: reference images (the machine profile limits how many).
 - `seed`: seed, to reproduce a result.
 
@@ -112,6 +113,7 @@ python3 -m gimg sheet --out sheet.png a.png b.png     # contact sheet to review 
 python3 -m gimg export a.png a.webp --size 960x540   # copy to WebP, ICO or BMP (the delivery stays PNG)
 python3 -m gimg export a.png b.png --crop 64,0,768,1152 --size 600x900   # declared crop (X,Y,W,H of the original), then scale down
 python3 -m gimg export a.png b.png --size 1536x384 --anchor top   # where the proportion crop sits: top|bottom|left|right (or top-left…), centre by default
+python3 -m gimg tile texture.png --preview view.png   # seamless texture (up to 4.2 Mpx in total, e.g. 2048x2048): texture-tile.png and the 4x4 view (--blend, --preview-side, -o, --force)
 python3 -m gimg brand matte logo.png                  # removes the flat background: logo-alpha.png (the original is untouched)
 python3 -m gimg brand trace logo-alpha.png --mode color|mono|silhouette   # PNG to SVG (--palette, --colors, --matte)
 python3 -m gimg brand wordmark TARKOR --font Cinzel.ttf -o wordmark.svg   # the name as paths, no <text> (--weight, --spacing)

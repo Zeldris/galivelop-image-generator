@@ -249,6 +249,26 @@ class LocaleCoverageTests(unittest.TestCase):
             for key in keys:
                 self.assertTrue(key in texts or "error." + key in texts, (lang, key))
 
+    def test_every_help_text_formats_with_a_literal_percent(self):
+        # argparse expands `%` in help; Python 3.14 checks it when the parser is built, older ones when help is printed
+        import argparse
+        for lang in ("es", "en"):
+            parsers = [cli._build(lang)]
+            seen = 0
+            while parsers:
+                parser = parsers.pop()
+                text = parser.format_help()
+                seen += 1
+                self.assertNotIn("%%", text, (lang, parser.prog))
+                for action in parser._actions:
+                    if isinstance(action, argparse._SubParsersAction):
+                        parsers.extend(action.choices.values())
+            self.assertGreater(seen, 20, lang)
+            trace = cli._build(lang).parse_args  # the help of `brand trace` carries "20 %"
+            with contextlib.redirect_stdout(io.StringIO()) as out, self.assertRaises(SystemExit):
+                trace(["brand", "--help"])
+            self.assertIn("20", out.getvalue())
+
 
 class BadEngineTests(CliBase):
     def test_bad_engine_fails_before_queueing(self):
