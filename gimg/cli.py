@@ -409,6 +409,8 @@ def _run(args, out: _Out) -> int:
             for item in res.get("recovered", ()):
                 out.line("cli.out.tile_recovery_restored" if item["action"] == "restored" else "cli.out.tile_recovery_kept",
                          path=item["path"], backup=item["backup"])
+            for item in res.get("stale_backups", ()):
+                out.line("cli.out.tile_stale_backup", path=item["path"], backup=item["backup"], reason=item["reason"])
     elif cmd == "export":
         res = export.export(args.image, args.out, args.size, args.icon_sizes, args.background, args.force,
                            args.crop, args.anchor)

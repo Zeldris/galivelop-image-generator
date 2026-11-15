@@ -196,7 +196,8 @@ def recover_backups(paths) -> list:
     If the target is missing, the oldest copy is the original and is put back; if the target exists, the copies are
     left where they are and reported (one may be the only copy of an original that the half-done run replaced:
     nothing is deleted that cannot be told apart from a leftover of a finished run). Returns one dict per copy,
-    ``{"action": "restored" | "kept", "backup": ..., "path": ...}``."""
+    ``{"action": "restored" | "kept", "backup": ..., "path": ...}``; if a copy cannot be put back, the `GimgError`
+    carries in ``recovered`` what was already done."""
     done, now = [], time.time_ns()
     for path in paths:
         folder, prefix = os.path.dirname(os.path.abspath(path)), _backup_prefix(path)
@@ -219,8 +220,10 @@ def recover_backups(paths) -> list:
                     os.replace(bak, path)
                     done.append({"action": "restored", "backup": bak, "path": str(path)})
             except OSError as exc:
-                raise GimgError("tile.write_failed", path=str(path),
+                err = GimgError("tile.write_failed", path=str(path),
                                 reason="cannot recover %s: %s" % (bak, exc.strerror or exc))
+                err.recovered = done  # the copies already put back are said too
+                raise err from exc
     return done
 
 
@@ -249,12 +252,14 @@ def _stage(path: str, data: bytes) -> str:
     return tmp
 
 
-def _publish(files) -> None:
+def _publish(files) -> list:
     """Write every ``(path, data)`` or none: all are staged first; a target that is a folder is refused before
     anything is staged. Each existing target is moved aside (same folder) before the new file takes its place: on
     success a symlink is replaced by the new regular file (what it pointed at is not touched); if anything fails the
-    ones already in place are put back (the old file, or nothing if there was none), a symlink and its mode as they were."""
-    staged, done = [], []  # done: (path, backup or None)
+    ones already in place are put back (the old file, or nothing if there was none), a symlink and its mode as they were.
+    Returns ``{"backup": ..., "path": ..., "reason": ...}`` for each copy of an old file that could not be deleted after
+    a success: it is said, because a later run would take it for an original left by an interrupted run."""
+    staged, done, stale = [], [], []  # done: (path, backup or None)
     path = None
     try:
         for path, _ in files:
@@ -292,10 +297,15 @@ def _publish(files) -> None:
         for tmp, _ in staged:
             with contextlib.suppress(OSError):
                 os.unlink(tmp)
-        for _, backup in done:
+        for p, backup in done:
             if backup:
-                with contextlib.suppress(OSError):
+                try:
                     os.unlink(backup)
+                except FileNotFoundError:
+                    pass
+                except OSError as exc:
+                    stale.append({"backup": backup, "path": str(p), "reason": str(exc.strerror or exc)})
+    return stale
 
 
 def _same_file(a: str, b: str) -> bool:
@@ -333,8 +343,9 @@ def tile(src, out=None, blend: float = 0.25, preview=None, preview_side: int = 2
         _check_options(width, height, blend)
     except ValueError as exc:
         raise GimgError("tile.bad_option", reason=str(exc))
-    recovered = recover_backups([out] + ([preview] if preview is not None else []))
+    recovered = []
     try:
+        recovered = recover_backups([out] + ([preview] if preview is not None else []))
         if not force:  # before inflating and blending: an existing output is refused without doing the work
             for target in (out, preview):
                 if target is not None and os.path.exists(target):
@@ -354,10 +365,13 @@ def tile(src, out=None, blend: float = 0.25, preview=None, preview_side: int = 2
             files.append((preview, png.rgba_bytes(pw * PREVIEW_GRID, ph * PREVIEW_GRID, grid)))
             res["preview"] = preview
             res["preview_size"] = [pw * PREVIEW_GRID, ph * PREVIEW_GRID]
-        _publish(files)
+        stale = _publish(files)
         if recovered:
             res["recovered"] = recovered
+        if stale:
+            res["stale_backups"] = stale
         return res
     except GimgError as exc:
-        exc.recovered = recovered  # what was put back before the failure: the command line says it
+        if not hasattr(exc, "recovered"):  # recover_backups sets it itself when it fails half way
+            exc.recovered = recovered  # what was put back before the failure: the command line says it
         raise

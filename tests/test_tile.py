@@ -409,6 +409,47 @@ class TileCommandTests(unittest.TestCase):
         code, so, se = self.run_cli("--lang", "en", "tile", self.src, "-o", out, "--force")
         self.assertIn("may be the original", so)
 
+    def test_what_was_put_back_before_a_failed_recovery_is_said(self):
+        out, view = os.path.join(self.dir.name, "o.png"), os.path.join(self.dir.name, "v.png")
+        Path(self.dir.name, tile._backup_name(out, pid=2 ** 22 + 5, stamp=OLD)).write_bytes(b"the original")
+        Path(self.dir.name, tile._backup_name(view, pid=2 ** 22 + 5, stamp=OLD)).write_bytes(b"the old view")
+        real = os.replace
+
+        def flaky(a, b):
+            if b == view:
+                raise OSError(13, "Permission denied", a)
+            return real(a, b)
+
+        with mock.patch("gimg.tile.os.replace", flaky), self.assertRaises(GimgError) as cm:
+            tile.tile(self.src, out=out, preview=view, force=True)
+        self.assertEqual(cm.exception.code, "tile.write_failed")
+        self.assertIn("cannot recover", cm.exception.params["reason"])
+        self.assertEqual([(i["action"], i["path"]) for i in cm.exception.recovered], [("restored", out)])
+        self.assertEqual(Path(out).read_bytes(), b"the original")
+
+    def test_a_copy_that_could_not_be_deleted_after_a_success_is_said(self):
+        out = os.path.join(self.dir.name, "o.png")
+        Path(out).write_bytes(b"old texture")
+        real = os.unlink
+
+        def flaky(p, *a, **k):
+            if ".gimg-bak-" in os.fspath(p):
+                raise OSError(16, "Device or resource busy", p)
+            return real(p, *a, **k)
+
+        with mock.patch("gimg.tile.os.unlink", flaky):
+            res = tile.tile(self.src, out=out, force=True)
+        [item] = res["stale_backups"]
+        self.assertEqual(item["path"], out)
+        self.assertIn("Device or resource busy", item["reason"])
+        self.assertEqual(Path(item["backup"]).read_bytes(), b"old texture")
+        self.assertNotEqual(Path(out).read_bytes(), b"old texture")
+        with mock.patch("gimg.tile.os.unlink", flaky):
+            code, so, se = self.run_cli("--lang", "es", "tile", self.src, "-o", out, "--force")
+        self.assertEqual(code, 0)
+        self.assertIn("no se pudo borrar", so)
+        self.assertIn("Device or resource busy", so)
+
     def test_an_existing_output_without_force_is_refused_before_decoding_or_blending(self):
         out = os.path.join(self.dir.name, "o.png")
         Path(out).write_bytes(b"keep me")

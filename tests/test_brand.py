@@ -1102,6 +1102,16 @@ class SquareTests(BrandBase):
         self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/><line x1="0" y1="0" x2="40" y2="20" stroke="#fedcba"/>')
         self.assertEqual(self.make(force=True)["flattened"], 2)
 
+    def test_a_line_does_not_inherit_the_root_fill(self):
+        self.draw.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20" fill="#ff0000">'
+                             '<path fill="#123456" d="M0 0L40 0L40 20Z"/>'
+                             '<line x1="0" y1="0" x2="40" y2="20" stroke="#123456"/></svg>\n')
+        self.assertNotIn("flattened", self.make())
+        self.draw.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20" fill="#ff0000">'
+                             '<path d="M0 0L40 0L40 20Z"/>'
+                             '<line x1="0" y1="0" x2="40" y2="20" stroke="#123456"/></svg>\n')
+        self.assertEqual(self.make(force=True)["flattened"], 2)  # the path does inherit it
+
     def test_a_bang_that_is_not_important_stays_inside_the_value(self):
         self._draw('<path style="fill:#123456 !x;stroke-width:2" d="M0 0L40 0L40 20Z"/>')
         self.make()
