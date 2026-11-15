@@ -4,7 +4,7 @@ import re
 import unittest
 from pathlib import Path
 
-from gimg import server
+from gimg import brand, matte, server
 from tests.test_server import ServerBase
 
 UI = Path(server.UI_DIR)
@@ -924,6 +924,40 @@ class Contrast(unittest.TestCase):
         self.assertRegex(rules[where(".attempt.is-compared")[0]][1], r"outline-offset:\s*-")
         for i in where("select"):
             self.assertNotIn("text-transform", rules[i][1])
+
+
+class BrandWorkshopLimits(unittest.TestCase):
+    """The fields of the brand workshop use the limits that the server validates (no value the UI allows is refused)."""
+    JS = read(UI / "js" / "components" / "brand-workshop.js")
+
+    def field(self, id_):
+        m = re.search(r"'%s'[^\n]*?\{([^}]*)\}" % id_, self.JS)
+        self.assertTrue(m, id_)
+        return {k: float(v) for k, v in re.findall(r"\b(min|max):\s*(-?[\d.]+)", m.group(1))}
+
+    def test_pieces_are_the_system_files_but_the_contact_sheet(self):
+        m = re.search(r"const PIECES = \[([^\]]*)\]", self.JS)
+        self.assertEqual(re.findall(r"'([^']+)'", m.group(1)), [k for k in brand.SYSTEM_FILES if k != "contactos.png"])
+
+    def test_the_name_texts_are_as_long_as_the_server_allows(self):
+        self.assertEqual(re.findall(r"id: 'shop-(?:name|wtext)', type: 'text', maxlength: (\d+)", self.JS),
+                         [str(brand.MAX_TEXT)] * 2)
+
+    def test_the_border_minimum_is_the_one_of_the_matte(self):
+        self.assertEqual(self.field("shop-border")["min"], 1)
+        with self.assertRaises(ValueError) as ctx:
+            matte.remove_bg(4, 4, bytes(64), border=0)
+        self.assertIn("border must be at least 1", str(ctx.exception))
+        matte.remove_bg(4, 4, bytes(64), border=1)
+
+    def test_the_tolerances_reach_the_largest_rgb_distance(self):
+        top = (3 * 255 ** 2) ** 0.5
+        for id_ in ("shop-tol", "shop-soft"):
+            self.assertGreaterEqual(self.field(id_)["max"], top, id_)
+            self.assertLess(self.field(id_)["max"], top + 1, id_)
+
+    def test_the_grow_maximum_is_the_one_of_the_matte(self):
+        self.assertLessEqual(self.field("shop-grow")["max"], matte.MAX_GROW)
 
 
 if __name__ == "__main__":
