@@ -89,8 +89,6 @@ def write_file(path: str, data: bytes) -> None:
         raise
 
 
-
-
 def _opaque(rgba) -> bool:
     return all(a >= 250 for a in rgba[3::4])
 
