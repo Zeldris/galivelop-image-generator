@@ -11,6 +11,8 @@ Las lee la skill `orchestrate-dealer` antes de repartir. Son de este proyecto; s
   haz un commit `WIP:` en tu worktree y devuelve qué está hecho y qué falta». El siguiente intento sube un peldaño de la
   escalera de `gw-selector` o parte el encargo (aprobado el 2026-11-13: «negative en el pedido» hizo 40 llamadas a
   132k de media, 5,3 M; el 2026-11-12, 80 y 66).
+- **Arreglos de una revisión: 4-5 puntos por encargo como máximo**, agrupados por archivo (dos encargos no tocan el
+  mismo archivo) y en paralelo con worktree (aprobado el 2026-11-15: 9 puntos en un encargo fueron 47 llamadas, 4,6 M).
 - **Un subagente que escribe código** va en worktree (`isolation: "worktree"`) o, si va en la carpeta principal, la
   sesión principal no termina su turno hasta su aviso: el gancho de parada ve el árbol a medias y pide commit
   (una vuelta de ~110k; aprobado el 2026-11-14).

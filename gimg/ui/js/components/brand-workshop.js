@@ -14,6 +14,8 @@ import { toastError, toastOk } from './toast.js';
 import { confirmAction } from './confirm.js';
 import { imageVersion } from './attempt-util.js';
 
+/* Los límites de los campos casan con los del servidor (`brand.MAX_TEXT`, `matte.remove_bg`: distancia RGB hasta ~441,
+   borde >= 1) y PIECES con `brand.SYSTEM_FILES` sin la hoja de contactos: `tests/test_ui.py` lo comprueba. */
 const PIECES = ['emblema-alpha.png', 'emblema.svg', 'emblema-mono.svg', 'wordmark.svg', 'lockup-h.svg', 'lockup-v.svg'];
 const SIZES = [16, 32, 64, 128];
 const RANK = { candidate: 1, new: 2, discarded: 3 };
@@ -180,9 +182,9 @@ export function brandWorkshop(project, cfg) {
 
   /* ---- 2 · quitar fondo ---- */
   const matteOut = live();
-  const tol = num('shop-tol', 60, { min: 0, max: 255, step: 1 });
-  const soft = num('shop-soft', 110, { min: 0, max: 255, step: 1 });
-  const border = num('shop-border', 6, { min: 0, max: 64, step: 1 });
+  const tol = num('shop-tol', 60, { min: 0, max: 442, step: 1 });
+  const soft = num('shop-soft', 110, { min: 0, max: 442, step: 1 });
+  const border = num('shop-border', 6, { min: 1, max: 64, step: 1 });
   const grow = num('shop-grow', 3, { min: 0, max: 32, step: 1 });
   const holes = h('input', { id: 'shop-holes', type: 'checkbox' });
   const matteView = h('div.stack');
@@ -247,7 +249,7 @@ export function brandWorkshop(project, cfg) {
   const wordOut = live();
   let textEdited = false;
   let editedSlug = '';
-  const wText = h('input', { id: 'shop-wtext', type: 'text', maxlength: 100, autocomplete: 'off', value: nameInput.value.toUpperCase() });
+  const wText = h('input', { id: 'shop-wtext', type: 'text', maxlength: 60, autocomplete: 'off', value: nameInput.value.toUpperCase() });
   wText.addEventListener('input', () => { textEdited = true; editedSlug = slugOf(nameInput.value); });
   const syncText = () => { if (!textEdited) wText.value = nameInput.value.toUpperCase(); };
   const wFont = h('input', { id: 'shop-wfont', type: 'text', list: 'shop-fonts', value: fonts[0] || '', autocomplete: 'off', aria: { describedby: 'shop-wfont-hint' } });

@@ -18,7 +18,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote
 
-from . import __version__, brandshop, build_id, compose, delivery, doctor, i18n, measure, models, orders, paths, projects, queue
+from . import __version__, brand, brandshop, build_id, compose, delivery, doctor, i18n, measure, models, orders, paths, projects, queue
 from .errors import GimgError
 
 API_VERSION = 1
@@ -940,7 +940,7 @@ def brand_wordmark(req):
     if text is not None and not isinstance(text, str):
         raise GimgError("api.bad_param", name="text")
     font = _str_field(body, "font")
-    opts = {"weight": _int(body, "weight", 800), "spacing": _number(body, "spacing", None)}
+    opts = {"weight": _int(body, "weight", brand.DEFAULT_WEIGHT), "spacing": _number(body, "spacing", None)}
     with _heavy():  # rsvg-convert
         return brandshop.wordmark(project, name, font, text, **opts)
 

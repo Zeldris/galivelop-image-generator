@@ -14,7 +14,14 @@ from . import brand, paths, projects
 from .errors import GimgError
 
 FC_TIMEOUT_S = 20
-FONT_SUFFIXES = (".ttf", ".otf")
+# .ttc/.otc (collections) are fine: `brand._name_table` reads the family of the first face (``ttcf`` header) and `brand.wordmark`
+# copies the file whole into a private fontconfig folder, which indexes every face of it, so rsvg-convert finds the family.
+FONT_SUFFIXES = (".ttf", ".otf", ".ttc", ".otc")
+# CSS weight (what the API and the SVG ``font-weight`` use) -> fontconfig weight (``FC_WEIGHT_*``), the points of
+# ``FcWeightFromOpenType``: 100 thin = 0, 200 extralight = 40, 300 light = 50, 400 regular = 80, 500 medium = 100,
+# 600 semibold = 180, 700 bold = 200, 800 extrabold = 205, 900 black = 210 (1000 -> 215); in between, interpolated.
+_FC_WEIGHTS = ((1, 0), (100, 0), (200, 40), (300, 50), (400, 80), (500, 100), (600, 180), (700, 200), (800, 205), (900, 210),
+               (1000, 215))
 DESTS = ("data", "project")
 PIECES = tuple(k for k in brand.SYSTEM_FILES if k != "contactos.png")
 STEP_OF = {"emblema-alpha.png": "matte", "emblema.svg": "trace", "emblema-mono.svg": "trace", "wordmark.svg": "wordmark",
@@ -92,34 +99,51 @@ def _escape(text: str) -> str:
     return "".join("\\" + ch if ch in "\\-:,=()" else ch for ch in text)
 
 
-def resolve_font(family) -> str:
-    """The font file of an installed `family` (``fc-match``); never a path from the client. ``brand.font_unknown`` when no
-    installed family is called so (``fc-match`` would answer with a fallback), ``brand.font_unreadable`` when it is no .ttf/.otf."""
+def fc_weight(css_weight) -> int:
+    """The fontconfig weight of a CSS weight 1-1000 (`_FC_WEIGHTS`)."""
+    w = max(1, min(1000, css_weight))
+    for (w0, f0), (w1, f1) in zip(_FC_WEIGHTS, _FC_WEIGHTS[1:]):
+        if w <= w1:
+            return round(f0 + (f1 - f0) * (w - w0) / (w1 - w0))
+    return _FC_WEIGHTS[-1][1]
+
+
+def resolve_font(family, weight=None) -> str:
+    """The font file of an installed `family` (``fc-match``, asked for the pattern ``family:weight=N`` with `fc_weight` of the
+    CSS `weight` when given, so a family of static files answers with the face of that weight); never a path from the client.
+    ``brand.font_unknown`` when no installed family is called so (``fc-match`` would answer with a fallback),
+    ``brand.font_unreadable`` when it is no .ttf/.otf/.ttc/.otc."""
     if not isinstance(family, str) or not family.strip() or len(family) > 100 or any(ord(c) < 32 or ord(c) == 127 for c in family):
         raise GimgError("brand.font_unknown", font=str(family)[:100])
     family = family.strip()
+    pattern = _escape(family)
+    if weight is not None:
+        brand._check_weight_spacing(weight, None)  # the error and message that wordmark gives
+        pattern += ":weight=%d" % fc_weight(weight)
     exe = shutil.which("fc-match")
     if exe is None:
         raise GimgError("brand.tool_missing", tool="fc-match")
     try:
-        done = subprocess.run([exe, "-f", "%{file}\\n%{family}\\n", _escape(family)], capture_output=True, text=True,
+        done = subprocess.run([exe, "-f", "%{file}\\n%{family}\\n%{index}\\n", pattern], capture_output=True, text=True,
                               errors="replace", timeout=FC_TIMEOUT_S, stdin=subprocess.DEVNULL)
     except (OSError, subprocess.SubprocessError) as exc:
         raise GimgError("brand.tool_failed", tool="fc-match", reason=str(getattr(exc, "strerror", None) or exc)[:300])
     lines = done.stdout.split("\n")
-    if done.returncode != 0 or len(lines) < 2 or not lines[0]:
+    if done.returncode != 0 or len(lines) < 3 or not lines[0]:
         raise GimgError("brand.font_unknown", font=family)
     if family.lower() not in {n.strip().lower() for n in lines[1].split(",")}:
         raise GimgError("brand.font_unknown", font=family)
     if not lines[0].lower().endswith(FONT_SUFFIXES):
-        raise GimgError("brand.font_unreadable", path=lines[0], reason="not a .ttf or .otf file")
+        raise GimgError("brand.font_unreadable", path=lines[0], reason="not a .ttf, .otf, .ttc or .otc file")
+    if lines[2].strip() not in ("", "0"):  # brand reads the names of face 0 of a collection: the family would not be this one
+        raise GimgError("brand.font_unreadable", path=lines[0], reason="the face is number %s of a font collection: only a face 0 is read" % lines[2].strip())
     return lines[0]
 
 
 def wordmark(project: str, name: str, font: str, text=None, **opts) -> dict:
     slug = slug_of(name)
     line = text if text else name.strip().upper()
-    result = brand.wordmark(line, resolve_font(font), piece(project, slug, "wordmark.svg"), title=name.strip(), **opts)
+    result = brand.wordmark(line, resolve_font(font, opts.get("weight") or brand.DEFAULT_WEIGHT), piece(project, slug, "wordmark.svg"), title=name.strip(), **opts)
     _stale(project, slug, "wordmark.svg")
     return result
 
@@ -190,6 +214,6 @@ def save(project: str, name: str, dest: str = "data", force: bool = False) -> di
         size = brand.contact_sheet(shop, tmp)
     for key in brand.SYSTEM_FILES:
         with open(shop[key], "rb") as fh:
-            brand._write(targets[key], fh.read())
+            brand.write_file(targets[key], fh.read())
     return {"name": name.strip(), "slug": slug, "dest": dest, "out_dir": str(out_dir), "files": dict(targets),
             "contact_size": list(size), "overwritten": sorted(clash)}

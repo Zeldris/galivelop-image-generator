@@ -163,6 +163,26 @@ def _backup_prefix(path) -> str:
     return ".gimg-bak-" + hashlib.sha1(name, usedforsecurity=False).hexdigest()[:12] + "-"
 
 
+STALE_MARK = ".gimg-stale-"  # replaces the start of `_backup_prefix` in a copy known to be a leftover of a finished run
+
+
+def _stale_prefix(path) -> str:
+    return STALE_MARK + _backup_prefix(path)[len(".gimg-bak-"):]
+
+
+def _mark_stale(backup: str) -> str:
+    """Rename a copy that could not be deleted after a finished run so its name says it is a leftover: a later
+    `recover_backups` never restores it nor takes it for an original. Returns the new name; if the rename fails too
+    the copy keeps its name (limit: a later run will then report it as a possible original)."""
+    folder, name = os.path.split(backup)
+    marked = os.path.join(folder, STALE_MARK + name[len(".gimg-bak-"):])
+    try:
+        os.replace(backup, marked)
+    except OSError:
+        return backup
+    return marked
+
+
 def _backup_name(path, pid=None, stamp=None) -> str:
     """``<prefix><pid>-<ns since epoch>-<random>``: who made the copy and when, so another run can tell a live one."""
     return "%s%d-%d-%s" % (_backup_prefix(path), os.getpid() if pid is None else pid,
@@ -196,15 +216,25 @@ def recover_backups(paths) -> list:
     If the target is missing, the oldest copy is the original and is put back; if the target exists, the copies are
     left where they are and reported (one may be the only copy of an original that the half-done run replaced:
     nothing is deleted that cannot be told apart from a leftover of a finished run). Returns one dict per copy,
-    ``{"action": "restored" | "kept", "backup": ..., "path": ...}``; if a copy cannot be put back, the `GimgError`
-    carries in ``recovered`` what was already done."""
+    ``{"action": "restored" | "kept" | "stale", "backup": ..., "path": ...}``. A copy marked as a leftover of a finished run
+    (`_mark_stale`) is never restored: it is deleted, and reported as ``"stale"`` only if that fails.
+    If a copy cannot be put back, the `GimgError` carries in ``recovered`` what was already done."""
     done, now = [], time.time_ns()
     for path in paths:
         folder, prefix = os.path.dirname(os.path.abspath(path)), _backup_prefix(path)
         try:
-            names = [n for n in os.listdir(folder) if n.startswith(prefix)]
+            listing = os.listdir(folder)
         except OSError:
             continue
+        for name in sorted(n for n in listing if n.startswith(_stale_prefix(path))):
+            bak = os.path.join(folder, name)
+            try:
+                os.unlink(bak)
+            except FileNotFoundError:
+                pass
+            except OSError:
+                done.append({"action": "stale", "backup": bak, "path": str(path)})
+        names = [n for n in listing if n.startswith(prefix)]
         found = []
         for name in names:
             pid, stamp = _backup_info(name[len(prefix):])
@@ -258,7 +288,8 @@ def _publish(files) -> list:
     success a symlink is replaced by the new regular file (what it pointed at is not touched); if anything fails the
     ones already in place are put back (the old file, or nothing if there was none), a symlink and its mode as they were.
     Returns ``{"backup": ..., "path": ..., "reason": ...}`` for each copy of an old file that could not be deleted after
-    a success: it is said, because a later run would take it for an original left by an interrupted run."""
+    a success: it is said, and renamed (`_mark_stale`) so a later run does not take it for an original left by an
+    interrupted run (if the rename fails too, it keeps its name and a later run will report it as a possible original)."""
     staged, done, stale = [], [], []  # done: (path, backup or None)
     path = None
     try:
@@ -304,6 +335,7 @@ def _publish(files) -> list:
                 except FileNotFoundError:
                     pass
                 except OSError as exc:
+                    backup = _mark_stale(backup)
                     stale.append({"backup": backup, "path": str(p), "reason": str(exc.strerror or exc)})
     return stale
 
