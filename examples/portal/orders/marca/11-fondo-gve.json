@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/11-fondo-gve",
+  "profile": "fondo",
+  "seed": 1141,
+  "count": 2,
+  "draft": false,
+  "prompt": "Faint chart detail of open water, very pale and quiet, made to sit behind text: a few wide bathymetric contour lines curving gently across the sheet and, scattered between them, many small depth soundings drawn as tiny dots, evenly spread, with a few short straight survey lines joining some of the dots in a loose row. Everything is drawn very light, in pale ink grey and pale cerulean on off-white paper, low and uniform contrast over the whole sheet, no dark areas anywhere, no coastline, no land. Richly detailed engraved antique nautical chart style, like a fine sea chart printed in two inks: many layers of fine lines and hatching, line density increasing in the darker areas to give depth and tone, lines of several weights, crisp and sharp, intricate but calm, premium print quality, high detail, elegant. Flat graphic seen straight on. No photographic rendering, no glow, no gradient, no text, no letters, no numbers, no digits, no labels, no compass rose, no watermark, full-bleed edge to edge, no border, no frame. Palette strictly limited to medium cerulean ocean blue #0072a8 and its tints and shades, off-white #fbfcfd and ink grey #13212b."
+}

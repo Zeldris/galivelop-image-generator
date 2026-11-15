@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/23b-icono-gve-b",
+  "profile": "icono",
+  "seed": 2371,
+  "count": 3,
+  "draft": false,
+  "prompt": "A minimal flat line icon, centred, seen straight on: the vial of a spirit level made entirely of outlines. First, one wide horizontal capsule outline, a long pill shape with fully rounded ends, about three times as wide as it is tall, perfectly level. Second, inside the capsule, two short straight vertical lines standing side by side near the middle, a little apart, each running from near the top edge to near the bottom edge without touching them. Third, exactly between those two lines, one hollow circle, the bubble, its inside empty, the background showing through it, not touching the lines. The whole figure is symmetrical left to right. Simple line register: one single uniform stroke weight everywhere, thick and bold, the very same line thickness in every part of the icon, rounded line caps and rounded joins, outlines only, no fill anywhere, no solid shape, the background colour shows through every shape. The whole icon is drawn in one single colour, dark olive green #6f7a05, and nothing else. The background is a perfectly flat, plain, uniform pure chroma key magenta #ff00ff filling the whole square, with no gradient, no texture, no vignette and no shadow. Generous empty margin all around, the icon takes about two thirds of the width of the square, balanced, geometric, clean vector look, few large simple shapes with wide gaps between the lines, legible at very small size. No liquid, no shading, no hatching, no drop shadow, no glow, no highlights, no reflections, no 3D, no perspective, no photographic rendering, no second colour in the icon, no thin lines, no extra details, no ornaments, no text, no letters, no numbers, no digits, no watermark."
+}
