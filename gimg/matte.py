@@ -70,14 +70,16 @@ def border_color(width: int, height: int, rgba, border: int = 6) -> tuple:
 
 
 def remove_bg(width: int, height: int, rgba, t0: float = 60, t1: float = 110, border: int = 6, grow: int = 3,
-              holes: bool = False) -> bytearray:
-    """RGBA copy of `rgba` with the flat background made transparent (see the module docstring)."""
+              holes: bool = False, bg=None) -> bytearray:
+    """RGBA copy of `rgba` with the flat background made transparent (see the module docstring). `bg` is the
+    `border_color` of the image, when the caller already has it."""
     _check(width, height, rgba)
     if not 0 <= t0 < t1:
         raise ValueError("remove_bg: t0 and t1 must satisfy 0 <= t0 < t1 (got %s and %s)" % (t0, t1))
     if border < 1 or not 0 <= grow <= MAX_GROW:
         raise ValueError("remove_bg: border must be at least 1 and grow between 0 and %d" % MAX_GROW)
-    bg = border_color(width, height, rgba, border)
+    if bg is None:
+        bg = border_color(width, height, rgba, border)
     n = width * height
     dist = [math.sqrt((rgba[k * 4] - bg[0]) ** 2 + (rgba[k * 4 + 1] - bg[1]) ** 2 + (rgba[k * 4 + 2] - bg[2]) ** 2)
             if rgba[k * 4 + 3] >= 128 else 0.0 for k in range(n)]

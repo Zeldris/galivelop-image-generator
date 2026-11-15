@@ -65,7 +65,7 @@ def _check_out(src, out) -> str:
     return out
 
 
-def _write(path: str, data: bytes) -> None:
+def write_file(path: str, data: bytes) -> None:
     """Atomic write; the file gets the mode of a plain open(); any OSError is ``brand.write_failed``."""
     folder = os.path.dirname(os.path.abspath(path))
     try:
@@ -88,6 +88,9 @@ def _write(path: str, data: bytes) -> None:
         raise
 
 
+_write = write_file  # the name this module has always used
+
+
 def _opaque(rgba) -> bool:
     return all(a >= 250 for a in rgba[3::4])
 
@@ -98,8 +101,8 @@ def matte(src, out=None, tol: float = 60, soft: float = 110, border: int = 6, gr
     out = _check_out(src, out or default_out(src, "-alpha", ".png"))
     width, height, rgba = png.read_rgba(src)
     try:
-        res = _matte.remove_bg(width, height, rgba, t0=tol, t1=soft, border=border, grow=grow, holes=holes)
         bg = _matte.border_color(width, height, rgba, border)
+        res = _matte.remove_bg(width, height, rgba, t0=tol, t1=soft, border=border, grow=grow, holes=holes, bg=bg)
         data = png.rgba_bytes(width, height, res)
     except ValueError as exc:
         raise _bad(exc)
@@ -107,6 +110,18 @@ def matte(src, out=None, tol: float = 60, soft: float = 110, border: int = 6, gr
     clear = sum(1 for a in res[3::4] if a == 0)
     return {"src": str(src), "out": out, "size": [width, height], "background": "#%02x%02x%02x" % bg,
             "transparent": round(clear / (width * height), 4)}
+
+
+def _check_palette_colors(palette, colors) -> None:
+    """``brand.bad_option`` if both `palette` and `colors` are given."""
+    if palette and colors is not None:
+        raise GimgError("brand.bad_option", reason="--palette and --colors exclude each other")
+
+
+def _check_weight_spacing(weight, spacing) -> None:
+    """``brand.bad_option`` unless `weight` is a whole number 1-1000 and `spacing` is None or -0.5 to 2 (em)."""
+    if not isinstance(weight, int) or not 1 <= weight <= 1000 or (spacing is not None and not -0.5 <= spacing <= 2):
+        raise GimgError("brand.bad_option", reason="weight 1-1000 and spacing between -0.5 and 2 em")
 
 
 def parse_palette(text) -> list:
@@ -126,8 +141,7 @@ def trace(src, out=None, mode: str = "color", palette=None, colors=None, dp_tol:
     """Write the SVG of `src` (`lang`: language of the warnings); ``opts`` go to `trace.to_svg` (``color``, ``max_side``, ``title``...)."""
     if mode not in MODES:
         raise GimgError("brand.bad_option", reason="mode must be one of %s (got %r)" % (", ".join(MODES), mode))
-    if palette and colors is not None:
-        raise GimgError("brand.bad_option", reason="--palette and --colors exclude each other")
+    _check_palette_colors(palette, colors)
     out = _check_out(src, out or default_out(src, "", ".svg"))
     width, height, rgba = png.read_rgba(src)
     had_alpha = not _opaque(rgba)
@@ -259,8 +273,7 @@ def wordmark(text: str, font, out=None, weight: int = 800, spacing=None, title: 
         raise GimgError("brand.empty_text")
     if len(text) > MAX_TEXT:
         raise GimgError("brand.text_too_long", max=MAX_TEXT)
-    if not isinstance(weight, int) or not 1 <= weight <= 1000 or (spacing is not None and not -0.5 <= spacing <= 2):
-        raise GimgError("brand.bad_option", reason="weight 1-1000 and spacing between -0.5 and 2 em")
+    _check_weight_spacing(weight, spacing)
     family = _family if _family is not None else _font_family(font)  # `_family`: the caller already read it (`system`)
     if spacing is None:
         spacing = default_spacing(family)
@@ -440,7 +453,7 @@ def lockup(emblem, wordmark, out=None, layout: str = "h", cap: float = 0.45, gap
         raise GimgError("brand.exists", folder=os.path.dirname(os.path.abspath(out)), files=os.path.basename(out))
     em, wm = _read_svg(emblem), _read_svg(wordmark)
     if color:
-        if not re.fullmatch(r"#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}|[A-Za-z]{3,20}", str(color)):
+        if not _trace._COLOR.fullmatch(str(color)):  # the same expression as `trace.to_svg`'s ``color``
             raise GimgError("brand.bad_option", reason="color %r is not #rgb, #rrggbb or a color name" % (color,))
         wm = dict(wm, inner=wm["inner"].replace("currentColor", str(color)))
     ew, eh = em["box"][2] - em["box"][0], em["box"][3] - em["box"][1]
@@ -911,15 +924,13 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing=None, palet
         raise GimgError("brand.bad_name", name=str(name))
     targets = targets_of(slug, out_dir)
     clash = check_targets(targets, out_dir, force, src)
-    if palette and colors is not None:
-        raise GimgError("brand.bad_option", reason="--palette and --colors exclude each other")
+    _check_palette_colors(palette, colors)
     line = text if text else str(name).strip().upper()
     if not str(line).strip():
         raise GimgError("brand.empty_text")
     if len(line) > MAX_TEXT:
         raise GimgError("brand.text_too_long", max=MAX_TEXT)
-    if not isinstance(weight, int) or not 1 <= weight <= 1000 or (spacing is not None and not -0.5 <= spacing <= 2):
-        raise GimgError("brand.bad_option", reason="weight 1-1000 and spacing between -0.5 and 2 em")
+    _check_weight_spacing(weight, spacing)
     if not 0 <= margin <= 2:
         raise GimgError("brand.bad_option", reason="margin 0-2 (in emblem diameters)")
     if len(os.path.basename(next(iter(targets.values()))).encode("utf-8")) > 255:

@@ -789,7 +789,7 @@
   "cli.arg.brand_out_dir": "carpeta de salida (se crea si falta)",
   "cli.arg.brand_wordmark_text": "texto del nombre a trazos (por defecto el nombre en mayúsculas)",
   "cli.arg.brand_holes": "también es fondo lo no conectado al borde que se parezca a él (un anillo cerrado entre formas); sin esto, solo lo conectado al borde o a un píxel ya transparente de la entrada",
-  "cli.arg.brand_force": "pisa los archivos que ya estén en la carpeta",
+  "cli.arg.brand_force": "pisa los archivos que ya existan",
   "cli.out.brand_lockup": "{out}: disposición {layout}, {width}x{height}, {paths} trazados, {bytes} bytes",
   "cli.out.brand_system": "sistema «{slug}» en {out_dir}: {count} archivos, {paths} trazados, {seconds} s",
   "cli.out.brand_file": "  {path}",

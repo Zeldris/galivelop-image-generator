@@ -574,6 +574,36 @@ class LockupTests(BrandBase):
         self.assertEqual(out.read_text(), "mine")
         self.assertEqual(sorted(p.name for p in self.tmp.iterdir()), ["e.svg", "l.svg", "w.svg"])  # no .brand-*.tmp
 
+    def test_a_failure_midway_through_the_data_keeps_the_old_file_and_leaves_no_temporary(self):
+        out = self.tmp / "l.svg"
+        out.write_text("mine")
+        real = os.fdopen
+
+        def failing(fd, *a, **kw):
+            fh = real(fd, *a, **kw)
+            fh.write = mock.Mock(side_effect=OSError(5, "Input/output error"))
+            return fh
+
+        with mock.patch("gimg.brand.os.fdopen", failing), self.assertRaises(GimgError) as cm:
+            brand.lockup(self.emblem, self.word, out, force=True)
+        self.assertEqual(cm.exception.code, "brand.write_failed")
+        self.assertIn("Input/output error", str(cm.exception.params["reason"]))
+        self.assertEqual(out.read_text(), "mine")
+        self.assertEqual(sorted(p.name for p in self.tmp.iterdir()), ["e.svg", "l.svg", "w.svg"])
+
+    def test_force_replaces_an_existing_lockup_with_the_one_that_a_fresh_run_makes(self):
+        fresh = self.tmp / "fresh.svg"
+        brand.lockup(self.emblem, self.word, fresh)
+        out = self.tmp / "l.svg"
+        out.write_text("mine")
+        with self.assertRaises(GimgError) as cm:
+            brand.lockup(self.emblem, self.word, out)
+        self.assertEqual((cm.exception.code, cm.exception.params["files"]), ("brand.exists", "l.svg"))
+        self.assertEqual(out.read_text(), "mine")
+        res = brand.lockup(self.emblem, self.word, out, force=True)
+        self.assertEqual(out.read_text(), fresh.read_text())
+        self.assertEqual(res["out"], str(out))
+
     def test_force_over_a_symlink_replaces_the_link_and_never_writes_through_it(self):
         victim, out = self.tmp / "victim.txt", self.tmp / "l.svg"
         victim.write_text("precious")

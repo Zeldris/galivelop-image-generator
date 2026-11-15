@@ -789,7 +789,7 @@
   "cli.arg.brand_out_dir": "output folder (created if missing)",
   "cli.arg.brand_wordmark_text": "text of the wordmark (default: the name in capitals)",
   "cli.arg.brand_holes": "also treat as background what is not connected to the border but looks like it (a ring closed between shapes); without it only what connects to the border or to a pixel already transparent in the input is background",
-  "cli.arg.brand_force": "overwrite the files already in the folder",
+  "cli.arg.brand_force": "overwrite files that already exist",
   "cli.out.brand_lockup": "{out}: layout {layout}, {width}x{height}, {paths} paths, {bytes} bytes",
   "cli.out.brand_system": "system '{slug}' in {out_dir}: {count} files, {paths} paths, {seconds} s",
   "cli.out.brand_file": "  {path}",

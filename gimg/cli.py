@@ -136,7 +136,7 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--margin", "cli.arg.brand_margin", type=float, default=0.0),
          opt("--color", "cli.arg.brand_ink", metavar="COLOR"),
          opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"),
-         opt("--force", "cli.arg.brand_force_square", action="store_true"), *props)
+         opt("--force", "cli.arg.brand_force", action="store_true"), *props)
     leaf(g, "square", "cli.cmd.brand_square", arg("drawing", "cli.arg.brand_drawing_svg"),
          opt("--fill", "cli.arg.brand_fill", required=True, metavar="#RRGGBB"),
          opt("--ink", "cli.arg.brand_ink_hex", required=True, metavar="#RRGGBB"),
