@@ -87,7 +87,8 @@ def remove_bg(width: int, height: int, rgba, t0: float = 60, t1: float = 110, bo
         stack += [x, (height - 1) * width + x]
     for y in range(height):
         stack += [y * width, y * width + width - 1]
-    if any(rgba[(y * width + x) * 4 + 3] >= 128 for x, y in _border_pixels(width, height, border)):
+    edge = [rgba[(y * width + x) * 4 + 3] >= 128 for x, y in _border_pixels(width, height, border)]
+    if 2 * sum(edge) >= len(edge):  # most of the border is opaque
         stack += [k for k in range(n) if rgba[k * 4 + 3] < 128]  # a real background color: holes of the input seed too
     while stack:
         k = stack.pop()
