@@ -25,6 +25,8 @@
 #     claude.ai/code/session link. A human co-author (even one called Claude) and a body that only quotes those texts
 #     pass. Comment lines (core.commentString or core.commentChar) and the --verbose diff below the scissors line are
 #     ignored (git strips them). Checked on merges too; skipped during a rebase (old messages are replayed).
+#   - With `agentSignatures: false`, also rejects a commit whose author or committer is noreply@anthropic.com (local
+#     change of this project; pre-push checks the same on what it pushes).
 # Bash 3.2 compatible. Root from this hook's path, never from $CLAUDE_PROJECT_DIR or the current directory.
 set -uo pipefail
 hookdir="$(cd "$(dirname "$0")" && pwd)"
@@ -108,6 +110,17 @@ if [ "$signatures" = false ] && [ "$in_rebase" = false ]; then
   fi
   found="$(find_signature)"
   [ -z "$found" ] || reject_signature "$found"
+  # The author and committer too: a commit made under the agent's identity (a fresh container) is the agent's
+  # signature on every line of `git log` (local change of this project, proposed to the workflow).
+  for who in AUTHOR COMMITTER; do
+    ident="$(git var "GIT_${who}_IDENT" 2>/dev/null)" || ident=""
+    case "$(printf '%s' "$ident" | tr '[:upper:]' '[:lower:]')" in
+      *"<noreply@anthropic.com>"*)
+        echo "commit-msg: the commit's $(printf '%s' "$who" | tr '[:upper:]' '[:lower:]') is the agent (${ident% * *}), which this project forbids (agentSignatures: false in .claude/gw.json)" >&2
+        echo "commit-msg: set the person's identity and commit again: git config user.name '<name>' && git config user.email '<email>'" >&2
+        exit 1 ;;
+    esac
+  done
 fi
 
 # Format, Refs trailer and Agent trailer (commitFormat, commitRefs, agentSignatures): the rules in commit-message.py.

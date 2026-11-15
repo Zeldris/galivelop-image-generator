@@ -19,6 +19,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `--ink`/`--accent` as hex or `currentColor` for a single ink, `--png` through rsvg-convert); with `--paper none` the hub stays an open hole (mask).
 - `gimg brand fit`: reframes an image so its motif falls in a zone (`--anchor`, `--min-x`, `--max-x`); the rest is
   paper and the moved image's edges fade into it (`--feather`, `--feather-y`).
+- Optional negative prompt: order field `negative` (empty or whitespace-only is the same as absent), `gimg attempt new
+  --negative`, API field `negative` for new attempts, and "Negative prompt" fields in the interface (new order and
+  retouch). It is passed to `sd-cli` as `--negative-prompt` and kept in the attempt and in the delivery manifest.
+
+### Changed
+
+- `gimg brand lockup` no longer overwrites an existing file: it gives `brand.exists` unless `--force` is passed (like
+  `system` and `square`).
+
+### Fixed
+
+- `gimg brand square --force --png`: if a PNG fails midway, the previous files stay intact (the SVG and PNGs are written
+  under temporary names and renamed at the end).
+- The interface: a `/api/health` answer launched before pausing or resuming the queue no longer puts the old state back.
 
 ## [0.5.0] - 2026-11-13
 

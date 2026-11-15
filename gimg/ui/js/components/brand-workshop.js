@@ -226,7 +226,8 @@ export function brandWorkshop(project, cfg) {
     }
     const r = await api.brandTrace(project, body);
     await reload();
-    done(traceOut, k('traceDone', { mode: k(`mode.${mode}`), paths: r && r.paths !== undefined ? r.paths : '?' }));
+    done(traceOut, k('traceDone', { mode: k(`mode.${mode}`), paths: r && r.paths !== undefined ? r.paths : '?' }),
+      ...((r && r.warnings) || []).map((w) => h('p.notice.notice-warn.small', { role: 'status' }, w)));
   };
   const step3 = h('div.stack', {},
     h('div.cols-4', {}, field('shop-colorsrc', k('colorsFrom'), colorSrc), field('shop-colors', k('colors'), colorsN, k('colorsHint')),
@@ -252,7 +253,7 @@ export function brandWorkshop(project, cfg) {
   const wFont = h('input', { id: 'shop-wfont', type: 'text', list: 'shop-fonts', value: fonts[0] || '', autocomplete: 'off', aria: { describedby: 'shop-wfont-hint' } });
   wFont.addEventListener('input', refresh);
   const wWeight = num('shop-wweight', 800, { min: 100, max: 900, step: 100 });
-  const wSpacing = num('shop-wspacing', 0.01, { min: -0.2, max: 1, step: 0.01 });
+  const wSpacing = num('shop-wspacing', '', { min: -0.2, max: 1, step: 0.01, placeholder: k('wspacingAuto') });
   const wordView = h('div.stack');
   const step4 = h('div.stack', {},
     h('div.cols-4', {}, field('shop-wtext', k('wtext'), wText, k('wtextHint')),
@@ -260,7 +261,8 @@ export function brandWorkshop(project, cfg) {
         h('span.hint', { id: 'shop-wfont-hint' }, fonts.length ? k('wfontHint') : k('wfontNone'))),
       field('shop-wweight', k('wweight'), wWeight), field('shop-wspacing', k('wspacing'), wSpacing, k('wspacingHint'))),
     action(k('wordGo'), () => (!validName() ? k('needName') : !wFont.value.trim() ? k('needFont') : null), async () => {
-      const body = { name: nameInput.value, font: wFont.value.trim(), weight: numOf(wWeight, 800), spacing: numOf(wSpacing, 0.01) };
+      const body = { name: nameInput.value, font: wFont.value.trim(), weight: numOf(wWeight, 800) };
+      if (wSpacing.value.trim() !== '' && Number.isFinite(Number(wSpacing.value))) body.spacing = Number(wSpacing.value); // vacío: la del servicio según la fuente
       if (wText.value.trim()) body.text = wText.value.trim();
       const r = await api.brandWordmark(project, body);
       await reload();

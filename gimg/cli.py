@@ -7,7 +7,7 @@ import os
 import sys
 import traceback
 
-from . import __version__, brand, compose, delivery, doctor, export, i18n, measure, orders, projects, queue, service, sheet, worker
+from . import __version__, brand, compose, delivery, doctor, export, i18n, measure, orders, projects, queue, service, sheet, tile, worker
 from .errors import GimgError
 
 LANGS = ("es", "en")
@@ -24,24 +24,27 @@ def _build(lang: str) -> argparse.ArgumentParser:
     def t(key, **params):
         return i18n.t(key, lang, **params)
 
+    def h(key):  # argparse reads `%` in help as a format (3.14 checks it when the parser is built)
+        return t(key).replace("%", "%%")
+
     common = argparse.ArgumentParser(add_help=False)
-    common.add_argument("--lang", choices=LANGS, default=argparse.SUPPRESS, help=t("cli.help.lang"))
-    common.add_argument("--json", action="store_true", default=argparse.SUPPRESS, help=t("cli.help.json"))
+    common.add_argument("--lang", choices=LANGS, default=argparse.SUPPRESS, help=h("cli.help.lang"))
+    common.add_argument("--json", action="store_true", default=argparse.SUPPRESS, help=h("cli.help.json"))
 
     parser = argparse.ArgumentParser(prog="gimg", description=t("cli.description"), parents=[common])
     top = parser.add_subparsers(dest="cmd", metavar="<command>", required=True)
 
     def leaf(group, name, help_key, *args):
-        p = group.add_parser(name, help=t(help_key), description=t(help_key), parents=[common])
+        p = group.add_parser(name, help=h(help_key), description=t(help_key), parents=[common])
         for flags, kwargs in args:
             kwargs = dict(kwargs)
             if "help" in kwargs:
-                kwargs["help"] = t(kwargs["help"])
+                kwargs["help"] = h(kwargs["help"])
             p.add_argument(*flags, **kwargs)
         return p
 
     def group(parent, name, help_key):
-        p = parent.add_parser(name, help=t(help_key), description=t(help_key), parents=[common])
+        p = parent.add_parser(name, help=h(help_key), description=t(help_key), parents=[common])
         return p.add_subparsers(dest="sub", metavar="<command>", required=True)
 
     def arg(name, help_key, **kw):
@@ -67,14 +70,14 @@ def _build(lang: str) -> argparse.ArgumentParser:
     lst = leaf(g, "list", "cli.cmd.order_list", project,
                opt("--profile", "cli.arg.profile_filter"))
     mutex = lst.add_mutually_exclusive_group()
-    mutex.add_argument("--chosen", action="store_true", help=t("cli.arg.chosen"))
-    mutex.add_argument("--unchosen", action="store_true", help=t("cli.arg.unchosen"))
+    mutex.add_argument("--chosen", action="store_true", help=h("cli.arg.chosen"))
+    mutex.add_argument("--unchosen", action="store_true", help=h("cli.arg.unchosen"))
     leaf(g, "show", "cli.cmd.order_show", project, okey, oprofile)
 
     g = group(top, "attempt", "cli.cmd.attempt")
     leaf(g, "new", "cli.cmd.attempt_new", project, okey, oprofile,
          opt("--seed", "cli.arg.seed", type=int), opt("--count", "cli.arg.count", type=int, default=1),
-         opt("--prompt", "cli.arg.prompt"), opt("--steps", "cli.arg.steps", type=int),
+         opt("--prompt", "cli.arg.prompt"), opt("--negative", "cli.arg.negative"), opt("--steps", "cli.arg.steps", type=int),
          opt("--cfg", "cli.arg.cfg", type=float), opt("--sampler", "cli.arg.sampler"),
          opt("--draft", "cli.arg.draft", action=argparse.BooleanOptionalAction, default=None),
          opt("--template", "cli.arg.template", metavar="ID"),
@@ -135,7 +138,7 @@ def _build(lang: str) -> argparse.ArgumentParser:
     leaf(g, "wordmark", "cli.cmd.brand_wordmark", arg("text", "cli.arg.brand_text"),
          opt("--font", "cli.arg.brand_font", required=True, metavar="TTF"),
          opt("--weight", "cli.arg.brand_weight", type=int, default=800),
-         opt("--spacing", "cli.arg.brand_spacing", type=float, default=brand.SPACING),
+         opt("--spacing", "cli.arg.brand_spacing", type=float),
          opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"))
     props = (opt("--cap", "cli.arg.brand_cap", type=float, default=0.45),
              opt("--gap", "cli.arg.brand_gap", type=float, default=0.25),
@@ -145,7 +148,8 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--layout", "cli.arg.brand_layout", choices=brand.LAYOUTS, default="h"),
          opt("--margin", "cli.arg.brand_margin", type=float, default=0.0),
          opt("--color", "cli.arg.brand_ink", metavar="COLOR"),
-         opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"), *props)
+         opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"),
+         opt("--force", "cli.arg.brand_force_square", action="store_true"), *props)
     leaf(g, "overlay", "cli.cmd.brand_overlay", arg("base", "cli.arg.brand_overlay_base"),
          arg("motif", "cli.arg.brand_overlay_motif"),
          opt("-o", "cli.arg.brand_overlay_out", dest="out", metavar="SVG"),
@@ -178,7 +182,7 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--font", "cli.arg.brand_font", required=True, metavar="TTF"),
          opt("--out-dir", "cli.arg.brand_out_dir", required=True, metavar="DIR"),
          opt("--weight", "cli.arg.brand_weight", type=int, default=800),
-         opt("--spacing", "cli.arg.brand_spacing", type=float, default=brand.SPACING),
+         opt("--spacing", "cli.arg.brand_spacing", type=float),
          opt("--palette", "cli.arg.brand_palette", metavar="#HEX,#HEX"),
          opt("--colors", "cli.arg.brand_colors", type=int, metavar="N"),
          opt("--text", "cli.arg.brand_wordmark_text"),
@@ -192,6 +196,12 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--columns", "cli.arg.sheet_columns", type=int, default=sheet.DEFAULT_COLUMNS),
          opt("--width", "cli.arg.sheet_width", type=int, default=sheet.DEFAULT_WIDTH))
 
+    leaf(top, "tile", "cli.cmd.tile", arg("image", "cli.arg.tile_image", metavar="PNG"),
+         opt("-o", "cli.arg.tile_out", dest="out", metavar="PNG"),
+         opt("--blend", "cli.arg.tile_blend", type=float, default=0.25),
+         opt("--preview", "cli.arg.tile_preview", metavar="PNG"),
+         opt("--preview-side", "cli.arg.tile_preview_side", type=int, default=256),
+         opt("--force", "cli.arg.tile_force", action="store_true"))
     leaf(top, "export", "cli.cmd.export", arg("image", "cli.arg.export_image", metavar="PNG"),
          arg("out", "cli.arg.export_out", metavar="OUT"),
          opt("--size", "cli.arg.export_size", metavar="WxH"),
@@ -214,9 +224,9 @@ def _build(lang: str) -> argparse.ArgumentParser:
     serve = leaf(top, "serve", "cli.cmd.serve", opt("--port", "cli.arg.serve_port", type=int),
                  opt("--idle-min", "cli.arg.serve_idle", type=int, metavar="N"))
     mode = serve.add_mutually_exclusive_group()
-    mode.add_argument("--detach", action="store_true", help=t("cli.arg.serve_detach"))
-    mode.add_argument("--status", action="store_true", help=t("cli.arg.serve_status"))
-    mode.add_argument("--stop", action="store_true", help=t("cli.arg.serve_stop"))
+    mode.add_argument("--detach", action="store_true", help=h("cli.arg.serve_detach"))
+    mode.add_argument("--status", action="store_true", help=h("cli.arg.serve_status"))
+    mode.add_argument("--stop", action="store_true", help=h("cli.arg.serve_stop"))
     leaf(top, "ui", "cli.cmd.ui", opt("--no-browser", "cli.arg.no_browser", action="store_true"))
     leaf(top, "doctor", "cli.cmd.doctor", opt("--verify", "cli.arg.verify", action="store_true"))
     leaf(top, "version", "cli.cmd.version")
@@ -322,11 +332,14 @@ def _brand(args, sub, out: _Out) -> None:
         return
     elif sub == "trace":
         res = brand.trace(args.image, args.out, args.mode, args.palette, args.colors, args.dp_tol, args.min_island,
-                          args.matte, args.ink_only, args.paper)
+                          args.matte, args.ink_only, args.paper, lang=out.lang)
         key = "cli.out.brand_trace"
+        if not out.as_json:
+            for note in res["warnings"]:
+                print(note, file=sys.stderr)
     elif sub == "lockup":
         res = brand.lockup(args.emblem, args.wordmark, args.out, args.layout, args.cap, args.gap, args.width, args.margin,
-                           args.color)
+                           args.color, force=args.force)
         key = "cli.out.brand_lockup"
     elif sub == "overlay":
         res = brand.overlay(args.base, args.motif, args.out, args.fit, args.box, args.recolor, args.skip_rect)
@@ -345,6 +358,8 @@ def _brand(args, sub, out: _Out) -> None:
             out.line("cli.out.brand_file", path=path)
         if res["contrast"] < 4.5:
             out.line("cli.out.brand_square_low", contrast=res["contrast"])
+        if res.get("flattened"):
+            out.line("cli.out.brand_square_flat", count=res["flattened"])
         return
     elif sub == "rose":
         res = brand.rose(args.out, args.png, args.size, args.points, args.stroke, args.ink, args.accent,
@@ -437,6 +452,18 @@ def _run(args, out: _Out) -> int:
                      columns=res["columns"], count=len(res["images"]))
             for i, path in enumerate(res["images"], 1):
                 out.line("cli.out.sheet_item", index=i, path=path)
+    elif cmd == "tile":
+        res = tile.tile(args.image, args.out, args.blend, args.preview, args.preview_side, args.force)
+        if out.as_json:
+            out.data(res)
+        else:
+            out.line("cli.out.tile_done", out=res["out"], width=res["size"][0], height=res["size"][1])
+            if "preview" in res:
+                out.line("cli.out.tile_preview", path=res["preview"], width=res["preview_size"][0],
+                         height=res["preview_size"][1])
+            for item in res.get("recovered", ()):
+                out.line("cli.out.tile_recovery_restored" if item["action"] == "restored" else "cli.out.tile_recovery_kept",
+                         path=item["path"], backup=item["backup"])
     elif cmd == "export":
         res = export.export(args.image, args.out, args.size, args.icon_sizes, args.background, args.force,
                            args.crop, args.anchor)
@@ -645,6 +672,8 @@ def _order(args, sub, out: _Out) -> None:
             return
         out.line("cli.out.order_head", order=o["key"], profile=o["profile"])
         out.line("cli.out.order_prompt", prompt=o["prompt"])
+        if o.get("negative"):
+            out.line("cli.out.order_negative", negative=o["negative"])
         out.line("cli.out.order_seed", seed=out.none(o["seed"]))
         out.line("cli.out.order_refs", references=", ".join(o["references"]) or out.t("cli.out.none"))
         if o.get("initImage") is not None:
@@ -671,7 +700,8 @@ def _attempt(args, sub, out: _Out) -> None:
                                        ("sampler", args.sampler)) if v is not None}
         entries, provider = queue.new_attempts(args.project, args.key, args.profile, args.count,
                                                seed=args.seed, prompt=args.prompt, params=overrides,
-                                               draft=args.draft, template=args.template, model=args.model)
+                                               draft=args.draft, template=args.template, model=args.model,
+                                               negative=args.negative)
         _queued(out, entries, provider)
     elif sub == "mark":
         item = orders.mark(args.project, args.key, args.profile, args.attempt, args.state)
@@ -771,6 +801,8 @@ def main(argv=None) -> int:
         return _run(args, out)
     except GimgError as exc:
         print(exc.message(lang), file=sys.stderr)
+        for item in getattr(exc, "recovered", ()):
+            print(tile.describe_recovery(item, lang), file=sys.stderr)
     except KeyboardInterrupt:
         return 130
     except Exception as exc:

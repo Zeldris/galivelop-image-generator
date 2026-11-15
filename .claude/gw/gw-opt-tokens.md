@@ -88,9 +88,40 @@ las crea una vez; desde entonces son del proyecto.
 - Cada ronda de revisión visual de la interfaz (rN de capturas) cuenta como paso: commit, bitácora y `/clear`
   (aprobado el 2026-11-13; `ccr-85e9d14e-zt7p8b` encadenó r2-r4 y tocó techos de 164k).
 
+- `/clear` también entre dos tareas de la misma sesión y siempre al volver tras más de 1 h de pausa (la caché caducó
+  y el contexto se reescribe entero): `0cacc78c` encadenó la release v0.5.0 y la tarea de leves, 70 llamadas a 126k
+  de media frente a un suelo de 88k, ~1,9 M de más (aprobado el 2026-11-13, como regla, sin gancho).
+- `check.sh` (~4 min) en primer plano con tiempo límite de 6 min, o en segundo plano sin cerrar el turno: en `AGENTS.md`,
+  «Comprobar» (aprobado el 2026-11-14; `79c75ecd` gastó ~5 llamadas, ~0,5 M, esperando con el gancho de parada).
+- Tope de 30 llamadas en el encargo de cada subagente: en `.claude/gw/gw-orchestrate-dealer.md` (aprobado el
+  2026-11-13).
+- Subagentes en paralelo: solo los tests de su módulo; la suite completa, en `merge-branch.sh`; esperas con un
+  `Monitor` y dentro del tope de 30: en `.claude/gw/gw-orchestrate-dealer.md` (aprobado el 2026-11-14).
+- La rama que vuelve de un subagente se revisa en la principal con `git diff --stat` y el archivo del revisor, nunca
+  con el diff entero; para procesos, `pgrep -a <nombre> | head`, no `pgrep -af` (aprobado el 2026-11-15: el diff de
+  `agent/L5d-tests`, 41,6k, y un `pgrep -af`, 17,6k, se arrastraron por la principal).
+
 ## Referencias medidas
 
 <!-- Cifras medidas con las que comparar: fecha, sesión, contexto medio, llamadas, total. -->
+- 2026-11-15, `ccr-85e9d14e-zt7p8b` desde `2e31af8` (quinta tanda de leves, cinco ramas, y su fase 1), sesión
+  `0cacc78c`: principal 78 llamadas, 10,8 M (139k de media, suelo 102k, techo 160k, 1 compactación); 13 subagentes,
+  242 llamadas, 22,5 M (arranque medio 65,7k; `tile` 44 llamadas y 4,55 M; revisión de fase 1 con Opus 21 y 2,25 M).
+  Total 320 llamadas, 33,3 M.
+- 2026-11-14, `ccr-85e9d14e-zt7p8b` desde `2c608ed` (cuarta tanda de leves y su fase 1), sesión `ec96ac04`: principal
+  30 llamadas, 3,4 M (114k de media, suelo 87k, techo 150k); revisión Opus 10 llamadas, 0,94 M; 3 subagentes Sonnet
+  115 llamadas, 10,2 M (el de `tile`, 76 llamadas y 7,1 M, ~40 esperando la suite). Total 155 llamadas, 14,5 M.
+  6 vueltas del gancho de parada en la principal (~0,7 M); la regla de subir antes de cerrar el turno, rechazada.
+- 2026-11-14, `ccr-85e9d14e-zt7p8b` desde `1c178d3` (gancho de hojas y fase 1 de la tercera ida a `main`, arreglos en la
+  principal), sesión `79c75ecd`: principal 27 llamadas, 2,76 M (102k de media, suelo 87k, techo 116k); revisión Opus 10
+  llamadas, 0,9 M (arranque 69k). Total 37 llamadas, 3,7 M.
+- 2026-11-14, `ccr-85e9d14e-zt7p8b` desde `d2913d1` (fase 1 de la segunda ida a `main` y sus arreglos), sesión
+  `66f16e48`: principal 21 llamadas, 2,2 M (106k de media, suelo 88k, techo 120k); revisión Opus 10 llamadas, 0,9 M;
+  arreglos Sonnet 26 llamadas, 2,4 M (arranque 69k). Total 57 llamadas, 5,5 M.
+- 2026-11-13, `ccr-85e9d14e-zt7p8b` desde `529468b` (release v0.5.0, leves sin equipo, fase 1), sesiones `0cacc78c` y
+  `6e5628a7`: principal 123 llamadas, ~15 M (126k y 117k de media, techos 162/149k, 0 compactaciones); 4 subagentes,
+  113 llamadas, ~12,3 M, arranque 66-69k. Suelo tras `/clear`: 85-88k (en octubre, 38-45k), casi todo herramientas y
+  conectores del entorno; la persona no lo cambia de momento.
 - 2026-11-13, `ccr-85e9d14e-zt7p8b` desde `2e6b642` (revisión de la interfaz r10): 135 llamadas, 127,6k de media,
   3 compactaciones (presupuesto 2; techos 163/164/106k), 17,2 M en la principal + 1,2 M en 1 subagente; 28 capturas
   sueltas, ~2,2 M arrastrados (13 %).

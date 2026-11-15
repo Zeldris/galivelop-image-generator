@@ -157,6 +157,31 @@ class WorkerTests(QueueBase):
         self.assertEqual(orders.get("proj", "a", "banner")["attempts"][0]["references"], ["refs/r.png"])
         self.assertEqual(self.lines()[0]["app.image.references"], 1)
 
+    def test_negative_reaches_the_engine_the_attempt_and_the_png_metadata(self):
+        orders.submit("proj", {"key": "n", "profile": "banner", "prompt": "a cat", "negative": "blurry, text"})
+        orders.submit("proj", {"key": "m", "profile": "banner", "prompt": "a cat"})
+        seen = []
+
+        class Spy(engine.FakeEngine):
+            def generate(self, job, should_cancel):
+                seen.append(job.negative)
+                return super().generate(job, should_cancel)
+
+        with_neg = self.push(key="n")[0]
+        without = self.push(key="m")[0]
+        self.assertEqual(with_neg["negative"], "blurry, text")
+        self.assertNotIn("negative", without)
+        worker.run(engine=Spy())
+        self.assertEqual(seen, ["blurry, text", None])
+        attempt = orders.get("proj", "n", "banner")["attempts"][0]
+        self.assertEqual(attempt["negative"], "blurry, text")
+        self.assertNotIn("negative", orders.get("proj", "m", "banner")["attempts"][0])
+        meta = worker.metadata_for(queue.get(with_neg["id"]), None)
+        self.assertEqual(meta["negative"], "blurry, text")
+        self.assertNotIn("negative", worker.metadata_for(queue.get(without["id"]), None))
+        image = orders._order_file("proj", "n", "banner").parent / attempt["image"]
+        self.assertIn(b'"negative": "blurry, text"', image.read_bytes())  # the gimg chunk of the PNG
+
     def test_reference_missing_or_directory(self):
         (self.projects["proj"] / "adir").mkdir()
         for ref in ("nope.png", "adir"):

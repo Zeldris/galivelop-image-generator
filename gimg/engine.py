@@ -39,6 +39,7 @@ class EngineJob:
     machine: dict = field(default_factory=dict)
     timeout_s: Optional[float] = None
     on_progress: Optional[Callable[[dict], None]] = None  # called with ``{"step", "steps", "etaS"}`` when the step changes (F2.4)
+    negative: Optional[str] = None  # negative prompt; sd-cli gets ``--negative-prompt`` only when it is not empty (the fake engine ignores it)
 
 
 @dataclass

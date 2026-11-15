@@ -55,6 +55,7 @@ def record_for(key: str, profile: str, spec: dict, machine: dict, provider: str 
         "app.image.backend": getattr(result, "backend", None),
         "app.image.threads": getattr(result, "threads", None),
         "app.image.draft": bool(spec.get("draft")),
+        "app.image.negative": spec.get("negative") or None,
         "app.image.initImage": (str(spec["initImage"]).rsplit("/", 1)[-1] if spec.get("initImage") is not None else None),
         "app.image.strength": spec.get("strength") if spec.get("initImage") is not None else None,
         "app.image.compose": compose,

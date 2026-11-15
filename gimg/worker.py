@@ -190,6 +190,8 @@ def metadata_for(entry: dict, result) -> dict:
             "engineVersion": getattr(result, "engine_version", None)}
     if entry.get("draft") is True:
         meta["draft"] = True
+    if entry.get("negative"):
+        meta["negative"] = entry["negative"]
     if entry.get("initImage") is not None:
         meta["initImage"] = str(entry["initImage"]).rsplit("/", 1)[-1]
         if entry.get("strength") is not None:
@@ -316,7 +318,8 @@ def _generate(entry: dict, eng, machine: dict, state: dict, lang=None):
         seed=entry["seed"], output=str(tmp), steps=params.get("steps"), cfg=params.get("cfg"),
         sampler=params.get("sampler"), model=params.get("model"), references=references,
         init_image=init_image, strength=entry.get("strength"), tileable=params.get("tileable"),
-        machine=machine, timeout_s=machine.get("timeoutS"), on_progress=_progress_to_queue(entry_id))
+        machine=machine, timeout_s=machine.get("timeoutS"), on_progress=_progress_to_queue(entry_id),
+        negative=entry.get("negative") or None)
     _expose_preview(entry_id, eng, tmp)
     state["result"] = eng.generate(job, lambda: queue.is_cancel_requested(entry_id))
     if queue.is_cancel_requested(entry_id):
@@ -360,7 +363,7 @@ def _generate(entry: dict, eng, machine: dict, state: dict, lang=None):
         "references": entry["references"], "engine": eng.provider,
         "engineVersion": result.engine_version, "command": getattr(result, "command", None),
         "modelFiles": getattr(result, "model_files", None), "log": kept_log,
-        "draft": entry.get("draft") is True,
+        "draft": entry.get("draft") is True, "negative": entry.get("negative"),
         "initImage": entry.get("initImage"), "strength": entry.get("strength"), **extra}, entry_id=entry_id)
     state["final"] = None
     if raw is not None:

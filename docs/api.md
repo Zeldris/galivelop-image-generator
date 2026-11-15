@@ -158,7 +158,7 @@ curl -s -X PUT -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/o
 ### POST /api/projects/{p}/orders/{profile}/{key}/attempts
 
 Más intentos (otra semilla, retoque del prompt, varios seguidos, borrador). Cuerpo, todo opcional: `{"count", "seed",
-"prompt", "steps", "cfg", "sampler", "draft", "template", "model"}` (`template`: id de una plantilla de
+"prompt", "negative", "steps", "cfg", "sampler", "draft", "template", "model"}` (`negative`: prompt negativo retocado; `""` lo quita; `template`: id de una plantilla de
 `GET …/profiles/{profile}/templates`, la de los intentos nuevos; sin él, `default`; `model`: id de `GET /api/models`
 que sustituye al del perfil en estos intentos, como `gimg attempt new --model`). Respuesta 202: `{"entries",
 "estimateMs"}`; cada entrada lleva su `template`. Errores: `order.count_invalid`, `order.prompt_too_long`, `limit.*`,
@@ -302,7 +302,8 @@ curl -s "$B/api/projects/mi-proyecto/profiles/og/assets/template?id=claro"
 ### GET /api/queue
 
 La cola: cada entrada con `progress`, `errorText` y `estimateMs` si procede (sin la ruta de la vista previa). Query:
-`state=queued|running|done|failed|cancelled`. Error: `queue.bad_state`.
+`state=queued|running|done|failed|cancelled`. Error: `queue.bad_state`. La respuesta lleva la cabecera
+`X-Queue-Paused: 1|0` (la cola está en pausa o no, como `paused` de `/api/health`); el cuerpo sigue siendo la lista.
 
 ```sh
 curl -s "$B/api/queue?state=running"
@@ -398,7 +399,7 @@ curl -s $B/api/projects/mi-proyecto/brand
 ### POST /api/projects/{p}/brand/matte
 
 Quita el fondo plano de un intento del proyecto. Campos: `name` (nombre de la marca), `source`
-(`{"profile", "key", "attempt"}`, resuelto como `attempt_image`), `tol` (60), `soft` (110), `border` (6), `grow` (3, de 0 a 32), `holes` (false: con `true` también se vacían las regiones de color de fondo no conectadas al borde, como un anillo encerrado).
+(`{"profile", "key", "attempt"}`, resuelto como `attempt_image`), `tol` (60), `soft` (110), `border` (6), `grow` (3, de 0 a 32), `holes` (false: con `true` también se vacían las regiones de color de fondo no conectadas al borde, como un anillo encerrado; en cualquier caso, un píxel ya transparente de la entrada vacía lo conectado a él, si el borde tiene color opaco).
 Escribe `emblema-alpha.png` y devuelve lo que `gimg brand matte`. Errores: `api.bad_param`, `brand.bad_name`,
 `brand.empty_text`, `brand.no_matte`, `order.attempt_unknown` (404), `api.not_found` (404), `project.unknown`.
 
@@ -422,7 +423,7 @@ curl -s -X POST $B/api/projects/mi-proyecto/brand/trace -H 'Content-Type: applic
 ### POST /api/projects/{p}/brand/wordmark
 
 Dibuja el nombre a trazos. Campos: `name`, `font` (familia instalada, p. ej. `Cinzel`; se resuelve con `fc-match`, nunca
-una ruta), `text` (por defecto el nombre en mayúsculas), `weight` (800), `spacing` (0,01). Escribe `wordmark.svg`. Errores:
+una ruta), `text` (por defecto el nombre en mayúsculas), `weight` (800), `spacing` (según la familia: 0,01 Big Shoulders Display, 0,12 las demás). Escribe `wordmark.svg`. Errores:
 `brand.font_unknown`, `brand.font_unreadable`, `brand.tool_missing` (500), `brand.wordmark_no_fit`, `brand.text_too_long`.
 
 ```sh

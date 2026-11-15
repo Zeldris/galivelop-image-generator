@@ -7,10 +7,11 @@
 - `lockup(emblem, wordmark, out=None, layout="h"|"v")`: the emblem SVG and the wordmark SVG in one, as paths only (proportions of
   the sheet: wordmark height 0.45 and gap 0.25 of the emblem diameter in ``h``; width 1.6 in ``v``).
 - `system(src, name, font, out_dir)`: the seven files of the logo system (matte, traces, wordmark, both lockups, contact sheet).
-- `wordmark(text, font, out=None, weight=800, spacing=SPACING)`: `text` set in the font file `font` and turned into paths, with no
+- `wordmark(text, font, out=None, weight=800, spacing=None)`: `text` set in the font file `font` and turned into paths, with no
   ``<text>`` and no need for the font afterwards. ``rsvg-convert`` draws the text big in black; the result is cropped
   to the ink and traced in mono mode. The font reaches ``rsvg-convert`` through a throwaway fontconfig file that adds a
-  copy of it to the system fonts (a variable font gets the weight asked for).
+  copy of it to the system fonts (a variable font gets the weight asked for). ``spacing=None`` is the family's tracking:
+  `SPACING` (0.01 em) for Big Shoulders Display and `SPACING_OTHER` (0.12 em) for any other font; a given value always wins.
 
 Each returns a dict (``out`` is the written path) and raises `GimgError` (``brand.*``): the ``ValueError`` of the
 modules below becomes ``brand.bad_option``. Stdlib plus ``rsvg-convert`` (only for the wordmark), called without a shell.
@@ -29,7 +30,7 @@ import unicodedata
 from pathlib import Path
 from xml.sax.saxutils import escape
 
-from . import fsutil, matte as _matte, measure, png, trace as _trace
+from . import fsutil, i18n, matte as _matte, measure, png, trace as _trace
 from .errors import GimgError
 
 TOOL = "rsvg-convert"
@@ -40,6 +41,10 @@ MAX_PIXELS = 1 << 24  # the limit of `png.read_rgba`
 PAD_PX = 6
 MIN_TRANSPARENT = 0.02  # a matte that frees less than this found no flat background
 SPACING = 0.01  # em between letters: the family's tracking (Big Shoulders Display 800, hojas de docs/marcas/)
+SPACING_OTHER = 0.12  # em between letters for any other font
+SPACING_FAMILIES = ("big shoulders display", "big shoulders")
+SPACING_SUFFIXES = ("sc", "variable", "thin", "extralight", "light", "regular", "medium", "semibold", "bold", "extrabold",
+                    "black", "italic", "heavy", "demibold", "ultralight", "ultrabold")  # trailing words of a family name that are not a different design
 MODES = {"color": "color", "mono": "mono", "silhouette": "silueta", "silueta": "silueta"}
 
 
@@ -255,8 +260,8 @@ def parse_palette(text) -> list:
 
 
 def trace(src, out=None, mode: str = "color", palette=None, colors=None, dp_tol: float = 1.2, min_island: float = 12,
-          matte: bool = False, ink_only: bool = False, paper=None, **opts) -> dict:
-    """Write the SVG of `src`; ``opts`` go to `trace.to_svg` (``color``, ``max_side``, ``title``...).
+          matte: bool = False, ink_only: bool = False, paper=None, lang=None, **opts) -> dict:
+    """Write the SVG of `src` (`lang`: language of the warnings); ``opts`` go to `trace.to_svg` (``color``, ``max_side``, ``title``...).
 
     ``ink_only``: one ``currentColor`` path with every colour but the paper (``paper``, default the palette colour closest to white).
     """
@@ -271,19 +276,20 @@ def trace(src, out=None, mode: str = "color", palette=None, colors=None, dp_tol:
     out = _check_out(src, out or default_out(src, "", ".svg"))
     width, height, rgba = png.read_rgba(src)
     had_alpha = not _opaque(rgba)
+    notes = []
     try:
         if matte:
             rgba = _matte.remove_bg(width, height, rgba)
         if colors is not None:
             opts["ncolores"] = colors
         svg = _trace.to_svg(width, height, rgba, MODES[mode], palette=parse_palette(palette) if palette else None,
-                            dp_tol=dp_tol, min_island=min_island, **opts)
+                            dp_tol=dp_tol, min_island=min_island, notes=notes, **opts)
     except ValueError as exc:
         raise _bad(exc)
     _write(out, svg.encode("utf-8"))
     return {"src": str(src), "out": out, "size": [width, height], "mode": mode, "paths": svg.count("<path"),
             "bytes": len(svg.encode("utf-8")), "matted": bool(matte),
-            "opaque_background": not had_alpha and not matte}
+            "opaque_background": not had_alpha and not matte, "warnings": [i18n.t(key, lang, **params) for key, params in notes]}
 
 
 # ---------- wordmark ----------
@@ -312,6 +318,32 @@ def _name_table(data: bytes, path) -> str:
         raise ValueError("no family name")
     except (struct.error, ValueError) as exc:
         raise GimgError("brand.font_unreadable", path=str(path), reason=str(exc))
+
+
+def _font_family(font) -> str:
+    """The family of the font file `font`; a file that cannot be opened or parsed is ``brand.font_unreadable``."""
+    try:
+        with open(font, "rb") as fh:
+            data = fh.read(64 * 1024 * 1024)
+    except OSError as exc:
+        raise GimgError("brand.font_unreadable", path=str(font), reason=str(exc.strerror or exc))
+    return _name_table(data, font)
+
+
+def default_spacing(family) -> float:
+    """The tracking in em when none is given: `SPACING` for Big Shoulders Display (also the variable "Big Shoulders", the
+    "SC" variants and a weight or style that a static file carries in its family name, such as "Big Shoulders Display
+    ExtraBold", "Extra Bold", "Display-Bold" or "Display 800", case and spacing aside), `SPACING_OTHER` for any other family. Other cuts of the superfamily ("Text",
+    "Inline Display", "Stencil") are other designs, with no sheet in `docs/marcas/`: they keep `SPACING_OTHER`."""
+    words = str(family).lower().replace("-", " ").split()
+    while len(words) > 1:
+        if len(words) > 2 and words[-2] + words[-1] in SPACING_SUFFIXES:  # "extra bold", "semi bold"
+            del words[-2:]
+        elif words[-1] in SPACING_SUFFIXES or (words[-1].isdigit() and 100 <= int(words[-1]) <= 900 and int(words[-1]) % 100 == 0):
+            words.pop()
+        else:
+            break
+    return SPACING if " ".join(words) in SPACING_FAMILIES else SPACING_OTHER
 
 
 def _fontconfig(folder: str) -> str:
@@ -365,21 +397,18 @@ def _crop(width: int, height: int, rgba, pad: int):
     return w, h, res
 
 
-def wordmark(text: str, font, out=None, weight: int = 800, spacing: float = SPACING, title: str = "") -> dict:
-    """Write the SVG of `text` in `font`, as paths (see the module docstring). ``spacing`` is in em."""
+def wordmark(text: str, font, out=None, weight: int = 800, spacing=None, title: str = "", *, _family=None) -> dict:
+    """Write the SVG of `text` in `font`, as paths (see the module docstring). ``spacing`` is in em; ``None`` is the family's (`default_spacing`)."""
     text = " ".join("".join(ch for ch in str(text) if ch.isspace() or unicodedata.category(ch) != "Cc").split())
     if not text:
         raise GimgError("brand.empty_text")
     if len(text) > MAX_TEXT:
         raise GimgError("brand.text_too_long", max=MAX_TEXT)
-    if not isinstance(weight, int) or not 1 <= weight <= 1000 or not -0.5 <= spacing <= 2:
+    if not isinstance(weight, int) or not 1 <= weight <= 1000 or (spacing is not None and not -0.5 <= spacing <= 2):
         raise GimgError("brand.bad_option", reason="weight 1-1000 and spacing between -0.5 and 2 em")
-    try:
-        with open(font, "rb") as fh:
-            data = fh.read(64 * 1024 * 1024)
-    except OSError as exc:
-        raise GimgError("brand.font_unreadable", path=str(font), reason=str(exc.strerror or exc))
-    family = _name_table(data, font)
+    family = _family if _family is not None else _font_family(font)  # `_family`: the caller already read it (`system`)
+    if spacing is None:
+        spacing = default_spacing(family)
     out = _check_out(font, out or "wordmark.svg")
     gap = spacing * FONT_PX
     canvas_w = int(len(text) * (FONT_PX * 1.3 + gap)) + FONT_PX
@@ -446,7 +475,7 @@ def slugify(name: str) -> str:
 
 
 def _read_svg(path) -> dict:
-    """``{"vb": (x, y, w, h), "inner": str, "box": (x0, y0, x1, y1)}`` of a traced SVG; ``brand.bad_svg`` if it is not one."""
+    """``{"vb": (x, y, w, h), "inner": str, "root": str (the attributes of ``<svg>``), "box": (x0, y0, x1, y1)}`` of a traced SVG; ``brand.bad_svg`` if it is not one."""
     try:
         with open(path, "r", encoding="utf-8") as fh:
             text = fh.read(32 * 1024 * 1024)
@@ -468,7 +497,7 @@ def _read_svg(path) -> dict:
     if not all(math.isfinite(v) for v in nums) or not (w > 0 and h > 0):
         raise GimgError("brand.bad_svg", path=str(path), reason="the viewBox has no area")
     inner = _TITLE.sub("", m.group(2))
-    return {"vb": (x, y, w, h), "inner": inner, "box": _ink_box(inner) or (x, y, x + w, y + h)}
+    return {"vb": (x, y, w, h), "inner": inner, "root": m.group(1), "box": _ink_box(inner) or (x, y, x + w, y + h)}
 
 
 def _bez(p0, p1, p2, p3):
@@ -623,12 +652,13 @@ def _place(piece: dict, x: float, y: float, scale: float) -> str:
 
 
 def lockup(emblem, wordmark, out=None, layout: str = "h", cap: float = 0.45, gap: float = 0.25, width: float = 1.6,
-           margin: float = 0.0, color=None, title: str = "") -> dict:
+           margin: float = 0.0, color=None, title: str = "", force: bool = False) -> dict:
     """Write one SVG with the `emblem` and the `wordmark` (both SVG files of this module), as paths only.
 
     The diameter D is the longer side of the emblem's ink box. ``h``: the wordmark's height is ``cap`` x D, ``gap`` x D to the
     right of the emblem, both centered vertically. ``v``: the wordmark's width is ``width`` x D, ``gap`` x D under the emblem,
     both centered horizontally. ``margin`` (x D) is free space around. ``color`` replaces ``currentColor`` in the wordmark.
+    ``brand.exists`` if `out` is there and not `force`.
     """
     if layout not in LAYOUTS:
         raise GimgError("brand.bad_option", reason="layout must be one of %s (got %r)" % (", ".join(LAYOUTS), layout))
@@ -637,6 +667,8 @@ def lockup(emblem, wordmark, out=None, layout: str = "h", cap: float = 0.45, gap
     out = str(out or "lockup-%s.svg" % layout)
     for src in (emblem, wordmark):
         _check_out(src, out)
+    if os.path.lexists(out) and not force:
+        raise GimgError("brand.exists", folder=os.path.dirname(os.path.abspath(out)), files=os.path.basename(out))
     em, wm = _read_svg(emblem), _read_svg(wordmark)
     if color:
         if not re.fullmatch(r"#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}|[A-Za-z]{3,20}", str(color)):
@@ -811,16 +843,228 @@ def _fit(piece: dict, x: float, y: float, w: float, h: float, ink=None) -> str:
 
 SQUARE = 128
 _PAINT_ATTR = re.compile(r'(?<![\w:.-])(fill|stroke)="([^"]*)"')
+_STYLE = re.compile(r'(?<![\w:.-])style="([^"]*)"')
+_DECL = re.compile(r'(?<![\w-])(fill|stroke)(\s*:\s*)((?:[^;!]|!(?!\s*important))*)(!\s*important)?')
+_NO_PAINT = ("", "none", "currentcolor", "inherit", "transparent")
 
 
-def _square_ink(inner: str, ink: str) -> str:
-    """`inner` with every fill and stroke that paints (not ``none``) turned into `ink`; unpainted paths inherit it."""
-    return '<g fill="%s">%s</g>' % (ink, _PAINT_ATTR.sub(lambda m: m.group(0) if m.group(2).strip() == "none" else '%s="%s"' % (m.group(1), ink), inner))
+def _paints(value: str) -> bool:
+    """False for no paint, ``transparent`` and any color with alpha 0 (``rgba(…, 0)``, ``#0000``, ``hsla(…, 0)``)."""
+    v = value.strip().lower()
+    return v not in ("", "none", "transparent") and not _invisible(_norm_color(v))
+
+
+def _invisible(norm: str) -> bool:
+    return bool(re.fullmatch(r"#[0-9a-f]{6}00", norm))
+
+
+def _square_ink(inner: str, ink: str, root: str = "") -> str:
+    """`inner` with every fill and stroke that paints (not ``none``) turned into `ink`, as attributes and as declarations
+    of a ``style`` attribute; unpainted paths inherit it. The paint attributes of the root ``<svg>`` (`root`: its attributes:
+    ``fill``, ``stroke``, ``stroke-width``, ``style``...) go on the wrapping ``<g>``, recolored the same way, so open strokes stay strokes."""
+    def decl(m):
+        if not _paints(m.group(3)):
+            return m.group(0)
+        important = m.group(4)  # `!important` stays, with the space it had before it
+        return "%s%s%s%s" % (m.group(1), m.group(2), ink, (m.group(3)[len(m.group(3).rstrip()):] + important) if important else "")
+
+    def recolor(text):
+        text = _STYLE.sub(lambda m: 'style="%s"' % _DECL.sub(decl, m.group(1)), text)
+        return _PAINT_ATTR.sub(lambda m: m.group(0) if not _paints(m.group(2)) else '%s="%s"' % (m.group(1), ink), text)
+
+    kept = _root_text(root, ("fill", "stroke"))
+    return "<g %s%s>%s</g>" % ("" if _has_fill(kept) else 'fill="%s" ' % ink, recolor(kept), recolor(inner))
+
+
+_ROOT_ATTR = re.compile(r"""(?<![\w:.-])([\w-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')""")
+
+
+def _root_text(root: str, only=None) -> str:
+    """The root's attributes (`only`: those named ``style`` or starting with one of these) rewritten with double quotes."""
+    return " ".join('%s="%s"' % (n, v.replace('"', "&quot;")) for n, v in _root_attrs(root)
+                    if only is None or n == "style" or n.startswith(tuple(only)))
+
+
+def _root_attrs(root: str) -> list:
+    """The ``(name, value)`` pairs of the root's attributes, written with double or single quotes."""
+    return [(n, d if d or not q else q) for n, d, q in _ROOT_ATTR.findall(root)]
+
+
+_NAMED = {"black": "#000000", "white": "#ffffff", "red": "#ff0000", "lime": "#00ff00", "blue": "#0000ff", "yellow": "#ffff00",
+          "cyan": "#00ffff", "aqua": "#00ffff", "magenta": "#ff00ff", "fuchsia": "#ff00ff", "gray": "#808080", "grey": "#808080",
+          "silver": "#c0c0c0", "maroon": "#800000", "olive": "#808000", "green": "#008000", "purple": "#800080", "teal": "#008080",
+          "navy": "#000080", "orange": "#ffa500"}
+_NUM = r"[-+]?(?:\d+\.?\d*|\.\d+)"
+_C = r"(%s)(%%?)" % _NUM
+_RGB = tuple(re.compile(r"rgba?\(\s*%s\)" % body.replace("{c}", _C)) for body in (  # the comma form or the space form with `/`, never mixed
+    r"{c}\s*,\s*{c}\s*,\s*{c}\s*(?:,\s*{c}\s*)?", r"{c}\s+{c}\s+{c}\s*(?:/\s*{c}\s*)?"))
+_HSL = tuple(re.compile(r"hsla?\(\s*%s\)" % body.replace("{c}", _C).replace("{n}", _NUM)) for body in (
+    r"({n})(deg|grad|rad|turn)?\s*,\s*({n})%\s*,\s*({n})%\s*(?:,\s*{c}\s*)?", r"({n})(deg|grad|rad|turn)?\s+({n})%\s+({n})%\s*(?:/\s*{c}\s*)?"))
+_HUE = {None: 1.0, "deg": 1.0, "grad": 0.9, "rad": 180 / math.pi, "turn": 360.0}
+_SHAPE = re.compile(r"<(path|rect|circle|ellipse|polygon|polyline|line)\b([^>]*)>")
+_TAG = re.compile(r"<(/?)(g|path|rect|circle|ellipse|polygon|polyline|line)\b([^>]*)>")
+_CLASS = re.compile(r'(?<![\w:.-])class\s*=')
+
+
+def _has_fill(attrs: str) -> bool:
+    return (any(m.group(1) == "fill" for m in _PAINT_ATTR.finditer(attrs))
+            or any(d.group(1) == "fill" for st in _STYLE.finditer(attrs) for d in _DECL.finditer(st.group(1))))
+
+
+def _hex_alpha(rgb, alpha) -> str:
+    """``#rrggbb``, or ``#rrggbbaa`` when `alpha` (0-1) is not fully opaque."""
+    a = round(min(max(alpha, 0.0), 1.0) * 255)
+    return "#%02x%02x%02x" % tuple(rgb) + ("" if a == 255 else "%02x" % a)
+
+
+def _alpha_of(num, pct) -> float:
+    return 1.0 if num is None else float(num) / (100 if pct else 1)
+
+
+def _norm_color(value: str) -> str:
+    """`value` as lowercase ``#rrggbb`` (``#rrggbbaa`` if it is not opaque) when it is a hex color (3, 4, 6 or 8 digits), a
+    basic CSS color name, ``rgb()`` / ``rgba()`` or ``hsl()`` / ``hsla()``; anything else, lowercased."""
+    v = value.strip().lower()
+    if re.fullmatch(r"#[0-9a-f]{3,4}", v):
+        v = "#" + "".join(c * 2 for c in v[1:])
+    if re.fullmatch(r"#[0-9a-f]{8}", v):
+        return v[:7] if v.endswith("ff") else v
+    for pat in _RGB:
+        rgb = pat.fullmatch(v)
+        if rgb:
+            g = rgb.groups()  # out of range channels are clamped, as CSS (and rsvg) do
+            chans = [float(g[i]) * (2.55 if g[i + 1] else 1) for i in (0, 2, 4)]
+            return _hex_alpha([round(min(max(c, 0), 255)) for c in chans], _alpha_of(g[6], g[7]))
+    for pat in _HSL:
+        hsl = pat.fullmatch(v)
+        if hsl:
+            h = float(hsl.group(1)) * _HUE[hsl.group(2)] % 360
+            if not math.isfinite(h):
+                return v
+            sat, light = min(max(float(hsl.group(3)), 0), 100) / 100, min(max(float(hsl.group(4)), 0), 100) / 100
+            c = (1 - abs(2 * light - 1)) * sat
+            x = c * (1 - abs((h / 60) % 2 - 1))
+            r, g2, b = [(c, x, 0), (x, c, 0), (0, c, x), (0, x, c), (x, 0, c), (c, 0, x)][int(h // 60) % 6]
+            m = light - c / 2
+            return _hex_alpha([round((n + m) * 255) for n in (r, g2, b)], _alpha_of(hsl.group(5), hsl.group(6)))
+    return _NAMED.get(v, v)
+
+
+def _paint_colors(inner: str, root: str = "") -> set:
+    """The distinct colors that `inner` paints with (attributes and ``style`` declarations), as `_norm_color` writes them;
+    ``none``, ``currentColor`` and strokes that are not there do not count, but a shape with no ``fill`` at all paints the
+    default black (unless a ``<g>`` or the root (`root`: the attributes of ``<svg>``) sets a fill, or it has a ``class`` or the
+    drawing a ``<style>``: then it is not counted); a ``<line>`` has no area, so it only paints by its stroke."""
+    root = _root_text(root)  # single quotes too
+    inner, root = _mute(inner, root), _mute_attrs(root)
+    found = [m.group(2) for m in _PAINT_ATTR.finditer(inner)]
+    for st in _STYLE.finditer(inner):
+        found += [m.group(3) for m in _DECL.finditer(st.group(1))]
+    colors = set()
+    for v in found:
+        n = _norm_color(v)
+        if v.strip().lower() not in _NO_PAINT and not _invisible(n):
+            colors.add(n[:7] if re.fullmatch(r"#[0-9a-f]{8}", n) else n)  # alpha aside: same color
+    root_paint = {}  # property -> value the root sets; it counts only if a shape inherits it (rsvg: stroke too)
+    for m in _PAINT_ATTR.finditer(root):
+        root_paint[m.group(1)] = m.group(2)
+    for st in _STYLE.finditer(root):
+        for m in _DECL.finditer(st.group(1)):
+            root_paint[m.group(1)] = m.group(3)
+    inherited = set()
+    if "<style" not in inner.lower():  # with a stylesheet the color may come from CSS: not counted
+        groups = [{p for p in ("fill", "stroke") if _sets(root, p)}]  # one set per open <g> (the first, the root): what its shapes inherit
+        for m in _TAG.finditer(inner):
+            closing, tag, attrs = m.groups()
+            if tag == "g":
+                if closing:
+                    if groups:
+                        groups.pop()
+                elif not attrs.rstrip().endswith("/"):
+                    groups.append({p for p in ("fill", "stroke") if _sets(attrs, p)})
+            elif not closing:
+                above = set().union(*groups[1:]) if len(groups) > 1 else set()
+                for prop in ("fill", "stroke"):
+                    if not _sets(attrs, prop) and prop not in above and not _CLASS.search(attrs):
+                        inherited.add(prop)
+                if tag != "line" and not any("fill" in g for g in groups) and not _has_fill(attrs) and not _CLASS.search(attrs):
+                    colors.add("#000000")
+    else:
+        inherited = {"fill", "stroke"}
+    for prop, v in root_paint.items():
+        n = _norm_color(v)
+        if prop in inherited and v.strip().lower() not in _NO_PAINT and not _invisible(n):
+            colors.add(n[:7] if re.fullmatch(r"#[0-9a-f]{8}", n) else n)
+    return colors
+
+
+def _sets(attrs: str, prop: str) -> bool:
+    return (any(m.group(1) == prop for m in _PAINT_ATTR.finditer(attrs))
+            or any(d.group(1) == prop for st in _STYLE.finditer(attrs) for d in _DECL.finditer(st.group(1))))
+
+
+def _opacity(attrs: str, name: str):
+    """The number (``50%`` is .5) that the attribute or ``style`` declaration `name` of `attrs` gives (the last one wins), or None."""
+    found = [a or b for a, b in re.findall(r"""(?<![\w:.-])%s\s*=\s*(?:"([^"]*)"|'([^']*)')""" % re.escape(name), attrs)]
+    for st in _STYLE.finditer(attrs):
+        found += [m.group(1) for m in re.finditer(r"(?<![\w-])%s\s*:\s*([^;!]*)" % re.escape(name), st.group(1))]
+    value = None
+    for raw in found:
+        raw = raw.strip()
+        try:
+            value = float(raw.rstrip("%")) / (100 if raw.endswith("%") else 1)
+        except ValueError:
+            pass
+    return value
+
+
+def _mute_attrs(attrs: str, fill0: bool = False, stroke0: bool = False) -> str:
+    """`attrs` with the paints that ``fill-opacity`` / ``stroke-opacity`` 0 (own, or inherited: `fill0`, `stroke0`) make
+    invisible turned into ``none``."""
+    attrs = attrs.rstrip()
+    if attrs.endswith("/"):
+        attrs = attrs[:-1]
+    for prop, inherited in (("fill", fill0), ("stroke", stroke0)):
+        own = _opacity(attrs, prop + "-opacity")
+        if (own <= 0) if own is not None else inherited:
+            attrs = _PAINT_ATTR.sub(lambda m, prop=prop: '%s="none"' % prop if m.group(1) == prop else m.group(0), attrs)
+            attrs = _STYLE.sub(lambda m, prop=prop: 'style="%s"' % re.sub(r"(?<![\w-])%s(\s*:\s*)[^;]*" % prop, r"%s\g<1>none" % prop, m.group(1)), attrs)
+            attrs += ' %s="none"' % prop
+    return attrs
+
+
+def _mute(inner: str, root: str = "") -> str:
+    """`inner` as far as paint counting goes, in one pass with a stack of the open ``<g>``: shapes under ``opacity`` 0
+    (own, a group's or the root's) are gone, and ``fill-opacity`` / ``stroke-opacity`` 0, inherited too, turn that paint
+    into ``none`` (a partial opacity is like the alpha of a color: the same ink)."""
+    def state(attrs, up):
+        o = _opacity(attrs, "opacity")
+        fo, so = _opacity(attrs, "fill-opacity"), _opacity(attrs, "stroke-opacity")
+        return (up[0] or (o is not None and o <= 0), up[1] if fo is None else fo <= 0, up[2] if so is None else so <= 0)
+    stack = [state(root, (False, False, False))]
+    out, last = [], 0
+    for m in _TAG.finditer(inner):
+        closing, tag, attrs = m.groups()
+        if tag == "g":
+            if closing:
+                if len(stack) > 1:
+                    stack.pop()
+            elif not attrs.rstrip().endswith("/"):
+                stack.append(state(attrs, stack[-1]))
+        elif not closing:
+            out.append(inner[last:m.start()])
+            last = m.end()
+            muted, fill0, stroke0 = state(attrs, stack[-1])
+            if not muted:
+                out.append("<%s%s>" % (tag, _mute_attrs(attrs, fill0, stroke0)))
+    out.append(inner[last:])
+    return "".join(out)
 
 
 def square(drawing, out=None, fill=None, ink=None, chamfer: int = 28, pad: int = 24, pngs=None, force: bool = False) -> dict:
     """The family symbol: a flat `fill` square of 128 with a 45-degree `chamfer` cut off its top right corner and the SVG
-    `drawing` (paths only, as `trace` / `wordmark` make them) fitted inside `pad`, all of it in the one color `ink`.
+    `drawing` (paths only, as `trace` / `wordmark` make them) fitted inside `pad`, all of it in the one color `ink`
+    (``fill`` / ``stroke`` attributes and ``style`` declarations alike; a paint with ``opacity`` / ``fill-opacity`` / ``stroke-opacity`` 0 is invisible and does not count as ink; ``flattened`` in the result counts the paint colors it had, if more than one).
 
     `pngs` are sides in pixels: each also gets ``<out stem>-<side>.png`` (needs rsvg-convert). Returns the files, the colors
     and the WCAG contrast of `ink` on `fill`; `brand.exists` if a file is there and not `force`."""
@@ -853,21 +1097,85 @@ def square(drawing, out=None, fill=None, ink=None, chamfer: int = 28, pad: int =
     if room <= 0:
         raise GimgError("brand.bad_square", reason="pad leaves no room for the drawing")
     k = min(room / bw, room / bh)
-    art = _place(dict(piece, inner=_square_ink(piece["inner"], ink)), (SQUARE - bw * k) / 2, (SQUARE - bh * k) / 2, k)
+    flattened = len(_paint_colors(piece["inner"], piece["root"]))
+    art = _place(dict(piece, inner=_square_ink(piece["inner"], ink, piece["root"])), (SQUARE - bw * k) / 2, (SQUARE - bh * k) / 2, k)
     d = "M0 0 H%s L%d %s V%d H0 Z" % (_num(SQUARE - chamfer), SQUARE, _num(chamfer), SQUARE)
     svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" role="img"><path fill="%s" d="%s"/>%s</svg>\n'
            % (SQUARE, SQUARE, fill, d, art))
     if sides and shutil.which(TOOL) is None:
         raise GimgError("brand.tool_missing", tool=TOOL)
-    _write(out, svg.encode("utf-8"))
-    for side, path in files.items():
-        if os.path.exists(path):
-            os.unlink(path)
-        _rsvg([TOOL, "-w", str(side), "-h", str(side), "-o", path, out], dict(os.environ))
-        if not os.path.exists(path):
-            raise GimgError("brand.tool_failed", tool=TOOL, reason="no output")
+    # All or nothing: the SVG and every PNG are made under temporary names next to their targets and only renamed at the end.
+    staged = {}  # temporary path -> final path
+    try:
+        folder = os.path.dirname(os.path.abspath(out))
+        try:
+            os.makedirs(folder, exist_ok=True)
+            fd, tmp_svg = tempfile.mkstemp(dir=folder, prefix=".brand-", suffix=".svg.tmp")
+        except OSError as exc:
+            raise GimgError("brand.write_failed", path=str(out), reason=str(exc.strerror or exc))
+        staged[tmp_svg] = out
+        try:
+            fsutil.honour_umask(fd)
+            with os.fdopen(fd, "wb") as fh:
+                fh.write(svg.encode("utf-8"))
+        except OSError as exc:
+            raise GimgError("brand.write_failed", path=str(out), reason=str(exc.strerror or exc))
+        for side, path in files.items():
+            try:
+                fd_png, tmp_png = tempfile.mkstemp(dir=folder, prefix=".brand-", suffix=".png.tmp")
+                fsutil.honour_umask(fd_png)
+                os.close(fd_png)
+            except OSError as exc:
+                raise GimgError("brand.write_failed", path=str(path), reason=str(exc.strerror or exc))
+            staged[tmp_png] = path
+            _rsvg([TOOL, "-f", "png", "-w", str(side), "-h", str(side), "-o", tmp_png, tmp_svg], dict(os.environ))
+            if os.path.getsize(tmp_png) == 0:
+                raise GimgError("brand.tool_failed", tool=TOOL, reason="no output")
+        _commit(staged)
+    finally:
+        for tmp in staged:
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
     contrast = measure.contrast_ratio(measure.luminance(measure.parse_hex(ink)), measure.luminance(measure.parse_hex(fill)))
-    return {"out": out, "pngs": list(files.values()), "fill": fill, "ink": ink, "contrast": round(contrast, 2)}
+    res = {"out": out, "pngs": list(files.values()), "fill": fill, "ink": ink, "contrast": round(contrast, 2)}
+    if flattened > 1:
+        res["flattened"] = flattened  # the drawing had this many paint colors: all of them are now the ink
+    return res
+
+
+def _commit(staged: dict) -> None:
+    """Move every temporary onto its final path, all or nothing as far as practical: an existing target is first moved
+    to a backup; if any rename fails, the new files are removed and the backups put back (``brand.write_failed``)."""
+    backups, placed = {}, []  # final path -> backup path; final paths already holding the new file
+    try:
+        for tmp, final in staged.items():
+            if os.path.lexists(final):
+                fd, backup = tempfile.mkstemp(dir=os.path.dirname(os.path.abspath(final)), prefix=".brand-", suffix=".bak")
+                os.close(fd)
+                backups[final] = backup
+                os.replace(final, backup)
+            os.replace(tmp, final)
+            placed.append(final)
+    except OSError as exc:
+        for final in placed:
+            try:
+                os.unlink(final)
+            except OSError:
+                pass
+        for final, backup in backups.items():
+            try:
+                os.replace(backup, final)
+            except OSError:
+                pass
+        raise GimgError("brand.write_failed", path=str(final), reason=str(exc.strerror or exc))
+    finally:
+        for backup in backups.values():
+            try:
+                os.unlink(backup)
+            except OSError:
+                pass
 
 
 def _contact_svg(pieces: dict) -> tuple:
@@ -931,7 +1239,7 @@ def check_targets(targets: dict, out_dir, force: bool = False, src=None) -> list
     return clash
 
 
-def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = SPACING, palette=None, colors=None, text=None,
+def system(src, name: str, font, out_dir, weight: int = 800, spacing=None, palette=None, colors=None, text=None,
            cap: float = 0.45, gap: float = 0.25, width: float = 1.6, force: bool = False, holes: bool = False,
            margin: float = 0.0, mono: bool = False) -> dict:
     """The logo system of `name` from the emblem PNG `src`, in `out_dir`: ``<slug>-emblema-alpha.png``, ``-emblema.svg``,
@@ -957,17 +1265,15 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = SP
         raise GimgError("brand.empty_text")
     if len(line) > MAX_TEXT:
         raise GimgError("brand.text_too_long", max=MAX_TEXT)
-    if not isinstance(weight, int) or not 1 <= weight <= 1000 or not -0.5 <= spacing <= 2:
+    if not isinstance(weight, int) or not 1 <= weight <= 1000 or (spacing is not None and not -0.5 <= spacing <= 2):
         raise GimgError("brand.bad_option", reason="weight 1-1000 and spacing between -0.5 and 2 em")
     if not 0 <= margin <= 2:
         raise GimgError("brand.bad_option", reason="margin 0-2 (in emblem diameters)")
     if len(os.path.basename(next(iter(targets.values()))).encode("utf-8")) > 255:
         raise GimgError("brand.bad_name", name=str(name))
-    try:
-        with open(font, "rb"):
-            pass
-    except OSError as exc:
-        raise GimgError("brand.font_unreadable", path=str(font), reason=str(exc.strerror or exc))
+    family = _font_family(font)  # an unreadable font fails here, before the matte and the traces
+    if spacing is None:
+        spacing = default_spacing(family)
     if shutil.which(TOOL) is None:  # after the caller's own mistakes: those are reported with or without the tool
         raise GimgError("brand.tool_missing", tool=TOOL)
     with tempfile.TemporaryDirectory(prefix="gimg-brand-") as tmp:
@@ -977,21 +1283,26 @@ def system(src, name: str, font, out_dir, weight: int = 800, spacing: float = SP
             raise GimgError("brand.no_matte", path=str(src), transparent=round(m["transparent"] * 100, 1))
         title = str(name).strip()
         color = trace(t["emblema-alpha.png"], t["emblema.svg"], "color", palette, colors, title=title)
-        one_ink = trace(t["emblema-alpha.png"], t["emblema-mono.svg"], "mono", title=title)
-        word = wordmark(line, font, t["wordmark.svg"], weight, spacing, title=title)
+        try:
+            one_ink = trace(t["emblema-alpha.png"], t["emblema-mono.svg"], "mono", title=title)
+        except GimgError as exc:  # no ink left: only the lockups that use it stop; otherwise its silhouette
+            if mono or exc.code != "brand.bad_option":
+                raise
+            one_ink = trace(t["emblema-alpha.png"], t["emblema-mono.svg"], "silhouette", title=title)
+        word = wordmark(line, font, t["wordmark.svg"], weight, spacing, title=title, _family=family)
         emblem = t["emblema-mono.svg" if mono else "emblema.svg"]
-        lh = lockup(emblem, t["wordmark.svg"], t["lockup-h.svg"], "h", cap, gap, width, margin, title=title)
-        lv = lockup(emblem, t["wordmark.svg"], t["lockup-v.svg"], "v", cap, gap, width, margin, title=title)
+        lh = lockup(emblem, t["wordmark.svg"], t["lockup-h.svg"], "h", cap, gap, width, margin, title=title, force=True)
+        lv = lockup(emblem, t["wordmark.svg"], t["lockup-v.svg"], "v", cap, gap, width, margin, title=title, force=True)
         sheet_size = contact_sheet(t, tmp)
         for key in SYSTEM_FILES:
             with open(t[key], "rb") as fh:
                 _write(targets[key], fh.read())
     files = {key: targets[key] for key in SYSTEM_FILES}
-    return {"src": str(src), "name": str(name).strip(), "slug": slug, "out_dir": str(out_dir), "files": files,
+    return {"src": str(src), "name": str(name).strip(), "slug": slug, "out_dir": str(out_dir), "files": files, "spacing": spacing,
             "paths": {"emblem": color["paths"], "mono": one_ink["paths"], "wordmark": word["paths"], "lockup_h": lh["paths"],
                       "lockup_v": lv["paths"]},
             "contact_size": list(sheet_size), "overwritten": sorted(clash), "seconds": round(time.monotonic() - t0, 1)}
 
 
-__all__ = ["contact_sheet", "targets_of", "check_targets", "matte", "fit", "trace", "wordmark", "lockup", "system", "slugify", "parse_palette", "default_out", "MODES", "SPACING", "LAYOUTS",
+__all__ = ["contact_sheet", "targets_of", "check_targets", "matte", "fit", "trace", "wordmark", "lockup", "system", "slugify", "parse_palette", "default_out", "MODES", "SPACING", "SPACING_OTHER", "default_spacing", "LAYOUTS",
            "SYSTEM_FILES", "TOOL"]

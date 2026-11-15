@@ -42,13 +42,16 @@ function withLang(path) {
   return `${path}${sep}lang=${encodeURIComponent(state.lang)}`;
 }
 
-async function request(method, path, body) {
+/** Con `withHeaders` devuelve {json, header(nombre)} en vez del cuerpo; `header` ignora mayúsculas y da null si falta. */
+async function request(method, path, body, withHeaders = false) {
   const url = withLang(path);
   if (state.transport) {
     const res = await state.transport(method, url, body);
     if (res.status >= 400) throw new ApiError(res.status, res.json);
     setOffline(false);
-    return res.json;
+    if (!withHeaders) return res.json;
+    const low = Object.fromEntries(Object.entries(res.headers || {}).map(([k, v]) => [k.toLowerCase(), String(v)]));
+    return { json: res.json, header: (name) => low[name.toLowerCase()] ?? null };
   }
   let res;
   try {
@@ -67,10 +70,11 @@ async function request(method, path, body) {
   let json = null;
   try { json = await res.json(); } catch { json = null; }
   if (!res.ok) throw new ApiError(res.status, json);
-  return json;
+  return withHeaders ? { json, header: (name) => res.headers.get(name) } : json;
 }
 
 export const get = (path) => request('GET', path);
+const getWithHeaders = (path) => request('GET', path, undefined, true);
 export const post = (path, body = {}) => request('POST', path, body);
 export const put = (path, body = {}) => request('PUT', path, body);
 
@@ -145,7 +149,12 @@ export const api = {
   measure: (p, profile, key, id, opts) => get(paths.measure(p, profile, key, id, opts)),
   choose: (p, profile, key, attempt) => post(paths.choose(p, profile, key), { attempt }),
   undo: (p, profile, key) => post(paths.undo(p, profile, key), {}),
-  queue: (state) => get(paths.queue(state)),
+  /** La cola y la pausa, de la cabecera `X-Queue-Paused` de la misma respuesta: {entries, paused} (`paused` es null si falta). */
+  queueState: async (state) => {
+    const { json, header } = await getWithHeaders(paths.queue(state));
+    const flag = header('X-Queue-Paused');
+    return { entries: json, paused: flag === '1' ? true : flag === '0' ? false : null };
+  },
   cancel: (id) => post(paths.cancel(id), {}),
   move: (id, to) => post(paths.move(id), { to }),
   clearQueue: (project) => post(paths.clear(), project ? { project } : {}),

@@ -130,7 +130,7 @@ def lockup(project: str, name: str, layout: str, **opts) -> dict:
         raise GimgError("brand.bad_option", reason="layout must be one of %s (got %r)" % (", ".join(brand.LAYOUTS), layout))
     emblem = _need(project, slug, "emblema.svg")
     word = _need(project, slug, "wordmark.svg")
-    return brand.lockup(emblem, word, piece(project, slug, "lockup-%s.svg" % layout), layout, title=name.strip(), **opts)
+    return brand.lockup(emblem, word, piece(project, slug, "lockup-%s.svg" % layout), layout, title=name.strip(), force=True, **opts)
 
 
 def listing(project: str) -> list:

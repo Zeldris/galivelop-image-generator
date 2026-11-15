@@ -19,6 +19,19 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
   `--ink`/`--accent` en hex o `currentColor` para una sola tinta, `--png` con rsvg-convert); con `--paper none`, el centro queda hueco (máscara).
 - `gimg brand fit`: reencuadra una imagen para que el motivo caiga en una zona (`--anchor`, `--min-x`, `--max-x`); el
   resto es papel y los bordes de la imagen movida se funden con él (`--feather`, `--feather-y`).
+- Prompt negativo opcional: campo `negative` del pedido (vacío o solo espacios equivale a no ponerlo), `gimg attempt new
+  --negative`, campo `negative` de la API para intentos nuevos y campos «Prompt negativo» en la interfaz (pedido nuevo
+  y retoque). Se pasa a `sd-cli` como `--negative-prompt` y queda en el intento y en el manifiesto de entrega.
+
+### Cambiado
+
+- `gimg brand lockup` ya no pisa un archivo que exista: da `brand.exists` salvo con `--force` (como `system` y `square`).
+
+### Corregido
+
+- `gimg brand square --force --png`: si un PNG falla a medias, los archivos anteriores quedan intactos (SVG y PNG se
+  escriben con nombres temporales y se renombran al final).
+- La interfaz: una respuesta de `/api/health` lanzada antes de pausar o reanudar la cola ya no devuelve el estado viejo.
 
 ## [0.5.0] - 2026-11-13
 

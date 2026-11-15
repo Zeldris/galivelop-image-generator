@@ -75,7 +75,7 @@ setInterval(() => {
 
 function findOrder(p, profile, key) { return (ordersOf[p] || []).find((o) => o.profile === profile && o.key === key); }
 const err = (status, code, message, params = {}) => ({ status, json: { error: { code, params, message } } });
-const ok = (json, status = 200) => ({ status, json });
+const ok = (json, status = 200, headers = {}) => ({ status, json, headers });
 
 let locales = {};
 async function loadLocale(lang) {
@@ -124,7 +124,7 @@ export async function transport(method, url, body) {
       return ok({ ...e });
     }
     const st = u.searchParams.get('state');
-    return ok(queue.filter((e) => !st || e.state === st).map((e) => ({ ...e })));
+    return ok(queue.filter((e) => !st || e.state === st).map((e) => ({ ...e })), 200, { 'X-Queue-Paused': paused ? '1' : '0' });
   }
   if (r0 === 'models' && method === 'GET') {
     return ok([
