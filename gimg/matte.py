@@ -8,7 +8,9 @@ connected to the border), grows the flood up to `grow` pixels over the soft edge
 that edge a partial alpha, ``(distance - t0) / (t1 - t0)``, with the background tint taken out of its color
 (despill), so the edge has no halo of the background color. With ``holes=True`` every region **not connected to the
 border** whose pixels are closer than `t0` to the background color is background too (a ring of background enclosed
-by the shape, as in an emblem with an open ring), with the same grow and despill; by default such a region is kept.
+by the shape, as in an emblem with an open ring), with the same grow and despill; by default such a region is
+kept, except the part connected, through pixels closer than `t0`, to a pixel already transparent in the input (that
+pixel seeds the flood like the border, only when the border has an opaque color).
 It returns a new RGBA ``bytearray``; the input is not
 touched. A pixel whose own alpha is under 128 is background (and ends fully transparent), and the border color
 is taken from the border pixels that are not. `border_color` gives the background color alone.
@@ -25,9 +27,11 @@ halo). Only the strip of `CHROMA_BAND` pixels next to the removed background is 
 mix of the background and the color of the subject pixels around it (further in, outside the strip) takes that color
 and, as coverage, the share of the way from the background to it; any other pixel (an outline or a rim of its own)
 is kept. The rest of the subject is not
-touched, whatever its color. The fix only reaches the strip of the background that was removed: a hole already in the
-input (a region of background closed off by the subject) is not touched unless ``holes=True`` removes it, as the
-default keeps such regions as the subject's own, and a pixel already transparent in the input counts as removed.
+touched, whatever its color. The fix only reaches the strip of the background that was removed: a region of
+opaque background closed off by the subject is not touched unless ``holes=True`` removes it, as the default keeps
+such regions as the subject's own; a pixel already transparent in the input counts as removed and, like the border,
+seeds the flood (if the border has an opaque color), so a ring of background around a transparent hole of the
+input is emptied without `holes`.
 """
 from __future__ import annotations
 
@@ -83,6 +87,9 @@ def remove_bg(width: int, height: int, rgba, t0: float = 60, t1: float = 110, bo
         stack += [x, (height - 1) * width + x]
     for y in range(height):
         stack += [y * width, y * width + width - 1]
+    edge = [rgba[(y * width + x) * 4 + 3] >= 128 for x, y in _border_pixels(width, height, border)]
+    if 2 * sum(edge) >= len(edge):  # most of the border is opaque
+        stack += [k for k in range(n) if rgba[k * 4 + 3] < 128]  # a real background color: holes of the input seed too
     while stack:
         k = stack.pop()
         if seen[k] or dist[k] >= t0:
@@ -155,15 +162,14 @@ def _is_chroma(bg) -> bool:
     return any(math.dist(bg, key) <= CHROMA_REACH for key in CHROMA_KEYS)
 
 
-def _chroma_edge(width, height, rgba, out, seen, dist, bg, t0) -> None:
-    """Fix the strip of `out` next to the removed background of a chroma key (see the module docstring)."""
-    n = width * height
-    clear = bytearray(1 if out[k * 4 + 3] == 0 else 0 for k in range(n))
+def _band(clear, width: int, n: int) -> bytearray:
+    """Mask of the pixels within `CHROMA_BAND` steps (4-neighbors) of the cleared ones, the cleared excluded.
+
+    The strip is walked ring by ring from the pixels that touch the removed background: one scan only (the simple
+    form, `CHROMA_BAND` dilations of the whole image, is the reference of the equivalence test).
+    """
     band = bytearray(n)
-    ring = []  # the strip is walked ring by ring from the pixels that touch the removed background: one scan only
-    for k in range(n):
-        if not clear[k] and _touches(clear, k, width, n):
-            ring.append(k)
+    ring = [k for k in range(n) if not clear[k] and _touches(clear, k, width, n)]
     for step in range(CHROMA_BAND):
         for k in ring:
             band[k] = 1
@@ -178,6 +184,14 @@ def _chroma_edge(width, height, rgba, out, seen, dist, bg, t0) -> None:
         for k in nxt:
             band[k] = 0
         ring = nxt
+    return band
+
+
+def _chroma_edge(width, height, rgba, out, seen, dist, bg, t0) -> None:
+    """Fix the strip of `out` next to the removed background of a chroma key (see the module docstring)."""
+    n = width * height
+    clear = bytearray(1 if out[k * 4 + 3] == 0 else 0 for k in range(n))
+    band = _band(clear, width, n)
     r = CHROMA_WINDOW
     for k in range(n):
         if not band[k] or rgba[k * 4 + 3] < 128:

@@ -290,8 +290,11 @@ def _brand(args, sub, out: _Out) -> None:
         key = "cli.out.brand_matte"
     elif sub == "trace":
         res = brand.trace(args.image, args.out, args.mode, args.palette, args.colors, args.dp_tol, args.min_island,
-                          args.matte)
+                          args.matte, lang=out.lang)
         key = "cli.out.brand_trace"
+        if not out.as_json:
+            for note in res["warnings"]:
+                print(note, file=sys.stderr)
     elif sub == "lockup":
         res = brand.lockup(args.emblem, args.wordmark, args.out, args.layout, args.cap, args.gap, args.width, args.margin,
                            args.color, force=args.force)
@@ -403,6 +406,9 @@ def _run(args, out: _Out) -> int:
             if "preview" in res:
                 out.line("cli.out.tile_preview", path=res["preview"], width=res["preview_size"][0],
                          height=res["preview_size"][1])
+            for item in res.get("recovered", ()):
+                out.line("cli.out.tile_recovery_restored" if item["action"] == "restored" else "cli.out.tile_recovery_kept",
+                         path=item["path"], backup=item["backup"])
     elif cmd == "export":
         res = export.export(args.image, args.out, args.size, args.icon_sizes, args.background, args.force,
                            args.crop, args.anchor)
@@ -740,6 +746,8 @@ def main(argv=None) -> int:
         return _run(args, out)
     except GimgError as exc:
         print(exc.message(lang), file=sys.stderr)
+        for item in getattr(exc, "recovered", ()):
+            print(tile.describe_recovery(item, lang), file=sys.stderr)
     except KeyboardInterrupt:
         return 130
     except Exception as exc:

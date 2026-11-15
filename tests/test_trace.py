@@ -390,8 +390,8 @@ class ToSvgTests(unittest.TestCase):
                 self.assertEqual(len(ps), 1)
                 self.assertEqual(evenodd_area(ps[0].get("d"), 40), area)  # tips included, nothing added
         d = "".join(p.get("d") for p in paths(trace.to_svg(*diag, "mono", dp_tol=0, min_island=0, curves=False)))
-        self.assertGreaterEqual(d.count("M"), 25, "the diagonal survives as its pixels")
-        self.assertLessEqual(evenodd_area(d, 40), 30, "and is not widened beyond the original")
+        self.assertEqual(d.count("M"), 1, "the diagonal is one staircase")
+        self.assertLessEqual(evenodd_area(d, 40), 60, "and is at most two pixels wide")
 
     def test_mono_does_not_bring_back_burrs_or_specks_next_to_a_thick_block(self):
         img = canvas(30, 20)
@@ -411,14 +411,48 @@ class ToSvgTests(unittest.TestCase):
     def test_mono_warns_when_the_ink_is_most_of_the_image(self):
         img = canvas(40, 40, (20, 20, 20, 255))  # dark frame, light inside: the light is taken for ink
         fill(img, 3, 3, 37, 37, (240, 240, 240, 255))
-        with self.assertWarnsRegex(UserWarning, "frame or the background"):
-            trace.to_svg(*img, "mono", ncolores=2)
+        notes = []
+        trace.to_svg(*img, "mono", ncolores=2, notes=notes)
+        self.assertEqual(len(notes), 1)
+        key, params = notes[0]
+        self.assertEqual(key, "brand.trace_ink_share")
+        self.assertEqual(params["paper"], 20)
+        self.assertGreaterEqual(params["share"], 70)
         ok = canvas(40, 40, (250, 250, 250, 255))
         fill(ok, 10, 10, 20, 20, (20, 20, 20, 255))
+        notes = []
+        trace.to_svg(*ok, "mono", ncolores=2, notes=notes)
+        self.assertEqual(notes, [])
+
+    def test_mono_does_not_warn_when_the_darkest_rule_picked_the_ink(self):
+        # dark on the top half of the border, light on the bottom half: both are paper, so no border rule applies and the
+        # darkest color is dropped; the light drawing is no "frame taken for ink" even when it fills most of the image
+        img = canvas(40, 40, (240, 240, 240, 255))
+        fill(img, 0, 0, 40, 4, (20, 20, 20, 255))
+        notes = []
+        svg = trace.to_svg(*img, "mono", ncolores=2, notes=notes)
+        self.assertEqual(notes, [])
+        self.assertIn("<path", svg)
+
+    def test_mono_without_a_notes_list_warns_nowhere(self):
         import warnings
+        img = canvas(40, 40, (20, 20, 20, 255))
+        fill(img, 3, 3, 37, 37, (240, 240, 240, 255))
         with warnings.catch_warnings():
             warnings.simplefilter("error")
-            trace.to_svg(*ok, "mono", ncolores=2)
+            trace.to_svg(*img, "mono", ncolores=2)
+
+    def test_mono_diagonal_of_one_pixel_is_one_connected_staircase(self):
+        diag = canvas(40, 40)
+        for i in range(30):
+            fill(diag, 5 + i, 5 + i, 6 + i, 6 + i, (0, 0, 0, 255))
+        for passes in (2, 0):
+            with self.subTest(smooth_passes=passes):
+                ps = paths(trace.to_svg(*diag, "mono", smooth_passes=passes, curves=False, dp_tol=0))
+                d = "".join(p.get("d") for p in ps)
+                self.assertEqual(d.count("M"), 1, "one outline: the steps are joined, not 30 loose squares")
+                self.assertGreaterEqual(evenodd_area(d, 40), 30)
+                self.assertLessEqual(evenodd_area(d, 40), 60)
 
     def test_color_and_silueta_refuse_an_empty_svg_too(self):
         img = canvas(20, 20)

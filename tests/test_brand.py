@@ -227,6 +227,37 @@ class TraceTests(BrandBase):
         self.assertIn("#fac81e", svg)
 
 
+class TraceWarningTests(BrandBase):
+    def _frame(self):
+        src = self.tmp / "frame.png"
+        rgba = bytearray()
+        for y in range(40):
+            for x in range(40):
+                inside = 3 <= x < 37 and 3 <= y < 37
+                rgba += bytes((240, 240, 240, 255) if inside else (20, 20, 20, 255))
+        src.write_bytes(png.rgba_bytes(40, 40, rgba))
+        return src
+
+    def test_the_dark_frame_warning_comes_back_in_the_result_in_spanish(self):
+        res = brand.trace(self._frame(), None, "mono", colors=2, lang="es")
+        self.assertEqual(len(res["warnings"]), 1)
+        self.assertIn("el interior o el fondo se hayan tomado por tinta", res["warnings"][0])
+        en = brand.trace(self._frame(), None, "mono", colors=2, lang="en")["warnings"][0]
+        self.assertIn("the inside or the background may have been taken for ink", en)
+
+    def test_a_clean_trace_has_no_warnings(self):
+        src = self.tmp / "logo.png"
+        square_png(src, bg=(0, 0, 0), size=24, alpha=0)
+        self.assertEqual(brand.trace(src, None, "silhouette")["warnings"], [])
+
+    def test_the_cli_prints_the_warning_on_stderr(self):
+        code, out, err = self.run_cli("brand", "trace", str(self._frame()), "--mode", "mono", "--colors", "2")
+        self.assertEqual(code, 0)
+        self.assertIn("the inside or the background may have been taken for ink", err)  # GIMG_LANG=en
+        code, out, err = self.run_cli("brand", "trace", str(self._frame()), "--mode", "mono", "--colors", "2", "--json")
+        self.assertEqual(json.loads(out)["warnings"][0][:5], "mono:")
+
+
 class WordmarkTests(BrandBase):
     @unittest.skipUnless(HAS_WORDMARK, "needs rsvg-convert and a .ttf/.otf font")
     def test_wordmark_is_paths_without_text(self):
@@ -975,6 +1006,79 @@ class SquareTests(BrandBase):
         self.assertEqual(brand._norm_color(raw), raw)
         self._draw('<path fill="%s" d="M0 0L40 0L40 20Z"/>' % raw)
         self.make()
+
+    def test_rgb_and_hsl_take_one_separator_style_not_a_mix(self):
+        for value, want in (("rgb(255 0 0 / .5)", "#ff000080"), ("rgb(255,0,0,.5)", "#ff000080"), ("hsl(0 100% 50%)", "#ff0000")):
+            self.assertEqual(brand._norm_color(value), want, value)
+        for raw in ("rgb(255,0 0)", "rgb(255 0 0,.5)", "rgb(255,0,0/.5)", "hsl(0,100% 50%)"):
+            self.assertEqual(brand._norm_color(raw), raw, raw)  # not a color: left as written
+
+    def test_out_of_range_channels_are_clamped_like_css(self):
+        for value, want in (("rgb(300,0,0)", "#ff0000"), ("rgb(-5,0,0)", "#000000"), ("rgb(0,0,120%)", "#0000ff"),
+                            ("hsl(0,100%,120%)", "#ffffff"), ("rgba(0,0,0,2)", "#000000")):
+            self.assertEqual(brand._norm_color(value), want, value)
+        self._draw('<path fill="rgb(300,0,0)" d="M0 0L40 0L40 20Z"/><path fill="#f00" d="M0 0L5 0L5 5Z"/>')
+        self.assertNotIn("flattened", self.make())
+
+    def test_hsl_hue_units(self):
+        for value, want in (("hsl(0.5turn 100% 50%)", "#00ffff"), ("hsl(200grad,100%,50%)", "#00ffff"),
+                            ("hsl(1rad 100% 50%)", "#fff400"), ("hsl(180deg 100% 50%)", "#00ffff"), ("hsl(1turn 100% 50%)", "#ff0000")):
+            self.assertEqual(brand._norm_color(value), want, value)
+
+    def test_a_root_stroke_counts_only_when_a_shape_inherits_it(self):
+        svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20" stroke="#00f">%s</svg>\n'
+        self.draw.write_text(svg % '<path fill="#f00" d="M0 0L40 0L40 20Z"/>')
+        self.assertEqual(self.make()["flattened"], 2)  # fill and the inherited stroke
+        self.draw.write_text(svg % '<path fill="#f00" stroke="none" d="M0 0L40 0L40 20Z"/>')
+        self.assertNotIn("flattened", self.make(force=True))
+        self.draw.write_text(svg % '<g stroke="#f00"><path fill="#f00" d="M0 0L40 0L40 20Z"/></g>')
+        self.assertNotIn("flattened", self.make(force=True))
+
+    def test_zero_opacity_is_not_ink_and_partial_opacity_is_the_same_color(self):
+        self._draw('<path fill="#f00" d="M0 0L40 0L40 20Z"/><path fill="#00f" fill-opacity="0" d="M0 0L5 0L5 5Z"/>'
+                   '<path fill="#0f0" opacity="0" d="M0 0L6 0L6 6Z"/><path style="fill:#0ff;fill-opacity:0" d="M0 0L7 0L7 7Z"/>'
+                   '<g opacity="0"><path fill="#ff0" d="M0 0L8 0L8 8Z"/></g>')
+        self.assertNotIn("flattened", self.make())
+        self._draw('<path fill="#f00" d="M0 0L40 0L40 20Z"/><path fill="#f00" fill-opacity=".5" d="M0 0L5 0L5 5Z"/>')
+        self.assertNotIn("flattened", self.make(force=True))
+        self._draw('<path fill="#f00" d="M0 0L40 0L40 20Z"/><path fill-opacity="0" d="M0 0L5 0L5 5Z"/>')  # no default black either
+        self.assertNotIn("flattened", self.make(force=True))
+
+    def test_opacity_zero_groups_nest_and_inherit(self):
+        for body in ('<g><g opacity="0"><path fill="#0f0" d="M0 0L9 0L9 9Z"/></g><path fill="#f00" d="M0 0L40 0L40 20Z"/></g>',
+                     '<g opacity="0"><g><path fill="#0f0" d="M0 0L9 0L9 9Z"/></g><path fill="#f00" d="M0 0L9 0L9 5Z"/></g>'
+                     '<path fill="#00f" d="M0 0L40 0L40 20Z"/>',
+                     '<g fill-opacity="0"><path fill="#0f0" d="M0 0L9 0L9 9Z"/></g><path fill="#00f" d="M0 0L40 0L40 20Z"/>',
+                     '<path fill="#00f" d="M0 0L40 0L40 20Z"/><path opacity="-1" fill="#0f0" d="M0 0L9 0L9 9Z"/>',
+                     '<path fill="#00f" d="M0 0L40 0L40 20Z"/><path fill="#0f0" opacity="0" d="M0 0L9 0L9 9Z"/ >'):
+            self._draw(body)
+            self.assertNotIn("flattened", self.make(force=True), body)
+        self.draw.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20" fill-opacity="0">'
+                             '<path fill="#0f0" d="M0 0L9 0L9 9Z"/><path fill="#00f" fill-opacity="1" d="M0 0L40 0L40 20Z"/></svg>\n')
+        self.assertNotIn("flattened", self.make(force=True))
+
+    def test_thousands_of_unclosed_groups_are_fast(self):
+        import time
+        self._draw('<g opacity="1">' * 20000 + '<path fill="#f00" d="M0 0L40 0L40 20Z"/>')
+        start = time.monotonic()
+        brand._paint_colors(*(lambda p: (p["inner"], p["root"]))(brand._read_svg(self.draw)))
+        self.assertLess(time.monotonic() - start, 5)
+
+    def test_a_stroke_only_root_or_group_keeps_the_implicit_black_of_a_shape_without_fill(self):
+        shape = '<path d="M0 0h1v1z"/>'
+        self.assertEqual(brand._paint_colors(shape, 'stroke="#ff0000"'), {"#000000", "#ff0000"})
+        self.assertEqual(brand._paint_colors('<g stroke="#ff0000">' + shape + "</g>"), {"#000000", "#ff0000"})
+        self.assertEqual(brand._paint_colors(shape, 'fill="#00ff00" stroke="#ff0000"'), {"#00ff00", "#ff0000"})
+
+    def test_root_attributes_in_single_quotes_are_copied(self):
+        self.draw.write_text("<svg xmlns='http://www.w3.org/2000/svg' viewBox=\"0 0 40 20\" fill='#f00' stroke='#00f' stroke-width='3'>"
+                             "<path d='M0 0L40 0L40 20Z'/></svg>\n")
+        res = self.make()
+        text = self.out.read_text()
+        self.assertEqual(res["flattened"], 2)
+        self.assertIn('stroke-width="3"', text)
+        self.assertIn('fill="#fbfcfd" stroke="#fbfcfd"', text)
+        self.assertNotIn("#f00", text.replace("#fff", ""))
 
     def test_alpha_zero_paints_nothing_and_a_translucent_color_counts_as_its_opaque_one(self):
         for value in ("rgba(0,0,0,0)", "#0000", "#12345600", "hsla(10,50%,50%,0)"):

@@ -679,7 +679,7 @@ class QueueDrawer(UiBase):
         self.page.wait("document.querySelector('.queue-pill.is-paused')", timeout=10)
         self.assertTrue(self.js("""import('/ui/js/api.js').then(m => { window.__api = m.api; window.__real = m.api.queueState;
             m.api.queueState = async () => ({entries: [], paused: null}); return true; })"""))
-        self.js("import('/ui/js/queue-poll.js').then(m => m.refreshNow())")
+        self.assertTrue(self.js("import('/ui/js/queue-poll.js').then(m => m.refreshNow()).then(() => true)"))  # termina con `paused: null`
         self.js("window.__api.queueState = window.__real; true")
         self.page.pump(0.3)
         self.assertTrue(self.js("!!document.querySelector('.queue-pill.is-paused')"))
