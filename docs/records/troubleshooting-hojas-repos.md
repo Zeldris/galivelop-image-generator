@@ -7,6 +7,10 @@ la persona, 2026-11-12). Ronda de interfaz de Tarkor del 2026-11-15 (#986-1125),
 placas: madera donde se pide hierro, haces de luz horneados, perspectiva. Conviene un preámbulo reducido para los
 perfiles `textura`, `banda` y `tira`.
 
+**Al reescribir (2026-11-15):** las negaciones de la columna «Rediseño» son la idea, no el texto: la regla P3 de
+`docs/marcas/tarkor/hoja.md` las prohíbe (se cuelan: «no stars» pintó una estrella), así que los pedidos describen en
+positivo lo que sí debe salir. Hover y pulsado de e13 se derivan del botón base; sus pedidos se borraron.
+
 | Problema | Intentos | Rediseño |
 |---|---|---|
 | 02 tablón, 03 madera de fondo y 07 tablón de defensa: haces de luz y sombra azul horneados, desconchones dorados; no repiten | q986-q991, q1000-q1002 | Sin la frase de luz rasante: «flat diffuse light, no cast shadows, no gold» |

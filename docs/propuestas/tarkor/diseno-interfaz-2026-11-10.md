@@ -141,7 +141,7 @@ en ese repo a partir del emblema elegido.
 | #6 | `entrega/ui/06-cielo.png` | 1536×640 | `.crystal-sky` (l.269-286): Home l.20 y `WorldCard.tsx` l.25 |
 | #7 | `entrega/ui/07-defensa.png` | 1024×1024, repetible | `.plank-panel-defense` (l.193) |
 | #8 | `entrega/ui/08-esquina-oro-alpha.png`, `08-esquina-acero-alpha.png` | 64×64 | `.corner-bracket` / `.corner-bracket-gold` (l.300-322) |
-| #9 | `entrega/ui/09-separador-alpha.png`, `09-estrella-alpha.png` | 1024×128 y 16×16 | `.gold-hairline`; remache central (`.rivet`, l.324-348); E8 (separador vertical) es el mismo girado por CSS |
+| #9 | `entrega/ui/09-estrella-alpha.png` (solo el remate; el filete que se desvanece es CSS) | 16×16 | `.gold-hairline`; remache central (`.rivet`, l.324-348); E8 (separador vertical) es el mismo girado por CSS |
 | #10 | `entrega/ui/10-ranura-alpha.png` | 64×64 (`border-image`) | `.skill-slot` (l.369-388), `SkillBarHud.tsx` l.43-72 |
 | #11 | `entrega/ui/11-pestana-<nombre>-alpha.png` | 512×512 | pestañas de los modales (`ModalShell.tsx`) |
 | #12 | `entrega/ui/12-hud-<nombre>-alpha.png` | 512×512 | pictogramas del HUD (`SkillBarHud.tsx`) |
@@ -158,7 +158,7 @@ en ese repo a partir del emblema elegido.
 | E10 | `entrega/ui/e10-insignia-alpha.png` | 512×512 | insignias de logro |
 | E11 | `entrega/ui/e11-marco-retrato-alpha.png`, `e11-marco-redondo-alpha.png` | 1280×704 y 512×512 | marcos de retrato y de miniatura |
 | E12 | `entrega/ui/e12-plantilla-captura.png` | 1280×704 | marco de las capturas compartidas |
-| E13 | `entrega/ui/e13-boton-alpha.png`, `e13-boton-hover-alpha.png`, `e13-boton-pulsado-alpha.png` | 1024×128 (`border-image`) | botones principales |
+| E13 | `entrega/ui/e13-boton-alpha.png` (una sola placa; hover y pulsado se derivan de ella por brillo: `filter: brightness()` en CSS o `gimg export`) | 1024×128 (`border-image`) | botones principales |
 | E16 | `tarkor-glifo.svg` | vectorial, 16 px | marcador de lista, cursor de texto, puntos de carga |
 | E17 | `entrega/ui/e17-tooltip-alpha.png` | 1024×128 (`border-image`) | tooltips |
 | E14 | `entrega/marca/e14-icono-app.png` | 512×512 (+ 16/32/128 y `fuente.png` 1024) | **Instalador:** `app/src-tauri/icons/` (`icon.png`, `32x32.png`, `64x64.png`, `128x128.png`, `128x128@2x.png`, `icon.ico`, `fuente.png`), `tauri.conf.json` l.34 <!-- gw-allow-private: nombre de archivo de Tauri, no un e-mail --> |
