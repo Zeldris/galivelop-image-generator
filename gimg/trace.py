@@ -8,7 +8,9 @@
    with `smooth_passes` passes of a 3x3 majority filter.
 3. The mask borders are traced, simplified with Douglas-Peucker (`dp_tol`, in reduced pixels) and written as cubic
    Bezier curves (`curves`) that keep every corner sharper than `corner_deg` degrees, or as straight lines.
-4. Loops smaller than `min_island` (reduced pixels, area) are dropped.
+4. Loops smaller than `min_island` are dropped. `min_island` is an area in pixels of the image as given: with the
+   reduction it is divided by the factor squared (a reduced pixel is that many original ones), so a shape does not
+   vanish only because `max_side` is lower than the side of the image.
 5. The layers are stacked: the whole opaque silhouette first, filled with the color that covers most, then one path
    per other color, biggest first. So a ``color`` SVG has one ``<path>`` per color found (a color that only had
    islands has none).
@@ -342,7 +344,9 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
             cache[key] = min(range(len(pal)), key=lambda j: _d2(key, pal[j])) if pal else 0
         return cache[key]
 
-    W, H, grid = _reduce(width, height, rgba, -(-max(width, height) // max_side), label)
+    factor = -(-max(width, height) // max_side)
+    W, H, grid = _reduce(width, height, rgba, factor, label)
+    min_island /= factor * factor  # reduced pixels: the same area as at full size
     sx, sy = width / W, height / H
     counts = defaultdict(int)
     for row in grid:
@@ -359,6 +363,9 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
             else:  # nothing was erased, but a one-pixel diagonal still needs its steps closed
                 m = [[a | b for a, b in zip(r1, r2)] for r1, r2 in zip(raw, _thin(raw, [[0] * W for _ in range(H)], W, H))]
         d = _path_data(m, W, H, sx, sy, dp_tol, min_island, curves, corner_deg)
+        if not d and smooth_passes and factor > 1 and any(map(any, raw)):
+            # a shape of a few reduced pixels is erased by the smoothing: with the reduction, keep the unsmoothed mask
+            d = _path_data(raw, W, H, sx, sy, dp_tol, min_island, curves, corner_deg)
         return '<path fill=%s fill-rule="evenodd" d="%s"/>' % (quoteattr(fill), d) if d else ""
 
     layers = []

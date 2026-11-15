@@ -475,6 +475,18 @@ class ToSvgTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "ink: the list is empty"):
             trace.to_svg(*img, "mono", ink=[])
 
+    def test_a_lower_max_side_keeps_the_shape_instead_of_an_empty_svg(self):
+        # min_island and the smoothing work in reduced pixels: a small solid shape must not vanish with the reduction
+        for w, size, max_side in ((1000, 24, 512), (1000, 12, 512), (100, 30, 16), (60, 20, 8)):
+            img = canvas(w, w)
+            fill(img, 10, 10, 10 + size, 10 + size, DARK + (255,))
+            for mode in ("mono", "color", "silueta"):
+                with self.subTest(w=w, size=size, max_side=max_side, mode=mode):
+                    svg = trace.to_svg(*img, mode, ncolores=1, max_side=max_side, **({"ink": [0]} if mode == "mono" else {}))
+                    d = "".join(p.get("d") for p in paths(svg))
+                    self.assertNotEqual(d, "", "an empty path")
+                    self.assertGreater(evenodd_area(d, w), 0)
+
 
 if __name__ == "__main__":
     unittest.main()
