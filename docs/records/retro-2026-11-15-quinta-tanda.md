@@ -1,6 +1,7 @@
 # Retro 2026-11-15: quinta tanda de leves de `ccr-85e9d14e-zt7p8b`
 
-**Estado:** pendiente de la persona.
+**Estado:** aprobada por la persona el 2026-11-15: P1, P2 y P3 aplicadas en `.claude/gw/gw-orchestrate-dealer.md` y
+`.claude/gw/gw-opt-tokens.md`; P4 aprobada, queda aquí para `gw-harvest`.
 
 Fase 2 de la ida a `main`, tras la quinta tanda de leves (cinco ramas `agent/L5*`) y su fase 1 (seis medios
 arreglados en `0199087` y `700488a`).

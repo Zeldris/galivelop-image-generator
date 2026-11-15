@@ -19,3 +19,5 @@ Las lee la skill `orchestrate-dealer` antes de repartir. Son de este proyecto; s
   fusionar, una rama detrás de otra. Un comando largo se espera con un solo `Monitor` con tiempo límite, nunca con
   `sleep` en bucle, y las esperas cuentan para el tope de 30 (aprobado el 2026-11-14: con tres suites a la vez, el
   subagente de `tile` esperó ~40 de sus 76 llamadas, ~3,5 M, y la suite acabó matada).
+- **Un módulo con más de ~4 leves, o con leves que tocan librería, CLI e i18n a la vez, va en dos encargos** (aprobado
+  el 2026-11-15: `tile` con copias, recuperación, textos traducibles y velocidad en uno hizo 44 llamadas y 4,55 M).
