@@ -34,6 +34,9 @@ las crea una vez; desde entonces son del proyecto.
 - Aquí `logRows` está apagado: las filas de la bitácora se editan a mano, sin `handoff.py set-row` ni
   `GW_SHARED_LOG` (descubrirlo costó 4 llamadas el 2026-11-05; aprobado ese día).
 
+- Arreglos de una revisión en encargos de 4-5 puntos por archivo (`.claude/gw/gw-orchestrate-dealer.md`; aprobado el
+  2026-11-15: 9 puntos fueron 47 llamadas y 4,6 M).
+
 ## Costes conocidos
 
 <!-- Lo que se ha visto que cuesta mucho en este proyecto (archivos grandes leídos enteros, salidas largas...). -->
@@ -146,3 +149,5 @@ las crea una vez; desde entonces son del proyecto.
 - `/code-review` en la fase 1: el subagente hereda el contexto de la sesión (68k de arranque, 19 llamadas, 2,2 M, casi
   la mitad de la tarea el 2026-11-13). Es la revisión que pide la fase 1 y no se baja de modelo; lanzarla justo tras
   un `/clear` deja el arranque en el suelo.
+- 2026-11-15, L7 de `ccr-85e9d14e-zt7p8b` desde `6e73f1e`: principal 60 llamadas, 7,7 M (128k de media); 5 subagentes,
+  134 llamadas, 12,9 M (arranque medio 66,7k; arreglos de la fase 1, 47 llamadas y 4,6 M).
