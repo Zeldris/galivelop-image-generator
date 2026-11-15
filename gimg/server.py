@@ -928,7 +928,7 @@ def brand_trace(req):
         if not palette:
             raise GimgError("brand.no_palette", project=project)
     with _heavy():
-        return brandshop.trace(project, name, mode, palette, colors=colors, **opts)
+        return brandshop.trace(project, name, mode, palette, colors=colors, lang=req.lang, **opts)
 
 
 @route("POST", _BRAND + "/wordmark")

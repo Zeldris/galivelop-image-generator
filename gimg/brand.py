@@ -623,7 +623,7 @@ def _paint_colors(inner: str, root: str = "") -> set:
                 for prop in ("fill", "stroke"):
                     if not _sets(attrs, prop) and prop not in above and not _CLASS.search(attrs):
                         inherited.add(prop)
-                if tag != "line" and not any(groups) and not _has_fill(attrs) and not _CLASS.search(attrs):
+                if tag != "line" and not any("fill" in g for g in groups) and not _has_fill(attrs) and not _CLASS.search(attrs):
                     colors.add("#000000")
     else:
         inherited = {"fill", "stroke"}
