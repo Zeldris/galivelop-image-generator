@@ -620,7 +620,7 @@ def _paint_colors(inner: str, root: str = "") -> set:
                     groups.append({p for p in ("fill", "stroke") if _sets(attrs, p)})
             elif not closing:
                 above = set().union(*groups[1:]) if len(groups) > 1 else set()
-                for prop in ("fill", "stroke"):
+                for prop in ("fill", "stroke") if tag != "line" else ("stroke",):  # a <line> has no area: an inherited fill paints nothing
                     if not _sets(attrs, prop) and prop not in above and not _CLASS.search(attrs):
                         inherited.add(prop)
                 if tag != "line" and not any("fill" in g for g in groups) and not _has_fill(attrs) and not _CLASS.search(attrs):
