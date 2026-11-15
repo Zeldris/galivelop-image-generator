@@ -190,6 +190,6 @@ def save(project: str, name: str, dest: str = "data", force: bool = False) -> di
         size = brand.contact_sheet(shop, tmp)
     for key in brand.SYSTEM_FILES:
         with open(shop[key], "rb") as fh:
-            brand._write(targets[key], fh.read())
+            brand.write_file(targets[key], fh.read())
     return {"name": name.strip(), "slug": slug, "dest": dest, "out_dir": str(out_dir), "files": dict(targets),
             "contact_size": list(size), "overwritten": sorted(clash)}
