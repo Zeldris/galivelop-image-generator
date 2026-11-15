@@ -96,6 +96,14 @@ class MatteTests(BrandBase):
         self.assertIn("is the original itself", err)
         self.assertEqual(src.read_bytes(), before)
 
+    def test_a_border_of_zero_says_why(self):
+        src = self.tmp / "a.png"
+        square_png(src)
+        with self.assertRaises(GimgError) as ctx:
+            brand.matte(str(src), border=0)
+        self.assertEqual(ctx.exception.code, "brand.bad_option")
+        self.assertIn("border must be at least 1", str(ctx.exception.params))
+
     def test_bad_tolerance_is_a_gimg_error(self):
         src = self.tmp / "a.png"
         square_png(src)
