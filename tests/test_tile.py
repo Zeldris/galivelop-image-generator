@@ -320,6 +320,7 @@ class TileCommandTests(unittest.TestCase):
         self.assertIn("No space left", reason)
         self.assertIn("rollback incomplete", reason)
         self.assertIn("Input/output error", reason)
+        self.assertIn("the copy keeps the original", reason)
         self.assertIn(out, reason)
         baks = [n for n in os.listdir(self.dir.name) if n.startswith(".gimg-bak-")]
         self.assertEqual(len(baks), 2, "the old files stay on disk for the next run")
@@ -403,7 +404,19 @@ class TileCommandTests(unittest.TestCase):
         Path(out).write_bytes(b"in place")
         code, so, se = self.run_cli("--lang", "es", "tile", self.src, "-o", out, "--force")
         self.assertEqual(code, 0)
-        self.assertIn("bórrala si no la necesitas", so)
+        self.assertIn("puede ser el original", so)
+        self.assertNotIn("bórrala si no la necesitas", so)
+        code, so, se = self.run_cli("--lang", "en", "tile", self.src, "-o", out, "--force")
+        self.assertIn("may be the original", so)
+
+    def test_an_existing_output_without_force_is_refused_before_decoding_or_blending(self):
+        out = os.path.join(self.dir.name, "o.png")
+        Path(out).write_bytes(b"keep me")
+        with mock.patch.object(png, "read_rgba", side_effect=AssertionError("decoded")), mock.patch.object(
+                tile, "tileable", side_effect=AssertionError("blended")), self.assertRaises(GimgError) as cm:
+            tile.tile(self.src, out=out)
+        self.assertEqual(cm.exception.code, "tile.exists")
+        self.assertEqual(Path(out).read_bytes(), b"keep me")
 
     def test_an_input_over_the_pixel_limit_is_refused_with_its_reason(self):
         with mock.patch.object(tile, "MAX_PIXELS", 96 * 64 - 1), mock.patch.object(

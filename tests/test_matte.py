@@ -70,6 +70,22 @@ class RemoveBgTests(unittest.TestCase):
             self.assertEqual(at(out, w, x, 20)[3], 0, x)
         self.assertEqual(at(out, w, 12, 20), FG + (255,))
 
+    def test_cut_emblem_with_a_small_white_tab_on_the_edge_keeps_its_white_ring(self):
+        w = h = 40
+        px = bytearray(w * h * 4)  # transparent everywhere but the emblem
+        for k in range(w * h):
+            x, y = k % w, k // w
+            r = math.hypot(x - 19.5, y - 19.5)
+            if 3.5 < r <= 7:
+                px[k * 4:k * 4 + 4] = bytes((255, 255, 255, 255))  # white ring around a transparent hole
+            elif 7 < r <= 14:
+                px[k * 4:k * 4 + 4] = bytes(FG + (255,))
+            elif x < 3 and 18 <= y < 22:  # a few opaque white pixels on the border: not a real background color
+                px[k * 4:k * 4 + 4] = bytes((255, 255, 255, 255))
+        out = matte.remove_bg(w, h, px)
+        self.assertEqual(at(out, w, 15, 20), (255, 255, 255, 255), "the ring is part of the emblem")
+        self.assertEqual(at(out, w, 10, 20), FG + (255,))
+
     def test_transparent_hole_of_an_already_cut_input_keeps_a_dark_core(self):
         ink = (20, 20, 20)
         w, h, px = disc(size=40, radius=14, fg=(184, 134, 43), bg=(0, 0, 0))

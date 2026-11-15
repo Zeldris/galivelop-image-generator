@@ -93,16 +93,20 @@ def _mix_into(dst: bytearray, other, spots) -> None:
         dst[l] = int(a + 0.5)
 
 
-def tileable(width: int, height: int, rgba, blend: float = 0.25) -> bytearray:
-    """RGBA copy of `rgba` that repeats with no seam (see the module docstring); the input is not touched."""
-    if len(rgba) != width * height * 4:
-        raise ValueError("%d bytes do not fit a %dx%d RGBA image" % (len(rgba), width, height))
+def _check_options(width: int, height: int, blend: float) -> None:
     if min(width, height) < MIN_SIDE:
         raise ValueError("the image must be at least %d px on each side (it is %dx%d)" % (MIN_SIDE, width, height))
     if not 0 < blend <= MAX_BLEND:
         raise ValueError("blend must be above 0 and at most %s (got %s)" % (MAX_BLEND, blend))
     if blend * min(width, height) < 1:
         raise ValueError("blend x the shorter side must be at least 1 px (got %s x %d)" % (blend, min(width, height)))
+
+
+def tileable(width: int, height: int, rgba, blend: float = 0.25) -> bytearray:
+    """RGBA copy of `rgba` that repeats with no seam (see the module docstring); the input is not touched."""
+    if len(rgba) != width * height * 4:
+        raise ValueError("%d bytes do not fit a %dx%d RGBA image" % (len(rgba), width, height))
+    _check_options(width, height, blend)
     sx, sy = width // 2, height // 2
     wx, wy = _weights(width, blend * width), _weights(height, blend * height)
     row_bytes = width * 4
@@ -274,9 +278,10 @@ def _publish(files) -> None:
                 else:
                     os.unlink(p)
             except OSError as rb:
-                what = "put back %s from %s" % (p, backup) if backup else "remove %s" % p
+                what = "put back %s from %s (the copy keeps the original)" % (p, backup) if backup else "remove %s" % p
                 failed.append("%s: %s" % (what, rb.strerror or rb))
-        done = []  # a backup that could not be put back stays on disk: the next run restores it (`recover_backups`)
+        done = []  # a backup that could not be put back stays on disk, and it may be the only copy of the original:
+        # the next run reports it (`recover_backups`) and restores it only if the target is missing
         note = "; rollback incomplete (" + "; ".join(failed) + ")" if failed else ""
         if isinstance(exc, OSError):
             raise GimgError("tile.write_failed", path=str(path), reason=str(exc.strerror or exc) + note)
@@ -324,17 +329,21 @@ def tile(src, out=None, blend: float = 0.25, preview=None, preview_side: int = 2
     width, height = png.size(src)  # the header only: an image over the limit is refused before it is inflated
     if width * height > MAX_PIXELS:
         raise GimgError("tile.too_big", width=width, height=height, max=MAX_PIXELS)
-    width, height, rgba = png.read_rgba(src)
-    try:
-        result = tileable(width, height, rgba, blend)
+    try:  # from the header: nothing is recovered or touched for a call that fails validation
+        _check_options(width, height, blend)
     except ValueError as exc:
         raise GimgError("tile.bad_option", reason=str(exc))
     recovered = recover_backups([out] + ([preview] if preview is not None else []))
     try:
-        if not force:
+        if not force:  # before inflating and blending: an existing output is refused without doing the work
             for target in (out, preview):
                 if target is not None and os.path.exists(target):
                     raise GimgError("tile.exists", path=target)
+        width, height, rgba = png.read_rgba(src)
+        try:
+            result = tileable(width, height, rgba, blend)
+        except ValueError as exc:
+            raise GimgError("tile.bad_option", reason=str(exc))
         files = [(out, png.rgba_bytes(width, height, result))]
         res = {"src": str(src), "out": out, "size": [width, height], "blend": blend}
         if preview is not None:
