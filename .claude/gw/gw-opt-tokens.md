@@ -42,6 +42,9 @@ las crea una vez; desde entonces son del proyecto.
   lectura a un subagente.
 - `cat` de `CLAUDE.md` o `AGENTS.md`: ya están en el contexto; releerlos costó 151k arrastrados.
 - `cat docs/handoff.md` (9 veces, 80k arrastrados): usar `python3 .claude/gw/scripts/recover.py --state`.
+- «Pendiente» de la bitácora pasado del corte de 9 500 caracteres de `recover.py --state` (2026-11-15: una lectura con
+  `sed`, 190k arrastrados): al cerrar una tanda, sus leves abiertos van a `docs/records/leves-<rama>.md` y en la
+  bitácora queda una línea con el puntero (aprobado el 2026-11-15).
 - «Pendiente» de la bitácora lleno de leves de ramas fusionadas (2026-11-06, `fix-0.4.1`: 7 lecturas, 247k
   arrastrados, 5,5 % de la sesión; 28,5k caracteres): al fusionar una rama, sus leves pasan a
   `docs/records/leves-<rama>.md` y en «Pendiente» queda un puntero de una línea (aprobado el 2026-11-06).
