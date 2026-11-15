@@ -763,6 +763,7 @@
   "cli.out.brand_wordmark": "{out}: «{text}» en {family} peso {weight}, {width}x{height}, {paths} trazado, {bytes} bytes",
   "cli.out.brand_opaque": "el PNG no tiene transparencia: si trae fondo, repite con --matte",
   "brand.trace_ink_share": "mono: la tinta cubre el {share} % de la imagen, así que puede que el interior o el fondo se hayan tomado por tinta y el marco por papel (el papel es cada color que ocupa el {paper} % del borde): quita antes el fondo (matte), indica la tinta a mano o usa el modo color",
+  "brand.trace_relaxed": "traza: no quedaba nada con la reducción a {factor}x, así que se repitió sin suavizar y con min_island en {min_island}: para conservar el detalle sube max_side",
   "error.brand.bad_option": "opción no válida: {reason}",
   "error.brand.out_is_input": "la salida «{path}» es el propio original: elige otro -o para no pisarlo",
   "error.brand.tool_missing": "falta la herramienta «{tool}» para el nombre a trazos (instálala; «gimg doctor» dice cómo)",
