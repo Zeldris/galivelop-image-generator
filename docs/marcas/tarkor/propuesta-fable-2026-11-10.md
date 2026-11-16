@@ -245,7 +245,7 @@ Cambios a las piezas #1-#18 existentes (solo los que mejoran):
   solo elemento de oro tipográfico por pantalla.
 - **Nunca:** letras pintadas por FLUX, ni New Rocker/Metamorphous/Almendra (r7 archivada).
 
-## 8. Propuestas a la interfaz del juego (solo propuesta; se entrega desde `docs/propuestas/`)
+## 8. Propuestas a la interfaz del juego (solo propuesta; se entrega desde `docs/proposals/`)
 
 Tokens nuevos en el `@theme` de `index.css`, con el mismo criterio que `danger`/`cost` (fijos, no tematizables):
 

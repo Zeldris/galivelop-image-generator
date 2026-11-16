@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Gancho PreToolUse de Read: rechaza leer enteros los documentos grandes del proyecto y dice cómo leer solo lo que hace
 falta. Deja pasar una lectura con `limit` de hasta `MAX_LINEAS` líneas. Una lectura entera de `docs/plan.md` arrastró
-348k tokens en F2.0 (`.claude/gw/opt-tokens.md`).
+348k tokens en F2.0 (`.claude/gw/gw-opt-tokens.md`).
 
 Lee el JSON del gancho en la entrada estándar; ante cualquier error deja pasar (un gancho no rompe la sesión).
 """

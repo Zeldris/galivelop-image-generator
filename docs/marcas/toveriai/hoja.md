@@ -304,7 +304,7 @@ del Portal como marca, el formato del `og:image` final.
   pendiente de A1 (§16).
 - En `VeriNews_AI`: el `og:image` apunta al favicon de 512 y `twitter:card` es `summary`; no hay manifest ni apple-touch-icon;
   los PNG «VeriNews» siguen en `assets/`; la tarjeta compartible toma los hex a mano y se captura sobre `#ffffff`. Todo va a
-  `docs/propuestas/verinews-ai/entrega-hoja-2026-11-12.md` (escrita el 2026-11-12), no se toca desde aquí.
+  `docs/proposals/verinews-ai/entrega-hoja-2026-11-12.md` (escrita el 2026-11-12), no se toca desde aquí.
 
 ---
 
@@ -357,7 +357,7 @@ DM Sans, verde bosque `#2D6A4F`, semáforo del IMI): añade lo que el repo no ti
 falta (con su fuente en `VeriNews_AI` `1f98db6`), qué pieza de `gimg` lo produce y en qué perfil de
 `examples/toveriai/galivelop-images.json`, y quién decide. Nada se dibuja a mano: los SVG salen de `gimg brand trace` sobre un
 PNG, y las imágenes, de un pedido. La entrega para la sesión de su repo es
-`docs/propuestas/verinews-ai/entrega-hoja-2026-11-12.md`; nada de esto se ha generado todavía.
+`docs/proposals/verinews-ai/entrega-hoja-2026-11-12.md`; nada de esto se ha generado todavía.
 
 | # | PROPUESTA | Qué falta hoy (fuente) | Pieza de `gimg` y perfil | Decide |
 |---|---|---|---|---|
@@ -411,7 +411,7 @@ generó el motor.
    dicen «toVeriAI»; los PNG `frontend/src/assets/logo.png` y `logo-vertical.png` dicen «VeriNews» con `Veri` gris, y **ningún
    archivo del frontend los referencia**. El `README.md` llama al proyecto «VeriNews AI» (es su nombre académico).
    **Resuelta (aprobada por delegación):** la hoja manda con «toVeriAI» (decisión delegada, `docs/marcas/README.md` l.39-42, que la persona confirma);
-   en `docs/propuestas/verinews-ai/entrega-hoja-2026-11-12.md` se le pide al repo retirar los dos PNG huérfanos o regenerarlos con el wordmark actual.
+   en `docs/proposals/verinews-ai/entrega-hoja-2026-11-12.md` se le pide al repo retirar los dos PNG huérfanos o regenerarlos con el wordmark actual.
 2. **Rangos del IMI.** Kit (l.442-444), `imiColors.js`, i18n (l.529-531) y seis páginas dicen 0-39 / 40-69 / 70-100 con
    granate / ámbar / verde; `Documentacion/v1.1/marketing.html` l.278-285 dice 0-49 / 50-74 / 75-100 con `#e74c3c`, `#c9761f`,
    `#27ae60` (colores fuera de marca); `AdminPage.jsx` l.12-13 y `AdminDatasetPage.jsx` l.100-101 cortan en ≥ 75 / ≥ 50, y
@@ -450,7 +450,7 @@ generó el motor.
     de las piezas son los cinco del código. Se apunta al repo que el `README.md` está desfasado.
 11. **`og:image` cuadrado.** `index.html` sirve el favicon de 512 como `og:image` y `twitter:image` con `twitter:card` `summary`.
     **Resuelta (aprobada por delegación):** la pieza `og` 1200×630 de esta hoja (ya compuesta en r4) pasa a `og:image`, con `twitter:card`
-    `summary_large_image`; es la primera pieza de la prioridad y la entrada principal de `docs/propuestas/verinews-ai/entrega-hoja-2026-11-12.md`.
+    `summary_large_image`; es la primera pieza de la prioridad y la entrada principal de `docs/proposals/verinews-ai/entrega-hoja-2026-11-12.md`.
 12. **Peso del wordmark en el pie.** El kit l.335 y el `Navbar` ponen el wordmark a 400; `Footer.css` l.24 lo pone a 300 sobre
     `#1A1A1A`. **Resuelta (aprobada por delegación):** el lockup oscuro, si se hace, a 400 como el kit; se apunta al repo la diferencia, menor.
 13. **Pesos de la familia Galivelop.** La regla acordada para la familia (titular 700, subtítulo Inter 400 con opacidad 0,82) no

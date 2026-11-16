@@ -194,7 +194,7 @@ Orden de trabajo (el detalle, en `peticiones.md` §5):
 2. **Marca fuera del juego:** E1 avatar, E2 cabecera, E3 og (plantilla nueva), E4 Steam (header y main; decisión 7).
 3. **Interfaz:** bloque A (fondos), #16 medallón, #10 ranura, E6 carga, E7 barra, bloque C (pictogramas), B, D y el resto de E.
 4. **Paisajes** (banner, cuadrado, vertical, cabecera) con la plantilla de paisaje, cuando el Portal los pida.
-5. **Hoja de contactos** (E18) y propuestas a los repos del juego y del Instalador desde `docs/propuestas/tarkor/`
+5. **Hoja de contactos** (E18) y propuestas a los repos del juego y del Instalador desde `docs/proposals/tarkor/`
    (la de la interfaz: `../../propuestas/tarkor/diseno-interfaz-2026-11-10.md`).
 
 Entrega: `examples/tarkor/entrega/ui/<nn>-<nombre>.png` (interfaz), `entrega/marca/e<nn>-<nombre>.png` (marca),

@@ -13,7 +13,7 @@ el 2026-11-04 (`docs/records/decisiones-hojas-2026-11-04.md`, apartado «Plantil
 
 1. Se copia esta plantilla y se rellena campo a campo, en este orden. Una hoja rellena vive en
    `docs/marcas/<proyecto>/biblia.md` (aquí) mientras su repo no la adopte, y se le propone en
-   `docs/propuestas/<proyecto>.md`. **El repo del proyecto manda:** cada dato que sale de él se cita con ruta y commit.
+   `docs/proposals/<proyecto>.md`. **El repo del proyecto manda:** cada dato que sale de él se cita con ruta y commit.
    **Al rellenar, cada tabla se queda en cuatro columnas: Campo / Nivel / Valor / Estado.** «Qué es y formato», «Ejemplo» y
    «Dónde acaba» se quitan (esta plantilla sigue siendo donde se consultan); el estado y la fuente de cada valor van en
    «Estado».
@@ -227,7 +227,7 @@ Un bloque por repo (el del proyecto y, si hay, el de la marca paraguas «Hereda 
 
 **Lo que la configuración no refleja aún.** Lista de diferencias entre la hoja y `galivelop-images.json` (color fuera de
 `brand.palette`, perfiles hechos sin declarar, destino sin `targetWidth`/`targetHeight`, prompt que incumple la
-comprobación 8 o 9): es la entrada de `docs/propuestas/<proyecto>.md`. Vacía, se escribe «nada».
+comprobación 8 o 9): es la entrada de `docs/proposals/<proyecto>.md`. Vacía, se escribe «nada».
 
 ---
 
