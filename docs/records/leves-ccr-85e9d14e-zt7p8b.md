@@ -47,6 +47,8 @@ Fase 1 de 2026-11-13 (diff contra `origin/main` sobre `9844344`):
 
 ## Revisión del bloque de la interfaz de recortar (2026-11-16): leves de la fase 1
 
+Hechos los cinco en `4c297c1` (barrido B, 2026-11-16).
+
 - `crop-editor.js`: cada `pointermove` hace un `refresh()` completo (incluido `drawImage` del raw entero); durante el
   arrastre, solo la caja y los campos, y la vista previa por `requestAnimationFrame` o al soltar.
 - `crop-editor.js` `showError` llama además a `toastError`, que el `dialog` modal tapa: el error sale duplicado al cerrar.
