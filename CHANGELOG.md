@@ -9,6 +9,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+
+- The interface, crop and layout editors: an error on saving shows only inside the dialog (it used to come back as a
+  toast on closing); "Repeat the same box on…" is disabled, with its notice, when the order's profile composes; while
+  dragging the box, the preview is painted at most once per frame.
+- `releases.py check` works without GraphQL (it queries the release through the REST API), also from the cloud.
+
+## [0.6.0] - 2026-11-16
+
 ### Added
 
 - `gimg brand trace --ink-only [--paper #hex]`: a single-ink SVG; the paper becomes transparent and the rest is one
@@ -22,6 +31,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Optional negative prompt: order field `negative` (empty or whitespace-only is the same as absent), `gimg attempt new
   --negative`, API field `negative` for new attempts, and "Negative prompt" fields in the interface (new order and
   retouch). It is passed to `sd-cli` as `--negative-prompt` and kept in the attempt and in the delivery manifest.
+
+- `gimg crop PROJECT KEY PROFILE ATTEMPT --box x0,y0,x1,y1 [--free] [--to KEY] [--to-profile PROFILE]` and
+  `POST …/attempts/{id}/crop`: crop the raw image of an attempt and store the piece as a **derived attempt**
+  (`derivedFrom` points at the source and the box, to repeat it; the original is not touched). With the proportion of
+  the profile locked (the default) the result is exactly its size (`crop.ratio_mismatch` if the box differs by more than
+  1 %); with `--free`, the size of the box. `--to` takes the piece to another order, created if it does not exist.
+  Area-average reduction and bilinear enlargement (`export.resize`).
+
+- "Crop" in the interface (More actions of an attempt): a dialog over the raw image with one box (profile ratio or free,
+  2×2 / 3×3 grid whose cells place the box, 1/10/50 px step, move/size mode, box in editable numbers, output size and a
+  canvas preview) that saves a derived attempt or takes it to another order; on a crop, "Repeat the same box on…"
+  another attempt of the batch. Derived attempts carry a "Crop of q…" badge.
 
 ### Changed
 

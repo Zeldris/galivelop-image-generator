@@ -236,6 +236,28 @@ curl -s -X POST -H 'Content-Type: application/json' \
   $B/api/projects/mi-proyecto/orders/og/fauna%2Flobo/attempts/1/compose -d '{"text":{"title":"El lobo"}}'
 ```
 
+### POST /api/projects/{p}/orders/{profile}/{key}/attempts/{id}/crop
+
+Crops the attempt with a box and stores the piece as a **derived attempt**; the original is not touched. Body: `{"box":
+[x0, y0, x1, y1], "lockRatio": true, "to": {"profile": "p", "key": "k"}}`. `box` is four integers in pixels of the raw
+image of the attempt (`x1` and `y1` are not included); `lockRatio` (default `true`) requires the box to have the
+proportion of the destination profile (1 % tolerance) and gives exactly its `width`x`height`; with `false` the derived
+attempt has the size of the box, without resampling. Reducing averages the area, enlarging is bilinear. `to` (optional)
+takes the piece to another order of the project; if it does not exist it is created with the `prompt` of the source
+order, and the profile must exist. The derived attempt is in state `new`, with `image` `attempts/<id>.png`, the seed,
+prompt, `params` (with the new `width` and `height`), references, negative and draft of the source, and `derivedFrom`:
+`{"profile", "key", "attempt", "box", "lockRatio"}`; it is chosen with `choose` like any other. Response: `{"attempt":
+{…}, "profile": "p", "key": "k", "created": false}` (`created` is `true` if the destination order was new). One heavy
+task at a time: the second waits up to 60 s and gets 409 `api.heavy_busy`. Errors: `crop.bad_box` (400: not four
+integers, or the box has no area), `crop.outside` (400: it leaves the image), `crop.ratio_mismatch` (400), `crop.compose_unsupported` (400: the destination profile composes),
+`crop.bad_target` (400), `order.unknown` and `order.attempt_unknown` (404), `order.profile_unknown` (404, the
+destination's too).
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' \
+  $B/api/projects/my-project/orders/portada/fauna%2Flobo/attempts/1/crop -d '{"box":[0,64,1536,928]}'
+```
+
 ### GET /api/projects/{p}/orders/{profile}/{key}/attempts/{id}/image
 
 The attempt's PNG; `?raw=1` gives the raw image (without composition). With `ETag`: `If-None-Match` returns 304. Error:

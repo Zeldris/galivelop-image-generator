@@ -7,7 +7,7 @@ import os
 import sys
 import traceback
 
-from . import __version__, brand, compose, delivery, doctor, export, i18n, measure, orders, projects, queue, service, sheet, tile, worker
+from . import __version__, brand, compose, crop, delivery, doctor, export, i18n, measure, orders, projects, queue, service, sheet, tile, worker
 from .errors import GimgError
 
 LANGS = ("es", "en")
@@ -89,6 +89,11 @@ def _build(lang: str) -> argparse.ArgumentParser:
 
     leaf(top, "choose", "cli.cmd.choose", project, okey, oprofile, attempt)
     leaf(top, "undo", "cli.cmd.undo", project, okey, oprofile)
+    leaf(top, "crop", "cli.cmd.crop", project, okey, oprofile, attempt,
+         opt("--box", "cli.arg.crop_box", metavar="x0,y0,x1,y1", required=True),
+         opt("--free", "cli.arg.crop_free", action="store_true"),
+         opt("--to", "cli.arg.crop_to", metavar="KEY"),
+         opt("--to-profile", "cli.arg.crop_to_profile", metavar="PROFILE"))
     leaf(top, "compose", "cli.cmd.compose", project, okey, oprofile,
          arg("attempt", "cli.arg.attempt_optional", type=int, nargs="?", default=None),
          opt("--text", "cli.arg.text_kv", action="append", default=[], metavar="FIELD=TEXT"),
@@ -137,7 +142,7 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--paper", "cli.arg.brand_paper", metavar="#HEX"))
     leaf(g, "wordmark", "cli.cmd.brand_wordmark", arg("text", "cli.arg.brand_text"),
          opt("--font", "cli.arg.brand_font", required=True, metavar="TTF"),
-         opt("--weight", "cli.arg.brand_weight", type=int, default=800),
+         opt("--weight", "cli.arg.brand_weight", type=int, default=brand.DEFAULT_WEIGHT),
          opt("--spacing", "cli.arg.brand_spacing", type=float),
          opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"))
     props = (opt("--cap", "cli.arg.brand_cap", type=float, default=0.45),
@@ -149,7 +154,7 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--margin", "cli.arg.brand_margin", type=float, default=0.0),
          opt("--color", "cli.arg.brand_ink", metavar="COLOR"),
          opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"),
-         opt("--force", "cli.arg.brand_force_square", action="store_true"), *props)
+         opt("--force", "cli.arg.brand_force", action="store_true"), *props)
     leaf(g, "overlay", "cli.cmd.brand_overlay", arg("base", "cli.arg.brand_overlay_base"),
          arg("motif", "cli.arg.brand_overlay_motif"),
          opt("-o", "cli.arg.brand_overlay_out", dest="out", metavar="SVG"),
@@ -164,7 +169,7 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--pad", "cli.arg.brand_pad", type=float, default=24),
          opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"),
          opt("--png", "cli.arg.brand_png_sizes", metavar="512,128,32"),
-         opt("--force", "cli.arg.brand_force_square", action="store_true"))
+         opt("--force", "cli.arg.brand_force", action="store_true"))
     leaf(g, "rose", "cli.cmd.brand_rose",
          opt("-o", "cli.arg.brand_out_svg_rose", dest="out", metavar="SVG", required=True),
          opt("--png", "cli.arg.brand_rose_png", metavar="PNG"),
@@ -181,7 +186,7 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--name", "cli.arg.brand_name", required=True),
          opt("--font", "cli.arg.brand_font", required=True, metavar="TTF"),
          opt("--out-dir", "cli.arg.brand_out_dir", required=True, metavar="DIR"),
-         opt("--weight", "cli.arg.brand_weight", type=int, default=800),
+         opt("--weight", "cli.arg.brand_weight", type=int, default=brand.DEFAULT_WEIGHT),
          opt("--spacing", "cli.arg.brand_spacing", type=float),
          opt("--palette", "cli.arg.brand_palette", metavar="#HEX,#HEX"),
          opt("--colors", "cli.arg.brand_colors", type=int, metavar="N"),
@@ -433,6 +438,21 @@ def _run(args, out: _Out) -> int:
         else:
             out.line("cli.out.chosen" if cmd == "choose" else "cli.out.undone",
                      new=out.none(result["new"]), old=out.none(result["old"]))
+    elif cmd == "crop":
+        to = None
+        if args.to is not None or args.to_profile is not None:
+            to = {"profile": args.to_profile or args.profile, "key": args.to or args.key}
+        res = crop.crop(args.project, args.key, args.profile, args.attempt, crop.parse_box(args.box),
+                        lock_ratio=not args.free, to=to)
+        if out.as_json:
+            out.data(res)
+        else:
+            made = res["attempt"]
+            out.line("cli.out.crop_done", id=made["id"], order=res["key"], profile=res["profile"],
+                     width=made["params"]["width"], height=made["params"]["height"],
+                     box=",".join(str(v) for v in made["derivedFrom"]["box"]))
+            if res["created"]:
+                out.line("cli.out.crop_created", order=res["key"], profile=res["profile"])
     elif cmd == "compose":
         _compose(args, out)
     elif cmd == "templates":
@@ -462,8 +482,9 @@ def _run(args, out: _Out) -> int:
                 out.line("cli.out.tile_preview", path=res["preview"], width=res["preview_size"][0],
                          height=res["preview_size"][1])
             for item in res.get("recovered", ()):
-                out.line("cli.out.tile_recovery_restored" if item["action"] == "restored" else "cli.out.tile_recovery_kept",
-                         path=item["path"], backup=item["backup"])
+                print(tile.describe_recovery(item, out.lang))
+            for item in res.get("stale_backups", ()):
+                out.line("cli.out.tile_stale_backup", path=item["path"], backup=item["backup"], reason=item["reason"])
     elif cmd == "export":
         res = export.export(args.image, args.out, args.size, args.icon_sizes, args.background, args.force,
                            args.crop, args.anchor)

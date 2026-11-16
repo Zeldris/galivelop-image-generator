@@ -41,7 +41,7 @@ export async function orderView(host, route) {
   const brand = cfg.brand || {};
   const compose = profileCfg.compose || {};
   const ctx = {
-    project, profile, key, order, profileCfg, brand, templates: Array.isArray(templates) ? templates : [], models: Array.isArray(models) ? models : [],
+    project, profile, key, order, profileCfg, profiles: cfg.profiles || {}, brand, templates: Array.isArray(templates) ? templates : [], models: Array.isArray(models) ? models : [],
     measure: { zone: compose.zone, textColor: compose.textColor || brand.textColor, paletteMin: brand.paletteMin },
     showRaw: store.get('showRaw'), compare: [], queuedIds: [], estimateMs: estimateFor(profile),
     actions: {},
@@ -119,6 +119,16 @@ export async function orderView(host, route) {
         await reload();
         throw e;
       }
+    },
+    /** El recorte (crop-editor.js): `body` = {box, lockRatio, to?}; `from` = {profile, key} si el intento es de otro pedido. Devuelve la respuesta; si el derivado cayó en este
+        pedido, lo recarga. Un error se relanza para que el diálogo lo muestre. */
+    crop: async (a, body, from) => {
+      const res = await api.crop(project, from ? from.profile : profile, from ? from.key : key, a.id, body);
+      const id = res.attempt.id;
+      const here = res.profile === profile && res.key === key;
+      toastOk(here ? t('ui.crop.saved', { id }) : t('ui.crop.savedOther', { id, profile: res.profile, key: res.key }));
+      if (here) await reload();
+      return res;
     },
     /** Plantilla nueva desde un intento (D40); después se piden otra vez las plantillas para que salga en los selectores. */
     saveTemplate: async (a, name, dest) => {

@@ -17,51 +17,15 @@
 import { h, replace } from '../dom.js';
 import { t } from '../i18n.js';
 import { api, paths, describeError } from '../api.js';
-import { toastError } from './toast.js';
 import { renderMeasure, requestMeasure } from './measure-chip.js';
 import { imageVersion } from './attempt-util.js';
+import { CORNERS, STEP, STEP_BIG, moveBox, sizeBox, resizeBox, sameBox, startBoxDrag, boxKey } from './box-drag.js';
+import { trapDialog } from './dialog-trap.js';
 
 export const NAME_PATTERN = /^[a-z0-9][a-z0-9-]{0,39}$/;
 export const MEASURE_DELAY_MS = 400;
-const STEP = 1;
-const STEP_BIG = 10;
-const CORNERS = ['nw', 'ne', 'sw', 'se'];
-const ARROWS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
-const FOCUSABLE = 'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), [tabindex="0"]';
 
-const clamp = (v, lo, hi) => Math.min(Math.max(lo, hi), Math.max(lo, v));
-export const sameBox = (a, b) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
-
-/** Mueve la caja `b` (`{x, y, w, h}`) `dx`, `dy` píxeles sin salir del destino `W`×`H`. */
-export function moveBox(b, dx, dy, W, H) {
-  return { x: clamp(b.x + dx, 0, W - b.w), y: clamp(b.y + dy, 0, H - b.h), w: b.w, h: b.h };
-}
-
-/** Cambia el tamaño de `b` en `dw`, `dh` (teclado, ancho y alto por separado) sin salir del destino ni bajar de 1. */
-export function sizeBox(b, dw, dh, W, H) {
-  return { x: b.x, y: b.y, w: clamp(b.w + dw, 1, W - b.x), h: clamp(b.h + dh, 1, H - b.y) };
-}
-
-/** Arrastra la esquina `corner` (`nw|ne|sw|se`) de `b` `dx`, `dy` píxeles: la esquina opuesta queda fija. Con `lock`
-    la proporción de `b` se mantiene (manda el eje que más cambia). Siempre dentro del destino y de al menos 1×1. */
-export function resizeBox(b, corner, dx, dy, lock, W, H) {
-  const east = corner.includes('e');
-  const south = corner.includes('s');
-  const anchorX = east ? b.x : b.x + b.w;
-  const anchorY = south ? b.y : b.y + b.h;
-  const maxW = east ? W - anchorX : anchorX;
-  const maxH = south ? H - anchorY : anchorY;
-  let w = clamp(b.w + (east ? dx : -dx), 1, maxW);
-  let hh = clamp(b.h + (south ? dy : -dy), 1, maxH);
-  if (lock) {
-    let k = Math.abs(w / b.w - 1) >= Math.abs(hh / b.h - 1) ? w / b.w : hh / b.h;
-    k = Math.min(k, maxW / b.w, maxH / b.h);
-    k = Math.max(k, 1 / Math.min(b.w, b.h));
-    w = Math.max(1, Math.round(b.w * k));
-    hh = Math.max(1, Math.round(b.h * k));
-  }
-  return { x: east ? anchorX : anchorX - w, y: south ? anchorY : anchorY - hh, w, h: hh };
-}
+export { moveBox, sizeBox, resizeBox, sameBox };
 
 /** `{nombre: caja}` de lo que difiere de la caja de la plantilla (lo que se manda a la API). */
 export function changedLayout(items) {
@@ -159,7 +123,6 @@ export function openLayoutEditor(ctx, attempt, tpl, opener) {
 
   function showError(e) {
     const message = describeError(e, t);
-    toastError(message);
     error.textContent = message;
     error.hidden = false;
   }
@@ -187,40 +150,18 @@ export function openLayoutEditor(ctx, attempt, tpl, opener) {
 
   // --- puntero ---
   function startDrag(ev, it, corner) {
-    if (busy || (ev.button !== undefined && ev.button !== 0)) return;
-    ev.preventDefault();
-    ev.stopPropagation();
-    it.node.focus();
-    const target = ev.currentTarget;
-    try { target.setPointerCapture(ev.pointerId); } catch { /* sin captura el arrastre sigue mientras el puntero esté encima */ }
-    const origin = { x: ev.clientX, y: ev.clientY, box: { ...it.cur } };
-    const onMove = (m) => {
-      const k = img.clientWidth / W;
-      if (!k) return;
-      const dx = Math.round((m.clientX - origin.x) / k);
-      const dy = Math.round((m.clientY - origin.y) / k);
-      it.cur = corner ? resizeBox(origin.box, corner, dx, dy, !m.shiftKey, W, H) : moveBox(origin.box, dx, dy, W, H);
-      refresh(it);
-    };
-    const onEnd = () => {
-      target.removeEventListener('pointermove', onMove);
-      target.removeEventListener('pointerup', onEnd);
-      target.removeEventListener('pointercancel', onEnd);
-      try { target.releasePointerCapture(ev.pointerId); } catch { /* ya soltado */ }
-      measureLater(it);
-    };
-    target.addEventListener('pointermove', onMove);
-    target.addEventListener('pointerup', onEnd);
-    target.addEventListener('pointercancel', onEnd);
+    startBoxDrag(ev, {
+      getBox: () => it.cur, setBox: (box) => { it.cur = box; refresh(it); }, scale: () => img.clientWidth / W, W, H, corner,
+      lock: (m) => !m.shiftKey, busy: () => busy, focus: it.node, onEnd: () => measureLater(it),
+    });
   }
 
   // --- teclado ---
   function onBoxKey(ev, it) {
-    const dir = ARROWS[ev.key];
-    if (!dir || busy || ev.ctrlKey || ev.metaKey) return;
-    ev.preventDefault();
-    const step = ev.shiftKey ? STEP_BIG : STEP;
-    it.cur = ev.altKey ? sizeBox(it.cur, dir[0] * step, dir[1] * step, W, H) : moveBox(it.cur, dir[0] * step, dir[1] * step, W, H);
+    if (busy) return;
+    const next = boxKey(ev, it.cur, { W, H, step: ev.shiftKey ? STEP_BIG : STEP, size: ev.altKey });
+    if (!next) return;
+    it.cur = next;
     refresh(it);
     measureLater(it);
   }
@@ -244,26 +185,15 @@ export function openLayoutEditor(ctx, attempt, tpl, opener) {
   }
 
   // --- foco atrapado y cierre ---
-  dlg.addEventListener('keydown', (ev) => {
-    ev.stopPropagation(); // los atajos de la galería y los globales no actúan con el editor abierto
-    if (ev.key !== 'Tab') return;
-    const nodes = [...dlg.querySelectorAll(FOCUSABLE)].filter((n) => n.getClientRects().length > 0);
-    if (!nodes.length) return;
-    const first = nodes[0];
-    const last = nodes[nodes.length - 1];
-    if (ev.shiftKey && (document.activeElement === first || document.activeElement === dlg)) { ev.preventDefault(); last.focus(); }
-    else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
-  });
   dlg.addEventListener('close', () => {
     closed = true;
     for (const it of items) clearTimeout(it.timer);
     if (observer) observer.disconnect();
     window.removeEventListener('resize', layoutBoxes);
     dlg.remove();
-    // el pedido se recarga al aplicar y la tarjeta se rehace: si el botón ya no está, la tarjeta del intento
-    const back = opener && opener.isConnected ? opener : document.querySelector(`[data-attempt="${attempt.id}"][data-kind="attempt"]`);
-    if (back) back.focus();
   });
+  // el pedido se recarga al aplicar y la tarjeta se rehace: si el botón ya no está, la tarjeta del intento
+  trapDialog(dlg, { opener, fallback: () => document.querySelector(`[data-attempt="${attempt.id}"][data-kind="attempt"]`) });
 
   document.body.append(dlg);
   const observer = ('ResizeObserver' in window) ? new ResizeObserver(layoutBoxes) : null;

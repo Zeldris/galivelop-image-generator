@@ -542,7 +542,7 @@ Entre el repo de Workflow (`7d61089`) y la biblia (`a50b544`), o entre la biblia
    del proyecto en mayúsculas con tracking 0,16 em. La biblia §2-§3 dice `#0d1b2a`, `#eef6fb`, `#8a9bb0`, `#38b6e8`, `#4cc38a`,
    `#f0716a`, Inter, wordmark en una línea sin mayúsculas. Los tonos son vecinos (azul noche, celeste, verde, rojo), pero no
    son los mismos hex, y las propias plantillas dicen «override these to match the project» mientras el repo no tiene la
-   nota `.claude/gw/gw-media-content.md` que lo haría. **Propuesta:** la hoja manda con la biblia; en `docs/propuestas/galivelop-workflow.md`
+   nota `.claude/gw/gw-media-content.md` que lo haría. **Propuesta:** la hoja manda con la biblia; en `docs/proposals/galivelop-workflow.md`
    se le pide a Workflow una nota con `Palette:` que mapee `--background: #0d1b2a; --surface: #06121c; --border: #1b3447;
    --text: #eef6fb; --muted: #8a9bb0; --accent: #38b6e8; --accent-text: #0d1b2a; --good: #4cc38a; --bad: #f0716a` y
    `--font: Inter, …` (el borde `#1b3447` es el de las superficies oscuras del Portal, `docs/marcas/portal/biblia.md` l.28; la biblia de Workflow no lo lista). El `.brand` en mayúsculas queda como está

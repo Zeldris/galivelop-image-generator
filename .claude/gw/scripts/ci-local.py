@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
-# galivelop-workflow v0.5.0
+# galivelop-workflow v0.7.0
 """Runs the project's GitHub Actions CI on this machine, for when GitHub does not start it (no Actions quota, no
 runners), and with --record records the result in the config's `ciLocalLog` (default docs/records/ci-local.md).
 The PR hook (review-before-main.sh) takes a committed green record as the CI of a PR whose CI never started; a CI
 that started and failed is never replaced this way. Recording one is the person's call ("checked only locally").
 
   python3 ci-local.py [--event pull_request|push] [--plan] [--record] [--root PATH]
+  python3 ci-local.py --validate [--root PATH]
+
+--validate (E51) runs nothing: it parses every .github/workflows/*.yml|yaml with the reader below and prints
+`<file>: line N: <reason>` for each one that fails (GitHub never runs a workflow with invalid YAML, so no CI goes
+red; e.g. an unquoted `name: a: b`). Exit 0 all valid (or none), 1 some invalid, 2 bad config. With `ciYamlCheck`
+false in .claude/gw.json it says it is off and exits 0. The reader is a subset: a valid file it rejects is a reader
+gap to report, not a reason to skip the file.
 
 What runs: the workflows of `ciLocalWorkflows`, or else every .github/workflows/*.yml|yaml triggered by the event
 (default pull_request, the one a PR merge waits for; branch and path filters honoured), on the working tree as it is.
@@ -20,7 +27,7 @@ expected to have the toolchain already. Not covered, and listed as such: jobs fo
 Green = every step that ran passed, at least one ran and no job was left out for lack of evaluation (a matrix from
 an expression runs once, with this machine's toolchain; other-OS, `services` and `container` jobs stay only listed). Exit 0 green, 1 not green, 2 no workflow or a bad config.
 The YAML reader covers what workflows use (block maps and lists, flow [..] {..}, quotes, | and > scalars, comments);
-no anchors or tags. Python 3.8+, stdlib only. Root from this script's path (config.find_root).
+anchors and tags are read past (not resolved: an alias stays text). Python 3.8+, stdlib only. Root from this script's path (config.find_root).
 """
 import argparse
 import datetime
@@ -41,7 +48,18 @@ sys.path.insert(0, HERE)
 sys.dont_write_bytecode = True  # no __pycache__: it would make the tree look dirty
 import config  # noqa: E402  the only reader of .claude/gw.json
 
-SYSTEM_PACKAGES = re.compile(r"(^|[\s;&|(])(sudo|apt-get|apt|yum|dnf|apk|brew|choco|winget|snap)\s")
+
+def system_packages(commands):
+    """The regex of a step that installs system packages: one of `commands` (ciSystemCommands) as a word followed by
+    whitespace, at the start of the script or after `;`, `&`, `|` or `(`; None for an empty list."""
+    if not commands:
+        return None
+    return re.compile(r"(^|[\s;&|(])(" + "|".join(re.escape(c) for c in commands) + r")\s")
+
+
+PACKAGE_VERB = re.compile(r"(?:^|[\s;&|(])(?:install|update|upgrade|add|remove|refresh|autoremove|clean|-y)(?:\s|$)")
+
+
 HEADER = ("# CI run locally\n\n"
           "Written by `ci-local.py --record`: one line per local run of the GitHub CI (green or red, with what it\n"
           "did not cover). The PR hook takes a green line whose commit has only content after it as the CI that\n"
@@ -243,6 +261,12 @@ class Yaml:
     def scalar(self, rest, parent):
         """The value `rest` (already read) of a key or list item at column `parent`; block scalars and multi-line
         plain or flow values read their continuation lines (indented past `parent`)."""
+        props = re.match(r"(?:[&!]\S*\s*)+", rest)  # an &anchor or !tag before the value: only its value matters
+        if props:
+            rest = rest[props.end():]
+            if not rest:  # the value is the block node on the next lines
+                nxt = self.peek()
+                return self.node(nxt[0]) if nxt and nxt[0] > parent else None
         if rest[0] in "|>":
             return self.block(rest, parent)
         while rest[0] in "[{" and rest.count(rest[0]) > rest.count("]" if rest[0] == "[" else "}"):
@@ -252,12 +276,16 @@ class Yaml:
             rest += " " + p[1]
             self.i += 1
         if rest[0] not in "[{'\"":
+            start = self.i
             while True:
                 p = self.peek()
                 if p is None or p[0] <= parent:
                     break
                 rest += " " + p[1]
                 self.i += 1
+            if re.search(r":(\s|$)", rest):  # YAML: a plain scalar cannot hold ': ' (E51)
+                self.i = start - 1  # report the line of the key, not the one read after it
+                self.error(f"mapping values are not allowed here in {rest!r}; quote the value")
         return flow(rest)
 
     def block(self, header, parent):
@@ -575,6 +603,8 @@ def matrix_combos(strategy, ev):
 class Run:
     def __init__(self, root, cfg, event, plan_only):
         self.root, self.cfg, self.event, self.plan_only = root, cfg, event, plan_only
+        self.system = system_packages(config.ci_system_commands(cfg))
+        self.step_timeout = config.ci_step_timeout(cfg)
         self.os = host_os()
         self.branch = git(root, "rev-parse", "--abbrev-ref", "HEAD").stdout.strip() or "HEAD"
         self.sha = git(root, "rev-parse", "HEAD").stdout.strip()
@@ -719,7 +749,9 @@ class Run:
                     self.say(f"{sname}: not run (uses: {step['uses']}; this machine must have it already)")
                     continue
                 script = substitute(step.get("run"), ev)
-                if SYSTEM_PACKAGES.search(script):
+                if self.system and self.system.search(script):
+                    if not PACKAGE_VERB.search(script):  # `sudo bash tests/check.sh` is no install: it forbids a green
+                        self.unrun.append(f"{sname} (skipped as a system command but it installs nothing)")
                     self.not_run.append(sname)
                     self.say(f"{sname}: not run (system packages; this machine must have them already)")
                     continue
@@ -729,6 +761,8 @@ class Run:
                 wd = substitute(step.get("working-directory") or defaults.get("working-directory") or ".", ev)
                 tolerate = text_of(substitute(step.get("continue-on-error"), ev)) == "true"
                 timeout = step.get("timeout-minutes")
+                if timeout is None and self.step_timeout:
+                    timeout = self.step_timeout  # ciStepTimeout: only for a step with no limit of its own
             except Unknown as exc:
                 self.not_covered.append(f"{sname} ({exc})")
                 continue
@@ -833,6 +867,32 @@ def workflows(root, cfg, event, branch):
             if f.endswith((".yml", ".yaml"))]
 
 
+def validate(root, cfg):
+    """--validate (E51): parse every workflow file; 0 all valid, 1 some invalid (fails closed on unreadable files)."""
+    if not cfg["ciYamlCheck"]:
+        print("ci-local: workflow YAML check is off (ciYamlCheck is false in .claude/gw.json)")
+        return 0
+    folder = os.path.join(root, ".github", "workflows")
+    files = sorted(f for f in os.listdir(folder) if f.endswith((".yml", ".yaml"))) if os.path.isdir(folder) else []
+    bad = 0
+    for name in files:
+        rel = os.path.join(".github", "workflows", name)
+        try:
+            with open(os.path.join(root, rel), encoding="utf-8") as fh:
+                text = fh.read()
+            if not text.strip():
+                raise YamlError("the file is empty")
+            doc = load_yaml(text)
+            if not isinstance(doc, dict):
+                raise YamlError("not a mapping at the top level")
+        except (YamlError, UnicodeDecodeError, OSError) as exc:
+            bad += 1
+            print(f"ci-local: {rel}: {exc}; GitHub would not run it. Fix it (quote values holding ': ', use spaces "
+                  f"not tabs) and recheck: python3 {os.path.join(HERE, 'ci-local.py')} --validate", file=sys.stderr)
+    print(f"ci-local: {len(files)} workflow file(s) checked, {bad} invalid")
+    return 1 if bad else 0
+
+
 def dirty(root, log):
     out = git(root, "status", "--porcelain", "--untracked-files=all").stdout.splitlines()
     return any(line[3:].strip('"') != log for line in out if line.strip())
@@ -871,6 +931,7 @@ def main(argv=None):
     p.add_argument("--event", default="pull_request", choices=("pull_request", "push"))
     p.add_argument("--plan", action="store_true", help="say what would run, run nothing")
     p.add_argument("--record", action="store_true", help="append the result to ciLocalLog")
+    p.add_argument("--validate", action="store_true", help="only check that each workflow file is valid YAML")
     args = p.parse_args(argv)
     try:
         root = config.find_root(args.root)
@@ -878,6 +939,8 @@ def main(argv=None):
     except config.ConfigError as exc:
         print(f"ci-local: {exc}; fix the config: python3 {os.path.join(HERE, 'config.py')} validate", file=sys.stderr)
         return 2
+    if args.validate:
+        return validate(root, cfg)
     if args.plan and args.record:
         print("ci-local: --plan runs nothing, so there is nothing to record; drop one: "
               f"python3 {os.path.join(HERE, 'ci-local.py')} --record", file=sys.stderr)

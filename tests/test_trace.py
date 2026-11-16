@@ -475,6 +475,52 @@ class ToSvgTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "ink: the list is empty"):
             trace.to_svg(*img, "mono", ink=[])
 
+    def test_a_lower_max_side_keeps_the_shape_instead_of_an_empty_svg(self):
+        # min_island and the smoothing work in reduced pixels: a small solid shape must not vanish with the reduction
+        for w, size, max_side in ((1000, 24, 512), (1000, 12, 512), (100, 30, 16), (60, 20, 8)):
+            img = canvas(w, w)
+            fill(img, 10, 10, 10 + size, 10 + size, DARK + (255,))
+            for mode in ("mono", "color", "silueta"):
+                with self.subTest(w=w, size=size, max_side=max_side, mode=mode):
+                    svg = trace.to_svg(*img, mode, ncolores=1, max_side=max_side, **({"ink": [0]} if mode == "mono" else {}))
+                    d = "".join(p.get("d") for p in paths(svg))
+                    self.assertNotEqual(d, "", "an empty path")
+                    self.assertGreater(evenodd_area(d, w), 0)
+
+    def test_a_speck_next_to_a_big_shape_is_still_dropped_with_the_reduction(self):
+        img = canvas(256, 256)
+        fill(img, 20, 20, 120, 120, DARK + (255,))
+        fill(img, 200, 200, 208, 208, DARK + (255,))  # 4x4 = 16 reduced px at factor 2, but min_island is 40
+        for mode in ("color", "silueta"):
+            with self.subTest(mode=mode):
+                svg = trace.to_svg(*img, mode, ncolores=1, max_side=128, min_island=40, smooth_passes=0, curves=False)
+                self.assertEqual(sum(p.get("d").count("M") for p in paths(svg)), 1, "only the big shape, not the speck")
+
+    def test_the_relaxed_retry_leaves_a_note_and_only_then(self):
+        img = canvas(1000, 1000)
+        fill(img, 10, 10, 22, 22, DARK + (255,))  # 6x6 reduced px: under min_island 100, over the relaxed 25
+        notes = []
+        svg = trace.to_svg(*img, "color", ncolores=1, max_side=500, min_island=100, notes=notes)
+        self.assertIn("<path", svg)
+        self.assertEqual([k for k, _ in notes], ["brand.trace_relaxed"])
+        self.assertEqual(notes[0][1]["factor"], 2)
+        self.assertEqual(notes[0][1]["min_island"], 25)
+        notes = []  # no reduction needed, or the first pass already works: no note
+        trace.to_svg(*img, "color", ncolores=1, max_side=1000, min_island=0, notes=notes)
+        big = canvas(1000, 1000)
+        fill(big, 100, 100, 400, 400, DARK + (255,))
+        trace.to_svg(*big, "color", ncolores=1, max_side=500, notes=notes)
+        self.assertEqual(notes, [])
+
+    def test_the_final_failure_after_the_retry_says_to_raise_max_side(self):
+        img = canvas(1000, 1000)
+        fill(img, 10, 10, 14, 14, DARK + (255,))  # 2x2 reduced px: under even the relaxed min_island (10)
+        for mode in ("color", "mono"):
+            with self.subTest(mode=mode):
+                kw = {"ink": [0]} if mode == "mono" else {}
+                with self.assertRaisesRegex(ValueError, "raise max_side"):
+                    trace.to_svg(*img, mode, ncolores=1, max_side=500, min_island=40, **kw)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -453,7 +453,7 @@ destino, el mapeo de `Palette:` para un futuro `gw-media-content`.
   `examples/pilot/componer.py` y `piezas.json`.
 - Copia de los logos en `examples/galivelop-developer/logos/`: pendiente (F2.10, dec. 3).
 - En el repo de developer: nada que recibir hoy (sin web, favicon ni `gw-media-content`); la propuesta
-  `docs/propuestas/galivelop-developer.md` le llevaría la hoja, el logo `d` como favicon y social preview, y la nota `Palette:`
+  `docs/proposals/galivelop-developer.md` le llevaría la hoja, el logo `d` como favicon y social preview, y la nota `Palette:`
   para cuando actualice el flujo.
 
 ---

@@ -39,4 +39,4 @@ Desde `529468b`, sesiones `0cacc78c` y `6e5628a7`: principal 123 llamadas, ~15 M
 - **W3. Tope de llamadas en el encargo de la skill `gw-orchestrate-dealer`**: pasadas ~30, commit `WIP:` y devolver
   qué falta. Aplicado aquí como nota del proyecto; tres encargos lo pasaron en dos días (80, 66, 40).
 - **W4. Rechazar commits con autor o committer `noreply@anthropic.com`**: propuesta completa en
-  `docs/propuestas/galivelop-workflow/autor-agente-2026-11-13.md`.
+  `docs/proposals/galivelop-workflow/autor-agente-2026-11-13.md`.

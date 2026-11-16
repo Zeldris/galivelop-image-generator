@@ -24,7 +24,7 @@ La página de revisión con todas las propuestas la genera `python3 examples/pil
 ## Elegido por el agente (delegado, 2026-10-26)
 
 La persona dejó estas decisiones en manos del agente («lo dejo en tus manos»); valen hasta que ella diga otra cosa y se
-proponen a cada repo al cerrar F2 (`docs/propuestas/`).
+proponen a cada repo al cerrar F2 (`docs/proposals/`).
 
 - **Logos** (tabla de arriba), con el porqué:
   - Portal **a**: el logo de hoy simplificado, sin ruptura con lo publicado.

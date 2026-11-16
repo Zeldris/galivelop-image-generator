@@ -96,6 +96,14 @@ class MatteTests(BrandBase):
         self.assertIn("is the original itself", err)
         self.assertEqual(src.read_bytes(), before)
 
+    def test_a_border_of_zero_says_why(self):
+        src = self.tmp / "a.png"
+        square_png(src)
+        with self.assertRaises(GimgError) as ctx:
+            brand.matte(str(src), border=0)
+        self.assertEqual(ctx.exception.code, "brand.bad_option")
+        self.assertIn("border must be at least 1", str(ctx.exception.params))
+
     def test_bad_tolerance_is_a_gimg_error(self):
         src = self.tmp / "a.png"
         square_png(src)
@@ -574,6 +582,36 @@ class LockupTests(BrandBase):
         self.assertEqual(out.read_text(), "mine")
         self.assertEqual(sorted(p.name for p in self.tmp.iterdir()), ["e.svg", "l.svg", "w.svg"])  # no .brand-*.tmp
 
+    def test_a_failure_midway_through_the_data_keeps_the_old_file_and_leaves_no_temporary(self):
+        out = self.tmp / "l.svg"
+        out.write_text("mine")
+        real = os.fdopen
+
+        def failing(fd, *a, **kw):
+            fh = real(fd, *a, **kw)
+            fh.write = mock.Mock(side_effect=OSError(5, "Input/output error"))
+            return fh
+
+        with mock.patch("gimg.brand.os.fdopen", failing), self.assertRaises(GimgError) as cm:
+            brand.lockup(self.emblem, self.word, out, force=True)
+        self.assertEqual(cm.exception.code, "brand.write_failed")
+        self.assertIn("Input/output error", str(cm.exception.params["reason"]))
+        self.assertEqual(out.read_text(), "mine")
+        self.assertEqual(sorted(p.name for p in self.tmp.iterdir()), ["e.svg", "l.svg", "w.svg"])
+
+    def test_force_replaces_an_existing_lockup_with_the_one_that_a_fresh_run_makes(self):
+        fresh = self.tmp / "fresh.svg"
+        brand.lockup(self.emblem, self.word, fresh)
+        out = self.tmp / "l.svg"
+        out.write_text("mine")
+        with self.assertRaises(GimgError) as cm:
+            brand.lockup(self.emblem, self.word, out)
+        self.assertEqual((cm.exception.code, cm.exception.params["files"]), ("brand.exists", "l.svg"))
+        self.assertEqual(out.read_text(), "mine")
+        res = brand.lockup(self.emblem, self.word, out, force=True)
+        self.assertEqual(out.read_text(), fresh.read_text())
+        self.assertEqual(res["out"], str(out))
+
     def test_force_over_a_symlink_replaces_the_link_and_never_writes_through_it(self):
         victim, out = self.tmp / "victim.txt", self.tmp / "l.svg"
         victim.write_text("precious")
@@ -1034,6 +1072,30 @@ class SquareTests(BrandBase):
         self.draw.write_text(svg % '<g stroke="#f00"><path fill="#f00" d="M0 0L40 0L40 20Z"/></g>')
         self.assertNotIn("flattened", self.make(force=True))
 
+    def test_a_fill_that_only_a_line_would_get_is_not_a_color(self):
+        """A <line> has no area: its fill (own, a group's or the root's) paints nothing, so it is not a flattened color."""
+        line = '<line x1="0" y1="0" x2="40" y2="20" stroke="#f00"%s/>'
+        for body in (line % ' fill="#00f"', '<g fill="#00f">' + line % "" + "</g>",
+                     '<g fill="#00f"><g>' + line % "" + "</g></g>", line % ' style="fill:#00f"'):
+            self._draw(body)
+            self.assertNotIn("flattened", self.make(force=True), body)
+        self.assertEqual(brand._paint_colors(line % "", 'fill="#00f"'), {"#ff0000"})
+        self.assertEqual(brand._paint_colors('<g fill="#00f">' + line % "" + '<path d="M0 0h1v1z"/></g>'), {"#ff0000", "#0000ff"})
+
+    def test_an_inherit_fill_climbs_the_groups_to_the_one_that_gives_it(self):
+        path = '<path d="M0 0"/>'
+        self.assertEqual(brand._paint_colors('<g fill="red"><g fill="inherit">' + path + "</g></g>"), {"#ff0000"})
+        self.assertEqual(brand._paint_colors('<g fill="red"><g style="fill:unset">' + path + "</g></g>"), {"#ff0000"})
+        self.assertEqual(brand._paint_colors('<g fill="inherit">' + path + "</g>", 'fill="#00f"'), {"#0000ff"})
+        self.assertEqual(brand._paint_colors('<g fill="red"><path fill="inherit" d="M0 0"/></g>'), {"#ff0000"})
+        self.assertEqual(brand._paint_colors('<g fill="inherit">' + path + "</g>"), {"#000000"})
+
+    def test_no_fill_paints_through_a_line_even_with_its_own_fill_opacity(self):
+        line = '<line x1="0" y1="0" x2="40" y2="20" stroke="#00f"%s/>'
+        self.assertEqual(brand._paint_colors('<g fill="red" fill-opacity="1">' + line % "" + "</g>"), {"#0000ff"})
+        self.assertEqual(brand._paint_colors(line % ' fill="red" fill-opacity="1"'), {"#0000ff"})
+        self.assertEqual(brand._paint_colors(line % ' style="fill:red;fill-opacity:1"'), {"#0000ff"})
+
     def test_zero_opacity_is_not_ink_and_partial_opacity_is_the_same_color(self):
         self._draw('<path fill="#f00" d="M0 0L40 0L40 20Z"/><path fill="#00f" fill-opacity="0" d="M0 0L5 0L5 5Z"/>'
                    '<path fill="#0f0" opacity="0" d="M0 0L6 0L6 6Z"/><path style="fill:#0ff;fill-opacity:0" d="M0 0L7 0L7 7Z"/>'
@@ -1101,6 +1163,16 @@ class SquareTests(BrandBase):
         self.assertNotIn("flattened", self.make(force=True))
         self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/><line x1="0" y1="0" x2="40" y2="20" stroke="#fedcba"/>')
         self.assertEqual(self.make(force=True)["flattened"], 2)
+
+    def test_a_line_does_not_inherit_the_root_fill(self):
+        self.draw.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20" fill="#ff0000">'
+                             '<path fill="#123456" d="M0 0L40 0L40 20Z"/>'
+                             '<line x1="0" y1="0" x2="40" y2="20" stroke="#123456"/></svg>\n')
+        self.assertNotIn("flattened", self.make())
+        self.draw.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20" fill="#ff0000">'
+                             '<path d="M0 0L40 0L40 20Z"/>'
+                             '<line x1="0" y1="0" x2="40" y2="20" stroke="#123456"/></svg>\n')
+        self.assertEqual(self.make(force=True)["flattened"], 2)  # the path does inherit it
 
     def test_a_bang_that_is_not_important_stays_inside_the_value(self):
         self._draw('<path style="fill:#123456 !x;stroke-width:2" d="M0 0L40 0L40 20Z"/>')

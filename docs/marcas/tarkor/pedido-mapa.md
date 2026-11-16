@@ -1,4 +1,4 @@
-<!-- Copia de World-Maker-Fantasy docs/producto/pedido-imagenes-mapa.md (commit 7c5e2d13, 2026-11-10). El original manda; si cambia, se vuelve a copiar. Corregido aquí el 2026-11-12 contra hoja.md §16 (acabado pintado, sin negativo, perfiles del mapa, prompts 39, 40 y 43): los mismos cambios se piden al original en docs/propuestas/world-maker-fantasy/entrega-hoja-2026-11-12.md. El original no ha cambiado desde 7c5e2d13. -->
+<!-- Copia de World-Maker-Fantasy docs/producto/pedido-imagenes-mapa.md (commit 7c5e2d13, 2026-11-10). El original manda; si cambia, se vuelve a copiar. Corregido aquí el 2026-11-12 contra hoja.md §16 (acabado pintado, sin negativo, perfiles del mapa, prompts 39, 40 y 43): los mismos cambios se piden al original en docs/proposals/world-maker-fantasy/entrega-hoja-2026-11-12.md. El original no ha cambiado desde 7c5e2d13. -->
 
 # Pedido a galivelop-image-generator: imágenes para el mapa de Helek (2026-11-10)
 

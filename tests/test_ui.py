@@ -4,7 +4,7 @@ import re
 import unittest
 from pathlib import Path
 
-from gimg import server
+from gimg import brand, matte, server
 from tests.test_server import ServerBase
 
 UI = Path(server.UI_DIR)
@@ -393,6 +393,64 @@ class ApiRoutes(unittest.TestCase):
                 self.assertIn(name, patterns, rel(path))
 
 
+class CropEditor(unittest.TestCase):
+    """FM 0.6.0: el editor de recorte, comprobado en estático (el recorrido de verdad está en test_ui_browser.py)."""
+
+    def comp(self, name):
+        return read(UI / "js" / "components" / name)
+
+    def test_the_card_offers_crop_in_more_actions_and_marks_derived_attempts(self):
+        card = self.comp("attempt-card.js")
+        self.assertIn("openCropEditor(ctx, attempt, cropBtn)", card)
+        self.assertIn("ui.attempt.cropOf", card)
+        self.assertIn("a.derivedFrom", card)
+        self.assertLess(card.index("const more = h('details'"), card.index("cropBtn,"))
+
+    def test_the_call_matches_the_endpoint(self):
+        api = read(UI / "js" / "api.js")
+        self.assertIn("/crop`", api)
+        self.assertIn("post(paths.crop(", api)
+        order = self.comp("order-view.js")
+        self.assertIn("api.crop(project, from ? from.profile : profile, from ? from.key : key, a.id, body)", order)
+        self.assertIn("profiles: cfg.profiles", order)
+
+    def test_the_editor_asks_the_raw_image_and_sends_the_api_shape(self):
+        crop = self.comp("crop-editor.js")
+        self.assertIn("raw: true", crop)
+        self.assertIn("{ box: toBox(box), lockRatio: locked", crop)
+        self.assertIn("api.heavy_busy", crop)
+        self.assertIn("RATIO_TOLERANCE = 0.01", crop)
+        self.assertIn("ENLARGE_WARN = 2", crop)
+        self.assertIn("getContext('2d')", crop)
+        self.assertIn("ctx.profileCfg", crop)
+        self.assertIn("cfg.compose", crop)
+        self.assertIn("saveLocked", crop)
+        for needle in ("showModal()", "trapDialog(dlg, { opener", "startBoxDrag(ev", "boxKey(ev"):
+            self.assertIn(needle, crop)
+
+    def test_repeat_takes_the_origin_batch_and_goes_to_the_viewed_order(self):
+        crop = self.comp("crop-editor.js")
+        self.assertIn("!a.derivedFrom && a.id !== df.attempt", crop)
+        self.assertIn("api.order(ctx.project, df.profile, df.key)", crop)
+        self.assertIn("to: { profile: ctx.profile, key: ctx.key }", crop)
+
+    def test_the_crop_stage_leaves_room_for_the_44_px_handles(self):
+        css = read(UI / "css" / "components.css")
+        self.assertRegex(css, r"\.crop-stage \{[^}]*padding: 22px")
+        self.assertIn("crop-inner", self.comp("crop-editor.js"))
+
+    def test_the_ratio_tolerance_is_the_one_of_the_server(self):
+        from gimg import crop as server_crop
+        self.assertEqual(server_crop.RATIO_TOLERANCE, 0.01)
+
+    def test_touch_handles_are_44_px(self):
+        css = read(UI / "css" / "components.css")
+        self.assertRegex(css, r"\.crop-handle \{[^}]*width: 44px; height: 44px")
+
+    def test_the_mock_serves_the_crop_endpoint(self):
+        self.assertIn("r7 === 'crop'", read(UI / "mock" / "api-mock.js"))
+
+
 class LayoutEditor(unittest.TestCase):
     """F4c.3: el editor de elementos, comprobado en estático (no hay navegador: el recorrido es de la persona)."""
 
@@ -436,9 +494,73 @@ class LayoutEditor(unittest.TestCase):
 
     def test_dialog_traps_focus_stops_global_keys_and_returns_focus(self):
         editor = self.comp("layout-editor.js")
-        for needle in ("showModal()", "ev.key !== 'Tab'", "ev.stopPropagation()", "opener.focus()", "setPointerCapture", "ev.shiftKey", "ev.altKey"):
+        for needle in ("showModal()", "trapDialog(dlg", "startBoxDrag(ev", "boxKey(ev", "ev.shiftKey", "ev.altKey"):
             self.assertIn(needle, editor)
+        trap = self.comp("dialog-trap.js")
+        for needle in ("ev.key !== 'Tab'", "ev.stopPropagation()", "back.focus()", "export function trapDialog"):
+            self.assertIn(needle, trap)
         self.assertNotIn("setAttribute('style'", editor)
+
+    def test_the_drag_and_the_arrows_live_in_box_drag_and_both_editors_use_them(self):
+        drag = self.comp("box-drag.js")
+        for needle in ("setPointerCapture", "releasePointerCapture", "pointercancel", "export function resizeBox", "export function boxKey"):
+            self.assertIn(needle, drag)
+        self.assertIn("from './box-drag.js'", self.comp("layout-editor.js"))
+        for gone in ("setPointerCapture", "function resizeBox", "const ARROWS"):
+            self.assertNotIn(gone, self.comp("layout-editor.js"))
+
+    def test_both_editors_share_the_focus_trap(self):
+        for name in ("layout-editor.js", "crop-editor.js"):
+            src = self.comp(name)
+            self.assertIn("import { trapDialog } from './dialog-trap.js'", src)
+            self.assertIn("trapDialog(dlg, { opener", src)
+            self.assertNotIn("FOCUSABLE", src)
+            self.assertNotIn("ev.key !== 'Tab'", src)
+
+    @staticmethod
+    def fn_body(src, name):
+        """El cuerpo de `function name(...) {` hasta su llave de cierre (a la sangría de la declaración)."""
+        m = re.search(r"^( *)function %s\([^\n]*\{\n(.*?)^\1\}\n" % name, src, re.S | re.M)
+        assert m, name
+        return m.group(2)
+
+    def test_crop_editor_sweep_b_review_fixes(self):
+        crop = self.comp("crop-editor.js")
+        layout = self.comp("layout-editor.js")
+        for name, src in (("crop", crop), ("layout", layout)):  # el foco se devuelve tras `dlg.remove()` del `close` propio
+            close, trap = src.find("dlg.addEventListener('close'"), src.find("trapDialog(dlg")
+            self.assertTrue(0 <= close < trap, name)
+        close_body = crop[crop.index("dlg.addEventListener('close'"):crop.index("trapDialog(dlg")]
+        self.assertIn("cancelAnimationFrame(previewFrame)", close_body)
+        # el arrastre solo hace la parte ligera y el `refresh` completo llega al soltar
+        drag = crop[crop.index("const drag = "):crop.index("boxNode.addEventListener('pointerdown'")]
+        self.assertIn("refreshBox()", drag)
+        self.assertNotIn("refresh();", drag.split("onEnd")[0])
+        self.assertRegex(drag, r"onEnd: \(\) => \{[^}]*refresh\(\)")
+        # `previewFrame` se declara antes de la primera función que lo usa (sin TDZ)
+        self.assertLess(crop.index("let previewFrame"), crop.index("const src = paths.image"))
+        self.assertLess(crop.index("let previewReason"), crop.index("const src = paths.image"))
+        # «Repetir» desactivado con aviso y sin que el bucle de `select` lo reactive después
+        refresh = self.fn_body(crop, "refresh")
+        self.assertIn("repeatLocked", refresh)
+        self.assertGreater(refresh.index("repeatSel.disabled = busy || !size || saveLocked;"), refresh.index("querySelectorAll('.ed-side"))
+        # el error se muestra solo en el diálogo modal
+        self.assertNotIn("toastError", self.fn_body(layout, "showError"))
+        self.assertNotIn("toastError", layout)
+
+    def test_crop_editor_sweep_b(self):
+        crop = self.comp("crop-editor.js")
+        self.assertNotIn("toastError", crop)  # el error va dentro del diálogo, el toast queda tapado
+        self.assertIn("repeatGo.disabled = busy || !size || saveLocked;", crop)
+        self.assertIn("requestAnimationFrame(", crop)
+        self.assertIn("if (!closed) paintPreview(", crop)
+        for name in ("refresh", "refreshBox"):  # ninguna pinta directo: solo programa la vista previa
+            body = self.fn_body(crop, name)
+            self.assertNotIn("paintPreview(", body)
+        self.assertIn("schedulePreview(", self.fn_body(crop, "refreshBox"))
+        self.assertIn("refreshBox()", self.fn_body(crop, "refresh"))
+        self.assertIn("= toBox(b);", crop)
+        self.assertNotIn("x1: b.x + b.w", crop)
 
     def test_local_templates_get_an_export_link_with_download(self):
         slots = self.comp("slots.js")
@@ -924,6 +1046,41 @@ class Contrast(unittest.TestCase):
         self.assertRegex(rules[where(".attempt.is-compared")[0]][1], r"outline-offset:\s*-")
         for i in where("select"):
             self.assertNotIn("text-transform", rules[i][1])
+
+
+class BrandWorkshopLimits(unittest.TestCase):
+    """Each field of the brand workshop, taken on its own, stays within the range that the server validates (a combination of
+    fields can still be refused: a tolerance from the soft edge up, for one, is for `matte.remove_bg`)."""
+    JS = read(UI / "js" / "components" / "brand-workshop.js")
+
+    def field(self, id_):
+        m = re.search(r"'%s'[^\n]*?\{([^}]*)\}" % id_, self.JS)
+        self.assertTrue(m, id_)
+        return {k: float(v) for k, v in re.findall(r"\b(min|max):\s*(-?[\d.]+)", m.group(1))}
+
+    def test_pieces_are_the_system_files_but_the_contact_sheet(self):
+        m = re.search(r"const PIECES = \[([^\]]*)\]", self.JS)
+        self.assertEqual(re.findall(r"'([^']+)'", m.group(1)), [k for k in brand.SYSTEM_FILES if k != "contactos.png"])
+
+    def test_the_name_texts_are_as_long_as_the_server_allows(self):
+        self.assertEqual(re.findall(r"id: 'shop-(?:name|wtext)', type: 'text', maxlength: (\d+)", self.JS),
+                         [str(brand.MAX_TEXT)] * 2)
+
+    def test_the_border_minimum_is_the_one_of_the_matte(self):
+        self.assertEqual(self.field("shop-border")["min"], 1)
+        with self.assertRaises(ValueError) as ctx:
+            matte.remove_bg(4, 4, bytes(64), border=0)
+        self.assertIn("border must be at least 1", str(ctx.exception))
+        matte.remove_bg(4, 4, bytes(64), border=1)
+
+    def test_the_tolerances_reach_the_largest_rgb_distance(self):
+        top = (3 * 255 ** 2) ** 0.5
+        for id_ in ("shop-tol", "shop-soft"):
+            self.assertGreaterEqual(self.field(id_)["max"], top, id_)
+            self.assertLess(self.field(id_)["max"], top + 1, id_)
+
+    def test_the_grow_maximum_is_the_one_of_the_matte(self):
+        self.assertLessEqual(self.field("shop-grow")["max"], matte.MAX_GROW)
 
 
 if __name__ == "__main__":

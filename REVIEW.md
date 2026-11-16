@@ -1,4 +1,4 @@
-<!-- galivelop-workflow v0.5.0 -->
+<!-- galivelop-workflow v0.7.0 -->
 # Guía de revisión
 
 Lo que el revisor (`/code-review`, o cualquier agente que revise un diff) comprueba en cada diff de galivelop-image-generator,
@@ -43,8 +43,12 @@ creada.
 - Los scripts de shell corren en bash 3.2 (macOS): nada de `mapfile` ni arrays asociativos. Lo mecánico (`readlink -f`,
   `mapfile`, `declare -A`, `${v,,}`, `wc` comparado como cadena) lo comprueba `tests/test_portabilidad.py`; la revisión
   mira el resto (opciones de GNU en `sed`, `date`, `stat`…). (check: `tests/test_portabilidad.py`, en parte)
+- Un comando lanzado dentro de un `while read … done < archivo` (o `<<<`) lleva la entrada redirigida (`< /dev/null`):
+  si la lee, se come los elementos que quedan del bucle. Su test usa al menos dos elementos. (criterio)
 - Una carpeta con nombre fijo en un directorio compartido (`$TMPDIR`, `/tmp`) es por usuario, se crea con permisos 700
   y se rechaza si ya existe como symlink o de otro usuario; los archivos sueltos, con `mktemp`. (criterio)
+- Un script que hace commits se prueba con los ganchos del proyecto instalados (`commit-msg` estricto incluido): un
+  commit con `--no-verify` en el test esconde el rechazo que tendrá de verdad. (criterio)
 - Cada cambio en un gancho o un script lleva su caso en los tests; un caso que espera un fallo comprueba el motivo,
   no solo el código de salida. Vale para los scripts propios del proyecto. (criterio)
 - Los scripts de `.claude/gw/scripts/` se prueban en el repo del flujo y no se editan aquí: un cambio va al flujo
@@ -59,6 +63,12 @@ creada.
   (`[s]ervidor`). (criterio)
 - Un runbook o encargo que sigue una tarea programada (una sesión sin persona delante) se revisa como código, aunque
   case con `content`: lo que dice se ejecuta tal cual. (criterio)
+
+## Tests
+
+- Un componente que los tests sustituyen por un doble (fake, mock, stub) tiene también una prueba de humo contra el
+  real: arrancarlo y hacer una llamada de punta a punta. Se omite en local si falta el real y falla en el CI.
+  (criterio)
 
 ## Traído de otro repo: se adapta a los contratos de este
 

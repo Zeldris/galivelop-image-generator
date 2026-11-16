@@ -16,7 +16,8 @@
 menor; `fix` y `perf`, el parche; sin nada de eso, ninguna. `bump` sale con 1 y dice el motivo si la versión no es
 semver, no es mayor que la actual o si algún CHANGELOG no tiene nada sin publicar. `verify-tag` sale con 0 o 1.
 `check` sale con 0 si las dos existen, 1 si falta alguna (y dice la orden que la crea) y 2 si no lo puede saber
-(sin `git` o `gh`, sin red). Se corre al cerrar cada fase, con la rama ya en `main`. Antes de leer la versión trae
+(sin `git` o `gh`, sin red; la release se consulta por la API REST, `gh api repos/{owner}/{repo}/releases/tags/<tag>`,
+porque GraphQL puede estar bloqueado, y falta solo con un 404). Se corre al cerrar cada fase, con la rama ya en `main`. Antes de leer la versión trae
 `ref` del remoto si es una rama de `origin/` (un `origin/main` viejo daría por buena la versión anterior).
 """
 import datetime
@@ -83,14 +84,14 @@ def check(ref, run=subprocess.run):
         tag = f"v{version}"
         tags = run(["git", "ls-remote", "--tags", "origin", f"refs/tags/{tag}"], cwd=R, capture_output=True,
                    text=True, check=True).stdout
-        release = run(["gh", "release", "view", tag, "--json", "tagName"], cwd=R, capture_output=True, text=True)
+        release = run(["gh", "api", f"repos/{{owner}}/{{repo}}/releases/tags/{tag}", "--jq", ".tag_name"], cwd=R, capture_output=True, text=True)
     except (OSError, subprocess.CalledProcessError, ValueError) as exc:
         return 2, f"releases: no se puede comprobar ({exc})"
     missing = []
     if not tags.strip():
         missing.append(f"la etiqueta: git tag -a {tag} <commit> -m 'gimg {version}' && git push origin {tag}")
     if release.returncode != 0:
-        if (release.stderr or "").strip().lower() != "release not found":
+        if "HTTP 404" not in (release.stderr or ""):
             return 2, f"releases: gh no responde ({(release.stderr or '').strip()})"
         missing.append(f"la release: python3 releases.py notes {version} | "
                        f"gh release create {tag} --verify-tag --title '{version}' --notes-file -")
