@@ -393,6 +393,50 @@ class ApiRoutes(unittest.TestCase):
                 self.assertIn(name, patterns, rel(path))
 
 
+class CropEditor(unittest.TestCase):
+    """FM 0.6.0: el editor de recorte, comprobado en estático (el recorrido de verdad está en test_ui_browser.py)."""
+
+    def comp(self, name):
+        return read(UI / "js" / "components" / name)
+
+    def test_the_card_offers_crop_in_more_actions_and_marks_derived_attempts(self):
+        card = self.comp("attempt-card.js")
+        self.assertIn("openCropEditor(ctx, attempt, cropBtn)", card)
+        self.assertIn("ui.attempt.cropOf", card)
+        self.assertIn("a.derivedFrom", card)
+        self.assertLess(card.index("const more = h('details'"), card.index("cropBtn,"))
+
+    def test_the_call_matches_the_endpoint(self):
+        api = read(UI / "js" / "api.js")
+        self.assertIn("/crop`", api)
+        self.assertIn("post(paths.crop(", api)
+        order = self.comp("order-view.js")
+        self.assertIn("api.crop(project, profile, key, a.id, body)", order)
+        self.assertIn("profiles: cfg.profiles", order)
+
+    def test_the_editor_asks_the_raw_image_and_sends_the_api_shape(self):
+        crop = self.comp("crop-editor.js")
+        self.assertIn("raw: true", crop)
+        self.assertIn("{ box: toBox(box), lockRatio: locked", crop)
+        self.assertIn("api.heavy_busy", crop)
+        self.assertIn("RATIO_TOLERANCE = 0.01", crop)
+        self.assertIn("ENLARGE_WARN = 2", crop)
+        self.assertIn("getContext('2d')", crop)
+        for needle in ("showModal()", "ev.key !== 'Tab'", "ev.stopPropagation()", "opener.isConnected", "startBoxDrag(ev", "boxKey(ev"):
+            self.assertIn(needle, crop)
+
+    def test_the_ratio_tolerance_is_the_one_of_the_server(self):
+        from gimg import crop as server_crop
+        self.assertEqual(server_crop.RATIO_TOLERANCE, 0.01)
+
+    def test_touch_handles_are_44_px(self):
+        css = read(UI / "css" / "components.css")
+        self.assertRegex(css, r"\.crop-handle \{[^}]*width: 44px; height: 44px")
+
+    def test_the_mock_serves_the_crop_endpoint(self):
+        self.assertIn("r7 === 'crop'", read(UI / "mock" / "api-mock.js"))
+
+
 class LayoutEditor(unittest.TestCase):
     """F4c.3: el editor de elementos, comprobado en estático (no hay navegador: el recorrido es de la persona)."""
 

@@ -97,6 +97,7 @@ export const paths = {
   attempt: (p, profile, key, id) => `${paths.order(p, profile, key)}/attempts/${enc(id)}`,
   mark: (p, profile, key, id) => `${paths.attempt(p, profile, key, id)}/mark`,
   note: (p, profile, key, id) => `${paths.attempt(p, profile, key, id)}/note`,
+  crop: (p, profile, key, id) => `${paths.attempt(p, profile, key, id)}/crop`,
   compose: (p, profile, key, id) => `${paths.attempt(p, profile, key, id)}/compose`,
   image: (p, profile, key, id, { raw = false, v = '' } = {}) =>
     `${paths.attempt(p, profile, key, id)}/image${raw ? '?raw=1' : ''}${v ? (raw ? '&' : '?') + 'v=' + enc(v) : ''}`,
@@ -146,6 +147,7 @@ export const api = {
   templates: (p, profile) => get(paths.templates(p, profile)),
   saveTemplate: (p, profile, body) => post(paths.templates(p, profile), body),
   compose: (p, profile, key, id, body = {}) => post(paths.compose(p, profile, key, id), body),
+  crop: (p, profile, key, id, body) => post(paths.crop(p, profile, key, id), body),
   measure: (p, profile, key, id, opts) => get(paths.measure(p, profile, key, id, opts)),
   choose: (p, profile, key, attempt) => post(paths.choose(p, profile, key), { attempt }),
   undo: (p, profile, key) => post(paths.undo(p, profile, key), {}),

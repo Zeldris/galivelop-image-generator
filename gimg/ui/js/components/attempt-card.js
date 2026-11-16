@@ -1,7 +1,8 @@
 /* Tarjeta de un intento en la galería del pedido: imagen (compuesta o fondo crudo), estado, metadatos, chip de medida,
    veredicto sí/no, elegir/deshacer, comparar, nota, y acciones secundarias (recrear, variar, copiar parámetros, registro).
    La misma tarjeta pinta una entrada de la cola todavía sin intento (en cola, generando con vista previa, fallo).
-   Selector de plantilla (F4b, slots.js) y botón «Editar composición» (F4c, layout-editor.js). */
+   Selector de plantilla (F4b, slots.js) y botón «Editar composición» (F4c, layout-editor.js).
+   «Recortar» (crop-editor.js, FM 0.6.0) y el distintivo «Recorte de q…» de los intentos con `derivedFrom`. */
 
 import { h, mmss, when, setVars } from '../dom.js';
 import { t } from '../i18n.js';
@@ -12,6 +13,7 @@ import { templateSlot, editorSlot, measureFor } from './slots.js';
 import { progressOf, remainingMs } from './queue-bar.js';
 import { openLightbox } from './lightbox.js';
 import { imageVersion } from './attempt-util.js';
+import { openCropEditor } from './crop-editor.js';
 
 /** Estado de presentación de un intento: chosen > candidate/discarded/new. */
 export function stateOf(order, attempt) {
@@ -68,10 +70,14 @@ export function attemptCard(ctx, attempt) {
     onchange: (e) => ctx.actions.note(attempt, e.target.value),
   });
 
+  const cropBtn = attempt.image || attempt.raw
+    ? h('button.btn', { type: 'button', title: t('ui.attempt.cropHint'), data: { action: 'crop' }, onclick: () => openCropEditor(ctx, attempt, cropBtn) }, '⛶ ', t('ui.attempt.crop'))
+    : null;
   const more = h('details', {}, h('summary', {}, t('ui.attempt.more')), h('div.actions', {},
     h('button.btn', { type: 'button', title: t('ui.attempt.recreateHint'), onclick: () => ctx.actions.recreate(attempt) }, '↩ ', t('ui.attempt.recreate')),
     h('button.btn', { type: 'button', title: t('ui.attempt.varyHint'), onclick: () => ctx.actions.vary(attempt) }, '▶ ', t('ui.attempt.vary')),
     h('button.btn', { type: 'button', onclick: () => ctx.actions.copyParams(attempt) }, '⎘ ', t('ui.attempt.copyParams')),
+    cropBtn,
     attempt.image ? h('a.btn', { href: `${to.project(ctx.project, 'marca')}?src=${encodeURIComponent(`${ctx.profile}|${ctx.key}|${id}`)}`, title: t('ui.attempt.forBrandHint') }, '◈ ', t('ui.attempt.forBrand')) : null,
     attempt.log ? h('a.btn', { href: paths.log(ctx.project, ctx.profile, ctx.key, id), target: '_blank', rel: 'noopener' }, t('ui.attempt.log')) : null,
   ), h('div.stack', {}, templateSlot(ctx, attempt), editorSlot(ctx, attempt)));
@@ -119,7 +125,8 @@ export function queueCard(ctx, entry) {
 
 function badges(st, a) {
   const cls = { chosen: 'chip-fill-ok', candidate: 'chip-fill-accent', failed: 'chip-fill-bad', running: 'chip-fill-ok' }[st] || '';
-  return h('div.badges', {}, h('span.chip', { class: cls }, t(`ui.state.${st}`)), a.draft ? h('span.chip', {}, t('ui.state.draft')) : null, a.compose ? h('span.chip', {}, t('ui.attempt.composed')) : null);
+  return h('div.badges', {}, h('span.chip', { class: cls }, t(`ui.state.${st}`)), a.draft ? h('span.chip', {}, t('ui.state.draft')) : null, a.compose ? h('span.chip', {}, t('ui.attempt.composed')) : null,
+    a.derivedFrom ? h('span.chip', { title: `${a.derivedFrom.profile}/${a.derivedFrom.key}` }, t('ui.attempt.cropOf', { id: a.derivedFrom.attempt })) : null);
 }
 
 function shortModel(m) { return String(m).replace(/-q\d+.*$/i, '').slice(0, 24); }
