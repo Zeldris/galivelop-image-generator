@@ -32,3 +32,16 @@ Fase 1 de 2026-11-13 (diff contra `origin/main` sobre `9844344`):
 - `brand._paint_colors`: el `stroke` de un `<g>` se cuenta aunque todos sus hijos lo pisen (ya pasaba en `main`).
 - El taller deja poner tolerancia ≥ borde suave (cada campo está en rango, la combinación la rechaza `remove_bg`).
 - `brand._check_weight_spacing` acepta `True` como peso (`isinstance(True, int)`), en `wordmark` y ahora en `resolve_font`.
+
+## Revisión del bloque de recortar (2026-11-16): leves de la fase 1
+
+- `orders.add_derived`: el temporal en `attempts/` usa el prefijo genérico `.`/`.tmp`; un SIGKILL entre `mkstemp` y
+  `os.replace` lo deja para siempre (ninguna limpieza de restos lo busca). Usar `.<id>.crop.*.tmp` y limpiarlo.
+- `cli crop`: `args.to or args.key` toma `--to ""` como si no se diera (la API da `crop.bad_target`); usar `is not None`.
+- `orders.add_derived` repite cómo arma el registro `add_attempt` y la escritura atómica (≈6 sitios): un
+  `_new_record` y un `fsutil.write_bytes_atomic` evitarían que una regla nueva se quede fuera de los derivados.
+- `export.resize` al ampliar guarda listas de floats por fila (icono 512→1024: ~64 MB dentro de `_heavy`); pasada en
+  flujo con dos filas de origen.
+- `.claude/settings.json`: `whole-read.py` entra en un segundo bloque PreToolUse con matcher `Read` sin anclar, junto
+  al `^Read$`; juntarlos (pide permiso de la persona; ver también el solape con `leer-entero.py` en la retro).
+- `AGENTS.md`: el check de `.claude/gw.json` lleva una tercera orden (`ci-local.py --validate`) y AGENTS.md nombra dos.
