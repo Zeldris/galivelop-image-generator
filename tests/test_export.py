@@ -86,6 +86,22 @@ class FitTests(unittest.TestCase):
         self.assertIn("20x5", cm.exception.message("en"))
 
 
+class ResampleStreamTests(unittest.TestCase):
+    def test_salida_identica_a_la_previa_al_reducir_y_ampliar(self):
+        import hashlib
+        data = ruido(23, 17, 3)
+        self.assertEqual(hashlib.sha256(bytes(export.fit(23, 17, data, 7, 5))).hexdigest(),
+                         "46cb516ea30a4ea17223bf7f40e59ccb3cb148618015fb789b4843a2cf72f0d2")
+        data = ruido(9, 7, 3)
+        self.assertEqual(hashlib.sha256(bytes(export.resize(9, 7, data, 20, 15))).hexdigest(),
+                         "7ba486a0148e7a40aa960f6754f40e5527f59931962ce6258e2691befc5606ef")
+
+    def test_la_memoria_retenida_esta_acotada_al_ampliar(self):
+        export._STATS["peak_rows"] = 0
+        export.resize(40, 40, ruido(40, 40), 160, 160)
+        self.assertLessEqual(export._STATS["peak_rows"], 3)
+
+
 class BmpTests(Base):
     def test_cabecera_filas_al_reves_y_relleno(self):
         data = bytearray([10, 20, 30, 255, 40, 50, 60, 255, 70, 80, 90, 255,   # fila de arriba

@@ -204,6 +204,14 @@ class ErrorTests(CropBase):
         crop.crop(NAME, "hoja", "tiny", 1, [0, 0, 40, 20])
         self.assertEqual(sorted(p.name for p in attempts.iterdir()), [".q3.png.motor.tmp", "1.png", "2.png"])
 
+    def test_la_limpieza_solo_toca_los_temporales_de_recorte_con_su_forma(self):
+        attempts = self.folder("hoja", "tiny") / "attempts"
+        ajeno = attempts / ".notas.crop.guardado.tmp"
+        ajeno.write_bytes(b"de otro")
+        (attempts / ".2.crop.k1ll3d.tmp").write_bytes(b"a medias")
+        crop.crop(NAME, "hoja", "tiny", 1, [0, 0, 40, 20])
+        self.assertEqual(sorted(p.name for p in attempts.iterdir()), [".notas.crop.guardado.tmp", "1.png", "2.png"])
+
     def test_destino_que_compone_se_rechaza_sin_escribir(self):
         cfg = json.loads((self.root / "galivelop-images.json").read_text())
         cfg["profiles"]["og"] = dict(cfg["profiles"]["tiny"], compose={"template": "t.svg", "fields": ["title"]})
@@ -327,6 +335,11 @@ class CliTests(CropBase):
         self.assertEqual((json.loads(out)["key"], json.loads(out)["profile"]), ("hoja", "sq"))
         code, out, _ = self.run_cli("--json", "crop", NAME, "hoja", "tiny", "1", "--box", "0,0,20,10", "--to", "otra")
         self.assertEqual((json.loads(out)["key"], json.loads(out)["profile"]), ("otra", "tiny"))
+
+    def test_to_vacio_no_se_toma_por_no_dado(self):
+        code, out, err = self.run_cli("crop", NAME, "hoja", "tiny", "1", "--box", "0,0,20,20", "--to", "")
+        self.assertEqual((code, out), (1, ""))
+        self.assertIn("no es un destino válido", err)
 
     def test_errores(self):
         for box, message in (("0,0,41,20", "se sale de la imagen"), ("0,0,20,20", "proporción"), ("a,b", "no es una caja"),
