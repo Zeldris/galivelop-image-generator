@@ -249,7 +249,7 @@ prompt, `params` (with the new `width` and `height`), references, negative and d
 `{"profile", "key", "attempt", "box", "lockRatio"}`; it is chosen with `choose` like any other. Response: `{"attempt":
 {…}, "profile": "p", "key": "k", "created": false}` (`created` is `true` if the destination order was new). One heavy
 task at a time: the second waits up to 60 s and gets 409 `api.heavy_busy`. Errors: `crop.bad_box` (400: not four
-integers, or the box has no area), `crop.outside` (400: it leaves the image), `crop.ratio_mismatch` (400),
+integers, or the box has no area), `crop.outside` (400: it leaves the image), `crop.ratio_mismatch` (400), `crop.compose_unsupported` (400: the destination profile composes),
 `crop.bad_target` (400), `order.unknown` and `order.attempt_unknown` (404), `order.profile_unknown` (404, the
 destination's too).
 

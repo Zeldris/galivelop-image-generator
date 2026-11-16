@@ -206,12 +206,38 @@ def _attempt(order: dict, attempt_id) -> dict:
 
 def submit(project: str, order: dict) -> dict:
     """Create or update an order (D18); returns the stored record (a copy).
+    (`create_missing` is the variant that never touches an existing order.)
 
     `order` follows the ``order`` schema (``count`` is accepted but not stored: it is for the caller to
     pass to `attempt_specs`). Resubmitting the same key + profile replaces prompt, references, params
     seed (a missing ``seed`` clears it), initImage and strength (missing ones clear them), draft (a missing one is false) and
     text (a missing one is ``{}``; its keys must be in the profile's ``compose.fields``, else ``order.text_unknown_field``)
     and keeps attempts, chosen and history. Does not enqueue."""
+    return _submit(project, order, False)[0]
+
+
+def create_missing(project: str, order: dict) -> tuple:
+    """Like `submit`, but atomic get-or-create: under the lock of ``order.json``, an order that already exists is returned
+    untouched. Returns ``(record, created)``."""
+    return _submit(project, order, True)
+
+
+def discard_if_empty(project: str, key: str, profile: str) -> None:
+    """Undo the creation of an order (`create_missing`): under the lock, remove it only if it still has no attempts."""
+    path = _order_file(project, key, profile)
+    with fsutil.lock(path):
+        try:
+            record = _read(project, key, profile)
+        except GimgError:
+            return
+        if record["attempts"]:
+            return
+        with contextlib.suppress(OSError):
+            path.unlink()
+            (path.parent / "attempts").rmdir()
+
+
+def _submit(project: str, order: dict, only_new: bool) -> tuple:
     errors = schema.validate(order, schema.load_schema("order"))
     if errors:
         raise GimgError("order.invalid", errors=errors)
@@ -242,12 +268,17 @@ def submit(project: str, order: dict) -> dict:
                 raise
             record = {"key": key, "profile": profile, "createdAt": now, "attempts": [],
                       "chosen": None, "chosenHistory": []}
+            created = True
+        else:
+            if only_new:
+                return copy.deepcopy(record), False
+            created = False
         record.update(fields)
         if not _neg(order.get("negative")):  # only orders with a negative carry the key, so stored orders keep their shape
             record.pop("negative", None)
         record["updatedAt"] = now
         fsutil.write_json(path, record)
-    return copy.deepcopy(record)
+    return copy.deepcopy(record), created
 
 
 def check_order(project: str, order: dict) -> list:

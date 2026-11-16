@@ -393,6 +393,7 @@
   "error.crop.outside": "the box {box} leaves the image ({width}x{height})",
   "error.crop.ratio_mismatch": "the box {box} has proportion {box_ratio}, and profile \"{profile}\" ({size}) asks for {ratio}: adjust the box or release the proportion",
   "error.crop.bad_target": "\"{value}\" is not a valid destination: it needs the profile and key of the order",
+  "error.crop.compose_unsupported": "profile \"{profile}\" composes text and logo: cropping into it is not supported; use a profile without composition",
   "error.crop.write_failed": "could not write the derived attempt: {reason}",
   "cli.cmd.sheet": "contact sheet: several images in one PNG, each with its number and name, to review a round by reading a single image",
   "cli.arg.sheet_images": "images of the sheet, in order (only read)",

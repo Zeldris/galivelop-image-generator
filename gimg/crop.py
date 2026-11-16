@@ -10,15 +10,16 @@ a new attempt, the **derived** one; the original attempt, its file and its recor
 - **Resampling:** `export.resize`: area average when reducing, bilinear when enlarging, on premultiplied alpha. The same box
   always gives the same image.
 - **Destination:** `to` is ``None`` (the same order) or ``{"profile", "key"}`` (take the piece to another order, "Llevar a otro
-  pedido"). A destination order that does not exist is created with `orders.submit` and the ``prompt`` of the source order; its
+  pedido"). A destination order that does not exist is created (atomically, `orders.create_missing`, never overwriting one) and the ``prompt`` of the source order; its
   profile must exist in the project (``order.profile_unknown``).
 - **Record:** `orders.add_derived`: ``state`` ``new``, ``image`` ``attempts/<id>.png``, ``seed``, ``prompt``, ``params`` (with the
   new ``width`` and ``height``), ``references``, ``negative`` and ``draft`` of the source, and ``derivedFrom``
   ``{"profile", "key", "attempt", "box", "lockRatio"}``. It is chosen like any other attempt (a draft cannot be).
 
 Errors (`GimgError`): ``crop.bad_box`` (not four integers, or no area), ``crop.outside`` (the box leaves the image),
-``crop.ratio_mismatch``, ``crop.bad_target``, ``crop.write_failed``; and the ``order.*`` and ``png.invalid`` ones. Everything is
-checked before anything is written; the image and the record are stored together (`orders.add_derived`).
+``crop.ratio_mismatch``, ``crop.compose_unsupported`` (the destination profile composes), ``crop.bad_target``, ``crop.write_failed``; and the ``order.*`` and ``png.invalid`` ones. Everything is
+checked before anything is written; the image and the record are stored together (`orders.add_derived`), and a destination order
+created for it is removed if that fails. ``tileable`` is dropped from the params unless the box is the whole image.
 """
 from __future__ import annotations
 
@@ -70,6 +71,8 @@ def crop(project: str, key: str, profile: str, attempt_id: int, box, lock_ratio:
     dest_profile, dest_key = _target(to, key, profile)
     config = projects.get(project)["config"]
     profile_cfg = orders._profile(config, dest_profile)  # order.profile_unknown, before anything else changes
+    if profile_cfg.get("compose"):  # the piece would reach `choose` without its text and logo: not supported (yet)
+        raise GimgError("crop.compose_unsupported", profile=dest_profile)
     orders._check_id(dest_key, dest_profile)
     width, height, rgba = png.read_rgba(orders.raw_image(project, key, profile, attempt))
     x0, y0, x1, y1 = box
@@ -87,22 +90,23 @@ def crop(project: str, key: str, profile: str, attempt_id: int, box, lock_ratio:
     pixels = export.resize(box_w, box_h, piece, out_w, out_h)
     data = png.rgba_bytes(out_w, out_h, pixels)
 
-    created = False
-    try:
-        orders.get(project, dest_key, dest_profile)
-    except GimgError as exc:
-        if exc.code != "order.unknown":
-            raise
-        orders.submit(project, {"key": dest_key, "profile": dest_profile, "prompt": source["prompt"]})
-        created = True
     params = copy.deepcopy(attempt["params"])
     params["width"], params["height"] = out_w, out_h
+    if box != [0, 0, width, height]:  # a piece no longer matches by its edges
+        params.pop("tileable", None)
     spec = {"seed": attempt["seed"], "prompt": attempt["prompt"], "params": params,
             "references": list(attempt.get("references", source["references"])),
             "draft": attempt.get("draft") is True, "negative": attempt.get("negative")}
     derived_from = {"profile": profile, "key": key, "attempt": attempt["id"], "box": box, "lockRatio": lock_ratio}
+    created = False
     try:
-        record = orders.add_derived(project, dest_key, dest_profile, spec, derived_from, data)
+        _, created = orders.create_missing(project, {"key": dest_key, "profile": dest_profile, "prompt": source["prompt"]})
+        try:
+            record = orders.add_derived(project, dest_key, dest_profile, spec, derived_from, data)
+        except BaseException:
+            if created:
+                orders.discard_if_empty(project, dest_key, dest_profile)
+            raise
     except OSError as exc:
         raise GimgError("crop.write_failed", reason=str(exc.strerror or exc)) from None
     return {"attempt": record, "profile": dest_profile, "key": dest_key, "created": created}

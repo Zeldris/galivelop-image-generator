@@ -197,6 +197,61 @@ class ErrorTests(CropBase):
         self.assertEqual(orders.get(NAME, "hoja", "tiny"), before)
         self.assertEqual(sorted(p.name for p in (self.folder("hoja", "tiny") / "attempts").iterdir()), ["1.png"])
 
+    def test_destino_que_compone_se_rechaza_sin_escribir(self):
+        cfg = json.loads((self.root / "galivelop-images.json").read_text())
+        cfg["profiles"]["og"] = dict(cfg["profiles"]["tiny"], compose={"template": "t.svg", "fields": ["title"]})
+        (self.root / "galivelop-images.json").write_text(json.dumps(cfg))
+        for to in ({"profile": "og", "key": "hoja"}, {"profile": "og", "key": "nuevo"}):
+            with self.subTest(to=to):
+                with self.assertRaises(GimgError) as cm:
+                    crop.crop(NAME, "hoja", "tiny", 1, [0, 0, 40, 20], lock_ratio=False, to=to)
+                self.assertEqual(cm.exception.code, "crop.compose_unsupported")
+                self.assertEqual(cm.exception.params["profile"], to["profile"])
+                with self.assertRaises(GimgError) as gone:
+                    orders.get(NAME, to["key"], to["profile"])
+                self.assertEqual(gone.exception.code, "order.unknown")
+        self.assertEqual(len(orders.get(NAME, "hoja", "tiny")["attempts"]), 1)
+
+    def test_pedido_de_destino_existente_no_se_pisa_aunque_get_no_lo_vea(self):
+        orders.submit(NAME, {"key": "otro", "profile": "sq", "prompt": "ajeno"})
+        real = orders.get
+
+        def stale(project, key, profile):
+            if key == "otro":
+                raise GimgError("order.unknown", project=project, order=key, profile=profile)
+            return real(project, key, profile)
+
+        with mock.patch("gimg.orders.get", side_effect=stale):
+            res = crop.crop(NAME, "hoja", "tiny", 1, [0, 0, 20, 20], to={"profile": "sq", "key": "otro"})
+        self.assertFalse(res["created"])
+        self.assertEqual(real(NAME, "otro", "sq")["prompt"], "ajeno")
+
+    def test_si_add_derived_falla_se_deshace_el_pedido_nuevo(self):
+        to = {"profile": "sq", "key": "nuevo"}
+        with mock.patch("gimg.orders.add_derived", side_effect=GimgError("order.spec_invalid", missing="x")):
+            with self.assertRaises(GimgError) as cm:
+                crop.crop(NAME, "hoja", "tiny", 1, [0, 0, 20, 20], to=to)
+        self.assertEqual(cm.exception.code, "order.spec_invalid")
+        with self.assertRaises(GimgError) as gone:
+            orders.get(NAME, "nuevo", "sq")
+        self.assertEqual(gone.exception.code, "order.unknown")
+
+    def test_oserror_al_crear_el_pedido_es_write_failed(self):
+        with mock.patch("gimg.fsutil.write_json", side_effect=OSError("disco lleno")):
+            with self.assertRaises(GimgError) as cm:
+                crop.crop(NAME, "hoja", "tiny", 1, [0, 0, 20, 20], to={"profile": "sq", "key": "nuevo"})
+        self.assertEqual(cm.exception.code, "crop.write_failed")
+        self.assertEqual(cm.exception.params["reason"], "disco lleno")
+
+    def test_tileable_solo_se_conserva_con_la_imagen_entera(self):
+        spec = {"seed": 7, "prompt": "p", "params": {"width": W, "height": H, "tileable": "xy"}}
+        orders.add_attempt(NAME, "hoja", "tiny", spec)
+        (self.folder("hoja", "tiny") / "attempts" / "2.png").write_bytes(png.rgba_bytes(W, H, imagen()))
+        whole = crop.crop(NAME, "hoja", "tiny", 2, [0, 0, 40, 20])["attempt"]
+        part = crop.crop(NAME, "hoja", "tiny", 2, [0, 0, 20, 10])["attempt"]
+        self.assertEqual(whole["params"].get("tileable"), "xy")
+        self.assertNotIn("tileable", part["params"])
+
 
 class ResizeTests(unittest.TestCase):
     def test_mismo_tamano_es_una_copia(self):

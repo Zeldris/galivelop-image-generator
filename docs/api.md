@@ -242,7 +242,7 @@ el nuevo `width` y `height`), las referencias, el negativo y el borrador del ori
 "key", "attempt", "box", "lockRatio"}`; se elige con `choose` como cualquier otro. Respuesta: `{"attempt": {…},
 "profile": "p", "key": "k", "created": false}` (`created` es `true` si el pedido de destino era nuevo). Una sola tarea
 pesada a la vez: la segunda espera hasta 60 s y da 409 `api.heavy_busy`. Errores: `crop.bad_box` (400: no son cuatro
-enteros o la caja no tiene área), `crop.outside` (400: sale de la imagen), `crop.ratio_mismatch` (400),
+enteros o la caja no tiene área), `crop.outside` (400: sale de la imagen), `crop.ratio_mismatch` (400), `crop.compose_unsupported` (400: the destination profile composes),
 `crop.bad_target` (400), `order.unknown` y `order.attempt_unknown` (404), `order.profile_unknown` (404, también el del
 destino).
 
