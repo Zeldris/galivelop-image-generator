@@ -119,6 +119,11 @@ las crea una vez; desde entonces son del proyecto.
 ## Referencias medidas
 
 <!-- Cifras medidas con las que comparar: fecha, sesión, contexto medio, llamadas, total. -->
+- 2026-11-16, `ccr-85e9d14e-zt7p8b` desde `98fcc7c` (release v0.6.0, barrido B de `crop-editor.js` y su fase 1),
+  sesión `0cacc78c`: principal 53 llamadas, 6,4 M (121k de media, techo 144k, 0 compactaciones); 4 subagentes, 74
+  llamadas, 3,1 M (arranque 15-21k con `gw-worker`/`gw-reviewer`, frente a 66-69k antes). Total 127 llamadas, 9,6 M.
+  El registro de tokens sin subir al cerrar cada turno hizo saltar el gancho de parada 4 veces (~0,5 M): propuesto al
+  flujo (retro `retro-2026-11-16-barrido-b.md`, P2).
 - 2026-11-16, `ccr-85e9d14e-zt7p8b` desde `4624825` (diseño de FM, flujo 0.7.0 y FM 0.6.0 Recortar), sesión `0cacc78c`:
   principal 210 llamadas, 26,4 M (126k de media, suelo 97k, techos 164/165k, 3 compactaciones; arranque tras `/clear`
   92k, 58 % del corte); 4 subagentes, 31 llamadas, 2,7 M. Total 241 llamadas, 29,2 M.

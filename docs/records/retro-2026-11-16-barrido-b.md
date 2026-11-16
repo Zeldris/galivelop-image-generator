@@ -1,6 +1,6 @@
 # Retro 2026-11-16: barrido B de `crop-editor.js` (rama `ccr-85e9d14e-zt7p8b`)
 
-**Estado:** pendiente de la decisión de la persona.
+**Estado:** aprobada entera por la persona (2026-11-16): P3 aplicada en la rama; P5 apuntada en «Pendiente» para 0.7.0; P1, P2 y P4 aprobadas para proponerlas al flujo (abajo).
 
 Alcance: desde `98fcc7c` (versión 0.6.0) hasta `eede8d5`: comprobar la release v0.6.0, barrido B (`4c297c1`), fase 1
 (5 leves arreglados en `6398948`, `Findings: 5`) y CHANGELOG.
