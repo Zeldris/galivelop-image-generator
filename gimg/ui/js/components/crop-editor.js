@@ -13,16 +13,15 @@
 import { h, replace } from '../dom.js';
 import { t } from '../i18n.js';
 import { api, describeError, ApiError, paths } from '../api.js';
-import { toastError } from './toast.js';
 import { imageVersion } from './attempt-util.js';
 import { KEY_PATTERN, MAX_KEY } from './new-order.js';
 import { CORNERS, STEP_BIG, clamp, startBoxDrag, boxKey } from './box-drag.js';
+import { trapDialog } from './dialog-trap.js';
 
 export const RATIO_TOLERANCE = 0.01;
 export const ENLARGE_WARN = 2;
 export const STEPS = [1, 10, 50];
 export const GRIDS = [['free', 'ui.crop.gridFree'], ['2', 'ui.crop.grid2'], ['3', 'ui.crop.grid3']];
-const FOCUSABLE = 'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), [tabindex="0"]';
 const PREVIEW_MAX = 240;
 
 const gcd = (a, b) => (b ? gcd(b, a % b) : a);
@@ -191,7 +190,7 @@ export function openCropEditor(ctx, attempt, opener) {
       h('div.crop-actions', {}, cancel, moveBtn, save), toBox_, repeat));
 
   // --- estado -> pantalla ---
-  const boxFor = (b) => ({ x0: b.x, y0: b.y, x1: b.x + b.w, y1: b.y + b.h });
+  const boxFor = (b) => { const [x0, y0, x1, y1] = toBox(b); return { x0, y0, x1, y1 }; };
   const scale = () => (size ? img.clientWidth / size.w : 0);
   const out = () => {
     if (!locked) return { w: box.w, h: box.h };
@@ -254,9 +253,23 @@ export function openCropEditor(ctx, attempt, opener) {
     save.disabled = busy || Boolean(reason) || !size || saveLocked || !toBox_.hidden;
     moveBtn.disabled = busy || !size;
     toGo.disabled = busy || Boolean(reason) || !size || goLocked;
-    repeatGo.disabled = busy || !size;
+    // el recorte repetido cae en el pedido visto: un perfil que compone no lo admite
+    repeatGo.disabled = busy || !size || saveLocked;
     for (const el of dlg.querySelectorAll('.ed-side input, .ed-side select, .crop-cells button, .crop-foot select, .crop-foot input')) el.disabled = busy || !size;
-    paintPreview(reason);
+    schedulePreview(reason);
+  }
+
+  // la vista previa (un `drawImage` del raw entero) se pinta como mucho una vez por fotograma
+  let previewFrame = 0;
+  let previewReason = null;
+  function schedulePreview(reason) {
+    previewReason = reason;
+    if (typeof requestAnimationFrame !== 'function') { paintPreview(reason); return; }
+    if (previewFrame) return;
+    previewFrame = requestAnimationFrame(() => {
+      previewFrame = 0;
+      if (!closed) paintPreview(previewReason);
+    });
   }
 
   function paintPreview(reason) {
@@ -284,7 +297,6 @@ export function openCropEditor(ctx, attempt, opener) {
 
   function showError(e) {
     const message = e instanceof ApiError && e.code === 'api.heavy_busy' ? t('ui.crop.busy') : describeError(e, t);
-    toastError(message);
     error.textContent = message;
     error.hidden = false;
   }
@@ -334,23 +346,13 @@ export function openCropEditor(ctx, attempt, opener) {
   });
 
   // --- foco atrapado y cierre ---
-  dlg.addEventListener('keydown', (ev) => {
-    ev.stopPropagation(); // los atajos de la galería y los globales no actúan con el editor abierto
-    if (ev.key !== 'Tab') return;
-    const nodes = [...dlg.querySelectorAll(FOCUSABLE)].filter((n) => n.getClientRects().length > 0);
-    if (!nodes.length) return;
-    const first = nodes[0];
-    const last = nodes[nodes.length - 1];
-    if (ev.shiftKey && (document.activeElement === first || document.activeElement === dlg)) { ev.preventDefault(); last.focus(); }
-    else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
-  });
   dlg.addEventListener('close', () => {
     closed = true;
+    if (previewFrame && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(previewFrame);
     if (observer) observer.disconnect();
     dlg.remove();
-    const back = opener && opener.isConnected ? opener : document.querySelector(`[data-attempt="${attempt.id}"][data-kind="attempt"]`);
-    if (back) back.focus();
   });
+  trapDialog(dlg, { opener, fallback: () => document.querySelector(`[data-attempt="${attempt.id}"][data-kind="attempt"]`) }); // después del `close` propio: el foco vuelve tras `dlg.remove()`
 
   img.addEventListener('load', ready);
   img.addEventListener('error', () => { replace(loading, t('ui.crop.imageError')); loading.setAttribute('role', 'alert'); });

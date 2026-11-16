@@ -21,10 +21,10 @@ import { toastError } from './toast.js';
 import { renderMeasure, requestMeasure } from './measure-chip.js';
 import { imageVersion } from './attempt-util.js';
 import { CORNERS, STEP, STEP_BIG, moveBox, sizeBox, resizeBox, sameBox, startBoxDrag, boxKey } from './box-drag.js';
+import { trapDialog } from './dialog-trap.js';
 
 export const NAME_PATTERN = /^[a-z0-9][a-z0-9-]{0,39}$/;
 export const MEASURE_DELAY_MS = 400;
-const FOCUSABLE = 'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), [tabindex="0"]';
 
 export { moveBox, sizeBox, resizeBox, sameBox };
 
@@ -187,26 +187,15 @@ export function openLayoutEditor(ctx, attempt, tpl, opener) {
   }
 
   // --- foco atrapado y cierre ---
-  dlg.addEventListener('keydown', (ev) => {
-    ev.stopPropagation(); // los atajos de la galería y los globales no actúan con el editor abierto
-    if (ev.key !== 'Tab') return;
-    const nodes = [...dlg.querySelectorAll(FOCUSABLE)].filter((n) => n.getClientRects().length > 0);
-    if (!nodes.length) return;
-    const first = nodes[0];
-    const last = nodes[nodes.length - 1];
-    if (ev.shiftKey && (document.activeElement === first || document.activeElement === dlg)) { ev.preventDefault(); last.focus(); }
-    else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
-  });
   dlg.addEventListener('close', () => {
     closed = true;
     for (const it of items) clearTimeout(it.timer);
     if (observer) observer.disconnect();
     window.removeEventListener('resize', layoutBoxes);
     dlg.remove();
-    // el pedido se recarga al aplicar y la tarjeta se rehace: si el botón ya no está, la tarjeta del intento
-    const back = opener && opener.isConnected ? opener : document.querySelector(`[data-attempt="${attempt.id}"][data-kind="attempt"]`);
-    if (back) back.focus();
   });
+  // el pedido se recarga al aplicar y la tarjeta se rehace: si el botón ya no está, la tarjeta del intento
+  trapDialog(dlg, { opener, fallback: () => document.querySelector(`[data-attempt="${attempt.id}"][data-kind="attempt"]`) });
 
   document.body.append(dlg);
   const observer = ('ResizeObserver' in window) ? new ResizeObserver(layoutBoxes) : null;

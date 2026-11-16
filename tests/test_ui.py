@@ -425,7 +425,7 @@ class CropEditor(unittest.TestCase):
         self.assertIn("ctx.profileCfg", crop)
         self.assertIn("cfg.compose", crop)
         self.assertIn("saveLocked", crop)
-        for needle in ("showModal()", "ev.key !== 'Tab'", "ev.stopPropagation()", "opener.isConnected", "startBoxDrag(ev", "boxKey(ev"):
+        for needle in ("showModal()", "trapDialog(dlg, { opener", "startBoxDrag(ev", "boxKey(ev"):
             self.assertIn(needle, crop)
 
     def test_repeat_takes_the_origin_batch_and_goes_to_the_viewed_order(self):
@@ -494,8 +494,11 @@ class LayoutEditor(unittest.TestCase):
 
     def test_dialog_traps_focus_stops_global_keys_and_returns_focus(self):
         editor = self.comp("layout-editor.js")
-        for needle in ("showModal()", "ev.key !== 'Tab'", "ev.stopPropagation()", "opener.focus()", "startBoxDrag(ev", "boxKey(ev", "ev.shiftKey", "ev.altKey"):
+        for needle in ("showModal()", "trapDialog(dlg", "startBoxDrag(ev", "boxKey(ev", "ev.shiftKey", "ev.altKey"):
             self.assertIn(needle, editor)
+        trap = self.comp("dialog-trap.js")
+        for needle in ("ev.key !== 'Tab'", "ev.stopPropagation()", "back.focus()", "export function trapDialog"):
+            self.assertIn(needle, trap)
         self.assertNotIn("setAttribute('style'", editor)
 
     def test_the_drag_and_the_arrows_live_in_box_drag_and_both_editors_use_them(self):
@@ -505,6 +508,24 @@ class LayoutEditor(unittest.TestCase):
         self.assertIn("from './box-drag.js'", self.comp("layout-editor.js"))
         for gone in ("setPointerCapture", "function resizeBox", "const ARROWS"):
             self.assertNotIn(gone, self.comp("layout-editor.js"))
+
+    def test_both_editors_share_the_focus_trap(self):
+        for name in ("layout-editor.js", "crop-editor.js"):
+            src = self.comp(name)
+            self.assertIn("import { trapDialog } from './dialog-trap.js'", src)
+            self.assertIn("trapDialog(dlg, { opener", src)
+            self.assertNotIn("FOCUSABLE", src)
+            self.assertNotIn("ev.key !== 'Tab'", src)
+
+    def test_crop_editor_sweep_b(self):
+        crop = self.comp("crop-editor.js")
+        self.assertNotIn("toastError", crop)  # el error va dentro del diálogo, el toast queda tapado
+        self.assertIn("repeatGo.disabled = busy || !size || saveLocked;", crop)
+        self.assertIn("requestAnimationFrame(", crop)
+        self.assertIn("if (!closed) paintPreview(", crop)
+        self.assertNotIn("    paintPreview(reason);\n  }", crop)  # `refresh` ya no pinta directo
+        self.assertIn("= toBox(b);", crop)
+        self.assertNotIn("x1: b.x + b.w", crop)
 
     def test_local_templates_get_an_export_link_with_download(self):
         slots = self.comp("slots.js")
