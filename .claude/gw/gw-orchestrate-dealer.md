@@ -23,3 +23,7 @@ Las lee la skill `orchestrate-dealer` antes de repartir. Son de este proyecto; s
   subagente de `tile` esperó ~40 de sus 76 llamadas, ~3,5 M, y la suite acabó matada).
 - **Un módulo con más de ~4 leves, o con leves que tocan librería, CLI e i18n a la vez, va en dos encargos** (aprobado
   el 2026-11-15: `tile` con copias, recuperación, textos traducibles y velocidad en uno hizo 44 llamadas y 4,55 M).
+- **Actualizar el flujo (`apply.py --update`) es de un subagente Sonnet**, que devuelve en 10 líneas como mucho los
+  conflictos de `AGENTS.md`/`CLAUDE.md` con su texto y las novedades del `CHANGELOG` que tocan al proyecto; la
+  principal decide cada conflicto sobre ese texto (aprobado el 2026-11-16: en la principal, `CHANGELOG`, diffs y salida
+  de `apply.py` arrastraron ~0,95 M).

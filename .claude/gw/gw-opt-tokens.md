@@ -77,6 +77,15 @@ las crea una vez; desde entonces son del proyecto.
   sueltas ≈ 4-5 M arrastrados (T1); la bitácora, 10 lecturas, 979k; subagentes de 80 y 66 llamadas, por encima del
   tope de ~30: partir esos encargos.
 
+- Fases de diseño (FM, 2026-11-15/16) consultadas en la principal: `docs/plan.md` 21 lecturas (498k arrastrados),
+  `docs/interfaz/marca.md` 10 (271k) y la propuesta de Fable 4 (322k), con `sed`/`grep` por Bash, que `leer-entero.py`
+  no frena. La regla de «F1 en detalle» vale también para el diseño: el contrato lo escribe un subagente y la principal
+  revisa el texto final (aprobado el 2026-11-16).
+- `docs/metrics/ledger.jsonl` no se lee (11 lecturas, 151k el 2026-11-15/16): se sube con `git add` sin mirarlo y los
+  informes salen de `metrics.py` (aprobado el 2026-11-16).
+- Bitácora por encima de `logSize` (23,7k, 2026-11-16) sin nada que `handoff.py archive` saque solo: los detalles de
+  ramas fusionadas de «Pendiente» van a mano a `docs/records/handoff-archive.md` con un puntero (aprobado ese día).
+
 ## Ajustes en vigor
 
 - Ventana de compactación automática: `CLAUDE_CODE_AUTO_COMPACT_WINDOW` en `.claude/settings.json`, 200000 desde el
@@ -110,6 +119,9 @@ las crea una vez; desde entonces son del proyecto.
 ## Referencias medidas
 
 <!-- Cifras medidas con las que comparar: fecha, sesión, contexto medio, llamadas, total. -->
+- 2026-11-16, `ccr-85e9d14e-zt7p8b` desde `4624825` (diseño de FM, flujo 0.7.0 y FM 0.6.0 Recortar), sesión `0cacc78c`:
+  principal 210 llamadas, 26,4 M (126k de media, suelo 97k, techos 164/165k, 3 compactaciones; arranque tras `/clear`
+  92k, 58 % del corte); 4 subagentes, 31 llamadas, 2,7 M. Total 241 llamadas, 29,2 M.
 - 2026-11-15, `ccr-85e9d14e-zt7p8b` desde `2e31af8` (quinta tanda de leves, cinco ramas, y su fase 1), sesión
   `0cacc78c`: principal 78 llamadas, 10,8 M (139k de media, suelo 102k, techo 160k, 1 compactación); 13 subagentes,
   242 llamadas, 22,5 M (arranque medio 65,7k; `tile` 44 llamadas y 4,55 M; revisión de fase 1 con Opus 21 y 2,25 M).
