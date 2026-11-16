@@ -566,7 +566,7 @@ class CropScreen(OrderPages):
     """The crop editor on `social` (1280x640, no compose); `og` composes and is blocked."""
 
     ORDER_PROFILE = "social"
-    KEYS = ("fondos/recorte", "fondos/recorte-libre")
+    KEYS = ("fondos/recorte", "fondos/recorte-libre", "fondos/recorte-repetir")
 
     @classmethod
     def prepare(cls):
@@ -640,6 +640,83 @@ class CropScreen(OrderPages):
             const j = document.querySelector('.crop-nums input[data-field=y1]');
             j.value = %d; j.dispatchEvent(new Event('change', {bubbles: true})); })()""" % (x1 - 3, y1))
         self.page.wait("![...document.querySelectorAll('dialog.crop button')].find(b => b.textContent.includes('Guardar como')).disabled")
+        self.no_problems()
+
+    def set_field(self, name, value):
+        self.js("""(() => { const i = document.querySelector('.crop-nums input[data-field=%s]'); i.focus();
+            i.value = %s; i.dispatchEvent(new Event('change', {bubbles: true})); })()""" % (name, value))
+
+    def save_disabled(self):
+        return self.js("[...document.querySelectorAll('dialog.crop button')].find(b => b.textContent.includes('Guardar como')).disabled")
+
+    def pick_destination(self, profile):
+        self.press("dialog.crop", "Llevar a otro pedido")
+        self.js("(() => { const s = document.getElementById('crop-to-profile'); s.value = %s; s.dispatchEvent(new Event('change', {bubbles: true})); })()"
+                % json.dumps(profile))
+
+    def test_save_waits_while_the_destination_panel_changes_the_ratio(self):
+        self.open_crop("fondos/recorte-libre")
+        self.assertFalse(self.save_disabled())
+        self.pick_destination("square")  # 1:1: la caja sigue al destino, no al perfil del pedido
+        self.assertTrue(self.save_disabled())
+        self.assertIn("1024", self.js("document.getElementById('crop-output').textContent"))
+        self.no_problems()
+
+    def test_closing_the_destination_panel_goes_back_to_the_ratio_of_the_order(self):
+        self.open_crop("fondos/recorte-libre")
+        self.pick_destination("square")
+        x0, y0, x1, y1 = self.crop_box()
+        self.assertEqual(x1 - x0, y1 - y0)
+        self.press("dialog.crop", "Llevar a otro pedido")  # cierra el panel
+        x0, y0, x1, y1 = self.crop_box()
+        self.assertEqual(x1 - x0, 2 * (y1 - y0))
+        self.assertFalse(self.save_disabled())
+        self.no_problems()
+
+    def test_repeat_lists_only_the_originals_of_the_source_batch(self):
+        key = "fondos/recorte-repetir"
+        self.open()  # una página del mismo origen para llamar a la API antes de abrir el pedido
+        res = self.api("POST", "/api/projects/%s/orders/%s/%s/attempts/2/crop" % (PROJECT, self.ORDER_PROFILE, quote(key, safe="")),
+                       {"box": [0, 0, 640, 320], "lockRatio": True})
+        self.assertEqual(res["attempt"]["id"], 3, res)
+        self.open_crop(key, n=3)
+        self.page.wait("document.querySelectorAll('#crop-repeat-pick option').length")
+        self.assertEqual(self.js("[...document.querySelectorAll('#crop-repeat-pick option')].map(o => o.value)"), ["1"])
+        self.no_problems()
+
+    def test_dragging_a_corner_with_the_ratio_locked_keeps_the_ratio_exactly(self):
+        self.open_crop("fondos/recorte-libre")
+        self.set_field("x1", 101)
+        x0, y0, x1, y1 = self.crop_box()
+        self.assertEqual((x1 - x0, y1 - y0), (101, 51))
+        self.js("""(() => { const img = document.querySelector('.ed-img'); const k = img.clientWidth / img.naturalWidth;
+            const hd = document.querySelector('.crop-handle.h-se');
+            const ev = (type, x) => hd.dispatchEvent(new PointerEvent(type, {bubbles: true, button: 0, pointerId: 7, clientX: x, clientY: 0}));
+            ev('pointerdown', 0); ev('pointermove', 99 * k); ev('pointerup', 99 * k); })()""")
+        x0, y0, x1, y1 = self.crop_box()
+        self.assertEqual((x1 - x0, y1 - y0), (200, 100))
+        self.no_problems()
+
+    def test_a_typed_box_value_keeps_the_keyboard_focus(self):
+        self.open_crop("fondos/recorte-libre")
+        self.set_field("x1", 300)
+        self.assertEqual(self.js("document.activeElement.dataset.field"), "x1")
+        self.assertEqual(self.js("document.activeElement.value"), "300")
+        self.no_problems()
+
+    def test_everything_in_the_footer_waits_while_a_request_is_running(self):
+        self.open_crop("fondos/recorte-libre")
+        self.js("window.fetch = () => new Promise(() => {})")  # la petición no termina
+        self.press("dialog.crop", "Guardar como intento derivado")
+        self.page.wait("document.getElementById('crop-to-profile').disabled")
+        self.assertTrue(self.js("document.getElementById('crop-to-key').disabled"))
+        self.assertTrue(self.js("document.getElementById('crop-step').disabled"))
+
+    def test_the_handles_have_room_inside_the_stage(self):
+        self.open_crop("fondos/recorte-libre")
+        self.assertTrue(self.js("""(() => { const s = document.querySelector('.crop-stage').getBoundingClientRect();
+            const hd = document.querySelector('.crop-handle.h-nw').getBoundingClientRect();
+            return hd.left >= s.left && hd.top >= s.top; })()"""))
         self.no_problems()
 
 

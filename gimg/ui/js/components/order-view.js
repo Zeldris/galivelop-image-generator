@@ -120,10 +120,10 @@ export async function orderView(host, route) {
         throw e;
       }
     },
-    /** El recorte (crop-editor.js): `body` = {box, lockRatio, to?}. Devuelve la respuesta; si el derivado cayó en este
+    /** El recorte (crop-editor.js): `body` = {box, lockRatio, to?}; `from` = {profile, key} si el intento es de otro pedido. Devuelve la respuesta; si el derivado cayó en este
         pedido, lo recarga. Un error se relanza para que el diálogo lo muestre. */
-    crop: async (a, body) => {
-      const res = await api.crop(project, profile, key, a.id, body);
+    crop: async (a, body, from) => {
+      const res = await api.crop(project, from ? from.profile : profile, from ? from.key : key, a.id, body);
       const id = res.attempt.id;
       const here = res.profile === profile && res.key === key;
       toastOk(here ? t('ui.crop.saved', { id }) : t('ui.crop.savedOther', { id, profile: res.profile, key: res.key }));

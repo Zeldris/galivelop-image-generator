@@ -411,7 +411,7 @@ class CropEditor(unittest.TestCase):
         self.assertIn("/crop`", api)
         self.assertIn("post(paths.crop(", api)
         order = self.comp("order-view.js")
-        self.assertIn("api.crop(project, profile, key, a.id, body)", order)
+        self.assertIn("api.crop(project, from ? from.profile : profile, from ? from.key : key, a.id, body)", order)
         self.assertIn("profiles: cfg.profiles", order)
 
     def test_the_editor_asks_the_raw_image_and_sends_the_api_shape(self):
@@ -427,6 +427,17 @@ class CropEditor(unittest.TestCase):
         self.assertIn("saveLocked", crop)
         for needle in ("showModal()", "ev.key !== 'Tab'", "ev.stopPropagation()", "opener.isConnected", "startBoxDrag(ev", "boxKey(ev"):
             self.assertIn(needle, crop)
+
+    def test_repeat_takes_the_origin_batch_and_goes_to_the_viewed_order(self):
+        crop = self.comp("crop-editor.js")
+        self.assertIn("!a.derivedFrom && a.id !== df.attempt", crop)
+        self.assertIn("api.order(ctx.project, df.profile, df.key)", crop)
+        self.assertIn("to: { profile: ctx.profile, key: ctx.key }", crop)
+
+    def test_the_crop_stage_leaves_room_for_the_44_px_handles(self):
+        css = read(UI / "css" / "components.css")
+        self.assertRegex(css, r"\.crop-stage \{[^}]*padding: 22px")
+        self.assertIn("crop-inner", self.comp("crop-editor.js"))
 
     def test_the_ratio_tolerance_is_the_one_of_the_server(self):
         from gimg import crop as server_crop
