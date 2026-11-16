@@ -546,6 +546,7 @@ Los mismos commits que citan las secciones 0 y 13 desde el 2026-11-12.
 | Instalador-WMF-Tarkor | `origin/main` | `5631e77b` | — |
 | Instalador-WMF-Tarkor | `origin/claude/installer-docs-review-09e7vs` | `34d2bb27` | `docs/13-hoja-de-estilos-e-imagenes.md` (`d9d33fe`, `608661d`): pide I1-I6. `app/src/estilos.css` aún sin oro ni noche (INS-56) |
 | WMF-imagenes | — | — | Clon del mismo origen que el juego; nada que cambiar por esta hoja |
+| World-Maker-Fantasy, front del generador del mundo | `origin/main` | `b55cdf06` (2026-11-16) | `image-generator/interfaz/index.html` va hoy con paleta propia beige y marrón, sin logo ni favicon; **usa la marca de Tarkor** (tokens de madera, hueso y oro, Cinzel en títulos, favicon del juego): [`../../proposals/wmf-imagenes/entrega-interfaz-2026-11-16.md`](../../proposals/wmf-imagenes/entrega-interfaz-2026-11-16.md), enfoque elegido por el agente (delegado, 2026-11-16), sin aplicar |
 | galivelop-image-generator | `agent/hojas-tarkor` | desde `3c04dd1` | 23 perfiles y 16 hex en `examples/tarkor/galivelop-images.json`; sin perfil `lateral` |
 
 La sección 9 decía que E14 va sobre madera 950: va sobre un disco de noche `#0f1428` (decisión de la usuaria en el
