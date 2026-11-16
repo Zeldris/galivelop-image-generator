@@ -36,7 +36,7 @@ hace falta `GW_SHARED_LOG`. Aun así, cada rama toca solo su fila salvo al cerra
 
 ## Pendiente
 
-- **`tests-for.py --run` sin `tests/__init__.py` (2026-11-16):** `test-run.py` descubre con `top_level_dir=tests`, así que no se importa `tests/__init__.py` y `GIMG_AUTOSTART=0` no se fija: `ComposeCliTests` y `FullCycleTests` fallan con el aviso `service_failed` y dejan un `gimg serve` vivo. El check completo pasa. Arreglo: en el flujo (`.claude/gw/scripts/`, necesita permiso) o con un `testMap.command` del proyecto que use `-t .`.
+- **`tests-for.py --run` sin `tests/__init__.py` (2026-11-16):** `test-run.py` descubre con `top_level_dir=tests`, así que no se importa `tests/__init__.py` y `GIMG_AUTOSTART=0` no se fija: `ComposeCliTests` y `FullCycleTests` fallan con el aviso `service_failed` y dejan un `gimg serve` vivo. El check completo pasa. Parcheado en `tests/test_cli.py` (fija `GIMG_AUTOSTART=0` al importarse); el arreglo general, en el flujo (`.claude/gw/scripts/`, necesita permiso) o con un `testMap.command` del proyecto que use `-t .`.
 - **Barrido de `gimg/brand.py` (0.7.0; retro del 2026-11-16 «barrido-brand», P2): hecho (2026-11-16)**, sin revisar: quitado `_mute_attrs` del `flat`, unidos los dos bucles de `_paint_colors`, `_mute_attrs` llama a `_no_paint` y `_mute` lleva `stroke-opacity` 0 y `stroke-width` 0 por separado. El punto 4 cambia comportamiento: una opacidad de trazo 0 heredada ya no la deshace un ancho propio. El barrido anterior (P5) y `orders.add_derived` (2), hechos.
 - **Al flujo (retro del 2026-11-16, P1, P2, P4, aprobadas):** comprobar filas de la tabla de estado; registro de tokens
   en un archivo ignorado volcado en el `pre-commit`; dos líneas en el encargo de `gw-orchestrate-dealer`. Detalle en
