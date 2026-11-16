@@ -76,7 +76,7 @@ Cada fase es una rama y un pull request a `main`, con las tres fases de revisió
 | F2 Motor real | Envoltorio de `sd-cli` con el perfil de máquina (memoria, `--max-vram`, tope, cancelar, progreso); `instalar.sh` con versiones fijas y checksum; catálogo de modelos, borradores, composición de texto y logo, medida de marca; **piloto de contenido corporativo** (Portal, Tarkor, toVeriAI, Galivelop-workflow) con configuraciones de ejemplo en este repo *(aprobado 2026-10-26)* | Un pedido real generado en la Deck y la primera ronda de piezas definitivas de los cuatro proyectos elegidas por la persona (comprobación manual) |
 | F3 API y arranque | API HTTP (D17, D25) y arranque bajo demanda; unidad `systemd --user` opcional *(F3 mínima, D39: hecha en 0.3.0 con `docs/api.md`; la unidad `systemd` queda fuera; pendiente manual en la Deck: `gimg ui` abre el navegador y el servicio se para a los 15 min)* | Tests de la API; `gimg` arranca el servicio solo |
 | F4 Interfaz | Las tres pantallas de D22, es/en, más plantillas elegibles y editor de elementos (D39), con la hoja de estilo de este proyecto; se adelanta al cierre del piloto. **F4a-F4d hechas (0.4.0) salvo la prueba en navegador** (`gimg/ui/`, `docs/interfaz/f4a.md`, `tests/test_ui.py`); pendiente de la persona: recorrido completo en el navegador de la Deck y en escritorio, con teclado y con mando | Recorrido completo en el navegador |
-| FM Proceso de marca | Hoja como datos, pieza de marca e imagen libre, tandas, contador de fallos y troubleshooting, recortar, taller enlazado, entrega por carpetas, nota y descarte, bandeja del agente (D41); va en 0.6.0-0.10.0, antes de F5-F7, y la bandeja es la entrada de F6 *(propuesta del 2026-11-16, decisiones abiertas en su «en detalle»)* | El «pasa si» de cada versión de «FM en detalle» |
+| FM Proceso de marca | Hoja como datos, pieza de marca e imagen libre, tandas, contador de fallos y troubleshooting, recortar, taller enlazado, entrega por carpetas, nota y descarte, bandeja del agente (D41); va en 0.6.0-0.11.0, antes de F5-F7, y la bandeja es la entrada de F6 *(propuesta del 2026-11-16, decisiones abiertas en su «en detalle»)* | El «pasa si» de cada versión de «FM en detalle» |
 | F5 Piloto WMF | Configuración de ejemplo para WMF, guía de integración y propuesta de migración para su repo; medida base con `opt-ai` y comparación `sd-server` (D14); LUT por marca si F2 la deja pendiente; stable-diffusion.cpp `master-1039` o posterior con LoRA (`--lora-model-dir`, nueva versión fija en `instalar.sh`); bocetos paramétricos, planos y encuadre de Tarkor (`bocetos/plantilla.py`, `planos.sh`, `encuadre.py`); LoRA en el perfil (`style.lora`: archivo, peso, palabra disparadora y sha256; `--lora-model-dir` y la etiqueta en el prompt; todo en el registro, D34), para que WMF use su `wmf-estilo` sin código propio *(aprobado 2026-10-26: el piloto corporativo pasa a F2 y WMF sigue aquí; ampliado 2026-11-02; LoRA en el perfil aprobado 2026-11-04, `docs/records/lectura-2026-11-04-tarkor.md`)* | WMF genera y recibe una elegida sin copia a mano |
 | F6 Director local | Paso **opcional** con un LLM local de Ollama (D37): redacta y mejora prompts desde la hoja de estilo y la biblia del proyecto, propone variantes para la plantilla y elige entre los intentos con `gimg measure` y su lectura de la imagen (modelo con visión si cabe en la máquina); sin Ollama todo sigue con prompts a mano; nada de API externas ni cuotas | Tests con un Ollama falso; una ronda del piloto hecha de principio a fin sin agentes, con la nota de la persona |
 | F7 Compatibilidad | **Última fase** (pedido de la persona del 2026-11-05; D4 deja la Deck primero): que `gimg` funcione en cualquier equipo, no solo con Vulkan. **Motor:** elegir el `sd-cli` según lo que haya (Vulkan, CUDA, ROCm/HIP, Metal o solo CPU), cada uno con versión fija y sha256, detectado por `instalar.sh`/`gimg doctor` y declarado en el perfil de máquina; perfiles de máquina genéricos (CPU, GPU pequeña, GPU grande) además de `steam-deck`. **Linux variados:** sin Vulkan ni GPU, otras distribuciones, sin `rsvg-convert` o con un ffmpeg distinto (avisos claros en `doctor`). **Windows:** instalador propio (`instalar.ps1` o similar), parada del proceso sin `os.killpg` probada de verdad, rutas y fuentes de Windows, lanzador `arrancar.cmd` (sin `.exe`: nada que instalar, D6). **macOS** si cabe (Metal). Navegador: el predeterminado del sistema, con `BROWSER` para forzar otro | **Manual persona:** en un Linux sin Vulkan (solo CPU) y en un equipo Windows: instalar, `gimg doctor` en verde, un pedido generado y elegido desde la interfaz |
@@ -170,8 +170,8 @@ la persona decide si es una F4e o va con otra). Se diseña con su «en detalle»
    cabe en la caja (encoger, cortar o avisar) y si la fuente elegida viaja con el proyecto (archivo en el repo, D25).
 8. **Piezas de mapa: sin costura y recortes** (pedido de WMF del 2026-11-10, `docs/marcas/tarkor/pedido-mapa.md`): (a) una orden que hace repetible una textura (desplazar media pieza y fundir la costura, solo stdlib) y una vista 4×4 para comprobarla, sin escala ni marca visible; (b) `gimg brand matte` con fondo croma verde o magenta (el color dominante del borde ya lo cubre: se prueba con los dos); (c) perfiles `cartela` 1024×512 y `banda` 1024×256; (d) img2img desde una pieza base con fuerza 0,35-0,45 (comprobar qué acepta `sd-cli`). Pasa si una textura en 4×4 no enseña costura y un icono se lee a 24 px en gris.
    *Hecho (rama `agent/P8-mapa`):* (a) `gimg tile <png> [--preview vista.png]` (entrada de hasta 4,2 Mpx en total (4 194 304 px, como 2048×2048), `tile.MAX_PIXELS`; `gimg/tile.py`, `tests/test_tile.py`); (b) `matte` con croma `#00ff00` y `#ff00ff` probado, con arreglo del halo en croma puro (`gimg/matte.py`); (c) `cartela` y `banda` ya estaban en `examples/tarkor`, ahora con test. **Falta:** (d) img2img (necesita `sd-cli` en la máquina) y la prueba a ojo del icono a 24 px.
-9. **Recortar un intento desde la interfaz** (pedido de la persona del 2026-11-12, al sacar a mano las portadas 06 sin marco y los iconos 07 de una hoja 2×2): botón «Recortar» en la tarjeta del intento que abre la imagen con un rectángulo de esquinas arrastrable (ratón primero); por defecto con la proporción del perfil (16:9 en `portada`), con opción de soltarla; vista previa antes de guardar. Guardar crea un intento **derivado** (el original no se toca) con la caja apuntada para poder repetirlo, que se elige con `choose` como cualquier otro; y «Llevar a otro pedido» guarda el trozo como intento de otro pedido del proyecto (un icono sacado de una hoja). Lo mismo por orden: `gimg crop <proyecto> <clave> <perfil> <intento> --box x0,y0,x1,y1 [--to <clave>]`. Solo stdlib (D6): `png.py` lee y escribe, reescalado bilineal. Cubre también los recortes de la pieza 8. Pasa si un recorte con proporción bloqueada sale del tamaño del perfil, el original queda intacto y el derivado repite la misma caja. Va en FM, 0.8.0 (o antes, decisión abierta).
-10. **Nota de marca determinista en cada intento** (pedido de la persona del 2026-11-12, tras descartar a ojo muchas portadas 06 por colores fuera de paleta, horizonte o luz de día): primero **investigar si se puede**: qué rasgos de la marca se miden sin un modelo (ajuste a la paleta y colores fuera de ella, luminancia y saturación medias frente a las referencias aprobadas, marco crema en el borde, densidad de grabado). Base: `gimg measure` (paleta, `--refs`, zona). Si se puede, cada intento lleva una **nota de 0 a 10** visible en su tarjeta de la interfaz, con el desglose por rasgo; **7 o más** se ofrece como posible propuesta y **menos de 7 se descarta solo**. **Descartar mueve el archivo** a una carpeta de descartes del pedido (hoy el estado `discarded` de `orders.py` solo marca y el archivo sigue en `attempts/`): se apunta la nota y el motivo, se ve aparte en la interfaz y se puede recuperar; vale también para el descarte a mano. Los pesos y las referencias salen de la marca del proyecto. Lo que no se pueda medir de forma determinista (horizonte, motivo repetido, glifos) se dice en el informe, no se inventa con un modelo. Pasa si las aprobadas del Portal (q311, q628, q635) sacan 7 o más y los descartes apuntados en `docs/records/troubleshooting-portal-marca.md` sacan menos. Va en FM, 0.9.0 (2026-11-16: descarte propuesto hasta calibrar, decisión abierta).
+9. **Recortar un intento desde la interfaz** (pedido de la persona del 2026-11-12, al sacar a mano las portadas 06 sin marco y los iconos 07 de una hoja 2×2): botón «Recortar» en la tarjeta del intento que abre la imagen con un rectángulo de esquinas arrastrable (ratón primero); por defecto con la proporción del perfil (16:9 en `portada`), con opción de soltarla; vista previa antes de guardar. Guardar crea un intento **derivado** (el original no se toca) con la caja apuntada para poder repetirlo, que se elige con `choose` como cualquier otro; y «Llevar a otro pedido» guarda el trozo como intento de otro pedido del proyecto (un icono sacado de una hoja). Lo mismo por orden: `gimg crop <proyecto> <clave> <perfil> <intento> --box x0,y0,x1,y1 [--to <clave>]`. Solo stdlib (D6): `png.py` lee y escribe, reescalado bilineal. Cubre también los recortes de la pieza 8. Pasa si un recorte con proporción bloqueada sale del tamaño del perfil, el original queda intacto y el derivado repite la misma caja. Va en FM, 0.6.0.
+10. **Nota de marca determinista en cada intento** (pedido de la persona del 2026-11-12, tras descartar a ojo muchas portadas 06 por colores fuera de paleta, horizonte o luz de día): primero **investigar si se puede**: qué rasgos de la marca se miden sin un modelo (ajuste a la paleta y colores fuera de ella, luminancia y saturación medias frente a las referencias aprobadas, marco crema en el borde, densidad de grabado). Base: `gimg measure` (paleta, `--refs`, zona). Si se puede, cada intento lleva una **nota de 0 a 10** visible en su tarjeta de la interfaz, con el desglose por rasgo; **7 o más** se ofrece como posible propuesta y **menos de 7 se descarta solo**. **Descartar mueve el archivo** a una carpeta de descartes del pedido (hoy el estado `discarded` de `orders.py` solo marca y el archivo sigue en `attempts/`): se apunta la nota y el motivo, se ve aparte en la interfaz y se puede recuperar; vale también para el descarte a mano. Los pesos y las referencias salen de la marca del proyecto. Lo que no se pueda medir de forma determinista (horizonte, motivo repetido, glifos) se dice en el informe, no se inventa con un modelo. Pasa si las aprobadas del Portal (q311, q628, q635) sacan 7 o más y los descartes apuntados en `docs/records/troubleshooting-portal-marca.md` sacan menos. Va en FM, 0.8.0 (2026-11-16: descarte propuesto hasta calibrar).
 
 ## F1 en detalle
 
@@ -1392,23 +1392,30 @@ marcadas «(abierta)» son de la persona.
    libres). El prompt montado se guarda en el intento con `sheetVersion` (hash de la hoja resuelta), para repetirlo.
 4. **Tanda = una entrada de la cola con su count.** No hace falta otro concepto: los intentos llevan el id de la
    entrada que los generó y la cola y la galería los agrupan; mover y vaciar ya trabajan por entrada.
-5. **Fallo y contador.** Una tanda falla si la persona dice «Ninguno vale» o descarta todos sus intentos, siempre con
-   motivo (los motivos son los `unmeasured` más «colores», «marco», «otro»). El contador vive en `order.json`; al
-   segundo fallo avisa y al tercero bloquea el pedido hasta apuntar una fila de troubleshooting (motivo, cambio de
-   sujeto), que lo pone a cero. Al escribir el sujeto, la comprobación avisa si coincide con uno que ya falló.
+5. **Fallo y contador** (persona, 2026-11-16). Un intento **falla si saca menos de 5** de nota. Al **tercer
+   fallo seguido** el pedido se bloquea hasta apuntar una fila de troubleshooting (motivo, cambio de sujeto), que pone
+   el contador a cero; un intento de 5 o más también lo pone a cero. El contador vive en `order.json`. Al escribir el
+   sujeto, la comprobación avisa si coincide con uno que ya falló. El «No» a mano lleva motivo (los `unmeasured` más
+   «colores», «marco», «otro»). Umbrales, número de fallos y el resto de valores de una pieza son **configurables con
+   valores por defecto** (persona): la hoja los fija por tipo de pieza y el pedido puede cambiarlos, y la interfaz
+   marca lo que difiere de la hoja.
 6. **Nota 0-10 (punto 10).** Sobre `measure()`: ajuste a paleta con CIEDE2000 (stdlib), luminancia y saturación frente
    a las referencias, marco en el borde y densidad de grabado; desglose por rasgo y los `unmeasured` como «No
    medido». Se calcula en el trabajador al terminar el intento. Primero se investiga si separa: pasa si las aprobadas
    del Portal (q311, q628, q635) sacan 7 o más y los descartes del troubleshooting menos. Hasta entonces, **descarte
-   propuesto** («Descartar los N»), no automático.
+   propuesto** («Descartar los N»), no automático (persona, 2026-11-16). Una tanda **se para sola en cuanto un intento
+   saca 9 o más** (persona): los intentos que quedan de esa entrada de la cola se cancelan.
 7. **Descartar mueve el archivo** a `discarded/` del pedido, con nota y motivo, recuperable; vale para el descarte a
    mano. El manifiesto y `chosenHistory` no se tocan: un intento elegido no se puede descartar sin deshacer antes.
-8. **Recortar (punto 9) y taller enlazado:** el tipo de pieza dice qué paso sigue (recortar, quitar fondo, pasar a
+8. **Recursos del proyecto** (persona, 2026-11-16): lo ya generado y aprobado (de gimg o archivos de la persona) se
+   puede usar en el diseño de cada proyecto: como referencia de la nota, como capa de una composición y, desde la
+   interfaz, añadido a la hoja con «Usar como referencia». La hoja se edita también desde la interfaz.
+9. **Recortar (punto 9) y taller enlazado:** el tipo de pieza dice qué paso sigue (recortar, quitar fondo, pasar a
    SVG) y el taller (`brand-workshop.js`) se abre con `?piece=`.
-9. **Entrega por tipo de pieza:** destino `<raíz>/<carpeta>/<slug>/` con `aprobadas/`, `pendiente/`, `descartes/` y
+10. **Entrega por tipo de pieza** (también para los pedidos libres de un proyecto con hoja, persona): destino `<raíz>/<carpeta>/<slug>/` con `aprobadas/`, `pendiente/`, `descartes/` y
    `svg/` y su LEEME, como `piloto/portal-marca/`; ancho, formato y postproceso del tipo. Sustituir una aprobada
    guarda la anterior en `aprobadas/` (como `reemplaza.sh`). Nunca en `public/` del Portal: lo copia su sesión.
-10. **Bandeja del agente:** lo que pide criterio sale como tarea (`id`, `kind`, entrada, esquema de respuesta,
+11. **Bandeja del agente:** lo que pide criterio sale como tarea (`id`, `kind`, entrada, esquema de respuesta,
     estado, `resolvedBy`), validada al contestar: escribir el sujeto desde un encargo, juzgar los `unmeasured`,
     rediseñar tras tres fallos, elegir entre candidatos ≥ 7, escribir la hoja inicial desde la biblia. `gimg agent
     todo` da JSON y `gimg agent answer` contesta; la persona siempre puede «Responder yo». Hoy la atiende Claude;
@@ -1427,34 +1434,32 @@ marcadas «(abierta)» son de la persona.
 
 ### Versiones
 
-Cada versión trae CLI + API + su parte de interfaz (`docs/interfaz/marca.md` §5), CHANGELOG es/en, README
-«Versión», `docs/api.md` y su release (`releases.py bump`). Orden elegido: lo que se usa a diario primero; la nota,
-que necesita datos para calibrar, después de que 0.7-0.8 los vayan juntando.
+Cada versión trae CLI + API + su parte de interfaz (`docs/interfaz/marca.md` §5, que sigue el orden anterior),
+CHANGELOG es/en, README «Versión», `docs/api.md` y su release (`releases.py bump`). Orden (2026-11-16, tras las
+respuestas de la persona): recortar primero, porque no depende de la hoja y hoy se hace a mano; la nota antes de la
+pieza de marca, porque el fallo es «nota menor que 5» y el contador la necesita. Se calibra con lo que ya hay
+(aprobadas y descartes del Portal).
 
 | Versión | Qué trae | Pasa si |
 |---|---|---|
-| **0.6.0 Hoja como datos** | Esquema `brand-sheet` con `extends`; `gimg/brandsheet.py`; `gimg brand init` (esqueleto desde la configuración), `gimg brand prompt` y `gimg brand lint`; migrar Portal y sus productos (y corregir en `hoja.md` la retícula, que hoy no coincide con el CSS del Portal); test hoja.md ↔ datos; pestaña Marca con subpestañas Hoja y Comprobación, «Probar un sujeto», Piezas por tipo | `brand prompt` reproduce los prompts aprobados del Portal a partir de su sujeto; `brand lint` rechaza los descartes de vetos del troubleshooting por su motivo |
-| **0.7.0 Pieza de marca** | Modo en el pedido y en el retoque; montaje y comprobación en el servidor; tandas agrupadas; «No» con motivo y «Ninguno vale»; contador, bloqueo y troubleshooting; esquema de la tarea de bandeja fijado (los formularios ya escriben ese cuerpo) | Un pedido de marca del Portal hecho de principio a fin desde la interfaz, sin escribir el prompt entero |
-| **0.8.0 Recortar, taller y entrega** | Punto 9 (`gimg crop`, `crop-editor.js`); tira de pasos al taller por tipo de pieza; entrega por carpetas con LEEME y sustituir sin perder | Las portadas 06 y los iconos 07 de una hoja 2×2 salen recortados y entregados sin tocar archivos a mano |
-| **0.9.0 Nota y descarte** | Investigación y nota del punto 10; desglose; descarte propuesto y mover a `discarded/` recuperable; `autoDiscard` por proyecto solo tras calibrar | El «pasa si» del punto 10 |
-| **0.10.0 Bandeja** | `gimg agent todo/answer`, API y pestaña Bandeja; F6 la atiende con Ollama después | Una tanda con un juicio pedido y contestado desde la bandeja |
+| **0.6.0 Recortar** | Punto 9: `gimg crop`, intento derivado, «Llevar a otro pedido», `crop-editor.js` | Las portadas 06 y los iconos 07 de una hoja 2×2 salen recortados sin tocar archivos a mano |
+| **0.7.0 Hoja como datos** | Esquema `brand-sheet` con `extends`; `gimg/brandsheet.py`; `gimg brand init`, `gimg brand prompt` y `gimg brand lint`; migrar el Portal y sus productos (y corregir la retícula de `hoja.md`, que no coincide con el CSS del Portal); hoja.md ↔ datos; pestaña Marca con Hoja y Comprobación, «Probar un sujeto», Piezas por tipo | `brand prompt` reproduce los prompts aprobados del Portal desde su sujeto; `brand lint` rechaza los descartes de vetos del troubleshooting por su motivo |
+| **0.8.0 Nota y descarte** | Investigación y nota del punto 10 en el trabajador; desglose; descarte propuesto y mover a `discarded/` recuperable; `autoDiscard` por proyecto tras calibrar | El «pasa si» del punto 10 |
+| **0.9.0 Pieza de marca** | Modo en el pedido y en el retoque; montaje y comprobación en el servidor; tandas agrupadas y parada con 9; contador de fallos, bloqueo y troubleshooting; esquema de la tarea de bandeja fijado | Un pedido de marca del Portal hecho de principio a fin desde la interfaz, sin escribir el prompt entero |
+| **0.10.0 Taller, recursos y entrega** | Tira de pasos al taller por tipo de pieza; recursos del proyecto y «Usar como referencia»; editar la hoja desde la interfaz; entrega por carpetas con LEEME y sustituir sin perder | Una pieza del Portal entregada en su carpeta sin tocar archivos a mano |
+| **0.11.0 Bandeja** | `gimg agent todo/answer`, API y pestaña Bandeja; F6 la atiende con Ollama después | Una tanda con un juicio pedido y contestado desde la bandeja |
 
-### Decisiones abiertas (de la persona)
+### Decisiones de la persona (2026-11-16)
 
-1. Qué cuenta como fallo: la tanda entera sin ningún válido (lo propuesto) o cada intento descartado; y si el
-   contador es por pedido (lo propuesto) o por sujeto.
-2. Al tercer fallo: bloqueo duro (lo propuesto) o «una tanda más» apuntándolo.
-3. Umbral 7: descarte propuesto hasta calibrar (lo propuesto) o automático desde el primer día.
-4. En modo marca, ¿se puede cambiar modelo y count (se ve «distinto de la hoja») o quedan fijos?
-5. ¿Recortar antes, como 0.6.x, si se sigue recortando a mano?
-6. ¿La entrega por carpetas vale también para los pedidos libres de un proyecto con hoja?
-7. ¿Parar una tanda cuando ya hay un intento con nota ≥ 8, para ahorrar tiempo de Deck?
-8. ¿La hoja se edita algún día desde la interfaz (p. ej. «Usar como referencia» en la tarjeta)?
-El resto de preguntas de la interfaz están en `docs/interfaz/marca.md` §6.
+1. Fallo: un intento con nota menor que 5. 2. Bloqueo: al tercer fallo seguido. 3. Descarte por debajo de 7:
+propuesto hasta calibrar. 4. Modelo, count y umbrales: configurables, con valores por defecto. 5. Recortar: cuándo, a
+criterio del agente (va primero, 0.6.0). 6. La entrega por carpetas vale también para lo libre. 7. La tanda se para
+sola con un 9 o más. 8. La hoja se edita desde la interfaz y lo ya generado se usa como recurso del proyecto.
+Quedan preguntas: se apuntan aquí según las conteste.
 
 ### Riesgos
 
-- El mando en la Deck sigue sin probarse y FM añade formulario: el recorrido con mando, antes de 0.7.0.
+- El mando en la Deck sigue sin probarse y FM añade formulario: el recorrido con mando, antes de 0.9.0.
 - Escribir el sujeto con el teclado en pantalla es lento; lo alivian «Copiar de…» y la bandeja.
 - La nota puede no separar lo bueno de lo malo: entonces 0.9.0 se queda en desglose informativo.
 - Con tandas de ~40 min, el bloqueo al tercer fallo llega tarde; el aviso al segundo y el de sujeto fallido frenan
