@@ -1467,22 +1467,23 @@ Segunda ronda (2026-11-16):
   sin fallos ni parada. El descarte automático lo enciende la persona con un botón que solo se activa si la
   calibración pasa.
 - **Hoja:** `marca.json` es la fuente y gimg genera `hoja.md`. Padre: Portal; heredan Galivelop-workflow,
-  galivelop-developer, el generador de voz y el evaluador. Tarkor y toVeriAI son independientes, con hoja propia.
+  galivelop-developer, galivelop-voice-generator y galivelop-evaluator (por dar de alta en gimg si no lo están). Tarkor y toVeriAI son independientes, con hoja propia.
   `marca.json` se escribe donde declare el proyecto, como las plantillas (D40). Desde la interfaz se edita todo
   menos la herencia, avisando de los hijos afectados. **Manda la hoja de cada proyecto**, no el CSS: si el CSS del
   Portal no coincide (la retícula), se avisa al Portal. Cambiar la hoja deja las notas desactualizadas: la interfaz
   dice «La marca ha cambiado, ¿recalcular las notas?» y, si se dice que no, el botón «Recalcular notas» sigue
   disponible.
 - **Pieza de marca:** el sujeto se escribe en inglés o en español (más idiomas, más adelante); el español pasa por la
-  bandeja para traducirlo, con confirmación. Seed fija en la primera tanda y +1 en cada siguiente. «Pasar a imagen
+  bandeja para traducirlo, con confirmación; mientras no haya F6, la interfaz avisa al escribirlo («en español:
+  espera traducción») y deja encolarlo igualmente en inglés. Seed fija en la primera tanda y +1 en cada siguiente. «Pasar a imagen
   libre» cambia el pedido entero, apuntado. El fondo de croma se quita solo al terminar, con copia.
 - **Pedidos existentes:** quedan libres; los del Portal y los de Tarkor se centralizan y reestructuran con la persona
-  en su equipo, viendo lo que hay.
+  en su equipo, viendo lo que hay, al llegar 0.7.0 (con sus hojas ya hechas).
 - **Entrega:** lo libre va a la carpeta que marque gimg por defecto, con la ruta cambiable y «Guardar como»; al
   sustituir una aprobada, la anterior pasa a `aprobadas/` con fecha.
 - **Bandeja:** nada se aplica sin confirmar hasta F6; por proyecto, con contador global en la cabecera; el agente la
   mira al empezar cada sesión y lo dice en una línea.
-- **Orden:** primero se reanuda la cola parada (la persona, en la Deck) y FM sigue en paralelo; los leves, después de
+- **Orden:** la cola parada la reanuda el agente en la próxima sesión en local, con la persona y FM sigue en paralelo; los leves, después de
   0.7.0. Una versión, un PR y una release cada vez. El recorrido con mando queda pendiente de la persona, sin
   bloquear. El diseño de interfaz de `docs/interfaz/marca.md` queda aprobado, con los cambios de este plan.
 
