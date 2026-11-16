@@ -35,7 +35,7 @@ INTENDED_500 = {
     "serve.start_failed",
     # brand.*: faults of the machine, not of the request (the rest of brand.* has its 4xx)
     "brand.out_is_input", "brand.tool_missing", "brand.tool_failed", "brand.timeout", "brand.write_failed", "export.write_failed",
-    "export.out_is_input",
+    "export.out_is_input", "crop.write_failed",
     # tile.*: no endpoint serves `gimg tile` (CLI only), so none of its errors maps to a status; add a 409/400 when one does
     "tile.out_is_input", "tile.same_outputs", "tile.write_failed", "tile.exists", "tile.too_big",
 }

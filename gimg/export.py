@@ -113,6 +113,33 @@ def _taps(src_len: int, start: float, span: float, dst_len: int) -> list:
     return out
 
 
+def _linear_taps(src_len: int, dst_len: int) -> list:
+    """Bilinear taps (pixel centres aligned, edges clamped): ``[(source index, weight)]`` per output pixel."""
+    ratio = src_len / dst_len
+    out = []
+    for i in range(dst_len):
+        pos = min(max((i + 0.5) * ratio - 0.5, 0.0), src_len - 1.0)
+        lo = int(pos)
+        frac = pos - lo
+        if frac < 1e-9 or lo + 1 >= src_len:
+            out.append([(lo, 1.0)])
+        else:
+            out.append([(lo, 1.0 - frac), (lo + 1, frac)])
+    return out
+
+
+def resize(width: int, height: int, rgba, dst_w: int, dst_h: int) -> bytearray:
+    """`rgba` (``width x height``) scaled to ``dst_w x dst_h``, the whole image, per axis: reducing averages the source
+    area each output pixel covers, enlarging is bilinear. Premultiplied alpha; the same size is a copy. No cropping."""
+    if dst_w < 1 or dst_h < 1:
+        raise ValueError("resize: %dx%d is not a size" % (dst_w, dst_h))
+    if (dst_w, dst_h) == (width, height):
+        return bytearray(rgba)
+    cols = _taps(width, 0.0, width, dst_w) if dst_w < width else _linear_taps(width, dst_w)
+    rows = _taps(height, 0.0, height, dst_h) if dst_h < height else _linear_taps(height, dst_h)
+    return _resample(width, rgba, dst_w, dst_h, cols, rows)
+
+
 def fit(width: int, height: int, rgba, dst_w: int, dst_h: int, anchor=(0.5, 0.5)) -> bytearray:
     """`rgba` cropped to the proportion of ``dst_w x dst_h`` (centred unless `anchor` = ``(fx, fy)`` says otherwise)
     and scaled down to it by area average."""
@@ -124,6 +151,11 @@ def fit(width: int, height: int, rgba, dst_w: int, dst_h: int, anchor=(0.5, 0.5)
     span_x, span_y = dst_w / scale, dst_h / scale
     cols = _taps(width, (width - span_x) * anchor[0], span_x, dst_w)
     rows = _taps(height, (height - span_y) * anchor[1], span_y, dst_h)
+    return _resample(width, rgba, dst_w, dst_h, cols, rows)
+
+
+def _resample(width: int, rgba, dst_w: int, dst_h: int, cols: list, rows: list) -> bytearray:
+    """Separable resampling with the taps of each output column and row (premultiplied alpha)."""
     needed = sorted({j for taps in rows for j, _ in taps})
     x0 = min(j for taps in cols for j, _ in taps)
     x1 = max(j for taps in cols for j, _ in taps) + 1

@@ -7,7 +7,7 @@ import os
 import sys
 import traceback
 
-from . import __version__, brand, compose, delivery, doctor, export, i18n, measure, orders, projects, queue, service, sheet, tile, worker
+from . import __version__, brand, compose, crop, delivery, doctor, export, i18n, measure, orders, projects, queue, service, sheet, tile, worker
 from .errors import GimgError
 
 LANGS = ("es", "en")
@@ -89,6 +89,11 @@ def _build(lang: str) -> argparse.ArgumentParser:
 
     leaf(top, "choose", "cli.cmd.choose", project, okey, oprofile, attempt)
     leaf(top, "undo", "cli.cmd.undo", project, okey, oprofile)
+    leaf(top, "crop", "cli.cmd.crop", project, okey, oprofile, attempt,
+         opt("--box", "cli.arg.crop_box", metavar="x0,y0,x1,y1", required=True),
+         opt("--free", "cli.arg.crop_free", action="store_true"),
+         opt("--to", "cli.arg.crop_to", metavar="KEY"),
+         opt("--to-profile", "cli.arg.crop_to_profile", metavar="PROFILE"))
     leaf(top, "compose", "cli.cmd.compose", project, okey, oprofile,
          arg("attempt", "cli.arg.attempt_optional", type=int, nargs="?", default=None),
          opt("--text", "cli.arg.text_kv", action="append", default=[], metavar="FIELD=TEXT"),
@@ -378,6 +383,21 @@ def _run(args, out: _Out) -> int:
         else:
             out.line("cli.out.chosen" if cmd == "choose" else "cli.out.undone",
                      new=out.none(result["new"]), old=out.none(result["old"]))
+    elif cmd == "crop":
+        to = None
+        if args.to is not None or args.to_profile is not None:
+            to = {"profile": args.to_profile or args.profile, "key": args.to or args.key}
+        res = crop.crop(args.project, args.key, args.profile, args.attempt, crop.parse_box(args.box),
+                        lock_ratio=not args.free, to=to)
+        if out.as_json:
+            out.data(res)
+        else:
+            made = res["attempt"]
+            out.line("cli.out.crop_done", id=made["id"], order=res["key"], profile=res["profile"],
+                     width=made["params"]["width"], height=made["params"]["height"],
+                     box=",".join(str(v) for v in made["derivedFrom"]["box"]))
+            if res["created"]:
+                out.line("cli.out.crop_created", order=res["key"], profile=res["profile"])
     elif cmd == "compose":
         _compose(args, out)
     elif cmd == "templates":

@@ -15,6 +15,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   --negative`, API field `negative` for new attempts, and "Negative prompt" fields in the interface (new order and
   retouch). It is passed to `sd-cli` as `--negative-prompt` and kept in the attempt and in the delivery manifest.
 
+- `gimg crop PROJECT KEY PROFILE ATTEMPT --box x0,y0,x1,y1 [--free] [--to KEY] [--to-profile PROFILE]` and
+  `POST …/attempts/{id}/crop`: crop the raw image of an attempt and store the piece as a **derived attempt**
+  (`derivedFrom` points at the source and the box, to repeat it; the original is not touched). With the proportion of
+  the profile locked (the default) the result is exactly its size (`crop.ratio_mismatch` if the box differs by more than
+  1 %); with `--free`, the size of the box. `--to` takes the piece to another order, created if it does not exist.
+  Area-average reduction and bilinear enlargement (`export.resize`).
+
 ### Changed
 
 - `gimg brand lockup` no longer overwrites an existing file: it gives `brand.exists` unless `--force` is passed (like

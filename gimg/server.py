@@ -18,7 +18,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote
 
-from . import __version__, brand, brandshop, build_id, compose, delivery, doctor, i18n, measure, models, orders, paths, projects, queue
+from . import __version__, brand, brandshop, build_id, compose, crop, delivery, doctor, i18n, measure, models, orders, paths, projects, queue
 from .errors import GimgError
 
 API_VERSION = 1
@@ -53,7 +53,7 @@ _EXACT = {
     400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "compose.template_unknown", "compose.element_unknown", "compose.bad_layout", "compose.bad_element", "compose.templates_dir_missing", "api.bad_json",
           "api.bad_param", "brand.no_matte", "brand.dir_missing", "brand.no_palette", "brand.font_unknown", "brand.empty_text", "brand.text_too_long", "brand.empty_wordmark", "brand.wordmark_no_fit", "brand.font_unreadable", "brand.bad_square",
           "export.size_not_for_ico", "export.icon_sizes_only_ico", "export.upscale", "export.too_big",
-          "export.bad_crop", "export.crop_outside", "export.bad_anchor"),
+          "export.bad_crop", "export.crop_outside", "export.bad_anchor", "crop.outside", "crop.ratio_mismatch"),
 }
 # Server-side faults whose names match the 400 patterns below: checked first.
 _SERVER_FAULTS = ("compose.svg_too_big", "engine.unknown", "engine.bad_delay", "machine.invalid", "machine.bad_path", "machine.bad_name",
@@ -761,6 +761,18 @@ def attempt_compose(req):
     attempt_id = _int_param("id", q["id"])
     with _heavy():
         return compose.recompose(q["p"], q["key"], q["profile"], attempt_id, text or None, template, layout)
+
+
+@route("POST", _ATT + "/crop")
+def attempt_crop(req):
+    q = req.params
+    body = _fields(req.body, ("box", "lockRatio", "to"))
+    lock = body.get("lockRatio", True)
+    if not isinstance(lock, bool):
+        raise GimgError("api.bad_param", name="lockRatio")
+    attempt_id = _int_param("id", q["id"])
+    with _heavy():
+        return crop.crop(q["p"], q["key"], q["profile"], attempt_id, body.get("box"), lock, body.get("to"))
 
 
 @route("GET", _ATT + "/measure")
