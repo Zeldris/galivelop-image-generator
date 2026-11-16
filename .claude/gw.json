@@ -43,7 +43,9 @@
   "linkRoots": [],
   "scoutDir": ".claude/gw/scout",
   "relatedTests": {
-    "fast": [],
+    "fast": [
+      "python3 .claude/gw/scripts/tests-for.py --run {files}"
+    ],
     "slow": []
   },
   "plan": [],
@@ -56,5 +58,52 @@
   },
   "authorDeny": [
     "noreply@anthropic.com"
-  ]
+  ],
+  "testMap": {
+    "rules": [
+      {
+        "paths": "^gimg/(?P<m>\\w+)\\.py$",
+        "tests": [
+          "tests/test_{m}.py"
+        ]
+      },
+      {
+        "paths": "^gimg/server\\.py$",
+        "tests": [
+          "tests/test_server_read.py",
+          "tests/test_server_write.py",
+          "tests/test_server_brand.py",
+          "tests/test_server_templates.py"
+        ]
+      },
+      {
+        "paths": "^gimg/locales/",
+        "tests": [
+          "tests/test_i18n.py"
+        ]
+      },
+      {
+        "paths": "^gimg/ui/",
+        "tests": [
+          "tests/test_ui.py",
+          "tests/test_ui_browser.py"
+        ]
+      },
+      {
+        "paths": "^tests/(?P<t>test_\\w+\\.py)$",
+        "tests": [
+          "tests/{t}"
+        ]
+      },
+      {
+        "paths": "^\\.claude/hooks/",
+        "tests": [
+          "tests/test_hooks_sesion.py",
+          "tests/test_hooks_autor.py"
+        ]
+      }
+    ],
+    "command": "python3 -m unittest {files}"
+  },
+  "checkLockWait": 300
 }

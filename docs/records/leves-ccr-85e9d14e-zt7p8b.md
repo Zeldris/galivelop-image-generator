@@ -42,8 +42,7 @@ Fase 1 de 2026-11-13 (diff contra `origin/main` sobre `9844344`):
   `_new_record` y un `fsutil.write_bytes_atomic` evitarían que una regla nueva se quede fuera de los derivados.
 - `export.resize` al ampliar guarda listas de floats por fila (icono 512→1024: ~64 MB dentro de `_heavy`); pasada en
   flujo con dos filas de origen.
-- `.claude/settings.json`: `whole-read.py` entra en un segundo bloque PreToolUse con matcher `Read` sin anclar, junto
-  al `^Read$`; juntarlos (pide permiso de la persona; ver también el solape con `leer-entero.py` en la retro).
+- ~~`.claude/settings.json`: dos bloques de `Read`~~ hecho en la retro del 2026-11-16 (P2).
 - `AGENTS.md`: el check de `.claude/gw.json` lleva una tercera orden (`ci-local.py --validate`) y AGENTS.md nombra dos.
 
 ## Revisión del bloque de la interfaz de recortar (2026-11-16): leves de la fase 1

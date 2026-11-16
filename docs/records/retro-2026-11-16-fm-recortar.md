@@ -1,6 +1,11 @@
 # Retro — FM 0.6.0 Recortar (`ccr-85e9d14e-zt7p8b`, 2026-11-16)
 
-**Estado:** pendiente de la persona (P1-P5).
+**Estado:** aprobada y aplicada (P1, P2, P3, P4) el 2026-11-16; P5 sin cambio. G1-G3, para `gw-harvest`.
+
+Aplicado: P1 en `.claude/gw.json` (`testMap`, `relatedTests.fast`, `checkLockWait`); P2 con los ganchos de `Read`
+juntos en `.claude/settings.json`; P3 como barrido en «Pendiente» de la bitácora; P4 en
+`.claude/gw/gw-orchestrate-dealer.md`. Aviso de P1: `shellcheck` no está en la nube, así que `tests-for.py --run`
+falla cuando cambia un `.sh`.
 
 Fuentes: los registros de las sesiones `0cacc78c` (trabajo) y `66ab8160` (fase 2), buscados con `recover.py --search`,
 y `git log 4624825..HEAD` (30 commits; revisiones de bloque `Findings: 4` y `Findings: 7`, sin `Retries`).
