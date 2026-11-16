@@ -436,9 +436,17 @@ class LayoutEditor(unittest.TestCase):
 
     def test_dialog_traps_focus_stops_global_keys_and_returns_focus(self):
         editor = self.comp("layout-editor.js")
-        for needle in ("showModal()", "ev.key !== 'Tab'", "ev.stopPropagation()", "opener.focus()", "setPointerCapture", "ev.shiftKey", "ev.altKey"):
+        for needle in ("showModal()", "ev.key !== 'Tab'", "ev.stopPropagation()", "opener.focus()", "startBoxDrag(ev", "boxKey(ev", "ev.shiftKey", "ev.altKey"):
             self.assertIn(needle, editor)
         self.assertNotIn("setAttribute('style'", editor)
+
+    def test_the_drag_and_the_arrows_live_in_box_drag_and_both_editors_use_them(self):
+        drag = self.comp("box-drag.js")
+        for needle in ("setPointerCapture", "releasePointerCapture", "pointercancel", "export function resizeBox", "export function boxKey"):
+            self.assertIn(needle, drag)
+        self.assertIn("from './box-drag.js'", self.comp("layout-editor.js"))
+        for gone in ("setPointerCapture", "function resizeBox", "const ARROWS"):
+            self.assertNotIn(gone, self.comp("layout-editor.js"))
 
     def test_local_templates_get_an_export_link_with_download(self):
         slots = self.comp("slots.js")
