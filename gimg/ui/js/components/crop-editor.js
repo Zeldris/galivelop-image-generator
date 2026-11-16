@@ -13,16 +13,15 @@
 import { h, replace } from '../dom.js';
 import { t } from '../i18n.js';
 import { api, describeError, ApiError, paths } from '../api.js';
-import { toastError } from './toast.js';
 import { imageVersion } from './attempt-util.js';
 import { KEY_PATTERN, MAX_KEY } from './new-order.js';
 import { CORNERS, STEP_BIG, clamp, startBoxDrag, boxKey } from './box-drag.js';
+import { trapDialog } from './dialog-trap.js';
 
 export const RATIO_TOLERANCE = 0.01;
 export const ENLARGE_WARN = 2;
 export const STEPS = [1, 10, 50];
 export const GRIDS = [['free', 'ui.crop.gridFree'], ['2', 'ui.crop.grid2'], ['3', 'ui.crop.grid3']];
-const FOCUSABLE = 'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), [tabindex="0"]';
 const PREVIEW_MAX = 240;
 
 const gcd = (a, b) => (b ? gcd(b, a % b) : a);
@@ -85,6 +84,8 @@ export function openCropEditor(ctx, attempt, opener) {
   let mode = 'move';
   let busy = false;
   let closed = false;
+  let previewFrame = 0; // el fotograma de la vista previa pendiente (0 = ninguno)
+  let previewReason = null;
 
   const src = paths.image(ctx.project, ctx.profile, ctx.key, attempt.id, { raw: true, v: imageVersion(attempt) });
   const img = h('img.ed-img', { src, alt: '', draggable: 'false' });
@@ -191,7 +192,7 @@ export function openCropEditor(ctx, attempt, opener) {
       h('div.crop-actions', {}, cancel, moveBtn, save), toBox_, repeat));
 
   // --- estado -> pantalla ---
-  const boxFor = (b) => ({ x0: b.x, y0: b.y, x1: b.x + b.w, y1: b.y + b.h });
+  const boxFor = (b) => { const [x0, y0, x1, y1] = toBox(b); return { x0, y0, x1, y1 }; };
   const scale = () => (size ? img.clientWidth / size.w : 0);
   const out = () => {
     if (!locked) return { w: box.w, h: box.h };
@@ -233,19 +234,28 @@ export function openCropEditor(ctx, attempt, opener) {
     boxNode.focus();
   }
 
-  function refresh() {
-    ratioLabel.textContent = t('ui.crop.ratioLocked', { ratio: ratioText() });
+  // la parte ligera, la única que corre en cada `pointermove`: la caja, los campos, su etiqueta y la vista previa
+  function refreshBox() {
     layoutBox();
     const b = boxFor(box);
     for (const n of nums) if (document.activeElement !== n.input) n.input.value = String(b[n.name]);
     boxNode.setAttribute('aria-label', t('ui.crop.boxLabel', b));
     const reason = size ? blockedReason(box, size, ratioValue()) : 'area';
+    schedulePreview(reason);
+    return reason;
+  }
+
+  function refresh() {
+    ratioLabel.textContent = t('ui.crop.ratioLocked', { ratio: ratioText() });
+    const reason = refreshBox();
     const o = out();
     const k = size && !reason ? enlargement(box, o.w, o.h) : 0;
     output.textContent = size && !reason ? t('ui.crop.outputValue', { w: o.w, h: o.h, scale: k.toFixed(1) }) : '—';
     const saveLocked = composes(ctx.profileCfg);
     const goLocked = composes(profiles[toProfile.value]);
-    composeNote.hidden = !(toBox_.hidden ? saveLocked : goLocked);
+    // «Repetir» cae en el perfil del pedido (`saveLocked`): con su panel visible también se avisa
+    const repeatLocked = Boolean(repeat) && !repeat.hidden && saveLocked;
+    composeNote.hidden = !((toBox_.hidden ? saveLocked : goLocked) || repeatLocked);
     status.hidden = !(size && reason);
     if (size && reason) status.textContent = t(`ui.crop.blocked.${reason}`, { w: size.w, h: size.h, ratio: ratioText() });
     warn.hidden = !(k > ENLARGE_WARN);
@@ -254,9 +264,21 @@ export function openCropEditor(ctx, attempt, opener) {
     save.disabled = busy || Boolean(reason) || !size || saveLocked || !toBox_.hidden;
     moveBtn.disabled = busy || !size;
     toGo.disabled = busy || Boolean(reason) || !size || goLocked;
-    repeatGo.disabled = busy || !size;
+    // el recorte repetido cae en el pedido visto: un perfil que compone no lo admite
+    repeatGo.disabled = busy || !size || saveLocked;
     for (const el of dlg.querySelectorAll('.ed-side input, .ed-side select, .crop-cells button, .crop-foot select, .crop-foot input')) el.disabled = busy || !size;
-    paintPreview(reason);
+    repeatSel.disabled = busy || !size || saveLocked;
+  }
+
+  // la vista previa (un `drawImage` del raw entero) se pinta como mucho una vez por fotograma
+  function schedulePreview(reason) {
+    previewReason = reason;
+    if (typeof requestAnimationFrame !== 'function') { paintPreview(reason); return; }
+    if (previewFrame) return;
+    previewFrame = requestAnimationFrame(() => {
+      previewFrame = 0;
+      if (!closed) paintPreview(previewReason);
+    });
   }
 
   function paintPreview(reason) {
@@ -284,7 +306,6 @@ export function openCropEditor(ctx, attempt, opener) {
 
   function showError(e) {
     const message = e instanceof ApiError && e.code === 'api.heavy_busy' ? t('ui.crop.busy') : describeError(e, t);
-    toastError(message);
     error.textContent = message;
     error.hidden = false;
   }
@@ -319,7 +340,7 @@ export function openCropEditor(ctx, attempt, opener) {
     return { x: corner.includes('w') ? Math.max(0, b.x + b.w - r.w) : r.x, y: corner.includes('n') ? Math.max(0, b.y + b.h - r.h) : r.y, w: r.w, h: r.h };
   };
   const drag = (ev, corner) => startBoxDrag(ev, {
-    getBox: () => box, setBox: (b) => { box = locked && size && corner ? lockedDrag(b, corner) : b; refresh(); }, scale, W: size ? size.w : 1, H: size ? size.h : 1, corner,
+    getBox: () => box, setBox: (b) => { box = locked && size && corner ? lockedDrag(b, corner) : b; refreshBox(); }, onEnd: () => { if (!closed) refresh(); }, scale, W: size ? size.w : 1, H: size ? size.h : 1, corner,
     lock: () => locked, busy: () => busy || !size, focus: boxNode,
   });
   boxNode.addEventListener('pointerdown', (ev) => drag(ev, null));
@@ -334,23 +355,13 @@ export function openCropEditor(ctx, attempt, opener) {
   });
 
   // --- foco atrapado y cierre ---
-  dlg.addEventListener('keydown', (ev) => {
-    ev.stopPropagation(); // los atajos de la galería y los globales no actúan con el editor abierto
-    if (ev.key !== 'Tab') return;
-    const nodes = [...dlg.querySelectorAll(FOCUSABLE)].filter((n) => n.getClientRects().length > 0);
-    if (!nodes.length) return;
-    const first = nodes[0];
-    const last = nodes[nodes.length - 1];
-    if (ev.shiftKey && (document.activeElement === first || document.activeElement === dlg)) { ev.preventDefault(); last.focus(); }
-    else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
-  });
   dlg.addEventListener('close', () => {
     closed = true;
+    if (previewFrame && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(previewFrame);
     if (observer) observer.disconnect();
     dlg.remove();
-    const back = opener && opener.isConnected ? opener : document.querySelector(`[data-attempt="${attempt.id}"][data-kind="attempt"]`);
-    if (back) back.focus();
   });
+  trapDialog(dlg, { opener, fallback: () => document.querySelector(`[data-attempt="${attempt.id}"][data-kind="attempt"]`) }); // después del `close` propio: el foco vuelve tras `dlg.remove()`
 
   img.addEventListener('load', ready);
   img.addEventListener('error', () => { replace(loading, t('ui.crop.imageError')); loading.setAttribute('role', 'alert'); });

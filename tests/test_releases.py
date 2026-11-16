@@ -38,8 +38,9 @@ def fake_run(version='"0.4.0"', tag=True, release="ok", calls=None):
             return subprocess.CompletedProcess(argv, 0, "", "")
         if argv[:2] == ["git", "ls-remote"]:
             return subprocess.CompletedProcess(argv, 0, "abc\trefs/tags/v0.4.0\n" if tag else "", "")
+        assert argv[:2] == ["gh", "api"] and argv[2] == "repos/{owner}/{repo}/releases/tags/v0.4.0", argv
         if release == "ok":
-            return subprocess.CompletedProcess(argv, 0, '{"tagName":"v0.4.0"}', "")
+            return subprocess.CompletedProcess(argv, 0, "v0.4.0\n", "")
         return subprocess.CompletedProcess(argv, 1, "", release)
     return run
 
@@ -216,7 +217,7 @@ class CheckTests(unittest.TestCase):
                          (0, "releases: gimg 0.4.0 (origin/main) tiene etiqueta y release"))
 
     def test_missing_tag_and_release_say_how_to_make_them(self):
-        code, message = releases.check("origin/main", fake_run(tag=False, release="release not found"))
+        code, message = releases.check("origin/main", fake_run(tag=False, release="gh: Not Found (HTTP 404)"))
         self.assertEqual(code, 1)
         self.assertIn("git tag -a v0.4.0", message)
         self.assertIn("gh release create v0.4.0", message)
@@ -230,9 +231,13 @@ class CheckTests(unittest.TestCase):
         releases.check("v0.3.0", fake_run(calls=calls))
         self.assertEqual(calls, [])
 
-    def test_repo_not_found_is_unknown_not_missing(self):
-        code, message = releases.check("origin/main", fake_run(release="HTTP 404: Not Found"))
-        self.assertEqual((code, "gh no responde (HTTP 404: Not Found)" in message), (2, True))
+    def test_404_means_the_release_is_missing(self):
+        code, message = releases.check("origin/main", fake_run(release="gh: Not Found (HTTP 404)"))
+        self.assertEqual((code, "le falta la release" in message), (1, True))
+
+    def test_403_is_unknown_not_missing(self):
+        code, message = releases.check("origin/main", fake_run(release="gh: Forbidden (HTTP 403)"))
+        self.assertEqual((code, "gh no responde (gh: Forbidden (HTTP 403))" in message), (2, True))
 
     def test_check_rejects_an_option_as_ref(self):
         self.assertEqual(releases.main(["check", "--ref", "--ref"]), 2)

@@ -9,6 +9,13 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Sin publicar]
 
+### Corregido
+
+- La interfaz, editores de recorte y de capas: un error al guardar sale solo dentro del diálogo (antes reaparecía
+  como aviso al cerrarlo); «Repetir la misma caja en…» se desactiva, con su aviso, si el perfil del pedido compone; al
+  arrastrar la caja, la vista previa se pinta como mucho una vez por fotograma.
+- `releases.py check` funciona sin GraphQL (consulta la release por la API REST), también desde la nube.
+
 ## [0.6.0] - 2026-11-16
 
 ### Añadido
