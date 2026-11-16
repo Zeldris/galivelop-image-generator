@@ -9,6 +9,8 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Sin publicar]
 
+## [0.6.0] - 2026-11-16
+
 ### Añadido
 
 - Prompt negativo opcional: campo `negative` del pedido (vacío o solo espacios equivale a no ponerlo), `gimg attempt new
