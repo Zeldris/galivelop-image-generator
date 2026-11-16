@@ -197,6 +197,13 @@ class ErrorTests(CropBase):
         self.assertEqual(orders.get(NAME, "hoja", "tiny"), before)
         self.assertEqual(sorted(p.name for p in (self.folder("hoja", "tiny") / "attempts").iterdir()), ["1.png"])
 
+    def test_el_resto_de_un_recorte_matado_se_limpia_y_el_del_motor_no(self):
+        attempts = self.folder("hoja", "tiny") / "attempts"
+        (attempts / ".2.crop.k1ll3d.tmp").write_bytes(b"a medias")
+        (attempts / ".q3.png.motor.tmp").write_bytes(b"lo escribe el worker")
+        crop.crop(NAME, "hoja", "tiny", 1, [0, 0, 40, 20])
+        self.assertEqual(sorted(p.name for p in attempts.iterdir()), [".q3.png.motor.tmp", "1.png", "2.png"])
+
     def test_destino_que_compone_se_rechaza_sin_escribir(self):
         cfg = json.loads((self.root / "galivelop-images.json").read_text())
         cfg["profiles"]["og"] = dict(cfg["profiles"]["tiny"], compose={"template": "t.svg", "fields": ["title"]})

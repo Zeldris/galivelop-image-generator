@@ -35,11 +35,9 @@ Fase 1 de 2026-11-13 (diff contra `origin/main` sobre `9844344`):
 
 ## Revisión del bloque de recortar (2026-11-16): leves de la fase 1
 
-- `orders.add_derived`: el temporal en `attempts/` usa el prefijo genérico `.`/`.tmp`; un SIGKILL entre `mkstemp` y
-  `os.replace` lo deja para siempre (ninguna limpieza de restos lo busca). Usar `.<id>.crop.*.tmp` y limpiarlo.
+- ~~`orders.add_derived`: temporal con prefijo genérico que un SIGKILL deja para siempre~~ hecho (2026-11-16: `.<id>.crop.*.tmp`, se limpia bajo el candado).
 - `cli crop`: `args.to or args.key` toma `--to ""` como si no se diera (la API da `crop.bad_target`); usar `is not None`.
-- `orders.add_derived` repite cómo arma el registro `add_attempt` y la escritura atómica (≈6 sitios): un
-  `_new_record` y un `fsutil.write_bytes_atomic` evitarían que una regla nueva se quede fuera de los derivados.
+- ~~`orders.add_derived` repite el registro de `add_attempt` y la escritura atómica~~ hecho (2026-11-16: `_new_record` y `fsutil.write_bytes_atomic`, que también usa `write_json`; los otros `mkstemp` de `gimg/` siguen igual).
 - `export.resize` al ampliar guarda listas de floats por fila (icono 512→1024: ~64 MB dentro de `_heavy`); pasada en
   flujo con dos filas de origen.
 - ~~`.claude/settings.json`: dos bloques de `Read`~~ hecho en la retro del 2026-11-16 (P2).
