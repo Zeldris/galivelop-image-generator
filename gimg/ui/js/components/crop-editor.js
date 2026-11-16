@@ -84,6 +84,8 @@ export function openCropEditor(ctx, attempt, opener) {
   let mode = 'move';
   let busy = false;
   let closed = false;
+  let previewFrame = 0; // el fotograma de la vista previa pendiente (0 = ninguno)
+  let previewReason = null;
 
   const src = paths.image(ctx.project, ctx.profile, ctx.key, attempt.id, { raw: true, v: imageVersion(attempt) });
   const img = h('img.ed-img', { src, alt: '', draggable: 'false' });
@@ -232,19 +234,28 @@ export function openCropEditor(ctx, attempt, opener) {
     boxNode.focus();
   }
 
-  function refresh() {
-    ratioLabel.textContent = t('ui.crop.ratioLocked', { ratio: ratioText() });
+  // la parte ligera, la única que corre en cada `pointermove`: la caja, los campos, su etiqueta y la vista previa
+  function refreshBox() {
     layoutBox();
     const b = boxFor(box);
     for (const n of nums) if (document.activeElement !== n.input) n.input.value = String(b[n.name]);
     boxNode.setAttribute('aria-label', t('ui.crop.boxLabel', b));
     const reason = size ? blockedReason(box, size, ratioValue()) : 'area';
+    schedulePreview(reason);
+    return reason;
+  }
+
+  function refresh() {
+    ratioLabel.textContent = t('ui.crop.ratioLocked', { ratio: ratioText() });
+    const reason = refreshBox();
     const o = out();
     const k = size && !reason ? enlargement(box, o.w, o.h) : 0;
     output.textContent = size && !reason ? t('ui.crop.outputValue', { w: o.w, h: o.h, scale: k.toFixed(1) }) : '—';
     const saveLocked = composes(ctx.profileCfg);
     const goLocked = composes(profiles[toProfile.value]);
-    composeNote.hidden = !(toBox_.hidden ? saveLocked : goLocked);
+    // «Repetir» cae en el perfil del pedido (`saveLocked`): con su panel visible también se avisa
+    const repeatLocked = Boolean(repeat) && !repeat.hidden && saveLocked;
+    composeNote.hidden = !((toBox_.hidden ? saveLocked : goLocked) || repeatLocked);
     status.hidden = !(size && reason);
     if (size && reason) status.textContent = t(`ui.crop.blocked.${reason}`, { w: size.w, h: size.h, ratio: ratioText() });
     warn.hidden = !(k > ENLARGE_WARN);
@@ -256,12 +267,10 @@ export function openCropEditor(ctx, attempt, opener) {
     // el recorte repetido cae en el pedido visto: un perfil que compone no lo admite
     repeatGo.disabled = busy || !size || saveLocked;
     for (const el of dlg.querySelectorAll('.ed-side input, .ed-side select, .crop-cells button, .crop-foot select, .crop-foot input')) el.disabled = busy || !size;
-    schedulePreview(reason);
+    repeatSel.disabled = busy || !size || saveLocked;
   }
 
   // la vista previa (un `drawImage` del raw entero) se pinta como mucho una vez por fotograma
-  let previewFrame = 0;
-  let previewReason = null;
   function schedulePreview(reason) {
     previewReason = reason;
     if (typeof requestAnimationFrame !== 'function') { paintPreview(reason); return; }
@@ -331,7 +340,7 @@ export function openCropEditor(ctx, attempt, opener) {
     return { x: corner.includes('w') ? Math.max(0, b.x + b.w - r.w) : r.x, y: corner.includes('n') ? Math.max(0, b.y + b.h - r.h) : r.y, w: r.w, h: r.h };
   };
   const drag = (ev, corner) => startBoxDrag(ev, {
-    getBox: () => box, setBox: (b) => { box = locked && size && corner ? lockedDrag(b, corner) : b; refresh(); }, scale, W: size ? size.w : 1, H: size ? size.h : 1, corner,
+    getBox: () => box, setBox: (b) => { box = locked && size && corner ? lockedDrag(b, corner) : b; refreshBox(); }, onEnd: () => { if (!closed) refresh(); }, scale, W: size ? size.w : 1, H: size ? size.h : 1, corner,
     lock: () => locked, busy: () => busy || !size, focus: boxNode,
   });
   boxNode.addEventListener('pointerdown', (ev) => drag(ev, null));

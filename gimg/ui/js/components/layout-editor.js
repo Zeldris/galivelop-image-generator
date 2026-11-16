@@ -17,7 +17,6 @@
 import { h, replace } from '../dom.js';
 import { t } from '../i18n.js';
 import { api, paths, describeError } from '../api.js';
-import { toastError } from './toast.js';
 import { renderMeasure, requestMeasure } from './measure-chip.js';
 import { imageVersion } from './attempt-util.js';
 import { CORNERS, STEP, STEP_BIG, moveBox, sizeBox, resizeBox, sameBox, startBoxDrag, boxKey } from './box-drag.js';
@@ -124,7 +123,6 @@ export function openLayoutEditor(ctx, attempt, tpl, opener) {
 
   function showError(e) {
     const message = describeError(e, t);
-    toastError(message);
     error.textContent = message;
     error.hidden = false;
   }
