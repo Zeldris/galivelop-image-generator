@@ -63,3 +63,4 @@ Hechos los cinco en `4c297c1` (barrido B, 2026-11-16).
 - `brand.py:643`: dos bucles casi iguales sobre fill/stroke en `_paint_colors` que repiten `_own_paint`/`_CLASS`.
 - `brand.py:710` `_no_paint` duplica las sustituciones de `_mute_attrs` (y ya difieren en `prop=prop`).
 - `orders.py:472` `_new_record` fija initImage/strength a None que `add_attempt` sobrescribe; pasarlos como parámetros.
+- brand.py `_mute`: un solo booleano mezcla `stroke-opacity` 0 y `stroke-width` 0; un hijo con ancho > 0 bajo un `<g>` con `stroke-opacity` 0 vuelve a contar su trazo (visto en la verificación de `f41df36`).
