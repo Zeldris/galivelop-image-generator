@@ -533,9 +533,9 @@ def add_derived(project: str, key: str, profile: str, spec: dict, derived_from: 
         order["attempts"].append(record)
         order["updatedAt"] = _now()
         for stale in final.parent.glob(".*" + _CROP_TMP + "*.tmp"):
-            if not _CROP_TMP_RE.match(stale.name):
-                continue  # remains of a crop killed mid-write (only
-            with contextlib.suppress(OSError):                    # add_derived makes them, under this lock)
+            if not _CROP_TMP_RE.match(stale.name):  # remains of a crop killed mid-write (only add_derived
+                continue                              # makes them, under this lock); any other hidden file stays
+            with contextlib.suppress(OSError):
                 stale.unlink()
         fsutil.write_bytes_atomic(final, png_data, prefix=".%d%s" % (new_id, _CROP_TMP))
         try:

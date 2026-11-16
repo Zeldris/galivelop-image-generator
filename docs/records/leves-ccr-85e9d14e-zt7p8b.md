@@ -30,18 +30,18 @@ Fase 1 de 2026-11-13 (diff contra `origin/main` sobre `9844344`):
   escritura, archivo abierto en Windows): en ese caso la copia sigue como `.gimg-bak-*` y se da como `kept`
   (límite documentado en `_mark_stale`); una copia marcada se informa como `stale` en cada ejecución hasta que se borre.
 - ~~`brand._paint_colors`: el `stroke` de un `<g>` se cuenta aunque todos sus hijos lo pisen~~ hecho (2026-11-16, barrido de `brand.py`).
-- El taller deja poner tolerancia ≥ borde suave (cada campo está en rango, la combinación la rechaza `remove_bg`).
+- ~~El taller deja poner tolerancia ≥ borde suave (cada campo está en rango, la combinación la rechaza `remove_bg`).~~ hecho (2026-11-16, tanda L8)
 - ~~`brand._check_weight_spacing` acepta `True` como peso~~ hecho (2026-11-16, barrido de `brand.py`).
 
 ## Revisión del bloque de recortar (2026-11-16): leves de la fase 1
 
 - ~~`orders.add_derived`: temporal con prefijo genérico que un SIGKILL deja para siempre~~ hecho (2026-11-16: `.<id>.crop.*.tmp`, se limpia bajo el candado).
-- `cli crop`: `args.to or args.key` toma `--to ""` como si no se diera (la API da `crop.bad_target`); usar `is not None`.
+- ~~`cli crop`: `args.to or args.key` toma `--to ""` como si no se diera (la API da `crop.bad_target`); usar `is not None`.~~ hecho (2026-11-16, tanda L8)
 - ~~`orders.add_derived` repite el registro de `add_attempt` y la escritura atómica~~ hecho (2026-11-16: `_new_record` y `fsutil.write_bytes_atomic`, que también usa `write_json`; los otros `mkstemp` de `gimg/` siguen igual).
-- `export.resize` al ampliar guarda listas de floats por fila (icono 512→1024: ~64 MB dentro de `_heavy`); pasada en
-  flujo con dos filas de origen.
+- ~~`export.resize` al ampliar guarda listas de floats por fila (icono 512→1024: ~64 MB dentro de `_heavy`); pasada en
+  flujo con dos filas de origen.~~ hecho (2026-11-16, tanda L8)
 - ~~`.claude/settings.json`: dos bloques de `Read`~~ hecho en la retro del 2026-11-16 (P2).
-- `AGENTS.md`: el check de `.claude/gw.json` lleva una tercera orden (`ci-local.py --validate`) y AGENTS.md nombra dos.
+- ~~`AGENTS.md`: el check de `.claude/gw.json` lleva una tercera orden (`ci-local.py --validate`) y AGENTS.md nombra dos.~~ hecho (2026-11-16, tanda L8)
 
 ## Revisión del bloque de la interfaz de recortar (2026-11-16): leves de la fase 1
 
@@ -57,10 +57,10 @@ Hechos los cinco en `4c297c1` (barrido B, 2026-11-16).
 
 ## Revisión de bloque (2026-11-16)
 
-- `orders.py:533` `add_derived`: el glob de limpieza `".*" + _CROP_TMP + "*.tmp"` recoge cualquier oculto con `.crop.`, no solo `.<id>.crop.`; limitarlo a `^\.\d+\.crop\..*\.tmp$`.
-- `orders.py:537`: `bytes(png_data)` es una copia innecesaria de un bytearray.
+- ~~`orders.py:533` `add_derived`: el glob de limpieza `".*" + _CROP_TMP + "*.tmp"` recoge cualquier oculto con `.crop.`, no solo `.<id>.crop.`; limitarlo a `^\.\d+\.crop\..*\.tmp$`.~~ hecho (2026-11-16, tanda L8)
+- ~~`orders.py:537`: `bytes(png_data)` es una copia innecesaria de un bytearray.~~ hecho (2026-11-16, tanda L8)
 - `brand.py:610` (`flat`): `_mute_attrs` sobre los `<g>` no tiene efecto porque `_no_paint` lo pone todo a none.
 - `brand.py:643`: dos bucles casi iguales sobre fill/stroke en `_paint_colors` que repiten `_own_paint`/`_CLASS`.
 - `brand.py:710` `_no_paint` duplica las sustituciones de `_mute_attrs` (y ya difieren en `prop=prop`).
-- `orders.py:472` `_new_record` fija initImage/strength a None que `add_attempt` sobrescribe; pasarlos como parámetros.
+- ~~`orders.py:472` `_new_record` fija initImage/strength a None que `add_attempt` sobrescribe; pasarlos como parámetros.~~ hecho (2026-11-16, tanda L8)
 - brand.py `_mute`: un solo booleano mezcla `stroke-opacity` 0 y `stroke-width` 0; un hijo con ancho > 0 bajo un `<g>` con `stroke-opacity` 0 vuelve a contar su trazo (visto en la verificación de `f41df36`).
