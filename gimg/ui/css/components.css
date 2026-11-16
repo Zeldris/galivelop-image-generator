@@ -113,6 +113,8 @@ dialog.editor[open] { display: flex; }
 .ed-item .btn { justify-content: flex-start; }
 .ed-nums { font: 13px var(--font-mono); color: var(--text-2); }
 /* recorte (FM 0.6.0): una sola caja sobre la imagen cruda; lo de fuera de la caja se oscurece */
+.crop-stage { box-sizing: border-box; padding: 22px; }
+.crop-inner { position: relative; }
 .crop-box { position: absolute; box-sizing: border-box; outline: 2px solid var(--accent-text); outline-offset: -2px; box-shadow: 0 0 0 100vmax var(--overlay); cursor: move; touch-action: none; }
 .crop-box:focus-visible { outline: var(--focus-w) solid var(--focus); outline-offset: -3px; }
 .crop-box[hidden] { display: none; }
@@ -134,6 +136,7 @@ dialog.editor[open] { display: flex; }
 .crop-foot { display: grid; gap: 8px; }
 .crop-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .crop-repeat { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.crop-repeat[hidden] { display: none; }
 fieldset.crop-to { border: 1px solid var(--rule); padding: 8px; margin: 0; display: grid; gap: 8px; }
 fieldset.crop-to[hidden] { display: none; }
 dialog.editor-save { width: min(92vw, 460px); }

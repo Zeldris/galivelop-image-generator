@@ -12,7 +12,7 @@
 
 import { h, replace } from '../dom.js';
 import { t } from '../i18n.js';
-import { describeError, ApiError, paths } from '../api.js';
+import { api, describeError, ApiError, paths } from '../api.js';
 import { toastError } from './toast.js';
 import { imageVersion } from './attempt-util.js';
 import { KEY_PATTERN, MAX_KEY } from './new-order.js';
@@ -90,7 +90,8 @@ export function openCropEditor(ctx, attempt, opener) {
   const img = h('img.ed-img', { src, alt: '', draggable: 'false' });
   const boxNode = h('div.crop-box', { tabindex: 0, role: 'group', hidden: true }, CORNERS.map((c) => h('span.ed-handle.crop-handle', { class: `h-${c}`, data: { corner: c }, aria: { hidden: true } })));
   const gridNode = h('div.crop-grid', { aria: { hidden: true } });
-  const stage = h('div.ed-stage', { role: 'group', aria: { label: t('ui.crop.stage', { id: attempt.id }), describedby: 'crop-hint' } }, img, gridNode, boxNode);
+  // el margen de 22 px del escenario deja sitio a la mitad de las asas de 44 px que sobresalen de la caja en el borde
+  const stage = h('div.ed-stage.crop-stage', { role: 'group', aria: { label: t('ui.crop.stage', { id: attempt.id }), describedby: 'crop-hint' } }, h('div.crop-inner', {}, img, gridNode, boxNode));
   const loading = h('p.hint', { role: 'status' }, h('span.spin', { aria: { hidden: true } }), ' ', t('ui.crop.loading'));
   const error = h('p.notice.notice-bad', { role: 'alert', hidden: true });
   const status = h('p.notice.notice-warn', { role: 'status', hidden: true });
@@ -133,10 +134,10 @@ export function openCropEditor(ctx, attempt, opener) {
   const output = h('output.ed-nums', { id: 'crop-output' });
   const canvas = h('canvas.crop-preview', { role: 'img', aria: { label: t('ui.crop.previewAlt') } });
 
-  const save = h('button.btn.btn-primary', { type: 'button', onclick: () => run(() => ctx.actions.crop(attempt, payload(null)), true) }, t('ui.crop.save'));
+  const save = h('button.btn.btn-primary', { type: 'button', onclick: () => { if (toBox_.hidden) run(() => ctx.actions.crop(attempt, payload(null)), true); } }, t('ui.crop.save'));
   const cancel = h('button.btn', { type: 'button', onclick: () => dlg.close() }, t('ui.editor.cancel'));
   const close = h('button.btn.btn-ghost', { type: 'button', onclick: () => dlg.close() }, t('ui.actions.close'));
-  const moveBtn = h('button.btn', { type: 'button', aria: { expanded: 'false', controls: 'crop-to' }, onclick: () => { toBox_.hidden = !toBox_.hidden; moveBtn.setAttribute('aria-expanded', String(!toBox_.hidden)); if (!toBox_.hidden) toKey.focus(); refresh(); } }, t('ui.crop.moveTo'));
+  const moveBtn = h('button.btn', { type: 'button', aria: { expanded: 'false', controls: 'crop-to' }, onclick: () => { toBox_.hidden = !toBox_.hidden; moveBtn.setAttribute('aria-expanded', String(!toBox_.hidden)); if (locked && size) box = lockTo(box, ratioValue(), size, 'w'); if (!toBox_.hidden) toKey.focus(); refresh(); } }, t('ui.crop.moveTo'));
   const toProfile = h('select', { id: 'crop-to-profile' }, Object.keys(profiles).map((p) => h('option', { value: p, selected: p === ctx.profile }, p)));
   toProfile.addEventListener('change', () => { if (locked && size) box = lockTo(box, ratioValue(), size, 'w'); refresh(); });
   const toKey = h('input', { id: 'crop-to-key', type: 'text', autocomplete: 'off', spellcheck: 'false', maxlength: MAX_KEY, aria: { describedby: 'crop-to-hint' } });
@@ -151,15 +152,27 @@ export function openCropEditor(ctx, attempt, opener) {
     h('div.field', {}, h('label', { for: 'crop-to-profile' }, t('ui.crop.toProfile')), toProfile),
     h('div.field', {}, h('label', { for: 'crop-to-key' }, t('ui.crop.toKey')), toKey, h('p.hint', { id: 'crop-to-hint' }, t('ui.crop.toHint')), toProblem), toGo);
 
-  const others = attempt.derivedFrom ? (ctx.order.attempts || []).filter((a) => a.id !== attempt.id && (a.raw || a.image)) : [];
-  const repeatSel = h('select', { id: 'crop-repeat-pick', aria: { label: t('ui.crop.repeatPick') } }, others.map((a) => h('option', { value: a.id }, `q${a.id}`)));
+  // «Repetir la misma caja en…»: los intentos de la tanda de origen (el pedido del que salió este derivado), sin derivados
+  // y sin el propio intento de origen; si el origen es otro pedido, se pide y el recorte lleva `to` hacia el pedido visto
+  const df = attempt.derivedFrom;
+  const sameOrder = Boolean(df) && df.profile === ctx.profile && df.key === ctx.key;
+  let others = [];
+  const repeatSel = h('select', { id: 'crop-repeat-pick', aria: { label: t('ui.crop.repeatPick') } });
   const repeatGo = h('button.btn', { type: 'button', onclick: () => {
     const target = others.find((a) => a.id === Number(repeatSel.value));
-    if (target) run(() => ctx.actions.crop(target, { box: attempt.derivedFrom.box, lockRatio: attempt.derivedFrom.lockRatio !== false }), true);
+    if (!target) return;
+    const body = { box: df.box, lockRatio: df.lockRatio !== false, ...(sameOrder ? {} : { to: { profile: ctx.profile, key: ctx.key } }) };
+    run(() => ctx.actions.crop(target, body, sameOrder ? null : { profile: df.profile, key: df.key }), true);
   } }, t('ui.crop.repeatGo'));
-  const repeat = others.length
-    ? h('div.crop-repeat', {}, h('label', { for: 'crop-repeat-pick' }, t('ui.crop.repeat')), repeatSel, repeatGo)
-    : null;
+  const repeat = df ? h('div.crop-repeat', { hidden: true }, h('label', { for: 'crop-repeat-pick' }, t('ui.crop.repeat')), repeatSel, repeatGo) : null;
+  const setOthers = (list, late) => {
+    others = (list || []).filter((a) => !a.derivedFrom && a.id !== df.attempt && (a.raw || a.image));
+    repeatSel.replaceChildren(...others.map((a) => h('option', { value: a.id }, `q${a.id}`)));
+    repeat.hidden = !others.length;
+    if (late && !closed) refresh();
+  };
+  if (df && sameOrder) setOthers(ctx.order.attempts);
+  else if (df) api.order(ctx.project, df.profile, df.key).then((o) => setOthers(o.attempts, true), () => {});
 
   const dlg = h('dialog.editor.crop', { aria: { labelledby: 'crop-title' } },
     h('div.ed-head', {}, h('h2', { id: 'crop-title' }, t('ui.crop.title', { id: attempt.id })), h('span.grow'), close),
@@ -237,11 +250,12 @@ export function openCropEditor(ctx, attempt, opener) {
     if (size && reason) status.textContent = t(`ui.crop.blocked.${reason}`, { w: size.w, h: size.h, ratio: ratioText() });
     warn.hidden = !(k > ENLARGE_WARN);
     if (k > ENLARGE_WARN) warn.textContent = t('ui.crop.small', { scale: k.toFixed(1) });
-    save.disabled = busy || Boolean(reason) || !size || saveLocked;
+    // con el panel de destino abierto la caja sigue la proporción del destino: «Guardar» (aquí, en el perfil del pedido) espera a que se cierre
+    save.disabled = busy || Boolean(reason) || !size || saveLocked || !toBox_.hidden;
     moveBtn.disabled = busy || !size;
     toGo.disabled = busy || Boolean(reason) || !size || goLocked;
     repeatGo.disabled = busy || !size;
-    for (const el of dlg.querySelectorAll('.ed-side input, .ed-side select, .crop-cells button')) el.disabled = busy || !size;
+    for (const el of dlg.querySelectorAll('.ed-side input, .ed-side select, .crop-cells button, .crop-foot select, .crop-foot input')) el.disabled = busy || !size;
     paintPreview(reason);
   }
 
@@ -264,8 +278,8 @@ export function openCropEditor(ctx, attempt, opener) {
     b[name] = v;
     box = { x: b.x0, y: b.y0, w: b.x1 - b.x0, h: b.y1 - b.y0 };
     if (locked && box.w > 0 && box.h > 0) box = lockTo(box, ratioValue(), size, name[0] === 'x' ? 'w' : 'h', false);
-    input.blur();
     refresh();
+    input.value = String(boxFor(box)[name]); // `refresh` no toca el campo con el foco, que se queda donde está
   }
 
   function showError(e) {
@@ -298,8 +312,14 @@ export function openCropEditor(ctx, attempt, opener) {
   }
 
   // --- puntero y teclado ---
+  // con la proporción bloqueada, `resizeBox` redondea ancho y alto por separado y el error se acumula: se rehace el alto
+  // desde el ancho (como la ruta del teclado), con la esquina opuesta fija
+  const lockedDrag = (b, corner) => {
+    const r = lockTo(b, ratioValue(), size, 'w');
+    return { x: corner.includes('w') ? Math.max(0, b.x + b.w - r.w) : r.x, y: corner.includes('n') ? Math.max(0, b.y + b.h - r.h) : r.y, w: r.w, h: r.h };
+  };
   const drag = (ev, corner) => startBoxDrag(ev, {
-    getBox: () => box, setBox: (b) => { box = b; refresh(); }, scale, W: size ? size.w : 1, H: size ? size.h : 1, corner,
+    getBox: () => box, setBox: (b) => { box = locked && size && corner ? lockedDrag(b, corner) : b; refresh(); }, scale, W: size ? size.w : 1, H: size ? size.h : 1, corner,
     lock: () => locked, busy: () => busy || !size, focus: boxNode,
   });
   boxNode.addEventListener('pointerdown', (ev) => drag(ev, null));
