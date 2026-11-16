@@ -325,6 +325,23 @@ class WordmarkTests(BrandBase):
         self.assertEqual(cm.exception.code, "brand.bad_option")
         self.assertIn("weight", cm.exception.params["reason"])
 
+    def test_non_numeric_spacing_is_refused_like_an_out_of_range_one(self):
+        for spacing in (True, "1", 5):
+            with self.assertRaises(GimgError) as cm:
+                brand._check_weight_spacing(400, spacing)
+            self.assertEqual(cm.exception.code, "brand.bad_option", spacing)
+            self.assertIn("spacing", cm.exception.params["reason"])
+        brand._check_weight_spacing(400, 0.5)
+        brand._check_weight_spacing(400, 1)
+
+    def test_a_stroke_of_width_zero_is_not_a_color(self):
+        shape = '<path fill="#123456" stroke-width="0" d="M0 0"/>'
+        self.assertEqual(brand._paint_colors('<g stroke="#ff0000">' + shape + "</g>"), {"#123456"})
+        self.assertEqual(brand._paint_colors('<g stroke="#ff0000" stroke-width="0"><path fill="#123456" d="M0 0"/></g>'), {"#123456"})
+        self.assertEqual(brand._paint_colors('<path fill="#123456" stroke="#ff0000" style="stroke-width:0" d="M0 0"/>'), {"#123456"})
+        self.assertEqual(brand._paint_colors('<g stroke="#ff0000" stroke-width="0"><path fill="#123456" stroke-width="2" d="M0 0"/></g>'),
+                         {"#123456", "#ff0000"})
+
     def _tiny_path(self):
         font = self.tmp / "tiny.ttf"
         font.write_bytes(self._tiny_font())

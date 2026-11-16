@@ -54,3 +54,12 @@ Hechos los cinco en `4c297c1` (barrido B, 2026-11-16).
 - `crop-editor.js` copia de `layout-editor.js` la trampa de foco (`FOCUSABLE`, Tab, `stopPropagation`, devolver el
   foco): un helper `trapDialog(dlg, opener)` compartido.
 - `crop-editor.js` `boxFor` repite el `toBox` exportado.
+
+## Revisión de bloque (2026-11-16)
+
+- `orders.py:533` `add_derived`: el glob de limpieza `".*" + _CROP_TMP + "*.tmp"` recoge cualquier oculto con `.crop.`, no solo `.<id>.crop.`; limitarlo a `^\.\d+\.crop\..*\.tmp$`.
+- `orders.py:537`: `bytes(png_data)` es una copia innecesaria de un bytearray.
+- `brand.py:610` (`flat`): `_mute_attrs` sobre los `<g>` no tiene efecto porque `_no_paint` lo pone todo a none.
+- `brand.py:643`: dos bucles casi iguales sobre fill/stroke en `_paint_colors` que repiten `_own_paint`/`_CLASS`.
+- `brand.py:710` `_no_paint` duplica las sustituciones de `_mute_attrs` (y ya difieren en `prop=prop`).
+- `orders.py:472` `_new_record` fija initImage/strength a None que `add_attempt` sobrescribe; pasarlos como parámetros.

@@ -118,7 +118,7 @@ def _check_palette_colors(palette, colors) -> None:
 
 def _check_weight_spacing(weight, spacing) -> None:
     """``brand.bad_option`` unless `weight` is a whole number 1-1000 and `spacing` is None or -0.5 to 2 (em)."""
-    if isinstance(weight, bool) or not isinstance(weight, int) or not 1 <= weight <= 1000 or (spacing is not None and not -0.5 <= spacing <= 2):
+    if isinstance(weight, bool) or not isinstance(weight, int) or not 1 <= weight <= 1000 or (spacing is not None and (isinstance(spacing, bool) or not isinstance(spacing, (int, float)) or not -0.5 <= spacing <= 2)):
         raise GimgError("brand.bad_option", reason="weight 1-1000 and spacing between -0.5 and 2 em")
 
 
@@ -723,7 +723,11 @@ def _mute(inner: str, root: str = "") -> str:
     def state(attrs, up):
         o = _opacity(attrs, "opacity")
         fo, so = _opacity(attrs, "fill-opacity"), _opacity(attrs, "stroke-opacity")
-        return (up[0] or (o is not None and o <= 0), up[1] if fo is None else fo <= 0, up[2] if so is None else so <= 0)
+        sw = _opacity(attrs, "stroke-width")  # a stroke of width 0 paints nothing, like stroke-opacity 0
+        stroke0 = up[2] if so is None else so <= 0
+        if sw is not None:
+            stroke0 = stroke0 or sw <= 0 if so is not None else sw <= 0
+        return (up[0] or (o is not None and o <= 0), up[1] if fo is None else fo <= 0, stroke0)
     stack = [state(root, (False, False, False))]
     out, last = [], 0
     for m in _TAG.finditer(inner):
