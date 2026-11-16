@@ -15,7 +15,6 @@ import contextlib
 import copy
 import os
 import random
-import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -427,6 +426,28 @@ def _check_spec(spec: dict) -> None:
         _check_fields(spec["prompt"], params, spec["seed"])
 
 
+def _new_record(order: dict, spec: dict, new_id: int, image: str) -> dict:
+    """The fields every new attempt has (`add_attempt` and `add_derived`), in state ``new``."""
+    record = {
+        "id": new_id,
+        "state": "new",
+        "seed": spec["seed"],
+        "prompt": spec["prompt"],
+        "params": copy.deepcopy(spec["params"]),
+        "references": list(spec.get("references", order["references"])),
+        "initImage": None,
+        "strength": None,
+        "image": image,
+        "note": "",
+        "createdAt": _now(),
+    }
+    if spec.get("draft") is True:  # only drafts carry the key, so stored orders keep their shape
+        record["draft"] = True
+    if isinstance(spec.get("negative"), str) and spec["negative"]:  # same for the negative prompt
+        record["negative"] = spec["negative"]
+    return record
+
+
 def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None) -> int:
     """Append an attempt in state ``new`` (used by the worker after generating); returns its id.
 
@@ -447,25 +468,11 @@ def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None)
                 if item.get("queueEntry") == entry_id:
                     return item["id"]
         new_id = max((a["id"] for a in order["attempts"]), default=0) + 1
-        record = {
-            "id": new_id,
-            "state": "new",
-            "seed": spec["seed"],
-            "prompt": spec["prompt"],
-            "params": copy.deepcopy(spec["params"]),
-            "references": list(spec.get("references", order["references"])),
-            "initImage": spec.get("initImage"),
-            "strength": spec.get("strength"),
-            "image": "attempts/%d.png" % new_id if entry_id is None else entry_image_name(entry_id),
-            "note": "",
-            "createdAt": _now(),
-        }
+        image = "attempts/%d.png" % new_id if entry_id is None else entry_image_name(entry_id)
+        record = _new_record(order, spec, new_id, image)
+        record["initImage"], record["strength"] = spec.get("initImage"), spec.get("strength")
         if entry_id is not None:
             record["queueEntry"] = entry_id
-        if spec.get("draft") is True:  # only drafts carry the key, so stored orders keep their shape
-            record["draft"] = True
-        if isinstance(spec.get("negative"), str) and spec["negative"]:  # same for the negative prompt
-            record["negative"] = spec["negative"]
         for extra in ("engine", "engineVersion", "log"):  # which engine made it (the manifest repeats the first two)
             if isinstance(spec.get(extra), str):
                 record[extra] = spec[extra]
@@ -494,6 +501,9 @@ def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None)
     return _modify(project, key, profile, change)
 
 
+_CROP_TMP = ".crop."  # temp-file marker of `add_derived` in attempts/
+
+
 def add_derived(project: str, key: str, profile: str, spec: dict, derived_from: dict, png_data: bytes) -> dict:
     """Append a derived attempt (`gimg crop`) and write its image, as one step; returns the record (a copy).
 
@@ -517,38 +527,19 @@ def add_derived(project: str, key: str, profile: str, spec: dict, derived_from: 
         new_id = max((a["id"] for a in order["attempts"]), default=0) + 1
         image = "attempts/%d.png" % new_id
         final = paths.inside(folder, image)
-        record = {
-            "id": new_id, "state": "new", "seed": spec["seed"], "prompt": spec["prompt"],
-            "params": copy.deepcopy(spec["params"]),
-            "references": list(spec.get("references", order["references"])),
-            "initImage": None, "strength": None, "image": image, "note": "", "createdAt": _now(),
-            "derivedFrom": copy.deepcopy(derived_from),
-        }
-        if spec.get("draft") is True:
-            record["draft"] = True
-        if isinstance(spec.get("negative"), str) and spec["negative"]:
-            record["negative"] = spec["negative"]
+        record = _new_record(order, spec, new_id, image)
+        record["derivedFrom"] = copy.deepcopy(derived_from)
         order["attempts"].append(record)
         order["updatedAt"] = _now()
-        placed = False
+        for stale in final.parent.glob(".*" + _CROP_TMP + "*.tmp"):  # remains of a crop killed mid-write (only
+            with contextlib.suppress(OSError):                    # add_derived makes them, under this lock)
+                stale.unlink()
+        fsutil.write_bytes_atomic(final, bytes(png_data), prefix=".%d%s" % (new_id, _CROP_TMP))
         try:
-            final.parent.mkdir(parents=True, exist_ok=True)
-            fd, tmp = tempfile.mkstemp(dir=str(final.parent), prefix=".", suffix=".tmp")
-            try:
-                fsutil.honour_umask(fd)
-                with os.fdopen(fd, "wb") as fh:
-                    fh.write(png_data)
-                os.replace(tmp, final)
-                placed = True
-            except BaseException:
-                with contextlib.suppress(OSError):
-                    os.unlink(tmp)
-                raise
             fsutil.write_json(path, order)
         except BaseException:
-            if placed:
-                with contextlib.suppress(OSError):
-                    os.unlink(final)
+            with contextlib.suppress(OSError):
+                os.unlink(final)
             raise
     return copy.deepcopy(record)
 

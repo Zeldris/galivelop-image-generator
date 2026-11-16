@@ -8,7 +8,7 @@ De la revisión del diff contra `origin/main` (fase 1). No se arreglan en este p
 - Validaciones y datos repetidos: peso y espaciado en `brand.wordmark` y `brand.system`; la exclusión
   `--palette`/`--colors`; la expresión de color frente a `trace._COLOR`; `PIECES` en JS frente a `brand.SYSTEM_FILES`;
   `brandshop.save` llama al privado `brand._write`.
-- `brand.matte` calcula `border_color` dos veces (en `brand.py` y dentro de `matte.remove_bg`).
+- ~~`brand.matte` calcula `border_color` dos veces~~ ya estaba hecho (`remove_bg(bg=…)`; visto en el barrido del 2026-11-16).
 - Sin verificar (confianza baja): la fuente de reserva en `wordmark`; `_place` redondea la escala a 3 decimales;
   `png.read_rgba` ignora `tRNS`; `--circular` junto a `--vae-tiling` no está probado.
 - El camino completo con `rsvg-convert` (wordmark, lockup, `system` y luego `save`) solo corre en el CI: este
@@ -29,17 +29,15 @@ Fase 1 de 2026-11-13 (diff contra `origin/main` sobre `9844344`):
 - `tile._mark_stale` solo se intenta tras fallar el borrado, y el renombrado suele fallar por lo mismo (carpeta sin
   escritura, archivo abierto en Windows): en ese caso la copia sigue como `.gimg-bak-*` y se da como `kept`
   (límite documentado en `_mark_stale`); una copia marcada se informa como `stale` en cada ejecución hasta que se borre.
-- `brand._paint_colors`: el `stroke` de un `<g>` se cuenta aunque todos sus hijos lo pisen (ya pasaba en `main`).
+- ~~`brand._paint_colors`: el `stroke` de un `<g>` se cuenta aunque todos sus hijos lo pisen~~ hecho (2026-11-16, barrido de `brand.py`).
 - El taller deja poner tolerancia ≥ borde suave (cada campo está en rango, la combinación la rechaza `remove_bg`).
-- `brand._check_weight_spacing` acepta `True` como peso (`isinstance(True, int)`), en `wordmark` y ahora en `resolve_font`.
+- ~~`brand._check_weight_spacing` acepta `True` como peso~~ hecho (2026-11-16, barrido de `brand.py`).
 
 ## Revisión del bloque de recortar (2026-11-16): leves de la fase 1
 
-- `orders.add_derived`: el temporal en `attempts/` usa el prefijo genérico `.`/`.tmp`; un SIGKILL entre `mkstemp` y
-  `os.replace` lo deja para siempre (ninguna limpieza de restos lo busca). Usar `.<id>.crop.*.tmp` y limpiarlo.
+- ~~`orders.add_derived`: temporal con prefijo genérico que un SIGKILL deja para siempre~~ hecho (2026-11-16: `.<id>.crop.*.tmp`, se limpia bajo el candado).
 - `cli crop`: `args.to or args.key` toma `--to ""` como si no se diera (la API da `crop.bad_target`); usar `is not None`.
-- `orders.add_derived` repite cómo arma el registro `add_attempt` y la escritura atómica (≈6 sitios): un
-  `_new_record` y un `fsutil.write_bytes_atomic` evitarían que una regla nueva se quede fuera de los derivados.
+- ~~`orders.add_derived` repite el registro de `add_attempt` y la escritura atómica~~ hecho (2026-11-16: `_new_record` y `fsutil.write_bytes_atomic`, que también usa `write_json`; los otros `mkstemp` de `gimg/` siguen igual).
 - `export.resize` al ampliar guarda listas de floats por fila (icono 512→1024: ~64 MB dentro de `_heavy`); pasada en
   flujo con dos filas de origen.
 - ~~`.claude/settings.json`: dos bloques de `Read`~~ hecho en la retro del 2026-11-16 (P2).
@@ -56,3 +54,13 @@ Hechos los cinco en `4c297c1` (barrido B, 2026-11-16).
 - `crop-editor.js` copia de `layout-editor.js` la trampa de foco (`FOCUSABLE`, Tab, `stopPropagation`, devolver el
   foco): un helper `trapDialog(dlg, opener)` compartido.
 - `crop-editor.js` `boxFor` repite el `toBox` exportado.
+
+## Revisión de bloque (2026-11-16)
+
+- `orders.py:533` `add_derived`: el glob de limpieza `".*" + _CROP_TMP + "*.tmp"` recoge cualquier oculto con `.crop.`, no solo `.<id>.crop.`; limitarlo a `^\.\d+\.crop\..*\.tmp$`.
+- `orders.py:537`: `bytes(png_data)` es una copia innecesaria de un bytearray.
+- `brand.py:610` (`flat`): `_mute_attrs` sobre los `<g>` no tiene efecto porque `_no_paint` lo pone todo a none.
+- `brand.py:643`: dos bucles casi iguales sobre fill/stroke en `_paint_colors` que repiten `_own_paint`/`_CLASS`.
+- `brand.py:710` `_no_paint` duplica las sustituciones de `_mute_attrs` (y ya difieren en `prop=prop`).
+- `orders.py:472` `_new_record` fija initImage/strength a None que `add_attempt` sobrescribe; pasarlos como parámetros.
+- brand.py `_mute`: un solo booleano mezcla `stroke-opacity` 0 y `stroke-width` 0; un hijo con ancho > 0 bajo un `<g>` con `stroke-opacity` 0 vuelve a contar su trazo (visto en la verificación de `f41df36`).
