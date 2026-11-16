@@ -7,7 +7,9 @@ Uso:    python3 docs/marcas/galivelop-evaluator/tonos.py '#B4C424' ['#otro' ...]
 Para cada hex vivo: lo pasa a OKLCH (OKLab de Björn Ottosson, D65), y con tono y croma
 fijos baja L de 0,005 en 0,005 hasta el primer hex de 8 bits con contraste WCAG 2.x
 >= 4,5:1 sobre el papel #fbfcfd (hondo), y la sube hasta el primero con >= 4,5:1 sobre
-el papel oscuro #0d171e (variante oscura). Si un paso cae fuera de sRGB, baja la croma
+el papel oscuro #0d171e (variante oscura). Propio de GVE (traslado 1 de su repo, 2026-11-16):
+el hondo cumple además el umbral sobre la banda alterna #f1f6f9 (--surface-2 de su front) y
+sobre el tinte claro (vivo al 12 % sobre el papel), porque su front pone texto de acento ahí. Si un paso cae fuera de sRGB, baja la croma
 de 0,005 en 0,005 desde la del vivo (sin tocar el tono) hasta que entra. Si el vivo ya
 cumple un umbral, ese tono es el vivo. El contraste se calcula sobre el hex redondeado.
 """
@@ -16,6 +18,7 @@ import re
 import sys
 
 PAPEL, PAPEL_OSCURO, BLANCO, TINTA, TINTA_OSCURA = "#fbfcfd", "#0d171e", "#ffffff", "#13212b", "#e6eef3"
+BANDA = "#f1f6f9"  # --surface-2 del front de GVE: el texto de acento también va encima
 PASO, UMBRAL = 0.005, 4.5
 
 
@@ -76,18 +79,19 @@ def a_hex(L, C, h):
         C = max(C - PASO, 0.0)
 
 
-def buscar(vivo, fondo, sentido):
+def buscar(vivo, fondos, sentido):
+    """Primer tono que cumple el umbral sobre todos los fondos a la vez."""
     L, C, h = a_oklch(vivo)
-    if contraste(vivo, fondo) >= UMBRAL:
+    if all(contraste(vivo, f) >= UMBRAL for f in fondos):
         return vivo.lower(), L, C, 0
     pasos = 0
     while 0.0 < L < 1.0:
         L += sentido * PASO
         pasos += 1
         hexa, c = a_hex(L, C, h)
-        if contraste(hexa, fondo) >= UMBRAL:
+        if all(contraste(hexa, f) >= UMBRAL for f in fondos):
             return hexa, L, c, pasos
-    raise SystemExit(f"sin solución para {vivo} sobre {fondo}")
+    raise SystemExit(f"sin solución para {vivo} sobre {', '.join(fondos)}")
 
 
 def mezcla(encima, debajo, alfa):
@@ -100,14 +104,15 @@ def r(a, b):
 
 def informe(vivo):
     L, C, h = a_oklch(vivo)
-    hondo, lh, ch, ph = buscar(vivo, PAPEL, -1)
-    oscuro, lo, co, po = buscar(vivo, PAPEL_OSCURO, +1)
     t12, t18 = mezcla(vivo, PAPEL, 0.12), mezcla(vivo, PAPEL_OSCURO, 0.18)
+    hondo, lh, ch, ph = buscar(vivo, (PAPEL, BANDA, t12), -1)
+    oscuro, lo, co, po = buscar(vivo, (PAPEL_OSCURO,), +1)
     print(f"vivo   {vivo.lower()}  OKLCH L={L:.4f} C={C:.4f} h={math.degrees(h) % 360:.2f}")
     print(f"       sobre {PAPEL} {r(vivo, PAPEL)} | blanco encima {r(BLANCO, vivo)} | tinta {TINTA} encima {r(TINTA, vivo)}"
           f" | sobre {PAPEL_OSCURO} {r(vivo, PAPEL_OSCURO)}")
     print(f"hondo  {hondo}  L={lh:.4f} C={ch:.4f} ({ph} pasos)")
     print(f"       sobre {PAPEL} {r(hondo, PAPEL)} | blanco encima {r(BLANCO, hondo)} | sobre {PAPEL_OSCURO} {r(hondo, PAPEL_OSCURO)}")
+    print(f"       sobre banda {BANDA} {r(hondo, BANDA)} | sobre tinte {t12} {r(hondo, t12)} | tinta {TINTA} encima {r(TINTA, hondo)}")
     print(f"oscuro {oscuro}  L={lo:.4f} C={co:.4f} ({po} pasos)")
     print(f"       sobre {PAPEL_OSCURO} {r(oscuro, PAPEL_OSCURO)}")
     print(f"tinte  12 % sobre {PAPEL} = {t12}, tinta encima {r(TINTA, t12)}"

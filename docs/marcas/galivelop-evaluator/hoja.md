@@ -6,8 +6,10 @@
 > del Portal** y esta se corrige. Todo gráfico nace de `gimg` (FLUX para bocetos y composición, Z-Image para calidad);
 > nada se dibuja a mano.
 
-**Borrador del 2026-11-15, sin aprobar.** El acento, su nombre, el motivo y los prompts son **elegidos por el agente
-(delegado)**: la persona delegó la elección del acento; lo demás va como **[P]** hasta su «sí». Estados como en
+**Hoja cerrada el 2026-11-16** (escrita el 2026-11-15). El acento `#b4c424` lo **aprobó la persona** el 2026-11-15; el
+hondo pasa a `#6b7509` por el traslado 1 de GVE; la regla de mareas, el monograma «GE» y el icono (nivel de burbuja)
+son **elegidos por el agente (delegado, 2026-11-16)** y la persona puede revertirlos (ver «Decisiones»). Las piezas y
+los prompts siguen como **[P]** hasta el «sí» de cada ronda. Estados como en
 [`../README.md`](../README.md): **heredado** remite a la hoja del Portal y no repite sus valores salvo donde hacen falta
 para comprobar; **propio** solo vale para GVE; **calculado** sale de [`tonos.py`](tonos.py); *(suposición)* se comprueba
 en la primera ronda.
@@ -26,11 +28,11 @@ Commits de referencia: galivelop-evaluator `origin/ccr-4fe19114-typsl9` `2e2dc15
 
 | Campo | Valor | Estado |
 |---|---|---|
-| Paleta | **Heredado:** cerúleo `#0072a8` («medium cerulean ocean blue #0072a8»), papel `#fbfcfd`, tinta `#13212b`; versión oscura, fondo `#0d171e` y líneas `#e6eef3`; los grabados admiten «tints and shades» del cerúleo; los iconos, una sola tinta. **Propio: el acento «verde nivel» ocupa el lugar del alga `#5d7a6a`**, solo como «a touch of», nunca bloque grande ni protagonista. Frase final de todo prompt de GVE: **«Palette strictly limited to medium cerulean ocean blue #0072a8 and its tints and shades, off-white #fbfcfd, ink grey #13212b and a touch of chartreuse yellow-green #b4c424.»** (sin «and its tints and shades» en línea simple; en las piezas con banderín, «… on the pennant only»). `brand.palette` propuesto: `#0072a8`, `#1aa6df`, `#fbfcfd`, `#13212b`, `#e6eef3`, `#0d171e`, `#b4c424`, `#6f7a05` | Portal, fila «Paleta» y «Qué cambia», fila «Acento secundario» (`../portal/hoja.md` l.52, l.296) y decisión 3; el nombre «chartreuse yellow-green» es *(suposición)*: la primera ronda mide con `gimg measure` si da ese hex («sky blue» desvió el cerúleo en el Portal) |
-| Acento: tres tonos | **Vivo `#b4c424`**, **hondo `#6f7a05`** (tema claro), **variante oscura `#b4c424`** (es el vivo: ya da 9,38:1 sobre `#0d171e`, regla 5 del método). Detalle y ratios en «Acento: los tres tonos, calculados» | **elegido por el agente (delegado)**, 2026-11-15; hondo y oscura, **calculados** |
+| Paleta | **Heredado:** cerúleo `#0072a8` («medium cerulean ocean blue #0072a8»), papel `#fbfcfd`, tinta `#13212b`; versión oscura, fondo `#0d171e` y líneas `#e6eef3`; los grabados admiten «tints and shades» del cerúleo; los iconos, una sola tinta. **Propio: el acento «verde nivel» ocupa el lugar del alga `#5d7a6a`**, solo como «a touch of», nunca bloque grande ni protagonista. Frase final de todo prompt de GVE: **«Palette strictly limited to medium cerulean ocean blue #0072a8 and its tints and shades, off-white #fbfcfd, ink grey #13212b and a touch of chartreuse yellow-green #b4c424.»** (sin «and its tints and shades» en línea simple; en las piezas con banderín, «… on the pennant only»). `brand.palette` propuesto: `#0072a8`, `#1aa6df`, `#fbfcfd`, `#13212b`, `#e6eef3`, `#0d171e`, `#b4c424`, `#6b7509` | Portal, fila «Paleta» y «Qué cambia», fila «Acento secundario» (`../portal/hoja.md` l.52, l.296) y decisión 3; el nombre «chartreuse yellow-green» es *(suposición)*: la primera ronda mide con `gimg measure` si da ese hex («sky blue» desvió el cerúleo en el Portal) |
+| Acento: tres tonos | **Vivo `#b4c424`**, **hondo `#6b7509`** (tema claro), **variante oscura `#b4c424`** (es el vivo: ya da 9,38:1 sobre `#0d171e`, regla 5 del método). Detalle y ratios en «Acento: los tres tonos, calculados» | vivo elegido por el agente (delegado) y **aprobado por la persona el 2026-11-15**; hondo y oscura, **calculados** (hondo corregido el 2026-11-16, traslado 1 de GVE) |
 | Tipografía | **Heredado sin cambio:** Big Shoulders Display (titulares), Literata (texto), JetBrains Mono (datos). **Ninguna imagen lleva texto**, ni generado ni compuesto: lo pone la web o el front con sus fuentes | Portal, fila «Tipografía» (l.53) y decisión 3; GVE ya las usa (`tokens.css` l.54-57) |
 | Modelo y parámetros | **Heredado:** calidad con `zimage-turbo-q6`, 8 pasos, cfg 1.0, euler, `draft {scale 0.5, steps 4}`; FLUX (`flux2-klein-4b-q8`, 6 pasos) para bocetos y para fijar una composición; Qwen-Image no hace falta. Con cfg 1.0 no hay prompt negativo. **Si una pieza con la regla graduada sale con cifras** (lo esperable: una escala invita a números), el camino es el de la 31d: boceto FLUX limpio y Z-Image en img2img sobre él (`initImage`, `strength` 0,5) | Portal, fila «Modelo y parámetros» (l.54); `examples/portal/orders/marca/31d-portada-workflow-img2img.json` |
-| Mar y tecnología | **Heredado:** el mar pone el dónde (carta, isobatas, papel, cerúleo) y la tecnología el qué; ningún motivo náutico protagonista sin decisión de la persona. **Propio, el qué de GVE: la medida que deja rastro.** Tres formas del mismo motivo: 1) **en el mar grabado** (portada, `og`, cabecera): una **regla de mareas**, un listón graduado que sale del agua con marcas sin cifras y un banderín pequeño del acento, como la boya con banderín de voz (15v) y de workflow (31d); 2) **en grabado sobre papel** (tarjeta, estado vacío): **las sondas**, el perfil del fondo medido con varias líneas de sonda que bajan desde la superficie (las sondas de una carta son medidas: cada punto de profundidad tiene detrás una línea echada); 3) **en línea simple** (icono, símbolo): **el dial de medida**, media corona con marcas y una aguja de eje hueco | Portal, fila «Mar y tecnología» (l.55); motivo, **[P]** del agente. La regla de mareas es un objeto de mar como protagonista de tres piezas: sigue el patrón aprobado de los hermanos (15v, 31d, 24), pero **la decide la persona** (duda 2) |
+| Mar y tecnología | **Heredado:** el mar pone el dónde (carta, isobatas, papel, cerúleo) y la tecnología el qué; ningún motivo náutico protagonista sin decisión de la persona. **Propio, el qué de GVE: la medida que deja rastro.** Tres formas del mismo motivo: 1) **en el mar grabado** (portada, `og`, cabecera): una **regla de mareas**, un listón graduado que sale del agua con marcas sin cifras y un banderín pequeño del acento, como la boya con banderín de voz (15v) y de workflow (31d); 2) **en grabado sobre papel** (tarjeta, estado vacío): **las sondas**, el perfil del fondo medido con varias líneas de sonda que bajan desde la superficie (las sondas de una carta son medidas: cada punto de profundidad tiene detrás una línea echada); 3) **en línea simple** (icono de proyecto): **el nivel de burbuja**, una cápsula horizontal con dos marcas y la burbuja hueca entre ellas (decisión 6); **el dial de medida** (media corona con marcas y aguja de eje hueco) queda para el estado vacío, en grabado, y como reserva del icono | Portal, fila «Mar y tecnología» (l.55); motivo, **[P]** del agente. La regla de mareas es un objeto de mar como protagonista de tres piezas: sigue el patrón aprobado de los hermanos (15v, 31d, 24); **aceptada: elegido por el agente (delegado, 2026-11-16)**, decisión 2 |
 | Dos registros de dibujo | **Heredado, con los bloques literales del Portal:** grabado a dos tintas para lo grande; línea simple para iconos y símbolo. No se mezclan en una pieza | Portal, fila «Dos registros de dibujo» (l.56) |
 | Zonas limpias, recuentos, encuadre | **Heredado sin cambio:** zona limpia en positivo y como papel o agua en calma; trama confinada; nunca «exactly N» (marcas y sondas, «a few», «several», «a regular ladder of»); todo a sangre con el cierre del Portal | Portal, filas «Zonas limpias», «Recuentos», «Encuadre» (l.57, l.58, l.61) |
 | Fondo y recorte | **Heredado:** lo que se recorta va sobre croma plano y pasa por `gimg brand matte` y `trace`. **Propio: el croma de GVE es siempre magenta `#ff00ff`**, nunca `#00ff00`: el acento es un amarillo verdoso y su borde suavizado se funde con el verde (es la regla del Portal para las piezas con verde). Las hojas de iconos para revisar, sobre papel `#fbfcfd` | Portal, fila «Fondo y recorte» (l.59) |
@@ -53,27 +55,40 @@ fuera de las tintas, ni como adjetivo; `seed` fijo y `count` 2-4. **Propio de GV
   («a little pennant», «one of the weights») y lo repite la frase de paleta con «only».
 - **El icono se dibuja en el tono hondo**, no en el vivo: el vivo da 1,88:1 sobre el papel y no se lee.
 
-**Dudas que decide la persona** (2026-11-15):
+**Decisiones** (las «dudas que decide la persona» del 2026-11-15; **todas cerradas el 2026-11-16**). Las tres marcadas
+«elegido por el agente (delegado, 2026-11-16)» las puede revertir la persona; al lado va qué habría que cambiar.
 
-1. **El acento.** `#b4c424`, «verde nivel»: el amarillo verdoso del líquido de un nivel de burbuja. Es el tono que
-   queda más lejos de todos los hermanos a la vez (ver la tabla de tonos); **elegido por el agente (delegado)**.
-   Alternativa descartada: ámbar «latón» (tono ~80°), que cae sobre el aviso `--warn` del propio front y a 33° de Tarkor.
-2. **La regla de mareas como protagonista** de portada, `og` y cabecera. Es un objeto de mar, y el Portal dice que un
-   producto no añade motivo náutico sin decisión. **Recomendación:** aceptarla; hace con GVE lo que la boya de
-   campana con voz y las boyas con cuerda con workflow, y «medir» se lee sin una sola cifra.
-3. **El acento y el estado «sube» del front.** `--up` es `#2f6a4a` (tono 157,5°, croma 0,081) y el hondo de GVE
-   `#6f7a05` (115,9°, 0,124): 42° de diferencia, pero los dos son verdes y de la misma claridad. **Recomendación:**
-   mantener la regla que el front ya tiene (`tokens.css` l.29: el color solo dice «sube / baja», siempre con signo) y
-   no usar el acento para nada que signifique resultado; se comprueba en la primera pantalla y, si se confunden, se
-   vuelve a la persona.
-4. **Series y escala de puestos del front.** `--s-work` y `--r1`…`--r4` usan el cerúleo (`tokens.css` l.40, l.49-52).
-   **Recomendación:** dejarlas en cerúleo: es tinta de la familia y dato, no acento; el acento queda para foco, enlaces,
-   bloques y marca.
-5. **Monograma.** El símbolo de los `galivelop-*` es el monograma de iniciales sobre el cuadrado con chaflán (decisión
-   6 del Portal: GV, GD, GW, IG). **Recomendación:** «GVE», las siglas del glosario (`GLOSSARY.md` l.33); alternativa,
-   «GE». Convive con el icono de proyecto (el dial), como en los hermanos.
-6. **Icono de proyecto: dial o nivel.** Van dos pedidos (`23b-icono-gve-a`, dial; `-b`, nivel de burbuja).
-   **Recomendación:** el dial (se lee «medir» a 24 px); el nivel es más propio del nombre del acento y más simple.
+1. **El acento. Cerrada: aprobado por la persona (2026-11-15).** `#b4c424`, «verde nivel»: el amarillo verdoso del
+   líquido de un nivel de burbuja. Es el tono que queda más lejos de todos los hermanos a la vez (ver la tabla de
+   tonos). Alternativa descartada: ámbar «latón» (tono ~80°), que cae sobre el aviso `--warn` del propio front y a 33°
+   de Tarkor.
+2. **La regla de mareas como protagonista** de portada, `og` y cabecera. **Cerrada: se acepta; elegido por el agente
+   (delegado, 2026-11-16).** Porqué: es el mismo patrón ya aprobado en los hermanos (objeto pequeño con banderín del
+   acento sobre el mar grabado: boya de campana de voz 15v, boyas con cuerda de workflow 31d, 24 de Tarkor), así que la
+   familia se lee como una serie, y «medir» se entiende sin una sola cifra. Para revertirla: R5, R6 y R9 pasan al
+   motivo de las sondas (el de R8), que no añade objeto de mar.
+3. **El acento y el estado «sube» del front. Cerrada: aplicada por GVE con la recomendación (2026-11-15).** `--up` es
+   `#2f6a4a` (tono 157,5°, croma 0,081) y el hondo de GVE `#6b7509` (115,6°, 0,119): 42° de diferencia, pero los dos
+   son verdes y de claridad parecida. Se mantiene la regla que el front ya tiene (`tokens.css` l.29: el color solo dice
+   «sube / baja», siempre con signo) y el acento no se usa para nada que signifique resultado; se comprueba en la
+   primera pantalla y, si se confunden, se vuelve a la persona.
+4. **Series y escala de puestos del front. Cerrada: aplicada por GVE con la recomendación (2026-11-15).** `--s-work` y
+   `--r1`…`--r4` siguen en cerúleo (`tokens.css` l.40, l.49-52): es tinta de la familia y dato, no acento; el acento
+   queda para foco, enlaces, bloques y marca.
+5. **Monograma. Cerrada: «GE»; elegido por el agente (delegado, 2026-11-16).** Porqué: los monogramas de la familia
+   son todos de dos letras (decisión 6 del Portal: GV, GD, GW, IG) y el trazo de la familia (12/128) deja tres letras
+   sin aire en el cuadrado con chaflán: a 16-32 px, que es donde el símbolo va solo, dos letras se leen y tres se
+   empastan. «GVE» sigue siendo la sigla **en texto** (`GLOSSARY.md` l.33) y «GALIVELOP EVALUATOR» el nombre del
+   lockup. Para revertirla: cambiar `"GE"` por `"GVE"` en la primera orden de R3; nada más depende de ello.
+6. **Icono de proyecto. Cerrada: el nivel de burbuja (R2, `23b-icono-gve-b`); elegido por el agente (delegado,
+   2026-11-16).** Porqué: son tres formas grandes y simétricas (cápsula, dos marcas, burbuja hueca) que aguantan los 16
+   px del favicon y que el modelo dibuja sin contar; el dial depende de una fila de marcas finas que a 16-24 px se
+   funde y que invita al modelo a poner cifras, y además se lee como velocímetro o «puntuación», justo el resultado que
+   GVE no promete. Es también el objeto que da nombre al acento («verde nivel»). El dial (R1, `23b-icono-gve-a`) queda
+   **de reserva**, con su pedido, y sigue en el estado vacío (R12). Para revertirla, o si el nivel no sale en 2-3
+   intentos o se confunde con un interruptor: se aprueba R1 en su lugar.
+7. **Relleno de acento en tema oscuro. Cerrada: aplicada por GVE con la recomendación (2026-11-15).** El front
+   mantiene el vivo con tinta oscura encima (9,38:1) en vez del hondo con blanco de la familia (ver «Interfaz»).
 
 ---
 
@@ -88,23 +103,28 @@ python3 docs/marcas/galivelop-evaluator/tonos.py '#B4C424'
 ```text
 vivo   #b4c424  OKLCH L=0.7819 C=0.1692 h=115.68
        sobre #fbfcfd 1.88 | blanco encima 1.93 | tinta #13212b encima 8.49 | sobre #0d171e 9.38
-hondo  #6f7a05  L=0.5519 C=0.1242 (46 pasos)
-       sobre #fbfcfd 4.58 | blanco encima 4.71 | sobre #0d171e 3.85
+hondo  #6b7509  L=0.5369 C=0.1192 (49 pasos)
+       sobre #fbfcfd 4.90 | blanco encima 5.03 | sobre #0d171e 3.60
+       sobre banda #f1f6f9 4.62 | sobre tinte #f2f5e3 4.54 | tinta #13212b encima 3.26
 oscuro #b4c424  L=0.7819 C=0.1692 (0 pasos)
        sobre #0d171e 9.38
 tinte  12 % sobre #fbfcfd = #f2f5e3, tinta encima 14.80 | 18 % sobre #0d171e = #2b361f, tinta #e6eef3 encima 10.84
 ```
 
-`tonos.py` es el de voice con la línea de uso cambiada; con `'#1aa6df'` da los ratios del Portal (2,70 / 2,78 / 5,91 /
-6,53), que es la prueba de que calcula lo mismo. En el hondo la croma baja de 0,1692 a 0,1242: a esa claridad el tono
-115° no cabe en sRGB con la croma del vivo, y el método la reduce sin tocar el tono (paso 4).
+`tonos.py` es el de voice con una exigencia más para el hondo (**traslado 1 de GVE, 2026-11-16**): además del papel
+`#fbfcfd`, tiene que dar ≥ 4,5:1 sobre la banda alterna `#f1f6f9` (`--surface-2` del front) y sobre el tinte claro
+`#f2f5e3`, porque el front de GVE pone texto de acento sobre los dos (`.b-info`) y su `tests/test_front_contraste.py`
+lo exige. Con solo el papel salía `#6f7a05` (46 pasos; 4,58 sobre papel, pero 4,32 y 4,25 sobre esos dos fondos); con
+los tres sale `#6b7509` (49 pasos). Para el vivo, con `'#1aa6df'` da los ratios del Portal (2,70 / 2,78 / 5,91 / 6,53),
+que es la prueba de que calcula lo mismo. En el hondo la croma baja de 0,1692 a 0,1192: a esa claridad el tono 115° no
+cabe en sRGB con la croma del vivo, y el método la reduce sin tocar el tono (paso 4).
 
 | Tono | Hex | Cómo sale | Ratios |
 |---|---|---|---|
-| **Vivo** | `#b4c424` | elegido por el agente (delegado) | sobre papel 1,88; tinta `#13212b` encima 8,49; sobre `#0d171e` 9,38 |
-| **Hondo** (tema claro) | `#6f7a05` | L baja 46 pasos de 0,005; C baja a 0,1242 para entrar en sRGB | sobre papel 4,58; blanco encima 4,71; papel `#fbfcfd` encima 4,58 |
+| **Vivo** | `#b4c424` | elegido por el agente (delegado); aprobado por la persona (2026-11-15) | sobre papel 1,88; tinta `#13212b` encima 8,49; sobre `#0d171e` 9,38 |
+| **Hondo** (tema claro) | `#6b7509` | L baja 49 pasos de 0,005 (hasta cumplir sobre papel, banda alterna y tinte); C baja a 0,1192 para entrar en sRGB | sobre papel 4,90; blanco encima 5,03; papel `#fbfcfd` encima 4,90; sobre la banda `#f1f6f9` 4,62; sobre el tinte `#f2f5e3` 4,54 |
 | **Variante oscura** | `#b4c424` | **es el vivo** (0 pasos) | sobre `#0d171e` 9,38; sobre `#111f29` 8,68; sobre `#16242e` 8,19 |
-| Tinte claro | `#f2f5e3` | vivo al 12 % sobre `#fbfcfd` | tinta encima 14,80; hondo encima 4,25 |
+| Tinte claro | `#f2f5e3` | vivo al 12 % sobre `#fbfcfd` | tinta encima 14,80; hondo encima 4,54 |
 | Tinte oscuro | `#2b361f` | vivo al 18 % sobre `#0d171e` | tinta `#e6eef3` encima 10,84; vivo encima 6,58 |
 
 **Por qué este tono** (OKLCH, calculado con el mismo script):
@@ -130,15 +150,17 @@ pone en su centro (116°), que además equidista del aviso y del «sube» de su 
 | Vivo: el mismo hex en claro y oscuro; no es texto sobre papel claro | `#b4c424`; 1,88 sobre papel | cumple. **Más claro que el del Portal (2,70):** sobre papel no llega a 3:1 ni como elemento no textual, así que **en tema claro el foco y los puntos de estado usan el hondo** (como hace ya el front: `--focus` es el tono hondo, `tokens.css` l.27) y el vivo queda para el tinte y el tema oscuro |
 | Sobre el vivo solo va la tinta, a ≥ 4,5:1 (Portal 5,91) | 8,49 | cumple (voice y GVIG no llegan) |
 | Vivo sobre el papel oscuro ≥ 4,5:1 (Portal 6,53) | 9,38 | cumple |
-| Hondo: ≥ 4,5:1 sobre papel y blanco encima ≥ 4,5:1 | 4,58 y 4,71 | cumple |
+| Hondo: ≥ 4,5:1 sobre papel y blanco encima ≥ 4,5:1 | 4,90 y 5,03 | cumple |
 | Variante oscura a ≥ 4,5:1 sobre `#0d171e` | 9,38 (es el vivo) | cumple, y también sobre las superficies oscuras (8,68 y 8,19) |
 | Tinte al 12 % / 18 %, tinta encima ≥ 7:1 | 14,80 / 10,84 | cumple |
-| Un acento con dos tonos (hondo en superficie grande, vivo en puntos) | mismo tono (115,7° y 115,9°), croma 0,169 y 0,124 | cumple |
-| Bloques con texto blanco: el hondo, también en oscuro | blanco sobre `#6f7a05` 4,71 | cumple |
+| Un acento con dos tonos (hondo en superficie grande, vivo en puntos) | mismo tono (115,7° y 115,6°), croma 0,169 y 0,119 | cumple |
+| Bloques con texto blanco: el hondo, también en oscuro | blanco sobre `#6b7509` 5,03 | cumple |
 
-**Dónde no llega el texto de acento:** el hondo da 4,32 sobre la banda alterna clara `#f1f6f9` y 4,25 sobre su propio
-tinte `#f2f5e3`. Regla de esta hoja (la de GVIG): el texto de acento va solo sobre el papel o sobre `#ffffff`; sobre
-banda alterna o tinte, el texto va en tinta y el acento se queda en el borde, el subrayado o el punto.
+**Dónde llega el texto de acento** (corregido el 2026-11-16, traslado 1 de GVE): el hondo `#6b7509` da ≥ 4,5:1 sobre
+todos los fondos claros del front: papel 4,90, `#ffffff` 5,03, banda alterna `#f1f6f9` 4,62 y su propio tinte `#f2f5e3`
+4,54. La regla anterior de esta hoja (texto de acento solo sobre papel o blanco, porque `#6f7a05` daba 4,32 y 4,25)
+**queda retirada**. En tema oscuro el texto de acento es el vivo (9,38 / 8,68 / 8,19 / 6,58 sobre el tinte oscuro); el
+hondo no es texto sobre fondo oscuro (3,60).
 
 ## Interfaz: tokens y reglas
 
@@ -148,18 +170,18 @@ velos, chaflanes (28 / 14 / 10 px), `border-radius` 0, tipografía por papel y t
 
 **Propio: el acento.** Con los nombres que el front ya usa (`front/v2/estilos/tokens.css` l.21-27, `2e2dc15`):
 
-| Token de GVE | Hoy (provisional) | Propuesto **[P]** | Papel que hace (el del Portal) |
+| Token de GVE | Antes (provisional, `2e2dc15`) | Vigente (aplicado por GVE, 2026-11-15) | Papel que hace (el del Portal) |
 |---|---|---|---|
 | `--accent` | `#1aa6df` | `#b4c424` | el de `--celeste`: marca, tinte, puntos en oscuro |
-| `--accent-text` | `light-dark(#0072a8, #5cc8f2)` | `light-dark(#6f7a05, #b4c424)` | enlaces y texto de acento (4,58 / 9,38) |
-| `--accent-fill` | `light-dark(#0072a8, #5cc8f2)` | `light-dark(#6f7a05, #b4c424)` | bloques y botones |
-| `--on-accent` | `light-dark(#ffffff, #0d171e)` | igual | texto sobre el relleno (4,71 / 9,38) |
+| `--accent-text` | `light-dark(#0072a8, #5cc8f2)` | `light-dark(#6b7509, #b4c424)` | enlaces y texto de acento (4,90 / 9,38) |
+| `--accent-fill` | `light-dark(#0072a8, #5cc8f2)` | `light-dark(#6b7509, #b4c424)` | bloques y botones |
+| `--on-accent` | `light-dark(#ffffff, #0d171e)` | igual | texto sobre el relleno (5,03 / 9,38) |
 | `--accent-soft` | `light-dark(#e4f3fa, #10303f)` | `light-dark(#f2f5e3, #2b361f)` | tinte al 12 % / 18 % (tinta encima 14,80 / 10,84) |
-| `--focus` | `light-dark(#0072a8, #5cc8f2)` | `light-dark(#6f7a05, #b4c424)` | `outline` de foco (4,58 / 9,38) |
+| `--focus` | `light-dark(#0072a8, #5cc8f2)` | `light-dark(#6b7509, #b4c424)` | `outline` de foco (4,90 / 9,38) |
 
 **Diferencias del front con el Portal** (se apuntan; no se corrigen desde aquí): relleno claro con tinta encima en tema
 oscuro, donde la familia pide el hondo con blanco en los dos temas (con `#b4c424` y `#0d171e` encima da 9,38: se
-propone mantener lo del front, duda de la persona si quiere igualarlo); `--text-2` oscuro `#a9bbc7` (Portal
+mantiene lo del front, decisión 7); `--text-2` oscuro `#a9bbc7` (Portal
 `#9fb2bf`), sin `--texto-3`; `--border` `#6f8493` propio; `--font-ui` de sistema para la interfaz, que el Portal no
 tiene; un solo chaflán de 14 px. Sus contrastes están en `docs/design/F1-v2.md` de GVE.
 
@@ -170,9 +192,9 @@ Ninguna hecha. Todas **[P]**, sin encolar. Se encolan desde `examples/portal` (`
 
 | # | Id | Recurso | Perfil (genera → entrega) | Modelo | Semilla / `count` | Registro |
 |---|---|---|---|---|---|---|
-| R1 | `23b-icono-gve-a` | Icono de proyecto, dial (recurso 23 del Portal; también avatar y favicon) | `icono` 1024² → 512² | Z-Image | 2361 / 3 | línea simple, croma `#ff00ff` |
-| R2 | `23b-icono-gve-b` | Icono de proyecto, nivel de burbuja (alternativa) | `icono` 1024² → 512² | Z-Image | 2371 / 3 | línea simple, croma `#ff00ff` |
-| R3 | — | Símbolo: monograma «GVE» en el cuadrado con chaflán | sin generar | `gimg brand` | — | órdenes abajo |
+| R1 | `23b-icono-gve-a` | Icono de proyecto, dial: **reserva** (decisión 6) | `icono` 1024² → 512² | Z-Image | 2361 / 3 | línea simple, croma `#ff00ff` |
+| R2 | `23b-icono-gve-b` | **Icono de proyecto elegido**, nivel de burbuja (recurso 23 del Portal; también favicon; decisión 6) | `icono` 1024² → 512² | Z-Image | 2371 / 3 | línea simple, croma `#ff00ff` |
+| R3 | — | Símbolo: monograma «GE» en el cuadrado con chaflán (decisión 5) | sin generar | `gimg brand` | — | órdenes abajo |
 | R4 | — | Lockup horizontal y vertical | sin generar | `gimg brand` | — | órdenes abajo |
 | R5 | `33-portada-gve` | Portada del producto en el Portal | `portada` 1344×768 → 1600×900 | Z-Image (boceto FLUX si salen cifras) | 3341 / 3 | grabado, mar |
 | R6 | `24-og-gve` | `og.jpg` del producto (recurso 24) | `social` 1344×704 → 1200×630 | Z-Image | 2441 / 3 | grabado, mar |
@@ -201,33 +223,34 @@ Ninguna hecha. Todas **[P]**, sin encolar. Se encolan desde `examples/portal` (`
   stroke weight everywhere, thick and bold, the very same line thickness in every part of the icon, rounded line caps
   and rounded joins, outlines only, no fill anywhere, no solid shape, the background colour shows through every shape.»
 
-### R1 · `marca/23b-icono-gve-a` (dial)
+### R1 · `marca/23b-icono-gve-a` (dial; reserva)
 
 ```
-A minimal flat line icon, centred, seen straight on: a measuring dial gauge made entirely of outlines. First, a large half ring: one wide semicircular arc, like the upper half of a circle, open at the bottom, its two ends finishing level with each other. Second, along the inside of the arc, a few short straight tick marks pointing towards the centre, evenly spread, all the same length, none of them touching the arc. Third, one straight needle that starts at the middle of the base and points up and to the right, towards the upper right part of the arc, stopping short of the tick marks. Fourth, at the foot of the needle, one small hollow ring, the hub, its inside empty, the background showing through it. Simple line register: one single uniform stroke weight everywhere, thick and bold, the very same line thickness in every part of the icon, rounded line caps and rounded joins, outlines only, no fill anywhere, no solid shape, the background colour shows through every shape. The whole icon is drawn in one single colour, dark olive green #6f7a05, and nothing else. The background is a perfectly flat, plain, uniform pure chroma key magenta #ff00ff filling the whole square, with no gradient, no texture, no vignette and no shadow. Generous empty margin all around, the icon takes about two thirds of the square, balanced, geometric, clean vector look, few large simple shapes with wide gaps between the lines, legible at very small size. No shading, no hatching, no drop shadow, no glow, no highlights, no 3D, no perspective, no photographic rendering, no second colour in the icon, no thin lines, no extra details, no ornaments, no text, no letters, no numbers, no digits, no watermark.
+A minimal flat line icon, centred, seen straight on: a measuring dial gauge made entirely of outlines. First, a large half ring: one wide semicircular arc, like the upper half of a circle, open at the bottom, its two ends finishing level with each other. Second, along the inside of the arc, a few short straight tick marks pointing towards the centre, evenly spread, all the same length, none of them touching the arc. Third, one straight needle that starts at the middle of the base and points up and to the right, towards the upper right part of the arc, stopping short of the tick marks. Fourth, at the foot of the needle, one small hollow ring, the hub, its inside empty, the background showing through it. Simple line register: one single uniform stroke weight everywhere, thick and bold, the very same line thickness in every part of the icon, rounded line caps and rounded joins, outlines only, no fill anywhere, no solid shape, the background colour shows through every shape. The whole icon is drawn in one single colour, dark olive green #6b7509, and nothing else. The background is a perfectly flat, plain, uniform pure chroma key magenta #ff00ff filling the whole square, with no gradient, no texture, no vignette and no shadow. Generous empty margin all around, the icon takes about two thirds of the square, balanced, geometric, clean vector look, few large simple shapes with wide gaps between the lines, legible at very small size. No shading, no hatching, no drop shadow, no glow, no highlights, no 3D, no perspective, no photographic rendering, no second colour in the icon, no thin lines, no extra details, no ornaments, no text, no letters, no numbers, no digits, no watermark.
 ```
 
-### R2 · `marca/23b-icono-gve-b` (nivel de burbuja)
+### R2 · `marca/23b-icono-gve-b` (nivel de burbuja; el elegido)
 
 ```
-A minimal flat line icon, centred, seen straight on: the vial of a spirit level made entirely of outlines. First, one wide horizontal capsule outline, a long pill shape with fully rounded ends, about three times as wide as it is tall, perfectly level. Second, inside the capsule, two short straight vertical lines standing side by side near the middle, a little apart, each running from near the top edge to near the bottom edge without touching them. Third, exactly between those two lines, one hollow circle, the bubble, its inside empty, the background showing through it, not touching the lines. The whole figure is symmetrical left to right. Simple line register: one single uniform stroke weight everywhere, thick and bold, the very same line thickness in every part of the icon, rounded line caps and rounded joins, outlines only, no fill anywhere, no solid shape, the background colour shows through every shape. The whole icon is drawn in one single colour, dark olive green #6f7a05, and nothing else. The background is a perfectly flat, plain, uniform pure chroma key magenta #ff00ff filling the whole square, with no gradient, no texture, no vignette and no shadow. Generous empty margin all around, the icon takes about two thirds of the width of the square, balanced, geometric, clean vector look, few large simple shapes with wide gaps between the lines, legible at very small size. No liquid, no shading, no hatching, no drop shadow, no glow, no highlights, no reflections, no 3D, no perspective, no photographic rendering, no second colour in the icon, no thin lines, no extra details, no ornaments, no text, no letters, no numbers, no digits, no watermark.
+A minimal flat line icon, centred, seen straight on: the vial of a spirit level made entirely of outlines. First, one wide horizontal capsule outline, a long pill shape with fully rounded ends, about three times as wide as it is tall, perfectly level. Second, inside the capsule, two short straight vertical lines standing side by side near the middle, a little apart, each running from near the top edge to near the bottom edge without touching them. Third, exactly between those two lines, one hollow circle, the bubble, its inside empty, the background showing through it, not touching the lines. The whole figure is symmetrical left to right. Simple line register: one single uniform stroke weight everywhere, thick and bold, the very same line thickness in every part of the icon, rounded line caps and rounded joins, outlines only, no fill anywhere, no solid shape, the background colour shows through every shape. The whole icon is drawn in one single colour, dark olive green #6b7509, and nothing else. The background is a perfectly flat, plain, uniform pure chroma key magenta #ff00ff filling the whole square, with no gradient, no texture, no vignette and no shadow. Generous empty margin all around, the icon takes about two thirds of the width of the square, balanced, geometric, clean vector look, few large simple shapes with wide gaps between the lines, legible at very small size. No liquid, no shading, no hatching, no drop shadow, no glow, no highlights, no reflections, no 3D, no perspective, no photographic rendering, no second colour in the icon, no thin lines, no extra details, no ornaments, no text, no letters, no numbers, no digits, no watermark.
 ```
 
-Después de elegir (R1 o R2): `gimg brand matte` sobre el magenta (con `--holes` para el eje o la burbuja) y
-`gimg brand trace --mode color --matte --dp-tol 0.5 --palette '#6f7a05'`, en el mismo paso que la aprobación; en la web
+Elegido R2 (decisión 6; R1 solo si R2 no sale): `gimg brand matte` sobre el magenta (con `--holes` para la burbuja, o
+para el eje si se usa R1) y
+`gimg brand trace --mode color --matte --dp-tol 0.5 --palette '#6b7509'`, en el mismo paso que la aprobación; en la web
 va a `currentColor` (hondo en claro, vivo en oscuro).
 
 ### R3 y R4 · símbolo y lockup (sin generar)
 
 ```
-gimg brand wordmark "GVE" --font <Big Shoulders Display variable .ttf> --weight 800 --spacing 0.01
-gimg brand square GVE.svg --fill '#6f7a05' --ink '#fbfcfd'
+gimg brand wordmark "GE" --font <Big Shoulders Display variable .ttf> --weight 800 --spacing 0.01
+gimg brand square GE.svg --fill '#6b7509' --ink '#fbfcfd'
 gimg brand wordmark "GALIVELOP EVALUATOR" --font <Big Shoulders Display variable .ttf> --weight 800 --spacing 0.01
 gimg brand lockup simbolo.svg wordmark.svg --layout h --cap 0.45 --gap 0.25 --margin 0.25
 gimg brand lockup simbolo.svg wordmark.svg --layout v --width 1.6 --gap 0.25 --margin 0.25
 ```
 
-Cuadrado plano del hondo, chaflán de 28/128 arriba a la derecha (lo pone `square`), monograma en papel (4,58:1). El
+Cuadrado plano del hondo, chaflán de 28/128 arriba a la derecha (lo pone `square`), monograma «GE» en papel (4,90:1). El
 nombre va en `currentColor` (tinta), nunca en el acento. Mínimos: `S` ≥ 32 px en horizontal, ≥ 48 px en vertical; por
 debajo, el símbolo solo hasta 16 px. Depende de tener el `.ttf` de Big Shoulders Display en el equipo.
 
@@ -316,12 +339,12 @@ Las seis comprobaciones de «Cómo se comprueba una hoja de producto» (`../port
 
 | # | Comprobación | Resultado |
 |---|---|---|
-| 1 | Tres hex del acento, calculados, con ratios; ninguno bajo 4,5 donde el método lo exige | **Pasa.** Vivo `#b4c424`, hondo `#6f7a05` (4,58 sobre `#fbfcfd`; blanco encima 4,71), oscura `#b4c424` (9,38 sobre `#0d171e`) |
+| 1 | Tres hex del acento, calculados, con ratios; ninguno bajo 4,5 donde el método lo exige | **Pasa.** Vivo `#b4c424`, hondo `#6b7509` (4,90 sobre `#fbfcfd`; blanco encima 5,03; 4,62 sobre `#f1f6f9`; 4,54 sobre el tinte), oscura `#b4c424` (9,38 sobre `#0d171e`) |
 | 2 | Papel, tinta, filete, retícula, tipografías y chaflanes coinciden con el Portal valor por valor | **Pasa por remisión** en la hoja. En el front, casi: ver «Diferencias del front con el Portal» |
-| 3 | Frase de paleta del Portal con el acento en el lugar del alga; ningún prompt nombra otro color | **Pasa.** El único color fuera de la frase es «dark olive green #6f7a05» en R1 y R2, que es el hondo del propio acento, y el magenta del croma, que es fondo y no tinta |
+| 3 | Frase de paleta del Portal con el acento en el lugar del alga; ningún prompt nombra otro color | **Pasa.** El único color fuera de la frase es «dark olive green #6b7509» en R1 y R2, que es el hondo del propio acento, y el magenta del croma, que es fondo y no tinta |
 | 4 | Logo: cuadrado plano del hondo, chaflán 28/128, trazo 12/128, salido de gimg | **Lo pide** (R3); no existe aún |
 | 5 | Iconos de una tinta, sin relleno, nodos huecos, legibles a 24 px | **Lo pide** (R1, R2, R13); sin generar |
-| 6 | Nada de «Prohibido en toda la familia» | **Pasa**, con dos avisos: la regla de mareas (duda 2) y el icono de la curva (R13, 25e) |
+| 6 | Nada de «Prohibido en toda la familia» | **Pasa**, con dos avisos: la regla de mareas (aceptada, decisión 2) y el icono de la curva (R13, 25e) |
 
 ---
 
@@ -332,8 +355,8 @@ Las seis comprobaciones de «Cómo se comprueba una hoja de producto» (`../port
 | Nombre de marca | Obl. | «Galivelop Evaluator»; siglas «GVE»; en el lockup, «GALIVELOP EVALUATOR» | `GLOSSARY.md` l.33 (`2e2dc15`); lo del lockup, decisión 4 del Portal |
 | Nombre en código | Obl. | `galivelop-evaluator` | `GLOSSARY.md` l.33 |
 | Fuente de verdad | Rec. | `galivelop-evaluator`, rama `origin/ccr-4fe19114-typsl9`, `2e2dc15`; sin nada publicado en `main` que citar | sección 13 |
-| Quién decide | Obl. | La persona; el acento, delegado al agente el 2026-11-15 hasta que diga otra cosa | encargo de esta hoja |
-| Fecha de la hoja | Rec. | 2026-11-15 | — |
+| Quién decide | Obl. | La persona; delegó en el agente el acento (2026-11-15, que luego aprobó) y las decisiones 2, 5 y 6 (2026-11-16), que puede revertir | encargo de esta hoja |
+| Fecha de la hoja | Rec. | 2026-11-15; cerrada el 2026-11-16 | — |
 | Familia visual | Rec. | `Galivelop`: hereda papel, tinta, tipografías, lockup común y estilo de imagen | regla de la persona; `../portal/hoja.md`, «Familia Galivelop» |
 | Hereda de | Opc. | Portal Galivelop, por su hoja (`../portal/hoja.md`, Portal `7fc0357`) | heredado |
 
@@ -361,7 +384,7 @@ Las seis comprobaciones de «Cómo se comprueba una hoja de producto» (`../port
 |---|---|---|---|
 | Fondo | Rec. | Papel `#fbfcfd` (claro, por defecto); `#0d171e` (oscuro) | heredado; coincide con `tokens.css` l.13 |
 | Texto | Rec. | Tinta `#13212b` sobre claro; `#e6eef3` sobre oscuro | heredado; `tokens.css` l.18 |
-| Acento | Obl. | «Verde nivel»: vivo `#b4c424`, hondo `#6f7a05`, oscura `#b4c424` | **elegido por el agente (delegado)**; calculado con `tonos.py` |
+| Acento | Obl. | «Verde nivel»: vivo `#b4c424`, hondo `#6b7509`, oscura `#b4c424` | vivo aprobado por la persona (2026-11-15); hondo y oscura calculados con `tonos.py` |
 | Acentos en imagen | Rec. | 1) cerúleo `#0072a8` y sus tonos (el mar); 2) tinta; 3) un toque del acento, solo en el banderín o en una marca | heredado; relación 7 del Portal |
 | Resto de la paleta | Rec. | La del Portal entera (superficies, filete, retícula, peligro, «hecho», velos). Del front, propios de dato: `--up` `#2f6a4a`/`#8fd0a8`, `--down` `#a3135f`/`#f27ab0`, `--warn` `#8a5a00`/`#f2c14e`, serie de reserva `#a8480f`/`#f0a35e` | heredado; `tokens.css` l.30-41 |
 | Combinaciones | Rec. | Las del Portal: papel + tinta + bloque del hondo con blanco; texto sobre imagen, sobre velo plano de tinta al 62-78 % | heredado |
@@ -375,11 +398,11 @@ con los rangos de los hermanos sobre mar (Portal).
 
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
-| Símbolo SVG | Obl. | **No hay.** Lo hace `gimg brand` (R3: monograma «GVE» sobre el cuadrado con chaflán en `#6f7a05`); el icono de proyecto, R1 o R2 | pendiente; duda 5 |
+| Símbolo SVG | Obl. | **No hay.** Lo hace `gimg brand` (R3: monograma «GE» sobre el cuadrado con chaflán en `#6b7509`); el icono de proyecto, R2 (nivel) | pendiente de generar; decisiones 5 y 6 |
 | Lockup | Rec. | **No hay.** Común a la familia, de `gimg brand lockup` (R4) | pendiente |
 | Variante clara y oscura | Rec. | Una: el cuadrado del hondo vale sobre los dos papeles; el nombre, en `currentColor` | heredado |
 | Tamaño mínimo y margen | Rec. | `S` ≥ 32 px (horizontal), ≥ 48 px (vertical); margen 0,25 `S`; símbolo solo hasta 16 px | heredado (decisión 4 del Portal) |
-| Usos prohibidos | Opc. | Degradado, sombra, redondeo, nombre en el acento, monograma en tinta oscura sobre el hondo (3,49:1) | heredado; el ratio, calculado |
+| Usos prohibidos | Opc. | Degradado, sombra, redondeo, nombre en el acento, monograma en tinta oscura sobre el hondo (3,26:1) | heredado; el ratio, calculado |
 | Logo fuera de la paleta | Opc. | No | — |
 
 ## 5. Tipografía
@@ -395,7 +418,7 @@ con los rangos de los hermanos sobre mar (Portal).
 
 | Campo | Nivel | Valor | Estado |
 |---|---|---|---|
-| Motivos Sí | Obl. | 1) Regla de mareas con marcas sin cifras y banderín del acento, sobre el mar grabado. 2) Sondas: líneas que bajan de la superficie al perfil del fondo, con una pesa marcada. 3) Dial de medida de media corona, aguja y eje hueco. 4) Nivel de burbuja (alternativa de icono). 5) Sondas como puntos y marcas en fondos y patrones | **[P]** |
+| Motivos Sí | Obl. | 1) Regla de mareas con marcas sin cifras y banderín del acento, sobre el mar grabado. 2) Sondas: líneas que bajan de la superficie al perfil del fondo, con una pesa marcada. 3) Nivel de burbuja: cápsula, dos marcas y burbuja hueca (icono de proyecto). 4) Dial de medida de media corona, aguja y eje hueco (estado vacío; reserva del icono). 5) Sondas como puntos y marcas en fondos y patrones | **[P]** |
 | Motivos No | Obl. | Gráficas de barras o de crecimiento, podios, medallas, estrellas, notas, lupas, microscopios, probetas, robots, cerebros, balanzas de justicia, personas; cualquier cifra | propio + heredado |
 | Palabras vetadas | Obl. | `graph`, `bar chart`, `growth`, `trophy`, `medal`, `podium`, `stars`, `score`, `percent`, `thumbs up`, `exam`, `teacher`, `judge`, `gavel`, `scales of justice`, `robot`, `brain`, `magnifying glass`, `microscope`, `lab coat`, `test tube`, `person`, `hand`, `face`; y las del Portal (`transparent`, `exactly`, `sky blue`) | propio + heredado |
 | Estilo de imagen | Rec. | Los bloques [MAR], [PAPEL] y [LÍNEA] de «Recursos»; sin «Style: … Mood: …» | heredado |
@@ -425,7 +448,7 @@ con los rangos de los hermanos sobre mar (Portal).
 | Piezas solo de logo | Rec. | `avatar` 512 e `icon` 180/192/512, con `gimg export` del símbolo (R14) | pendiente |
 | Borrador | Opc. | `draft {scale 0.5, steps 4}` | heredado |
 | Velo, logo en la pieza, palancas extra | Rec. / Opc. | No hay; palanca: `initImage` + `strength` 0,5 sobre boceto FLUX cuando salen cifras | heredado; R5 |
-| Prioridad | Rec. | 1) R1/R2 icono; 2) R6 `og` (y R7); 3) R5 portada; 4) R3-R4 símbolo y lockup; 5) R13 iconos de panel; después R8-R12 | **[P]** |
+| Prioridad | Rec. | 1) R2 icono (R1 de reserva); 2) R6 `og` (y R7); 3) R5 portada; 4) R3-R4 símbolo y lockup; 5) R13 iconos de panel; después R8-R12 | **[P]** |
 
 ## 10. Textos de composición
 
@@ -467,7 +490,7 @@ con los rangos de los hermanos sobre mar (Portal).
   (prompts hermanos); `docs/marcas/galivelop-voice-generator/tonos.py` (método).
 
 **Lo que la configuración no refleja aún:** todo. No hay `examples/galivelop-evaluator/` ni pedidos; `brand.palette`
-del proyecto `portal` no lleva `#b4c424` ni `#6f7a05` (para medir el toque hace falta añadirlos o un proyecto propio).
+del proyecto `portal` no lleva `#b4c424` ni `#6b7509` (para medir el toque hace falta añadirlos o un proyecto propio).
 
 ## 14. Lista de comprobación de lo obligatorio (este proyecto)
 

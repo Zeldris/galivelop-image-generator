@@ -1,7 +1,6 @@
 # Biblia de estilo: Galivelop Evaluator (GVE)
 
-Todo lo que hace falta para crear una pieza de GVE sin volver a leer su repo. **Borrador del 2026-11-15, sin
-aprobar.** GVE es un producto de la familia Galivelop: hereda del Portal papel, tinta, tipografías, lockup común y
+Todo lo que hace falta para crear una pieza de GVE sin volver a leer su repo. **Cerrada el 2026-11-16.** GVE es un producto de la familia Galivelop: hereda del Portal papel, tinta, tipografías, lockup común y
 estilo de imagen; lo único propio es el acento y el motivo. El detalle, los ratios y los prompts completos están en
 [`hoja.md`](hoja.md); ante cualquier diferencia manda la sección «Familia Galivelop» de
 [`../portal/hoja.md`](../portal/hoja.md). Estados como en [`../README.md`](../README.md): sin marca sale del repo
@@ -30,8 +29,8 @@ una ronda.
 | Papel | `#fbfcfd` (oscuro `#0d171e`) | Fondo; heredado |
 | Tinta | `#13212b` (oscuro `#e6eef3`) | Línea y texto; heredado |
 | Cerúleo | `#0072a8` (y sus tonos en grabados) | El mar; la tinta de color de la familia; heredado |
-| **Acento vivo, «verde nivel»** | `#b4c424` | Marca, tinte (12 % / 18 %), foco y enlaces en tema oscuro, el toque en imagen. **Elegido por el agente (delegado)** |
-| **Acento hondo** | `#6f7a05` | Bloques con texto blanco, enlaces, foco y puntos en tema claro, cuadrado del logo, icono. Calculado |
+| **Acento vivo, «verde nivel»** | `#b4c424` | Marca, tinte (12 % / 18 %), foco y enlaces en tema oscuro, el toque en imagen. Elegido por el agente (delegado); **aprobado por la persona (2026-11-15)** |
+| **Acento hondo** | `#6b7509` | Bloques con texto blanco, enlaces, foco y puntos en tema claro, cuadrado del logo, icono. Calculado: ≥ 4,5:1 sobre papel, banda alterna `#f1f6f9` y tinte `#f2f5e3` |
 | **Variante oscura** | `#b4c424` | Es el vivo: 9,38:1 sobre `#0d171e`. Calculado |
 
 - **Por qué este acento:** es el amarillo verdoso del líquido de un nivel de burbuja, el instrumento que dice si algo
@@ -39,11 +38,11 @@ una ronda.
   de Tarkor, 73° de developer, 113° de voice, 147° de workflow y 176° de GVIG.
 - **Cálculo:** `python3 docs/marcas/galivelop-evaluator/tonos.py '#B4C424'` ([`tonos.py`](tonos.py)); ratios en la
   hoja.
-- **Pieza clara:** papel + tinta + bloque del hondo con blanco encima (4,71:1). **Pieza oscura:** `#0d171e` + líneas
+- **Pieza clara:** papel + tinta + bloque del hondo con blanco encima (5,03:1). **Pieza oscura:** `#0d171e` + líneas
   `#e6eef3` + el vivo. **Sobre imagen:** texto blanco sobre velo plano de tinta al 62-78 %.
 - **En imagen generada:** cerúleo, papel y tinta; el acento, solo «a touch of», en el lugar del alga del Portal.
 - **Prohibidos:** el acento como color dominante de una pieza o como color de resultado («sube», «aprobado»); el vivo
-  como texto o trazo sobre papel claro (1,88:1); texto de acento sobre banda alterna o sobre el tinte (4,32 y 4,25);
+  como texto o trazo sobre papel claro (1,88:1); el hondo como texto sobre fondo oscuro (3,60:1);
   degradados, resplandores, cualquier color fuera de las tintas.
 
 ## 3. Tipografía
@@ -55,10 +54,11 @@ declara (`front/v2/estilos/tokens.css` l.54-57) y añade una de sistema para la 
 ## 4. Logo
 
 - **No hay ninguno.** No se dibuja a mano: todo nace de `gimg`.
-- **Símbolo [P]:** monograma «GVE» en papel `#fbfcfd` sobre el cuadrado plano del hondo `#6f7a05`, con chaflán de
-  28/128 arriba a la derecha (`gimg brand wordmark` + `gimg brand square`).
-- **Icono de proyecto [P]:** el dial de medida (media corona con marcas, aguja y eje hueco); alternativa, el nivel de
-  burbuja. Línea simple, una tinta, generado sobre croma magenta y vectorizado con `gimg brand trace` en el mismo paso
+- **Símbolo:** monograma «GE» en papel `#fbfcfd` sobre el cuadrado plano del hondo `#6b7509`, con chaflán de
+  28/128 arriba a la derecha (`gimg brand wordmark` + `gimg brand square`). Dos letras, como los hermanos (GV, GD, GW,
+  IG); «GVE» es la sigla en texto. Elegido por el agente (delegado, 2026-11-16).
+- **Icono de proyecto:** el nivel de burbuja (cápsula horizontal, dos marcas y la burbuja hueca entre ellas); de
+  reserva, el dial de medida. Elegido por el agente (delegado, 2026-11-16). Línea simple, una tinta, generado sobre croma magenta y vectorizado con `gimg brand trace` en el mismo paso
   que la aprobación.
 - **Lockup:** el común de la familia: símbolo + «GALIVELOP EVALUATOR» en Big Shoulders Display 800, de
   `gimg brand lockup` (horizontal: letras a 0,45 `S`, hueco y margen 0,25 `S`; vertical: nombre a 1,6 `S`). Nombre en
@@ -88,10 +88,11 @@ traslados, eventos) se usa entera, sin mezclarla con lucide.
   composición.
 - **El mar pone el dónde; la medida, el qué.** Tres formas del motivo:
   1. **Regla de mareas** sobre el mar grabado: un listón graduado que sale del agua, con marcas **sin cifras** y un
-     banderín pequeño del acento (portada, `og`, cabecera). **[P]**: es un objeto de mar y lo decide la persona.
+     banderín pequeño del acento (portada, `og`, cabecera). Aceptada: elegido por el agente (delegado, 2026-11-16).
   2. **Sondas** en grabado sobre papel: el perfil del fondo y varias líneas que bajan desde la superficie, cada una
      con su pesa; una pesa lleva el acento (tarjeta). Los puntos de sonda, en fondos y patrones.
-  3. **Dial de medida** en línea simple (icono) y en grabado sobre papel (estado vacío).
+  3. **Nivel de burbuja** en línea simple (icono de proyecto) y **dial de medida** en grabado sobre papel (estado
+     vacío; en línea simple, reserva del icono).
 - **Sí:** agua en calma, isobatas, puntos de sonda, marcas regulares, zonas limpias dichas en positivo.
 - **No:** cifras, gráficas, podios, personas, resplandores, cielo ni horizonte, marcos.
 - **Palabras vetadas:** `graph`, `bar chart`, `growth`, `trophy`, `medal`, `podium`, `stars`, `score`, `percent`,
@@ -120,7 +121,7 @@ clave `marca/…`.
 
 | Pieza | Id | Perfil | Destino |
 |---|---|---|---|
-| Icono de proyecto (dial / nivel) | `23b-icono-gve-a`, `-b` | `icono` | 512×512 |
+| Icono de proyecto (nivel; dial de reserva) | `23b-icono-gve-b` (`-a`) | `icono` | 512×512 |
 | Símbolo y lockup | sin generar (`gimg brand`) | — | SVG |
 | Portada en el Portal | `33-portada-gve` | `portada` | 1600×900 |
 | `og` (y tarjeta social de GitHub, por `gimg export`) | `24-og-gve` | `social` | 1200×630 (1280×640) |
