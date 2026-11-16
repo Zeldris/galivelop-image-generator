@@ -14,6 +14,7 @@ from __future__ import annotations
 import contextlib
 import copy
 import os
+import re
 import random
 from datetime import datetime, timezone
 from pathlib import Path
@@ -426,7 +427,7 @@ def _check_spec(spec: dict) -> None:
         _check_fields(spec["prompt"], params, spec["seed"])
 
 
-def _new_record(order: dict, spec: dict, new_id: int, image: str) -> dict:
+def _new_record(order: dict, spec: dict, new_id: int, image: str, init_image=None, strength=None) -> dict:
     """The fields every new attempt has (`add_attempt` and `add_derived`), in state ``new``."""
     record = {
         "id": new_id,
@@ -435,8 +436,8 @@ def _new_record(order: dict, spec: dict, new_id: int, image: str) -> dict:
         "prompt": spec["prompt"],
         "params": copy.deepcopy(spec["params"]),
         "references": list(spec.get("references", order["references"])),
-        "initImage": None,
-        "strength": None,
+        "initImage": init_image,
+        "strength": strength,
         "image": image,
         "note": "",
         "createdAt": _now(),
@@ -469,8 +470,7 @@ def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None)
                     return item["id"]
         new_id = max((a["id"] for a in order["attempts"]), default=0) + 1
         image = "attempts/%d.png" % new_id if entry_id is None else entry_image_name(entry_id)
-        record = _new_record(order, spec, new_id, image)
-        record["initImage"], record["strength"] = spec.get("initImage"), spec.get("strength")
+        record = _new_record(order, spec, new_id, image, spec.get("initImage"), spec.get("strength"))
         if entry_id is not None:
             record["queueEntry"] = entry_id
         for extra in ("engine", "engineVersion", "log"):  # which engine made it (the manifest repeats the first two)
@@ -501,6 +501,7 @@ def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None)
     return _modify(project, key, profile, change)
 
 
+_CROP_TMP_RE = re.compile(r"^\.\d+\.crop\..*\.tmp$")
 _CROP_TMP = ".crop."  # temp-file marker of `add_derived` in attempts/
 
 
@@ -531,10 +532,12 @@ def add_derived(project: str, key: str, profile: str, spec: dict, derived_from: 
         record["derivedFrom"] = copy.deepcopy(derived_from)
         order["attempts"].append(record)
         order["updatedAt"] = _now()
-        for stale in final.parent.glob(".*" + _CROP_TMP + "*.tmp"):  # remains of a crop killed mid-write (only
+        for stale in final.parent.glob(".*" + _CROP_TMP + "*.tmp"):
+            if not _CROP_TMP_RE.match(stale.name):
+                continue  # remains of a crop killed mid-write (only
             with contextlib.suppress(OSError):                    # add_derived makes them, under this lock)
                 stale.unlink()
-        fsutil.write_bytes_atomic(final, bytes(png_data), prefix=".%d%s" % (new_id, _CROP_TMP))
+        fsutil.write_bytes_atomic(final, png_data, prefix=".%d%s" % (new_id, _CROP_TMP))
         try:
             fsutil.write_json(path, order)
         except BaseException:
