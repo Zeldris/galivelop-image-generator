@@ -47,7 +47,7 @@ remate o gema, nunca como relleno.
 
 Hex del CSS real (`frontend/src/index.css`, bloque `@theme`), más los tonos de oro, piedra, noche y cristal oscuro fijados en
 §3 de `propuesta-fable-2026-11-10.md` (aprobados por la persona el 2026-11-10; marcados con *, son los tokens que se proponen
-al juego en `docs/propuestas/tarkor/diseno-interfaz-2026-11-10.md`). Proporción **60/30/10**: madera e hierro 60, oro y
+al juego en `docs/proposals/tarkor/diseno-interfaz-2026-11-10.md`). Proporción **60/30/10**: madera e hierro 60, oro y
 piedra 30, luz y cristal 10 (brillo `gold-100` ≤ 5 %, cristal ≤ 10 %).
 
 | Rol en la imagen | Token | Hex |
@@ -124,7 +124,7 @@ Reglas con medida: `hoja.md` §16. Revisado el 2026-11-12.
   dificultad prevista: **K** fácil; **K?** puede pedir más semillas; **M** recuento o detalle que va al SVG.
 - **Destino:** carpeta nueva `frontend/src/assets/ui/` del juego (Vite resuelve `url()` desde `index.css`), salvo
   donde la tabla diga otra. Esta hoja no toca el repo del juego: la entrega se deja en `examples/tarkor/entrega/ui/`
-  y se propone desde aquí (`docs/propuestas/`).
+  y se propone desde aquí (`docs/proposals/`).
 
 ## 3. Recursos
 
@@ -291,8 +291,8 @@ bloque E: el perfil `og` existe en `examples/tarkor`, pero su plantilla `plantil
    E17 y E18 al final.
 8. Entrega en `examples/tarkor/entrega/ui/<nn>-<nombre>.png` y `entrega/marca/e<nn>-<nombre>.png` (más los recortes
    `-alpha.png` con la transparencia de gimg, D6), hoja de contactos (E18) y propuesta a los repos del juego y del
-   instalador desde `docs/propuestas/tarkor/` (nunca se tocan desde aquí). La de la interfaz ya está escrita:
-   `docs/propuestas/tarkor/diseno-interfaz-2026-11-10.md` (tokens, clases y tipografía se aplican sin esperar imágenes).
+   instalador desde `docs/proposals/tarkor/` (nunca se tocan desde aquí). La de la interfaz ya está escrita:
+   `docs/proposals/tarkor/diseno-interfaz-2026-11-10.md` (tokens, clases y tipografía se aplican sin esperar imágenes).
 
 Tiempo estimado en la Deck (klein, 6 pasos): ~25 s por icono 512², ~70 s por 1024², ~60 s por 1536×640. Con 3
 semillas por pieza, el total (48 piezas de A-D más unas 20 del bloque E) ronda las 3 h de GPU. Antes de generar: `curl localhost:11434/api/ps`,
@@ -304,7 +304,7 @@ semillas por pieza, el total (48 piezas de A-D más unas 20 del bloque E) ronda 
   tiene ningún token de oro ni de noche índigo (lo más cercano, `cost-*` ámbar y `quest-*` amarillo); los logos son oro
   tallado sobre noche índigo. La mezcla pedida por la persona está escrita en §1 («la madera sostiene, el oro remata»)
   y en el bloque común. Quedan dos cosas por decidir: (a) si los seis hex de oro, bronce, noche y cristal verdoso
-  propuestos en §1 entran como tokens en `index.css` del juego (propuesta desde `docs/propuestas/`) o se quedan solo
+  propuestos en §1 entran como tokens en `index.css` del juego (propuesta desde `docs/proposals/`) o se quedan solo
   en las imágenes; (b) si los paneles de madera llevan canto de oro **en la imagen** (#2, #7) o el canto va por CSS
   (`border` con el hex de oro) y las texturas quedan sin él, que es como está en esta hoja para que el mosaico cierre.
 - **D2 · Violeta.** `biblia.md` §7 y `hoja.md` §6 vetan «purple/violet» (luz reservada del canon) y el cielo de los
@@ -327,7 +327,7 @@ semillas por pieza, el total (48 piezas de A-D más unas 20 del bloque E) ronda 
 ### Decisiones (sesión principal, delegadas por la persona, 2026-11-10)
 
 - **D1:** el canto de oro va por CSS (`border`), no en la textura, para que el mosaico cierre. Los tokens de oro, piedra y
-  noche entran en la interfaz por la propuesta `docs/propuestas/tarkor/diseno-interfaz-2026-11-10.md` (decisión 10:
+  noche entran en la interfaz por la propuesta `docs/proposals/tarkor/diseno-interfaz-2026-11-10.md` (decisión 10:
   el bloque entero); aquí se usan en los prompts.
 - **D2:** el veto sigue: «deep indigo blue», nunca violeta. Si sale violeta, se corrige el prompt, no la regla.
 - **D3:** #1 sirve desde 128 px. La versión pequeña es `tarkor-emblema-simple.svg` (dos tintas, `gold-500` sobre

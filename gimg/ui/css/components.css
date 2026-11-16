@@ -112,6 +112,33 @@ dialog.editor[open] { display: flex; }
 .ed-item { display: grid; gap: 4px; padding: 8px; border: 1px solid var(--rule); background: var(--surface-2); }
 .ed-item .btn { justify-content: flex-start; }
 .ed-nums { font: 13px var(--font-mono); color: var(--text-2); }
+/* recorte (FM 0.6.0): una sola caja sobre la imagen cruda; lo de fuera de la caja se oscurece */
+.crop-stage { box-sizing: border-box; padding: 22px; }
+.crop-inner { position: relative; }
+.crop-box { position: absolute; box-sizing: border-box; outline: 2px solid var(--accent-text); outline-offset: -2px; box-shadow: 0 0 0 100vmax var(--overlay); cursor: move; touch-action: none; }
+.crop-box:focus-visible { outline: var(--focus-w) solid var(--focus); outline-offset: -3px; }
+.crop-box[hidden] { display: none; }
+.crop-handle { width: 44px; height: 44px; background: none; border: 0; opacity: 1; }
+.crop-handle::after { content: ""; position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; background: var(--accent-fill); border: 2px solid var(--on-accent); box-sizing: border-box; }
+.crop-handle.h-nw { left: -22px; top: -22px; }
+.crop-handle.h-ne { right: -22px; top: -22px; }
+.crop-handle.h-sw { left: -22px; bottom: -22px; }
+.crop-handle.h-se { right: -22px; bottom: -22px; }
+.crop-grid { position: absolute; inset: 0; display: grid; grid-template: repeat(var(--n, 2), 1fr) / repeat(var(--n, 2), 1fr); pointer-events: none; }
+.crop-grid[hidden] { display: none; }
+.crop-cell { border: 1px dashed var(--rule); box-sizing: border-box; }
+.crop-cells { display: grid; grid-template-columns: repeat(var(--n, 2), minmax(var(--tap), 1fr)); gap: 6px; }
+.crop-cells[hidden] { display: none; }
+.crop-nums { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; }
+.crop-nums label { display: grid; gap: 2px; }
+.crop-nums input { width: 100%; }
+.crop-preview { max-width: 100%; height: auto; background: var(--surface-2); border: 1px solid var(--rule); }
+.crop-foot { display: grid; gap: 8px; }
+.crop-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.crop-repeat { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.crop-repeat[hidden] { display: none; }
+fieldset.crop-to { border: 1px solid var(--rule); padding: 8px; margin: 0; display: grid; gap: 8px; }
+fieldset.crop-to[hidden] { display: none; }
 dialog.editor-save { width: min(92vw, 460px); }
 dialog.editor-save form { display: grid; gap: 12px; }
 dialog.editor-save fieldset { border: 0; padding: 0; margin: 0; }

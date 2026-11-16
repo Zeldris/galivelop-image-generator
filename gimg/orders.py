@@ -6,14 +6,16 @@ Layout: ``<data>/projects/<project>/orders/<key>/@<profile>/order.json`` and
 This module neither enqueues (queue, F1.4) nor delivers (F1.5): `choose` and `undo` return the old and
 new chosen ids so delivery can hook in. Every read-modify-write holds `fsutil.lock` of ``order.json``.
 
-Public API: `submit`, `set_text`, `attempt_specs`, `add_attempt`, `set_composed`, `attempt_for_entry`, `attempt_image`,
+Public API: `submit`, `set_text`, `attempt_specs`, `add_attempt`, `add_derived`, `set_composed`, `attempt_for_entry`, `attempt_image`,
 `raw_image`, `compose_names`, `compose_paths`, `compose_lock_path`, `pending_image_path`, `mark`, `note`, `choose`, `undo`, `get`, `list_orders`. All raise `GimgError` with codes ``order.*`` on bad input.
 """
 from __future__ import annotations
 
+import contextlib
 import copy
 import os
 import random
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -204,12 +206,38 @@ def _attempt(order: dict, attempt_id) -> dict:
 
 def submit(project: str, order: dict) -> dict:
     """Create or update an order (D18); returns the stored record (a copy).
+    (`create_missing` is the variant that never touches an existing order.)
 
     `order` follows the ``order`` schema (``count`` is accepted but not stored: it is for the caller to
     pass to `attempt_specs`). Resubmitting the same key + profile replaces prompt, references, params
     seed (a missing ``seed`` clears it), initImage and strength (missing ones clear them), draft (a missing one is false) and
     text (a missing one is ``{}``; its keys must be in the profile's ``compose.fields``, else ``order.text_unknown_field``)
     and keeps attempts, chosen and history. Does not enqueue."""
+    return _submit(project, order, False)[0]
+
+
+def create_missing(project: str, order: dict) -> tuple:
+    """Like `submit`, but atomic get-or-create: under the lock of ``order.json``, an order that already exists is returned
+    untouched. Returns ``(record, created)``."""
+    return _submit(project, order, True)
+
+
+def discard_if_empty(project: str, key: str, profile: str) -> None:
+    """Undo the creation of an order (`create_missing`): under the lock, remove it only if it still has no attempts."""
+    path = _order_file(project, key, profile)
+    with fsutil.lock(path):
+        try:
+            record = _read(project, key, profile)
+        except GimgError:
+            return
+        if record["attempts"]:
+            return
+        with contextlib.suppress(OSError):
+            path.unlink()
+            (path.parent / "attempts").rmdir()
+
+
+def _submit(project: str, order: dict, only_new: bool) -> tuple:
     errors = schema.validate(order, schema.load_schema("order"))
     if errors:
         raise GimgError("order.invalid", errors=errors)
@@ -240,12 +268,17 @@ def submit(project: str, order: dict) -> dict:
                 raise
             record = {"key": key, "profile": profile, "createdAt": now, "attempts": [],
                       "chosen": None, "chosenHistory": []}
+            created = True
+        else:
+            if only_new:
+                return copy.deepcopy(record), False
+            created = False
         record.update(fields)
         if not _neg(order.get("negative")):  # only orders with a negative carry the key, so stored orders keep their shape
             record.pop("negative", None)
         record["updatedAt"] = now
         fsutil.write_json(path, record)
-    return copy.deepcopy(record)
+    return copy.deepcopy(record), created
 
 
 def check_order(project: str, order: dict) -> list:
@@ -378,18 +411,8 @@ def attempt_for_entry(project: str, key: str, profile: str, entry_id: int):
     return None
 
 
-def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None) -> int:
-    """Append an attempt in state ``new`` (used by the worker after generating); returns its id.
-
-    Ids are sequential from 1. `spec` needs ``seed``, ``prompt`` and ``params``; ``references``
-    defaults to the order's; ``engine`` / ``engineVersion`` / ``log`` (strings, optional), ``command`` (list of strings) and ``modelFiles`` (name by kind) are stored as given when they have that type (D34). F2.8: ``raw`` (a string, the raw image),
-    ``compose`` (an object, what was composed) and ``composeError`` (``{"code": str, "params": object}``, the composition failed) are
-    stored as given when they have that type. Without `entry_id`, ``image`` is ``attempts/<id>.png``, relative to the order
-    folder. With `entry_id` (the queue entry that made it) ``image`` is ``attempts/q<entry>.png`` and the
-    attempt records ``queueEntry``; the call is idempotent per entry: if an attempt with that
-    ``queueEntry`` exists, its id is returned and nothing is added."""
-    if entry_id is not None and (type(entry_id) is not int or entry_id < 1):
-        raise GimgError("order.spec_invalid", missing="entry_id")
+def _check_spec(spec: dict) -> None:
+    """The spec of an attempt to store needs ``seed``, ``prompt`` and valid ``params`` (``order.spec_invalid`` / ``order.invalid``)."""
     missing = [k for k in ("seed", "prompt", "params") if k not in spec]
     if missing:
         raise GimgError("order.spec_invalid", missing=", ".join(missing))
@@ -402,6 +425,21 @@ def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None)
         _check_fields(spec["prompt"], extra, spec["seed"])
     else:
         _check_fields(spec["prompt"], params, spec["seed"])
+
+
+def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None) -> int:
+    """Append an attempt in state ``new`` (used by the worker after generating); returns its id.
+
+    Ids are sequential from 1. `spec` needs ``seed``, ``prompt`` and ``params``; ``references``
+    defaults to the order's; ``engine`` / ``engineVersion`` / ``log`` (strings, optional), ``command`` (list of strings) and ``modelFiles`` (name by kind) are stored as given when they have that type (D34). F2.8: ``raw`` (a string, the raw image),
+    ``compose`` (an object, what was composed) and ``composeError`` (``{"code": str, "params": object}``, the composition failed) are
+    stored as given when they have that type. Without `entry_id`, ``image`` is ``attempts/<id>.png``, relative to the order
+    folder. With `entry_id` (the queue entry that made it) ``image`` is ``attempts/q<entry>.png`` and the
+    attempt records ``queueEntry``; the call is idempotent per entry: if an attempt with that
+    ``queueEntry`` exists, its id is returned and nothing is added."""
+    if entry_id is not None and (type(entry_id) is not int or entry_id < 1):
+        raise GimgError("order.spec_invalid", missing="entry_id")
+    _check_spec(spec)
 
     def change(order):
         if entry_id is not None:
@@ -454,6 +492,65 @@ def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None)
         return new_id
 
     return _modify(project, key, profile, change)
+
+
+def add_derived(project: str, key: str, profile: str, spec: dict, derived_from: dict, png_data: bytes) -> dict:
+    """Append a derived attempt (`gimg crop`) and write its image, as one step; returns the record (a copy).
+
+    The record is a new one in state ``new`` with sequential id, ``image`` ``attempts/<id>.png`` (no ``queueEntry``, ``raw``,
+    ``compose`` or ``composeError``) and ``derivedFrom`` = a copy of `derived_from` (``{"profile", "key", "attempt", "box",
+    "lockRatio"}``). `spec` has ``seed``, ``prompt`` and ``params`` as `add_attempt` asks, plus the optional ``references``,
+    ``negative`` and ``draft`` it copies. `png_data` are the bytes of the image.
+
+    Everything happens under the lock of ``order.json``: the image is written to a temporary file in ``attempts/`` and
+    renamed to its final name, then the order is saved. If anything fails the final file is removed and the order is
+    not saved, so there is never an image without record nor a record without image (D25: the path is guarded)."""
+    _check_spec(spec)
+    if not isinstance(derived_from, dict) or not isinstance(png_data, (bytes, bytearray)):
+        raise GimgError("order.spec_invalid", missing="derivedFrom")
+    path = _order_file(project, key, profile)
+    if not path.exists():
+        raise GimgError("order.unknown", project=project, order=key, profile=profile)
+    folder = _order_dir(project, key, profile)
+    with fsutil.lock(path):
+        order = _read(project, key, profile)
+        new_id = max((a["id"] for a in order["attempts"]), default=0) + 1
+        image = "attempts/%d.png" % new_id
+        final = paths.inside(folder, image)
+        record = {
+            "id": new_id, "state": "new", "seed": spec["seed"], "prompt": spec["prompt"],
+            "params": copy.deepcopy(spec["params"]),
+            "references": list(spec.get("references", order["references"])),
+            "initImage": None, "strength": None, "image": image, "note": "", "createdAt": _now(),
+            "derivedFrom": copy.deepcopy(derived_from),
+        }
+        if spec.get("draft") is True:
+            record["draft"] = True
+        if isinstance(spec.get("negative"), str) and spec["negative"]:
+            record["negative"] = spec["negative"]
+        order["attempts"].append(record)
+        order["updatedAt"] = _now()
+        placed = False
+        try:
+            final.parent.mkdir(parents=True, exist_ok=True)
+            fd, tmp = tempfile.mkstemp(dir=str(final.parent), prefix=".", suffix=".tmp")
+            try:
+                fsutil.honour_umask(fd)
+                with os.fdopen(fd, "wb") as fh:
+                    fh.write(png_data)
+                os.replace(tmp, final)
+                placed = True
+            except BaseException:
+                with contextlib.suppress(OSError):
+                    os.unlink(tmp)
+                raise
+            fsutil.write_json(path, order)
+        except BaseException:
+            if placed:
+                with contextlib.suppress(OSError):
+                    os.unlink(final)
+            raise
+    return copy.deepcopy(record)
 
 
 def set_composed(project: str, key: str, profile: str, attempt_id: int, compose: dict) -> dict:

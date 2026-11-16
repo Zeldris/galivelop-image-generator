@@ -229,6 +229,28 @@ curl -s -X POST -H 'Content-Type: application/json' \
   $B/api/projects/mi-proyecto/orders/og/fauna%2Flobo/attempts/1/compose -d '{"text":{"title":"El lobo"}}'
 ```
 
+### POST /api/projects/{p}/orders/{profile}/{key}/attempts/{id}/crop
+
+Recorta el intento con una caja y guarda el trozo como **intento derivado**; el original no se toca. Cuerpo: `{"box":
+[x0, y0, x1, y1], "lockRatio": true, "to": {"profile": "p", "key": "k"}}`. `box` son cuatro enteros en píxeles de la
+imagen cruda del intento (`x1` e `y1` no se incluyen); `lockRatio` (por defecto `true`) exige que la caja tenga la
+proporción del perfil de destino (1 % de margen) y da exactamente su `width`×`height`; con `false` el derivado tiene el
+tamaño de la caja, sin remuestrear. Al reducir se promedia el área y al ampliar es bilineal. `to` (opcional) lleva el
+trozo a otro pedido del proyecto; si no existe se crea con el `prompt` del pedido de origen, y el perfil tiene que
+existir. El derivado queda en estado `new`, con `image` `attempts/<id>.png`, la semilla, el prompt, los `params` (con
+el nuevo `width` y `height`), las referencias, el negativo y el borrador del origen, y `derivedFrom`: `{"profile",
+"key", "attempt", "box", "lockRatio"}`; se elige con `choose` como cualquier otro. Respuesta: `{"attempt": {…},
+"profile": "p", "key": "k", "created": false}` (`created` es `true` si el pedido de destino era nuevo). Una sola tarea
+pesada a la vez: la segunda espera hasta 60 s y da 409 `api.heavy_busy`. Errores: `crop.bad_box` (400: no son cuatro
+enteros o la caja no tiene área), `crop.outside` (400: sale de la imagen), `crop.ratio_mismatch` (400), `crop.compose_unsupported` (400: the destination profile composes),
+`crop.bad_target` (400), `order.unknown` y `order.attempt_unknown` (404), `order.profile_unknown` (404, también el del
+destino).
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' \
+  $B/api/projects/mi-proyecto/orders/portada/fauna%2Flobo/attempts/1/crop -d '{"box":[0,64,1536,928]}'
+```
+
 ### GET /api/projects/{p}/orders/{profile}/{key}/attempts/{id}/image
 
 PNG del intento; `?raw=1` da la imagen cruda (sin composición). Con `ETag`: `If-None-Match` devuelve 304. Error:

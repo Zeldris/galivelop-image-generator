@@ -219,6 +219,20 @@ export async function transport(method, url, body) {
           if (a.composeError && a.id === 6) return err(422, 'compose.font_missing', 'Falta la fuente Sora (gimg doctor)', { font: 'Sora' });
           a.compose = { templateId: (body && body.template) || (a.compose && a.compose.templateId) || 'default' }; a.composeError = undefined; return ok(a);
         }
+        if (r7 === 'crop') {
+          const box = (body || {}).box;
+          if (!Array.isArray(box) || box.length !== 4 || !box.every(Number.isInteger) || box[2] <= box[0] || box[3] <= box[1]) return err(400, 'crop.bad_box', `Caja no válida: ${box}`, { value: String(box) });
+          const dest = (body.to && body.to.profile) || r3; const destKey = (body.to && body.to.key) || r4;
+          const prof = projects[r1].config.profiles[dest];
+          if (!prof) return err(404, 'order.profile_unknown', `Perfil desconocido: ${dest}`, { profile: dest });
+          let target = findOrder(r1, dest, destKey); let created = false;
+          if (!target) { target = { key: destKey, profile: dest, prompt: order.prompt, params: {}, text: {}, attempts: [], chosen: null, chosenHistory: [], createdAt: now(), updatedAt: now() }; (ordersOf[r1] = ordersOf[r1] || []).push(target); created = true; }
+          const w = body.lockRatio === false ? box[2] - box[0] : prof.width; const hgt = body.lockRatio === false ? box[3] - box[1] : prof.height;
+          const id = Math.max(0, ...target.attempts.map((x) => x.id)) + 1;
+          const derived = { ...a, id, state: 'new', note: '', compose: undefined, composeError: undefined, raw: undefined, image: `attempts/q${id}.png`, params: { ...a.params, width: w, height: hgt }, derivedFrom: { profile: r3, key: r4, attempt: a.id, box, lockRatio: body.lockRatio !== false }, createdAt: now() };
+          target.attempts.push(derived); target.updatedAt = now();
+          return ok({ attempt: derived, profile: dest, key: destKey, created });
+        }
         if (r7 === 'measure') {
           if (a.id === 3 && !measureBusyOnce.done) { measureBusyOnce.done = true; return err(409, 'measure.busy', 'Hay otra medida en marcha (espera 60 s)'); }
           const k = (a.seed * 7919) % 100;

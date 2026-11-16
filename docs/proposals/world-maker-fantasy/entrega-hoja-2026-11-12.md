@@ -8,7 +8,7 @@ cambiar allí. Leído en `origin/main` `3a10a3fa` y en `origin/claude/marca-inte
 1. `docs/marcas/tarkor/hoja.md` §16: las reglas (DEBE / NUNCA) con su comprobación.
 2. `docs/marcas/tarkor/hoja.md` §17: qué pieza lleva cada pantalla, su tamaño, formato y estado.
 3. `docs/marcas/tarkor/peticiones.md` §3: el prompt de cada pieza.
-4. `docs/propuestas/tarkor/diseno-interfaz-2026-11-10.md`: la propuesta de la que salió UX-40 (ya la tenéis como
+4. `docs/proposals/tarkor/diseno-interfaz-2026-11-10.md`: la propuesta de la que salió UX-40 (ya la tenéis como
    `docs/producto/diseno-interfaz-marca.md`).
 
 **Dónde estarán las imágenes:** `examples/tarkor/entrega/ui/` (interfaz) y `examples/tarkor/entrega/marca/`
@@ -75,5 +75,5 @@ en SVG ya existen: `docs/marcas/tarkor/logos/`.
    la frase de croma de la hoja al final de cada pieza recortada; #27-#38, #42 y #45-#47 con el texto de
    nuestros pedidos.
 9. `image-generator/estilo/` (`gradacion.json`, LUT): sin cambios. `mundo.json`: una sola cosa a revisar, en
-   `docs/propuestas/wmf-imagenes/entrega-hoja-2026-11-12.md`. Las fichas, banners y miniaturas
+   `docs/proposals/wmf-imagenes/entrega-hoja-2026-11-12.md`. Las fichas, banners y miniaturas
    del mundo siguen siendo de vuestro generador y no pasan por esta hoja.

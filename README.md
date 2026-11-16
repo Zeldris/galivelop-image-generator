@@ -112,6 +112,7 @@ python3 -m gimg templates mi-proyecto banner          # plantillas de composici�
 python3 -m gimg measure imagen.png --project mi-proyecto   # paleta, contraste y distancia a la marca
 python3 -m gimg measure imagen.png --family "madera=#1b130c,#332415" --family "oro=#b8862b,#f2c45a"   # % de píxeles por familia de color (+ otros)
 python3 -m gimg sheet --out hoja.png a.png b.png      # hoja de contactos para revisar una ronda
+python3 -m gimg crop mi-proyecto fauna/red-howler portada 3 --box 0,64,1536,928   # recorta el intento 3 a un intento derivado (el original no se toca; --free suelta la proporción, --to y --to-profile lo llevan a otro pedido; en la interfaz, «Recortar» en Más acciones)
 python3 -m gimg export a.png a.webp --size 960x540  # copia a WebP, ICO o BMP (la entrega sigue en PNG)
 python3 -m gimg export a.png b.png --crop 64,0,768,1152 --size 600x900   # recorte declarado (X,Y,W,H del original) y luego reducción
 python3 -m gimg export a.png b.png --size 1536x384 --anchor top   # recorte de la proporción arriba|abajo|izquierda|derecha (o top-left…), por defecto al centro

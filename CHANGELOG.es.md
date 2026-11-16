@@ -15,6 +15,18 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
   --negative`, campo `negative` de la API para intentos nuevos y campos «Prompt negativo» en la interfaz (pedido nuevo
   y retoque). Se pasa a `sd-cli` como `--negative-prompt` y queda en el intento y en el manifiesto de entrega.
 
+- `gimg crop PROYECTO CLAVE PERFIL INTENTO --box x0,y0,x1,y1 [--free] [--to CLAVE] [--to-profile PERFIL]` y
+  `POST …/attempts/{id}/crop`: recortan la imagen cruda de un intento y guardan el trozo como **intento derivado**
+  (`derivedFrom` apunta al origen y a la caja, para repetirlo; el original no se toca). Con la proporción del perfil
+  bloqueada (por defecto) sale exactamente de su tamaño (`crop.ratio_mismatch` si la caja difiere más de un 1 %); con
+  `--free`, del tamaño de la caja. `--to` lleva el trozo a otro pedido, que se crea si no existe. Reducción por áreas
+  y ampliación bilineal (`export.resize`).
+
+- «Recortar» en la interfaz (Más acciones de un intento): un diálogo sobre la imagen cruda con una caja (proporción del
+  perfil o libre, rejilla 2×2 / 3×3 cuyas celdas colocan la caja, paso 1/10/50 px, modo mover/tamaño, caja en números
+  editables, tamaño de salida y vista previa en canvas) que guarda un intento derivado o lo lleva a otro pedido; en un
+  recorte, «Repetir la misma caja en…» otro intento de la tanda. Los derivados llevan el distintivo «Recorte de q…».
+
 ### Cambiado
 
 - `gimg brand lockup` ya no pisa un archivo que exista: da `brand.exists` salvo con `--force` (como `system` y `square`).
