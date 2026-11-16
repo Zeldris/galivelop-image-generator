@@ -45,3 +45,13 @@ Fase 1 de 2026-11-13 (diff contra `origin/main` sobre `9844344`):
 - `.claude/settings.json`: `whole-read.py` entra en un segundo bloque PreToolUse con matcher `Read` sin anclar, junto
   al `^Read$`; juntarlos (pide permiso de la persona; ver también el solape con `leer-entero.py` en la retro).
 - `AGENTS.md`: el check de `.claude/gw.json` lleva una tercera orden (`ci-local.py --validate`) y AGENTS.md nombra dos.
+
+## Revisión del bloque de la interfaz de recortar (2026-11-16): leves de la fase 1
+
+- `crop-editor.js`: cada `pointermove` hace un `refresh()` completo (incluido `drawImage` del raw entero); durante el
+  arrastre, solo la caja y los campos, y la vista previa por `requestAnimationFrame` o al soltar.
+- `crop-editor.js` `showError` llama además a `toastError`, que el `dialog` modal tapa: el error sale duplicado al cerrar.
+- `crop-editor.js`: «Repetir» no se desactiva cuando el perfil compone (falla siempre con `crop.compose_unsupported`).
+- `crop-editor.js` copia de `layout-editor.js` la trampa de foco (`FOCUSABLE`, Tab, `stopPropagation`, devolver el
+  foco): un helper `trapDialog(dlg, opener)` compartido.
+- `crop-editor.js` `boxFor` repite el `toBox` exportado.
