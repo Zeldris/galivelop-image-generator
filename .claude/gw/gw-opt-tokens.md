@@ -86,6 +86,10 @@ las crea una vez; desde entonces son del proyecto.
 - Bitácora por encima de `logSize` (23,7k, 2026-11-16) sin nada que `handoff.py archive` saque solo: los detalles de
   ramas fusionadas de «Pendiente» van a mano a `docs/records/handoff-archive.md` con un puntero (aprobado ese día).
 
+- Barrido y arreglos de revisión hechos en la principal (2026-11-16, `ccr-85e9d14e-zt7p8b` desde `fa842ef`: 77
+  llamadas, 8,3 M del modelo grande a 108k de media; en `gw-worker` Sonnet, ~2,5 M): un barrido o los arreglos de una
+  revisión con 2 o más puntos van a un `gw-worker`, como dice `gw-orchestrate-dealer` (aprobado el 2026-11-16).
+
 ## Ajustes en vigor
 
 - Ventana de compactación automática: `CLAUDE_CODE_AUTO_COMPACT_WINDOW` en `.claude/settings.json`, 200000 desde el
