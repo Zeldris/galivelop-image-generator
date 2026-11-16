@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "ux41/18-barra-relleno-neutra",
+  "profile": "tira",
+  "prompt": "Epic fantasy game asset. Materials: pale matte silver in #c8c8c8 with darker edges in #8f8f8f. Flat diffuse light. Crisp edges, no haze. A long horizontal bar of pale matte silver #c8c8c8, neutral light grey, with a slightly lighter centre line #e2e2e2 and darker #8f8f8f edges, even along its whole length, flat ends, filling 40 percent of the frame height. Orthographic front view. Centred on a solid, uniform, evenly lit chroma-key green background #00ff00, one flat colour edge to edge, the object lit evenly and floating, the bar spanning 88 percent of the frame width.",
+  "seed": 1,
+  "draft": false,
+  "count": 3
+}
