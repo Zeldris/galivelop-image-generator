@@ -254,7 +254,8 @@ class OrderScreen(UiBase):
     """The order: attempts, verdicts, choosing, retouching, compare, lightbox, texts, editor. One order per scenario."""
 
     KEYS = ("fondos/voto", "fondos/elegir", "fondos/comparar", "fondos/retoque", "fondos/textos", "fondos/editor",
-            "fondos/volver", "fondos/plantilla", "fondos/guardar", "fondos/atajos", "fondos/estrecho")
+            "fondos/volver", "fondos/plantilla", "fondos/guardar", "fondos/atajos", "fondos/estrecho", "fondos/recorte",
+            "fondos/recorte-libre")
 
     @classmethod
     def prepare(cls):
@@ -552,6 +553,61 @@ class OrderScreen(UiBase):
         self.page.wait("document.querySelector(\"#template-1 option[value=movida]\")")
         listed = self.api("GET", "/api/projects/%s/profiles/%s/templates" % (PROJECT, PROFILE))
         self.assertIn("movida", [t["id"] for t in listed])
+        self.no_problems()
+
+
+    def open_crop(self, key, n=2):
+        self.order(key)
+        self.js("document.querySelector(\"%s details\").open = true" % self.card(n))
+        self.press(self.card(n), "Recortar")
+        self.page.wait("document.querySelector('dialog.crop[open]') && !document.querySelector('.crop-box').hidden"
+                       " && document.querySelector('.crop-box').style.width")
+
+    def crop_box(self):
+        return self.js("[...document.querySelectorAll('.crop-nums input')].map(i => Number(i.value))")
+
+    def test_crop_moves_the_box_with_the_arrows_and_saves_a_derived_attempt(self):
+        key = "fondos/recorte"
+        self.open_crop(key)
+        self.assertEqual(self.js("document.activeElement.className"), "crop-box")
+        self.js("document.querySelector('input[name=crop-grid][value=\"2\"]').click()")
+        self.page.wait("document.querySelector('[data-cell=\"1\"]')")
+        self.js("document.querySelector('[data-cell=\"1\"]').click()")
+        x0, y0, x1, y1 = self.crop_box()
+        self.assertEqual((x0, y0), (0, 0))
+        self.assertEqual(self.js("document.activeElement.className"), "crop-box")
+        self.page.key("ArrowRight")  # mover, paso 10 px
+        self.assertEqual(self.crop_box(), [10, 0, x1 + 10, y1])
+        self.js("document.querySelector('input[name=crop-mode][value=size]').click(); document.querySelector('.crop-box').focus()")
+        self.page.key("ArrowDown")  # tamaño: con la proporción bloqueada también cambia el ancho
+        b = self.crop_box()
+        self.assertEqual(b[1], 0)
+        self.assertEqual(b[3], y1 + 10)
+        self.assertEqual(self.js("document.querySelector('.crop-preview').width > 0"), True)
+        self.press("dialog.crop", "Guardar como intento derivado")
+        self.page.wait("!document.querySelector('dialog.crop')")
+        derived = [a for a in self.data(key)["attempts"] if a.get("derivedFrom")]
+        self.assertEqual(len(derived), 1)
+        self.assertEqual(derived[0]["derivedFrom"]["box"], b)
+        self.assertEqual(derived[0]["derivedFrom"]["attempt"], 2)
+        self.page.wait("document.querySelector(\".gallery .attempt .badges\") && document.body.textContent.includes('Recorte de q2')")
+        self.no_problems()
+
+    def test_crop_blocks_a_box_outside_the_image_with_its_reason_and_frees_the_ratio(self):
+        key = "fondos/recorte-libre"
+        self.open_crop(key)
+        _, _, x1, y1 = self.crop_box()
+        self.js("""(() => { const i = document.querySelector('.crop-nums input[data-field=x1]');
+            i.value = %d; i.dispatchEvent(new Event('change', {bubbles: true})); })()""" % (x1 + 500))
+        self.page.wait("document.querySelector('dialog.crop [role=status]:not([hidden])')")
+        self.assertTrue(self.js("[...document.querySelectorAll('dialog.crop button')].find(b => b.textContent.includes('Guardar como')).disabled"))
+        self.assertIn("sale de la imagen", self.js("document.querySelector('dialog.crop .notice-warn:not([hidden])').textContent"))
+        self.js("document.querySelector('input[name=crop-ratio][value=\"0\"]').click()")
+        self.js("""(() => { const i = document.querySelector('.crop-nums input[data-field=x1]');
+            i.value = %d; i.dispatchEvent(new Event('change', {bubbles: true}));
+            const j = document.querySelector('.crop-nums input[data-field=y1]');
+            j.value = %d; j.dispatchEvent(new Event('change', {bubbles: true})); })()""" % (x1 - 3, y1))
+        self.page.wait("![...document.querySelectorAll('dialog.crop button')].find(b => b.textContent.includes('Guardar como')).disabled")
         self.no_problems()
 
 

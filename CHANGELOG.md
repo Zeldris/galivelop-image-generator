@@ -22,6 +22,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   1 %); with `--free`, the size of the box. `--to` takes the piece to another order, created if it does not exist.
   Area-average reduction and bilinear enlargement (`export.resize`).
 
+- "Crop" in the interface (More actions of an attempt): a dialog over the raw image with one box (profile ratio or free,
+  2×2 / 3×3 grid whose cells place the box, 1/10/50 px step, move/size mode, box in editable numbers, output size and a
+  canvas preview) that saves a derived attempt or takes it to another order; on a crop, "Repeat the same box on…"
+  another attempt of the batch. Derived attempts carry a "Crop of q…" badge.
+
 ### Changed
 
 - `gimg brand lockup` no longer overwrites an existing file: it gives `brand.exists` unless `--force` is passed (like
