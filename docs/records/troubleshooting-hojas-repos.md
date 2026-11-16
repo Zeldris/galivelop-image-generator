@@ -29,3 +29,17 @@ positivo lo que sí debe salir. Hover y pulsado de e13 se derivan del botón bas
 **Familias (observaciones):** habilidades y fase elección son la misma gema; fase ocupado y estado en curso, la misma
 rosa: vale si no conviven en pantalla. Los cuatro estados solo se distinguen por una gema diminuta (ámbar y rojo casi
 iguales): reforzar el color por CSS. Pestañas pedidas: 12, no 13.
+
+## Encargo UX-41 (2026-11-16, pedidos `examples/tarkor/orders/ux41/`, sin encolar)
+
+Rediseños al escribir los pedidos, antes de generar (elegido por el agente, delegado):
+
+| Problema | Intentos | Rediseño |
+|---|---|---|
+| 11 pestaña reputación: anillo (q1043-q1045); el rediseño a laurel, sin probar, es otro círculo abierto a 16-24 px | q1043-q1045 | Balanza: poste, astil recto y dos platillos (`ux41/14-pestana-reputacion`) |
+| 13 fase fin: «60» grabado y silueta rara; el rediseño a pergamino choca con mapa y leyendas | q1060-q1061 | Puerta cerrada en arco, de tablones con dos herrajes (`ux41/15-fase-fin`) |
+| 11 pestaña mapa: «rolled parchment» da un pergamino, igual que leyendas | q1032 | «flat unfolded map sheet» con pliegues, ruta a trazos y una X; sin «parchment» ni «scroll» |
+| 15 alimento: hogaza con «%» grabado | q1072-q1073 | La categoría nueva `comida` es una cuña de queso con agujeros; el muslo queda para `hud-hambre` |
+| 17 estados: solo cambiaba una gema diminuta | q1103-q1109 | Tres siluetas: triángulo con exclamación, aspa sobre sello rojo, marca de verificación sobre sello musgo |
+| 08 esquina: brazos de madera finos, filo verdoso al recortar | q1005 | Toda de oro, brazos de un quinto de su largo, contorno de bronce grueso; `gimg brand matte --grow 4` |
+| e07 barras: fondo de madera y piedra que hubo que recortar | q660, q662 | Bloque reducido y croma; las bajas se piden a un cuarto del alto y se reducen en vertical a 900×16 |

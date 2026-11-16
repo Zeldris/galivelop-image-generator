@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "ux41/02-estado-error",
+  "profile": "icono",
+  "prompt": "Epic fantasy game asset. Materials: aged dark wood planks with raised grain in #332415 and #46311d, dark forged iron in #171310, old carved gold in #b8862b with dark patina #7a5a1e in the recesses and bright worn edges in #f2c45a, dark cracked stone in #3a342d. Warm raking light from the upper left, deep cool shadows in every groove. A thin dark bronze outline separates gold from background. Physically plausible materials, crisp edges, high contrast, no haze. Single game interface icon of a bold X cross made of two thick straight gold bars crossing at the centre, laid over a round seal of dark red wax #7f1d1d, set on a round medallion of aged dark wood planks framed by a very thin rim of dark cracked stone, the rim a slim narrow band only 8 percent of the medallion's diameter wide; the medallion fills 80 percent of the frame. The motif is old carved gold with chiselled relief, one bold chunky silhouette with thick strokes and large plain shapes, filling 70 percent of the medallion's diameter and kept inside the rim, with a thin dark bronze outline, straight on, readable at very small size. The gold keeps its own warm colour right up to its edges. Centred on a solid, uniform, evenly lit chroma-key green background #00ff00, one flat colour edge to edge, the object lit evenly and floating, 15 percent empty margin on every side.",
+  "seed": 1,
+  "draft": false,
+  "count": 3
+}

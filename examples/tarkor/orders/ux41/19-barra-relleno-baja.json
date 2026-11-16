@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "ux41/19-barra-relleno-baja",
+  "profile": "tira",
+  "prompt": "Epic fantasy game asset. Materials: polished bright gold in #f2c45a with darker edges in #b8862b. Flat diffuse light. Crisp edges, no haze. A long, very slender horizontal bar of polished bright gold #f2c45a with a slightly lighter centre line and hairline darker #b8862b edges, even along its whole length, flat ends, a slim strip only one quarter of the frame height tall. Orthographic front view. Centred on a solid, uniform, evenly lit chroma-key green background #00ff00, one flat colour edge to edge, the object lit evenly and floating, the bar spanning 88 percent of the frame width.",
+  "seed": 1,
+  "draft": false,
+  "count": 3
+}
