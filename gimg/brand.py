@@ -607,7 +607,7 @@ def _paint_colors(inner: str, root: str = "") -> set:
     # A <g> paint counts only through the shapes that inherit it (below), not by itself: a group of lines paints no fill,
     # and a group stroke that every child overrides paints nothing.
     flat = inner if has_css else _TAG.sub(lambda m: m.group(0) if m.group(1) or m.group(2) != "g"
-                                          else "<g%s>" % _no_paint(_mute_attrs(m.group(3)), ("fill", "stroke")), inner)
+                                          else "<g%s>" % _no_paint(m.group(3), ("fill", "stroke")), inner)
     found = [m.group(2) for m in _PAINT.finditer(flat)]
     for st in _STYLE.finditer(flat):
         found += [m.group(3) for m in _DECL.finditer(st.group(1))]
@@ -638,11 +638,10 @@ def _paint_colors(inner: str, root: str = "") -> set:
             elif not closing:
                 above = set().union(*groups[1:]) if len(groups) > 1 else set()
                 for prop in ("fill", "stroke") if tag != "line" else ("stroke",):  # a <line> has no area: an inherited fill paints nothing
-                    if not _own_paint(attrs, prop) and prop not in above and not _CLASS.search(attrs):
-                        inherited.add(prop)
-                for prop in ("fill", "stroke") if tag != "line" else ("stroke",):
                     if _own_paint(attrs, prop) or _CLASS.search(attrs):
                         continue
+                    if prop not in above:
+                        inherited.add(prop)
                     near = next((g[prop] for g in reversed(groups[1:]) if prop in g), None)  # the nearest <g> paint
                     if near is not None:
                         n = _norm_color(near)
@@ -701,8 +700,7 @@ def _mute_attrs(attrs: str, fill0: bool = False, stroke0: bool = False) -> str:
     for prop, inherited in (("fill", fill0), ("stroke", stroke0)):
         own = _opacity(attrs, prop + "-opacity")
         if (own <= 0) if own is not None else inherited:
-            attrs = _PAINT.sub(lambda m, prop=prop: '%s="none"' % prop if m.group(1) == prop else m.group(0), attrs)
-            attrs = _STYLE.sub(lambda m, prop=prop: 'style="%s"' % re.sub(r"(?<![\w-])%s(\s*:\s*)[^;]*" % prop, r"%s\g<1>none" % prop, m.group(1)), attrs)
+            attrs = _no_paint(attrs, (prop,))
             attrs += ' %s="none"' % prop
     return attrs
 
@@ -724,11 +722,10 @@ def _mute(inner: str, root: str = "") -> str:
         o = _opacity(attrs, "opacity")
         fo, so = _opacity(attrs, "fill-opacity"), _opacity(attrs, "stroke-opacity")
         sw = _opacity(attrs, "stroke-width")  # a stroke of width 0 paints nothing, like stroke-opacity 0
-        stroke0 = up[2] if so is None else so <= 0
-        if sw is not None:
-            stroke0 = stroke0 or sw <= 0 if so is not None else sw <= 0
-        return (up[0] or (o is not None and o <= 0), up[1] if fo is None else fo <= 0, stroke0)
-    stack = [state(root, (False, False, False))]
+        # stroke-opacity 0 and stroke-width 0 are kept apart: an own width does not undo an inherited opacity 0
+        return (up[0] or (o is not None and o <= 0), up[1] if fo is None else fo <= 0,
+                up[2] if so is None else so <= 0, up[3] if sw is None else sw <= 0)
+    stack = [state(root, (False, False, False, False))]
     out, last = [], 0
     for m in _TAG.finditer(inner):
         closing, tag, attrs = m.groups()
@@ -741,9 +738,9 @@ def _mute(inner: str, root: str = "") -> str:
         elif not closing:
             out.append(inner[last:m.start()])
             last = m.end()
-            muted, fill0, stroke0 = state(attrs, stack[-1])
+            muted, fill0, op0, w0 = state(attrs, stack[-1])
             if not muted:
-                kept = _mute_attrs(attrs, fill0, stroke0)
+                kept = _mute_attrs(attrs, fill0, op0 or w0)
                 if tag == "line":  # a <line> has no area: no fill paints, whatever its own fill-opacity says
                     kept = _no_paint(kept)
                 out.append("<%s%s>" % (tag, kept))
