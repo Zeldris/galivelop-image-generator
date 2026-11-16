@@ -22,6 +22,11 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
   `--free`, del tamaño de la caja. `--to` lleva el trozo a otro pedido, que se crea si no existe. Reducción por áreas
   y ampliación bilineal (`export.resize`).
 
+- «Recortar» en la interfaz (Más acciones de un intento): un diálogo sobre la imagen cruda con una caja (proporción del
+  perfil o libre, rejilla 2×2 / 3×3 cuyas celdas colocan la caja, paso 1/10/50 px, modo mover/tamaño, caja en números
+  editables, tamaño de salida y vista previa en canvas) que guarda un intento derivado o lo lleva a otro pedido; en un
+  recorte, «Repetir la misma caja en…» otro intento de la tanda. Los derivados llevan el distintivo «Recorte de q…».
+
 ### Cambiado
 
 - `gimg brand lockup` ya no pisa un archivo que exista: da `brand.exists` salvo con `--force` (como `system` y `square`).

@@ -110,7 +110,7 @@ python3 -m gimg templates my-project banner           # the profile's compositio
 python3 -m gimg measure image.png --project my-project   # palette, contrast and distance to the brand
 python3 -m gimg measure image.png --family "wood=#1b130c,#332415" --family "gold=#b8862b,#f2c45a"   # % of pixels per colour family (+ other)
 python3 -m gimg sheet --out sheet.png a.png b.png     # contact sheet to review a round
-python3 -m gimg crop my-project fauna/red-howler portada 3 --box 0,64,1536,928   # crops attempt 3 into a derived attempt (the original is not touched; --free releases the proportion, --to and --to-profile take it to another order)
+python3 -m gimg crop my-project fauna/red-howler portada 3 --box 0,64,1536,928   # crops attempt 3 into a derived attempt (the original is not touched; --free releases the proportion, --to and --to-profile take it to another order; in the interface, "Crop" in More actions)
 python3 -m gimg export a.png a.webp --size 960x540   # copy to WebP, ICO or BMP (the delivery stays PNG)
 python3 -m gimg export a.png b.png --crop 64,0,768,1152 --size 600x900   # declared crop (X,Y,W,H of the original), then scale down
 python3 -m gimg export a.png b.png --size 1536x384 --anchor top   # where the proportion crop sits: top|bottom|left|right (or top-left…), centre by default
