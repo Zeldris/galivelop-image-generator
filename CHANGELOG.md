@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - The interface, crop and layout editors: an error on saving shows only inside the dialog (it used to come back as a
   toast on closing); "Repeat the same box on…" is disabled, with its notice, when the order's profile composes; while
   dragging the box, the preview is painted at most once per frame.
+- `releases.py check` works without GraphQL (it queries the release through the REST API), also from the cloud.
 
 ## [0.6.0] - 2026-11-16
 
