@@ -1164,6 +1164,12 @@ class SquareTests(BrandBase):
         self._draw('<path fill="#123456" d="M0 0L40 0L40 20Z"/><line x1="0" y1="0" x2="40" y2="20" stroke="#fedcba"/>')
         self.assertEqual(self.make(force=True)["flattened"], 2)
 
+    def test_a_group_stroke_counts_only_where_a_child_inherits_it(self):
+        self._draw('<g stroke="#ff0000"><path fill="#123456" stroke="#123456" d="M0 0L40 0L40 20Z"/></g>')
+        self.assertNotIn("flattened", self.make())  # every child overrides the red stroke: it paints nothing
+        self._draw('<g stroke="#ff0000"><path fill="#123456" d="M0 0L40 0L40 20Z"/></g>')
+        self.assertEqual(self.make(force=True)["flattened"], 2)  # the path inherits it
+
     def test_a_line_does_not_inherit_the_root_fill(self):
         self.draw.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20" fill="#ff0000">'
                              '<path fill="#123456" d="M0 0L40 0L40 20Z"/>'

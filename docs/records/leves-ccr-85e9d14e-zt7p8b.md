@@ -8,7 +8,7 @@ De la revisión del diff contra `origin/main` (fase 1). No se arreglan en este p
 - Validaciones y datos repetidos: peso y espaciado en `brand.wordmark` y `brand.system`; la exclusión
   `--palette`/`--colors`; la expresión de color frente a `trace._COLOR`; `PIECES` en JS frente a `brand.SYSTEM_FILES`;
   `brandshop.save` llama al privado `brand._write`.
-- `brand.matte` calcula `border_color` dos veces (en `brand.py` y dentro de `matte.remove_bg`).
+- ~~`brand.matte` calcula `border_color` dos veces~~ ya estaba hecho (`remove_bg(bg=…)`; visto en el barrido del 2026-11-16).
 - Sin verificar (confianza baja): la fuente de reserva en `wordmark`; `_place` redondea la escala a 3 decimales;
   `png.read_rgba` ignora `tRNS`; `--circular` junto a `--vae-tiling` no está probado.
 - El camino completo con `rsvg-convert` (wordmark, lockup, `system` y luego `save`) solo corre en el CI: este
@@ -29,9 +29,9 @@ Fase 1 de 2026-11-13 (diff contra `origin/main` sobre `9844344`):
 - `tile._mark_stale` solo se intenta tras fallar el borrado, y el renombrado suele fallar por lo mismo (carpeta sin
   escritura, archivo abierto en Windows): en ese caso la copia sigue como `.gimg-bak-*` y se da como `kept`
   (límite documentado en `_mark_stale`); una copia marcada se informa como `stale` en cada ejecución hasta que se borre.
-- `brand._paint_colors`: el `stroke` de un `<g>` se cuenta aunque todos sus hijos lo pisen (ya pasaba en `main`).
+- ~~`brand._paint_colors`: el `stroke` de un `<g>` se cuenta aunque todos sus hijos lo pisen~~ hecho (2026-11-16, barrido de `brand.py`).
 - El taller deja poner tolerancia ≥ borde suave (cada campo está en rango, la combinación la rechaza `remove_bg`).
-- `brand._check_weight_spacing` acepta `True` como peso (`isinstance(True, int)`), en `wordmark` y ahora en `resolve_font`.
+- ~~`brand._check_weight_spacing` acepta `True` como peso~~ hecho (2026-11-16, barrido de `brand.py`).
 
 ## Revisión del bloque de recortar (2026-11-16): leves de la fase 1
 
