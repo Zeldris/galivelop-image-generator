@@ -422,6 +422,9 @@ class CropEditor(unittest.TestCase):
         self.assertIn("RATIO_TOLERANCE = 0.01", crop)
         self.assertIn("ENLARGE_WARN = 2", crop)
         self.assertIn("getContext('2d')", crop)
+        self.assertIn("ctx.profileCfg", crop)
+        self.assertIn("cfg.compose", crop)
+        self.assertIn("saveLocked", crop)
         for needle in ("showModal()", "ev.key !== 'Tab'", "ev.stopPropagation()", "opener.isConnected", "startBoxDrag(ev", "boxKey(ev"):
             self.assertIn(needle, crop)
 

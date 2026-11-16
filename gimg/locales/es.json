@@ -619,6 +619,7 @@
   "ui.crop.untouched": "El original no se toca.",
   "ui.crop.save": "Guardar como intento derivado",
   "ui.crop.moveTo": "Llevar a otro pedido…",
+  "ui.crop.compose": "Este perfil compone texto y logo: recorta hacia un perfil sin composición con «Llevar a otro pedido…»",
   "ui.crop.toProfile": "Perfil de destino",
   "ui.crop.toKey": "Clave de destino",
   "ui.crop.toHint": "Si el pedido no existe, se crea con el prompt de este.",

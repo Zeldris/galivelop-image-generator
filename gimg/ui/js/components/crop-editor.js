@@ -95,6 +95,9 @@ export function openCropEditor(ctx, attempt, opener) {
   const error = h('p.notice.notice-bad', { role: 'alert', hidden: true });
   const status = h('p.notice.notice-warn', { role: 'status', hidden: true });
   const warn = h('p.notice.notice-warn.small', { role: 'status', hidden: true });
+  const composeNote = h('p.notice.notice-warn.crop-compose', { role: 'status', hidden: true }, t('ui.crop.compose'));
+  // un perfil que compone (texto y logo) no admite recorte: el servidor lo rechaza con `crop.compose_unsupported`
+  const composes = (cfg) => Boolean(cfg && cfg.compose);
 
   const radios = (name, options, current, onPick) => options.map(([value, label]) => {
     const input = h('input', { type: 'radio', name, value, checked: value === current });
@@ -169,7 +172,7 @@ export function openCropEditor(ctx, attempt, opener) {
         h('fieldset.field', {}, h('legend.label', {}, t('ui.crop.boxFields')), numNodes),
         h('div.field', {}, h('span.label', {}, t('ui.crop.output')), output),
         h('div.field', {}, h('span.label', {}, t('ui.crop.preview')), canvas),
-        status, warn, error)),
+        composeNote, status, warn, error)),
     h('div.crop-foot', {},
       h('p.hint', {}, t('ui.crop.untouched')),
       h('div.crop-actions', {}, cancel, moveBtn, save), toBox_, repeat));
@@ -227,13 +230,16 @@ export function openCropEditor(ctx, attempt, opener) {
     const o = out();
     const k = size && !reason ? enlargement(box, o.w, o.h) : 0;
     output.textContent = size && !reason ? t('ui.crop.outputValue', { w: o.w, h: o.h, scale: k.toFixed(1) }) : '—';
+    const saveLocked = composes(ctx.profileCfg);
+    const goLocked = composes(profiles[toProfile.value]);
+    composeNote.hidden = !(toBox_.hidden ? saveLocked : goLocked);
     status.hidden = !(size && reason);
     if (size && reason) status.textContent = t(`ui.crop.blocked.${reason}`, { w: size.w, h: size.h, ratio: ratioText() });
     warn.hidden = !(k > ENLARGE_WARN);
     if (k > ENLARGE_WARN) warn.textContent = t('ui.crop.small', { scale: k.toFixed(1) });
-    save.disabled = busy || Boolean(reason) || !size;
+    save.disabled = busy || Boolean(reason) || !size || saveLocked;
     moveBtn.disabled = busy || !size;
-    toGo.disabled = busy || Boolean(reason) || !size;
+    toGo.disabled = busy || Boolean(reason) || !size || goLocked;
     repeatGo.disabled = busy || !size;
     for (const el of dlg.querySelectorAll('.ed-side input, .ed-side select, .crop-cells button')) el.disabled = busy || !size;
     paintPreview(reason);

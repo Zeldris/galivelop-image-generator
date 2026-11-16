@@ -619,6 +619,7 @@
   "ui.crop.untouched": "The original is not touched.",
   "ui.crop.save": "Save as derived attempt",
   "ui.crop.moveTo": "Take to another order…",
+  "ui.crop.compose": "This profile composes text and logo: crop into a profile without composition with “Take to another order…”",
   "ui.crop.toProfile": "Target profile",
   "ui.crop.toKey": "Target key",
   "ui.crop.toHint": "If the order does not exist, it is created with this one's prompt.",

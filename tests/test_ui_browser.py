@@ -249,26 +249,17 @@ def order_route(key, profile=PROFILE):
     return "/p/%s/o/%s/%s" % (PROJECT, profile, quote(key, safe=""))
 
 
-@unittest.skipUnless(TOOLS, "ffmpeg and rsvg-convert are needed to compose")
-class OrderScreen(UiBase):
-    """The order: attempts, verdicts, choosing, retouching, compare, lightbox, texts, editor. One order per scenario."""
+class OrderPages(UiBase):
+    """Helpers to open an order and press its buttons; `ORDER_PROFILE` is the profile of the orders."""
 
-    KEYS = ("fondos/voto", "fondos/elegir", "fondos/comparar", "fondos/retoque", "fondos/textos", "fondos/editor",
-            "fondos/volver", "fondos/plantilla", "fondos/guardar", "fondos/atajos", "fondos/estrecho", "fondos/recorte",
-            "fondos/recorte-libre")
-
-    @classmethod
-    def prepare(cls):
-        for key in cls.KEYS:
-            cls.submit(key, count=2, work=False, text={"title1": "Titulo", "subtitle": "Sub"})
-        run_cli("work")
+    ORDER_PROFILE = PROFILE
 
     def order(self, key):
-        self.open(order_route(key), "document.querySelectorAll('.gallery .attempt[data-kind=attempt]').length >= 2")
+        self.open(order_route(key, self.ORDER_PROFILE), "document.querySelectorAll('.gallery .attempt[data-kind=attempt]').length >= 2")
         self.page.wait("[...document.querySelectorAll('.gallery img')].every(i => i.complete && i.naturalWidth > 0)")
 
     def data(self, key):
-        return self.api("GET", "/api/projects/%s/orders/%s/%s" % (PROJECT, PROFILE, quote(key, safe="")))
+        return self.api("GET", "/api/projects/%s/orders/%s/%s" % (PROJECT, self.ORDER_PROFILE, quote(key, safe="")))
 
     def card(self, n):
         return ".gallery .attempt[data-attempt='%d']" % n
@@ -282,6 +273,20 @@ class OrderScreen(UiBase):
             const b = [...root.querySelectorAll('button, a')].find(x => x.textContent.includes(%s));
             if (!b) throw new Error('no button ' + %s); b.click(); })()""" % (
             json.dumps(selector), json.dumps(text or ""), json.dumps(text)))
+
+
+@unittest.skipUnless(TOOLS, "ffmpeg and rsvg-convert are needed to compose")
+class OrderScreen(OrderPages):
+    """The order: attempts, verdicts, choosing, retouching, compare, lightbox, texts, editor. One order per scenario."""
+
+    KEYS = ("fondos/voto", "fondos/elegir", "fondos/comparar", "fondos/retoque", "fondos/textos", "fondos/editor",
+            "fondos/volver", "fondos/plantilla", "fondos/guardar", "fondos/atajos", "fondos/estrecho")
+
+    @classmethod
+    def prepare(cls):
+        for key in cls.KEYS:
+            cls.submit(key, count=2, work=False, text={"title1": "Titulo", "subtitle": "Sub"})
+        run_cli("work")
 
     def test_cards_show_images_and_metadata(self):
         self.order("fondos/voto")
@@ -556,6 +561,20 @@ class OrderScreen(UiBase):
         self.no_problems()
 
 
+@unittest.skipUnless(TOOLS, "ffmpeg and rsvg-convert are needed to compose")
+class CropScreen(OrderPages):
+    """The crop editor on `social` (1280x640, no compose); `og` composes and is blocked."""
+
+    ORDER_PROFILE = "social"
+    KEYS = ("fondos/recorte", "fondos/recorte-libre")
+
+    @classmethod
+    def prepare(cls):
+        for key in cls.KEYS:
+            cls.submit(key, profile="social", count=2, work=False)
+        cls.submit("fondos/recorte-og", count=2, work=False)
+        run_cli("work")
+
     def open_crop(self, key, n=2):
         self.order(key)
         self.js("document.querySelector(\"%s details\").open = true" % self.card(n))
@@ -591,6 +610,19 @@ class OrderScreen(UiBase):
         self.assertEqual(derived[0]["derivedFrom"]["box"], b)
         self.assertEqual(derived[0]["derivedFrom"]["attempt"], 2)
         self.page.wait("document.querySelector(\".gallery .attempt .badges\") && document.body.textContent.includes('Recorte de q2')")
+        self.no_problems()
+
+    def test_crop_is_blocked_with_its_reason_when_the_profile_composes(self):
+        self.open(order_route("fondos/recorte-og", PROFILE), "document.querySelectorAll('.gallery .attempt[data-kind=attempt]').length >= 2")
+        self.page.wait("[...document.querySelectorAll('.gallery img')].every(i => i.complete && i.naturalWidth > 0)")
+        self.js("document.querySelector(\"%s details\").open = true" % self.card(2))
+        self.press(self.card(2), "Recortar")
+        self.page.wait("document.querySelector('dialog.crop[open]') && !document.querySelector('.crop-box').hidden")
+        self.assertIn("Este perfil compone texto y logo", self.js("document.querySelector('dialog.crop .crop-compose:not([hidden])').textContent"))
+        self.assertTrue(self.js("[...document.querySelectorAll('dialog.crop button')].find(b => b.textContent.includes('Guardar como')).disabled"))
+        self.press("dialog.crop", "Llevar a otro pedido")  # sigue disponible para elegir otro perfil
+        self.js("(() => { const s = document.getElementById('crop-to-profile'); s.value = 'social'; s.dispatchEvent(new Event('change', {bubbles: true})); })()")
+        self.page.wait("!document.querySelector('dialog.crop .crop-compose:not([hidden])')")
         self.no_problems()
 
     def test_crop_blocks_a_box_outside_the_image_with_its_reason_and_frees_the_ratio(self):
