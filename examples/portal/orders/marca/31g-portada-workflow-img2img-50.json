@@ -1,0 +1,10 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/31g-portada-workflow-img2img-50",
+  "profile": "portada",
+  "seed": 3191,
+  "count": 2,
+  "prompt": "Antique steel engraving of a nautical chart, flat printed sheet seen straight on. Strict top-down plan view of open sea, exactly the layout of the source image: same positions, same sizes, same diagonal. Two-ink print on off-white paper #fbfcfd: cerulean blue #0072a8 in tints and shades, plus fine ink-grey line art. The sea is drawn with dense parallel engraved wave lines, fine hatching and stipple, in cerulean, calmer and sparser in the lower third. One diagonal chain of flat round buoys drawn in plan, as flat discs seen from directly above: off-white circles with a crisp engraved outline and light concentric hatching, no side view, no spherical shading. One thin engraved rope joins them, beginning at the first buoy and ending at the last. Open water surrounds the chain on every side. The last buoy, lower right, is larger, a flat disc filled solid cobalt blue #3D6FD9, with a bold off-white check mark on its face. Flat graphic print, uniform line weight, visible engraving texture. Not a photograph, not a painting, no perspective, no horizon, no depth, no cast shadows, no reflections, no foam. No text, no letters, no numbers, no compass rose, no boats, no people, no border, no frame.",
+  "initImage": "referencias/31f-portada-workflow-q1425.png",
+  "strength": 0.5
+}
