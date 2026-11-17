@@ -343,6 +343,10 @@ class WordmarkTests(BrandBase):
                          {"#123456", "#ff0000"})
         self.assertEqual(brand._paint_colors('<g stroke="#ff0000" stroke-opacity="0"><path fill="#123456" stroke-width="2" d="M0 0"/></g>'),
                          {"#123456"})  # an own width does not undo an inherited stroke-opacity 0
+        self.assertEqual(brand._paint_colors('<g stroke-width="0"><path fill="#123456" stroke="#ff0000" stroke-opacity="1" d="M0 0"/></g>'),
+                         {"#123456"})  # nor does an own stroke-opacity undo a width 0
+        self.assertEqual(brand._paint_colors('<path fill="#123456" stroke="#ff0000" stroke-width="0" stroke-opacity=".5" d="M0 0"/>'),
+                         {"#123456"})
 
     def _tiny_path(self):
         font = self.tmp / "tiny.ttf"
@@ -961,6 +965,22 @@ class SquareTests(BrandBase):
         self.draw = self.tmp / "ig.svg"
         self.draw.write_text(path_svg(40, 20, "#123456", "ig"))
         self.out = self.tmp / "sq.svg"
+        real = brand._square_ink
+
+        def xml(inner):
+            return ElementTree.fromstring('<svg xmlns="http://www.w3.org/2000/svg">%s</svg>' % inner)
+
+        def parsed(inner, *args, **kw):  # XML in, XML out: the whole ink, not just its start (REVIEW.md)
+            out = real(inner, *args, **kw)
+            try:
+                xml(inner)
+            except ElementTree.ParseError:
+                return out  # a test that feeds broken markup on purpose
+            xml(out)
+            return out
+        patch = mock.patch.object(brand, "_square_ink", parsed)
+        patch.start()
+        self.addCleanup(patch.stop)
 
     def make(self, **kw):
         args = dict(fill="#7C5CD6", ink="#fbfcfd")
@@ -1068,10 +1088,39 @@ class SquareTests(BrandBase):
         for value, want in (("rgb(255 0 0 / .5)", "#ff000080"), ("rgb(255,0,0,.5)", "#ff000080"), ("hsl(0 100% 50%)", "#ff0000")):
             self.assertEqual(brand._norm_color(value), want, value)
         for raw in ("rgb(255,0 0)", "rgb(255 0 0,.5)", "rgb(255,0,0/.5)", "hsl(0,100% 50%)"):
-            self.assertEqual(brand._norm_color(raw), raw, raw)  # not a color: left as written
+            self.assertEqual(brand._norm_color(raw), "", raw)  # malformed: rsvg drops it
+
+    def test_the_comma_form_takes_all_numbers_or_all_percentages(self):
+        """As rsvg 2.58: `rgb(100%, 0, 0)` is malformed; the space form may mix them."""
+        self.assertEqual(brand._norm_color("rgb(100%, 0, 0)"), "")
+        self.assertEqual(brand._norm_color("rgb(100%, 0%, 0%, 0.5)"), "#ff000080")
+        self.assertEqual(brand._norm_color("rgb(255 0% 0)"), "#ff0000")
+
+    def test_exponents_and_none_in_colors(self):
+        for value, want in (("rgb(1e2%, 0%, 0%)", "#ff0000"), ("rgb(2.55E2 0 0)", "#ff0000"), ("rgb(255 0 0 / 5e-1)", "#ff000080"),
+                            ("hsl(1e2 100% 50%)", "#55ff00"), ("hsl(none 100% 50%)", "#ff0000"), ("rgb(none 255 0)", "#00ff00"),
+                            ("hsl(120 none 50%)", "#808080"), ("hsl(120 100% none)", "#000000"), ("rgb(255 0 0 / none)", "#ff000000")):
+            self.assertEqual(brand._norm_color(value), want, value)
+        for raw in ("rgb(none, 0, 0)", "hsl(none, 100%, 50%)", "hsl(120deg 100 50)", "hsl(nonedeg 100% 50%)", "rgb(255,0,0,)"):
+            self.assertEqual(brand._norm_color(raw), "", raw)
+
+    def test_a_malformed_paint_is_not_set(self):
+        """rsvg drops an empty or malformed rgb()/hsl(): the shape inherits, so it counts its group's paint, not its own."""
+        self.assertEqual(brand._paint_colors('<g fill="#00ff00"><path fill="rgb(255, 0 0)" d="M0 0"/></g>'), {"#00ff00"})
+        self.assertEqual(brand._paint_colors('<g fill="#00ff00"><path fill="" d="M0 0"/></g>'), {"#00ff00"})
+        self.assertEqual(brand._paint_colors('<path fill="rgb(100%, 0, 0)" d="M0 0"/>'), {"#000000"})
+        self.assertEqual(brand._paint_colors('<path stroke="hsl(0,1)" fill="#123456" d="M0 0"/>'), {"#123456"})
+        inked = brand._square_ink('<path fill="#123456" stroke="rgb(1,2)" d="M0 0"/>', "#abcdef")
+        self.assertIn('stroke="rgb(1,2)"', inked)  # left as it is: it still paints nothing
+        self.assertTrue(inked.startswith('<g fill="#abcdef"'))
+        for root in ('fill="rgb(1,2)"', 'fill="inherit"', 'fill="unset"'):  # one fill attribute, the ink's: no XML redefined
+            self.assertEqual(brand._square_ink('<path d="M0 0"/>', "#abcdef", root), '<g fill="#abcdef" ><path d="M0 0"/></g>', root)
+        self.assertEqual(brand._paint_colors('<path fill="unset" d="M0 0"/>'), {"#000000"})
+        muted = brand._mute('<path fill="#123456" stroke="#ff0000" stroke-opacity="0" stroke-width="0" d="M0 0"/>')
+        self.assertEqual(muted.count("stroke="), 1, muted)
 
     def test_out_of_range_channels_are_clamped_like_css(self):
-        for value, want in (("rgb(300,0,0)", "#ff0000"), ("rgb(-5,0,0)", "#000000"), ("rgb(0,0,120%)", "#0000ff"),
+        for value, want in (("rgb(300,0,0)", "#ff0000"), ("rgb(-5,0,0)", "#000000"), ("rgb(0%,0%,120%)", "#0000ff"),
                             ("hsl(0,100%,120%)", "#ffffff"), ("rgba(0,0,0,2)", "#000000")):
             self.assertEqual(brand._norm_color(value), want, value)
         self._draw('<path fill="rgb(300,0,0)" d="M0 0L40 0L40 20Z"/><path fill="#f00" d="M0 0L5 0L5 5Z"/>')

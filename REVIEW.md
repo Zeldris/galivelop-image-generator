@@ -71,6 +71,9 @@ creada.
   (criterio)
 - Un arreglo que separa dos condiciones antes unidas (dos campos de estado, dos banderas) tiene tests de cada
   una sola y en los dos sentidos, también donde vuelven a juntarse al usarse (retro 2026-11-17, P2). (criterio)
+- Un test de una salida generada (SVG, XML, JSON) la parsea o la compara entera, nunca solo por su principio
+  (`startswith`): un atributo repetido pasaba así (retro 2026-11-17 barrido de color, P2). En `SquareTests`, toda
+  salida de `_square_ink` se parsea sola (check: `tests/test_brand.py`, `SquareTests.setUp`; el resto, criterio)
 
 ## Traído de otro repo: se adapta a los contratos de este
 

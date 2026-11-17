@@ -91,6 +91,8 @@ las crea una vez; desde entonces son del proyecto.
 - Barrido y arreglos de revisión hechos en la principal (2026-11-16, `ccr-85e9d14e-zt7p8b` desde `fa842ef`: 77
   llamadas, 8,3 M del modelo grande a 108k de media; en `gw-worker` Sonnet, ~2,5 M): un barrido o los arreglos de una
   revisión con 2 o más puntos van a un `gw-worker`, como dice `gw-orchestrate-dealer` (aprobado el 2026-11-16).
+  Se rompió otra vez el 2026-11-17 (barrido P3 en la principal: `brand.py` 19 lecturas, 239k arrastrados); propuesto
+  al flujo que `gw-selector` y el gancho de inicio lo señalen (retro `retro-2026-11-17-barrido-color.md`, P1).
 
 ## Ajustes en vigor
 
