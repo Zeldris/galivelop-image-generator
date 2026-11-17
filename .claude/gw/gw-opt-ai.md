@@ -55,8 +55,8 @@ for l in sys.stdin:
 Filtra por modelo presente y por `ts` desde `DESDE`; sin `DESDE`, la ronda arrastra rondas anteriores.
 
 ```gw-opt-ai
-log: piloto/opt-ai/ronda-2026-11-13.jsonl
-previous: piloto/opt-ai/ronda-2026-11-12.jsonl
+log: piloto/opt-ai/ronda-2026-11-17b.jsonl
+previous: piloto/opt-ai/ronda-2026-11-17.jsonl
 exclude_tasks: warmup
 cold_ms: 100
 ```
@@ -102,7 +102,7 @@ de más de 570 s tuvieron memoria libre mínima < 4,2 GB; con 4,9-5,6 GB libres,
 **Regla por megapíxel (P3 del 17-11, aprobada):** las tareas sin tope propio se miden por megapíxel generado
 (ancho×alto/10⁶), en `steam-deck-libre`: Z-Image p95 ≤ 610 s/Mpx y FLUX p95 ≤ 300 s/Mpx (medido en la ronda del
 17-11: Z-Image p50 545, p95 600, n=308; FLUX p50 215, p95 297, n=33). Las portadas 1344×768 de Z-Image, p95 ≤ 630 s
-(P2 del 14-11; medido el 17-11 p95 560 s, n=15). La regla no tapa una regresión: si la s/paso a 1024² pasa de 58 s en el
+(P2 del 14-11; medido el 17-11 p95 560 s, n=15). La regla vale desde 0,5 Mpx; los iconos de 512² tienen tope propio, p95 ≤ 200 s (P1 del 17-11 tarde: medido p50 177 s, p95 183 s, n=10; la carga y el coste fijo por paso los ponen en 675 s/Mpx). La regla no tapa una regresión: si la s/paso a 1024² pasa de 58 s en el
 banco en frío, se investiga aparte (P4 del 17-11).
 
 ## Script de parada
@@ -150,3 +150,9 @@ ningún `sd-cli` (`pgrep -a sd-cli`).
   541 s de media frente a 57,7 y 537 del banco base: sin regresión del motor ni de la máquina; los 60,7 s/paso de la
   ronda son de la carga continua (calor) y de la memoria; lo cubre la regla por megapíxel (P3). Registro en
   `~/.local/share/gimg/projects/portal/log.jsonl` (claves `opt-ai/p4-14-banco-frio`).
+- **Ronda del 17-11 tarde (`ronda-2026-11-17b`, q1412-1424 y q1367-1370), aprobadas por la persona el 2026-11-17:**
+  17 llamadas Z-Image sin errores; iconos 512² p50 177 s (la P2 de la mañana confirmada), portadas p95 585 s, social
+  589 s/Mpx, memoria libre mínima ≥ 4,1 GB. **P1:** tope propio de iconos 512² y regla por megapíxel desde 0,5 Mpx
+  (en «Tiempos aceptables»). **P2:** al juzgar 31f, desglose de la composición FLUX (q1425-1428) y del img2img de
+  Z-Image, y su cifra a «Tiempos aceptables». Cierre de la ronda: el servicio corre en el equipo y el sandbox no lo para
+  (`flatpak-spawn --host` denegado); lo para la persona con `gimg serve --stop` desde su terminal.
