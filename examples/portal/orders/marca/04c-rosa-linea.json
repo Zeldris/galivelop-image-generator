@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/04c-rosa-linea",
+  "profile": "cuadrado",
+  "seed": 334,
+  "count": 3,
+  "prompt": "An eight-point compass rose drawn in simple line style, outline only, centred: a star of eight slender pointed arms radiating from the centre, four long main arms pointing up, down, left and right, and four shorter diagonal arms between them, each about half as long. Every arm is a narrow empty kite shape drawn only as its outline, a continuous closed contour, hollow inside so the background shows through. One single thin uniform stroke weight everywhere, the same line thickness in every arm, with open space between the lines so that it still reads clearly when shown small as a watermark. No fills at all: no solid areas, no black halves, no two-tone arms, no arm split into a dark half and a light half. Only the star: no ring around it, no circle of tick marks, no scale, no small extra points. The tips of the arms carry nothing: no letters for north, south, east or west, no cardinal initials, no fleur-de-lis, no arrowheads, no degree numbers. Flat vector line drawing, simple line style, technical drawing of a chart instrument, crisp clean lines, perfectly symmetric, seen flat and straight on, the drawing centred with a clear margin around it, a single ink colour, ink grey #13212b, on a plain flat off-white #fbfcfd background that fills the whole image edge to edge. No second colour, no blue, no shading, no hatching, no texture, no shadow, no gradients, no glow, no photographic rendering, no metal, no brass, no 3D, no text, no letters, no initials, no numbers, no numerals, no watermark, no border, no frame."
+}

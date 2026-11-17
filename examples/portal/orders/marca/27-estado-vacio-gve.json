@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/27-estado-vacio-gve",
+  "profile": "formulario",
+  "seed": 2741,
+  "count": 2,
+  "draft": false,
+  "prompt": "An empty state illustration, flat and seen straight on: in the centre, a single measuring dial instrument drawn as crisp ink grey line art with fine engraved shading: a round case with a plain rim, and inside it a blank dial face of plain off-white paper with a ring of short plain tick marks around its edge and one thin straight needle resting at the far left end of the scale, at rest. The small round hub at the foot of the needle is filled with chartreuse yellow-green #b4c424. The dial face carries nothing else. The instrument takes about one third of the width, with wide empty paper margins around it; the background is light off-white #fbfcfd paper with only very faint, pale cerulean bathymetric contour lines of a sea chart, barely visible, kept pale and quiet. Richly detailed engraved antique nautical chart style, like a fine sea chart printed in two inks: many layers of fine lines and hatching, line density increasing in the darker areas to give depth and tone, lines of several weights, crisp and sharp, intricate but calm, premium print quality, high detail, elegant. No horizon, no sky, no landscape, no photographic rendering, no glow, no gradient, no text, no letters, no numbers, no digits, no labels, no brand marks, no watermark, no border, no frame. Palette strictly limited to medium cerulean ocean blue #0072a8 and its tints and shades, off-white #fbfcfd, ink grey #13212b and a touch of chartreuse yellow-green #b4c424 on the hub only."
+}

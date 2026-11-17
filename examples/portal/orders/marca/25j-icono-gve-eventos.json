@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/25j-icono-gve-eventos",
+  "profile": "cuadrado",
+  "seed": 2510,
+  "count": 2,
+  "draft": false,
+  "prompt": "A minimal flat line icon, centred, seen straight on: a history line: one straight vertical line with a few hollow rings set along it, and a short horizontal line leaving each ring to the right. Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, bold and clear enough to read at 24 pixels, generous empty margin around the icon, a single ink colour. Every small circle is a hollow ring, its inside empty, the paper showing through it. The icon takes about two thirds of the square, balanced, geometric, clean vector look, few large simple shapes with wide gaps between the lines. The background is perfectly flat, plain, uniform off-white #fbfcfd paper with no gradient, no texture and no shadow. No photographic rendering, no glow, no 3D, no perspective, no second colour, no thin lines, no extra details, no ornaments, no text, no letters, no numbers, no digits, no watermark, no border, no frame. Palette strictly limited to ink grey #13212b on off-white #fbfcfd."
+}
