@@ -222,3 +222,5 @@
 {"agent":"main","branch":"ccr-85e9d14e-zt7p8b","cacheRead":210795,"cacheWrite":574,"date":"2026-11-17","input":4,"model":"claude-opus-5-5","output":232,"recorded":"2026-11-17T15:02:14Z","refs":[],"session":"0cacc78c"}
 {"agent":"gw-worker","branch":"ccr-85e9d14e-zt7p8b","cacheRead":214479,"cacheWrite":3793,"date":"2026-11-17","input":14,"model":"claude-sonnet-5-5","output":2167,"recorded":"2026-11-17T15:15:05Z","refs":[],"session":"0cacc78c"}
 {"agent":"main","branch":"ccr-85e9d14e-zt7p8b","cacheRead":885914,"cacheWrite":8493,"date":"2026-11-17","input":14,"model":"claude-opus-5-5","output":3491,"recorded":"2026-11-17T15:15:05Z","refs":[],"session":"0cacc78c"}
+{"agent":"main","branch":"ccr-85e9d14e-zt7p8b","cacheRead":751389,"cacheWrite":36364,"date":"2026-11-17","input":16,"model":"claude-opus-5-5","output":4749,"recorded":"2026-11-17T16:08:37Z","refs":[],"session":"32f29102"}
+{"agent":"main","branch":"ccr-85e9d14e-zt7p8b","cacheRead":550885,"cacheWrite":12561,"date":"2026-11-17","input":9,"model":"claude-opus-5-5","output":2197,"recorded":"2026-11-17T16:09:59Z","refs":[],"session":"32f29102"}
