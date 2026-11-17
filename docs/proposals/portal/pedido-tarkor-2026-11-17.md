@@ -39,6 +39,6 @@ Mover q1425-1428 a `top` al reanudar la cola.
 
 | Punto | Estado |
 |---|---|
-| 1 SVG del icono | pendiente |
+| 1 SVG del icono | hecho (2026-11-17): curvas, `viewBox` 314 329 1412 1412, trazo ~1,5×, PNG 512² regenerado; a 24 px se lee como silueta del colmillo, el cordón se funde |
 | 2 og 24c | pendiente (sin encolar) |
 | 3 31f a top | pendiente (cola en pausa) |
