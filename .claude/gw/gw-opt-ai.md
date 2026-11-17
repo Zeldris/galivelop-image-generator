@@ -142,3 +142,9 @@ ningún `sd-cli` (`pgrep -a sd-cli`).
   por megapíxel (en «Tiempos aceptables»). **P4:** repetir el banco en frío (Z-Image 1024², s/paso 60,7 frente a 57,7).
   Pruebas encoladas: banco `opt-ai/p4-14-banco` (#1352-1354), iconos `prueba/p1-*-768|512` (#1355-1360), perfiles
   temporales `prueba768i` y `prueba512i` (se retiran al decidir); pedidos en `piloto/opt-ai/p1/` y `p4/`.
+  **Resultado (2026-11-17):** con la misma semilla, 1024² 556 s, 768² 326 s, 512² 168 s (n=3 cada uno, memoria libre
+  3,3-4,6 GB); trazo y lectura a 24 px iguales en los tres tamaños, y en cada tamaño un intento se aparta del pedido
+  (varía con la semilla, no con el tamaño); hojas en `piloto/opt-ai/p1/`. **Aplicada: perfil `icono` del Portal a
+  512²** (elegido por el agente, delegado; la persona puede volver a 768²); perfiles `prueba*i` retirados. P4: el
+  banco de la mañana coincidió con tests en la CPU (descartado); el banco en frío (`opt-ai/p4-14-banco-frio`,
+  #1361-1363) corre.

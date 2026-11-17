@@ -33,8 +33,8 @@
       }
     },
     "icono": {
-      "width": 1024,
-      "height": 1024,
+      "width": 512,
+      "height": 512,
       "steps": 8,
       "cfg": 1.0,
       "sampler": "euler",
@@ -224,34 +224,6 @@
       "model": "zimage-turbo-q6",
       "targetWidth": 1200,
       "targetHeight": 80,
-      "draft": {
-        "scale": 0.5,
-        "steps": 4
-      }
-    },
-    "prueba768i": {
-      "width": 768,
-      "height": 768,
-      "steps": 8,
-      "cfg": 1.0,
-      "sampler": "euler",
-      "model": "zimage-turbo-q6",
-      "targetWidth": 512,
-      "targetHeight": 512,
-      "draft": {
-        "scale": 0.5,
-        "steps": 4
-      }
-    },
-    "prueba512i": {
-      "width": 512,
-      "height": 512,
-      "steps": 8,
-      "cfg": 1.0,
-      "sampler": "euler",
-      "model": "zimage-turbo-q6",
-      "targetWidth": 512,
-      "targetHeight": 512,
       "draft": {
         "scale": 0.5,
         "steps": 4
