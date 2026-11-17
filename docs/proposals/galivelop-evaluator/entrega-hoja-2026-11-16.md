@@ -73,3 +73,11 @@ pasar a hechos.
 - **Símbolo «GE» y lockup:** `gimg brand` (órdenes en `hoja.md`, R3 y R4); dependen del `.ttf` de Big Shoulders Display.
 - **Suposiciones sin comprobar:** el nombre «chartreuse yellow-green» para `#b4c424` y el recorte de un trazo oliva
   sobre magenta; se miden en la primera ronda (`hoja.md`, sección 15).
+
+## Juicio del 2026-11-17 (elegido por el agente, delegado)
+
+- Aprobadas en `piloto/portal-marca/portal-web-final/galivelop-evaluator/`: portada q1202, cabecera q1164, og q1175,
+  próximamente q1161, patrón q1168, estado vacío q1203, dial de reserva q1206 y 8 iconos de sección.
+- **Icono (nivel de burbuja):** rehecho como figura apaisada. Si vuelve a fallar, el icono es el dial de reserva (q1206,
+  ya vectorizado); no se dibuja a mano.
+- **Fondo 11:** se retira; el fondo se hace por CSS, como el Portal.

@@ -160,3 +160,15 @@ generar:** el relleno aprobado en gris, con la misma forma y tamaño exactos (86
 ffmpeg -i piloto/tarkor-final/e07-barra-relleno-q662.png \
   -vf "format=rgba,hue=s=0,eq=brightness=0.18:contrast=0.9" -frames:v 1 "$L/barra-relleno-neutra.png"
 ```
+
+## Decisiones del 2026-11-17 (elegido por el agente, delegado)
+
+- **Gema o Semilla:** la gema azul es el símbolo de favicon, logo y og del juego, como pide el encargo; la Semilla sigue
+  siendo el emblema de marca en los lockups de la hoja (L1). El og con gema se monta a mano (órdenes de arriba).
+- **Barras (18, 19):** se juzgan en FLUX; la aprobada pasa por img2img con Z-Image (P6) antes de entregarse.
+- **Dado (12):** cubo de oro liso con las caras en blanco; los puntos 1-2-3 se ponen por SVG. Sigue valiendo
+  `14-dado-q1068.png` mientras tanto.
+- **Hecho (03, q1217):** se acepta; el verde se refuerza en CSS con `#4f5f33` detrás del icono.
+- **Medicinal (06):** se rehace como emblema plano de bajo relieve dentro del hueco, igual que las otras 13 categorías.
+- **Enciclopedia (07) y mapa (08):** rehechos como emblema plano montado y hoja sin pliegue (ver troubleshooting).
+- **SVG de medallones:** el trazado del medallón entero queda de referencia; el vector que se entrega es solo el motivo.

@@ -237,3 +237,10 @@ Solo cambia el aspecto. Queda igual:
 5. Opcional: esquina de oro en `#ficha`; icono de la herramienta cuando esté aprobado.
 6. Comprobar en pantalla, en Firefox, lo que aquí solo está calculado: los contrastes de la sección 7 y que el oro no
    pase del 10 % con la galería llena.
+
+## Decisiones del 2026-11-17 (elegido por el agente, delegado)
+
+- **Tema:** solo oscuro. Las imágenes del mundo se ven en el juego sobre fondo oscuro, y juzgarlas en el mismo fondo
+  evita sorpresas; la tabla clara de §8 queda como referencia, sin aplicar.
+- **Favicon:** el del juego (gema de UX-41, punto 21, cuando se apruebe; mientras, `tarkor-emblema-simple.svg`). El
+  icono propio del pincel (`g1-icono-generador`) no se encola.
