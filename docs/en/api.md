@@ -409,7 +409,7 @@ curl -s $B/api/models
 ### GET /api/projects/{p}/check
 
 The `gimg doctor` checks that concern the project (sources of `compose.fonts`, template and logo files, editable
-elements and `viewBox`): `[{"id", "status": "ok|warn|fail", "message", "fix"?}]`. With a brand sheet (or a warning without one) it adds the rows `sheet.present`, `sheet.valid`, `sheet.extends` and `sheet.contrast` (ink and accent on paper, 4.5:1 minimum). Error: `project.unknown`.
+elements and `viewBox`): `[{"id", "status": "ok|warn|fail", "message", "fix"?}]`. With a brand sheet (or a warning without one) it adds the rows `sheet.present`, `sheet.valid`, `sheet.extends` and `sheet.contrast` (ink and the accent's deep tone on paper, 4.5:1 minimum; a broken parent sheet or config shows in `sheet.extends`). Error: `project.unknown`.
 
 ```sh
 curl -s $B/api/projects/mi-proyecto/check
@@ -434,7 +434,7 @@ The resolved brand sheet (`extends` applied): `name`, `version`, `chain` (projec
 `paletteSentence` and `paletteSentenceText` (colours filled in), `vetoes`, `pieceTypes` (a list), `acceptance`,
 `promptWords` and `origin`: for every value (dotted path, e.g. `palette.paper.$value`; veto exceptions by position in the
 merged list) `{"origin": "own|inherited", "project", "file"}`. Errors: `brandsheet.none` and `brandsheet.missing` (404),
-`brandsheet.invalid`, `brandsheet.unreadable`, `brandsheet.extends_missing`, `brandsheet.extends_cycle`,
+`brandsheet.invalid`, `brandsheet.unreadable`, `brandsheet.extends_missing`, `brandsheet.extends_broken`, `brandsheet.extends_cycle`,
 `brandsheet.incomplete`, `brandsheet.unknown_register` (422), `project.unknown`.
 
 ```sh

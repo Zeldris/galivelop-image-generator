@@ -1004,6 +1004,7 @@
   "error.brandsheet.invalid": "la hoja de marca {path} no es válida:",
   "error.brandsheet.none": "el proyecto {project} no declara hoja de marca (brand.sheet)",
   "error.brandsheet.extends_missing": "la hoja de {project} hereda de {parent}, que no está registrado o no tiene hoja",
+  "error.brandsheet.extends_broken": "la hoja de {project} hereda de {parent}, cuya hoja o configuración no se puede usar: {reason}",
   "error.brandsheet.extends_cycle": "la herencia de hojas de {project} da la vuelta: {chain}",
   "error.brandsheet.incomplete": "a la hoja resuelta de {project} le falta {field}",
   "error.brandsheet.bad_placeholder": "la frase de paleta de {project} usa {{{placeholder}}}, que no es un papel de su paleta",
@@ -1067,6 +1068,6 @@
   "doctor.sheet.fix_extends": "registra el proyecto padre (gimg project add) o corrige «extends»",
   "doctor.sheet.extends_ok": "herencia de la hoja resuelta: {chain}",
   "doctor.sheet.contrast_low": "contraste bajo sobre el papel {paper} (mínimo {min}:1): {roles}",
-  "doctor.sheet.contrast_ok": "tinta y acento sobre el papel: contraste de {min}:1 o más",
+  "doctor.sheet.contrast_ok": "tinta y tono hondo del acento sobre el papel: contraste de {min}:1 o más",
   "error.brandsheet.convert_unsupported": "convertir un prompt libre (from) aún no está disponible; da piece y subject"
 }

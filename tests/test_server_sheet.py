@@ -76,6 +76,24 @@ class SheetViewTests(SheetApi):
         resp, payload = self.get("/api/projects/orphan/brand/sheet")
         self.err(resp, payload, 422, "brandsheet.extends_missing")
 
+    def test_parent_with_its_file_gone_is_422_extends_broken(self):
+        # revisión paso 2, punto 1: the parent's missing file is not the child's
+        parent = self.project("portal", PORTAL)
+        self.project("child", {"schemaVersion": 1, "name": "child", "extends": "portal"})
+        (parent / "marca.json").unlink()
+        resp, payload = self.get("/api/projects/child/brand/sheet")
+        self.err(resp, payload, 422, "brandsheet.extends_broken")
+        resp, payload = self.call("POST", "/api/projects/child/brand/prompt",
+                                  headers={"Content-Type": "application/json"}, body={"piece": next(iter(PORTAL["pieceTypes"])), "subject": "x"})
+        self.err(resp, payload, 422, "brandsheet.extends_broken")
+
+    def test_parent_with_invalid_config_is_422_not_500(self):
+        parent = self.project("portal", PORTAL)
+        self.project("child", {"schemaVersion": 1, "name": "child", "extends": "portal"})
+        (parent / "galivelop-images.json").write_text(json.dumps({"name": "portal"}))
+        resp, payload = self.get("/api/projects/child/brand/sheet")
+        self.err(resp, payload, 422, "brandsheet.extends_broken")
+
 
 class PromptTests(SheetApi):
     def post_prompt(self, name, body):
@@ -127,7 +145,7 @@ class CheckRowsTests(SheetApi):
         rows = self.rows("portal")
         self.assertEqual(rows["sheet.valid"]["status"], "ok")
         self.assertEqual(rows["sheet.present"]["status"], "ok")
-        self.assertIn(rows["sheet.contrast"]["status"], ("ok", "warn"))
+        self.assertEqual(rows["sheet.contrast"]["status"], "ok")
         self.assertEqual(set(rows["sheet.valid"]) - {"fix"}, {"id", "status", "message"})
 
     def test_no_sheet_warns_with_the_fix(self):
@@ -142,11 +160,33 @@ class CheckRowsTests(SheetApi):
         self.assertEqual(row["status"], "fail")
         self.assertIn("ghost", row["message"])
 
+    def test_parent_file_gone_blames_the_inheritance(self):
+        # revisión paso 2, punto 1: sheet.present of the child stays ok, the fix is not `brand init`
+        parent = self.project("portal", PORTAL)
+        self.project("child", {"schemaVersion": 1, "name": "child", "extends": "portal"})
+        (parent / "marca.json").unlink()
+        rows = self.rows("child")
+        self.assertEqual(rows["sheet.present"]["status"], "ok")
+        self.assertEqual(rows["sheet.extends"]["status"], "fail")
+        self.assertIn("portal", rows["sheet.extends"]["message"])
+        self.assertNotIn("brand init", rows["sheet.extends"].get("fix", ""))
+        self.assertNotIn("sheet.valid", rows)
+
+    def test_vivid_accent_with_a_deep_tone_is_ok(self):
+        # revisión paso 2, punto 2: the teal accent (3.4:1 vivid) has a deep tone, so contrast is ok
+        teal = json.loads(json.dumps(PORTAL))
+        teal["palette"]["accent"]["$value"] = "#0e9a93"
+        self.project("teal", teal)
+        self.assertLess(B.contrast("#0e9a93", teal["palette"]["paper"]["$value"]), B.TONE_THRESHOLD)
+        self.assertEqual(self.rows("teal")["sheet.contrast"]["status"], "ok")
+
     def test_low_contrast_warns(self):
         low = json.loads(json.dumps(PORTAL))
         low["palette"]["ink"]["$value"] = "#f0f0f0"
         self.project("pale", low)
-        self.assertEqual(self.rows("pale")["sheet.contrast"]["status"], "warn")
+        row = self.rows("pale")["sheet.contrast"]
+        self.assertEqual(row["status"], "warn")
+        self.assertIn("#f0f0f0", row["message"])
 
     def test_missing_file_fails(self):
         self.project("gone", None)

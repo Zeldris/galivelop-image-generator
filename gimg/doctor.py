@@ -455,7 +455,7 @@ def _sheet(name: str) -> list:
         if exc.code == "brandsheet.missing":
             return [Check("sheet.present", FAIL, "doctor.sheet.missing", {"path": rel},
                           "doctor.sheet.fix_init", {"project": name})]
-        if exc.code in ("brandsheet.extends_missing", "brandsheet.extends_cycle"):
+        if exc.code in ("brandsheet.extends_missing", "brandsheet.extends_broken", "brandsheet.extends_cycle"):
             return [Check("sheet.present", OK, "doctor.sheet.present", {"path": rel}),
                     Check("sheet.extends", FAIL, "doctor.sheet.extends_bad", {"message": message},
                           "doctor.sheet.fix_extends")]
@@ -468,11 +468,18 @@ def _sheet(name: str) -> list:
         out.append(Check("sheet.extends", OK, "doctor.sheet.extends_ok", {"chain": " <- ".join(sheet["chain"])}))
     paper = sheet["palette"]["paper"]["$value"]
     low = []
-    for role in ("ink", "accent"):
-        value = sheet["palette"][role]["$value"]
-        ratio = brandsheet.contrast(value, paper)
-        if ratio < brandsheet.TONE_THRESHOLD:
-            low.append("%s %s (%.1f:1)" % (role, value, ratio))
+    ink = sheet["palette"]["ink"]["$value"]
+    ratio = brandsheet.contrast(ink, paper)
+    if ratio < brandsheet.TONE_THRESHOLD:
+        low.append("ink %s (%.1f:1)" % (ink, ratio))
+    # the accent is the vivid one by design: what must read as text is its computed deep tone (accent_tones)
+    accent = sheet["palette"]["accent"]["$value"]
+    try:
+        brandsheet.accent_tones(accent, paper)
+    except GimgError as exc:
+        if exc.code != "brandsheet.no_tone":
+            raise
+        low.append("accent %s (%.1f:1)" % (accent, brandsheet.contrast(accent, paper)))
     if low:
         out.append(Check("sheet.contrast", WARN, "doctor.sheet.contrast_low",
                          {"roles": ", ".join(low), "min": brandsheet.TONE_THRESHOLD, "paper": paper},

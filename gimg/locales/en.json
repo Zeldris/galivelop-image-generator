@@ -1004,6 +1004,7 @@
   "error.brandsheet.invalid": "brand sheet {path} is not valid:",
   "error.brandsheet.none": "project {project} declares no brand sheet (brand.sheet)",
   "error.brandsheet.extends_missing": "the sheet of {project} extends {parent}, which is not registered or has no sheet",
+  "error.brandsheet.extends_broken": "the sheet of {project} extends {parent}, whose sheet or config cannot be used: {reason}",
   "error.brandsheet.extends_cycle": "the sheet inheritance of {project} loops: {chain}",
   "error.brandsheet.incomplete": "the resolved sheet of {project} lacks {field}",
   "error.brandsheet.bad_placeholder": "the palette sentence of {project} uses {{{placeholder}}}, which is not a role of its palette",
@@ -1067,6 +1068,6 @@
   "doctor.sheet.fix_extends": "register the parent project (gimg project add) or fix \"extends\"",
   "doctor.sheet.extends_ok": "sheet inheritance resolved: {chain}",
   "doctor.sheet.contrast_low": "low contrast on paper {paper} (minimum {min}:1): {roles}",
-  "doctor.sheet.contrast_ok": "ink and accent on paper: contrast of {min}:1 or more",
+  "doctor.sheet.contrast_ok": "ink and the accent's deep tone on paper: contrast of {min}:1 or more",
   "error.brandsheet.convert_unsupported": "converting a free prompt (from) is not available yet; give piece and subject"
 }

@@ -56,13 +56,25 @@ def _project_sheet(name: str, child: str | None = None) -> dict:
     except GimgError as exc:
         if child is not None and exc.code == "project.unknown":
             raise GimgError("brandsheet.extends_missing", project=child, parent=name)
+        if child is not None and exc.code.startswith("project.config_"):
+            raise GimgError("brandsheet.extends_broken", project=child, parent=name,
+                            reason=exc.message().replace("\n", " "))
         raise
     rel = project["config"].get("brand", {}).get("sheet")
     if rel is None:
         if child is not None:
             raise GimgError("brandsheet.extends_missing", project=child, parent=name)
         raise GimgError("brandsheet.none", project=name)
-    return load(paths.inside(project["root"], rel))
+    if child is None:
+        return load(paths.inside(project["root"], rel))
+    try:
+        return load(paths.inside(project["root"], rel))
+    except GimgError as exc:
+        # the parent's file is the broken one, not the child's sheet: say so (review paso 2, point 1)
+        if exc.code.startswith("brandsheet."):  # path.* (D25) keeps its own code
+            raise GimgError("brandsheet.extends_broken", project=child, parent=name,
+                            reason=exc.message().replace("\n", " "))
+        raise
 
 
 def _leaves(value, prefix, out):

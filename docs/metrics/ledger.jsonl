@@ -232,3 +232,10 @@
 {"agent":"main","branch":"hoja-datos","cacheRead":794218,"cacheWrite":58971,"date":"2026-11-17","input":13,"model":"claude-opus-5-5","output":2815,"recorded":"2026-11-17T20:50:46Z","refs":[],"session":"0cacc78c"}
 {"agent":"general-purpose","branch":"hoja-datos","cacheRead":192101,"cacheWrite":19923,"date":"2026-11-17","input":10,"model":"claude-opus-5-5","output":2083,"recorded":"2026-11-17T20:51:08Z","refs":[],"session":"0cacc78c"}
 {"agent":"main","branch":"hoja-datos","cacheRead":372093,"cacheWrite":1034,"date":"2026-11-17","input":7,"model":"claude-opus-5-5","output":470,"recorded":"2026-11-17T20:51:08Z","refs":[],"session":"0cacc78c"}
+{"agent":"general-purpose","branch":"hoja-datos","cacheRead":303854,"cacheWrite":11371,"date":"2026-11-17","input":12,"model":"claude-opus-5-5","output":7114,"recorded":"2026-11-17T20:55:06Z","refs":[],"session":"0cacc78c"}
+{"agent":"gw-reviewer","branch":"hoja-datos","cacheRead":1160364,"cacheWrite":63533,"date":"2026-11-17","input":38,"model":"claude-opus-5-5","output":12987,"recorded":"2026-11-17T20:55:06Z","refs":[],"session":"0cacc78c"}
+{"agent":"gw-worker","branch":"hoja-datos","cacheRead":15606,"cacheWrite":20711,"date":"2026-11-17","input":4,"model":"claude-opus-5-5","output":447,"recorded":"2026-11-17T20:55:06Z","refs":[],"session":"0cacc78c"}
+{"agent":"main","branch":"hoja-datos","cacheRead":636507,"cacheWrite":5833,"date":"2026-11-17","input":12,"model":"claude-opus-5-5","output":3118,"recorded":"2026-11-17T20:55:06Z","refs":[],"session":"0cacc78c"}
+{"agent":"gw-worker","branch":"hoja-datos","cacheRead":679462,"cacheWrite":29175,"date":"2026-11-17","input":38,"model":"claude-opus-5-5","output":8258,"recorded":"2026-11-17T20:58:37Z","refs":[],"session":"0cacc78c"}
+{"agent":"main","branch":"hoja-datos","cacheRead":131061,"cacheWrite":545,"date":"2026-11-17","input":4,"model":"claude-opus-5-5","output":43,"recorded":"2026-11-17T20:58:37Z","refs":[],"session":"0cacc78c"}
+{"agent":"main","branch":"hoja-datos","cacheRead":131606,"cacheWrite":288,"date":"2026-11-17","input":2,"model":"claude-opus-5-5","output":82,"recorded":"2026-11-17T20:58:41Z","refs":[],"session":"0cacc78c"}

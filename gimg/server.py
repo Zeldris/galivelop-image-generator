@@ -47,7 +47,8 @@ _EXACT = {
     404: ("project.unknown", "order.unknown", "order.profile_unknown", "order.attempt_unknown", "queue.unknown",
           "api.not_found", "compose.template_missing", "compose.logo_missing", "brandsheet.none", "brandsheet.missing"),
     # the project's sheet exists but its content (or its parents) cannot be used
-    422: ("brandsheet.invalid", "brandsheet.unreadable", "brandsheet.extends_missing", "brandsheet.extends_cycle",
+    422: ("brandsheet.invalid", "brandsheet.unreadable", "brandsheet.extends_missing", "brandsheet.extends_broken",
+          "brandsheet.extends_cycle",
           "brandsheet.incomplete", "brandsheet.unknown_register", "brandsheet.no_tone"),
     405: ("api.method_not_allowed",), 411: ("api.length_required",), 413: ("api.body_too_large",),
     415: ("api.content_type",),

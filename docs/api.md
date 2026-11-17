@@ -400,8 +400,8 @@ curl -s $B/api/models
 ### GET /api/projects/{p}/check
 
 Las comprobaciones de `gimg doctor` que tocan al proyecto (fuentes de `compose.fonts`, archivos de plantillas y
-logos, elementos editables y `viewBox`): `[{"id", "status": "ok|warn|fail", "message", "fix"?}]`. Error:
-Con hoja de marca (o sin ella, avisando) añade las filas `sheet.present`, `sheet.valid`, `sheet.extends` y `sheet.contrast` (tinta y acento sobre el papel, mínimo 4,5:1). Error: `project.unknown`.
+logos, elementos editables y `viewBox`): `[{"id", "status": "ok|warn|fail", "message", "fix"?}]`.
+Con hoja de marca (o sin ella, avisando) añade las filas `sheet.present`, `sheet.valid`, `sheet.extends` y `sheet.contrast` (tinta y tono hondo del acento sobre el papel, mínimo 4,5:1; una hoja o configuración del padre rota sale en `sheet.extends`). Error: `project.unknown`.
 
 ```sh
 curl -s $B/api/projects/mi-proyecto/check
@@ -425,7 +425,7 @@ La hoja de marca resuelta (con la herencia de `extends` aplicada): `name`, `vers
 `closing`, `paletteSentence` y `paletteSentenceText` (con los colores puestos), `vetoes`, `pieceTypes` (lista), `acceptance`,
 `promptWords` y `origin`: por cada valor (ruta con puntos, p. ej. `palette.paper.$value`; las excepciones de vetos, por su
 posición en la lista fusionada) `{"origin": "own|inherited", "project", "file"}`. Errores: `brandsheet.none` y
-`brandsheet.missing` (404), `brandsheet.invalid`, `brandsheet.unreadable`, `brandsheet.extends_missing`,
+`brandsheet.missing` (404), `brandsheet.invalid`, `brandsheet.unreadable`, `brandsheet.extends_missing`, `brandsheet.extends_broken`,
 `brandsheet.extends_cycle`, `brandsheet.incomplete`, `brandsheet.unknown_register` (422), `project.unknown`.
 
 ```sh

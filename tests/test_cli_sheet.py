@@ -38,6 +38,22 @@ class InitTests(SheetCli):
         self.assertEqual(self.run_cli("brand", "init", "--project", "fresh", "--force")[0], 0)
         self.assertNotIn("mine", json.loads((root / "marca.json").read_text()))
 
+    def test_init_never_writes_over_the_config_nor_git(self):
+        # revisión paso 2, punto 5: `brand.sheet` passes the same guard as delivery.dir and manifest, also with --force
+        for rel, code_expected in (("galivelop-images.json", "cannot be galivelop-images.json"),
+                                   (".git/marca.json", "cannot be inside .git")):
+            root = self.project("fresh", rel=None)
+            cfg_path = root / "galivelop-images.json"
+            cfg = json.loads(cfg_path.read_text())
+            cfg["brand"] = {"sheet": rel}
+            cfg_path.write_text(json.dumps(cfg))
+            before = cfg_path.read_text()
+            code, _, err = self.run_cli("brand", "init", "--project", "fresh", "--force", "--json")
+            self.assertEqual(code, 1)
+            self.assertIn(code_expected, err)
+            self.assertEqual(cfg_path.read_text(), before)
+            self.assertFalse((root / ".git" / "marca.json").exists())
+
     def test_init_extends_and_unknown_parent(self):
         self.project("parent", PORTAL)
         root = self.project("child", rel=None)
