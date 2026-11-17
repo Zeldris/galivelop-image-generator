@@ -69,6 +69,8 @@ creada.
 - Un componente que los tests sustituyen por un doble (fake, mock, stub) tiene también una prueba de humo contra el
   real: arrancarlo y hacer una llamada de punta a punta. Se omite en local si falta el real y falla en el CI.
   (criterio)
+- Un arreglo que separa dos condiciones antes unidas (dos campos de estado, dos banderas) tiene tests de cada
+  una sola y en los dos sentidos, también donde vuelven a juntarse al usarse (retro 2026-11-17, P2). (criterio)
 
 ## Traído de otro repo: se adapta a los contratos de este
 

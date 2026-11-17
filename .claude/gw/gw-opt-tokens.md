@@ -24,6 +24,8 @@ las crea una vez; desde entonces son del proyecto.
 - Subagentes que escriben código mientras la principal sigue: en worktree (`isolation: "worktree"`) y de vuelta con
   `merge-branch.sh`, nunca en el árbol principal (el gancho de parada bloqueó 5 vueltas × ~105k el 2026-11-04; aprobado
   ese día, propuesto al flujo en `docs/records/retro-2026-11-04-f2-motor.md`).
+- La revisión de un bloque de más de `reviewTrivialLines` líneas la hace el `gw-reviewer` con un encargo de un
+  párrafo (intención y alcance), no la principal leyendo el módulo (aprobado el 2026-11-17; ~250k por bloque).
 - Cada `docs/records/lectura-*` abre con `**HEAD leído:** <repo> <rama> <sha>`: la siguiente lectura empieza con
   `git log <sha>..` (aprobado el 2026-11-04).
 
@@ -172,3 +174,6 @@ las crea una vez; desde entonces son del proyecto.
   un `/clear` deja el arranque en el suelo.
 - 2026-11-15, L7 de `ccr-85e9d14e-zt7p8b` desde `6e73f1e`: principal 60 llamadas, 7,7 M (128k de media); 5 subagentes,
   134 llamadas, 12,9 M (arranque medio 66,7k; arreglos de la fase 1, 47 llamadas y 4,6 M).
+- 2026-11-17, `ccr-85e9d14e-zt7p8b` desde `c5827e2` (tanda L8, barrido P2, fase 1): principal 57 llamadas, 6,56 M
+  (115k de media, techo 138k, 0 compactaciones); revisor de fase 1 ~45k. Evitable: 220k arrastrados por leer
+  `brand.py` en la principal para revisar.
