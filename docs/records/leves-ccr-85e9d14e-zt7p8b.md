@@ -2,12 +2,12 @@
 
 De la revisión del diff contra `origin/main` (fase 1). No se arreglan en este pull request ni vuelven a revisarse en él.
 
-- `brandshop.resolve_font` llama a `fc-match` sin el peso y rechaza las `.ttc`.
-- Los límites de los campos del taller no casan con los del servidor: borde mínimo 0 (el servidor pide 1 o más), texto
-  del nombre con `maxlength` 100 (`MAX_TEXT` es 60), tolerancias hasta 255 (la distancia llega a ~441).
-- Validaciones y datos repetidos: peso y espaciado en `brand.wordmark` y `brand.system`; la exclusión
+- ~~`brandshop.resolve_font` llama a `fc-match` sin el peso y rechaza las `.ttc`.~~ ya estaba hecho (visto el 2026-11-17: `family:weight=N` y `.ttc`/`.otc`).
+- ~~Los límites de los campos del taller no casan con los del servidor: borde mínimo 0 (el servidor pide 1 o más), texto
+  del nombre con `maxlength` 100 (`MAX_TEXT` es 60), tolerancias hasta 255 (la distancia llega a ~441).~~ ya estaba hecho (visto el 2026-11-17).
+- ~~Validaciones y datos repetidos: peso y espaciado en `brand.wordmark` y `brand.system`; la exclusión
   `--palette`/`--colors`; la expresión de color frente a `trace._COLOR`; `PIECES` en JS frente a `brand.SYSTEM_FILES`;
-  `brandshop.save` llama al privado `brand._write`.
+  `brandshop.save` llama al privado `brand._write`.~~ ya estaba hecho (visto el 2026-11-17: `_check_weight_spacing`, la guarda de paleta, `_trace._COLOR`, test de `PIECES`, `brand.write_file`).
 - ~~`brand.matte` calcula `border_color` dos veces~~ ya estaba hecho (`remove_bg(bg=…)`; visto en el barrido del 2026-11-16).
 - Sin verificar (confianza baja): la fuente de reserva en `wordmark`; `_place` redondea la escala a 3 decimales;
   `png.read_rgba` ignora `tRNS`; `--circular` junto a `--vae-tiling` no está probado.
@@ -16,8 +16,8 @@ De la revisión del diff contra `origin/main` (fase 1). No se arreglan en este p
 
 Fase 1 de 2026-11-13 (diff contra `origin/main` sobre `9844344`):
 
-- `brand lockup --force` reutiliza la clave de ayuda `cli.arg.brand_force_square` (`gimg/cli.py:136`); mejor una
-  genérica `cli.arg.brand_force`.
+- ~~`brand lockup --force` reutiliza la clave de ayuda `cli.arg.brand_force_square` (`gimg/cli.py:136`); mejor una
+  genérica `cli.arg.brand_force`.~~ ya estaba hecho (visto el 2026-11-17).
 
 ## Tandas 1-5 (2026-11-13/14), sacados de la bitácora el 2026-11-15 (retro de la sexta tanda, P1)
 
