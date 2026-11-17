@@ -973,7 +973,7 @@
   "ui.brand.shop.done": "Done",
   "ui.brand.shop.needName": "Type a valid name.",
   "ui.brand.shop.needSource": "Pick a source attempt first.",
-  "ui.brand.shop.needTolBelowSoft": "The tolerance must be lower than the softness.",
+  "ui.brand.shop.needTolBelowSoft": "The tolerance must be 0 or more and lower than the softness.",
   "ui.brand.shop.needMatte": "Remove the background first.",
   "ui.brand.shop.needTrace": "Trace the emblem to color SVG first.",
   "ui.brand.shop.needWord": "Draw the wordmark first.",

@@ -973,7 +973,7 @@
   "ui.brand.shop.done": "Hecho",
   "ui.brand.shop.needName": "Escribe un nombre válido.",
   "ui.brand.shop.needSource": "Elige antes un intento de origen.",
-  "ui.brand.shop.needTolBelowSoft": "La tolerancia tiene que ser menor que el suavizado.",
+  "ui.brand.shop.needTolBelowSoft": "La tolerancia tiene que ser 0 o más y menor que el suavizado.",
   "ui.brand.shop.needMatte": "Quita antes el fondo.",
   "ui.brand.shop.needTrace": "Pasa antes el emblema a SVG en color.",
   "ui.brand.shop.needWord": "Dibuja antes el wordmark.",

@@ -194,7 +194,7 @@ export function brandWorkshop(project, cfg) {
     h('div.cols-4', {}, field('shop-tol', k('tol'), tol, k('tolHint')), field('shop-soft', k('soft'), soft, k('softHint')),
       field('shop-border', k('border'), border, k('borderHint')), field('shop-grow', k('grow'), grow, k('growHint'))),
     h('label.check', {}, holes, h('span', {}, k('holes'))),
-    action(k('matteGo'), () => (!validName() ? k('needName') : !state.source ? k('needSource') : !(numOf(tol, 60) < numOf(soft, 110)) ? k('needTolBelowSoft') : null), async () => {
+    action(k('matteGo'), () => (!validName() ? k('needName') : !state.source ? k('needSource') : !(numOf(tol, 60) >= 0 && numOf(tol, 60) < numOf(soft, 110)) ? k('needTolBelowSoft') : null), async () => {
       const r = await api.brandMatte(project, { name: nameInput.value, source: state.source, tol: numOf(tol, 60), soft: numOf(soft, 110), border: numOf(border, 6), grow: numOf(grow, 3), holes: holes.checked });
       state.transparent = r && Number.isFinite(r.transparent) ? r.transparent : null;
       await reload();

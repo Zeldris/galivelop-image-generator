@@ -501,8 +501,8 @@ def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None)
     return _modify(project, key, profile, change)
 
 
-_CROP_TMP_RE = re.compile(r"^\.\d+\.crop\..*\.tmp$")
 _CROP_TMP = ".crop."  # temp-file marker of `add_derived` in attempts/
+_CROP_TMP_RE = re.compile(r"^\.\d+" + re.escape(_CROP_TMP) + r".*\.tmp$")
 
 
 def add_derived(project: str, key: str, profile: str, spec: dict, derived_from: dict, png_data: bytes) -> dict:
@@ -532,7 +532,7 @@ def add_derived(project: str, key: str, profile: str, spec: dict, derived_from: 
         record["derivedFrom"] = copy.deepcopy(derived_from)
         order["attempts"].append(record)
         order["updatedAt"] = _now()
-        for stale in final.parent.glob(".*" + _CROP_TMP + "*.tmp"):
+        for stale in (final.parent.iterdir() if final.parent.is_dir() else ()):  # attempts/ may not exist yet
             if not _CROP_TMP_RE.match(stale.name):  # remains of a crop killed mid-write (only add_derived
                 continue                              # makes them, under this lock); any other hidden file stays
             with contextlib.suppress(OSError):

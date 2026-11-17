@@ -68,9 +68,9 @@ Hechos los cinco en `4c297c1` (barrido B, 2026-11-16).
 ## Fase 1 antes de `main` (2026-11-17): leves
 
 - ~~`brand.py:743` `_mute`: llama a `_mute_attrs(attrs, fill0, op0 or w0)`, así que un `stroke-opacity` propio pisa un `stroke-width` 0 (propio o heredado) y el trazo vuelve a contar; `square()` informa `flattened` de más (la salida no cambia). Ya pasaba en `main`; pasar `w0` aparte.~~ hecho (2026-11-17, barrido de color)
-- `orders.py:504-505, 535-536`: `_CROP_TMP_RE` repite a mano el `.crop.` de `_CROP_TMP`; construirla con `re.escape(_CROP_TMP)` y quitar el glob.
-- `export.py:157, 173` `_STATS`: contador global de módulo que solo sirve a un test y se actualiza por fila en producción (compartido entre hilos); que el test parchee el paso de filas y quitarlo.
-- `brand-workshop.js:197`: la guarda tolerancia ≥ suavizado no mira `tol >= 0` (`numOf` no recorta al `min`); con -5/110 el botón sigue activo y el servidor devuelve el error crudo de `remove_bg`.
+- ~~`orders.py:504-505, 535-536`: `_CROP_TMP_RE` repite a mano el `.crop.` de `_CROP_TMP`; construirla con `re.escape(_CROP_TMP)` y quitar el glob.~~ hecho (2026-11-17, tanda 1 de leves)
+- ~~`export.py:157, 173` `_STATS`: contador global de módulo que solo sirve a un test y se actualiza por fila en producción (compartido entre hilos); que el test parchee el paso de filas y quitarlo.~~ hecho (2026-11-17, tanda 1 de leves)
+- ~~`brand-workshop.js:197`: la guarda tolerancia ≥ suavizado no mira `tol >= 0` (`numOf` no recorta al `min`); con -5/110 el botón sigue activo y el servidor devuelve el error crudo de `remove_bg`.~~ hecho (2026-11-17, tanda 1 de leves)
 
 ## Fase 1 del bloque desde `78975bf` (2026-11-17, barrido de color): leves
 
