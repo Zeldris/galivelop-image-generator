@@ -1,0 +1,10 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/24e-og-tarkor-img2img-50",
+  "profile": "social",
+  "seed": 2491,
+  "count": 2,
+  "prompt": "Antique steel engraving of a calm sea, flat printed sheet seen straight on. Exactly the layout of the source image: same positions, same sizes, same curves, same empty areas. Two-ink print on off-white paper #fbfcfd: cerulean blue #0072a8 in tints and shades, plus fine ink-grey #13212b line art. The calm sea fills the whole image edge to edge and is drawn with dense parallel engraved wave lines, fine hatching and stipple, in cerulean, darker and deeper towards the left. The whole left half of the image is only quiet engraved water: even parallel wave lines, no object, no ripple, no foam, nothing else. In the right third, two matching ivory tusks float side by side on the water, the same size and the same gentle curve, drawn in off-white with a crisp engraved ink-grey outline and light hatching along the curve for roundness. Each tusk narrows evenly to a point; its thick end is solid, closed and smoothly rounded, with no hole, no opening, no hollow, no rim. The ivory is plain and smooth, with no cracks and no carving. A thin ink-grey cord is wound around both thick ends, tying the two tusks together, with one single small round bead filled solid burnt orange #E0703A. Around the pair, a few soft concentric ripples drawn as fine engraved off-white lines, wide flattened ovals that fade out well before the middle of the image. Open water surrounds the pair on every side; nothing touches the edges. Flat graphic print, crisp lines of several weights, visible engraving texture, intricate but calm. Not a photograph, not a painting, no horizon, no sky, no cast shadows, no reflections, no glow, no gradient. No third tusk, no small fang, no horn, no skull, no animal, no person, no boats, no text, no letters, no numbers, no compass rose, no border, no frame.",
+  "initImage": "referencias/24d-og-tarkor-q1430.png",
+  "strength": 0.5
+}
