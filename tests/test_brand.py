@@ -1097,7 +1097,11 @@ class SquareTests(BrandBase):
         inked = brand._square_ink('<path fill="#123456" stroke="rgb(1,2)" d="M0 0"/>', "#abcdef")
         self.assertIn('stroke="rgb(1,2)"', inked)  # left as it is: it still paints nothing
         self.assertTrue(inked.startswith('<g fill="#abcdef"'))
-        self.assertTrue(brand._square_ink("", "#abcdef", 'fill="rgb(1,2)"').startswith('<g fill="#abcdef"'))
+        for root in ('fill="rgb(1,2)"', 'fill="inherit"', 'fill="unset"'):  # one fill attribute, the ink's: no XML redefined
+            self.assertEqual(brand._square_ink('<path d="M0 0"/>', "#abcdef", root), '<g fill="#abcdef" ><path d="M0 0"/></g>', root)
+        self.assertEqual(brand._paint_colors('<path fill="unset" d="M0 0"/>'), {"#000000"})
+        muted = brand._mute('<path fill="#123456" stroke="#ff0000" stroke-opacity="0" stroke-width="0" d="M0 0"/>')
+        self.assertEqual(muted.count("stroke="), 1, muted)
 
     def test_out_of_range_channels_are_clamped_like_css(self):
         for value, want in (("rgb(300,0,0)", "#ff0000"), ("rgb(-5,0,0)", "#000000"), ("rgb(0%,0%,120%)", "#0000ff"),

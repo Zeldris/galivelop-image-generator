@@ -492,7 +492,7 @@ SQUARE = 128
 _PAINT = re.compile(r'(?<![\w:.-])(fill|stroke)="([^"]*)"')
 _STYLE = re.compile(r'(?<![\w:.-])style="([^"]*)"')
 _DECL = re.compile(r'(?<![\w-])(fill|stroke)(\s*:\s*)((?:[^;!]|!(?!\s*important))*)(!\s*important)?')
-_NO_PAINT = ("", "none", "currentcolor", "inherit", "transparent")
+_NO_PAINT = ("", "none", "currentcolor", "inherit", "unset", "transparent")
 
 
 def _paints(value: str) -> bool:
@@ -521,6 +521,8 @@ def _square_ink(inner: str, ink: str, root: str = "") -> str:
         return _PAINT.sub(lambda m: m.group(0) if not _paints(m.group(2)) else '%s="%s"' % (m.group(1), ink), text)
 
     kept = _root_text(root, ("fill", "stroke"))
+    if not _has_fill(kept):  # an `inherit`, `unset` or malformed root fill gives way to the ink: one fill attribute only
+        kept = _PAINT.sub(lambda m: "" if m.group(1) == "fill" else m.group(0), kept).strip()
     return "<g %s%s>%s</g>" % ("" if _has_fill(kept) else 'fill="%s" ' % ink, recolor(kept), recolor(inner))
 
 
@@ -715,9 +717,14 @@ def _mute_attrs(attrs: str, fill0: bool = False, stroke0: bool = False) -> str:
     for prop, inherited in (("fill", fill0), ("stroke", stroke0)):
         own = _opacity(attrs, prop + "-opacity")
         if (own <= 0) if own is not None else inherited:
-            attrs = _no_paint(attrs, (prop,))
-            attrs += ' %s="none"' % prop
+            attrs = _paint_none(attrs, prop)
     return attrs
+
+
+def _paint_none(attrs: str, prop: str) -> str:
+    """`attrs` with `prop` turned into ``none``, added as an attribute only when it has no value of its own: one attribute each."""
+    attrs = _no_paint(attrs, (prop,))
+    return attrs if _paint_value(attrs, prop) is not None else attrs + ' %s="none"' % prop
 
 
 def _no_paint(attrs: str, props=("fill",)) -> str:
@@ -757,7 +764,7 @@ def _mute(inner: str, root: str = "") -> str:
             if not muted:
                 kept = _mute_attrs(attrs, fill0, op0)
                 if w0:  # a width 0 (own or inherited) hides the stroke whatever its own stroke-opacity says
-                    kept = _no_paint(kept, ("stroke",)) + ' stroke="none"'
+                    kept = _paint_none(kept, "stroke")
                 if tag == "line":  # a <line> has no area: no fill paints, whatever its own fill-opacity says
                     kept = _no_paint(kept)
                 out.append("<%s%s>" % (tag, kept))
