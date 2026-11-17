@@ -908,7 +908,7 @@ def _square_ink(inner: str, ink: str, root: str = "") -> str:
 
     kept = _root_text(root, ("fill", "stroke"))
     if not _has_fill(kept):  # an `inherit`, `unset` or malformed root fill gives way to the ink: one fill attribute only
-        kept = _PAINT.sub(lambda m: "" if m.group(1) == "fill" else m.group(0), kept).strip()
+        kept = _PAINT_ATTR.sub(lambda m: "" if m.group(1) == "fill" else m.group(0), kept).strip()
     return "<g %s%s>%s</g>" % ("" if _has_fill(kept) else 'fill="%s" ' % ink, recolor(kept), recolor(inner))
 
 
