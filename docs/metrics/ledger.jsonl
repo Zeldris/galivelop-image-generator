@@ -226,3 +226,7 @@
 {"agent":"main","branch":"hoja-datos","cacheRead":344190,"cacheWrite":2741,"date":"2026-11-17","input":8,"model":"claude-opus-5-5","output":2407,"recorded":"2026-11-17T19:55:35Z","refs":[],"session":"0cacc78c"}
 {"agent":"gw-worker","branch":"hoja-datos","cacheRead":70778,"cacheWrite":9813,"date":"2026-11-17","input":4,"model":"claude-sonnet-5-5","output":684,"recorded":"2026-11-17T19:55:43Z","refs":[],"session":"0cacc78c"}
 {"agent":"main","branch":"hoja-datos","cacheRead":117180,"cacheWrite":468,"date":"2026-11-17","input":4,"model":"claude-opus-5-5","output":72,"recorded":"2026-11-17T19:55:43Z","refs":[],"session":"0cacc78c"}
+{"agent":"general-purpose","branch":"hoja-datos","cacheRead":55776,"cacheWrite":20334,"date":"2026-11-17","input":6,"model":"claude-opus-5-5","output":306,"recorded":"2026-11-17T20:50:46Z","refs":[],"session":"0cacc78c"}
+{"agent":"gw-reviewer","branch":"hoja-datos","cacheRead":0,"cacheWrite":22055,"date":"2026-11-17","input":2,"model":"claude-opus-5-5","output":111,"recorded":"2026-11-17T20:50:46Z","refs":[],"session":"0cacc78c"}
+{"agent":"gw-worker","branch":"hoja-datos","cacheRead":1001623,"cacheWrite":35399,"date":"2026-11-17","input":32,"model":"claude-sonnet-5-5","output":22209,"recorded":"2026-11-17T20:50:46Z","refs":[],"session":"0cacc78c"}
+{"agent":"main","branch":"hoja-datos","cacheRead":794218,"cacheWrite":58971,"date":"2026-11-17","input":13,"model":"claude-opus-5-5","output":2815,"recorded":"2026-11-17T20:50:46Z","refs":[],"session":"0cacc78c"}
