@@ -99,6 +99,18 @@ sube a 5 min; FLUX solo hace bocetos y su borrador sale mejor). FLUX con imagen 
 Medida del 12-11 (`ronda-2026-11-12`): Z-Image 1024² n=43, p50 551 s, p95 615 s, **sobre el tope de 9,5 min (570 s)**. Las 13
 de más de 570 s tuvieron memoria libre mínima < 4,2 GB; con 4,9-5,6 GB libres, 535-549 s: el exceso es de memoria.
 
+**Regla por megapíxel (P3 del 17-11, aprobada):** las tareas sin tope propio se miden por megapíxel generado
+(ancho×alto/10⁶), en `steam-deck-libre`: Z-Image p95 ≤ 610 s/Mpx y FLUX p95 ≤ 300 s/Mpx (medido en la ronda del
+17-11: Z-Image p50 545, p95 600, n=308; FLUX p50 215, p95 297, n=33). Las portadas 1344×768 de Z-Image, p95 ≤ 630 s
+(P2 del 14-11; medido el 17-11 p95 560 s, n=15). La regla no tapa una regresión: si la s/paso a 1024² pasa de 58 s en el
+banco en frío, se investiga aparte (P4 del 17-11).
+
+## Script de parada
+
+`gimg serve --stop` (con `GIMG_CONFIG_HOME` y `GIMG_DATA_HOME` fijados desde el sandbox): para el servicio y su
+trabajador; la cola se queda como esté (en pausa o no). Comprobar después con `gimg serve --status` y que no queda
+ningún `sd-cli` (`pgrep -a sd-cli`).
+
 ## Ya en marcha
 
 - Perfil `steam-deck-libre` a 7 GB de VRAM (2026-11-10).
@@ -123,3 +135,10 @@ de más de 570 s tuvieron memoria libre mínima < 4,2 GB; con 4,9-5,6 GB libres,
 - No se propone: bajar Z-Image a menos de 8 pasos ni `--taesd` en la imagen final (calidad).
 - `flux3-klein-q8` sigue con ajustes en `steam-deck-libre.json` sin estar instalado (1 llamada fallida el 2026-11-10);
   se deja: es una configuración puesta a propósito y no estorba.
+- **Ronda del 17-11 (`ronda-2026-11-17`), aprobadas por la persona el 2026-11-17:** A2 confirmada (memoria libre
+  mínima ≥ 4,6 GB salvo una llamada; portadas −77 s de mediana). **P1:** aplicar la P1 del 14-11 (iconos del Portal a
+  768², entrega a 512; 21 iconos a 1024² en la ronda, p50 563 s frente a 302 s). **P2:** probar los iconos del Portal a
+  512² (150 s), con la misma semilla que a 768², en hoja y en SVG a 24 px; solo si no se ve diferencia. **P3:** regla
+  por megapíxel (en «Tiempos aceptables»). **P4:** repetir el banco en frío (Z-Image 1024², s/paso 60,7 frente a 57,7).
+  Pruebas encoladas: banco `opt-ai/p4-14-banco` (#1352-1354), iconos `prueba/p1-*-768|512` (#1355-1360), perfiles
+  temporales `prueba768i` y `prueba512i` (se retiran al decidir); pedidos en `piloto/opt-ai/p1/` y `p4/`.
