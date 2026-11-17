@@ -27,6 +27,42 @@ const projects = {
   roto: { name: 'roto', root: '/home/deck/Desarrollos/roto', error: { code: 'project.config_invalid', message: 'models.json: «flux-x» no está en el catálogo' } },
 };
 
+/* Hoja de marca del prototipo: la de PROJECT hereda de «portal» (los valores sin `origin` propio salen «heredados»). */
+const ENGRAVED = 'Richly detailed engraved antique nautical chart style, like a fine sea chart printed in two inks: many layers of fine lines and hatching, crisp and sharp, intricate but calm, premium print quality, high detail, elegant.';
+const CLOSING = 'No photographic rendering, no glow, no text, no letters, no numbers, no watermark, full-bleed edge to edge, no border, no frame.';
+const PALETTE_SENTENCE = 'Palette strictly limited to #0072a8 and its tints and shades, plain flat off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a.';
+const owned = (...fields) => Object.fromEntries(fields.map((f) => [f, { origin: 'own', project: PROJECT, file: 'marca.json' }]));
+const inherited = (...fields) => Object.fromEntries(fields.map((f) => [f, { origin: 'inherited', project: 'portal', file: 'marca.json' }]));
+const SHEET = {
+  name: PROJECT, version: '3f9c2a71b0de', chain: [PROJECT, 'portal'],
+  roles: { paper: { hex: '#fbfcfd', name: 'plain flat off-white' }, ink: { hex: '#13212b', name: 'ink grey' }, accent: { hex: '#5d7a6a', name: 'a touch of seaweed green' }, halo: { hex: '#0072a8', name: 'medium cerulean ocean blue' } },
+  registers: { engraved: { label: { es: 'Grabado', en: 'Engraved' }, block: ENGRAVED } },
+  closing: CLOSING, paletteSentence: PALETTE_SENTENCE, paletteSentenceText: PALETTE_SENTENCE,
+  vetoes: {
+    groups: [{ id: 'ethics', label: { es: 'Ética', en: 'Ethics' }, reason: { es: 'la biblia de la marca', en: 'the brand bible' }, terms: ['robot', 'hands'] }, { id: 'nautical', label: { es: 'Náutico', en: 'Nautical' }, reason: { es: 'el mar pone el dónde', en: 'the sea is the where' }, terms: ['lighthouse', 'boat'] }],
+    exceptions: [{ term: 'lighthouse', pieces: ['og'] }], neverWrite: ['transparent', 'exactly'], colorWords: ['white', 'golden'], fillPhrase: 'filling the whole sheet',
+  },
+  pieceTypes: [
+    { id: 'og', label: { es: 'Portada social', en: 'Social cover' }, profile: 'og', register: 'engraved', chroma: null, seed: 42, count: 2, workshop: ['crop'] },
+    { id: 'icon', label: { es: 'Icono', en: 'Icon' }, profile: 'icono', register: 'engraved', chroma: '#00ff00', seed: 7, count: 4, workshop: ['matte', 'trace'] },
+  ],
+  acceptance: { traits: { palette: 3, frame: 1 }, references: ['refs/q311.png'], autoDiscard: false, unmeasured: [{ id: 'horizon', label: { es: 'Horizonte', en: 'Horizon' } }] },
+  promptWords: { min: 120, max: 200 },
+  origin: {
+    ...inherited('palette.paper.$value', 'palette.ink.$value', 'palette.halo.$value', 'registers.engraved.block', 'closing', 'paletteSentence', 'vetoes.groups.ethics.terms', 'vetoes.exceptions.0', 'vetoes.neverWrite', 'acceptance.traits.frame'),
+    ...owned('palette.accent.$value', 'vetoes.groups.nautical.terms', 'vetoes.colorWords', 'pieceTypes.og.profile', 'pieceTypes.icon.profile', 'acceptance.references'),
+  },
+};
+const sheetInfo = (name) => (name === PROJECT
+  ? { sheet: { present: true, valid: true, version: SHEET.version, path: 'marca.json', extends: ['portal'], errors: [] }, pieceTypes: SHEET.pieceTypes }
+  : { sheet: { present: false, valid: false, version: null, path: null, extends: [], errors: [] }, pieceTypes: [] });
+const lintChecks = (prompt) => {
+  const words = prompt.trim() ? prompt.trim().split(/\s+/).length : 0;
+  const checks = [{ id: 'words', status: words >= 120 && words <= 200 ? 'ok' : 'warn', message: { key: words >= 120 && words <= 200 ? 'lint.ok.words' : 'lint.words', params: { count: words, min: 120, max: 200 } } }];
+  checks.push(/palette strictly limited/i.test(prompt) ? { id: 'palette', status: 'ok', message: { key: 'lint.ok.palette', params: {} } } : { id: 'palette', status: 'warn', message: { key: 'lint.palette', params: { missing: '#0072a8, #fbfcfd, #13212b, #5d7a6a' } } });
+  return checks;
+};
+
 let nextAttempt = 7;
 let nextEntry = 12;
 const att = (id, seed, state, extra = {}) => ({ id, state, seed, prompt: null, params: { steps: 6, cfg: 1.0, sampler: 'euler', model: 'flux2-klein-4b-q8', width: 1280, height: 640 }, image: `attempts/q${id}.png`, raw: `attempts/q${id}.raw.png`, note: '', createdAt: ago(3600 - id * 300), log: `attempts/q${id}.log`, durationMs: 11000 + id * 700, compose: { templateId: 'default' }, ...extra });
@@ -137,9 +173,35 @@ export async function transport(method, url, body) {
     const p = projects[r1];
     if (!p) return err(404, 'project.not_found', `No existe el proyecto «${r1}»`, { name: r1 });
     if (p.error) return err(409, p.error.code, p.error.message);
-    if (!r2) return ok({ name: p.name, root: p.root, config: p.config });
+    if (!r2) return ok({ name: p.name, root: p.root, config: p.config, ...sheetInfo(p.name) });
+    if (r2 === 'brand' && r3 === 'sheet') {
+      if (p.name !== PROJECT) return err(404, 'brandsheet.none', `El proyecto «${p.name}» no tiene hoja de marca`, { project: p.name });
+      return ok(SHEET);
+    }
+    if (r2 === 'brand' && r3 === 'prompt' && method === 'POST') {
+      if (p.name !== PROJECT) return err(404, 'brandsheet.none', `El proyecto «${p.name}» no tiene hoja de marca`, { project: p.name });
+      const piece = SHEET.pieceTypes.find((x) => x.id === (body && body.piece));
+      if (!piece) return err(400, 'brandsheet.unknown_piece', `Tipo de pieza desconocido: ${body && body.piece}`, { piece: body && body.piece });
+      const parts = [{ role: 'subject', text: `${String(body.subject || '').trim().replace(/\.*$/, '')}.`, source: 'input' }];
+      if (body.cleanZone) parts.push({ role: 'cleanZone', text: `${String(body.cleanZone).trim().replace(/\.*$/, '')}.`, source: 'input' });
+      parts.push({ role: 'register', text: ENGRAVED, source: `registers.${piece.register}` }, { role: 'closing', text: CLOSING, source: 'closing' }, { role: 'palette', text: PALETTE_SENTENCE, source: 'paletteSentence' });
+      const prompt = parts.map((x) => x.text).join(' ');
+      const checks = lintChecks(prompt);
+      if (/robot|hands/i.test(prompt)) checks.push({ id: 'veto', status: 'error', message: { key: 'lint.veto', params: { term: 'robot', group: 'ethics', reason: 'la biblia' } } });
+      return ok({ prompt, words: prompt.split(/\s+/).length, segments: parts, checks, blocked: checks.some((c) => c.status === 'error'), defaults: { profile: piece.profile, seed: piece.seed, count: piece.count, model: 'flux2-klein-4b-q8', chroma: piece.chroma }, known: [] });
+    }
+    if (r2 === 'brand' && r3 === 'lint' && method === 'POST') {
+      if (p.name !== PROJECT) return err(404, 'brandsheet.none', `El proyecto «${p.name}» no tiene hoja de marca`, { project: p.name });
+      if (!body || typeof body.prompt !== 'string') return err(400, 'api.bad_param', 'Falta «prompt»', { field: 'prompt' });
+      return ok({ checks: lintChecks(body.prompt) });
+    }
     if (r2 === 'check') {
       return ok([
+        ...(p.name === PROJECT ? [
+          { id: 'sheet.present', status: 'ok', message: 'hoja de marca: marca.json' },
+          { id: 'sheet.valid', status: 'ok', message: `hoja de marca válida (versión ${SHEET.version})` },
+          { id: 'sheet.extends', status: 'ok', message: 'herencia de la hoja resuelta: galivelop-image-generator <- portal' },
+        ] : [{ id: 'sheet.present', status: 'warn', message: `el proyecto «${p.name}» no tiene hoja de marca`, fix: `gimg brand init --project ${p.name}` }]),
         { id: 'fonts.Sora', status: 'ok', message: 'Fuente Sora instalada' },
         { id: 'fonts.Inter', status: 'warn', message: 'Fuente Inter no instalada: se usará una de reserva', fix: 'gimg fonts install Inter' },
         { id: 'template.cuadrado.viewbox', status: 'fail', message: 'El viewBox de plantillas/cuadrado.svg no es 1024×1024', fix: 'Ajusta el viewBox del SVG al tamaño del destino' },

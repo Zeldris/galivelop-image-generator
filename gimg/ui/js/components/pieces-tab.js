@@ -1,4 +1,5 @@
-/* Pestaña Piezas (F4d, D22): en gimg una pieza es un perfil del proyecto. Cada tarjeta enseña los tamaños (generación y
+/* Pestaña Piezas (F4d, D22): en gimg una pieza es un perfil del proyecto. Con una hoja de marca válida (0.7.0) hay una
+   tarjeta por tipo de pieza, con la tarjeta de su perfil dentro, y debajo los perfiles sin tipo («Pedir» en modo libre). Cada tarjeta enseña los tamaños (generación y
    destino), el ajuste (`compose.fit`), el modelo, los campos de texto, las plantillas con su miniatura (el SVG por
    `assets/template?id=`), cuántos pedidos tiene y cuántos están entregados, un «Pedir» que abre el panel con ese perfil
    y un enlace a sus pedidos. Plantillas y pedidos se piden por perfil; si una petición falla, la tarjeta sale sin ese dato. */
@@ -9,23 +10,59 @@ import { api, paths } from '../api.js';
 import { to } from '../router.js';
 import * as store from '../store.js';
 import { newOrderButton } from './slots.js';
+import { loc } from './sheet-view.js';
 
-export async function piecesTab(panel, project, cfg) {
+export async function piecesTab(panel, project, cfg, info = {}) {
   const names = Object.keys(cfg.profiles || {});
   panel.append(h('p.hint', {}, t('ui.pieces.hint')));
   if (!names.length) { panel.append(h('div.empty', {}, h('p', {}, t('ui.newOrder.noProfiles')))); return; }
-  const grid = h('div.piece-grid', { aria: { busy: 'true' } }, names.map((name) => h('div.card.piece-card', { data: { profile: name } },
-    h('h2', {}, name), h('p.empty', {}, h('span.spin', { aria: { hidden: true } }), ' ', t('ui.loading')))));
-  panel.append(grid);
-  await Promise.all(names.map(async (name, i) => {
-    const [templates, orders] = await Promise.all([
-      api.templates(project, name).catch(() => []),
-      api.orders(project, { profile: name }).catch(() => []),
-    ]);
-    grid.children[i].replaceWith(card(project, name, (cfg.profiles || {})[name] || {}, Array.isArray(templates) ? templates : [],
+  const types = info.sheet && info.sheet.valid ? (info.pieceTypes || []) : [];
+  const typed = new Set(types.map((p) => p.profile).filter(Boolean));
+  const loose = types.length ? names.filter((n) => !typed.has(n)) : names;
+  const data = new Map(); // perfil -> {templates, orders}, pedido una sola vez aunque lo usen varios tipos
+  const dataOf = (name) => {
+    if (!data.has(name)) {
+      data.set(name, Promise.all([
+        api.templates(project, name).catch(() => []),
+        api.orders(project, { profile: name }).catch(() => []),
+      ]));
+    }
+    return data.get(name);
+  };
+  const slot = (name) => h('div.card.piece-card', { data: { profile: name } },
+    h('h2', {}, name), h('p.empty', {}, h('span.spin', { aria: { hidden: true } }), ' ', t('ui.loading')));
+  const fill = async (node, name) => {
+    const [templates, orders] = await dataOf(name);
+    node.replaceWith(card(project, name, (cfg.profiles || {})[name] || {}, Array.isArray(templates) ? templates : [],
       Array.isArray(orders) ? orders : (orders && orders.orders) || []));
-  }));
-  grid.setAttribute('aria-busy', 'false');
+  };
+  const jobs = [];
+  const grids = [];
+  if (types.length) {
+    const grid = h('div.piece-grid', { aria: { busy: 'true' } }, types.map((pt) => {
+      const known = pt.profile && names.includes(pt.profile);
+      const inner = known ? slot(pt.profile) : null;
+      if (inner) jobs.push(fill(inner, pt.profile));
+      return h('section.card.piece-type', { data: { piece: pt.id }, aria: { labelledby: `pt-${pt.id}` } },
+        h('div.row-between', {}, h('h2', { id: `pt-${pt.id}` }, loc(pt.label) || pt.id),
+          h('span.row', {}, h('code.mono.hint', {}, pt.id), pt.register ? h('span.chip', {}, pt.register) : null)),
+        inner || h('p.hint', {}, t('ui.pieces.profileMissing', { profile: pt.profile || '—' })));
+    }));
+    grids.push(grid);
+    panel.append(grid);
+  }
+  if (loose.length) {
+    if (types.length) panel.append(h('h2', { id: 'pieces-loose' }, t('ui.pieces.loose')), h('p.hint', {}, t('ui.pieces.looseHint')));
+    const grid = h('div.piece-grid', { aria: { busy: 'true' }, data: { group: 'loose' } }, loose.map((name) => {
+      const node = slot(name);
+      jobs.push(fill(node, name));
+      return node;
+    }));
+    grids.push(grid);
+    panel.append(grid);
+  }
+  await Promise.all(jobs);
+  for (const g of grids) g.setAttribute('aria-busy', 'false');
 }
 
 function card(project, name, p, templates, orders) {

@@ -30,8 +30,8 @@ export async function projectView(host, route) {
     h('section', { id: 'tab-panel', aria: { label: t(`ui.project.tab.${tab}`) } }));
   const panel = host.querySelector('#tab-panel');
   if (tab === 'pedidos') await ordersTab(panel, project, profiles, cfg);
-  else if (tab === 'piezas') await piecesTab(panel, project, cfg);
-  else await brandTab(panel, project, cfg);
+  else if (tab === 'piezas') await piecesTab(panel, project, cfg, info);
+  else await brandTab(panel, project, cfg, info, route.query || {});
 }
 
 async function ordersTab(panel, project, profiles, cfg) {
