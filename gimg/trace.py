@@ -335,11 +335,15 @@ def to_svg(width: int, height: int, rgba, mode: str = "color", *, palette=None, 
     pal = [parse_hex(h) for h in pal_hex]
     paper_i = None
     if ink_only:
-        # the paper colour (given, else the palette colour closest to white, else white) joins the palette so its pixels get its label
-        want = parse_hex(paper) if paper else (min(pal, key=lambda c: _d2(c, (255, 255, 255))) if pal else (255, 255, 255))
-        if want not in pal:
-            pal.append(want)
-        paper_i = pal.index(want)
+        # the paper colour (given, else the palette colour closest to white) joins the palette so its pixels get its label.
+        # Without a given paper there is none when the background is already transparent (it is the paper) or when
+        # there is no palette (silueta: every opaque pixel is ink)
+        transparent = any(rgba[i] < bg_tol for i in range(3, len(rgba), 4))
+        if paper or (pal and not transparent):
+            want = parse_hex(paper) if paper else min(pal, key=lambda c: _d2(c, (255, 255, 255)))
+            if want not in pal:
+                pal.append(want)
+            paper_i = pal.index(want)
     elif paper:
         raise ValueError("paper only goes with ink_only")
     pal_hex = [_hex(c) for c in pal]

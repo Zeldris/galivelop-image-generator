@@ -198,30 +198,35 @@ def fit(src, out=None, anchor: str = "right", min_x=None, max_x=None, margin: fl
         data[3::4] = b"\xff" * (width * height)
     else:
         sw, sh = max(1, int(round(width * s))), max(1, int(round(height * s)))
-        data = _fit_compose(width, height, rgba, ink, sw, sh, dx, dy, feather, feather_y, margin)
+        data = _fit_compose(width, height, rgba, ink, sw, sh, dx, dy, feather, feather_y, margin, box)
     write_file(out, png.rgba_bytes(width, height, bytes(data)))
     after = [round(box[0] * s + dx, 1), round(box[1] * s + dy, 1), round(box[2] * s + dx, 1), round(box[3] * s + dy, 1)]
     return {"src": str(src), "out": out, "size": [width, height], "paper": "#%02x%02x%02x" % ink, "box": box,
             "box_after": after, "scale": round(s, 4), "shift": [dx, dy], "zone": [x0z, y0z, x1z, y1z]}
 
 
-def _fit_ramp(i, size, edge_lo, edge_hi, span):
-    """Alpha of the pixel `i` of ``size``: 0 to 1 over `span` px from each edge that is inside the canvas."""
+def _fit_ramp(i, size, edge_lo, edge_hi, span_lo, span_hi=None):
+    """Alpha of the pixel `i` of ``size``: 0 to 1 over `span_lo` / `span_hi` px from each edge that is inside the canvas."""
+    span_hi = span_lo if span_hi is None else span_hi
     a = 1.0
-    if span > 0:
-        if edge_lo:
-            a = min(a, (i + 0.5) / span)
-        if edge_hi:
-            a = min(a, (size - i - 0.5) / span)
+    if edge_lo and span_lo > 0:
+        a = min(a, (i + 0.5) / span_lo)
+    if edge_hi and span_hi > 0:
+        a = min(a, (size - i - 0.5) / span_hi)
     return a
 
 
-def _fit_compose(width, height, rgba, paper, sw, sh, dx, dy, feather, feather_y, margin=0) -> bytearray:
+def _fit_compose(width, height, rgba, paper, sw, sh, dx, dy, feather, feather_y, margin=0, box=None) -> bytearray:
     """The canvas of `paper` with `rgba` scaled to ``sw x sh`` (bilinear) at ``(dx, dy)``, faded where its edges are inside.
 
-    An edge within `margin` px of the canvas edge counts as on it: no fade, and the image is stretched (clamped sampling) to the edge."""
-    out = bytearray(bytes((paper[0], paper[1], paper[2], 255)) * (width * height))
+    An edge within `margin` px of the canvas edge counts as on it: no fade, and the image is stretched (clamped sampling) to the edge.
+    With `box` (the motif box in `rgba` pixels) the fade never enters the box: it is cut to the margin outside it."""
+    if box is None:
+        box = [0, 0, width, height]
     xr, yr = width / sw, height / sh  # source pixels per scaled one
+    fx_lo, fx_hi = min(feather, box[0] / xr), min(feather, (width - box[2]) / xr)
+    fy_lo, fy_hi = min(feather_y, box[1] / yr), min(feather_y, (height - box[3]) / yr)
+    out = bytearray(bytes((paper[0], paper[1], paper[2], 255)) * (width * height))
     x_lo, x_hi = (0 if dx <= margin else dx), (width if dx + sw >= width - margin else dx + sw)
     y_lo, y_hi = (0 if dy <= margin else dy), (height if dy + sh >= height - margin else dy + sh)
     cols = []  # per canvas column: x, byte offset of the left tap and of the right one, weight of the right, alpha
@@ -230,13 +235,13 @@ def _fit_compose(width, height, rgba, paper, sw, sh, dx, dy, feather, feather_y,
         i0 = max(0, min(width - 1, int(math.floor(u))))
         i1 = min(width - 1, i0 + 1)
         cols.append((x, i0 * 4, i1 * 4, min(1.0, max(0.0, u - i0)),
-                     _fit_ramp(x - dx, sw, x_lo > 0, x_hi < width, feather)))
+                     _fit_ramp(x - dx, sw, x_lo > 0, x_hi < width, fx_lo, fx_hi)))
     for y in range(y_lo, y_hi):
         v = (y - dy + 0.5) * yr - 0.5
         j0 = max(0, min(height - 1, int(math.floor(v))))
         j1 = min(height - 1, j0 + 1)
         w2 = min(1.0, max(0.0, v - j0))
-        ay = _fit_ramp(y - dy, sh, y_lo > 0, y_hi < height, feather_y)
+        ay = _fit_ramp(y - dy, sh, y_lo > 0, y_hi < height, fy_lo, fy_hi)
         r0, r1, base = j0 * width * 4, j1 * width * 4, y * width * 4
         for x, a0, a1, w1, ax in cols:
             alpha = ax * ay
@@ -712,6 +717,7 @@ def lockup(emblem, wordmark, out=None, layout: str = "h", cap: float = 0.45, gap
 _SVG_NS = "http://www.w3.org/2000/svg"
 _URL_REF = re.compile(r"url\(\s*(['\"]?)#([^)'\"\s]+)\1\s*\)")
 _PAINT = re.compile(r"(?P<k>(?:^|;)\s*(?:fill|stroke)\s*:\s*)(?P<v>[^;]*)", re.I)
+_ZERO_ALPHA = re.compile(r"(?:rgb|hsl)a?\(.*(?:,|/)\s*0(?:\.0*)?%?\s*\)")
 _BAD_TAGS = ("script", "foreignobject", "image", "animate", "set", "animatetransform", "animatemotion")
 
 
@@ -743,12 +749,28 @@ def _overlay_motif(path, box, recolor, skip_rect):
     if not all(math.isfinite(v) for v in box) or not (box[2] > 0 and box[3] > 0):
         raise GimgError("brand.bad_overlay_svg", path=str(path), reason="the box has no area")
     ids = {el.get("id") for el in root.iter() if el.get("id")}
+    scope = "mo-" + root.get("id") if root.get("id") else "mo-root"  # the id that scopes the motif's CSS rules
 
     def fix(value):
         return _URL_REF.sub(lambda m: "url(#mo-%s)" % m.group(2) if m.group(2) in ids else m.group(0), value)
 
     def paint(value):
-        return value if value.strip().lower() in ("none", "") else recolor
+        v = value.strip().lower()
+        return value if v in _NO_PAINT or _ZERO_ALPHA.fullmatch(v) else recolor
+
+    def css(text):
+        """The stylesheet `text`: ids prefixed, ``fill`` / ``stroke`` recolored, and (without at-rules) its rules scoped to the motif."""
+        def rule(m):
+            sel = m.group(1)
+            sel = re.sub(r"#([\w-]+)", lambda i: "#mo-" + i.group(1) if i.group(1) in ids else i.group(0), sel)
+            if "@" not in text:
+                sel = ",".join("#%s %s" % (scope, part.strip()) for part in sel.split(",") if part.strip())
+            body = m.group(2)
+            if recolor:
+                body = re.sub(r"(?<![\w-])(fill|stroke)(\s*:\s*)([^;}!]*)",
+                              lambda d: d.group(1) + d.group(2) + paint(d.group(3)), body)
+            return sel + "{" + body + "}"
+        return re.sub(r"([^{}]+)\{([^{}]*)\}", rule, fix(text))
 
     for parent in list(root.iter()):
         for child in list(parent):
@@ -776,7 +798,9 @@ def _overlay_motif(path, box, recolor, skip_rect):
                 val = _PAINT.sub(lambda m: m.group("k") + paint(m.group("v")), val)
             el.set(name, val)
         if _local(el.tag) == "style" and el.text:
-            el.text = fix(el.text)
+            el.text = css(el.text)
+    if any(_local(el.tag) == "style" and el.text for el in root.iter()):
+        root.set("id", scope)
     return root, box
 
 

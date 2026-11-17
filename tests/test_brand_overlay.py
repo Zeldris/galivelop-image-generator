@@ -61,6 +61,33 @@ class InkOnlyTests(BrandBase):
         self.assertIn("--paper only goes with --ink-only", err)
 
 
+class InkOnlyNoPaperTests(BrandBase):
+    def test_silueta_ink_only_without_palette_traces_everything_opaque(self):  # finding 3
+        src, out = self.tmp / "s.png", self.tmp / "s.svg"
+        two_color_png(src)
+        code, _, err = self.run_cli("brand", "trace", str(src), "-o", str(out), "--mode", "silhouette", "--ink-only")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(out.read_text().count("<path"), 1)
+        self.assertIn('fill="currentColor"', out.read_text())
+
+    def test_matte_ink_only_keeps_the_light_details_of_the_drawing(self):  # finding 6
+        size = 24
+        rgba = bytearray()
+        for y in range(size):  # transparent page; a dark square with a near-white block inside it
+            for x in range(size):
+                if 4 <= x < 20 and 4 <= y < 20:
+                    rgba += bytes((250, 250, 250) if 8 <= x < 16 and 8 <= y < 16 else (20, 40, 90)) + b"\xff"
+                else:
+                    rgba += b"\0\0\0\0"
+        src, out = self.tmp / "t.png", self.tmp / "t.svg"
+        src.write_bytes(png.rgba_bytes(size, size, rgba))
+        code, _, err = self.run_cli("brand", "trace", str(src), "-o", str(out), "--ink-only", "--palette", "#142a5a,#fafafa")
+        self.assertEqual(code, 0, err)
+        nums = [float(v) for v in re.findall(r"-?\d+(?:\.\d+)?", re.search(r' d="([^"]*)"', out.read_text()).group(1))]
+        self.assertTrue(min(nums) > 1 and max(nums) < 23.5)
+        self.assertEqual(out.read_text().count("M"), 1)  # one solid shape: the light block is ink, not a hole
+
+
 class OverlayTests(BrandBase):
     def setUp(self):
         super().setUp()
@@ -196,3 +223,31 @@ class OverlayTests(BrandBase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class OverlayPaintTests(BrandBase):
+    def overlay(self, body, *extra):
+        motif, base, out = self.tmp / "m.svg", self.tmp / "b.svg", self.tmp / "o.svg"
+        base.write_text(path_svg(1024, 1024, "#13212b"))
+        motif.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">%s</svg>' % body)
+        code, _, err = self.run_cli("brand", "overlay", str(base), str(motif), "-o", str(out), *extra)
+        self.assertEqual(code, 0, err)
+        return out.read_text()
+
+    def test_recolor_leaves_unpainted_values_alone(self):  # finding 4
+        text = self.overlay('<path d="M0 0h1v1z" fill="transparent" stroke="rgba(0,0,0,0)"/>'
+                            '<path d="M2 2h1v1z" fill="inherit" stroke="currentColor"/>'
+                            '<path d="M4 4h1v1z" fill="#123456"/>', "--recolor", "#ffffff")
+        for kept in ('fill="transparent"', 'stroke="rgba(0,0,0,0)"', 'fill="inherit"', 'stroke="currentColor"'):
+            self.assertIn(kept, text)
+        self.assertNotIn("#123456", text)
+        self.assertIn('fill="#ffffff"', text)
+
+    def test_recolor_reaches_the_css_and_ids_are_prefixed_and_scoped(self):  # finding 5
+        text = self.overlay('<style>#a{fill:#ff0000;stroke:none}.b{fill:red}</style>'
+                            '<path id="a" d="M0 0h1v1z"/><path class="b" d="M2 2h1v1z"/>', "--recolor", "#00ff00")
+        self.assertNotIn("#ff0000", text)
+        self.assertNotIn("fill:red", text)
+        self.assertIn("stroke:none", text)
+        self.assertIn("#mo-root #mo-a{fill:#00ff00;stroke:none}", text)
+        self.assertIn("#mo-root .b{fill:#00ff00}", text)

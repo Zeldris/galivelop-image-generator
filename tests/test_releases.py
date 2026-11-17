@@ -27,7 +27,7 @@ CHANGELOG = """# Changelog
 """
 
 
-def fake_run(version='"0.4.0"', tag=True, release="ok", calls=None):
+def fake_run(version='"0.4.0"', tag=True, release="ok", calls=None, repo="ok"):
     calls = [] if calls is None else calls
 
     def run(argv, **_):
@@ -38,6 +38,8 @@ def fake_run(version='"0.4.0"', tag=True, release="ok", calls=None):
             return subprocess.CompletedProcess(argv, 0, "", "")
         if argv[:2] == ["git", "ls-remote"]:
             return subprocess.CompletedProcess(argv, 0, "abc\trefs/tags/v0.4.0\n" if tag else "", "")
+        if argv[:3] == ["gh", "api", "repos/{owner}/{repo}"]:
+            return subprocess.CompletedProcess(argv, 0 if repo == "ok" else 1, "x/y\n" if repo == "ok" else "", repo)
         assert argv[:2] == ["gh", "api"] and argv[2] == "repos/{owner}/{repo}/releases/tags/v0.4.0", argv
         if release == "ok":
             return subprocess.CompletedProcess(argv, 0, "v0.4.0\n", "")
@@ -238,6 +240,15 @@ class CheckTests(unittest.TestCase):
     def test_403_is_unknown_not_missing(self):
         code, message = releases.check("origin/main", fake_run(release="gh: Forbidden (HTTP 403)"))
         self.assertEqual((code, "gh no responde (gh: Forbidden (HTTP 403))" in message), (2, True))
+
+    def test_repo_not_found_is_unknown_not_missing(self):
+        code, message = releases.check("origin/main", fake_run(release="gh: Not Found (HTTP 404)",
+                                                               repo="gh: Not Found (HTTP 404)"))
+        self.assertEqual((code, "gh no ve el repositorio" in message), (2, True))
+
+    def test_404_without_not_found_text_is_unknown(self):
+        code, message = releases.check("origin/main", fake_run(release="HTTP 404"))
+        self.assertEqual((code, "gh no responde (HTTP 404)" in message), (2, True))
 
     def test_check_rejects_an_option_as_ref(self):
         self.assertEqual(releases.main(["check", "--ref", "--ref"]), 2)
