@@ -21,16 +21,18 @@ def honour_umask(fd: int) -> None:
     os.fchmod(fd, 0o666 & ~mask)
 
 
-def write_json(path, data) -> None:
-    """Write JSON (indent 2, sorted keys, trailing newline) via temp file + os.replace."""
+def write_bytes_atomic(path, data: bytes, prefix: str | None = None) -> None:
+    """Write `data` to `path` via a temp file in the same folder (fsync) + os.replace; the temp file goes on failure.
+
+    The temp file is ``<prefix>*.tmp``; `prefix` defaults to ``.<name>.``, so a caller that cleans up its own remains
+    after a kill can give one only it uses."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    text = json.dumps(data, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
-    fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix="." + path.name + ".", suffix=".tmp")
+    fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix=prefix or "." + path.name + ".", suffix=".tmp")
     try:
         honour_umask(fd)
-        with os.fdopen(fd, "w", encoding="utf-8") as fh:
-            fh.write(text)
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(data)
             fh.flush()
             os.fsync(fh.fileno())
         os.replace(tmp, path)
@@ -38,6 +40,12 @@ def write_json(path, data) -> None:
         with contextlib.suppress(OSError):
             os.unlink(tmp)
         raise
+
+
+def write_json(path, data) -> None:
+    """Write JSON (indent 2, sorted keys, trailing newline) via temp file + os.replace."""
+    text = json.dumps(data, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
+    write_bytes_atomic(path, text.encode("utf-8"))
 
 
 def read_json(path, default=_MISSING):

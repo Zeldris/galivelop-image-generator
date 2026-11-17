@@ -1079,6 +1079,23 @@ class BrandWorkshopLimits(unittest.TestCase):
             self.assertGreaterEqual(self.field(id_)["max"], top, id_)
             self.assertLess(self.field(id_)["max"], top + 1, id_)
 
+    def test_the_tolerance_hints_say_the_real_range(self):
+        for lang in ("es", "en"):
+            msgs = json.loads((LOCALES / ("%s.json" % lang)).read_text(encoding="utf-8"))
+            for key in ("tolHint", "softHint"):
+                self.assertIn("(0-442)", msgs["ui.brand.shop." + key], (lang, key))
+
+    def test_the_matte_is_not_sent_with_a_tolerance_from_the_soft_edge_up(self):
+        m = re.search(r"action\(k\('matteGo'\), \(\) => \(([^\n]*)", self.JS)
+        self.assertTrue(m)
+        self.assertIn("numOf(tol, 60) < numOf(soft, 110)", m.group(1))
+        self.assertIn("k('needTolBelowSoft')", m.group(1))
+        self.assertIn("tol.addEventListener('input', refresh)", self.JS)
+        self.assertIn("soft.addEventListener('input', refresh)", self.JS)
+        for lang in ("es", "en"):
+            msgs = json.loads((LOCALES / ("%s.json" % lang)).read_text(encoding="utf-8"))
+            self.assertIn("ui.brand.shop.needTolBelowSoft", msgs)
+
     def test_the_grow_maximum_is_the_one_of_the_matte(self):
         self.assertLessEqual(self.field("shop-grow")["max"], matte.MAX_GROW)
 

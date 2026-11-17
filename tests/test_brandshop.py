@@ -64,7 +64,7 @@ class ResolveFontTests(unittest.TestCase):
         self.assertEqual(ctx.exception.code, "brand.bad_option")
 
     def test_the_weight_is_checked_as_wordmark_does_before_fc_match_runs(self):
-        for weight in (0, 1001, 400.5, "bold"):
+        for weight in (0, 1001, 400.5, "bold", True):
             run, calls = _fc_match("/f/Cinzel.ttf")
             with mock.patch.object(brandshop.shutil, "which", lambda n: "/usr/bin/" + n), \
                     mock.patch.object(brandshop.subprocess, "run", run), self.assertRaises(GimgError) as ctx:

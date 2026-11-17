@@ -441,7 +441,8 @@ def _run(args, out: _Out) -> int:
     elif cmd == "crop":
         to = None
         if args.to is not None or args.to_profile is not None:
-            to = {"profile": args.to_profile or args.profile, "key": args.to or args.key}
+            to = {"profile": args.to_profile if args.to_profile is not None else args.profile,
+                  "key": args.to if args.to is not None else args.key}
         res = crop.crop(args.project, args.key, args.profile, args.attempt, crop.parse_box(args.box),
                         lock_ratio=not args.free, to=to)
         if out.as_json:
