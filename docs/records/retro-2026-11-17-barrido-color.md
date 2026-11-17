@@ -34,4 +34,4 @@ heredada; `fill` explícito en `<line>` (sexta tanda). Al `gw-worker` sonnet (P1
 
 - P1: `gw-selector` y el gancho de inicio señalan el `gw-worker` para barridos y arreglos de revisión.
 
-**Estado:** pendiente de la persona.
+**Estado:** aprobada (2026-11-17) y aplicada: P2 (validador en `SquareTests.setUp` y regla en `REVIEW.md`); P1 aprobada, al flujo; P3 aprobada, en «Pendiente» de la bitácora para 0.7.0.

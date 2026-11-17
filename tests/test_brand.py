@@ -965,6 +965,22 @@ class SquareTests(BrandBase):
         self.draw = self.tmp / "ig.svg"
         self.draw.write_text(path_svg(40, 20, "#123456", "ig"))
         self.out = self.tmp / "sq.svg"
+        real = brand._square_ink
+
+        def xml(inner):
+            return ElementTree.fromstring('<svg xmlns="http://www.w3.org/2000/svg">%s</svg>' % inner)
+
+        def parsed(inner, *args, **kw):  # XML in, XML out: the whole ink, not just its start (REVIEW.md)
+            out = real(inner, *args, **kw)
+            try:
+                xml(inner)
+            except ElementTree.ParseError:
+                return out  # a test that feeds broken markup on purpose
+            xml(out)
+            return out
+        patch = mock.patch.object(brand, "_square_ink", parsed)
+        patch.start()
+        self.addCleanup(patch.stop)
 
     def make(self, **kw):
         args = dict(fill="#7C5CD6", ink="#fbfcfd")
