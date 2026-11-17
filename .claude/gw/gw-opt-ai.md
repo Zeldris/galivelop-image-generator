@@ -146,5 +146,7 @@ ningún `sd-cli` (`pgrep -a sd-cli`).
   3,3-4,6 GB); trazo y lectura a 24 px iguales en los tres tamaños, y en cada tamaño un intento se aparta del pedido
   (varía con la semilla, no con el tamaño); hojas en `piloto/opt-ai/p1/`. **Aplicada: perfil `icono` del Portal a
   512²** (elegido por el agente, delegado; la persona puede volver a 768²); perfiles `prueba*i` retirados. P4: el
-  banco de la mañana coincidió con tests en la CPU (descartado); el banco en frío (`opt-ai/p4-14-banco-frio`,
-  #1361-1363) corre.
+  banco de la mañana coincidió con tests en la CPU (descartado). **Banco en frío (#1364-1366):** 58,1 s/paso y
+  541 s de media frente a 57,7 y 537 del banco base: sin regresión del motor ni de la máquina; los 60,7 s/paso de la
+  ronda son de la carga continua (calor) y de la memoria; lo cubre la regla por megapíxel (P3). Registro en
+  `~/.local/share/gimg/projects/portal/log.jsonl` (claves `opt-ai/p4-14-banco-frio`).
