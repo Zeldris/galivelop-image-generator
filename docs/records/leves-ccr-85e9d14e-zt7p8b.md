@@ -74,8 +74,9 @@ Hechos los cinco en `4c297c1` (barrido B, 2026-11-16).
 
 ## Fase 1 del bloque desde `78975bf` (2026-11-17, barrido de color): leves
 
-- `brand.py` `_paint_value`: se queda con el último valor aunque esté mal formado; `<path fill="#f00" style="fill:rgb(1,2)">` lo pinta rojo en rsvg, pero `_paint_colors` da también `#000000` (`flattened` de más). Saltar los valores con `_norm_color == ""` antes de tomar el último.
-- `brand.py` `_norm_color`: con exponentes, `hsl(1e400 100% 50%)` da tono infinito y devuelve el texto crudo (cuenta como color propio). Comprobar en rsvg qué hace antes de cambiarlo (`test_a_huge_hue_does_not_crash_and_stays_raw` fija lo de hoy).
-- `brand.py` `_paints` y `_ink`: casi el mismo predicado; unirlos.
-- `brand.py` `_paint_colors`: `_ink(near)` y `_ink(v)` se calculan dos veces por pintura heredada.
+- ~~`brand.py` `_paint_value`: se queda con el último valor aunque esté mal formado; `<path fill="#f00" style="fill:rgb(1,2)">` lo pinta rojo en rsvg, pero `_paint_colors` da también `#000000` (`flattened` de más). Saltar los valores con `_norm_color == ""` antes de tomar el último.~~ hecho (2026-11-17, barrido de leves) (rsvg pinta un tono infinito como gris, sin croma: igualado)
+- ~~`brand.py` `_norm_color`: con exponentes, `hsl(1e400 100% 50%)` da tono infinito y devuelve el texto crudo (cuenta como color propio). Comprobar en rsvg qué hace antes de cambiarlo (`test_a_huge_hue_does_not_crash_and_stays_raw` fija lo de hoy).~~ hecho (2026-11-17, barrido de leves) (rsvg pinta un tono infinito como gris, sin croma: igualado)
+- ~~`brand.py` `_paints` y `_ink`: casi el mismo predicado; unirlos.~~ hecho (2026-11-17, barrido de leves)
+- ~~`brand.py` `_paint_colors`: `_ink(near)` y `_ink(v)` se calculan dos veces por pintura heredada.~~ hecho (2026-11-17, barrido de leves)
+- ~~`fill` explícito en un `<line>` cuenta como color (sexta tanda)~~ hecho (2026-11-17, barrido de leves; ya estaba arreglado, con test).
 - Hechos en el commit de arreglos: `fill` duplicado en `_square_ink` con raíz `inherit`/`unset`/mal formada (medio); `unset` en `_NO_PAINT`; `stroke="none"` duplicado en `_mute` (`_paint_none`).

@@ -498,8 +498,7 @@ _NO_PAINT = ("", "none", "currentcolor", "inherit", "unset", "transparent")
 def _paints(value: str) -> bool:
     """False for no paint, ``transparent``, a malformed ``rgb()`` / ``hsl()`` (rsvg drops it) and any color with alpha 0
     (``rgba(…, 0)``, ``#0000``, ``hsla(…, 0)``)."""
-    n = _norm_color(value)
-    return n not in ("", "none", "transparent") and not _invisible(n)
+    return _color_of(value) is not None
 
 
 def _invisible(norm: str) -> bool:
@@ -567,8 +566,16 @@ def _has_fill(attrs: str) -> bool:
 
 def _ink(value: str):
     """The color that the paint `value` counts as (`_norm_color` without its alpha), or None if it paints nothing."""
+    if value.strip().lower() in _NO_PAINT:
+        return None
+    return _color_of(value)
+
+
+def _color_of(value: str):
+    """`_norm_color` without its alpha, or None if `value` is no paint (``none``, ``transparent``, malformed, alpha 0); a keyword
+    such as ``currentColor`` or ``inherit`` stays (`_ink` drops those)."""
     n = _norm_color(value)
-    if value.strip().lower() in _NO_PAINT or n == "" or _invisible(n):
+    if n in ("", "none", "transparent") or _invisible(n):
         return None
     return n[:7] if re.fullmatch(r"#[0-9a-f]{8}", n) else n
 
@@ -610,12 +617,13 @@ def _norm_color(value: str) -> str:
         if hsl:
             hue = re.fullmatch(r"(.*?)(deg|grad|rad|turn|)", hsl.group(1))
             h = _val(hue.group(1)) * _HUE[hue.group(2)] % 360
-            if not math.isfinite(h):
-                return v
             sat, light = (min(max(_val(hsl.group(i).rstrip("%")), 0), 100) / 100 for i in (2, 3))
             c = (1 - abs(2 * light - 1)) * sat
-            x = c * (1 - abs((h / 60) % 2 - 1))
-            r, g2, b = [(c, x, 0), (x, c, 0), (0, c, x), (0, x, c), (x, 0, c), (c, 0, x)][int(h // 60) % 6]
+            if math.isfinite(h):
+                x = c * (1 - abs((h / 60) % 2 - 1))
+                r, g2, b = [(c, x, 0), (x, c, 0), (0, c, x), (0, x, c), (x, 0, c), (c, 0, x)][int(h // 60) % 6]
+            else:  # an infinite hue (`1e400`): rsvg paints it with no chroma, all three channels at `m` (a gray)
+                r = g2 = b = 0
             m = light - c / 2
             return _hex_alpha([round((n + m) * 255) for n in (r, g2, b)], _alpha_of(hsl.group(4), hsl.group(5)))
     if _COLOR_FN.fullmatch(v):
@@ -666,15 +674,17 @@ def _paint_colors(inner: str, root: str = "") -> set:
                     if prop not in above:
                         inherited.add(prop)
                     near = next((g[prop] for g in reversed(groups[1:]) if prop in g), None)  # the nearest <g> paint
-                    if near is not None and _ink(near):
-                        colors.add(_ink(near))
+                    near_ink = None if near is None else _ink(near)
+                    if near_ink:
+                        colors.add(near_ink)
                     elif prop == "fill" and not any("fill" in g for g in groups):
                         colors.add("#000000")
     else:
         inherited = {"fill", "stroke"}
     for prop, v in root_paint.items():
-        if prop in inherited and _ink(v):
-            colors.add(_ink(v))
+        root_ink = _ink(v)
+        if prop in inherited and root_ink:
+            colors.add(root_ink)
     return colors
 
 
@@ -682,6 +692,7 @@ def _paint_value(attrs: str, prop: str):
     """The value that the attribute or ``style`` declaration `prop` of `attrs` gives (a declaration wins, the last one wins), or None."""
     found = [m.group(2) for m in _PAINT.finditer(attrs) if m.group(1) == prop]
     found += [d.group(3) for st in _STYLE.finditer(attrs) for d in _DECL.finditer(st.group(1)) if d.group(1) == prop]
+    found = [v for v in found if _norm_color(v) != ""]  # rsvg drops a malformed rgb() / hsl(): the one before it stands
     return found[-1] if found else None
 
 

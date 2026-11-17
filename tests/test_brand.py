@@ -1078,11 +1078,19 @@ class SquareTests(BrandBase):
                    '<path style="fill:#ff0000ff" d="M0 0L6 0L6 6Z"/>')
         self.assertNotIn("flattened", self.make())
 
-    def test_a_huge_hue_does_not_crash_and_stays_raw(self):
-        raw = "hsl(%s,50%%,50%%)" % ("9" * 400)
-        self.assertEqual(brand._norm_color(raw), raw)
-        self._draw('<path fill="%s" d="M0 0L40 0L40 20Z"/>' % raw)
+    def test_a_huge_hue_does_not_crash_and_paints_gray_like_rsvg(self):
+        """rsvg 2.58 paints `hsl(1e400 50% 80%)` as #b3b3b3 (no chroma), not as invalid."""
+        for raw, want in (("hsl(%s,50%%,50%%)" % ("9" * 400), "#404040"), ("hsl(1e400 50% 80%)", "#b3b3b3"),
+                          ("hsl(1e400 100% 50%)", "#000000"), ("hsl(1e400 50% 80% / .5)", "#b3b3b380")):
+            self.assertEqual(brand._norm_color(raw), want, raw)
+        self._draw('<path fill="hsl(1e400 50% 80%)" d="M0 0L40 0L40 20Z"/>')
         self.make()
+
+    def test_a_malformed_later_paint_value_leaves_the_previous_one(self):
+        """rsvg 2.58: `fill="#f00" style="fill:rgb(1,2)"` paints red, so black is not a second color."""
+        self.assertEqual(brand._paint_value('fill="#f00" style="fill:rgb(1,2)"', "fill"), "#f00")
+        self.assertIsNone(brand._paint_value('style="fill:rgb(1,2)"', "fill"))
+        self.assertEqual(brand._paint_colors('<path fill="#f00" style="fill:rgb(1,2)" d="M0 0L9 0L9 9Z"/>'), {"#ff0000"})
 
     def test_rgb_and_hsl_take_one_separator_style_not_a_mix(self):
         for value, want in (("rgb(255 0 0 / .5)", "#ff000080"), ("rgb(255,0,0,.5)", "#ff000080"), ("hsl(0 100% 50%)", "#ff0000")):

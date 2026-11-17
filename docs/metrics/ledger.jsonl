@@ -209,3 +209,4 @@
 {"agent":"main","branch":"ccr-85e9d14e-zt7p8b","cacheRead":320660,"cacheWrite":331,"date":"2026-11-17","input":6,"model":"claude-opus-5-5","output":244,"recorded":"2026-11-17T13:09:49Z","refs":[],"session":"0cacc78c"}
 {"agent":"gw-worker","branch":"ccr-85e9d14e-zt7p8b","cacheRead":176800,"cacheWrite":33596,"date":"2026-11-17","input":16,"model":"claude-sonnet-5-5","output":6125,"recorded":"2026-11-17T14:25:58Z","refs":[],"session":"7b05c99e"}
 {"agent":"main","branch":"ccr-85e9d14e-zt7p8b","cacheRead":346410,"cacheWrite":37946,"date":"2026-11-17","input":8,"model":"claude-opus-5-5","output":3011,"recorded":"2026-11-17T14:25:58Z","refs":[],"session":"7b05c99e"}
+{"agent":"main","branch":"ccr-85e9d14e-zt7p8b","cacheRead":199509,"cacheWrite":866,"date":"2026-11-17","input":6,"model":"claude-opus-5-5","output":469,"recorded":"2026-11-17T14:26:13Z","refs":[],"session":"7b05c99e"}
