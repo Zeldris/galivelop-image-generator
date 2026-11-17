@@ -66,3 +66,4 @@ Portal y GVE:
 - **Regla de mareas:** 2 de 8 intentos con garabatos como cifras; mirarla siempre de cerca.
 - **Iconos que ocupan poco cuadro** se emborronan a 28 px: recortar al motivo antes de trazar.
 - **«off-white #fbfcfd» sale crema** en fondos y tarjetas, como el 12 del Portal.
+- **31e portada de workflow (q1421-1424), quinta ronda:** con Z-Image los cuatro salen pintura casi fotográfica, no grabado; boyas esféricas en perspectiva baja en vez de discos vistos desde arriba; la cuerda sale por los dos bordes pese a «nothing touches the edges». Rediseño: composición con FLUX (cenital, discos, cadena dentro) y grabado con Z-Image img2img sobre ella; o dibujar la cadena por código y pedir solo el mar. El visto en la boya azul sí sale bien las cuatro veces.
