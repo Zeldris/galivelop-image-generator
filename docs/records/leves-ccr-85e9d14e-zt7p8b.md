@@ -56,3 +56,22 @@ Hechos los cinco en `4c297c1` (barrido B, 2026-11-16).
 - `crop-editor.js` copia de `layout-editor.js` la trampa de foco (`FOCUSABLE`, Tab, `stopPropagation`, devolver el
   foco): un helper `trapDialog(dlg, opener)` compartido.
 - `crop-editor.js` `boxFor` repite el `toBox` exportado.
+
+## Revisión del bloque de `hojas-repos` (`6398948..d877030`, 2026-11-17): leves de la fase 1
+
+- `brand.overlay`: un `viewBox` malformado en la base (`"0 0 . 100"`) sale como traza de `ValueError`, no como
+  `brand.bad_overlay_svg` (el del motivo sí se captura).
+- `brand.fit`: `--min-x nan` pasa las guardas y revienta en `int(round(nan))`; `overlay` ya mira `math.isfinite`.
+- `brand.fit` ignora el alfa: un PNG sin fondo toma `#000000` como papel, y el camino «sin cambios» lo deja opaco.
+- `brand.overlay`: prefijo `mo-` fijo sin mirar los ids de la base; dos `overlay` seguidos con `id="g1"` chocan.
+- `brand.overlay --skip-rect` quita también los `<rect>` de `<clipPath>`, `<mask>` y `<pattern>`.
+- `brand.overlay`: la guarda de referencias externas solo mira `href`; `url(https://…)` en `fill`, `style` o
+  `@import` pasa.
+- `brand.rose`: `-o x.svg --png x.svg` borra el SVG recién escrito.
+- La docstring de `fit` dice que un motivo que ya cabe deja la imagen igual; con `--max-scale` > 1 la amplía.
+- `overlay` repite la validación de color de `_rose_color` con otro texto de error.
+- `_PAINT` nuevo (CSS) y `_PAINT_ATTR` renombrado: cuatro expresiones solapadas (`_PAINT`, `_PAINT_ATTR`, `_DECL`,
+  `_STYLE`).
+- `_fit_compose`: bilineal en Python puro por píxel (decenas de segundos a 2048²).
+- `server.py` mapea `brand.no_ink`/`brand.empty_zone` a 400 sin ruta que llame a `fit`, y no `brand.bad_overlay_svg`.
+- `brand.__all__` añade `fit` pero no `overlay` ni `rose`.
