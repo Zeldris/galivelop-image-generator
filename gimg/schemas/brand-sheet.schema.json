@@ -278,6 +278,9 @@
           "delivery": {
             "$ref": "#/$defs/relativePath",
             "description": "Delivery folder of this piece type, relative to the project root."
+          },
+          "promptWords": {
+            "$ref": "#/$defs/promptWords"
           }
         },
         "required": [
@@ -344,25 +347,7 @@
       "description": "What an attempt must have to pass."
     },
     "promptWords": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "min": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 1000
-        },
-        "max": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 1000
-        }
-      },
-      "required": [
-        "min",
-        "max"
-      ],
-      "description": "Prompt length in words."
+      "$ref": "#/$defs/promptWords"
     }
   },
   "$defs": {
@@ -441,6 +426,27 @@
         "$type"
       ],
       "description": "DTCG colour token."
+    },
+    "promptWords": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "min": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "max": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        }
+      },
+      "required": [
+        "min",
+        "max"
+      ],
+      "description": "Prompt length in words."
     }
   }
 }

@@ -421,7 +421,7 @@ def lint(sheet: dict, prompt: str, piece: str | None = None, mode: str = "brand"
             add(cid)
 
     # words
-    limits = sheet.get("promptWords", DEFAULT_WORDS)
+    limits = (spec or {}).get("promptWords") or sheet.get("promptWords", DEFAULT_WORDS)
     count = len(prompt.split())
     if not limits["min"] <= count <= limits["max"]:
         add("words", "words", count=count, min=limits["min"], max=limits["max"])

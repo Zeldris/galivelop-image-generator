@@ -188,8 +188,8 @@ class ReproductionTests(PortalEnv):
         for case in FIXTURE["cases"]:
             built = self.build(case)["prompt"]
             found = sorted({(cid, key) for cid, key, _ in self.errors(sheet, built, case["piece"], case["cleanZone"])})
-            # 19 is 111 words and the 06 are 224-268, the limits being 120-200: only the length trips, no veto
-            self.assertEqual([cid for cid, _ in found], ["words"], (case["order"], found))
+            # 19 is 111 words and the 06 are 224-268: their piece types carry their own range, so nothing trips
+            self.assertEqual(found, [], (case["order"], found))
 
 
 class LintTroubleshootingTests(PortalEnv):

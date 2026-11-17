@@ -353,6 +353,17 @@ class PieceTypeOverridesTests(Env):
         self.assertEqual(other["segments"][2]["source"], "closing")
         self.assertTrue(other["prompt"].endswith("a touch of seaweed green #5d7a6a."))
 
+    def test_word_range_of_the_piece_beats_the_sheets(self):
+        words = lambda sh: [c for c in B.lint(sh, B.assemble(sh, "stage", "A chart.")["prompt"], "stage")["checks"]
+                            if c["id"] == "words"][0]
+        base = with_piece()
+        n = len(B.assemble(base, "stage", "A chart.")["prompt"].split())
+        base["promptWords"] = {"min": n + 50, "max": n + 100}
+        self.assertEqual(words(base)["status"], "error")  # the sheet's range applies without one of its own
+        own = with_piece(promptWords={"min": n - 5, "max": n + 5})
+        own["promptWords"] = {"min": n + 50, "max": n + 100}  # the sheet's range, out of reach of the prompt
+        self.assertEqual(words(own)["status"], "ok")  # the piece's range wins
+
     def test_clean_zone_after_the_closing_continues_its_sentence(self):
         sheet = with_piece(closing=PIECE_CLOSING, cleanZone="afterClosing")
         out = B.assemble(sheet, "stage", "A chart.", "the islet small on the left")

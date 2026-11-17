@@ -311,7 +311,11 @@
         "crop"
       ],
       "closing": "No realistic objects, no photographic rendering, no glow, no text, no letters, no numbers, no watermark, no horizon, no sky, no clouds, full-bleed edge to edge, no border, no frame.",
-      "cleanZone": "afterClosing"
+      "cleanZone": "afterClosing",
+      "promptWords": {
+        "min": 200,
+        "max": 300
+      }
     },
     "stage-cover-night": {
       "label": {
@@ -326,7 +330,11 @@
         "crop"
       ],
       "closing": "No realistic objects, no photographic rendering, no yellow, no orange, no warm colors, no moon, no glow, no text, no letters, no numbers, no watermark, no horizon, no sky, no clouds, full-bleed edge to edge, no border, no frame.",
-      "cleanZone": "afterClosing"
+      "cleanZone": "afterClosing",
+      "promptWords": {
+        "min": 200,
+        "max": 300
+      }
     },
     "social": {
       "label": {
@@ -366,7 +374,11 @@
       "workshop": [
         "crop"
       ],
-      "closing": "No photographic rendering, no glow, no text, no letters, no numbers, no watermark, no border, no frame."
+      "closing": "No photographic rendering, no glow, no text, no letters, no numbers, no watermark, no border, no frame.",
+      "promptWords": {
+        "min": 100,
+        "max": 140
+      }
     },
     "header": {
       "label": {
