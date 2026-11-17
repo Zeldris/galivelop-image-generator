@@ -59,8 +59,15 @@ Hechos los cinco en `4c297c1` (barrido B, 2026-11-16).
 
 - ~~`orders.py:533` `add_derived`: el glob de limpieza `".*" + _CROP_TMP + "*.tmp"` recoge cualquier oculto con `.crop.`, no solo `.<id>.crop.`; limitarlo a `^\.\d+\.crop\..*\.tmp$`.~~ hecho (2026-11-16, tanda L8)
 - ~~`orders.py:537`: `bytes(png_data)` es una copia innecesaria de un bytearray.~~ hecho (2026-11-16, tanda L8)
-- `brand.py:610` (`flat`): `_mute_attrs` sobre los `<g>` no tiene efecto porque `_no_paint` lo pone todo a none.
-- `brand.py:643`: dos bucles casi iguales sobre fill/stroke en `_paint_colors` que repiten `_own_paint`/`_CLASS`.
-- `brand.py:710` `_no_paint` duplica las sustituciones de `_mute_attrs` (y ya difieren en `prop=prop`).
+- ~~`brand.py:610` (`flat`): `_mute_attrs` sobre los `<g>` no tiene efecto porque `_no_paint` lo pone todo a none.~~ hecho (2026-11-16, barrido P2, `9fb7e33`)
+- ~~`brand.py:643`: dos bucles casi iguales sobre fill/stroke en `_paint_colors` que repiten `_own_paint`/`_CLASS`.~~ hecho (2026-11-16, barrido P2, `9fb7e33`)
+- ~~`brand.py:710` `_no_paint` duplica las sustituciones de `_mute_attrs` (y ya difieren en `prop=prop`).~~ hecho (2026-11-16, barrido P2, `9fb7e33`)
 - ~~`orders.py:472` `_new_record` fija initImage/strength a None que `add_attempt` sobrescribe; pasarlos como parámetros.~~ hecho (2026-11-16, tanda L8)
-- brand.py `_mute`: un solo booleano mezcla `stroke-opacity` 0 y `stroke-width` 0; un hijo con ancho > 0 bajo un `<g>` con `stroke-opacity` 0 vuelve a contar su trazo (visto en la verificación de `f41df36`).
+- ~~brand.py `_mute`: un solo booleano mezcla `stroke-opacity` 0 y `stroke-width` 0; un hijo con ancho > 0 bajo un `<g>` con `stroke-opacity` 0 vuelve a contar su trazo (visto en la verificación de `f41df36`).~~ hecho (2026-11-16, barrido P2, `9fb7e33`)
+
+## Fase 1 antes de `main` (2026-11-17): leves
+
+- `brand.py:743` `_mute`: llama a `_mute_attrs(attrs, fill0, op0 or w0)`, así que un `stroke-opacity` propio pisa un `stroke-width` 0 (propio o heredado) y el trazo vuelve a contar; `square()` informa `flattened` de más (la salida no cambia). Ya pasaba en `main`; pasar `w0` aparte.
+- `orders.py:504-505, 535-536`: `_CROP_TMP_RE` repite a mano el `.crop.` de `_CROP_TMP`; construirla con `re.escape(_CROP_TMP)` y quitar el glob.
+- `export.py:157, 173` `_STATS`: contador global de módulo que solo sirve a un test y se actualiza por fila en producción (compartido entre hilos); que el test parchee el paso de filas y quitarlo.
+- `brand-workshop.js:197`: la guarda tolerancia ≥ suavizado no mira `tol >= 0` (`numOf` no recorta al `min`); con -5/110 el botón sigue activo y el servidor devuelve el error crudo de `remove_bg`.
