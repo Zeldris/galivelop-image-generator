@@ -8,11 +8,12 @@
 
 | Campo | Valor |
 |---|---|
-| **Rama** | `portal-marca` (desde `origin/main` `fa1076e`); el trabajo de F4e sigue en `f4e-piezas` |
-| **Fase / tarea** | marca del Portal y de Tarkor (hoja nueva, `gimg brand`) |
+| **Rama** | `hoja-datos` (desde `origin/main` `43ef055`, 2026-11-17): versión 0.7.0 «Hoja como datos»; `ccr-85e9d14e-zt7p8b` queda con sus leves por fusionar |
+| **Fase / tarea** | FM, 0.7.0 «Hoja como datos» (`docs/plan.md`, «FM en detalle»; interfaz en `docs/interfaz/marca.md` §2.10 y §4) |
 | **Último punto estable** | `main` en `78975bf` (PR #23, tanda L8 y retro, 2026-11-17, CI en verde); release v0.6.0 publicada (etiqueta en `98fcc7c`, PR #20, 2026-11-16) |
 | **Siguiente paso** | el de la fila de `ccr-85e9d14e-zt7p8b` |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
+| **Tarea en curso · `hoja-datos`** | Empezada el 2026-11-17 (la persona: «empieza 0.7.0»). Pasos: **1** esquema `gimg/schemas/brand-sheet.schema.json` + `gimg/brandsheet.py` (cargar, validar, `extends` por proyecto registrado con la guarda D25, paleta por papeles y tonos OKLCH, montar prompt, `lint`) + `brand.sheet` en `project-config`; **2** CLI `gimg brand init|prompt|lint` y API (`GET /api/projects/{p}` con `sheet`/`pieceTypes`, `GET …/brand/sheet`, `POST …/brand/prompt`, `POST …/brand/lint`, filas `sheet.*` en `check`); **3** migrar el Portal y sus productos a `marca.json` (los pedidos del Portal están en `hojas-repos`, no en `main`: decidir con la persona) y el «pasa si»; **4** `hoja.md` generada desde los datos y su test; **5** pestaña Marca: Hoja, Comprobación, «Probar un sujeto», Piezas por tipo; **6** CHANGELOG, README, `docs/api.md`, fases 1-3 y release. Hecho: nada todavía. Siguiente: paso 1. |
 | **Tarea en curso · `fix-0.4.1`** | Fusionada en `main` por el PR #5 (`fa1076e`, 2026-11-06, CI en verde); etiqueta y release v0.4.1 publicadas; rama terminada. |
 | **Tarea en curso · `ccr-85e9d14e-zt7p8b`** | PR #23 fusionado en `main` (`78975bf`, 2026-11-17, CI en verde). **Barrido de color de `brand.py` hecho (2026-11-17**, detalle en «Pendiente»; check en verde). Presupuesto de compactaciones: 0. Queda: asas táctiles de 44 px en un dispositivo (la persona). Fase 1 del bloque hecha (2026-11-17, `Findings: 3`); retro `retro-2026-11-17-barrido-color.md` aprobada; marca `ab39587`. **PR #24 abierto**; la persona autorizó fusionarlo con el CI en verde. Siguiente: fusionar el #24 con el CI en verde y apuntarlo aquí. **En la próxima sesión en local, avisar a la persona**: reanudar la cola de `hojas-repos`. |
 | **Tarea en curso · `claude/marca-r9`** | Fusionada en `main` por el PR #6 (`2509674`, 2026-11-11): hoja r9 aplicada a interfaz, logos y nombre (detalle en «Hecho»); rama terminada. Queda, en otra tarea: medir una ronda plana y `og`/`social` con el lockup nuevo (entonces se quitan la copia congelada y `REDRAWN_COPY_SHA256`) |
