@@ -492,13 +492,14 @@ SQUARE = 128
 _PAINT = re.compile(r'(?<![\w:.-])(fill|stroke)="([^"]*)"')
 _STYLE = re.compile(r'(?<![\w:.-])style="([^"]*)"')
 _DECL = re.compile(r'(?<![\w-])(fill|stroke)(\s*:\s*)((?:[^;!]|!(?!\s*important))*)(!\s*important)?')
-_NO_PAINT = ("", "none", "currentcolor", "inherit", "transparent")
+_NO_PAINT = ("", "none", "currentcolor", "inherit", "unset", "transparent")
 
 
 def _paints(value: str) -> bool:
-    """False for no paint, ``transparent`` and any color with alpha 0 (``rgba(…, 0)``, ``#0000``, ``hsla(…, 0)``)."""
-    v = value.strip().lower()
-    return v not in ("", "none", "transparent") and not _invisible(_norm_color(v))
+    """False for no paint, ``transparent``, a malformed ``rgb()`` / ``hsl()`` (rsvg drops it) and any color with alpha 0
+    (``rgba(…, 0)``, ``#0000``, ``hsla(…, 0)``)."""
+    n = _norm_color(value)
+    return n not in ("", "none", "transparent") and not _invisible(n)
 
 
 def _invisible(norm: str) -> bool:
@@ -520,6 +521,8 @@ def _square_ink(inner: str, ink: str, root: str = "") -> str:
         return _PAINT.sub(lambda m: m.group(0) if not _paints(m.group(2)) else '%s="%s"' % (m.group(1), ink), text)
 
     kept = _root_text(root, ("fill", "stroke"))
+    if not _has_fill(kept):  # an `inherit`, `unset` or malformed root fill gives way to the ink: one fill attribute only
+        kept = _PAINT.sub(lambda m: "" if m.group(1) == "fill" else m.group(0), kept).strip()
     return "<g %s%s>%s</g>" % ("" if _has_fill(kept) else 'fill="%s" ' % ink, recolor(kept), recolor(inner))
 
 
@@ -541,20 +544,33 @@ _NAMED = {"black": "#000000", "white": "#ffffff", "red": "#ff0000", "lime": "#00
           "cyan": "#00ffff", "aqua": "#00ffff", "magenta": "#ff00ff", "fuchsia": "#ff00ff", "gray": "#808080", "grey": "#808080",
           "silver": "#c0c0c0", "maroon": "#800000", "olive": "#808000", "green": "#008000", "purple": "#800080", "teal": "#008080",
           "navy": "#000080", "orange": "#ffa500"}
-_NUM = r"[-+]?(?:\d+\.?\d*|\.\d+)"
+_NUM = r"[-+]?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?"  # CSS numbers take an exponent (`1e2`); values come lowercased
 _C = r"(%s)(%%?)" % _NUM
-_RGB = tuple(re.compile(r"rgba?\(\s*%s\)" % body.replace("{c}", _C)) for body in (  # the comma form or the space form with `/`, never mixed
-    r"{c}\s*,\s*{c}\s*,\s*{c}\s*(?:,\s*{c}\s*)?", r"{c}\s+{c}\s+{c}\s*(?:/\s*{c}\s*)?"))
-_HSL = tuple(re.compile(r"hsla?\(\s*%s\)" % body.replace("{c}", _C).replace("{n}", _NUM)) for body in (
-    r"({n})(deg|grad|rad|turn)?\s*,\s*({n})%\s*,\s*({n})%\s*(?:,\s*{c}\s*)?", r"({n})(deg|grad|rad|turn)?\s+({n})%\s+({n})%\s*(?:/\s*{c}\s*)?"))
-_HUE = {None: 1.0, "deg": 1.0, "grad": 0.9, "rad": 180 / math.pi, "turn": 360.0}
+_M = r"(%s|none)(%%?)" % _NUM  # the space form also takes `none` (0)
+_ALPHA = r"\s*(?:%s\s*%s\s*)?"
+_RGB = tuple(re.compile(r"rgba?\(\s*%s\)" % body) for body in (  # the comma form or the space form with `/`, never mixed
+    r"(%s)()\s*,\s*(%s)()\s*,\s*(%s)()%s" % (_NUM, _NUM, _NUM, _ALPHA % (",", _C)),  # commas: all numbers or all %
+    r"(%s)(%%)\s*,\s*(%s)(%%)\s*,\s*(%s)(%%)%s" % (_NUM, _NUM, _NUM, _ALPHA % (",", _C)),
+    r"%s\s+%s\s+%s%s" % (_M, _M, _M, _ALPHA % ("/", _M))))
+_HSL = tuple(re.compile(r"hsla?\(\s*%s\)" % body) for body in (
+    r"(%s(?:deg|grad|rad|turn)?)\s*,\s*(%s%%)\s*,\s*(%s%%)%s" % (_NUM, _NUM, _NUM, _ALPHA % (",", _C)),
+    r"(%s(?:deg|grad|rad|turn)?|none)\s+(%s%%|none)\s+(%s%%|none)%s" % (_NUM, _NUM, _NUM, _ALPHA % ("/", _M))))
+_HUE = {"": 1.0, "deg": 1.0, "grad": 0.9, "rad": 180 / math.pi, "turn": 360.0}
 _SHAPE = re.compile(r"<(path|rect|circle|ellipse|polygon|polyline|line)\b([^>]*)>")
 _TAG = re.compile(r"<(/?)(g|path|rect|circle|ellipse|polygon|polyline|line)\b([^>]*)>")
 _CLASS = re.compile(r'(?<![\w:.-])class\s*=')
 
 
 def _has_fill(attrs: str) -> bool:
-    return _sets(attrs, "fill")
+    return _own_paint(attrs, "fill")
+
+
+def _ink(value: str):
+    """The color that the paint `value` counts as (`_norm_color` without its alpha), or None if it paints nothing."""
+    n = _norm_color(value)
+    if value.strip().lower() in _NO_PAINT or n == "" or _invisible(n):
+        return None
+    return n[:7] if re.fullmatch(r"#[0-9a-f]{8}", n) else n
 
 
 def _hex_alpha(rgb, alpha) -> str:
@@ -564,7 +580,15 @@ def _hex_alpha(rgb, alpha) -> str:
 
 
 def _alpha_of(num, pct) -> float:
-    return 1.0 if num is None else float(num) / (100 if pct else 1)
+    return 1.0 if num is None else _val(num) / (100 if pct else 1)
+
+
+def _val(text: str) -> float:
+    """A channel as `_RGB` / `_HSL` capture it, without its unit; ``none`` is 0."""
+    return 0.0 if text == "none" else float(text)
+
+
+_COLOR_FN = re.compile(r"(?:rgba?|hsla?)\(.*\)", re.S)
 
 
 def _norm_color(value: str) -> str:
@@ -579,20 +603,23 @@ def _norm_color(value: str) -> str:
         rgb = pat.fullmatch(v)
         if rgb:
             g = rgb.groups()  # out of range channels are clamped, as CSS (and rsvg) do
-            chans = [float(g[i]) * (2.55 if g[i + 1] else 1) for i in (0, 2, 4)]
+            chans = [_val(g[i]) * (2.55 if g[i + 1] else 1) for i in (0, 2, 4)]
             return _hex_alpha([round(min(max(c, 0), 255)) for c in chans], _alpha_of(g[6], g[7]))
     for pat in _HSL:
         hsl = pat.fullmatch(v)
         if hsl:
-            h = float(hsl.group(1)) * _HUE[hsl.group(2)] % 360
+            hue = re.fullmatch(r"(.*?)(deg|grad|rad|turn|)", hsl.group(1))
+            h = _val(hue.group(1)) * _HUE[hue.group(2)] % 360
             if not math.isfinite(h):
                 return v
-            sat, light = min(max(float(hsl.group(3)), 0), 100) / 100, min(max(float(hsl.group(4)), 0), 100) / 100
+            sat, light = (min(max(_val(hsl.group(i).rstrip("%")), 0), 100) / 100 for i in (2, 3))
             c = (1 - abs(2 * light - 1)) * sat
             x = c * (1 - abs((h / 60) % 2 - 1))
             r, g2, b = [(c, x, 0), (x, c, 0), (0, c, x), (0, x, c), (x, 0, c), (c, 0, x)][int(h // 60) % 6]
             m = light - c / 2
-            return _hex_alpha([round((n + m) * 255) for n in (r, g2, b)], _alpha_of(hsl.group(5), hsl.group(6)))
+            return _hex_alpha([round((n + m) * 255) for n in (r, g2, b)], _alpha_of(hsl.group(4), hsl.group(5)))
+    if _COLOR_FN.fullmatch(v):
+        return ""  # a malformed rgb() / hsl(): rsvg drops it, as if the paint were not set
     return _NAMED.get(v, v)
 
 
@@ -611,11 +638,7 @@ def _paint_colors(inner: str, root: str = "") -> set:
     found = [m.group(2) for m in _PAINT.finditer(flat)]
     for st in _STYLE.finditer(flat):
         found += [m.group(3) for m in _DECL.finditer(st.group(1))]
-    colors = set()
-    for v in found:
-        n = _norm_color(v)
-        if v.strip().lower() not in _NO_PAINT and not _invisible(n):
-            colors.add(n[:7] if re.fullmatch(r"#[0-9a-f]{8}", n) else n)  # alpha aside: same color
+    colors = {_ink(v) for v in found} - {None}  # alpha aside: same color
     root_paint = {}  # property -> value the root sets; it counts only if a shape inherits it (rsvg: stroke too)
     for m in _PAINT.finditer(root):
         root_paint[m.group(1)] = m.group(2)
@@ -643,18 +666,15 @@ def _paint_colors(inner: str, root: str = "") -> set:
                     if prop not in above:
                         inherited.add(prop)
                     near = next((g[prop] for g in reversed(groups[1:]) if prop in g), None)  # the nearest <g> paint
-                    if near is not None:
-                        n = _norm_color(near)
-                        if near.strip().lower() not in _NO_PAINT and not _invisible(n):
-                            colors.add(n[:7] if re.fullmatch(r"#[0-9a-f]{8}", n) else n)
+                    if near is not None and _ink(near):
+                        colors.add(_ink(near))
                     elif prop == "fill" and not any("fill" in g for g in groups):
                         colors.add("#000000")
     else:
         inherited = {"fill", "stroke"}
     for prop, v in root_paint.items():
-        n = _norm_color(v)
-        if prop in inherited and v.strip().lower() not in _NO_PAINT and not _invisible(n):
-            colors.add(n[:7] if re.fullmatch(r"#[0-9a-f]{8}", n) else n)
+        if prop in inherited and _ink(v):
+            colors.add(_ink(v))
     return colors
 
 
@@ -665,15 +685,12 @@ def _paint_value(attrs: str, prop: str):
     return found[-1] if found else None
 
 
-def _sets(attrs: str, prop: str) -> bool:
-    return _paint_value(attrs, prop) is not None
-
-
 def _own_paint(attrs: str, prop: str) -> bool:
     """Whether `attrs` gives `prop` a value of its own: ``inherit`` / ``unset`` (both inherited properties) take the parent's,
-    so they climb the stack of ``<g>`` up to the root as if the attribute were not there."""
+    and rsvg drops an empty or malformed ``rgb()`` / ``hsl()``, so they climb the stack of ``<g>`` up to the root as if the
+    attribute were not there."""
     value = _paint_value(attrs, prop)
-    return value is not None and value.strip().lower() not in ("inherit", "unset")
+    return value is not None and value.strip().lower() not in ("inherit", "unset") and _norm_color(value) != ""
 
 
 def _opacity(attrs: str, name: str):
@@ -700,9 +717,14 @@ def _mute_attrs(attrs: str, fill0: bool = False, stroke0: bool = False) -> str:
     for prop, inherited in (("fill", fill0), ("stroke", stroke0)):
         own = _opacity(attrs, prop + "-opacity")
         if (own <= 0) if own is not None else inherited:
-            attrs = _no_paint(attrs, (prop,))
-            attrs += ' %s="none"' % prop
+            attrs = _paint_none(attrs, prop)
     return attrs
+
+
+def _paint_none(attrs: str, prop: str) -> str:
+    """`attrs` with `prop` turned into ``none``, added as an attribute only when it has no value of its own: one attribute each."""
+    attrs = _no_paint(attrs, (prop,))
+    return attrs if _paint_value(attrs, prop) is not None else attrs + ' %s="none"' % prop
 
 
 def _no_paint(attrs: str, props=("fill",)) -> str:
@@ -740,7 +762,9 @@ def _mute(inner: str, root: str = "") -> str:
             last = m.end()
             muted, fill0, op0, w0 = state(attrs, stack[-1])
             if not muted:
-                kept = _mute_attrs(attrs, fill0, op0 or w0)
+                kept = _mute_attrs(attrs, fill0, op0)
+                if w0:  # a width 0 (own or inherited) hides the stroke whatever its own stroke-opacity says
+                    kept = _paint_none(kept, "stroke")
                 if tag == "line":  # a <line> has no area: no fill paints, whatever its own fill-opacity says
                     kept = _no_paint(kept)
                 out.append("<%s%s>" % (tag, kept))

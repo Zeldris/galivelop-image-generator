@@ -67,7 +67,15 @@ Hechos los cinco en `4c297c1` (barrido B, 2026-11-16).
 
 ## Fase 1 antes de `main` (2026-11-17): leves
 
-- `brand.py:743` `_mute`: llama a `_mute_attrs(attrs, fill0, op0 or w0)`, así que un `stroke-opacity` propio pisa un `stroke-width` 0 (propio o heredado) y el trazo vuelve a contar; `square()` informa `flattened` de más (la salida no cambia). Ya pasaba en `main`; pasar `w0` aparte.
+- ~~`brand.py:743` `_mute`: llama a `_mute_attrs(attrs, fill0, op0 or w0)`, así que un `stroke-opacity` propio pisa un `stroke-width` 0 (propio o heredado) y el trazo vuelve a contar; `square()` informa `flattened` de más (la salida no cambia). Ya pasaba en `main`; pasar `w0` aparte.~~ hecho (2026-11-17, barrido de color)
 - `orders.py:504-505, 535-536`: `_CROP_TMP_RE` repite a mano el `.crop.` de `_CROP_TMP`; construirla con `re.escape(_CROP_TMP)` y quitar el glob.
 - `export.py:157, 173` `_STATS`: contador global de módulo que solo sirve a un test y se actualiza por fila en producción (compartido entre hilos); que el test parchee el paso de filas y quitarlo.
 - `brand-workshop.js:197`: la guarda tolerancia ≥ suavizado no mira `tol >= 0` (`numOf` no recorta al `min`); con -5/110 el botón sigue activo y el servidor devuelve el error crudo de `remove_bg`.
+
+## Fase 1 del bloque desde `78975bf` (2026-11-17, barrido de color): leves
+
+- `brand.py` `_paint_value`: se queda con el último valor aunque esté mal formado; `<path fill="#f00" style="fill:rgb(1,2)">` lo pinta rojo en rsvg, pero `_paint_colors` da también `#000000` (`flattened` de más). Saltar los valores con `_norm_color == ""` antes de tomar el último.
+- `brand.py` `_norm_color`: con exponentes, `hsl(1e400 100% 50%)` da tono infinito y devuelve el texto crudo (cuenta como color propio). Comprobar en rsvg qué hace antes de cambiarlo (`test_a_huge_hue_does_not_crash_and_stays_raw` fija lo de hoy).
+- `brand.py` `_paints` y `_ink`: casi el mismo predicado; unirlos.
+- `brand.py` `_paint_colors`: `_ink(near)` y `_ink(v)` se calculan dos veces por pintura heredada.
+- Hechos en el commit de arreglos: `fill` duplicado en `_square_ink` con raíz `inherit`/`unset`/mal formada (medio); `unset` en `_NO_PAINT`; `stroke="none"` duplicado en `_mute` (`_paint_none`).
