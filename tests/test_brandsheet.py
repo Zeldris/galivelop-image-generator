@@ -24,7 +24,7 @@ LINE = ("Simple line icon style: one uniform stroke width, rounded caps and join
         "no texture, bold and clear enough to read at 24 pixels, generous empty margin around each icon, a single "
         "ink colour.")
 CLOSING = ("No photographic rendering, no glow, no text, no letters, no numbers, no watermark, full-bleed edge to "
-           "edge, no border, no frame.")
+           "edge, no border, no frame, no white margin, no blank band.")
 
 
 def label(es, en=None):
@@ -172,7 +172,8 @@ class LoadResolveTests(Env):
         self.assertEqual(origin["palette.paper.$value"], {"origin": "inherited", "project": "portal"})
         self.assertEqual(origin["vetoes.groups.ethics.terms"], {"origin": "inherited", "project": "family"})
         self.assertEqual(origin["vetoes.groups.gears.terms"], {"origin": "own", "project": "dev"})
-        self.assertEqual(origin["vetoes.exceptions.0.term"], {"origin": "inherited", "project": "family"})
+        self.assertEqual(origin["vetoes.exceptions.0.term"], {"origin": "inherited", "project": "portal"})
+        self.assertEqual(origin["vetoes.exceptions.1.term"], {"origin": "inherited", "project": "family"})
         self.assertRegex(sheet["version"], r"^[0-9a-f]{12}$")
         self.assertNotEqual(sheet["version"], B.resolve("portal")["version"])
         self.assertEqual(sheet["version"], B.resolve("dev")["version"])
@@ -217,6 +218,20 @@ class LoadResolveTests(Env):
         (root / "marca.json").unlink()
         (root / "marca.json").symlink_to(outside)
         err = self.code(B.resolve, "dev")
+        self.assertEqual((err.code, err.params["path"]), ("path.outside", "marca.json"))
+
+    def test_parent_sheet_symlink_caught_by_project_sheet_guard(self):
+        # load_config is bypassed (mocked), so only _project_sheet's paths.inside can refuse the link
+        outside = self.tmp / "elsewhere.json"
+        outside.write_text(json.dumps(PORTAL))
+        self.project("dev", {"schemaVersion": 1, "name": "dev", "extends": "portal"})
+        root = self.tmp / "portal"
+        root.mkdir()
+        (root / "marca.json").symlink_to(outside)
+        real_get = projects.get
+        portal = {"name": "portal", "root": str(root), "config": {"brand": {"sheet": "marca.json"}}}
+        with mock.patch.object(B.projects, "get", side_effect=lambda n: portal if n == "portal" else real_get(n)):
+            err = self.code(B.resolve, "dev")
         self.assertEqual((err.code, err.params["path"]), ("path.outside", "marca.json"))
 
     def test_parent_sheet_with_dotdot_rejected(self):
@@ -273,6 +288,17 @@ class ToneTests(unittest.TestCase):
         with self.assertRaises(GimgError) as cm:
             B.accent_tones("#12345g")
         self.assertEqual(cm.exception.code, "brandsheet.bad_hex")
+
+    def test_dark_paper_sheet_does_not_raise(self):
+        sheet = copy.deepcopy(PORTAL)
+        sheet["palette"]["paper"] = color("#101820", "deep slate")
+        pal = B.palette(sheet)
+        self.assertIn("#101820", pal)
+        tones = B.accent_tones("#5d7a6a", "#101820")
+        self.assertGreaterEqual(B.contrast(tones["deep"], "#101820"), 4.5)
+        zone = ZONE.replace("plain flat off-white", "deep slate")
+        prompt = B.assemble(sheet, "cover", SUBJECT, zone)["prompt"]
+        self.assertFalse(B.lint(sheet, prompt, piece="cover", clean_zone=zone)["blocked"])
 
     def test_palette(self):
         tones = B.accent_tones("#5d7a6a")
@@ -381,6 +407,29 @@ class LintTests(unittest.TestCase):
                          ("boat", "nautical", "the sea is the where"))
         i, j = veto[0]["span"]
         self.assertEqual(prompt[i:j], "Boat")
+
+    def test_real_closing_with_white_vetoed_not_blocked(self):
+        result = self.run_lint(self.good(), piece="cover", clean_zone=ZONE)
+        self.assertIn("no white margin", self.good())
+        self.assertFalse(result["blocked"])
+        self.assertEqual(self.problems(result), [])
+        # the same word outside the shielded text still blocks
+        bad = self.run_lint(self.good(subject=SUBJECT + ", a white ring"), piece="cover")
+        self.assertIn(("colorWord", "lint.color_word"), self.problems(bad))
+
+    def test_veto_plural(self):
+        for text in ("paper boats", "two anchors", "tall lighthouses", "robots"):
+            prompt = self.good(subject=SUBJECT + ", " + text)
+            self.assertIn(("veto", "lint.veto"), self.problems(self.run_lint(prompt)), text)
+
+    def test_color_word_plural(self):
+        prompt = self.good(subject=SUBJECT + ", deep reds")
+        checks = [c for c in self.run_lint(prompt, piece="cover")["checks"] if c["status"] != "ok"]
+        self.assertEqual([prompt[c["span"][0]:c["span"][1]] for c in checks if c["id"] == "colorWord"], ["reds"])
+
+    def test_never_write_plural(self):
+        prompt = self.good(subject=SUBJECT + ", transparents")
+        self.assertIn(("neverWrite", "lint.never_write"), self.problems(self.run_lint(prompt, piece="cover")))
 
     def test_veto_whole_word_only(self):
         prompt = self.good(subject=SUBJECT + ", boathouses of paper")

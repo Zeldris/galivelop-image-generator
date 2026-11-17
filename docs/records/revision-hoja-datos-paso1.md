@@ -9,7 +9,7 @@ Está comprobado y bien:
 - La guarda D25: `paths.inside` en `projects.load_config` y en `_project_sheet`, y `..` lo rechaza el esquema.
 - Se detectan los ciclos de `extends`.
 
-**Pendiente:** el arreglo de los puntos 1-5. Va a un subagente: `opus` para el 5, que toca la guarda, y `sonnet` para
+**Hecho (2026-11-17):** el arreglo de los puntos 1-5 (además, `palette()` omite los tonos si no hay tono posible, en vez de saltar). Plan seguido: Va a un subagente: `opus` para el 5, que toca la guarda, y `sonnet` para
 el resto. Va en un commit con `Findings: 5`, y cada test nuevo se pasa por `red-without-fix.sh`. Los leves (6-14) se
 quedan apuntados aquí y no vuelven a revisarse en este PR.
 

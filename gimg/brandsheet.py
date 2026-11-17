@@ -73,8 +73,9 @@ def _leaves(value, prefix, out):
         out.append(prefix)
 
 
-def _owned(sheet: dict) -> list:
-    """Field paths a sheet declares itself (groups by id, exceptions by position)."""
+def _owned(sheet: dict, offset: int = 0) -> list:
+    """Field paths a sheet declares itself (groups by id, exceptions by position in the merged list, after
+    the `offset` exceptions of the sheets it extends)."""
     body = {k: v for k, v in sheet.items() if k not in ("$schema", "schemaVersion", "name", "extends")}
     vetoes = body.get("vetoes", {})
     groups, exceptions = vetoes.get("groups"), vetoes.get("exceptions")
@@ -82,7 +83,7 @@ def _owned(sheet: dict) -> list:
     if groups is not None:
         body["vetoes"]["groups"] = {g["id"]: g for g in groups}
     if exceptions is not None:
-        body["vetoes"]["exceptions"] = {str(i): e for i, e in enumerate(exceptions)}
+        body["vetoes"]["exceptions"] = {str(offset + i): e for i, e in enumerate(exceptions)}
     out = []
     _leaves(body, "", out)
     return [p for p in out if p]
@@ -165,11 +166,12 @@ def resolve(project_name: str) -> dict:
         sheet = _project_sheet(name, child)
         sheets.append(sheet)
         child, name = name, sheet.get("extends")
-    merged, origin = {}, {}
+    merged, origin, shift = {}, {}, 0
     for owner, sheet in reversed(list(zip(chain, sheets))):
         merged = _merge_sheets(merged, sheet)
-        for field in _owned(sheet):
+        for field in _owned(sheet, shift):
             origin[field] = {"origin": "own" if owner == project_name else "inherited", "project": owner}
+        shift += len(sheet.get("vetoes", {}).get("exceptions", []))
     merged["schemaVersion"] = sheets[0]["schemaVersion"]
     merged["name"] = sheets[0]["name"]
     merged.pop("extends", None)
@@ -242,6 +244,8 @@ def _oklch_hex(lightness, chroma, hue):
 
 
 def _tone(vivid, paper, direction):
+    if _luminance(paper) < 0.18:  # a dark paper needs the lighter tone whatever the theme asked for
+        direction = +1
     lightness, chroma, hue = _oklch(vivid)
     if contrast(vivid, paper) >= TONE_THRESHOLD:
         return vivid.lower()
@@ -273,9 +277,13 @@ def palette(sheet: dict) -> list:
     dark = pal.get("dark", {})
     found = [_value(pal.get(role)) for role in ROLES]
     if pal.get("accent"):
-        tones = accent_tones(pal["accent"]["$value"], _value(pal.get("paper")) or PAPER_LIGHT,
-                             _value(dark.get("paper")) or PAPER_DARK)
-        found += [tones["deep"], tones["dark"]]
+        try:
+            tones = accent_tones(pal["accent"]["$value"], _value(pal.get("paper")) or PAPER_LIGHT,
+                                 _value(dark.get("paper")) or PAPER_DARK)
+            found += [tones["deep"], tones["dark"]]
+        except GimgError as exc:
+            if exc.code != "brandsheet.no_tone":
+                raise
     found += [_value(dark.get("paper")), _value(dark.get("ink"))]
     found += [h.lower() for h in pal.get("measureOnly", [])]
     out = []
@@ -343,7 +351,7 @@ def _find(prompt, needle):
 
 def _word_spans(prompt, term):
     words = term.split()
-    pattern = r"(?<!\w)" + r"\s+".join(re.escape(w) for w in words) + r"(?!\w)"
+    pattern = r"(?<!\w)" + r"\s+".join(re.escape(w) for w in words) + r"(?:e?s)?(?!\w)"
     return [[m.start(), m.end()] for m in re.finditer(pattern, prompt, re.IGNORECASE)]
 
 
@@ -451,8 +459,9 @@ def lint(sheet: dict, prompt: str, piece: str | None = None, mode: str = "brand"
     ok_unless("neverWrite", before)
 
     # colour names outside the palette sentence and the colours' own prompt names
-    shield = [pal_span] if pal_span else []
-    for token in (sheet["palette"].get(r) for r in ROLES):
+    shield = [s for s in [pal_span, closing_span] + list(reg_spans.values()) if s]
+    dark = sheet["palette"].get("dark", {})
+    for token in [sheet["palette"].get(r) for r in ROLES] + [dark.get("paper"), dark.get("ink")]:
         if token and token.get("promptName"):
             shield += _word_spans(prompt, token["promptName"])
     before = len(checks)
