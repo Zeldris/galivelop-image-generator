@@ -43,3 +43,26 @@ Rediseños al escribir los pedidos, antes de generar (elegido por el agente, del
 | 17 estados: solo cambiaba una gema diminuta | q1103-q1109 | Tres siluetas: triángulo con exclamación, aspa sobre sello rojo, marca de verificación sobre sello musgo |
 | 08 esquina: brazos de madera finos, filo verdoso al recortar | q1005 | Toda de oro, brazos de un quinto de su largo, contorno de bronce grueso; `gimg brand matte --grow 4` |
 | e07 barras: fondo de madera y piedra que hubo que recortar | q660, q662 | Bloque reducido y croma; las bajas se piden a un cuarto del alto y se reducen en vertical a 900×16 |
+
+## Juicio del 2026-11-17 (cola #1137-1246)
+
+Tarkor (instalador y UX-41):
+- **ux41/07 enciclopedia:** el libro descrito con materiales sale suelto, sin medallón. Rediseño: medallón primero en la frase; el libro, emblema plano de oro montado en las tablas.
+- **ux41/08 mapa:** el pliegue central lo lee como libro abierto a 24 px. Rediseño: hoja plana sin pliegue, borde rasgado, cuatro trazos gruesos y X grande.
+- **ux41/12 dado:** con 3 semillas no cuenta puntos (P7) y mete madera. Rediseño: cubo de oro liso con caras en blanco; los puntos 1-2-3, por SVG.
+- **ux41/03 hecho:** «stamped into a round seal» deforma el aro; «laid over a round seal» (error) sí funcionó.
+- **ux41/06 medicinal:** la receta de categorías da un mortero de bulto que desborda; si se rehace, emblema plano montado.
+- **Iconos fuera del aro:** «kept inside the rim» acierta uno de cada tres en flechas y rayos.
+- **i3 portada:** con camino, puerta y estandartes el cinturón desaparece; describir primero el cinturón ancho (frase de i6) y la empalizada como silueta lejana.
+- **i4 riel:** el bloque común de materiales gana a «hierro». Rediseño sin ese bloque: chapa continua `#171310` con rejilla grabada.
+- **SVG de medallones:** el trazado del medallón entero sale posterizado (motas de oro en la madera, cerco verde del croma); para vector limpio, trazar solo el motivo.
+
+Portal y GVE:
+- **«deep teal #16827c» junto al cerúleo** sale azul petróleo, igual que el mar (og de Developer). Rediseño: el vivo `#0e9a93` con nombre de verde.
+- **«capsule… vial of a spirit level»** en cuadrado da cápsula vertical (termómetro) las tres veces. Rediseño: figura apaisada descrita de izquierda a derecha.
+- **«dark olive green #6b7509»** sobre croma magenta sale verde botella: igualar al hondo al vectorizar.
+- **Cantidades vagas** («a few lines») dan 6-7 filas; aros «a lo largo» de una curva la deshacen. Mejor posiciones que cantidades.
+- **Grabados sobre papel traen marco y margen** pese a «no border»: se recorta. Los de mar a sangre, no.
+- **Regla de mareas:** 2 de 8 intentos con garabatos como cifras; mirarla siempre de cerca.
+- **Iconos que ocupan poco cuadro** se emborronan a 28 px: recortar al motivo antes de trazar.
+- **«off-white #fbfcfd» sale crema** en fondos y tarjetas, como el 12 del Portal.
