@@ -34,6 +34,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
+from . import brandsheet
 from . import compose as compose_mod
 from . import engine, engine_sdcpp, fsutil, i18n, limits, models, paths, projects
 from .errors import GimgError
@@ -439,10 +440,52 @@ def _ollama(machine: dict, bad: str, ollama_url: Optional[str]) -> Check:
                  "doctor.fix.ollama", {"cmds": "; ".join("ollama stop " + n for n in loaded)})
 
 
+def _sheet(name: str) -> list:
+    """`sheet.*` rows of one project: sheet present, valid, `extends` resolved, text contrast of the paper roles."""
+    project = projects.get(name)
+    rel = brandsheet.declared(project)
+    lang = i18n.default_lang()
+    if rel is None:
+        return [Check("sheet.present", WARN, "doctor.sheet.none", {"project": name},
+                      "doctor.sheet.fix_init", {"project": name})]
+    try:
+        sheet = brandsheet.resolve(name)
+    except GimgError as exc:
+        message = exc.message(lang).replace("\n", " ")
+        if exc.code == "brandsheet.missing":
+            return [Check("sheet.present", FAIL, "doctor.sheet.missing", {"path": rel},
+                          "doctor.sheet.fix_init", {"project": name})]
+        if exc.code in ("brandsheet.extends_missing", "brandsheet.extends_cycle"):
+            return [Check("sheet.present", OK, "doctor.sheet.present", {"path": rel}),
+                    Check("sheet.extends", FAIL, "doctor.sheet.extends_bad", {"message": message},
+                          "doctor.sheet.fix_extends")]
+        return [Check("sheet.present", OK, "doctor.sheet.present", {"path": rel}),
+                Check("sheet.valid", FAIL, "doctor.sheet.invalid", {"message": message}, "doctor.sheet.fix_edit",
+                      {"path": rel})]
+    out = [Check("sheet.present", OK, "doctor.sheet.present", {"path": rel}),
+           Check("sheet.valid", OK, "doctor.sheet.valid", {"version": sheet["version"]})]
+    if len(sheet["chain"]) > 1:
+        out.append(Check("sheet.extends", OK, "doctor.sheet.extends_ok", {"chain": " <- ".join(sheet["chain"])}))
+    paper = sheet["palette"]["paper"]["$value"]
+    low = []
+    for role in ("ink", "accent"):
+        value = sheet["palette"][role]["$value"]
+        ratio = brandsheet.contrast(value, paper)
+        if ratio < brandsheet.TONE_THRESHOLD:
+            low.append("%s %s (%.1f:1)" % (role, value, ratio))
+    if low:
+        out.append(Check("sheet.contrast", WARN, "doctor.sheet.contrast_low",
+                         {"roles": ", ".join(low), "min": brandsheet.TONE_THRESHOLD, "paper": paper},
+                         "doctor.sheet.fix_edit", {"path": rel}))
+    else:
+        out.append(Check("sheet.contrast", OK, "doctor.sheet.contrast_ok", {"min": brandsheet.TONE_THRESHOLD}))
+    return out
+
+
 def run_project(name: str) -> list:
     """The checks that concern one registered project (F4d, ``GET /api/projects/{p}/check``): its fonts, its template
     and logo files and their editable elements. The same functions as `run`, limited to `name`."""
-    return _fonts(name) + _template_files(name)
+    return _fonts(name) + _template_files(name) + _sheet(name)
 
 
 def run(verify: bool = False, ollama_url: Optional[str] = None) -> list:

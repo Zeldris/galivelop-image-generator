@@ -496,3 +496,84 @@ def lint(sheet: dict, prompt: str, piece: str | None = None, mode: str = "brand"
                 check["status"] = "warn"
     blocked = mode == "brand" and any(c["status"] == "error" for c in checks)
     return {"checks": checks, "blocked": blocked}
+
+
+# --- what the CLI and the API both serve -------------------------------------------------------------------------
+
+def declared(project: dict) -> str | None:
+    """Relative path of the sheet the project's config declares (`brand.sheet`), or None."""
+    return project["config"].get("brand", {}).get("sheet")
+
+
+def prompt_response(project_name: str, piece: str, subject: str, clean_zone: str | None = None) -> dict:
+    """`gimg brand prompt --json` / `POST .../brand/prompt`: the assembled prompt, its checks and the piece defaults."""
+    sheet = resolve(project_name)
+    built = assemble(sheet, piece, subject, clean_zone)
+    res = lint(sheet, built["prompt"], piece, "brand", clean_zone)
+    spec = sheet["pieceTypes"][piece]
+    profile = spec.get("profile")
+    model = projects.get(project_name)["config"].get("profiles", {}).get(profile, {}).get("model")
+    defaults = {"profile": profile, "seed": spec.get("seed"), "count": spec.get("count"), "model": model,
+                "chroma": spec.get("chroma")}
+    return {**built, "checks": res["checks"], "blocked": res["blocked"], "defaults": defaults, "known": []}
+
+
+def piece_list(piece_types: dict) -> list:
+    """Piece types as a list `[{"id", ...fields the sheet has}]`."""
+    return [{"id": pid, **copy.deepcopy(spec)} for pid, spec in piece_types.items()]
+
+
+def _error_lines(exc: GimgError, lang) -> list:
+    return exc.message(lang).split("\n")
+
+
+def status(project_name: str, lang=None) -> dict:
+    """State of the project's sheet that never raises for a sheet problem: `{"sheet": {present, valid, version,
+    path, extends, errors}, "pieceTypes": [...]}`. A project without a sheet is `present: false`, no error."""
+    project = projects.get(project_name)
+    rel = declared(project)
+    info = {"present": False, "valid": False, "version": None, "path": rel, "extends": [], "errors": []}
+    if rel is None:
+        return {"sheet": info, "pieceTypes": []}
+    own = None
+    try:
+        own = load(paths.inside(project["root"], rel))
+        info["present"] = True
+        if own.get("extends"):
+            info["extends"] = [own["extends"]]
+    except GimgError as exc:
+        info["present"] = exc.code != "brandsheet.missing"
+        info["errors"] = _error_lines(exc, lang)
+    except OSError as exc:
+        info["errors"] = [str(exc)]
+    if own is None:
+        return {"sheet": info, "pieceTypes": []}
+    try:
+        sheet = resolve(project_name)
+    except GimgError as exc:
+        info["errors"] = _error_lines(exc, lang)
+        return {"sheet": info, "pieceTypes": piece_list(own.get("pieceTypes", {}))}
+    info.update(valid=True, version=sheet["version"], extends=sheet["chain"][1:])
+    return {"sheet": info, "pieceTypes": piece_list(sheet.get("pieceTypes", {}))}
+
+
+def sheet_view(project_name: str) -> dict:
+    """`GET .../brand/sheet`: the resolved sheet as the UI shows it, with `origin` (own|inherited + project + file)
+    for every field path `resolve` records (vetoes.exceptions by position in the merged list)."""
+    sheet = resolve(project_name)
+    pal = sheet["palette"]
+    roles = {r: {"hex": _value(pal[r]), "name": pal[r].get("promptName")} for r in ROLES if r in pal}
+    files = {}
+    origin = {}
+    for field, found in sheet["origin"].items():
+        owner = found["project"]
+        if owner not in files:
+            files[owner] = declared(projects.get(owner))
+        origin[field] = {"origin": found["origin"], "project": owner, "file": files[owner]}
+    out = {"name": sheet["name"], "version": sheet["version"], "chain": sheet["chain"], "roles": roles,
+           "palette": pal, "registers": sheet["registers"], "closing": sheet["closing"],
+           "paletteSentence": sheet["paletteSentence"], "paletteSentenceText": palette_sentence(sheet),
+           "vetoes": sheet.get("vetoes", {}), "pieceTypes": piece_list(sheet.get("pieceTypes", {})),
+           "acceptance": sheet.get("acceptance", {}), "promptWords": sheet.get("promptWords", DEFAULT_WORDS),
+           "origin": origin}
+    return out

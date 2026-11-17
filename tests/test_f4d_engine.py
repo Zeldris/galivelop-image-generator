@@ -135,7 +135,7 @@ class CheckRouteTests(F4dBase):
         for item in got:
             self.assertIn(item["status"], ("ok", "warn", "fail"))
             self.assertTrue(item["message"])
-            self.assertIn(item["id"].split(":")[0], ("font", "fonts", "template", "templates"))
+            self.assertIn(item["id"].split(":")[0], ("font", "fonts", "template", "templates", "sheet.present"))
         self.bad("GET", "/api/projects/nope/check", None, 404, "project.unknown")
 
 

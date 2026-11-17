@@ -18,7 +18,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote
 
-from . import __version__, brand, brandshop, build_id, compose, crop, delivery, doctor, i18n, measure, models, orders, paths, projects, queue
+from . import __version__, brand, brandsheet, brandshop, build_id, compose, crop, delivery, doctor, i18n, measure, models, orders, paths, projects, queue
 from .errors import GimgError
 
 API_VERSION = 1
@@ -45,12 +45,15 @@ BASE_HEADERS = {
 _EXACT = {
     403: ("api.bad_host", "api.bad_origin"),
     404: ("project.unknown", "order.unknown", "order.profile_unknown", "order.attempt_unknown", "queue.unknown",
-          "api.not_found", "compose.template_missing", "compose.logo_missing"),
+          "api.not_found", "compose.template_missing", "compose.logo_missing", "brandsheet.none", "brandsheet.missing"),
+    # the project's sheet exists but its content (or its parents) cannot be used
+    422: ("brandsheet.invalid", "brandsheet.unreadable", "brandsheet.extends_missing", "brandsheet.extends_cycle",
+          "brandsheet.incomplete", "brandsheet.unknown_register", "brandsheet.no_tone"),
     405: ("api.method_not_allowed",), 411: ("api.length_required",), 413: ("api.body_too_large",),
     415: ("api.content_type",),
     409: ("compose.template_exists", "compose.busy", "measure.busy", "api.heavy_busy", "compose.nothing_to_do", "compose.no_attempts", "serve.already_running", "serve.port_busy", "serve.not_running", "order.discard_chosen",
-          "order.history_empty", "queue.not_cancellable", "queue.not_movable", "delivery.target_taken", "brand.exists", "brand.missing_piece", "export.exists"),
-    400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "compose.template_unknown", "compose.element_unknown", "compose.bad_layout", "compose.bad_element", "compose.templates_dir_missing", "api.bad_json",
+          "order.history_empty", "queue.not_cancellable", "queue.not_movable", "delivery.target_taken", "brand.exists", "brand.missing_piece", "export.exists", "brandsheet.exists"),
+    400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "compose.template_unknown", "compose.element_unknown", "compose.bad_layout", "compose.bad_element", "compose.templates_dir_missing", "api.bad_json", "brandsheet.unknown_piece", "brandsheet.convert_unsupported",
           "api.bad_param", "brand.no_matte", "brand.dir_missing", "brand.no_palette", "brand.font_unknown", "brand.empty_text", "brand.text_too_long", "brand.empty_wordmark", "brand.wordmark_no_fit", "brand.font_unreadable", "brand.bad_square",
           "export.size_not_for_ico", "export.icon_sizes_only_ico", "export.upscale", "export.too_big",
           "export.bad_crop", "export.crop_outside", "export.bad_anchor", "crop.outside", "crop.ratio_mismatch", "crop.compose_unsupported"),
@@ -430,7 +433,8 @@ def projects_list(req):
 
 @route("GET", "/api/projects/{p}")
 def project_show(req):
-    return projects.get(req.params["p"])
+    project = projects.get(req.params["p"])
+    return {**project, **brandsheet.status(project["name"], req.lang)}
 
 
 @route("GET", "/api/projects/{p}/orders")
@@ -1031,3 +1035,32 @@ def start_thread(server: Server) -> threading.Thread:
     thread = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.1}, daemon=True)
     thread.start()
     return thread
+
+
+# --- brand sheet (D41, 0.7.0): read-only and fast, so none of it goes through `_heavy()` ---
+@route("GET", _BRAND + "/sheet")
+def brand_sheet(req):
+    return brandsheet.sheet_view(_brand_project(req))
+
+
+@route("POST", _BRAND + "/prompt")
+def brand_prompt(req):
+    project = _brand_project(req)
+    body = _fields(req.body, ("piece", "subject", "cleanZone", "from"))
+    if "from" in body:
+        raise GimgError("brandsheet.convert_unsupported")
+    zone = body.get("cleanZone")
+    if zone is not None and not isinstance(zone, str):
+        raise GimgError("api.bad_param", name="cleanZone")
+    return brandsheet.prompt_response(project, _str_field(body, "piece"), _str_field(body, "subject"), zone)
+
+
+@route("POST", _BRAND + "/lint")
+def brand_lint(req):
+    project = _brand_project(req)
+    body = _fields(req.body, ("prompt", "piece"))
+    piece = body.get("piece")
+    if piece is not None and not isinstance(piece, str):
+        raise GimgError("api.bad_param", name="piece")
+    res = brandsheet.lint(brandsheet.resolve(project), _str_field(body, "prompt"), piece, "free")
+    return {"checks": res["checks"]}

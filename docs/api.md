@@ -105,7 +105,7 @@ curl -s $B/api/projects
 
 ### GET /api/projects/{p}
 
-`{"name", "root", "config"}` (perfiles, `compose`, `brand`). Errores: `project.*`.
+`{"name", "root", "config", "sheet", "pieceTypes"}` (perfiles, `compose`, `brand`). `sheet`: `{"present", "valid", "version", "path", "extends": [..], "errors": [..]}` (sin hoja: `present: false` y `pieceTypes: []`, sin error); `pieceTypes`: `[{"id", "label", "profile", "register", "chroma", "seed", "count", "workshop", ..}]`. Errores: `project.*`.
 
 ```sh
 curl -s $B/api/projects/mi-proyecto
@@ -401,7 +401,7 @@ curl -s $B/api/models
 
 Las comprobaciones de `gimg doctor` que tocan al proyecto (fuentes de `compose.fonts`, archivos de plantillas y
 logos, elementos editables y `viewBox`): `[{"id", "status": "ok|warn|fail", "message", "fix"?}]`. Error:
-`project.unknown`.
+Con hoja de marca (o sin ella, avisando) añade las filas `sheet.present`, `sheet.valid`, `sheet.extends` y `sheet.contrast` (tinta y acento sobre el papel, mínimo 4,5:1). Error: `project.unknown`.
 
 ```sh
 curl -s $B/api/projects/mi-proyecto/check
@@ -416,6 +416,44 @@ del sistema: `emblema-alpha.png`, `emblema.svg`, `emblema-mono.svg`, `wordmark.s
 
 ```sh
 curl -s $B/api/projects/mi-proyecto/brand
+```
+
+### GET /api/projects/{p}/brand/sheet
+
+La hoja de marca resuelta (con la herencia de `extends` aplicada): `name`, `version`, `chain` (proyectos, el propio primero),
+`roles` (`{papel: {"hex", "name"}}` de `paper`, `ink`, `accent`, `halo`, `grid`), `palette` (los tokens), `registers`,
+`closing`, `paletteSentence` y `paletteSentenceText` (con los colores puestos), `vetoes`, `pieceTypes` (lista), `acceptance`,
+`promptWords` y `origin`: por cada valor (ruta con puntos, p. ej. `palette.paper.$value`; las excepciones de vetos, por su
+posición en la lista fusionada) `{"origin": "own|inherited", "project", "file"}`. Errores: `brandsheet.none` y
+`brandsheet.missing` (404), `brandsheet.invalid`, `brandsheet.unreadable`, `brandsheet.extends_missing`,
+`brandsheet.extends_cycle`, `brandsheet.incomplete`, `brandsheet.unknown_register` (422), `project.unknown`.
+
+```sh
+curl -s $B/api/projects/mi-proyecto/brand/sheet
+```
+
+### POST /api/projects/{p}/brand/prompt
+
+Monta el prompt de una pieza de marca y lo comprueba, sin efectos y sin pasar por la cola: lo mismo que
+`gimg brand prompt --json`. Campos: `piece`, `subject`, `cleanZone` (opcional). Devuelve `{"prompt", "words", "segments",
+"checks", "blocked", "defaults", "known"}`; cada comprobación lleva `message: {"key", "params"}` (clave de i18n). `from`
+(convertir un prompt libre) aún no existe: `brandsheet.convert_unsupported` (400). Errores: `brandsheet.unknown_piece`
+(400), `api.bad_param`, los de la hoja de `GET .../brand/sheet`, `project.unknown`.
+
+```sh
+curl -s -X POST $B/api/projects/mi-proyecto/brand/prompt -H 'Content-Type: application/json' \
+  -d '{"piece": "cover", "subject": "Un zorro en la nieve", "cleanZone": "arriba a la izquierda"}'
+```
+
+### POST /api/projects/{p}/brand/lint
+
+Comprueba un prompt escrito a mano contra la hoja, en modo libre (los errores bajan a avisos; nunca `blocked`). Campos:
+`prompt`, `piece` (opcional). Devuelve `{"checks"}`. Errores: `brandsheet.unknown_piece` (400), `api.bad_param`, los de la
+hoja, `project.unknown`.
+
+```sh
+curl -s -X POST $B/api/projects/mi-proyecto/brand/lint -H 'Content-Type: application/json' \
+  -d '{"prompt": "a red fox in the snow", "piece": "cover"}'
 ```
 
 ### POST /api/projects/{p}/brand/matte

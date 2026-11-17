@@ -38,12 +38,8 @@ INTENDED_500 = {
     "export.out_is_input", "crop.write_failed",
     # tile.*: no endpoint serves `gimg tile` (CLI only), so none of its errors maps to a status; add a 409/400 when one does
     "tile.out_is_input", "tile.same_outputs", "tile.write_failed", "tile.exists", "tile.too_big",
-    # brandsheet.*: no endpoint reads the brand sheet yet (0.7.0 step 1); step 2 gives them their 4xx with the API
-    "brandsheet.missing", "brandsheet.unreadable", "brandsheet.none", "brandsheet.extends_missing",
-    "brandsheet.extends_cycle", "brandsheet.incomplete", "brandsheet.unknown_register", "brandsheet.no_tone",
-    "brandsheet.unknown_piece",
-    # CLI only (0.7.0 step 2A): `brand init` overwrite guard and `brand lint` source; step 2B maps them if the API needs them
-    "brandsheet.exists", "cli.lint_source", "cli.prompt_unreadable",
+    # CLI only (0.7.0 step 2A): no endpoint returns them (`brand init` overwrite guard, `brand lint` source)
+    "cli.lint_source", "cli.prompt_unreadable",
 }
 
 

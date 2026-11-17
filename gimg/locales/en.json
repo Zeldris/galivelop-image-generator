@@ -1055,5 +1055,18 @@
   "cli.out.prompt_blocked": "blocked: the prompt has errors against the sheet",
   "error.brandsheet.exists": "the brand sheet {path} already exists; use --force to overwrite it",
   "error.cli.lint_source": "give exactly one of --prompt or --file",
-  "error.cli.prompt_unreadable": "cannot read the prompt {path}: {reason}"
+  "error.cli.prompt_unreadable": "cannot read the prompt {path}: {reason}",
+  "doctor.sheet.none": "project \"{project}\" has no brand sheet",
+  "doctor.sheet.fix_init": "gimg brand init --project {project}",
+  "doctor.sheet.missing": "the declared brand sheet does not exist: {path}",
+  "doctor.sheet.present": "brand sheet: {path}",
+  "doctor.sheet.invalid": "the brand sheet is not valid: {message}",
+  "doctor.sheet.fix_edit": "fix the sheet {path}",
+  "doctor.sheet.valid": "valid brand sheet (version {version})",
+  "doctor.sheet.extends_bad": "the sheet inheritance fails: {message}",
+  "doctor.sheet.fix_extends": "register the parent project (gimg project add) or fix \"extends\"",
+  "doctor.sheet.extends_ok": "sheet inheritance resolved: {chain}",
+  "doctor.sheet.contrast_low": "low contrast on paper {paper} (minimum {min}:1): {roles}",
+  "doctor.sheet.contrast_ok": "ink and accent on paper: contrast of {min}:1 or more",
+  "error.brandsheet.convert_unsupported": "converting a free prompt (from) is not available yet; give piece and subject"
 }

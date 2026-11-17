@@ -1055,5 +1055,18 @@
   "cli.out.prompt_blocked": "bloqueado: el prompt tiene errores frente a la hoja",
   "error.brandsheet.exists": "la hoja de marca {path} ya existe; usa --force para pisarla",
   "error.cli.lint_source": "da exactamente una de --prompt o --file",
-  "error.cli.prompt_unreadable": "no se puede leer el prompt {path}: {reason}"
+  "error.cli.prompt_unreadable": "no se puede leer el prompt {path}: {reason}",
+  "doctor.sheet.none": "el proyecto «{project}» no tiene hoja de marca",
+  "doctor.sheet.fix_init": "gimg brand init --project {project}",
+  "doctor.sheet.missing": "no existe la hoja de marca declarada: {path}",
+  "doctor.sheet.present": "hoja de marca: {path}",
+  "doctor.sheet.invalid": "la hoja de marca no es válida: {message}",
+  "doctor.sheet.fix_edit": "corrige la hoja {path}",
+  "doctor.sheet.valid": "hoja de marca válida (versión {version})",
+  "doctor.sheet.extends_bad": "la herencia de la hoja falla: {message}",
+  "doctor.sheet.fix_extends": "registra el proyecto padre (gimg project add) o corrige «extends»",
+  "doctor.sheet.extends_ok": "herencia de la hoja resuelta: {chain}",
+  "doctor.sheet.contrast_low": "contraste bajo sobre el papel {paper} (mínimo {min}:1): {roles}",
+  "doctor.sheet.contrast_ok": "tinta y acento sobre el papel: contraste de {min}:1 o más",
+  "error.brandsheet.convert_unsupported": "convertir un prompt libre (from) aún no está disponible; da piece y subject"
 }

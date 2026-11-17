@@ -359,19 +359,12 @@ def _check_lines(out: _Out, checks: list) -> None:
 
 
 def _brand_prompt(args, out: _Out) -> int:
-    sheet = brandsheet.resolve(args.project)
-    built = brandsheet.assemble(sheet, args.piece, args.subject, args.clean_zone)
-    res = brandsheet.lint(sheet, built["prompt"], args.piece, "brand", args.clean_zone)
-    spec = sheet["pieceTypes"][args.piece]
-    profile = spec.get("profile")
-    model = projects.get(args.project)["config"].get("profiles", {}).get(profile, {}).get("model")
-    defaults = {"profile": profile, "seed": spec.get("seed"), "count": spec.get("count"), "model": model,
-                "chroma": spec.get("chroma")}
+    res = brandsheet.prompt_response(args.project, args.piece, args.subject, args.clean_zone)
     if out.as_json:
-        out.data({**built, "checks": res["checks"], "blocked": res["blocked"], "defaults": defaults, "known": []})
+        out.data(res)
     else:
-        print(built["prompt"])
-        out.line("cli.out.prompt_words", words=built["words"])
+        print(res["prompt"])
+        out.line("cli.out.prompt_words", words=res["words"])
         _check_lines(out, [c for c in res["checks"] if c["status"] != "ok"])
         if res["blocked"]:
             out.line("cli.out.prompt_blocked")
