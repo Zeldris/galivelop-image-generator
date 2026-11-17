@@ -17,7 +17,7 @@ menor; `fix` y `perf`, el parche; sin nada de eso, ninguna. `bump` sale con 1 y 
 semver, no es mayor que la actual o si algún CHANGELOG no tiene nada sin publicar. `verify-tag` sale con 0 o 1.
 `check` sale con 0 si las dos existen, 1 si falta alguna (y dice la orden que la crea) y 2 si no lo puede saber
 (sin `git` o `gh`, sin red; la release se consulta por la API REST, `gh api repos/{owner}/{repo}/releases/tags/<tag>`,
-porque GraphQL puede estar bloqueado, y falta solo con un 404). Se corre al cerrar cada fase, con la rama ya en `main`. Antes de leer la versión trae
+porque GraphQL puede estar bloqueado, y falta solo con un 404 «Not Found» con el repo visible: si no, 2). Se corre al cerrar cada fase, con la rama ya en `main`. Antes de leer la versión trae
 `ref` del remoto si es una rama de `origin/` (un `origin/main` viejo daría por buena la versión anterior).
 """
 import datetime
@@ -91,8 +91,15 @@ def check(ref, run=subprocess.run):
     if not tags.strip():
         missing.append(f"la etiqueta: git tag -a {tag} <commit> -m 'gimg {version}' && git push origin {tag}")
     if release.returncode != 0:
-        if "HTTP 404" not in (release.stderr or ""):
-            return 2, f"releases: gh no responde ({(release.stderr or '').strip()})"
+        err = (release.stderr or "").strip()
+        if "HTTP 404" not in err or not re.search(r"not found", err, re.I):
+            return 2, f"releases: gh no responde ({err})"
+        try:  # un 404 también es un repo que no se ve (token sin acceso, remoto renombrado): no es «falta la release»
+            repo = run(["gh", "api", "repos/{owner}/{repo}", "--jq", ".full_name"], cwd=R, capture_output=True, text=True)
+        except OSError as exc:
+            return 2, f"releases: no se puede comprobar ({exc})"
+        if repo.returncode != 0:
+            return 2, f"releases: gh no ve el repositorio ({(repo.stderr or '').strip()})"
         missing.append(f"la release: python3 releases.py notes {version} | "
                        f"gh release create {tag} --verify-tag --title '{version}' --notes-file -")
     if missing:

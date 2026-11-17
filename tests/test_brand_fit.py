@@ -89,10 +89,17 @@ class FitTests(BrandBase):
         self.assertEqual(code, 0, err)
         shift = json.loads(out)["shift"][0]
         w, h, rgba = png.read_rgba(self.out)
-        edge, mid = px(rgba, w, shift + 10, 20), px(rgba, w, shift + 25, 20)
+        edge, mid = px(rgba, w, shift + 5, 20), px(rgba, w, shift + 25, 20)
         self.assertEqual(mid, INK_ON_LIGHT)  # past the ramp
-        self.assertNotEqual(edge, INK_ON_LIGHT)  # inside the ramp (the image starts at x 0 of itself: paper there)
-        self.assertEqual(edge, tuple(round(p + (i - p) * 10.5 / 20) for p, i in zip(LIGHT, INK_ON_LIGHT)))
+        self.assertEqual(px(rgba, w, shift + 10, 20), INK_ON_LIGHT)  # the ramp stops at the box of the motif (10 px in)
+        self.assertEqual(edge, LIGHT)  # the margin outside the box: paper, whatever the ramp
+
+    def test_the_fade_never_enters_the_motif_box(self):
+        band_png(self.src, rect=(20, 8, 180, 32), size=(200, 40))
+        code, out, err = self.fit("--min-x", "100", "--margin", "0", "--feather", "40", "--feather-y", "0", "--json")
+        self.assertEqual(code, 0, err)
+        w, h, rgba = png.read_rgba(self.out)
+        self.assertEqual(px(rgba, w, 110, 20), INK_ON_LIGHT)  # 10 px inside the box: old ramp left it half transparent
 
     def test_an_edge_near_the_canvas_edge_is_not_faded_nor_left_as_a_strip(self):
         band_png(self.src, rect=(10, 0, 160, 40))  # ink to the right edge: scaled to the zone, the image ends 8 px short of the canvas
