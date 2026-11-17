@@ -3,6 +3,7 @@
   "minVersion": "0.1.0",
   "name": "galivelop-voice-generator",
   "brand": {
+    "sheet": "marca.json",
     "palette": [
       "#06121c",
       "#F6B1CA",

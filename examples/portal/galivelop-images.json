@@ -3,6 +3,7 @@
   "minVersion": "0.1.0",
   "name": "portal",
   "brand": {
+    "sheet": "marca.json",
     "palette": [
       "#0072a8",
       "#1aa6df",

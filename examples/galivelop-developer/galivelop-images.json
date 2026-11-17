@@ -3,6 +3,7 @@
   "minVersion": "0.1.0",
   "name": "galivelop-developer",
   "brand": {
+    "sheet": "marca.json",
     "palette": [
       "#06121c",
       "#eaf4fa",
