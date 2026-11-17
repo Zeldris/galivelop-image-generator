@@ -149,6 +149,8 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--piece", "cli.arg.sheet_piece", metavar="ID"),
          opt("--mode", "cli.arg.sheet_mode", choices=("brand", "free"), default="brand"),
          opt("--clean-zone", "cli.arg.sheet_clean_zone", metavar="TEXT"))
+    leaf(g, "md", "cli.cmd.brand_md", arg("project", "cli.arg.project"),
+         opt("--write", "cli.arg.md_write", metavar="FILE"), opt("--check", "cli.arg.md_check", metavar="FILE"))
     props = (opt("--cap", "cli.arg.brand_cap", type=float, default=0.45),
              opt("--gap", "cli.arg.brand_gap", type=float, default=0.25),
              opt("--width", "cli.arg.brand_width", type=float, default=1.6))
@@ -392,7 +394,41 @@ def _brand_lint(args, out: _Out) -> int:
     return 1 if res["blocked"] else 0
 
 
+def _brand_md(args, out: _Out) -> int:
+    block = brandsheet.markdown(args.project, out.lang)
+    target = args.write or args.check
+    if args.write and args.check:
+        raise GimgError("cli.md_target")
+    if target is None:
+        if out.as_json:
+            out.data({"markdown": block})
+        else:
+            print(block, end="")
+        return 0
+    path = Path(target)
+    try:
+        text = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        text = None
+    if args.write:
+        fsutil.write_bytes_atomic(path, brandsheet.replace_block(text or "", block, path).encode("utf-8"))
+        if out.as_json:
+            out.data({"path": str(path), "written": True})
+        else:
+            out.line("cli.out.md_written", path=path)
+        return 0
+    if text is None or brandsheet.extract_block(text, path) != block:
+        raise GimgError("brandsheet.markdown_stale", path=str(path), project=args.project)
+    if out.as_json:
+        out.data({"path": str(path), "ok": True})
+    else:
+        out.line("cli.out.md_ok", path=path)
+    return 0
+
+
 def _brand(args, sub, out: _Out):
+    if sub == "md":
+        return _brand_md(args, out)
     if sub == "init":
         return _brand_init(args, out)
     if sub == "prompt":

@@ -12,7 +12,7 @@ import math
 import re
 from pathlib import Path
 
-from . import fsutil, paths, projects, schema
+from . import fsutil, i18n, paths, projects, schema
 from .errors import GimgError
 
 ROLES = ("paper", "ink", "accent", "halo", "grid")
@@ -642,3 +642,168 @@ def sheet_view(project_name: str) -> dict:
            "acceptance": sheet.get("acceptance", {}), "promptWords": sheet.get("promptWords", DEFAULT_WORDS),
            "origin": origin}
     return out
+
+
+# --- hoja.md: the generated block (0.7.0, paso 4) ---------------------------------------------------------------
+
+MD_START = "<!-- gimg brand md: inicio (generado desde marca.json; no editar a mano: gimg brand md --write) -->"
+MD_END = "<!-- gimg brand md: fin -->"
+
+
+def _cell(value) -> str:
+    return "—" if value in (None, "", []) else str(value).replace("|", "\\|").replace("\n", " ")
+
+
+def _code(text: str) -> list:
+    return ["```", text.rstrip("\n"), "```"]
+
+
+def _table(head: list, rows: list) -> list:
+    out = ["| " + " | ".join(head) + " |", "|" + "|".join(" --- " for _ in head) + "|"]
+    return out + ["| " + " | ".join(_cell(c) for c in row) + " |" for row in rows]
+
+
+def _origin_text(origin: dict, prefix: str, lang: str) -> str:
+    """«propio» / «heredado de X» for a field path and everything under it (the sheet's own mix is both)."""
+    found = [v for k, v in origin.items() if k == prefix or k.startswith(prefix + ".")]
+    parts = []
+    if any(v["origin"] == "own" for v in found):
+        parts.append(i18n.t("brandsheet.md.own", lang))
+    for owner in dict.fromkeys(v["project"] for v in found if v["origin"] == "inherited"):
+        parts.append(i18n.t("brandsheet.md.inherited", lang, project=owner))
+    return " + ".join(parts) or "—"
+
+
+def _words(value, lang) -> str:
+    return i18n.t("brandsheet.md.words_range", lang, min=value["min"], max=value["max"]) if value else None
+
+
+def markdown(project_name: str, lang: str = "es") -> str:
+    """The generated `hoja.md` block (markers included) of a project's resolved sheet; deterministic."""
+    view = sheet_view(project_name)
+    origin = view["origin"]
+
+    def t(key, **params):
+        return i18n.t("brandsheet.md." + key, lang, **params)
+
+    def own(prefix):
+        return _origin_text(origin, prefix, lang)
+
+    out = [MD_START, "", "### " + t("title"), "", "#### " + t("card")]
+    out += ["", "- %s: `%s`" % (t("name"), view["name"]), "- %s: `%s`" % (t("version"), view["version"]),
+            "- %s: %s" % (t("chain"), " ← ".join(view["chain"]))]
+    pal = view["palette"]
+    out += ["", "#### " + t("palette"), ""]
+    rows = [(r, "`%s`" % view["roles"][r]["hex"], view["roles"][r]["name"], own("palette." + r))
+            for r in ROLES if r in view["roles"]]
+    out += _table([t("role"), "hex", t("prompt_name"), t("origin")], rows)
+    if "accent" in pal:
+        try:
+            tones = accent_tones(pal["accent"]["$value"], _value(pal.get("paper")) or PAPER_LIGHT,
+                                 _value(pal.get("dark", {}).get("paper")) or PAPER_DARK)
+            out += ["", "- %s: `%s` / `%s`" % (t("tones"), tones["deep"], tones["dark"])]
+        except GimgError as exc:
+            if exc.code != "brandsheet.no_tone":
+                raise
+    if pal.get("dark"):
+        out += ["", "- %s: %s (%s)" % (t("dark"), ", ".join("%s `%s`" % (k, _value(v)) for k, v in pal["dark"].items()),
+                                       own("palette.dark"))]
+    if pal.get("measureOnly"):
+        out += ["", "- %s: %s (%s)" % (t("measure_only"), ", ".join("`%s`" % h.lower() for h in pal["measureOnly"]),
+                                       own("palette.measureOnly"))]
+    out += ["", "- %s (%s):" % (t("palette_sentence"), own("paletteSentence")), ""]
+    out += _code(view["paletteSentenceText"])
+
+    out += ["", "#### " + t("registers")]
+    for rid, reg in view["registers"].items():
+        out += ["", "##### `%s`: %s (%s)" % (rid, reg["label"].get(lang) or reg["label"]["en"], own("registers." + rid)), ""]
+        out += _code(reg["block"])
+    out += ["", "- %s (%s):" % (t("closing"), own("closing")), ""] + _code(view["closing"])
+    out += ["", "- %s: %s (%s)" % (t("prompt_words"), _words(view["promptWords"], lang), own("promptWords"))]
+
+    vet = view["vetoes"]
+    out += ["", "#### " + t("vetoes")]
+    for group in vet.get("groups", []):
+        gid = group["id"]
+        label = group.get("label", {})
+        reason = group.get("reason", {})
+        out += ["", "##### `%s`: %s (%s)" % (gid, _cell(label.get(lang)), own("vetoes.groups." + gid))]
+        if reason.get(lang):
+            out += ["", "%s: %s" % (t("reason"), reason[lang])]
+        out += ["", "%s: %s" % (t("terms"), ", ".join("`%s`" % x for x in group["terms"]))]
+    if vet.get("exceptions"):
+        out += ["", "##### " + t("exceptions"), ""]
+        rows = [(e["term"], ", ".join(e["pieces"]), own("vetoes.exceptions.%d" % i))
+                for i, e in enumerate(vet["exceptions"])]
+        out += _table([t("term"), t("pieces"), t("origin")], rows)
+    for key in vet:
+        if key in ("groups", "exceptions"):
+            continue
+        value = vet[key]
+        text = ", ".join("`%s`" % x for x in value) if isinstance(value, list) else "`%s`" % value
+        out += ["", "- `%s` (%s): %s" % (key, own("vetoes." + key), text)]
+
+    out += ["", "#### " + t("pieces_title"), ""]
+    head = [t("piece"), t("profile"), t("register"), t("chroma"), "seed", "count", t("workshop"), t("delivery"),
+            t("own_closing"), t("own_sentence"), "cleanZone", "promptWords", t("origin")]
+    rows = []
+    for piece in view["pieceTypes"]:
+        pid = piece["id"]
+        label = piece.get("label", {}).get(lang)
+        rows.append(("`%s`%s" % (pid, " (%s)" % label if label else ""), piece.get("profile"), piece.get("register"),
+                     piece.get("chroma"), piece.get("seed"), piece.get("count"), ", ".join(piece.get("workshop", [])),
+                     piece.get("delivery"), piece.get("closing"), piece.get("paletteSentence"), piece.get("cleanZone"),
+                     _words(piece.get("promptWords"), lang), own("pieceTypes." + pid)))
+    out += _table(head, rows) if rows else [t("none")]
+
+    acc = view["acceptance"]
+    out += ["", "#### " + t("acceptance"), ""]
+    lines = []
+    if acc.get("traits"):
+        lines.append("- %s (%s): %s" % (t("traits"), own("acceptance.traits"),
+                                        ", ".join("`%s` %s" % (k, v) for k, v in acc["traits"].items())))
+    if "threshold" in acc:
+        lines.append("- %s: %s" % (t("threshold"), acc["threshold"]))
+    if acc.get("references"):
+        lines.append("- %s (%s): %s" % (t("references"), own("acceptance.references"),
+                                        ", ".join("`%s`" % r for r in acc["references"])))
+    if acc.get("unmeasured"):
+        lines.append("- %s (%s):" % (t("unmeasured"), own("acceptance.unmeasured")))
+        lines += ["  - `%s`: %s" % (u["id"], u["label"].get(lang) or u["label"]["en"]) for u in acc["unmeasured"]]
+    if "autoDiscard" in acc:
+        lines.append("- autoDiscard (%s): %s" % (own("acceptance.autoDiscard"), "true" if acc["autoDiscard"] else "false"))
+    out += lines or [t("none")]
+    return "\n".join(out + ["", MD_END]) + "\n"
+
+
+def _block_span(text: str, path) -> tuple | None:
+    """(start, end) offsets of the block in `text` (end after the closing marker), None without markers;
+    a lone or repeated marker raises."""
+    starts, ends = text.count(MD_START), text.count(MD_END)
+    if starts == 0 and ends == 0:
+        return None
+    if starts != 1 or ends != 1 or text.index(MD_START) > text.index(MD_END):
+        raise GimgError("brandsheet.markdown_markers", path=str(path))
+    return text.index(MD_START), text.index(MD_END) + len(MD_END)
+
+
+def _gap(text: str) -> str:
+    if not text or text.endswith("\n\n"):
+        return ""
+    return "\n" if text.endswith("\n") else "\n\n"
+
+
+def extract_block(text: str, path="") -> str | None:
+    """The block between the markers (markers included, one trailing newline), None if there are none."""
+    span = _block_span(text, path)
+    return None if span is None else text[span[0]:span[1]] + "\n"
+
+
+def replace_block(text: str, block: str, path="") -> str:
+    """`text` with the block between the markers replaced (the rest byte for byte); without markers, the block is
+    appended after a blank line."""
+    span = _block_span(text, path)
+    if span is None:
+        return text + _gap(text) + block
+    tail = text[span[1]:]
+    return text[:span[0]] + block.rstrip("\n") + (tail if tail else "\n")

@@ -822,3 +822,158 @@ el umbral y el logo `a`. A cambio, el Portal trae dos problemas que las herramie
 cambiar de identidad en una rama sin publicar (ADR 0002), y sus propias imágenes de marca (una captura y un PNG con
 `system-ui` y sombra) no cumplen la hoja que acaban de originar. Es la única marca de la familia en que la hoja es más
 estricta que lo publicado.
+
+## Datos de la hoja (generado)
+
+<!-- gimg brand md: inicio (generado desde marca.json; no editar a mano: gimg brand md --write) -->
+
+### Datos de la hoja
+
+#### Ficha
+
+- Nombre: `portal`
+- Versión: `0d06a5a9625c`
+- Herencia: portal
+
+#### Paleta por papeles
+
+| Papel | hex | Nombre en el prompt | Origen |
+| --- | --- | --- | --- |
+| paper | `#fbfcfd` | off-white | propio |
+| ink | `#13212b` | ink grey | propio |
+| accent | `#5d7a6a` | a touch of seaweed green | propio |
+| halo | `#0072a8` | medium cerulean ocean blue | propio |
+| grid | `#e3edf3` | — | propio |
+
+- Tonos del acento (profundo / oscuro): `#5d7a6a` / `#688676`
+
+- Versión oscura: paper `#0d171e`, ink `#e6eef3` (propio)
+
+- Solo para medir: `#1aa6df` (propio)
+
+- Frase de paleta montada (propio):
+
+```
+Palette strictly limited to medium cerulean ocean blue #0072a8 and its tints and shades, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a.
+```
+
+#### Registros
+
+##### `engraved`: Grabado a dos tintas (propio)
+
+```
+Richly detailed engraved antique nautical chart style, like a fine sea chart printed in two inks: many layers of fine lines and hatching, line density increasing in the darker areas to give depth and tone, lines of several weights, crisp and sharp, intricate but calm, premium print quality, high detail, elegant.
+```
+
+##### `line`: Línea simple (propio)
+
+```
+Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, bold and clear enough to read at 24 pixels, generous empty margin around each icon, a single ink colour.
+```
+
+##### `engraved-stage`: Grabado de la 06 (mar de carta) (propio)
+
+```
+Richly detailed engraved nautical chart style, like a fine antique sea chart printed in two inks: the sea built from many layers of fine wave lines and hatching, line density increasing towards the deep water to give depth, tonal bands from deep cerulean at the bottom to lighter cerulean at the top, bathymetric contour lines with small depth soundings drawn as tiny dots, a delicate compass rose with fine tick marks in a corner, subtle foam strokes and a few glints of light on the crests. Crisp sharp lines of several weights, intricate but calm, premium print quality, high detail, elegant.
+```
+
+##### `engraved-stage-night`: Grabado de la 06 nocturna (propio)
+
+```
+Richly detailed engraved nautical chart style, like a fine antique sea chart printed in two inks: the sea built from many layers of fine wave lines and hatching, line density increasing towards the deep water to give depth, tonal bands of deep dark cerulean, bathymetric contour lines with small depth soundings drawn as tiny dots, a delicate compass rose with fine tick marks in a corner, subtle foam strokes and a few glints of light on the crests. Crisp sharp lines of several weights, intricate but calm, premium print quality, high detail, elegant.
+```
+
+- Cierre (propio):
+
+```
+No photographic rendering, no glow, no text, no letters, no numbers, no watermark, full-bleed edge to edge, no border, no frame.
+```
+
+- Palabras del prompt: 120-200 palabras (—)
+
+#### Vetos
+
+##### `ethics`: Ética de la biblia (propio)
+
+Motivo: Vetado por ética (biblia): personas, manos, rostros, robots, cerebros, magia de IA, gente en traje, apretones de manos, cohetes y gráficas de crecimiento
+
+Términos: `person`, `people`, `hand`, `face`, `robot`, `brain`, `magic`, `suit`, `handshake`, `rocket`, `growth chart`
+
+##### `nautical`: Motivos náuticos (propio)
+
+Motivo: El mar pone el dónde, la tecnología pone el qué: un motivo náutico solo vale en las tres excepciones cerradas (barco de la 19, barco de la 15 de Developer, faro, boya, barco y grúa de las 06)
+
+Términos: `anchor`, `boat`, `ship`, `lighthouse`, `oar`, `buoy`, `crane`, `sextant`, `knot`, `sail`, `sailor`
+
+##### `glyph-windows`: Ventana de editor o terminal (propio)
+
+Motivo: Troubleshooting q574-q607: Z-Image inventa glifos dentro de la ventana (FLUX mete marco y graba pobre); la ventana solo vale como icono en línea simple
+
+Términos: `editor window`, `terminal window`
+
+##### `navigation-compass`: Compás de navegación (propio)
+
+Motivo: Troubleshooting q610, q616: sale de latón o metálico, fotográfico y con glifos en las patas
+
+Términos: `navigation compass`
+
+##### `camera-prefix`: Prefijo de cámara (propio)
+
+Motivo: Troubleshooting q614: con «seen from high above looking down» el mar sale fotorrealista y se pierde el grabado; se usa «seen from slightly above»
+
+Términos: `seen from high above looking down`
+
+##### `clock-arrow`: Reloj con flecha (propio)
+
+Motivo: Troubleshooting q646, q647: sin flecha se lee como «hora» y con ella sale con punta en estrella y bucle; la 08c es una línea de tiempo vertical con tres nodos
+
+Términos: `clock`
+
+##### Excepciones
+
+| Término | Piezas | Origen |
+| --- | --- | --- |
+| boat | sent, stage-cover, stage-cover-night | propio |
+| lighthouse | stage-cover, stage-cover-night | propio |
+| buoy | stage-cover, stage-cover-night | propio |
+| crane | stage-cover, stage-cover-night | propio |
+| editor window | icon, logo | propio |
+| terminal window | icon, logo | propio |
+
+- `neverWrite` (propio): `transparent`, `exactly`, `sky blue`
+
+- `colorWords` (propio): `white`, `black`, `golden`, `gold`, `red`, `yellow`, `orange`, `purple`, `pink`, `brown`, `silver`
+
+- `fillPhrase` (propio): `filling the whole sheet`
+
+#### Tipos de pieza
+
+| Pieza | Perfil | Registro | Croma | seed | count | Taller | Entrega | Cierre propio | Frase propia | cleanZone | promptWords | Origen |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `logo` (Logo, sello y rosa) | cuadrado | line | #00ff00 | — | 2 | matte, trace | — | — | — | — | — | propio |
+| `icon` (Icono) | icono | line | #00ff00 | — | 2 | matte, trace | — | — | — | — | — | propio |
+| `divider` (Separador) | separador | line | — | — | 2 | — | — | — | — | — | — | propio |
+| `cover` (Portada) | portada | engraved | — | — | 2 | crop | — | — | — | — | — | propio |
+| `stage-cover` (Portada de estado (06)) | portada | engraved-stage | — | — | 2 | crop | — | No realistic objects, no photographic rendering, no glow, no text, no letters, no numbers, no watermark, no horizon, no sky, no clouds, full-bleed edge to edge, no border, no frame. | — | afterClosing | 200-300 palabras | propio |
+| `stage-cover-night` (Portada de estado nocturna (06 publicado)) | portada | engraved-stage-night | — | — | 2 | crop | — | No realistic objects, no photographic rendering, no yellow, no orange, no warm colors, no moon, no glow, no text, no letters, no numbers, no watermark, no horizon, no sky, no clouds, full-bleed edge to edge, no border, no frame. | — | afterClosing | 200-300 palabras | propio |
+| `social` (Social y og) | social | engraved | — | — | 2 | crop | — | — | — | — | — | propio |
+| `coming-soon` (Próximamente (15)) | tarjeta | engraved | — | — | 2 | crop | — | — | — | — | — | propio |
+| `sent` (Enviado (19)) | formulario | engraved | — | — | 2 | crop | — | No photographic rendering, no glow, no text, no letters, no numbers, no watermark, no border, no frame. | — | — | 100-140 palabras | propio |
+| `header` (Cabecera) | cabecera | engraved | — | — | 2 | crop | — | — | — | — | — | propio |
+| `wall` (Muro y banda) | muro | engraved | — | — | 2 | crop | — | — | — | — | — | propio |
+| `diagram` (Diagrama (10)) | panoramica | engraved | — | — | 2 | crop | — | — | — | — | — | propio |
+| `background` (Fondo) | fondo | engraved | — | — | 2 | crop | — | — | — | — | — | propio |
+| `error-page` (Página de error (18)) | ilustracion | engraved | — | — | 2 | crop | — | — | — | — | — | propio |
+| `frame` (Marco de retrato (17)) | cuadrado | engraved | #00ff00 | — | 2 | matte | — | — | — | — | — | propio |
+| `pattern` (Patrón (21)) | patron | engraved | — | — | 2 | — | — | — | — | — | — | propio |
+
+#### Aceptación
+
+- Referencias (propio): `referencias/03-portada-social.png`, `referencias/31-portada-workflow-q911.png`, `referencias/31c-portada-workflow-q941.png`, `referencias/32e-portada-gvig-q952.png`
+- Sin medir (lo juzga una persona) (propio):
+  - `horizon`: Horizonte, cielo o nubes
+  - `repeated-motif`: Motivo repetido (otro barco de papel)
+  - `glyphs`: Glifos o letras inventadas
+- autoDiscard (propio): false
+
+<!-- gimg brand md: fin -->
