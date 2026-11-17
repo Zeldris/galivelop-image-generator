@@ -40,5 +40,5 @@ Mover q1425-1428 a `top` al reanudar la cola.
 | Punto | Estado |
 |---|---|
 | 1 SVG del icono | hecho (2026-11-17): curvas, `viewBox` 314 329 1412 1412, trazo ~1,5×, PNG 512² regenerado; a 24 px se lee como silueta del colmillo, el cordón se funde |
-| 2 og 24c | pendiente (sin encolar) |
-| 3 31f a top | pendiente (cola en pausa) |
+| 2 og 24c | rehecho como 24d: composición FLUX q1429-1432 en cola (17-11); falta grabado img2img |
+| 3 31f a top | hecho (17-11, cola reanudada) |
