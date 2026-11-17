@@ -49,7 +49,8 @@ _EXACT = {
     # the project's sheet exists but its content (or its parents) cannot be used
     422: ("brandsheet.invalid", "brandsheet.unreadable", "brandsheet.extends_missing", "brandsheet.extends_broken",
           "brandsheet.extends_cycle",
-          "brandsheet.incomplete", "brandsheet.unknown_register", "brandsheet.no_tone"),
+          "brandsheet.incomplete", "brandsheet.unknown_register", "brandsheet.no_tone",
+          "brandsheet.markdown_marker_in_data"),
     405: ("api.method_not_allowed",), 411: ("api.length_required",), 413: ("api.body_too_large",),
     415: ("api.content_type",),
     409: ("compose.template_exists", "compose.busy", "measure.busy", "api.heavy_busy", "compose.nothing_to_do", "compose.no_attempts", "serve.already_running", "serve.port_busy", "serve.not_running", "order.discard_chosen",

@@ -40,6 +40,8 @@ INTENDED_500 = {
     "tile.out_is_input", "tile.same_outputs", "tile.write_failed", "tile.exists", "tile.too_big",
     # CLI only (0.7.0 step 2A): no endpoint returns them (`brand init` overwrite guard, `brand lint` source)
     "cli.lint_source", "cli.prompt_unreadable",
+    # CLI only (0.7.0 step 4): `brand md --write|--check`; no endpoint writes or checks hoja.md yet
+    "brandsheet.markdown_markers", "brandsheet.markdown_stale", "cli.md_target",
 }
 
 
