@@ -9,6 +9,13 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Sin publicar]
 
+### Añadido
+
+- Hoja de marca como datos (paso 1 de 0.7.0): `gimg/schemas/brand-sheet.schema.json`, `brand.sheet` en la
+  configuración del proyecto (dentro de su raíz) y `gimg/brandsheet.py`, que resuelve `extends` por proyecto
+  registrado, deriva la paleta y los tonos del acento (OKLCH, 4,5:1), monta el prompt en el orden de la hoja y lo
+  comprueba.
+
 ### Corregido
 
 - La interfaz, editores de recorte y de capas: un error al guardar sale solo dentro del diálogo (antes reaparecía

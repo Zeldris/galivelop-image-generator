@@ -73,6 +73,9 @@ def load_config(root) -> dict:
     config.setdefault("manifest", DEFAULT_MANIFEST)
     _forbidden(root, "delivery.dir", config["delivery"]["dir"])
     _forbidden(root, "manifest", config["manifest"])
+    sheet = config.get("brand", {}).get("sheet")
+    if sheet is not None:
+        paths.inside(root, sheet)  # D25: the sheet stays inside the root (it is read later, by brandsheet)
     return config
 
 

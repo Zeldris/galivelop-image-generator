@@ -9,6 +9,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Brand sheet as data (0.7.0 step 1): `gimg/schemas/brand-sheet.schema.json`, `brand.sheet` in the project
+  config (kept inside the root) and `gimg/brandsheet.py`, which resolves `extends` by registered project, derives the
+  palette and the accent tones (OKLCH, 4.5:1), assembles the prompt in the sheet order and lints it.
+
 ### Fixed
 
 - The interface, crop and layout editors: an error on saving shows only inside the dialog (it used to come back as a

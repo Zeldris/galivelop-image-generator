@@ -1,0 +1,427 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Brand sheet",
+  "description": "Brand sheet of a project (marca.json, linked from brand.sheet): palette by role, drawing registers, vetoes, piece types and acceptance. A sheet with `extends` declares only what it changes; gimg resolves the inheritance.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "name"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Schema reference so editors can validate and complete the file."
+    },
+    "schemaVersion": {
+      "const": 1,
+      "description": "Version of this file format."
+    },
+    "name": {
+      "$ref": "#/$defs/name",
+      "description": "Sheet name (usually the project name)."
+    },
+    "extends": {
+      "$ref": "#/$defs/name",
+      "description": "Registered project whose sheet this one inherits (by name, never by path)."
+    },
+    "palette": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "paper": {
+          "$ref": "#/$defs/colorToken"
+        },
+        "ink": {
+          "$ref": "#/$defs/colorToken"
+        },
+        "accent": {
+          "$ref": "#/$defs/colorToken"
+        },
+        "halo": {
+          "$ref": "#/$defs/colorToken"
+        },
+        "grid": {
+          "$ref": "#/$defs/colorToken"
+        },
+        "dark": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "paper": {
+              "$ref": "#/$defs/colorToken"
+            },
+            "ink": {
+              "$ref": "#/$defs/colorToken"
+            }
+          },
+          "description": "Dark version: paper and ink."
+        },
+        "measureOnly": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/$defs/hex"
+          },
+          "description": "Colours only `measure` counts (never asked for in a prompt)."
+        }
+      },
+      "description": "Palette by role, as DTCG colour tokens. The deep and dark tones of the accent are computed, not stored."
+    },
+    "registers": {
+      "type": "object",
+      "maxProperties": 20,
+      "propertyNames": {
+        "$ref": "#/$defs/id"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "$ref": "#/$defs/label"
+          },
+          "block": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "description": "Prompt block of this drawing register."
+          }
+        },
+        "required": [
+          "label",
+          "block"
+        ],
+        "description": "One drawing register."
+      },
+      "description": "Drawing registers by id (e.g. engraved, line)."
+    },
+    "closing": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000,
+      "description": "Closing sentence of every prompt (the only place where negations belong)."
+    },
+    "paletteSentence": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000,
+      "description": "Final palette sentence; {paper}, {ink}, {accent}, {halo}, {grid} become «promptName #hex»."
+    },
+    "vetoes": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "groups": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/id"
+              },
+              "label": {
+                "$ref": "#/$defs/label"
+              },
+              "reason": {
+                "$ref": "#/$defs/label"
+              },
+              "terms": {
+                "type": "array",
+                "maxItems": 200,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "description": "Vetoed terms (whole words, case-insensitive)."
+              }
+            },
+            "required": [
+              "id",
+              "terms"
+            ],
+            "description": "Group of vetoed terms with its reason."
+          },
+          "description": "Vetoed term groups; an inheriting sheet merges them by id."
+        },
+        "exceptions": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "term": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "pieces": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 50,
+                "items": {
+                  "$ref": "#/$defs/id"
+                }
+              }
+            },
+            "required": [
+              "term",
+              "pieces"
+            ],
+            "description": "A vetoed term allowed in these piece types."
+          },
+          "description": "Exceptions tied to piece types; an inheriting sheet adds to them."
+        },
+        "neverWrite": {
+          "type": "array",
+          "maxItems": 200,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "description": "Words that do nothing or get in the way (transparent, exactly, sky blue…)."
+        },
+        "colorWords": {
+          "type": "array",
+          "maxItems": 200,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "description": "Colour names forbidden anywhere outside the palette sentence."
+        },
+        "fillPhrase": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "Phrase that fills the whole sheet; incompatible with a clean zone."
+        }
+      },
+      "description": "What a prompt must not say."
+    },
+    "pieceTypes": {
+      "type": "object",
+      "maxProperties": 100,
+      "propertyNames": {
+        "$ref": "#/$defs/id"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "$ref": "#/$defs/label"
+          },
+          "profile": {
+            "$ref": "#/$defs/profileName"
+          },
+          "register": {
+            "$ref": "#/$defs/id"
+          },
+          "chroma": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^#[0-9A-Fa-f]{6}$",
+            "description": "Flat chroma background to cut out later, or null."
+          },
+          "seed": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4294967295,
+            "description": "Default seed."
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "description": "Default attempts per batch."
+          },
+          "workshop": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {
+              "enum": [
+                "crop",
+                "matte",
+                "trace"
+              ]
+            },
+            "description": "Workshop steps after choosing, in order."
+          },
+          "delivery": {
+            "$ref": "#/$defs/relativePath",
+            "description": "Delivery folder of this piece type, relative to the project root."
+          }
+        },
+        "required": [
+          "label",
+          "profile",
+          "register"
+        ],
+        "description": "One piece type."
+      },
+      "description": "Piece types by id (logo, icon, cover…)."
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "traits": {
+          "type": "object",
+          "maxProperties": 30,
+          "propertyNames": {
+            "$ref": "#/$defs/id"
+          },
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "description": "Measurable traits and their weight."
+        },
+        "references": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "$ref": "#/$defs/relativePath"
+          },
+          "description": "Approved reference images, relative to the project root."
+        },
+        "autoDiscard": {
+          "type": "boolean",
+          "default": false,
+          "description": "Discard low scores without asking (off by default)."
+        },
+        "unmeasured": {
+          "type": "array",
+          "maxItems": 30,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/id"
+              },
+              "label": {
+                "$ref": "#/$defs/label"
+              }
+            },
+            "required": [
+              "id",
+              "label"
+            ]
+          },
+          "description": "Traits only a person judges."
+        }
+      },
+      "description": "What an attempt must have to pass."
+    },
+    "promptWords": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "min": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "max": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        }
+      },
+      "required": [
+        "min",
+        "max"
+      ],
+      "description": "Prompt length in words."
+    }
+  },
+  "$defs": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "Lowercase letters, digits and hyphens."
+    },
+    "profileName": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*$",
+      "description": "Profile name: lowercase letters and digits, starting with a letter, no hyphens (the profile is what follows the last hyphen in delivered file names)."
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![/~])(?!.*(^|/)\\.\\.(/|$))[^\\\\\\u0000-\\u001f\\u007f]+$",
+      "description": "Relative path that cannot be absolute, start with ~, contain .. segments, backslashes or control characters."
+    },
+    "id": {
+      "type": "string",
+      "maxLength": 40,
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "Identifier: lowercase letters, digits and hyphens."
+    },
+    "hex": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}$",
+      "description": "Colour as #rrggbb."
+    },
+    "label": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "es": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "Spanish."
+        },
+        "en": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "English."
+        }
+      },
+      "required": [
+        "es",
+        "en"
+      ],
+      "description": "Text in Spanish and English."
+    },
+    "colorToken": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "$value": {
+          "$ref": "#/$defs/hex"
+        },
+        "$type": {
+          "const": "color"
+        },
+        "promptName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "description": "How the prompt names this colour (before its hex)."
+        },
+        "label": {
+          "$ref": "#/$defs/label"
+        }
+      },
+      "required": [
+        "$value",
+        "$type"
+      ],
+      "description": "DTCG colour token."
+    }
+  }
+}
