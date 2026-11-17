@@ -232,6 +232,25 @@
             "pattern": "^#[0-9A-Fa-f]{6}$",
             "description": "Flat chroma background to cut out later, or null."
           },
+          "closing": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "description": "Closing of this piece type; replaces the sheet's closing for it."
+          },
+          "paletteSentence": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "description": "Palette sentence of this piece type; replaces the sheet's, with the same {role} placeholders."
+          },
+          "cleanZone": {
+            "enum": [
+              "beforeRegister",
+              "afterClosing"
+            ],
+            "description": "Where the clean zone goes: beforeRegister (default) is a sentence before the register block; afterClosing continues the closing sentence after a comma."
+          },
           "seed": {
             "type": "integer",
             "minimum": 0,

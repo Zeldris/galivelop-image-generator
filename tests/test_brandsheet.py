@@ -330,6 +330,100 @@ class AssembleTests(unittest.TestCase):
         self.assertEqual(cm.exception.code, "brandsheet.unknown_piece")
 
 
+def with_piece(**spec):
+    sheet = copy.deepcopy(PORTAL)
+    sheet["pieceTypes"]["stage"] = {**sheet["pieceTypes"]["cover"], **spec}
+    return sheet
+
+
+PIECE_CLOSING = "No realistic objects, no glow, no text, no frame."
+PIECE_PALETTE = "Palette limited to {halo} and {ink}"
+
+
+class PieceTypeOverridesTests(Env):
+    def test_closing_and_palette_sentence_of_the_piece_replace_the_sheets(self):
+        sheet = with_piece(closing=PIECE_CLOSING, paletteSentence=PIECE_PALETTE)
+        out = B.assemble(sheet, "stage", "A chart.")
+        self.assertEqual([s["text"] for s in out["segments"]][2:],
+                         [PIECE_CLOSING, "Palette limited to medium cerulean ocean blue #0072a8 and ink grey #13212b."])
+        self.assertEqual([s["source"] for s in out["segments"]][2:],
+                         ["pieceTypes.stage.closing", "pieceTypes.stage.paletteSentence"])
+        other = B.assemble(sheet, "cover", "A chart.")  # a piece without them keeps the sheet's
+        self.assertEqual(other["segments"][2]["text"], CLOSING)
+        self.assertEqual(other["segments"][2]["source"], "closing")
+        self.assertTrue(other["prompt"].endswith("a touch of seaweed green #5d7a6a."))
+
+    def test_clean_zone_after_the_closing_continues_its_sentence(self):
+        sheet = with_piece(closing=PIECE_CLOSING, cleanZone="afterClosing")
+        out = B.assemble(sheet, "stage", "A chart.", "the islet small on the left")
+        self.assertEqual([s["role"] for s in out["segments"]], ["subject", "register", "closing", "palette"])
+        self.assertEqual(out["segments"][2]["text"],
+                         "No realistic objects, no glow, no text, no frame, the islet small on the left.")
+        self.assertEqual(out["prompt"].count("the islet small on the left"), 1)
+        # no zone given: the closing is untouched
+        self.assertEqual(B.assemble(sheet, "stage", "A chart.")["segments"][2]["text"], PIECE_CLOSING)
+        # the default position is before the register
+        before = B.assemble(with_piece(cleanZone="beforeRegister"), "stage", "A chart.", "The zone")
+        self.assertEqual([s["role"] for s in before["segments"]][:3], ["subject", "cleanZone", "register"])
+
+    def test_lint_looks_at_the_closing_and_palette_sentence_of_the_piece(self):
+        zone = "the islet small on the left"
+        sheet = with_piece(closing=PIECE_CLOSING, paletteSentence=PIECE_PALETTE, cleanZone="afterClosing")
+        prompt = B.assemble(sheet, "stage", "A chart.", zone)["prompt"]
+        res = B.lint(sheet, prompt, "stage", "brand", zone)
+        self.assertEqual([c["id"] for c in res["checks"] if c["status"] != "ok" and c["id"] != "words"], [])
+        # the sheet's closing is not the piece's: seen as a cover the same prompt lacks it and its palette
+        bad = {(c["id"]) for c in B.lint(sheet, prompt, "cover")["checks"] if c["status"] != "ok"}
+        self.assertLessEqual({"closing", "palette"}, bad)
+        # the zone before the closing is out of place when the type puts it after
+        swapped = "A chart. %s. %s %s %s" % (zone, sheet["registers"]["engraved"]["block"], PIECE_CLOSING,
+                                              B.palette_sentence(sheet, sheet["pieceTypes"]["stage"]))
+        found = [(c["id"], c["message"]["key"]) for c in B.lint(sheet, swapped, "stage", "brand", zone)["checks"]
+                 if c["status"] != "ok" and c["id"] == "cleanZone"]
+        self.assertEqual(found, [("cleanZone", "lint.clean_zone_order")])
+
+    def test_negation_and_colour_words_follow_the_closing_of_the_piece(self):
+        sheet = with_piece(closing="No yellow, no warm colors.")
+        prompt = B.assemble(sheet, "stage", "A chart.")["prompt"]
+        res = B.lint(sheet, prompt, "stage")
+        self.assertEqual([c["id"] for c in res["checks"] if c["status"] != "ok" and c["id"] != "words"], [])
+        # the same text as a cover's closing is not the sheet's: «no», «yellow» are out of place there
+        loose = [c["id"] for c in B.lint(sheet, prompt, "cover")["checks"] if c["status"] != "ok"]
+        self.assertIn("closing", loose)
+        self.assertIn("negation", loose)
+
+    def test_vetoed_term_inside_the_closing_is_not_a_veto(self):
+        sheet = with_piece(closing="No boat, no frame.")
+        prompt = B.assemble(sheet, "stage", "A chart.")["prompt"]
+        self.assertFalse([c for c in B.lint(sheet, prompt, "stage")["checks"] if c["id"] == "veto" and c["status"] != "ok"])
+        again = B.assemble(sheet, "stage", "A boat on a chart.")["prompt"]
+        self.assertTrue([c for c in B.lint(sheet, again, "stage")["checks"] if c["id"] == "veto" and c["status"] != "ok"])
+
+    def test_schema_and_resolution_check_the_new_fields(self):
+        sheet = with_piece(closing=PIECE_CLOSING, paletteSentence=PIECE_PALETTE, cleanZone="afterClosing")
+        schema = S.load_schema("brand-sheet")
+        self.assertEqual(S.validate(sheet, schema), [])
+        self.assertTrue(S.validate(with_piece(cleanZone="middle"), schema))
+        self.assertTrue(S.validate(with_piece(closing=""), schema))
+        self.project("portal", with_piece(paletteSentence="Palette {nope}"))
+        self.assertEqual(self.code(B.resolve, "portal").code, "brandsheet.bad_placeholder")
+
+    def test_a_product_overrides_the_closing_of_an_inherited_type_by_key(self):
+        self.project("portal", with_piece(closing=PIECE_CLOSING, paletteSentence=PIECE_PALETTE, cleanZone="afterClosing"))
+        self.project("dev", {"schemaVersion": 1, "name": "dev", "extends": "portal",
+                             "pieceTypes": {"stage": {
+                                 "label": label("Etapa"), "profile": "portada", "register": "engraved",
+                                 "closing": "No frame."}}})
+        sheet = B.resolve("dev")
+        stage = sheet["pieceTypes"]["stage"]
+        self.assertEqual((stage["closing"], stage["paletteSentence"], stage["cleanZone"], stage["register"]),
+                         ("No frame.", PIECE_PALETTE, "afterClosing", "engraved"))
+        self.assertEqual(sheet["origin"]["pieceTypes.stage.closing"], {"origin": "own", "project": "dev"})
+        self.assertEqual(sheet["origin"]["pieceTypes.stage.paletteSentence"], {"origin": "inherited", "project": "portal"})
+        self.assertEqual(B.resolve("portal")["pieceTypes"]["stage"]["closing"], PIECE_CLOSING)
+        self.assertEqual(B.assemble(sheet, "stage", "A chart.")["segments"][2]["text"], "No frame.")
+
+
 class LintTests(unittest.TestCase):
     def good(self, piece="cover", subject=SUBJECT, zone=ZONE):
         return B.assemble(PORTAL, piece, subject, zone)["prompt"]

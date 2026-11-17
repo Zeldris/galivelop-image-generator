@@ -1,48 +1,40 @@
 {
-  "$comment": "Forma montada por gimg (assemble) de pedidos aprobados del Portal; cada entrada declara de qué pedido sale y en qué difiere.",
+  "$comment": "Sujeto y zona limpia de pedidos aprobados del Portal; la reproducción exacta (assemble) se comprueba contra el prompt del propio pedido. La 15 de Developer es obsoleta (ver 'obsolete').",
   "cases": [
     {
       "order": "19-enviado",
       "piece": "sent",
       "subject": "A paper boat leaving a quay, its wake drawn as three thin lines, ink grey on off-white.",
-      "cleanZone": null,
-      "removed": [
-        "full-bleed edge to edge, "
-      ],
-      "differences": [
-        "El cierre de la hoja lleva «full-bleed edge to edge» (identidad vigente, «Encuadre»); el pedido, anterior a esa regla, no. Quitado ese tramo, el prompt montado es el del pedido."
-      ],
-      "prompt": "A paper boat leaving a quay, its wake drawn as three thin lines, ink grey on off-white. Richly detailed engraved antique nautical chart style, like a fine sea chart printed in two inks: many layers of fine lines and hatching, line density increasing in the darker areas to give depth and tone, lines of several weights, crisp and sharp, intricate but calm, premium print quality, high detail, elegant. No photographic rendering, no glow, no text, no letters, no numbers, no watermark, full-bleed edge to edge, no border, no frame. Palette strictly limited to medium cerulean ocean blue #0072a8 and its tints and shades, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a."
+      "cleanZone": null
     },
     {
       "order": "06-portada-desarrollo",
       "piece": "stage-cover",
       "subject": "A lighthouse under construction on a small rocky islet in the open sea, seen from slightly above, its round stone tower only half built and wrapped in fine wooden scaffolding with ladders and a small wooden crane, drawn in crisp off-white and ink grey line art with fine engraved shading, small ripples around the rocks.",
-      "cleanZone": "The lighthouse small on the left third, open water on the right",
-      "differences": [
-        "El bloque de grabado del pedido es una variante propia de la 06 (mar de líneas de ola, batimetría, rosa de los vientos); la hoja tiene un solo bloque literal.",
-        "El cierre del pedido añade «no realistic objects», «no horizon, no sky, no clouds» y la colocación al final; la hoja tiene un cierre único por hoja y la colocación va antes del registro (zona).",
-        "El sujeto y la frase de paleta (con el alga) coinciden con el pedido palabra por palabra."
-      ],
-      "inOrder": [
-        "subject",
-        "palette"
-      ],
-      "prompt": "A lighthouse under construction on a small rocky islet in the open sea, seen from slightly above, its round stone tower only half built and wrapped in fine wooden scaffolding with ladders and a small wooden crane, drawn in crisp off-white and ink grey line art with fine engraved shading, small ripples around the rocks. The lighthouse small on the left third, open water on the right. Richly detailed engraved antique nautical chart style, like a fine sea chart printed in two inks: many layers of fine lines and hatching, line density increasing in the darker areas to give depth and tone, lines of several weights, crisp and sharp, intricate but calm, premium print quality, high detail, elegant. No photographic rendering, no glow, no text, no letters, no numbers, no watermark, full-bleed edge to edge, no border, no frame. Palette strictly limited to medium cerulean ocean blue #0072a8 and its tints and shades, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a."
+      "cleanZone": "the lighthouse small on the left third, open water on the right"
     },
+    {
+      "order": "06-portada-diseno",
+      "piece": "stage-cover",
+      "subject": "A small rocky islet in the open sea, seen from slightly above, where a lighthouse is about to be built: only a low round stone foundation ring has been laid, with wooden survey stakes and taut ropes marking out the circle of the future tower, a few cut stone blocks stacked beside it and a small wooden surveyor's tripod, drawn in crisp off-white and ink grey line art with fine engraved shading, small ripples around the rocks.",
+      "cleanZone": "the islet small on the left third, open water on the right"
+    },
+    {
+      "order": "06-portada-publicado",
+      "piece": "stage-cover-night",
+      "subject": "A finished lighthouse standing on a small rocky islet in the open sea at night, seen from slightly above, the night sky in deep dark cerulean and ink grey built from dense fine hatching with a few tiny off-white stars, the sea a deep dark cerulean, its lantern lit with a soft off-white light casting two long beams drawn as fine off-white radiating lines across the dark water, a small seaweed green #5d7a6a door at its base, drawn in crisp off-white and ink grey line art with fine engraved shading, small ripples around the rocks catching the light.",
+      "cleanZone": "the lighthouse small on the left third, open water on the right"
+    }
+  ],
+  "obsolete": [
     {
       "order": "15-proximamente-developer",
       "piece": "coming-soon",
       "subject": "A flat graphic seen straight on: a line of small round buoys connected by a single white line, running from left to right across the upper two thirds and stepping up and down like a sequence of steps in a process, white line on medium cerulean blue.",
       "cleanZone": "The lower third left clean, flat and empty",
       "differences": [
-        "El pedido es anterior a la decisión del 2026-11-11 (la 15 de Developer es el barco de papel, q311): lleva boyas y «white», que la hoja veta.",
-        "El bloque de grabado del pedido añade «in the cerulean field»; el cierre del pedido añade «Flat graphic, no horizon, no sky, no landscape»; su frase de paleta no lleva el alga."
-      ],
-      "inOrder": [
-        "subject"
-      ],
-      "prompt": "A flat graphic seen straight on: a line of small round buoys connected by a single white line, running from left to right across the upper two thirds and stepping up and down like a sequence of steps in a process, white line on medium cerulean blue. The lower third left clean, flat and empty. Richly detailed engraved antique nautical chart style, like a fine sea chart printed in two inks: many layers of fine lines and hatching, line density increasing in the darker areas to give depth and tone, lines of several weights, crisp and sharp, intricate but calm, premium print quality, high detail, elegant. No photographic rendering, no glow, no text, no letters, no numbers, no watermark, full-bleed edge to edge, no border, no frame. Palette strictly limited to medium cerulean ocean blue #0072a8 and its tints and shades, off-white #fbfcfd, ink grey #13212b and a touch of seaweed green #5d7a6a."
+        "Obsoleto: el pedido es anterior a la decisión del 2026-11-11 (la 15 de Developer es el barco de papel, q311, cuyo prompt no está en el repositorio): lleva boyas y «white», que la hoja veta. No se reproduce; solo sirve para comprobar que la hoja lo veta."
+      ]
     }
   ]
 }

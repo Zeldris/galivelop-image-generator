@@ -142,52 +142,54 @@ class ReproductionTests(PortalEnv):
     def norm(self, text):
         return " ".join(text.split())
 
-    def test_every_fixture_case_assembles_to_its_stored_form(self):
-        sheet = B.resolve("portal")
+    def build(self, case, sheet=None):
+        return B.assemble(sheet or B.resolve("portal"), case["piece"], case["subject"], case["cleanZone"])
+
+    def test_approved_orders_are_reproduced_word_for_word_from_subject_and_zone(self):
+        self.assertEqual([c["order"] for c in FIXTURE["cases"]],
+                         ["19-enviado", "06-portada-desarrollo", "06-portada-diseno", "06-portada-publicado"])
         for case in FIXTURE["cases"]:
-            self.assertTrue(case["differences"], case["order"])
-            built = B.assemble(sheet, case["piece"], case["subject"], case["cleanZone"])
-            self.assertEqual(self.norm(built["prompt"]), self.norm(case["prompt"]), case["order"])
+            self.assertEqual(self.norm(self.build(case)["prompt"]), self.norm(self.order_prompt(case)), case["order"])
 
-    def test_19_enviado_is_the_order_but_for_the_declared_closing_difference(self):
-        case = self.case("19-enviado")
-        built = B.assemble(B.resolve("portal"), case["piece"], case["subject"], case["cleanZone"])["prompt"]
-        for removed in case["removed"]:
-            self.assertEqual(built.count(removed), 1)
-            built = built.replace(removed, "")
-        self.assertEqual(self.norm(built), self.norm(self.order_prompt(case)))
+    def test_products_reproduce_the_same_orders_but_for_their_accent(self):
+        # the product only changes the palette sentence's accent; everything before it is the Portal's
+        for name in PRODUCTS:
+            sheet = B.resolve(name)
+            for case in FIXTURE["cases"]:
+                built = self.build(case, sheet)["prompt"]
+                self.assertEqual(self.norm(built).rsplit(" Palette ", 1)[0],
+                                 self.norm(self.order_prompt(case)).rsplit(" Palette ", 1)[0], (name, case["order"]))
 
-    def test_fixture_shares_what_it_says_with_the_order(self):
+    def test_the_15_of_developer_is_obsolete_and_the_sheet_vetoes_it(self):
         sheet = B.resolve("portal")
-        for case in FIXTURE["cases"]:
-            shared = case.get("inOrder", [])
-            order = self.norm(self.order_prompt(case))
-            built = B.assemble(sheet, case["piece"], case["subject"], case["cleanZone"])
-            parts = {s["role"]: self.norm(s["text"]) for s in built["segments"]}
-            for role in shared:
-                self.assertIn(parts[role].rstrip("."), order, (case["order"], role))
+        case = FIXTURE["obsolete"][0]
+        self.assertEqual(case["order"], "15-proximamente-developer")
+        built = B.assemble(sheet, case["piece"], case["subject"], case["cleanZone"])["prompt"]
+        self.assertEqual(sorted({(cid, key) for cid, key, _ in self.errors(sheet, built, case["piece"], case["cleanZone"])}),
+                         [("colorWord", "white"), ("veto", "nautical")])
 
-    def test_the_order_of_the_sheet_is_subject_zone_register_closing_palette(self):
-        sheet = B.resolve("portal")
+    def test_the_06_put_the_zone_at_the_end_of_their_own_closing(self):
         case = self.case("06-portada-desarrollo")
-        built = B.assemble(sheet, case["piece"], case["subject"], case["cleanZone"])
+        built = self.build(case)
+        self.assertEqual([s["role"] for s in built["segments"]], ["subject", "register", "closing", "palette"])
+        self.assertEqual(built["segments"][1]["source"], "registers.engraved-stage")
+        self.assertEqual(built["segments"][2]["source"], "pieceTypes.stage-cover.closing")
+        self.assertTrue(built["segments"][2]["text"].endswith("no frame, " + case["cleanZone"] + "."))
+        self.assertEqual(self.build(self.case("19-enviado"))["segments"][2]["source"], "pieceTypes.sent.closing")
+
+    def test_the_order_of_a_default_piece_is_subject_zone_register_closing_palette(self):
+        built = B.assemble(B.resolve("portal"), "cover", "A sea chart.", "The lower third is open")
         self.assertEqual([s["role"] for s in built["segments"]],
                          ["subject", "cleanZone", "register", "closing", "palette"])
-        self.assertTrue(built["prompt"].endswith(B.palette_sentence(sheet)))
+        self.assertTrue(built["prompt"].endswith(B.palette_sentence(B.resolve("portal"))))
 
     def test_approved_orders_trip_only_the_expected_checks(self):
         sheet = B.resolve("portal")
-        outcome = {}
         for case in FIXTURE["cases"]:
-            built = B.assemble(sheet, case["piece"], case["subject"], case["cleanZone"])["prompt"]
-            outcome[case["order"]] = sorted({(cid, key) for cid, key, _ in
-                                             self.errors(sheet, built, case["piece"], case["cleanZone"])})
-        # 19: the boat is its exception; only the length (111 words in the order) trips
-        self.assertEqual([cid for cid, _ in outcome["19-enviado"]], ["words"])
-        # 06 desarrollo: the lighthouse is the 06 exception, but the hoja does not list the crane
-        self.assertEqual(outcome["06-portada-desarrollo"], [("veto", "nautical")])
-        # 15 Developer as written still has buoys and «white»: the hoja retired it (paper boat, q311)
-        self.assertEqual(outcome["15-proximamente-developer"], [("colorWord", "white"), ("veto", "nautical")])
+            built = self.build(case)["prompt"]
+            found = sorted({(cid, key) for cid, key, _ in self.errors(sheet, built, case["piece"], case["cleanZone"])})
+            # 19 is 111 words and the 06 are 224-268, the limits being 120-200: only the length trips, no veto
+            self.assertEqual([cid for cid, _ in found], ["words"], (case["order"], found))
 
 
 class LintTroubleshootingTests(PortalEnv):
@@ -245,12 +247,21 @@ class LintTroubleshootingTests(PortalEnv):
                                      ("coming-soon", "A line of buoys", "buoy"),
                                      ("sent", "A lighthouse beside the quay", "lighthouse"),
                                      ("stage-cover", "A small anchor on the chart", "anchor"),
-                                     ("stage-cover", "A wooden crane on the quay", "crane")):
+                                     ("stage-cover-night", "A small anchor on the chart", "anchor")):
             params = self.blocked_by(piece, subject, "nautical", term)
             self.assertIn("tres excepciones", params["reason"]["es"])
 
+    def test_the_crane_is_an_exception_of_the_06_and_nowhere_else(self):
+        subject = "A wooden crane on the quay"
+        for piece in ("stage-cover", "stage-cover-night"):
+            self.assertEqual(self.vetoes(self.sheet, self.prompt(piece, subject), piece), set(), piece)
+        for piece in ("cover", "icon", "sent", "coming-soon"):
+            params = self.blocked_by(piece, subject, "nautical", "crane")
+            self.assertIn("grúa", params["reason"]["es"])
+
     def test_the_three_exceptions_pass_in_their_piece_type(self):
         for piece, subject in (("sent", "A paper boat leaving a quay"),
+                               ("stage-cover-night", "A lighthouse at night"),
                                ("stage-cover", "A lighthouse under construction on a rocky islet"),
                                ("stage-cover", "A small buoy on open water"),
                                ("stage-cover", "A folded paper boat with a pennant")):

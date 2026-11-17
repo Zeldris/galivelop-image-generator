@@ -55,6 +55,20 @@
         "en": "Simple line"
       },
       "block": "Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, bold and clear enough to read at 24 pixels, generous empty margin around each icon, a single ink colour."
+    },
+    "engraved-stage": {
+      "label": {
+        "es": "Grabado de la 06 (mar de carta)",
+        "en": "Engraved, 06 (chart sea)"
+      },
+      "block": "Richly detailed engraved nautical chart style, like a fine antique sea chart printed in two inks: the sea built from many layers of fine wave lines and hatching, line density increasing towards the deep water to give depth, tonal bands from deep cerulean at the bottom to lighter cerulean at the top, bathymetric contour lines with small depth soundings drawn as tiny dots, a delicate compass rose with fine tick marks in a corner, subtle foam strokes and a few glints of light on the crests. Crisp sharp lines of several weights, intricate but calm, premium print quality, high detail, elegant."
+    },
+    "engraved-stage-night": {
+      "label": {
+        "es": "Grabado de la 06 nocturna",
+        "en": "Engraved, night 06"
+      },
+      "block": "Richly detailed engraved nautical chart style, like a fine antique sea chart printed in two inks: the sea built from many layers of fine wave lines and hatching, line density increasing towards the deep water to give depth, tonal bands of deep dark cerulean, bathymetric contour lines with small depth soundings drawn as tiny dots, a delicate compass rose with fine tick marks in a corner, subtle foam strokes and a few glints of light on the crests. Crisp sharp lines of several weights, intricate but calm, premium print quality, high detail, elegant."
     }
   },
   "closing": "No photographic rendering, no glow, no text, no letters, no numbers, no watermark, full-bleed edge to edge, no border, no frame.",
@@ -92,8 +106,8 @@
           "en": "Nautical motifs"
         },
         "reason": {
-          "es": "El mar pone el dónde, la tecnología pone el qué: un motivo náutico solo vale en las tres excepciones cerradas (barco de la 19, barco de la 15 de Developer, faro, boya y barco de las 06)",
-          "en": "The sea sets the where, technology sets the what: a nautical motif only holds in the three closed exceptions (boat of 19, boat of Developer's 15, lighthouse, buoy and boat of the 06 covers)"
+          "es": "El mar pone el dónde, la tecnología pone el qué: un motivo náutico solo vale en las tres excepciones cerradas (barco de la 19, barco de la 15 de Developer, faro, boya, barco y grúa de las 06)",
+          "en": "The sea sets the where, technology sets the what: a nautical motif only holds in the three closed exceptions (boat of 19, boat of Developer's 15, lighthouse, buoy, boat and crane of the 06 covers)"
         },
         "terms": [
           "anchor",
@@ -172,19 +186,29 @@
         "term": "boat",
         "pieces": [
           "sent",
-          "stage-cover"
+          "stage-cover",
+          "stage-cover-night"
         ]
       },
       {
         "term": "lighthouse",
         "pieces": [
-          "stage-cover"
+          "stage-cover",
+          "stage-cover-night"
         ]
       },
       {
         "term": "buoy",
         "pieces": [
-          "stage-cover"
+          "stage-cover",
+          "stage-cover-night"
+        ]
+      },
+      {
+        "term": "crane",
+        "pieces": [
+          "stage-cover",
+          "stage-cover-night"
         ]
       },
       {
@@ -280,12 +304,29 @@
         "en": "Stage cover (06)"
       },
       "profile": "portada",
-      "register": "engraved",
+      "register": "engraved-stage",
       "chroma": null,
       "count": 2,
       "workshop": [
         "crop"
-      ]
+      ],
+      "closing": "No realistic objects, no photographic rendering, no glow, no text, no letters, no numbers, no watermark, no horizon, no sky, no clouds, full-bleed edge to edge, no border, no frame.",
+      "cleanZone": "afterClosing"
+    },
+    "stage-cover-night": {
+      "label": {
+        "es": "Portada de estado nocturna (06 publicado)",
+        "en": "Night stage cover (06 published)"
+      },
+      "profile": "portada",
+      "register": "engraved-stage-night",
+      "chroma": null,
+      "count": 2,
+      "workshop": [
+        "crop"
+      ],
+      "closing": "No realistic objects, no photographic rendering, no yellow, no orange, no warm colors, no moon, no glow, no text, no letters, no numbers, no watermark, no horizon, no sky, no clouds, full-bleed edge to edge, no border, no frame.",
+      "cleanZone": "afterClosing"
     },
     "social": {
       "label": {
@@ -324,7 +365,8 @@
       "count": 2,
       "workshop": [
         "crop"
-      ]
+      ],
+      "closing": "No photographic rendering, no glow, no text, no letters, no numbers, no watermark, no border, no frame."
     },
     "header": {
       "label": {

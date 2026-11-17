@@ -1373,9 +1373,11 @@ marcadas «(abierta)» son de la persona.
      cruzado contra sus valores; `brand.palette` pasa a derivarse de la hoja cuando la hay;
    - **registros** (grabado, línea simple): bloque de prompt, frase de cierre y frase de paleta con hex;
    - **vetos**: palabras, motivos y colores fuera de tinta, con **excepciones atadas al tipo de pieza** (el faro solo
-     en las 06, el barco solo en la 19);
+     en las 06, el barco solo en la 19; la grúa entra en la excepción de las 06, persona, 2026-11-17);
    - **tipos de pieza** (logo, icono, portada, fondo, marco…): perfil, registro, croma sí/no y color, seed y count por
-     defecto, paso de taller siguiente y destino de entrega;
+     defecto, paso de taller siguiente y destino de entrega; el tipo puede llevar su propio cierre, su frase de paleta
+     y la posición de la zona limpia (`cleanZone`: `beforeRegister`, por defecto, o `afterClosing`, al final del cierre)
+     (persona, 2026-11-17), porque los pedidos aprobados (las 06, la 19) tienen cierre y frase propios;
    - **aceptación**: rasgos medibles con peso y referencias aprobadas, `autoDiscard` (apagado por defecto) y
      `unmeasured`, la lista de rasgos que solo juzga alguien (horizonte, motivo repetido, glifos) con rótulo es/en;
    - **herencia** `extends: "<proyecto registrado>"`: por nombre, no por ruta; gimg lee la hoja del padre dentro de la

@@ -153,6 +153,9 @@ def _check_resolved(sheet: dict, project: str) -> None:
     for piece, spec in sheet.get("pieceTypes", {}).items():
         if spec["register"] not in sheet["registers"]:
             raise GimgError("brandsheet.unknown_register", project=project, piece=piece, register=spec["register"])
+        for name in _PLACEHOLDER.findall(spec.get("paletteSentence", "")):
+            if name not in ROLES or name not in sheet["palette"]:
+                raise GimgError("brandsheet.bad_placeholder", project=project, placeholder=name)
     words = sheet.get("promptWords")
     if words and words["min"] > words["max"]:
         raise GimgError("brandsheet.incomplete", project=project, field="promptWords")
@@ -305,13 +308,13 @@ def palette(sheet: dict) -> list:
     return out
 
 
-def palette_sentence(sheet: dict) -> str:
-    """The palette sentence with each {role} replaced by «promptName #hex» (or just the hex)."""
+def palette_sentence(sheet: dict, spec: dict | None = None) -> str:
+    """The palette sentence (the piece type's own if it has one) with each {role} replaced by «promptName #hex»."""
     def fill(match):
         token = sheet["palette"][match.group(1)]
         name = token.get("promptName")
         return "%s %s" % (name, token["$value"].lower()) if name else token["$value"].lower()
-    return _sentence(_PLACEHOLDER.sub(fill, sheet["paletteSentence"]))
+    return _sentence(_PLACEHOLDER.sub(fill, (spec or {}).get("paletteSentence") or sheet["paletteSentence"]))
 
 
 # --- prompt -----------------------------------------------------------------------------------------------------
@@ -328,21 +331,43 @@ def _piece(sheet, piece):
     return spec
 
 
+def _closing(sheet, spec):
+    """Closing of the piece type, or the sheet's."""
+    return (spec or {}).get("closing") or sheet["closing"]
+
+
+def _zone_after(spec):
+    """True when the piece type puts the clean zone at the end of the closing (`cleanZone: "afterClosing"`)."""
+    return (spec or {}).get("cleanZone") == "afterClosing"
+
+
 def assemble(sheet: dict, piece: str, subject: str, clean_zone: str | None = None) -> dict:
     """Prompt in the sheet order: subject -> clean zone -> register block of the piece -> closing -> palette.
+
+    The piece type may carry its own closing and palette sentence, and with `cleanZone: "afterClosing"` the clean
+    zone is not a sentence before the register but the end of the closing sentence: the closing loses its full stop
+    and goes on after a comma with the zone text as given (it should start in lower case).
 
     Returns {"prompt", "words", "segments": [{"role", "text", "source"}]}; each segment ends in a full stop and
     segments are joined with one space."""
     spec = _piece(sheet, piece)
     segments = [{"role": "subject", "text": _sentence(subject), "source": "input"}]
-    if clean_zone:
+    after = bool(clean_zone) and _zone_after(spec)
+    if clean_zone and not after:
         segments.append({"role": "cleanZone", "text": _sentence(clean_zone), "source": "input"})
+    closing = _closing(sheet, spec)
     segments += [
         {"role": "register", "text": _sentence(sheet["registers"][spec["register"]]["block"]),
          "source": "registers." + spec["register"]},
-        {"role": "closing", "text": _sentence(sheet["closing"]), "source": "closing"},
-        {"role": "palette", "text": palette_sentence(sheet), "source": "paletteSentence"},
+        {"role": "closing", "text": _sentence(closing), "source": "pieceTypes.%s.closing" % piece
+         if spec.get("closing") else "closing"},
     ]
+    if after:
+        closing_text = " ".join(closing.split()).rstrip(".!?")
+        segments[-1]["text"] = _sentence("%s, %s" % (closing_text, " ".join(clean_zone.split()).rstrip(".")))
+    segments.append({"role": "palette", "text": palette_sentence(sheet, spec),
+                     "source": "pieceTypes.%s.paletteSentence" % piece if spec.get("paletteSentence")
+                     else "paletteSentence"})
     segments = [s for s in segments if s["text"]]
     prompt = " ".join(s["text"] for s in segments)
     return {"prompt": prompt, "words": len(prompt.split()), "segments": segments}
@@ -404,7 +429,7 @@ def lint(sheet: dict, prompt: str, piece: str | None = None, mode: str = "brand"
         add("words", count=count)
 
     # palette sentence at the end, with every hex
-    expected = palette_sentence(sheet)
+    expected = palette_sentence(sheet, spec)
     tail = prompt.rstrip()
     pal_span = None
     if _norm(tail).endswith(_norm(expected)):
@@ -429,7 +454,7 @@ def lint(sheet: dict, prompt: str, piece: str | None = None, mode: str = "brand"
         add("register", register=present[0])
 
     # closing
-    closing_span = _find(prompt, sheet["closing"])
+    closing_span = _find(prompt, _closing(sheet, spec))
     if closing_span:
         add("closing")
     else:
@@ -442,6 +467,11 @@ def lint(sheet: dict, prompt: str, piece: str | None = None, mode: str = "brand"
         first_reg = min((s[0] for s in reg_spans.values() if s), default=None)
         if zone is None:
             add("cleanZone", "clean_zone_missing")
+        elif _zone_after(spec):
+            if closing_span is not None and zone[0] < closing_span[0]:
+                add("cleanZone", "clean_zone_order", span=zone)
+            else:
+                add("cleanZone")
         elif first_reg is not None and zone[0] > first_reg:
             add("cleanZone", "clean_zone_order", span=zone)
         else:
@@ -451,7 +481,9 @@ def lint(sheet: dict, prompt: str, piece: str | None = None, mode: str = "brand"
             add("fillPhrase", "fill_phrase", span=span, phrase=fill)
         ok_unless("fillPhrase", before)
 
-    # vetoed terms (whole word, any case), minus the exceptions of this piece
+    # vetoed terms (whole word, any case), minus the exceptions of this piece; the closing and the register block
+    # are the sheet's own approved text (the 06 closing says «no clouds»), so a term inside them is not a veto
+    own_text = [s for s in [closing_span] + list(reg_spans.values()) if s]
     vetoes = sheet.get("vetoes", {})
     allowed = {e["term"].lower() for e in vetoes.get("exceptions", []) if piece is not None and piece in e["pieces"]}
     before = len(checks)
@@ -461,13 +493,16 @@ def lint(sheet: dict, prompt: str, piece: str | None = None, mode: str = "brand"
             if term.lower() in allowed:
                 continue
             for span in _word_spans(prompt, term):
+                if _inside(span, own_text):
+                    continue
                 add("veto", "veto", span=span, term=term, group=group["id"], reason=reason)
     ok_unless("veto", before)
 
     before = len(checks)
     for term in vetoes.get("neverWrite", []):
         for span in _word_spans(prompt, term):
-            add("neverWrite", "never_write", span=span, term=term)
+            if not _inside(span, own_text):
+                add("neverWrite", "never_write", span=span, term=term)
     ok_unless("neverWrite", before)
 
     # colour names outside the palette sentence and the colours' own prompt names
