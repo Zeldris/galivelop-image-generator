@@ -646,8 +646,9 @@ def sheet_view(project_name: str) -> dict:
 
 # --- hoja.md: the generated block (0.7.0, paso 4) ---------------------------------------------------------------
 
-MD_START = "<!-- gimg brand md: inicio (generado desde marca.json; no editar a mano: gimg brand md --write) -->"
-MD_END = "<!-- gimg brand md: fin -->"
+MD_START = "<!-- gimg brand md: start (generated from marca.json; do not edit by hand: gimg brand md --write) -->"
+MD_END = "<!-- gimg brand md: end -->"
+MD_PREFIX = "<!-- gimg brand md:"
 
 
 def _cell(value) -> str:
@@ -655,7 +656,21 @@ def _cell(value) -> str:
 
 
 def _code(text: str) -> list:
-    return ["```", text.rstrip("\n"), "```"]
+    """A fenced code block whose fence is longer than any backtick run in the text (3 at least)."""
+    fence = "`" * max([3] + [len(run) + 1 for run in re.findall(r"`+", text)])
+    return [fence, text.rstrip("\n"), fence]
+
+
+def _no_marker(value, path=""):
+    if isinstance(value, str):
+        if MD_PREFIX in value:
+            raise GimgError("brandsheet.markdown_marker_in_data", field=path)
+    elif isinstance(value, dict):
+        for key, item in value.items():
+            _no_marker(item, "%s.%s" % (path, key) if path else str(key))
+    elif isinstance(value, list):
+        for i, item in enumerate(value):
+            _no_marker(item, "%s.%d" % (path, i))
 
 
 def _table(head: list, rows: list) -> list:
@@ -681,6 +696,7 @@ def _words(value, lang) -> str:
 def markdown(project_name: str, lang: str = "es") -> str:
     """The generated `hoja.md` block (markers included) of a project's resolved sheet; deterministic."""
     view = sheet_view(project_name)
+    _no_marker({k: v for k, v in view.items() if k != "origin"})
     origin = view["origin"]
 
     def t(key, **params):
@@ -727,9 +743,9 @@ def markdown(project_name: str, lang: str = "es") -> str:
         gid = group["id"]
         label = group.get("label", {})
         reason = group.get("reason", {})
-        out += ["", "##### `%s`: %s (%s)" % (gid, _cell(label.get(lang)), own("vetoes.groups." + gid))]
-        if reason.get(lang):
-            out += ["", "%s: %s" % (t("reason"), reason[lang])]
+        out += ["", "##### `%s`: %s (%s)" % (gid, _cell(label.get(lang) or label.get("en")), own("vetoes.groups." + gid))]
+        if reason.get(lang) or reason.get("en"):
+            out += ["", "%s: %s" % (t("reason"), reason.get(lang) or reason["en"])]
         out += ["", "%s: %s" % (t("terms"), ", ".join("`%s`" % x for x in group["terms"]))]
     if vet.get("exceptions"):
         out += ["", "##### " + t("exceptions"), ""]

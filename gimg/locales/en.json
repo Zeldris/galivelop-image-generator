@@ -1076,7 +1076,7 @@
   "cli.out.md_written": "{path}: block written",
   "cli.out.md_ok": "{path}: the block matches marca.json",
   "error.brandsheet.markdown_markers": "the gimg brand md markers in {path} are broken (one missing, or repeated)",
-  "error.brandsheet.markdown_stale": "the block in {path} does not match marca.json: fix it with gimg brand md {project} --write {path}",
+  "error.brandsheet.markdown_stale": "the block in {path} does not match marca.json: fix it with gimg brand md {project} --write {path} --lang {md_lang}",
   "brandsheet.md.title": "Sheet data",
   "brandsheet.md.card": "Card",
   "brandsheet.md.name": "Name",
@@ -1117,5 +1117,6 @@
   "brandsheet.md.own": "own",
   "brandsheet.md.inherited": "inherited from {project}",
   "brandsheet.md.words_range": "{min}-{max} words",
-  "error.cli.md_target": "give at most one of --write or --check"
+  "error.cli.md_target": "give at most one of --write or --check",
+  "error.brandsheet.markdown_marker_in_data": "the value of {field} contains a gimg brand md marker; the block cannot be generated"
 }

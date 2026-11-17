@@ -1076,7 +1076,7 @@
   "cli.out.md_written": "{path}: bloque escrito",
   "cli.out.md_ok": "{path}: el bloque coincide con marca.json",
   "error.brandsheet.markdown_markers": "los marcadores de gimg brand md de {path} están rotos (falta uno, o hay repetidos)",
-  "error.brandsheet.markdown_stale": "el bloque de {path} no coincide con marca.json: corrige con gimg brand md {project} --write {path}",
+  "error.brandsheet.markdown_stale": "el bloque de {path} no coincide con marca.json: corrige con gimg brand md {project} --write {path} --lang {md_lang}",
   "brandsheet.md.title": "Datos de la hoja",
   "brandsheet.md.card": "Ficha",
   "brandsheet.md.name": "Nombre",
@@ -1117,5 +1117,6 @@
   "brandsheet.md.own": "propio",
   "brandsheet.md.inherited": "heredado de {project}",
   "brandsheet.md.words_range": "{min}-{max} palabras",
-  "error.cli.md_target": "da como mucho una de --write o --check"
+  "error.cli.md_target": "da como mucho una de --write o --check",
+  "error.brandsheet.markdown_marker_in_data": "el valor de {field} contiene un marcador de gimg brand md; no se puede generar el bloque"
 }

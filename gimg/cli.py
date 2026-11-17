@@ -395,10 +395,11 @@ def _brand_lint(args, out: _Out) -> int:
 
 
 def _brand_md(args, out: _Out) -> int:
-    block = brandsheet.markdown(args.project, out.lang)
-    target = args.write or args.check
     if args.write and args.check:
         raise GimgError("cli.md_target")
+    lang = getattr(args, "lang", None) or "es"  # the block's language is es unless --lang is explicit
+    block = brandsheet.markdown(args.project, lang)
+    target = args.write or args.check
     if target is None:
         if out.as_json:
             out.data({"markdown": block})
@@ -418,7 +419,7 @@ def _brand_md(args, out: _Out) -> int:
             out.line("cli.out.md_written", path=path)
         return 0
     if text is None or brandsheet.extract_block(text, path) != block:
-        raise GimgError("brandsheet.markdown_stale", path=str(path), project=args.project)
+        raise GimgError("brandsheet.markdown_stale", path=str(path), project=args.project, md_lang=lang)
     if out.as_json:
         out.data({"path": str(path), "ok": True})
     else:

@@ -1,8 +1,10 @@
 """hoja.md ↔ datos (0.7.0, paso 4): the generated block of `docs/marcas/<p>/hoja.md` follows `marca.json`."""
 import contextlib
 import io
+import os
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from gimg import brandsheet as B, cli
 from gimg.errors import GimgError
@@ -26,12 +28,43 @@ class MarkdownTests(PortalEnv):
                              "%s: el bloque no coincide con marca.json; arréglalo con: gimg brand md %s --write %s --lang es"
                              % (path, name, path))
 
-    def test_the_match_fails_without_the_block(self):
+    def test_check_on_a_file_without_the_block_is_stale(self):
+        target = self.tmp / "sin.md"
+        target.write_text("prosa\n", encoding="utf-8")
+        code, _, err = self.cli("--lang", "es", "brand", "md", "portal", "--check", str(target))
+        self.assertEqual(code, 1)
+        self.assertIn("no coincide con marca.json", err)
+        self.assertIn("--lang es", err)
+
+    def test_check_is_es_without_explicit_lang(self):
         path = ROOT / "docs" / "marcas" / "portal" / "hoja.md"
-        text = path.read_text(encoding="utf-8")
-        cut = text[:text.index(B.MD_START)]
-        self.assertIsNone(B.extract_block(cut))
-        self.assertNotEqual(B.extract_block(cut), B.markdown("portal"))
+        with mock.patch.dict(os.environ, {"GIMG_LANG": "en"}):
+            self.assertEqual(self.cli("brand", "md", "portal", "--check", str(path))[0], 0)
+            code, out, _ = self.cli("brand", "md", "portal", "--lang", "en")
+        self.assertIn("### Sheet data", out)
+
+    def test_write_and_check_are_exclusive(self):
+        code, _, err = self.cli("brand", "md", "nope", "--write", "a", "--check", "b")
+        self.assertEqual(code, 1)
+        self.assertIn("--write", err)
+
+    def test_code_fence_outgrows_backticks(self):
+        self.assertEqual(B._code("a")[0], "```")
+        self.assertEqual(B._code("a ``` b")[0], "````")
+        self.assertEqual(B._code("a `````` b")[0], "`" * 7)
+
+    def test_marker_in_data_is_refused(self):
+        real = B.sheet_view("portal")
+        real["closing"] = "x <!-- gimg brand md: end --> y"
+        with mock.patch.object(B, "sheet_view", return_value=real):
+            with self.assertRaises(GimgError) as ctx:
+                B.markdown("portal")
+        self.assertEqual(ctx.exception.code, "brandsheet.markdown_marker_in_data")
+        self.assertEqual(ctx.exception.params["field"], "closing")
+
+    def test_markers_are_fixed_and_neutral(self):
+        self.assertIn(B.MD_START, B.markdown("portal", "en"))
+        self.assertIn(B.MD_START, B.markdown("portal", "es"))
 
     def test_replace_block_appends_without_markers(self):
         block = B.markdown("portal")

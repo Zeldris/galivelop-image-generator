@@ -575,7 +575,7 @@ propuesta tiene que decir en cada fila qué hay hoy, o quien la lea aplicará lo
 
 ## Datos de la hoja (generado)
 
-<!-- gimg brand md: inicio (generado desde marca.json; no editar a mano: gimg brand md --write) -->
+<!-- gimg brand md: start (generated from marca.json; do not edit by hand: gimg brand md --write) -->
 
 ### Datos de la hoja
 
@@ -732,4 +732,4 @@ Términos: `camera`, `brush`, `paintbrush`, `canvas`, `easel`, `spark`, `wand`
   - `glyphs`: Glifos o letras inventadas
 - autoDiscard (heredado de portal): false
 
-<!-- gimg brand md: fin -->
+<!-- gimg brand md: end -->

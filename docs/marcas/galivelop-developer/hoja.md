@@ -573,7 +573,7 @@ frases son propuesta, como en image-generator.
 
 ## Datos de la hoja (generado)
 
-<!-- gimg brand md: inicio (generado desde marca.json; no editar a mano: gimg brand md --write) -->
+<!-- gimg brand md: start (generated from marca.json; do not edit by hand: gimg brand md --write) -->
 
 ### Datos de la hoja
 
@@ -731,4 +731,4 @@ Términos: `gear`, `keyboard`, `screen`, `cloud`, `chip`, `circuit`, `spark`, `l
   - `glyphs`: Glifos o letras inventadas
 - autoDiscard (heredado de portal): false
 
-<!-- gimg brand md: fin -->
+<!-- gimg brand md: end -->

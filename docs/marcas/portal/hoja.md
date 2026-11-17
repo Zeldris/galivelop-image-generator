@@ -825,7 +825,7 @@ estricta que lo publicado.
 
 ## Datos de la hoja (generado)
 
-<!-- gimg brand md: inicio (generado desde marca.json; no editar a mano: gimg brand md --write) -->
+<!-- gimg brand md: start (generated from marca.json; do not edit by hand: gimg brand md --write) -->
 
 ### Datos de la hoja
 
@@ -976,4 +976,4 @@ Términos: `clock`
   - `glyphs`: Glifos o letras inventadas
 - autoDiscard (propio): false
 
-<!-- gimg brand md: fin -->
+<!-- gimg brand md: end -->
