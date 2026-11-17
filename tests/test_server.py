@@ -42,6 +42,8 @@ INTENDED_500 = {
     "brandsheet.missing", "brandsheet.unreadable", "brandsheet.none", "brandsheet.extends_missing",
     "brandsheet.extends_cycle", "brandsheet.incomplete", "brandsheet.unknown_register", "brandsheet.no_tone",
     "brandsheet.unknown_piece",
+    # CLI only (0.7.0 step 2A): `brand init` overwrite guard and `brand lint` source; step 2B maps them if the API needs them
+    "brandsheet.exists", "cli.lint_source", "cli.prompt_unreadable",
 }
 
 
