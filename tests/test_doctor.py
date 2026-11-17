@@ -12,7 +12,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from gimg import cli, doctor, engine_sdcpp, i18n, limits, projects
+from gimg import brandsheet, cli, doctor, engine_sdcpp, i18n, limits, projects
+from tests.test_brandsheet import PORTAL, Env
 from tests.test_engine_protections import FakeOllama, loaded
 from tests.test_engine_sdcpp import dead_ollama_url
 
@@ -582,6 +583,56 @@ class LocaleTests(unittest.TestCase):
     def test_the_two_languages_differ(self):
         for key in ("doctor.binary.missing", "doctor.summary_fail", "doctor.tool.missing"):
             self.assertNotEqual(i18n.t(key, "es", path="p", tool="t"), i18n.t(key, "en", path="p", tool="t"))
+
+
+class SheetMarkdownTests(Env):
+    """`sheet.markdown`: the generated block of `brand.sheetMarkdown` against the sheet data."""
+
+    def setUp(self):
+        super().setUp()
+        self.root = self.project("portal", PORTAL)
+        self.cfg_path = self.root / "galivelop-images.json"
+
+    def declare(self, rel="hoja.md", text=None):
+        cfg = json.loads(self.cfg_path.read_text())
+        cfg["brand"]["sheetMarkdown"] = rel
+        self.cfg_path.write_text(json.dumps(cfg))
+        if text is not None:
+            (self.root / rel).write_text(text, encoding="utf-8")
+
+    def rows(self):
+        return {c.id: c for c in doctor.run_project("portal")}
+
+    def test_without_the_field_there_is_no_row(self):
+        self.assertNotIn("sheet.markdown", self.rows())
+
+    def test_matching_block_is_ok_in_either_language(self):
+        for lang in ("es", "en"):
+            self.declare(text="# Hoja\n\n" + brandsheet.markdown("portal", lang))
+            row = self.rows()["sheet.markdown"]
+            self.assertEqual((row.status, row.key), (doctor.OK, "doctor.sheet.md_ok"), lang)
+
+    def test_a_hand_edited_block_fails_with_the_fix(self):
+        block = brandsheet.markdown("portal", "es").replace(brandsheet.MD_END, "- editado a mano\n" + brandsheet.MD_END)
+        self.declare(text=block)
+        row = self.rows()["sheet.markdown"]
+        self.assertEqual((row.status, row.key, row.fix_key), (doctor.FAIL, "doctor.sheet.md_differs", "doctor.sheet.fix_md"))
+        self.assertIn("gimg brand md portal --write hoja.md", row.fix("es"))
+
+    def test_no_markers_fails(self):
+        self.declare(text="# Hoja sin bloque\n")
+        row = self.rows()["sheet.markdown"]
+        self.assertEqual((row.status, row.key), (doctor.FAIL, "doctor.sheet.md_nomarkers"))
+
+    def test_missing_file_fails_as_unreadable(self):
+        self.declare("no-existe.md")
+        row = self.rows()["sheet.markdown"]
+        self.assertEqual((row.status, row.key), (doctor.FAIL, "doctor.sheet.md_unreadable"))
+
+    def test_invalid_sheet_has_no_markdown_row(self):
+        self.declare(text="x")
+        (self.root / "marca.json").write_text("{}")
+        self.assertNotIn("sheet.markdown", self.rows())
 
 
 if __name__ == "__main__":

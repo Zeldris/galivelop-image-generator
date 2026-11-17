@@ -409,7 +409,7 @@ curl -s $B/api/models
 ### GET /api/projects/{p}/check
 
 The `gimg doctor` checks that concern the project (sources of `compose.fonts`, template and logo files, editable
-elements and `viewBox`): `[{"id", "status": "ok|warn|fail", "message", "fix"?}]`. With a brand sheet (or a warning without one) it adds the rows `sheet.present`, `sheet.valid`, `sheet.extends` and `sheet.contrast` (ink and the accent's deep tone on paper, 4.5:1 minimum; a broken parent sheet or config shows in `sheet.extends`). Error: `project.unknown`.
+elements and `viewBox`): `[{"id", "status": "ok|warn|fail", "message", "fix"?}]`. With a brand sheet (or a warning without one) it adds the rows `sheet.present`, `sheet.valid`, `sheet.extends` and `sheet.contrast` (ink and the accent's deep tone on paper, 4.5:1 minimum; a broken parent sheet or config shows in `sheet.extends`). With a valid sheet and `brand.sheetMarkdown` in the config (path relative to the root: the `hoja.md` holding the `gimg brand md` block) it adds `sheet.markdown`: OK if the block matches the data (in `es` or `en`), FAIL if it differs, has no markers or cannot be read. Error: `project.unknown`.
 
 ```sh
 curl -s $B/api/projects/mi-proyecto/check

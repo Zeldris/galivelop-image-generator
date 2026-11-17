@@ -401,7 +401,7 @@ curl -s $B/api/models
 
 Las comprobaciones de `gimg doctor` que tocan al proyecto (fuentes de `compose.fonts`, archivos de plantillas y
 logos, elementos editables y `viewBox`): `[{"id", "status": "ok|warn|fail", "message", "fix"?}]`.
-Con hoja de marca (o sin ella, avisando) añade las filas `sheet.present`, `sheet.valid`, `sheet.extends` y `sheet.contrast` (tinta y tono hondo del acento sobre el papel, mínimo 4,5:1; una hoja o configuración del padre rota sale en `sheet.extends`). Error: `project.unknown`.
+Con hoja de marca (o sin ella, avisando) añade las filas `sheet.present`, `sheet.valid`, `sheet.extends` y `sheet.contrast` (tinta y tono hondo del acento sobre el papel, mínimo 4,5:1; una hoja o configuración del padre rota sale en `sheet.extends`). Con hoja válida y `brand.sheetMarkdown` en la configuración (ruta relativa a la raíz, el `hoja.md` con el bloque de `gimg brand md`), añade `sheet.markdown`: OK si el bloque coincide con los datos (en `es` o en `en`), FAIL si difiere, no tiene marcadores o no se lee. Error: `project.unknown`.
 
 ```sh
 curl -s $B/api/projects/mi-proyecto/check
