@@ -341,6 +341,8 @@ class WordmarkTests(BrandBase):
         self.assertEqual(brand._paint_colors('<path fill="#123456" stroke="#ff0000" style="stroke-width:0" d="M0 0"/>'), {"#123456"})
         self.assertEqual(brand._paint_colors('<g stroke="#ff0000" stroke-width="0"><path fill="#123456" stroke-width="2" d="M0 0"/></g>'),
                          {"#123456", "#ff0000"})
+        self.assertEqual(brand._paint_colors('<g stroke="#ff0000" stroke-opacity="0"><path fill="#123456" stroke-width="2" d="M0 0"/></g>'),
+                         {"#123456"})  # an own width does not undo an inherited stroke-opacity 0
 
     def _tiny_path(self):
         font = self.tmp / "tiny.ttf"

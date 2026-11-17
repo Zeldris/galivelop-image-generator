@@ -10,7 +10,7 @@ en `.claude/skills/` y su configuración en `.claude/gw.json` (solo la lee `.cla
 
 1. Lee la bitácora, `docs/handoff.md`: rama, tarea en curso, qué falta y siguiente paso.
 2. `git fetch origin <rama>` y comprueba que el último commit coincide con lo que dice la bitácora.
-3. Comprueba que el check está en verde antes de tocar nada: `for f in .githooks/pre-commit .githooks/pre-push .githooks/commit-msg; do bash -n "$f"; done`, `python3 -m unittest discover -s tests -t .`.
+3. Comprueba que el check está en verde antes de tocar nada: `for f in .githooks/pre-commit .githooks/pre-push .githooks/commit-msg; do bash -n "$f"; done`, `python3 -m unittest discover -s tests -t .`, `python3 .claude/gw/scripts/ci-local.py --validate`.
 4. Sigue por el **siguiente paso** de la bitácora, salvo que la persona pida otra cosa.
 5. Al empezar cada tarea, trae la rama protegida: `git fetch origin main` y, si trae commits,
    `git merge origin/main` (merge, nunca rebase: las ramas están subidas). Si el conflicto toca la
@@ -48,7 +48,7 @@ Cada sesión puede correr en un contenedor temporal: **lo que no está subido no
 
 ## Comprobar
 
-- **El check del proyecto:** `for f in .githooks/pre-commit .githooks/pre-push .githooks/commit-msg; do bash -n "$f"; done`, `python3 -m unittest discover -s tests -t .`. `.githooks/pre-push` lo corre sobre el commit que se sube a
+- **El check del proyecto:** `for f in .githooks/pre-commit .githooks/pre-push .githooks/commit-msg; do bash -n "$f"; done`, `python3 -m unittest discover -s tests -t .`, `python3 .claude/gw/scripts/ci-local.py --validate`. `.githooks/pre-push` lo corre sobre el commit que se sube a
   `main` o que cambia el entorno; a otra rama, solo los tests relacionados (`branchCheck`). El CI
   (`.github/workflows/check.yml`) lo corre entero en cada pull request y, salvo con `ciOnPush: false`, en cada
   push fuera de `main`.

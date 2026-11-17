@@ -12,6 +12,10 @@ from unittest import mock
 
 from gimg import __version__, cli, compose, engine, i18n
 
+# As in tests/__init__.py, which a discover with top_level_dir=tests (test-run.py, the fast related tests) does not
+# import: without it, `order submit` here starts a real service on the default port.
+os.environ["GIMG_AUTOSTART"] = "0"
+
 ROOT = Path(__file__).resolve().parent.parent
 EXAMPLE = json.loads((ROOT / "examples" / "galivelop-images.json").read_text())
 ORDER = json.loads((ROOT / "examples" / "order.json").read_text())

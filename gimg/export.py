@@ -154,27 +154,32 @@ def fit(width: int, height: int, rgba, dst_w: int, dst_h: int, anchor=(0.5, 0.5)
     return _resample(width, rgba, dst_w, dst_h, cols, rows)
 
 
+_STATS = {"peak_rows": 0}  # most source rows held at once by `_resample` (tests read it)
+
+
 def _resample(width: int, rgba, dst_w: int, dst_h: int, cols: list, rows: list) -> bytearray:
     """Separable resampling with the taps of each output column and row (premultiplied alpha)."""
-    needed = sorted({j for taps in rows for j, _ in taps})
     x0 = min(j for taps in cols for j, _ in taps)
     x1 = max(j for taps in cols for j, _ in taps) + 1
-    wide = [{}, {}, {}, {}]  # per channel, {source row: [dst_w floats]}; premultiplied a row at a time
-    for y in needed:
-        seg = rgba[(y * width + x0) * 4:(y * width + x1) * 4]
-        alpha = seg[3::4]
-        planes = [[c * a for c, a in zip(seg[k::4], alpha)] for k in range(3)] + [list(alpha)]
-        for by_row, plane in zip(wide, planes):
-            by_row[y] = [sum(plane[j - x0] * w for j, w in taps) for taps in cols]
+    wide = {}  # source row -> its 4 channels as [dst_w floats], premultiplied; only rows a later output row still uses
     out = bytearray(dst_w * dst_h * 4)
     for y, taps in enumerate(rows):
+        for j, _ in taps:
+            if j not in wide:
+                seg = rgba[(j * width + x0) * 4:(j * width + x1) * 4]
+                alpha = seg[3::4]
+                planes = [[c * a for c, a in zip(seg[k::4], alpha)] for k in range(3)] + [list(alpha)]
+                wide[j] = [[sum(plane[i - x0] * w for i, w in ctaps) for ctaps in cols] for plane in planes]
+        _STATS["peak_rows"] = max(_STATS["peak_rows"], len(wide))
         mixed = []
-        for by_row in wide:
+        for k in range(4):
             acc = [0.0] * dst_w
             for j, w in taps:
-                src = by_row[j]
-                acc = [a + s * w for a, s in zip(acc, src)]
+                acc = [a + s * w for a, s in zip(acc, wide[j][k])]
             mixed.append(acc)
+        floor = min(j for j, _ in rows[y + 1]) if y + 1 < dst_h else None  # taps never go back: drop what is behind
+        for j in [j for j in wide if floor is None or j < floor]:
+            del wide[j]
         base = y * dst_w * 4
         for x in range(dst_w):
             a = mixed[3][x]
