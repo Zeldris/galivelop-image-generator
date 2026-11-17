@@ -84,6 +84,24 @@ class ExamplesTests(PortalEnv):
         for piece, spec in B.resolve("portal")["pieceTypes"].items():
             self.assertIn(spec["profile"], profiles, piece)
 
+    def test_every_piece_profile_exists_in_the_config_of_the_project_that_declared_it(self):
+        from gimg import projects
+        for name in ("portal",) + PRODUCTS:
+            sheet = B.resolve(name)
+            for piece, spec in sheet["pieceTypes"].items():
+                owner = B.profile_owner(sheet, piece)
+                self.assertEqual(owner, "portal", (name, piece))  # the products declare no piece type
+                self.assertIn(spec["profile"], projects.get(owner)["config"]["profiles"], (name, piece))
+
+    def test_an_inherited_piece_gives_the_profile_and_model_of_the_portal(self):
+        from gimg import projects
+        portal = B.resolve("portal")["pieceTypes"]["stage-cover"]["profile"]
+        expected = projects.get("portal")["config"]["profiles"][portal]["model"]
+        self.assertTrue(expected)
+        for name in PRODUCTS:
+            defaults = B.prompt_response(name, "stage-cover", "A sea chart.")["defaults"]
+            self.assertEqual((defaults["profile"], defaults["model"]), (portal, expected), name)
+
     def test_references_exist(self):
         for rel in B.resolve("portal")["acceptance"]["references"]:
             self.assertTrue((EXAMPLES / "portal" / rel).is_file(), rel)
@@ -171,11 +189,28 @@ class ReproductionTests(PortalEnv):
     def test_the_06_put_the_zone_at_the_end_of_their_own_closing(self):
         case = self.case("06-portada-desarrollo")
         built = self.build(case)
-        self.assertEqual([s["role"] for s in built["segments"]], ["subject", "register", "closing", "palette"])
         self.assertEqual(built["segments"][1]["source"], "registers.engraved-stage")
-        self.assertEqual(built["segments"][2]["source"], "pieceTypes.stage-cover.closing")
-        self.assertTrue(built["segments"][2]["text"].endswith("no frame, " + case["cleanZone"] + "."))
+        self.assertIn("no frame, " + case["cleanZone"] + ".", built["prompt"])
         self.assertEqual(self.build(self.case("19-enviado"))["segments"][2]["source"], "pieceTypes.sent.closing")
+
+    def test_the_zone_after_the_closing_is_its_own_segment_with_the_same_text(self):
+        case = self.case("06-portada-desarrollo")
+        built = self.build(case)
+        self.assertEqual([s["role"] for s in built["segments"]],
+                         ["subject", "register", "closing", "cleanZone", "palette"])
+        closing, zone = built["segments"][2], built["segments"][3]
+        self.assertEqual(closing["source"], "pieceTypes.stage-cover.closing")
+        self.assertTrue(closing["text"].endswith("no frame,"))
+        self.assertEqual((zone["source"], zone["text"]), ("input", case["cleanZone"] + "."))
+
+    def test_a_no_in_the_zone_after_the_closing_is_not_a_negation(self):
+        sheet = B.resolve("portal")
+        zone = "the islet small on the left, no buildings"
+        built = B.assemble(sheet, "stage-cover", "A sea chart.", zone)["prompt"]
+        self.assertEqual([e for e in self.errors(sheet, built, "stage-cover", zone) if e[0] == "negation"], [])
+        loose = built.replace("A sea chart.", "A sea chart, not a map.")
+        self.assertEqual([e[0] for e in self.errors(sheet, loose, "stage-cover", zone) if e[0] == "negation"],
+                         ["negation"])
 
     def test_the_order_of_a_default_piece_is_subject_zone_register_closing_palette(self):
         built = B.assemble(B.resolve("portal"), "cover", "A sea chart.", "The lower third is open")

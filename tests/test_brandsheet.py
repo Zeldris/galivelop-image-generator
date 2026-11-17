@@ -254,6 +254,13 @@ class LoadResolveTests(Env):
         self.project("bad", bad)
         err = self.code(B.resolve, "bad")
         self.assertEqual((err.code, err.params["register"]), ("brandsheet.unknown_register", "watercolour"))
+        wide = copy.deepcopy(PORTAL)
+        wide["name"] = "wide"
+        wide["pieceTypes"]["icon"]["promptWords"] = {"min": 300, "max": 100}
+        self.project("wide", wide)
+        err = self.code(B.resolve, "wide")
+        self.assertEqual((err.code, err.params["piece"], err.params["field"]),
+                         ("brandsheet.incomplete", "icon", "pieceTypes.icon.promptWords"))
         worse = dict(copy.deepcopy(PORTAL), name="worse", paletteSentence="Only {grid}")
         self.project("worse", worse)
         err = self.code(B.resolve, "worse")
@@ -367,9 +374,11 @@ class PieceTypeOverridesTests(Env):
     def test_clean_zone_after_the_closing_continues_its_sentence(self):
         sheet = with_piece(closing=PIECE_CLOSING, cleanZone="afterClosing")
         out = B.assemble(sheet, "stage", "A chart.", "the islet small on the left")
-        self.assertEqual([s["role"] for s in out["segments"]], ["subject", "register", "closing", "palette"])
-        self.assertEqual(out["segments"][2]["text"],
-                         "No realistic objects, no glow, no text, no frame, the islet small on the left.")
+        self.assertEqual([s["role"] for s in out["segments"]],
+                         ["subject", "register", "closing", "cleanZone", "palette"])
+        self.assertEqual(out["segments"][2]["text"], "No realistic objects, no glow, no text, no frame,")
+        self.assertEqual(out["segments"][3]["text"], "the islet small on the left.")
+        self.assertIn("No realistic objects, no glow, no text, no frame, the islet small on the left.", out["prompt"])
         self.assertEqual(out["prompt"].count("the islet small on the left"), 1)
         # no zone given: the closing is untouched
         self.assertEqual(B.assemble(sheet, "stage", "A chart.")["segments"][2]["text"], PIECE_CLOSING)

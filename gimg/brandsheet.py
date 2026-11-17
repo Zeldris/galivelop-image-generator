@@ -159,6 +159,11 @@ def _check_resolved(sheet: dict, project: str) -> None:
     words = sheet.get("promptWords")
     if words and words["min"] > words["max"]:
         raise GimgError("brandsheet.incomplete", project=project, field="promptWords")
+    for piece, spec in sheet.get("pieceTypes", {}).items():
+        words = spec.get("promptWords")
+        if words and words["min"] > words["max"]:
+            raise GimgError("brandsheet.incomplete", project=project, field="pieceTypes.%s.promptWords" % piece,
+                            piece=piece)
 
 
 def canonical(sheet: dict) -> bytes:
@@ -346,10 +351,10 @@ def assemble(sheet: dict, piece: str, subject: str, clean_zone: str | None = Non
 
     The piece type may carry its own closing and palette sentence, and with `cleanZone: "afterClosing"` the clean
     zone is not a sentence before the register but the end of the closing sentence: the closing loses its full stop
-    and goes on after a comma with the zone text as given (it should start in lower case).
+    and goes on after a comma with the zone text as given (it should start in lower case), as its own segment.
 
-    Returns {"prompt", "words", "segments": [{"role", "text", "source"}]}; each segment ends in a full stop and
-    segments are joined with one space."""
+    Returns {"prompt", "words", "segments": [{"role", "text", "source"}]}; each segment ends in a full stop (the
+    closing before an after-closing zone, in a comma) and segments are joined with one space."""
     spec = _piece(sheet, piece)
     segments = [{"role": "subject", "text": _sentence(subject), "source": "input"}]
     after = bool(clean_zone) and _zone_after(spec)
@@ -363,8 +368,10 @@ def assemble(sheet: dict, piece: str, subject: str, clean_zone: str | None = Non
          if spec.get("closing") else "closing"},
     ]
     if after:
-        closing_text = " ".join(closing.split()).rstrip(".!?")
-        segments[-1]["text"] = _sentence("%s, %s" % (closing_text, " ".join(clean_zone.split()).rstrip(".")))
+        # the zone is the person's own segment: the closing loses its full stop and ends in a comma, the zone
+        # follows it and takes the full stop, so the joined text is «closing, zone.»
+        segments[-1]["text"] = " ".join(closing.split()).rstrip(".!?") + ","
+        segments.append({"role": "cleanZone", "text": _sentence(clean_zone), "source": "input"})
     segments.append({"role": "palette", "text": palette_sentence(sheet, spec),
                      "source": "pieceTypes.%s.paletteSentence" % piece if spec.get("paletteSentence")
                      else "paletteSentence"})
@@ -520,6 +527,10 @@ def lint(sheet: dict, prompt: str, piece: str | None = None, mode: str = "brand"
 
     # negations only in the closing (register blocks are approved text and may carry them)
     quiet = [s for s in [closing_span] + list(reg_spans.values()) if s]
+    if clean_zone and _zone_after(spec):  # the person's zone put after the closing may say «no buildings»
+        zone_span = _find(prompt, clean_zone)
+        if zone_span:
+            quiet.append(zone_span)
     before = len(checks)
     for word in NEGATIONS:
         for span in _word_spans(prompt, word):
@@ -552,6 +563,13 @@ def declared(project: dict) -> str | None:
     return project["config"].get("brand", {}).get("sheet")
 
 
+def profile_owner(sheet: dict, piece: str) -> str:
+    """Project whose config holds the profile of a piece type: the one that declared that `profile` (an inherited
+    piece type uses the profiles of the project that declared it, not the child's)."""
+    found = sheet.get("origin", {}).get("pieceTypes.%s.profile" % piece)
+    return found["project"] if found else sheet["chain"][0]
+
+
 def prompt_response(project_name: str, piece: str, subject: str, clean_zone: str | None = None) -> dict:
     """`gimg brand prompt --json` / `POST .../brand/prompt`: the assembled prompt, its checks and the piece defaults."""
     sheet = resolve(project_name)
@@ -559,7 +577,7 @@ def prompt_response(project_name: str, piece: str, subject: str, clean_zone: str
     res = lint(sheet, built["prompt"], piece, "brand", clean_zone)
     spec = sheet["pieceTypes"][piece]
     profile = spec.get("profile")
-    model = projects.get(project_name)["config"].get("profiles", {}).get(profile, {}).get("model")
+    model = projects.get(profile_owner(sheet, piece))["config"].get("profiles", {}).get(profile, {}).get("model")
     defaults = {"profile": profile, "seed": spec.get("seed"), "count": spec.get("count"), "model": model,
                 "chroma": spec.get("chroma")}
     return {**built, "checks": res["checks"], "blocked": res["blocked"], "defaults": defaults, "known": []}
