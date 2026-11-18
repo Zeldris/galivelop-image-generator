@@ -73,3 +73,30 @@ Portal y GVE:
 - **24c og de Tarkor (q1414) → 24d (2026-11-17):** Z-Image sacó un colmillo grande con grieta y raíz de cuerno hueco, otro pequeño colgado y la mitad izquierda invadida. Rediseño como 31f: composición con FLUX (`marca/24d-og-tarkor-flux`, q1429-1432: dos colmillos paralelos, bases redondeadas abajo a la derecha, izquierda vacía) y grabado con Z-Image img2img a 0,5 y 0,6.
   Prompt de la etapa 2: «Antique steel engraving of a calm sea, flat printed sheet seen straight on. Exactly the layout of the source image: same positions, same sizes, same curves, same empty areas. Two-ink print on off-white paper #fbfcfd: cerulean blue #0072a8 in tints and shades, plus fine ink-grey #13212b line art. The calm sea fills the whole image edge to edge and is drawn with dense parallel engraved wave lines, fine hatching and stipple, in cerulean, darker and deeper towards the left. The whole left half of the image is only quiet engraved water: even parallel wave lines, no object, no ripple, no foam, nothing else. In the right third, two matching ivory tusks float side by side on the water, the same size and the same gentle curve, drawn in off-white with a crisp engraved ink-grey outline and light hatching along the curve for roundness. Each tusk narrows evenly to a point; its thick end is solid, closed and smoothly rounded, with no hole, no opening, no hollow, no rim. The ivory is plain and smooth, with no cracks and no carving. A thin ink-grey cord is wound around both thick ends, tying the two tusks together, with one single small round bead filled solid burnt orange #E0703A. Around the pair, a few soft concentric ripples drawn as fine engraved off-white lines, wide flattened ovals that fade out well before the middle of the image. Open water surrounds the pair on every side; nothing touches the edges. Flat graphic print, crisp lines of several weights, visible engraving texture, intricate but calm. Not a photograph, not a painting, no horizon, no sky, no cast shadows, no reflections, no glow, no gradient. No third tusk, no small fang, no horn, no skull, no animal, no person, no boats, no text, no letters, no numbers, no compass rose, no border, no frame.» Si la cuenta vira a cerúleo, quitar «Two-ink».
 - **Resultado de FLUX + img2img (31g q1433, 24e q1438; 2026-11-18):** la composición se conserva entera (posiciones, tamaños, izquierda limpia) y Z-Image corrige formas (visto en 31g a 0,5; colmillos de marfil en 24e), pero sobre un mar FLUX plano no añade grabado: el agua queda casi lisa a 0,5 y 0,6. Si se pide la textura de las placas 24: componer FLUX ya con líneas de olas paralelas densas, o una tercera pasada img2img solo de textura.
+
+**Cola de la noche (17-18-11), juicio con hojas `gimg sheet`:**
+
+Portal, GVE e instalador:
+- **Figura apaisada en cuadrado:** describirla de izquierda a derecha (así salió el nivel de burbuja del 25e).
+- **«three rows» da cuatro** (25b): se aprueba quitando la cuarta fila al recortar; en el pedido, posiciones y no número.
+- **«plateau» no da meseta:** salen colinas; pedir la forma («flat-topped table mountain with sheer sides»).
+- **El nombre del color manda sobre el hex** (og de Developer): elegir el nombre que dé el tono, el hex no lo corrige.
+- **i3 portada aprobada (q1338)** con la ruta de la lección anterior (cinturón primero, empalizada lejana).
+- **i4 riel rechazado tras dos rondas:** sin el bloque de materiales sigue saliendo rejilla de madera. Rediseño: chapa
+  lisa `#171310` generada y la rejilla por CSS (no se pide a la imagen).
+- Rediseños propuestos aparte: 25e trazado a SVG a mano si el vectorizado mancha; i3 alternativo con pared de troncos
+  y franja recta.
+
+ux41 (iconos de Tarkor):
+- **«60 percent» se pinta como el signo «%»:** las categorías se piden sin porcentajes («fills most of the medallion»).
+- **Motivo primero y emblema plano** funciona: los aprobados describen el motivo antes que el medallón.
+- **«blank gold cube» sale cajón:** el dado va por SVG (cubo y puntos dibujados).
+- **Balanza, L de la esquina:** la balanza no sale simétrica y la L no sale; la esquina, por código (CSS).
+- **Motivos largos en diagonal se salen del aro:** pedirlos rectos o más cortos.
+- **Piel, trampa y metal salen de bulto** (3D): emblema plano, silueta recortada, sin sombras.
+- **La llave sale invertida** (paletón arriba): describir «bit at the bottom».
+- **Perfil `tira`:** sale en perspectiva una de cada tres; repetir y escoger la frontal.
+- **Perfil `og`:** usar `raw.png`, no el recorte.
+- **Gema azul y favicon (21, 22):** a `pendiente/` hasta que la persona decida el símbolo.
+- Rediseños propuestos: cuerda, piedra, otro, libro, instrumento, joya, fibra y reputación sin «percent» y con el motivo
+  primero; dado por SVG; esquina por código; gema azul según la decisión del símbolo.
