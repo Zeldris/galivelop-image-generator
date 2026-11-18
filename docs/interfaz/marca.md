@@ -1,6 +1,6 @@
 # Interfaz de Galivelop IG para el proceso de marca: diseño (borrador, sin decidir)
 
-Diseño de interfaz de la fase FM (`docs/plan.md`, «FM en detalle», D41), escrito el 2026-11-16; no está prototipado
+Diseño de interfaz de la fase FM (`docs/plan/fm.md`, D41), escrito el 2026-11-16; no está prototipado
 ni probado en navegador. Donde este documento y el plan difieran (versiones, decisiones), manda el plan. Parte de la
 propuesta de FM, de la interfaz de hoy (`gimg/ui/`),
 de `docs/interfaz/f4a.md`, de la hoja propia (`docs/marcas/galivelop-image-generator/hoja.md`, «Interfaz: tokens y

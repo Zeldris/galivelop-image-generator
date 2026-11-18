@@ -9,7 +9,7 @@
 | Campo | Valor |
 |---|---|
 | **Rama** | `hoja-datos` (desde `origin/main` `43ef055`, 2026-11-17): versión 0.7.0 «Hoja como datos»; `ccr-85e9d14e-zt7p8b` queda con sus leves por fusionar |
-| **Fase / tarea** | FM, 0.7.0 «Hoja como datos» (`docs/plan.md`, «FM en detalle»; interfaz en `docs/interfaz/marca.md` §2.10 y §4) |
+| **Fase / tarea** | FM, 0.7.0 «Hoja como datos» (`docs/plan/fm.md`; interfaz en `docs/interfaz/marca.md` §2.10 y §4) |
 | **Último punto estable** | `main` en `43ef055` (PR #24, barrido de color, 2026-11-17, CI en verde); release v0.6.0 publicada (etiqueta en `98fcc7c`, PR #20, 2026-11-16) |
 | **Siguiente paso** | el de la fila de `hoja-datos` |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
