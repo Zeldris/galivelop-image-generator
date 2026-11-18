@@ -2,13 +2,16 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import os
 import sys
 import traceback
+from pathlib import Path
 
-from . import __version__, brand, compose, crop, delivery, doctor, export, i18n, measure, orders, projects, queue, service, sheet, tile, worker
+from . import __version__, brand, brandsheet, compose, crop, delivery, doctor, export, i18n, measure, orders, projects, queue, service, sheet, tile, worker
 from .errors import GimgError
+from . import fsutil, paths, schema
 
 LANGS = ("es", "en")
 
@@ -132,6 +135,22 @@ def _build(lang: str) -> argparse.ArgumentParser:
          opt("--weight", "cli.arg.brand_weight", type=int, default=brand.DEFAULT_WEIGHT),
          opt("--spacing", "cli.arg.brand_spacing", type=float),
          opt("-o", "cli.arg.brand_out_svg", dest="out", metavar="SVG"))
+    sproj = opt("--project", "cli.arg.sheet_project", required=True, metavar="PROJECT")
+    leaf(g, "init", "cli.cmd.brand_init", sproj,
+         opt("--extends", "cli.arg.sheet_extends", metavar="PROJECT"),
+         opt("--force", "cli.arg.sheet_force", action="store_true"))
+    leaf(g, "prompt", "cli.cmd.brand_prompt", sproj,
+         opt("--piece", "cli.arg.sheet_piece", required=True, metavar="ID"),
+         opt("--subject", "cli.arg.sheet_subject", required=True, metavar="TEXT"),
+         opt("--clean-zone", "cli.arg.sheet_clean_zone", metavar="TEXT"))
+    leaf(g, "lint", "cli.cmd.brand_lint", sproj,
+         opt("--prompt", "cli.arg.sheet_lint_prompt", metavar="TEXT"),
+         opt("--file", "cli.arg.sheet_lint_file", metavar="PATH"),
+         opt("--piece", "cli.arg.sheet_piece", metavar="ID"),
+         opt("--mode", "cli.arg.sheet_mode", choices=("brand", "free"), default="brand"),
+         opt("--clean-zone", "cli.arg.sheet_clean_zone", metavar="TEXT"))
+    leaf(g, "md", "cli.cmd.brand_md", arg("project", "cli.arg.project"),
+         opt("--write", "cli.arg.md_write", metavar="FILE"), opt("--check", "cli.arg.md_check", metavar="FILE"))
     props = (opt("--cap", "cli.arg.brand_cap", type=float, default=0.45),
              opt("--gap", "cli.arg.brand_gap", type=float, default=0.25),
              opt("--width", "cli.arg.brand_width", type=float, default=1.6))
@@ -289,7 +308,134 @@ def _doctor(args, out: _Out) -> int:
     return 1 if bad else 0
 
 
-def _brand(args, sub, out: _Out) -> None:
+STARTER_SHEET = {
+    "schemaVersion": 1,
+    "palette": {
+        "paper": {"$value": "#fbfcfd", "$type": "color", "promptName": "plain flat off-white"},
+        "ink": {"$value": "#13212b", "$type": "color", "promptName": "ink grey"},
+        "accent": {"$value": "#0072a8", "$type": "color", "promptName": "medium cerulean blue"},
+    },
+    "registers": {"main": {"label": {"es": "Principal", "en": "Main"},
+                           "block": "Simple flat illustration style, clean shapes, calm and clear."}},
+    "closing": "No text, no letters, no watermark, no border.",
+    "paletteSentence": "Palette strictly limited to {paper}, {ink} and {accent}",
+}
+
+
+def _brand_init(args, out: _Out) -> None:
+    project = projects.get(args.project)
+    root = Path(project["root"])
+    cfg_path = root / projects.CONFIG_FILE
+    rel = project["config"].get("brand", {}).get("sheet", "marca.json")
+    target = paths.inside(root, rel)
+    if target.exists() and not args.force:
+        raise GimgError("brandsheet.exists", path=str(target))
+    sheet = {"schemaVersion": 1, "name": args.project}
+    if args.extends:
+        try:
+            projects.get(args.extends)
+        except GimgError as exc:
+            if exc.code == "project.unknown":
+                raise GimgError("brandsheet.extends_missing", project=args.project, parent=args.extends)
+            raise
+        sheet["extends"] = args.extends
+    else:
+        sheet.update(copy.deepcopy(STARTER_SHEET))
+    errors = schema.validate(sheet, schema.load_schema("brand-sheet"))
+    if errors:
+        raise GimgError("brandsheet.invalid", errors=errors, path=str(target))
+    fsutil.write_json(target, sheet)
+    linked = project["config"].get("brand", {}).get("sheet") is None
+    if linked:
+        raw = fsutil.read_json(cfg_path)
+        raw.setdefault("brand", {})["sheet"] = rel
+        fsutil.write_json(cfg_path, raw)
+    res = {"path": str(target), "sheet": rel, "linked": linked, "extends": args.extends}
+    out.data(res) if out.as_json else out.line("cli.out.brand_init", path=res["path"])
+
+
+def _check_lines(out: _Out, checks: list) -> None:
+    for c in checks:
+        msg = c["message"]
+        out.line("cli.out.lint_line", status=c["status"], id=c["id"], message=out.t(msg["key"], **msg["params"]))
+
+
+def _brand_prompt(args, out: _Out) -> int:
+    res = brandsheet.prompt_response(args.project, args.piece, args.subject, args.clean_zone)
+    if out.as_json:
+        out.data(res)
+    else:
+        print(res["prompt"])
+        out.line("cli.out.prompt_words", words=res["words"])
+        _check_lines(out, [c for c in res["checks"] if c["status"] != "ok"])
+        if res["blocked"]:
+            out.line("cli.out.prompt_blocked")
+    return 1 if res["blocked"] else 0
+
+
+def _brand_lint(args, out: _Out) -> int:
+    if (args.prompt is None) == (args.file is None):
+        raise GimgError("cli.lint_source")
+    text = args.prompt
+    if args.file is not None:
+        try:
+            with open(args.file, encoding="utf-8") as fh:
+                text = fh.read()
+        except (OSError, ValueError) as exc:
+            raise GimgError("cli.prompt_unreadable", path=args.file, reason=str(exc))
+    sheet = brandsheet.resolve(args.project)
+    res = brandsheet.lint(sheet, text, args.piece, args.mode, args.clean_zone)
+    if out.as_json:
+        out.data({"checks": res["checks"], "blocked": res["blocked"]})
+    else:
+        _check_lines(out, res["checks"])
+        if res["blocked"]:
+            out.line("cli.out.prompt_blocked")
+    return 1 if res["blocked"] else 0
+
+
+def _brand_md(args, out: _Out) -> int:
+    if args.write and args.check:
+        raise GimgError("cli.md_target")
+    lang = getattr(args, "lang", None) or "es"  # the block's language is es unless --lang is explicit
+    block = brandsheet.markdown(args.project, lang)
+    target = args.write or args.check
+    if target is None:
+        if out.as_json:
+            out.data({"markdown": block})
+        else:
+            print(block, end="")
+        return 0
+    path = Path(target)
+    try:
+        text = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        text = None
+    if args.write:
+        fsutil.write_bytes_atomic(path, brandsheet.replace_block(text or "", block, path).encode("utf-8"))
+        if out.as_json:
+            out.data({"path": str(path), "written": True})
+        else:
+            out.line("cli.out.md_written", path=path)
+        return 0
+    if text is None or brandsheet.extract_block(text, path) != block:
+        raise GimgError("brandsheet.markdown_stale", path=str(path), project=args.project, md_lang=lang)
+    if out.as_json:
+        out.data({"path": str(path), "ok": True})
+    else:
+        out.line("cli.out.md_ok", path=path)
+    return 0
+
+
+def _brand(args, sub, out: _Out):
+    if sub == "md":
+        return _brand_md(args, out)
+    if sub == "init":
+        return _brand_init(args, out)
+    if sub == "prompt":
+        return _brand_prompt(args, out)
+    if sub == "lint":
+        return _brand_lint(args, out)
     if sub == "matte":
         res = brand.matte(args.image, args.out, args.tol, args.soft, args.border, args.grow, args.holes)
         key = "cli.out.brand_matte"
@@ -408,7 +554,7 @@ def _run(args, out: _Out) -> int:
     elif cmd == "measure":
         _measure(args, out)
     elif cmd == "brand":
-        _brand(args, sub, out)
+        return _brand(args, sub, out) or 0
     elif cmd == "sheet":
         res = sheet.sheet(args.images, args.out, args.columns, args.width)
         if out.as_json:

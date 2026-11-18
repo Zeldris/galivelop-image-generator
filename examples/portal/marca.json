@@ -1,0 +1,504 @@
+{
+  "$schema": "../../gimg/schemas/brand-sheet.schema.json",
+  "schemaVersion": 1,
+  "name": "portal",
+  "palette": {
+    "paper": {
+      "$value": "#fbfcfd",
+      "$type": "color",
+      "promptName": "off-white"
+    },
+    "ink": {
+      "$value": "#13212b",
+      "$type": "color",
+      "promptName": "ink grey"
+    },
+    "accent": {
+      "$value": "#5d7a6a",
+      "$type": "color",
+      "promptName": "a touch of seaweed green"
+    },
+    "halo": {
+      "$value": "#0072a8",
+      "$type": "color",
+      "promptName": "medium cerulean ocean blue"
+    },
+    "grid": {
+      "$value": "#e3edf3",
+      "$type": "color"
+    },
+    "dark": {
+      "paper": {
+        "$value": "#0d171e",
+        "$type": "color"
+      },
+      "ink": {
+        "$value": "#e6eef3",
+        "$type": "color"
+      }
+    },
+    "measureOnly": [
+      "#1aa6df"
+    ]
+  },
+  "registers": {
+    "engraved": {
+      "label": {
+        "es": "Grabado a dos tintas",
+        "en": "Two-ink engraving"
+      },
+      "block": "Richly detailed engraved antique nautical chart style, like a fine sea chart printed in two inks: many layers of fine lines and hatching, line density increasing in the darker areas to give depth and tone, lines of several weights, crisp and sharp, intricate but calm, premium print quality, high detail, elegant."
+    },
+    "line": {
+      "label": {
+        "es": "Línea simple",
+        "en": "Simple line"
+      },
+      "block": "Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, bold and clear enough to read at 24 pixels, generous empty margin around each icon, a single ink colour."
+    },
+    "engraved-stage": {
+      "label": {
+        "es": "Grabado de la 06 (mar de carta)",
+        "en": "Engraved, 06 (chart sea)"
+      },
+      "block": "Richly detailed engraved nautical chart style, like a fine antique sea chart printed in two inks: the sea built from many layers of fine wave lines and hatching, line density increasing towards the deep water to give depth, tonal bands from deep cerulean at the bottom to lighter cerulean at the top, bathymetric contour lines with small depth soundings drawn as tiny dots, a delicate compass rose with fine tick marks in a corner, subtle foam strokes and a few glints of light on the crests. Crisp sharp lines of several weights, intricate but calm, premium print quality, high detail, elegant."
+    },
+    "engraved-stage-night": {
+      "label": {
+        "es": "Grabado de la 06 nocturna",
+        "en": "Engraved, night 06"
+      },
+      "block": "Richly detailed engraved nautical chart style, like a fine antique sea chart printed in two inks: the sea built from many layers of fine wave lines and hatching, line density increasing towards the deep water to give depth, tonal bands of deep dark cerulean, bathymetric contour lines with small depth soundings drawn as tiny dots, a delicate compass rose with fine tick marks in a corner, subtle foam strokes and a few glints of light on the crests. Crisp sharp lines of several weights, intricate but calm, premium print quality, high detail, elegant."
+    }
+  },
+  "closing": "No photographic rendering, no glow, no text, no letters, no numbers, no watermark, full-bleed edge to edge, no border, no frame.",
+  "paletteSentence": "Palette strictly limited to {halo} and its tints and shades, {paper}, {ink} and {accent}",
+  "vetoes": {
+    "groups": [
+      {
+        "id": "ethics",
+        "label": {
+          "es": "Ética de la biblia",
+          "en": "Bible ethics"
+        },
+        "reason": {
+          "es": "Vetado por ética (biblia): personas, manos, rostros, robots, cerebros, magia de IA, gente en traje, apretones de manos, cohetes y gráficas de crecimiento",
+          "en": "Vetoed by ethics (bible): people, hands, faces, robots, brains, AI magic, people in suits, handshakes, rockets and growth charts"
+        },
+        "terms": [
+          "person",
+          "people",
+          "hand",
+          "face",
+          "robot",
+          "brain",
+          "magic",
+          "suit",
+          "handshake",
+          "rocket",
+          "growth chart"
+        ]
+      },
+      {
+        "id": "nautical",
+        "label": {
+          "es": "Motivos náuticos",
+          "en": "Nautical motifs"
+        },
+        "reason": {
+          "es": "El mar pone el dónde, la tecnología pone el qué: un motivo náutico solo vale en las tres excepciones cerradas (barco de la 19, barco de la 15 de Developer, faro, boya, barco y grúa de las 06)",
+          "en": "The sea sets the where, technology sets the what: a nautical motif only holds in the three closed exceptions (boat of 19, boat of Developer's 15, lighthouse, buoy, boat and crane of the 06 covers)"
+        },
+        "terms": [
+          "anchor",
+          "boat",
+          "ship",
+          "lighthouse",
+          "oar",
+          "buoy",
+          "crane",
+          "sextant",
+          "knot",
+          "sail",
+          "sailor"
+        ]
+      },
+      {
+        "id": "glyph-windows",
+        "label": {
+          "es": "Ventana de editor o terminal",
+          "en": "Editor or terminal window"
+        },
+        "reason": {
+          "es": "Troubleshooting q574-q607: Z-Image inventa glifos dentro de la ventana (FLUX mete marco y graba pobre); la ventana solo vale como icono en línea simple",
+          "en": "Troubleshooting q574-q607: Z-Image invents glyphs inside the window (FLUX adds a frame and engraves poorly); a window only holds as a simple-line icon"
+        },
+        "terms": [
+          "editor window",
+          "terminal window"
+        ]
+      },
+      {
+        "id": "navigation-compass",
+        "label": {
+          "es": "Compás de navegación",
+          "en": "Navigation compass"
+        },
+        "reason": {
+          "es": "Troubleshooting q610, q616: sale de latón o metálico, fotográfico y con glifos en las patas",
+          "en": "Troubleshooting q610, q616: it comes out brass or metallic, photographic and with glyphs on its legs"
+        },
+        "terms": [
+          "navigation compass"
+        ]
+      },
+      {
+        "id": "camera-prefix",
+        "label": {
+          "es": "Prefijo de cámara",
+          "en": "Camera prefix"
+        },
+        "reason": {
+          "es": "Troubleshooting q614: con «seen from high above looking down» el mar sale fotorrealista y se pierde el grabado; se usa «seen from slightly above»",
+          "en": "Troubleshooting q614: with «seen from high above looking down» the sea comes out photorealistic and the engraving is lost; use «seen from slightly above»"
+        },
+        "terms": [
+          "seen from high above looking down"
+        ]
+      },
+      {
+        "id": "clock-arrow",
+        "label": {
+          "es": "Reloj con flecha",
+          "en": "Clock with arrow"
+        },
+        "reason": {
+          "es": "Troubleshooting q646, q647: sin flecha se lee como «hora» y con ella sale con punta en estrella y bucle; la 08c es una línea de tiempo vertical con tres nodos",
+          "en": "Troubleshooting q646, q647: without an arrow it reads as «time of day» and with one it gets a star tip and a loop; 08c is a vertical timeline with three nodes"
+        },
+        "terms": [
+          "clock"
+        ]
+      }
+    ],
+    "exceptions": [
+      {
+        "term": "boat",
+        "pieces": [
+          "sent",
+          "stage-cover",
+          "stage-cover-night"
+        ]
+      },
+      {
+        "term": "lighthouse",
+        "pieces": [
+          "stage-cover",
+          "stage-cover-night"
+        ]
+      },
+      {
+        "term": "buoy",
+        "pieces": [
+          "stage-cover",
+          "stage-cover-night"
+        ]
+      },
+      {
+        "term": "crane",
+        "pieces": [
+          "stage-cover",
+          "stage-cover-night"
+        ]
+      },
+      {
+        "term": "editor window",
+        "pieces": [
+          "icon",
+          "logo"
+        ]
+      },
+      {
+        "term": "terminal window",
+        "pieces": [
+          "icon",
+          "logo"
+        ]
+      }
+    ],
+    "neverWrite": [
+      "transparent",
+      "exactly",
+      "sky blue"
+    ],
+    "colorWords": [
+      "white",
+      "black",
+      "golden",
+      "gold",
+      "red",
+      "yellow",
+      "orange",
+      "purple",
+      "pink",
+      "brown",
+      "silver"
+    ],
+    "fillPhrase": "filling the whole sheet"
+  },
+  "pieceTypes": {
+    "logo": {
+      "label": {
+        "es": "Logo, sello y rosa",
+        "en": "Logo, seal and rose"
+      },
+      "profile": "cuadrado",
+      "register": "line",
+      "chroma": "#00ff00",
+      "count": 2,
+      "workshop": [
+        "matte",
+        "trace"
+      ]
+    },
+    "icon": {
+      "label": {
+        "es": "Icono",
+        "en": "Icon"
+      },
+      "profile": "icono",
+      "register": "line",
+      "chroma": "#00ff00",
+      "count": 2,
+      "workshop": [
+        "matte",
+        "trace"
+      ]
+    },
+    "divider": {
+      "label": {
+        "es": "Separador",
+        "en": "Divider"
+      },
+      "profile": "separador",
+      "register": "line",
+      "chroma": null,
+      "count": 2
+    },
+    "cover": {
+      "label": {
+        "es": "Portada",
+        "en": "Cover"
+      },
+      "profile": "portada",
+      "register": "engraved",
+      "chroma": null,
+      "count": 2,
+      "workshop": [
+        "crop"
+      ]
+    },
+    "stage-cover": {
+      "label": {
+        "es": "Portada de estado (06)",
+        "en": "Stage cover (06)"
+      },
+      "profile": "portada",
+      "register": "engraved-stage",
+      "chroma": null,
+      "count": 2,
+      "workshop": [
+        "crop"
+      ],
+      "closing": "No realistic objects, no photographic rendering, no glow, no text, no letters, no numbers, no watermark, no horizon, no sky, no clouds, full-bleed edge to edge, no border, no frame.",
+      "cleanZone": "afterClosing",
+      "promptWords": {
+        "min": 200,
+        "max": 300
+      }
+    },
+    "stage-cover-night": {
+      "label": {
+        "es": "Portada de estado nocturna (06 publicado)",
+        "en": "Night stage cover (06 published)"
+      },
+      "profile": "portada",
+      "register": "engraved-stage-night",
+      "chroma": null,
+      "count": 2,
+      "workshop": [
+        "crop"
+      ],
+      "closing": "No realistic objects, no photographic rendering, no yellow, no orange, no warm colors, no moon, no glow, no text, no letters, no numbers, no watermark, no horizon, no sky, no clouds, full-bleed edge to edge, no border, no frame.",
+      "cleanZone": "afterClosing",
+      "promptWords": {
+        "min": 200,
+        "max": 300
+      }
+    },
+    "social": {
+      "label": {
+        "es": "Social y og",
+        "en": "Social and og"
+      },
+      "profile": "social",
+      "register": "engraved",
+      "chroma": null,
+      "count": 2,
+      "workshop": [
+        "crop"
+      ]
+    },
+    "coming-soon": {
+      "label": {
+        "es": "Próximamente (15)",
+        "en": "Coming soon (15)"
+      },
+      "profile": "tarjeta",
+      "register": "engraved",
+      "chroma": null,
+      "count": 2,
+      "workshop": [
+        "crop"
+      ]
+    },
+    "sent": {
+      "label": {
+        "es": "Enviado (19)",
+        "en": "Sent (19)"
+      },
+      "profile": "formulario",
+      "register": "engraved",
+      "chroma": null,
+      "count": 2,
+      "workshop": [
+        "crop"
+      ],
+      "closing": "No photographic rendering, no glow, no text, no letters, no numbers, no watermark, no border, no frame.",
+      "promptWords": {
+        "min": 100,
+        "max": 140
+      }
+    },
+    "header": {
+      "label": {
+        "es": "Cabecera",
+        "en": "Header"
+      },
+      "profile": "cabecera",
+      "register": "engraved",
+      "chroma": null,
+      "count": 2,
+      "workshop": [
+        "crop"
+      ]
+    },
+    "wall": {
+      "label": {
+        "es": "Muro y banda",
+        "en": "Wall and band"
+      },
+      "profile": "muro",
+      "register": "engraved",
+      "chroma": null,
+      "count": 2,
+      "workshop": [
+        "crop"
+      ]
+    },
+    "diagram": {
+      "label": {
+        "es": "Diagrama (10)",
+        "en": "Diagram (10)"
+      },
+      "profile": "panoramica",
+      "register": "engraved",
+      "chroma": null,
+      "count": 2,
+      "workshop": [
+        "crop"
+      ]
+    },
+    "background": {
+      "label": {
+        "es": "Fondo",
+        "en": "Background"
+      },
+      "profile": "fondo",
+      "register": "engraved",
+      "chroma": null,
+      "count": 2,
+      "workshop": [
+        "crop"
+      ]
+    },
+    "error-page": {
+      "label": {
+        "es": "Página de error (18)",
+        "en": "Error page (18)"
+      },
+      "profile": "ilustracion",
+      "register": "engraved",
+      "chroma": null,
+      "count": 2,
+      "workshop": [
+        "crop"
+      ]
+    },
+    "frame": {
+      "label": {
+        "es": "Marco de retrato (17)",
+        "en": "Portrait frame (17)"
+      },
+      "profile": "cuadrado",
+      "register": "engraved",
+      "chroma": "#00ff00",
+      "count": 2,
+      "workshop": [
+        "matte"
+      ]
+    },
+    "pattern": {
+      "label": {
+        "es": "Patrón (21)",
+        "en": "Pattern (21)"
+      },
+      "profile": "patron",
+      "register": "engraved",
+      "chroma": null,
+      "count": 2
+    }
+  },
+  "acceptance": {
+    "references": [
+      "referencias/03-portada-social.png",
+      "referencias/31-portada-workflow-q911.png",
+      "referencias/31c-portada-workflow-q941.png",
+      "referencias/32e-portada-gvig-q952.png"
+    ],
+    "autoDiscard": false,
+    "unmeasured": [
+      {
+        "id": "horizon",
+        "label": {
+          "es": "Horizonte, cielo o nubes",
+          "en": "Horizon, sky or clouds"
+        }
+      },
+      {
+        "id": "repeated-motif",
+        "label": {
+          "es": "Motivo repetido (otro barco de papel)",
+          "en": "Repeated motif (another paper boat)"
+        }
+      },
+      {
+        "id": "glyphs",
+        "label": {
+          "es": "Glifos o letras inventadas",
+          "en": "Invented glyphs or letters"
+        }
+      }
+    ]
+  }
+}

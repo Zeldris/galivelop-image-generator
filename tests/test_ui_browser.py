@@ -3,6 +3,7 @@ real `gimg serve` (in a thread) on the fake engine, temporary folders and an exa
 fake engine writes placeholder images. Every scenario ends by asserting the page reported no exception, no console
 error, no CSP violation and no failed load. Skipped when no Chrome is found (see ``GIMG_TEST_CHROME``)."""
 import contextlib
+import copy
 import io
 import json
 import os
@@ -15,6 +16,7 @@ from urllib.parse import quote
 
 from gimg import cli, paths, png, server
 from tests import browser
+from tests.test_brandsheet import PORTAL, SUBJECT
 
 ROOT = Path(__file__).resolve().parent.parent
 TOOLS = shutil.which("ffmpeg") is not None and shutil.which("rsvg-convert") is not None
@@ -186,9 +188,11 @@ class Browse(UiBase):
         self.page.wait("document.querySelectorAll('.piece-card').length === %d" % perfiles)  # one card per profile
         self.assertEqual(self.js("document.querySelector('nav.tabs a[aria-current=page]').textContent"), "Piezas")
         self.click("nav.tabs a[href='#/p/tarkor/marca']")
-        self.page.wait("document.querySelector('.check-list .check-item')")
-        self.assertGreaterEqual(self.js("document.querySelectorAll('.swatch').length"), 3)
+        self.page.wait("document.querySelector('.check-list .check-item')")  # sin hoja se abre en «Comprobación»
         self.assertIn("bien", self.js("document.querySelector('#tab-panel section b').textContent"))
+        self.click("#sub-hoja")
+        self.page.wait("document.querySelector('[data-card=no-sheet]')")
+        self.assertGreaterEqual(self.js("document.querySelectorAll('.swatch').length"), 3)
         self.click("nav.tabs a[href='#/p/tarkor/pedidos']")
         self.page.wait("document.querySelector('.order-row')")
         self.no_problems()
@@ -866,7 +870,7 @@ class BrandShop(UiBase):
             .every(a => a.querySelector('button').disabled)""" % json.dumps(text))
 
     def test_steps_wait_for_their_piece_and_say_why(self):
-        self.open("/p/tarkor/marca", "document.querySelector('#brand-shop .shop-step')")
+        self.open("/p/tarkor/marca?s=taller", "document.querySelector('#brand-shop .shop-step')")
         self.assertEqual(self.js("document.querySelectorAll('#brand-shop .shop-step').length"), 7)
         self.assertTrue(self.js("document.getElementById('shop-name').value.toLowerCase().includes('tarkor')"))
         for label in ("Quitar fondo", "Pasar a SVG en color", "Lockup horizontal", "Guardar sistema"):
@@ -882,7 +886,7 @@ class BrandShop(UiBase):
         self.no_problems()
 
     def test_the_wordmark_spacing_is_sent_only_when_the_field_has_a_value(self):
-        self.open("/p/tarkor/marca", "document.querySelector('#shop-wspacing')")
+        self.open("/p/tarkor/marca?s=taller", "document.querySelector('#shop-wspacing')")
         self.js("""import('/ui/js/api.js').then(m => { window.__api = m.api; window.__real = m.api.brandWordmark; window.__bodies = [];
             m.api.brandWordmark = (project, body) => { window.__bodies.push(body); return Promise.resolve({}); }; return true; })""")
         self.addCleanup(lambda: self.js("window.__api.brandWordmark = window.__real; true"))
@@ -908,7 +912,7 @@ class BrandShop(UiBase):
         (shop / ("%s-emblema-alpha.png" % slug)).write_bytes(png.rgba_bytes(2, 2, bytes([20, 90, 40, 255]) * 4))
 
     def open_with_shops(self):
-        self.open("/p/tarkor/marca", "document.querySelector('#brand-shop .btn-toggle')")
+        self.open("/p/tarkor/marca?s=taller", "document.querySelector('#brand-shop .btn-toggle')")
 
     def test_a_name_without_workshop_does_not_adopt_another_brand(self):
         self.seed_shop("portal")
@@ -940,7 +944,7 @@ class BrandShop(UiBase):
         self.no_problems()
 
     def test_a_project_without_brand_dir_cannot_save_there(self):
-        self.open("/p/tarkor/marca", "document.getElementById('shop-dest')")
+        self.open("/p/tarkor/marca?s=taller", "document.getElementById('shop-dest')")
         has_dir = self.js("!document.querySelector('#shop-dest option[value=project]').disabled")
         cfg = json.loads((self.root / "galivelop-images.json").read_text(encoding="utf-8"))
         self.assertEqual(has_dir, bool((cfg.get("brand") or {}).get("dir")))
@@ -949,6 +953,76 @@ class BrandShop(UiBase):
         self.open(order_route("fondos/marca"), "document.querySelector('.gallery .attempt')")
         href = self.js("document.querySelector('.gallery .attempt details a[href*=\"/marca?src=\"]').getAttribute('href')")
         self.assertTrue(href.startswith("#/p/tarkor/marca?src="), href)
+
+
+class BrandSheetScreen(UiBase):
+    """0.7.0 §2.10: the Marca tab with a brand sheet: subtabs with ←/→, the palette by roles, «Probar un sujeto»."""
+
+    @classmethod
+    def customize_project(cls):
+        super().customize_project()
+        sheet = copy.deepcopy(PORTAL)
+        sheet["pieceTypes"]["cover"]["profile"] = PROFILE
+        sheet["pieceTypes"]["icon"]["profile"] = "social"
+        (cls.root / "marca.json").write_text(json.dumps(sheet), encoding="utf-8")
+        path = cls.root / "galivelop-images.json"
+        cfg = json.loads(path.read_text())
+        cfg.setdefault("brand", {})["sheet"] = "marca.json"
+        path.write_text(json.dumps(cfg))
+
+    def selected(self):
+        return self.js("document.querySelector('[role=tab][aria-selected=true]').dataset.sub")
+
+    def test_the_subtabs_move_with_the_arrows_and_the_sheet_shows_its_palette(self):
+        self.open("/p/tarkor/marca", "document.querySelector('[data-role=paper]')")
+        self.assertEqual(self.selected(), "hoja")  # with a sheet it opens there
+        self.assertEqual(self.js("document.querySelector('[data-role=paper] code').textContent"), "#fbfcfd")
+        self.assertEqual(self.js("document.querySelectorAll('.role-row').length"), 4)
+        self.assertEqual(self.js("document.querySelector('[data-sheet=chain]').textContent"), "tarkor")
+        self.assertEqual(self.js("document.querySelectorAll('[data-card=pieces] tbody tr').length"), 2)
+        self.assertEqual(self.js("document.querySelectorAll('[data-card=pieces] [data-slot=new-order]').length"), 2)
+        self.js("document.getElementById('sub-hoja').focus(); true")
+        for expected in ("probar", "check", "taller", "hoja"):
+            self.page.key("ArrowRight")
+            self.page.wait("document.querySelector('[role=tab][aria-selected=true]').dataset.sub === %s" % json.dumps(expected))
+            self.assertIn("s=" + expected, self.js("location.hash"))
+            self.assertEqual(self.js("document.activeElement.dataset.sub"), expected)
+        self.page.key("ArrowLeft")
+        self.page.wait("document.querySelector('[role=tab][aria-selected=true]').dataset.sub === 'taller'")
+        self.assertTrue(self.js("document.querySelector('#subpanel-hoja').hidden"))
+        self.assertTrue(self.js("document.querySelector('#brand-shop') !== null"))
+        self.no_problems()
+
+    def test_the_check_subtab_lists_the_sheet_rows(self):
+        self.open("/p/tarkor/marca?s=check", "document.querySelector('.check-item')")
+        self.assertEqual(self.selected(), "check")
+        self.page.wait("[...document.querySelectorAll('.check-item code')].some(c => c.textContent === 'sheet.valid')")
+        self.no_problems()
+
+    def test_pieces_come_by_piece_type_with_their_profile_inside(self):
+        self.open("/p/tarkor/piezas", "document.querySelector('.piece-type .piece-card')")
+        self.assertEqual(self.js("document.querySelectorAll('.piece-type').length"), 2)
+        self.assertEqual(self.js("document.querySelector('.piece-type[data-piece=cover] .piece-card').dataset.profile"), PROFILE)
+        self.no_problems()
+
+    def test_probar_builds_a_prompt_and_checks_a_free_one(self):
+        self.open("/p/tarkor/marca?s=probar", "document.getElementById('bp-subject')")
+        self.js("(() => { const s = document.getElementById('bp-subject'); s.value = %s; s.dispatchEvent(new Event('input')); })()" % json.dumps(SUBJECT))
+        self.js("document.getElementById('bp-piece').value = 'cover'; true")
+        self.click("[data-card=prompt] .btn-primary")
+        self.page.wait("document.querySelector('[data-slot=prompt]')")
+        self.assertTrue(self.js("document.querySelector('[data-slot=prompt]').textContent.startsWith(%s)" % json.dumps(SUBJECT[:40])))
+        self.assertEqual(self.js("[...document.querySelectorAll('[data-list=segments] li')].map(l => l.dataset.role).join()"),
+                         "subject,register,closing,palette")
+        self.assertGreaterEqual(self.js("document.querySelectorAll('[data-out=prompt] [data-check]').length"), 5)
+        self.assertEqual(self.js("document.querySelector('[data-slot=defaults] code').textContent"), PROFILE)
+        self.assertEqual(self.api("GET", "/api/queue"), [])  # nothing was queued
+        self.js("(() => { const s = document.getElementById('bl-prompt'); s.value = 'a red fox'; s.dispatchEvent(new Event('input')); })()")
+        self.click("[data-card=lint] .btn")
+        self.page.wait("document.querySelector('[data-out=lint] [data-check=words]')")
+        self.assertEqual(self.js("document.querySelector('[data-out=lint] [data-check=words]').dataset.status"), "warn")
+        self.assertIn("palabras", self.js("document.querySelector('[data-out=lint] [data-check=words]').textContent"))
+        self.no_problems()
 
 
 if __name__ == "__main__":

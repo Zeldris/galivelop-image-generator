@@ -1,0 +1,39 @@
+{
+  "$schema": "../../gimg/schemas/brand-sheet.schema.json",
+  "schemaVersion": 1,
+  "name": "galivelop-voice-generator",
+  "extends": "portal",
+  "palette": {
+    "accent": {
+      "$value": "#d9467a",
+      "$type": "color",
+      "promptName": "a touch of raspberry pink"
+    }
+  },
+  "vetoes": {
+    "groups": [
+      {
+        "id": "voice-generator-never",
+        "label": {
+          "es": "Nunca se muestra (Voice Generator)",
+          "en": "Never shown (Voice Generator)"
+        },
+        "reason": {
+          "es": "Hoja de voice, «Nunca se muestra»: bocas, labios, siluetas, micrófonos, cascos, altavoces, estudios, cantantes y chispas (nada que sugiera clonar una voz)",
+          "en": "Voice sheet, «Never shown»: mouths, lips, silhouettes, microphones, headphones, speakers, studios, singers and sparks (nothing that suggests cloning a voice)"
+        },
+        "terms": [
+          "mouth",
+          "lips",
+          "silhouette",
+          "microphone",
+          "headphones",
+          "speaker",
+          "studio",
+          "singer",
+          "spark"
+        ]
+      }
+    ]
+  }
+}

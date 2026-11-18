@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/23b-icono-gve-a",
+  "profile": "icono",
+  "seed": 2361,
+  "count": 3,
+  "draft": false,
+  "prompt": "A minimal flat line icon, centred, seen straight on: a measuring dial gauge made entirely of outlines. First, a large half ring: one wide semicircular arc, like the upper half of a circle, open at the bottom, its two ends finishing level with each other. Second, along the inside of the arc, a few short straight tick marks pointing towards the centre, evenly spread, all the same length, none of them touching the arc. Third, one straight needle that starts at the middle of the base and points up and to the right, towards the upper right part of the arc, stopping short of the tick marks. Fourth, at the foot of the needle, one small hollow ring, the hub, its inside empty, the background showing through it. Simple line register: one single uniform stroke weight everywhere, thick and bold, the very same line thickness in every part of the icon, rounded line caps and rounded joins, outlines only, no fill anywhere, no solid shape, the background colour shows through every shape. The whole icon is drawn in one single colour, dark olive green #6b7509, and nothing else. The background is a perfectly flat, plain, uniform pure chroma key magenta #ff00ff filling the whole square, with no gradient, no texture, no vignette and no shadow. Generous empty margin all around, the icon takes about two thirds of the square, balanced, geometric, clean vector look, few large simple shapes with wide gaps between the lines, legible at very small size. No shading, no hatching, no drop shadow, no glow, no highlights, no 3D, no perspective, no photographic rendering, no second colour in the icon, no thin lines, no extra details, no ornaments, no text, no letters, no numbers, no digits, no watermark."
+}

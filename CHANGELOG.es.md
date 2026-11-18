@@ -9,6 +9,37 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Sin publicar]
 
+## [0.7.0] - 2026-11-18
+
+### Añadido
+
+- Hoja de marca como datos (paso 1 de 0.7.0): `gimg/schemas/brand-sheet.schema.json`, `brand.sheet` en la
+  configuración del proyecto (dentro de su raíz) y `gimg/brandsheet.py`, que resuelve `extends` por proyecto
+  registrado, deriva la paleta y los tonos del acento (OKLCH, 4,5:1), monta el prompt en el orden de la hoja y lo
+  comprueba.
+
+- `gimg brand init --project P [--extends Q] [--force]` crea la hoja; `gimg brand prompt --project P --piece ID
+  --subject TEXTO [--clean-zone TEXTO]` monta el prompt de un tipo de pieza desde su sujeto; `gimg brand lint --project
+  P (--prompt TEXTO | --file RUTA) [--piece ID] [--mode brand|free]` comprueba un prompt contra los vetos, el rango de
+  palabras y el cierre. Cada tipo de pieza puede llevar su propio `closing`, `paletteSentence`, `cleanZone`
+  (`beforeRegister` o `afterClosing`) y `promptWords`; un tipo heredado del padre toma perfil y modelo del proyecto que
+  lo declaró.
+
+- API de la hoja de marca: `GET /api/projects/{p}/brand/sheet` (hoja resuelta, con el origen de cada valor),
+  `POST …/brand/prompt` y `POST …/brand/lint`; `GET /api/projects/{p}` añade `sheet` y `pieceTypes`. El doctor añade
+  las filas `sheet.present`, `sheet.valid`, `sheet.extends` y `sheet.contrast`.
+
+- El Portal y sus cuatro productos migrados a datos de hoja (`examples/portal/`, `marca.json`): `brand prompt`
+  reproduce los prompts aprobados del Portal desde su sujeto y `brand lint` rechaza los descartes vetados por su motivo.
+
+- `gimg brand md PROYECTO [--write ARCHIVO | --check ARCHIVO]` genera desde los datos el bloque de `hoja.md` (entre
+  marcadores, la prosa no se toca), en `es` o `en`; campo opcional `brand.sheetMarkdown` en la configuración del
+  proyecto y fila `sheet.markdown` del doctor (OK si el bloque coincide con los datos, FAIL si difiere, no tiene
+  marcadores o no se lee).
+
+- La pestaña Marca enseña la hoja en subpestañas `?s=hoja|probar|check|taller`: Hoja (fichas con origen propio o
+  heredado), Probar un sujeto (monta y comprueba sin encolar), Comprobación y Piezas por tipo.
+
 ### Corregido
 
 - La interfaz, editores de recorte y de capas: un error al guardar sale solo dentro del diálogo (antes reaparecía

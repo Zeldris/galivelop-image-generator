@@ -34,7 +34,7 @@ def _version(text: str) -> tuple:
 
 
 def _forbidden(root: Path, field: str, rel: str) -> None:
-    """delivery.dir / manifest must not land in .git/ nor on the config file."""
+    """delivery.dir / manifest / brand.sheet must not land in .git/ nor on the config file."""
     target = paths.inside(root, rel)
     real_root = root.resolve()
     parts = target.relative_to(real_root).parts
@@ -73,6 +73,9 @@ def load_config(root) -> dict:
     config.setdefault("manifest", DEFAULT_MANIFEST)
     _forbidden(root, "delivery.dir", config["delivery"]["dir"])
     _forbidden(root, "manifest", config["manifest"])
+    sheet = config.get("brand", {}).get("sheet")
+    if sheet is not None:
+        _forbidden(root, "brand.sheet", sheet)  # D25 and never the config nor .git/ (brand init writes it)
     return config
 
 

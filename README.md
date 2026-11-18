@@ -10,7 +10,7 @@ la biblioteca estándar (D6).
 
 ## Estado
 
-Versión **0.6.0**, fases **F0-F4 hechas** y en `main`: proyectos, pedidos, intentos, elegida y entrega, cola
+Versión **0.7.0**, fases **F0-F4 hechas** y en `main`: proyectos, pedidos, intentos, elegida y entrega, cola
 persistente, CLI, motor real (`sd-cli`, con `instalar.sh`), composición y medida de marca, API HTTP local e interfaz en
 el navegador. Quedan comprobaciones manuales en la Deck (rondas del piloto, recorrido de la interfaz en el navegador),
 el piloto con proyectos reales (F5) y lo que sigue (ver «Próximos pasos»). El motor de pruebas (`fake`, imágenes de
@@ -36,12 +36,11 @@ los arreglos de lo publicado salen antes, como parche:
 
 | Versión | Qué |
 |---|---|
-| 0.5.0 | Borrar intentos, composiciones, plantillas y elementos; editar el texto y la tipografía de lo compuesto; renombrar un pedido; mejora de la interfaz |
-| 0.6.0 | **Montaje**: un formato se compone con piezas del proyecto y archivos propios en capas (bloques y absolutos, como en CSS) y el motor lo «encaja» con img2img |
-| 0.7.0 | Cajas de texto colocadas antes de generar (frase en el prompt y chip de contraste) |
-| 0.8.0 | Borrar pedidos y todo desde la interfaz |
-| 0.9.0 | F5: piloto WMF, LoRA, transparencia y «Quitar fondo», imágenes de referencia, edición por prompt |
-| después | Piezas y marca editables, panel del equipo, F6, F7 y, al final, mando y táctil, hasta la 1.0.0 |
+| 0.8.0 | **Pieza de marca**: modo en el pedido y en el retoque, montaje y comprobación en el servidor, tandas agrupadas y contador de fallos |
+| 0.9.0 | **Nota y descarte**: nota del trabajador, descarte propuesto y recuperable |
+| 0.10.0 | **Taller, recursos y entrega**: pasos al taller por tipo de pieza, recursos del proyecto, editar la hoja y entrega por carpetas |
+| 0.11.0 | **Bandeja**: la bandeja del agente (`todo`/`answer`), API y pestaña Bandeja |
+| después | F5 piloto WMF, F6, F7 y, al final, mando y táctil, hasta la 1.0.0 |
 
 ## Cómo se conecta un proyecto
 
@@ -121,6 +120,7 @@ python3 -m gimg brand matte logo.png                  # quita el fondo plano: lo
 python3 -m gimg brand trace logo-alpha.png --mode color|mono|silhouette   # PNG a SVG (--palette, --colors, --matte; en mono, sin transparencia, el papel es todo color que ocupe >= 20 % del borde y lo demás es tinta; con un marco oscuro que llena el borde, quita antes el fondo con --matte o usa el modo color: la CLI no elige la tinta, solo la API `ink=`)
 python3 -m gimg brand wordmark TARKOR --font Cinzel.ttf -o wordmark.svg   # el nombre a trazos, sin <text> (--weight, --spacing)
 python3 -m gimg brand lockup emblema.svg wordmark.svg --layout h|v   # emblema y nombre en un SVG (--cap, --gap, --width, --margin, --color, -o)
+python3 -m gimg brand md mi-proyecto --write hoja.md   # bloque de hoja.md generado desde la hoja de marca; --check ARCHIVO lo comprueba (ver también brand init|prompt|lint)
 python3 -m gimg brand square ig.svg --fill '#7C5CD6' --ink '#fbfcfd' --png 512,128,32   # el símbolo: cuadrado con chaflán 28/128 y el dibujo en una tinta (--chamfer, --pad, -o, --force)
 python3 -m gimg brand system emblema.png --name Tarkor --font Cinzel.ttf --out-dir marca/   # los siete archivos del logo (--weight, --spacing, --palette, --colors, --text, --cap, --gap, --width, --margin, --mono para el lockup en una tinta, --force pisa)
 python3 -m gimg doctor                                # comprueba el motor, los modelos y las herramientas (--verify)

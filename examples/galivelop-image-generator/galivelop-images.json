@@ -3,6 +3,7 @@
   "minVersion": "0.1.0",
   "name": "galivelop-image-generator",
   "brand": {
+    "sheet": "marca.json",
     "palette": [
       "#06121c",
       "#A78BFA",
