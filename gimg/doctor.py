@@ -490,25 +490,38 @@ def _sheet(name: str) -> list:
     return out
 
 
-def _sheet_markdown(project: dict, name: str, rel: str) -> list:
+def _sheet_markdown(project: dict, name: str, declared_rel: str) -> list:
     """`sheet.markdown`: the generated block of the declared `brand.sheetMarkdown` equals `brandsheet.markdown` (es or en)."""
     md_rel = project["config"].get("brand", {}).get("sheetMarkdown")
     if md_rel is None:
         return []
-    fix = ("doctor.sheet.fix_md", {"project": name, "path": shlex.quote(md_rel)})
     try:
-        text = paths.inside(project["root"], md_rel).read_text(encoding="utf-8")
+        md_abs = paths.inside(project["root"], md_rel)  # `brand md --write` resolves against the current directory
+    except GimgError as exc:
+        return [Check("sheet.markdown", FAIL, "doctor.sheet.md_unreadable",
+                      {"path": md_rel, "reason": exc.message(i18n.default_lang()).replace("\n", " ")},
+                      "doctor.sheet.fix_md_edit", {"path": md_rel})]
+    fix = ("doctor.sheet.fix_md", {"project": name, "path": shlex.quote(str(md_abs))})
+    try:
+        text = md_abs.read_text(encoding="utf-8")
         block = brandsheet.extract_block(text, md_rel)
     except GimgError as exc:
-        if exc.code != "brandsheet.markdown_markers":
-            return [Check("sheet.markdown", FAIL, "doctor.sheet.md_unreadable",
-                          {"path": md_rel, "reason": exc.message(i18n.default_lang()).replace("\n", " ")}, *fix)]
-        block = None
+        reason = exc.message(i18n.default_lang()).replace("\n", " ")
+        if exc.code == "brandsheet.markdown_markers":  # `--write` would fail the same way: edit the markers by hand
+            return [Check("sheet.markdown", FAIL, "doctor.sheet.md_markers", {"path": md_rel, "reason": reason},
+                          "doctor.sheet.fix_md_edit", {"path": md_rel})]
+        return [Check("sheet.markdown", FAIL, "doctor.sheet.md_unreadable", {"path": md_rel, "reason": reason}, *fix)]
     except (OSError, UnicodeDecodeError) as exc:
         return [Check("sheet.markdown", FAIL, "doctor.sheet.md_unreadable", {"path": md_rel, "reason": str(exc)}, *fix)]
     if block is None:
         return [Check("sheet.markdown", FAIL, "doctor.sheet.md_nomarkers", {"path": md_rel}, *fix)]
-    if block in (brandsheet.markdown(name, lang) for lang in ("es", "en")):
+    try:
+        generated = [brandsheet.markdown(name, lang) for lang in ("es", "en")]
+    except GimgError as exc:
+        return [Check("sheet.markdown", FAIL, "doctor.sheet.md_cannot_generate",
+                      {"path": md_rel, "reason": exc.message(i18n.default_lang()).replace("\n", " ")},
+                      "doctor.sheet.fix_edit", {"path": declared_rel})]
+    if block in generated:
         return [Check("sheet.markdown", OK, "doctor.sheet.md_ok", {"path": md_rel})]
     return [Check("sheet.markdown", FAIL, "doctor.sheet.md_differs", {"path": md_rel}, *fix)]
 

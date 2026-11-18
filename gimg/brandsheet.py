@@ -583,9 +583,12 @@ def prompt_response(project_name: str, piece: str, subject: str, clean_zone: str
     return {**built, "checks": res["checks"], "blocked": res["blocked"], "defaults": defaults, "known": []}
 
 
-def piece_list(piece_types: dict) -> list:
-    """Piece types as a list `[{"id", ...fields the sheet has}]`."""
-    return [{"id": pid, **copy.deepcopy(spec)} for pid, spec in piece_types.items()]
+def piece_list(piece_types: dict, sheet: dict | None = None, project: str | None = None) -> list:
+    """Piece types as a list `[{"id", ...fields the sheet has, "profileProject"}]`. `profileProject` is the project
+    whose config holds the profile (`profile_owner` of the resolved `sheet`; without one, `project` itself)."""
+    return [{"id": pid, **copy.deepcopy(spec),
+             "profileProject": profile_owner(sheet, pid) if sheet is not None else project}
+            for pid, spec in piece_types.items()]
 
 
 def _error_lines(exc: GimgError, lang) -> list:
@@ -617,9 +620,9 @@ def status(project_name: str, lang=None) -> dict:
         sheet = resolve(project_name)
     except GimgError as exc:
         info["errors"] = _error_lines(exc, lang)
-        return {"sheet": info, "pieceTypes": piece_list(own.get("pieceTypes", {}))}
+        return {"sheet": info, "pieceTypes": piece_list(own.get("pieceTypes", {}), None, project_name)}
     info.update(valid=True, version=sheet["version"], extends=sheet["chain"][1:])
-    return {"sheet": info, "pieceTypes": piece_list(sheet.get("pieceTypes", {}))}
+    return {"sheet": info, "pieceTypes": piece_list(sheet.get("pieceTypes", {}), sheet)}
 
 
 def sheet_view(project_name: str) -> dict:
@@ -638,7 +641,7 @@ def sheet_view(project_name: str) -> dict:
     out = {"name": sheet["name"], "version": sheet["version"], "chain": sheet["chain"], "roles": roles,
            "palette": pal, "registers": sheet["registers"], "closing": sheet["closing"],
            "paletteSentence": sheet["paletteSentence"], "paletteSentenceText": palette_sentence(sheet),
-           "vetoes": sheet.get("vetoes", {}), "pieceTypes": piece_list(sheet.get("pieceTypes", {})),
+           "vetoes": sheet.get("vetoes", {}), "pieceTypes": piece_list(sheet.get("pieceTypes", {}), sheet),
            "acceptance": sheet.get("acceptance", {}), "promptWords": sheet.get("promptWords", DEFAULT_WORDS),
            "origin": origin}
     return out

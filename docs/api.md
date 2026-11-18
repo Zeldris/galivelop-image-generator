@@ -105,7 +105,7 @@ curl -s $B/api/projects
 
 ### GET /api/projects/{p}
 
-`{"name", "root", "config", "sheet", "pieceTypes"}` (perfiles, `compose`, `brand`). `sheet`: `{"present", "valid", "version", "path", "extends": [..], "errors": [..]}` (sin hoja: `present: false` y `pieceTypes: []`, sin error); `pieceTypes`: `[{"id", "label", "profile", "register", "chroma", "seed", "count", "workshop", ..}]`. Errores: `project.*`.
+`{"name", "root", "config", "sheet", "pieceTypes"}` (perfiles, `compose`, `brand`). `sheet`: `{"present", "valid", "version", "path", "extends": [..], "errors": [..]}` (sin hoja: `present: false` y `pieceTypes: []`, sin error); `pieceTypes`: `[{"id", "label", "profile", "register", "chroma", "seed", "count", "workshop", "profileProject", ..}]` (`profileProject`: el proyecto cuyo `profiles` tiene ese perfil; un tipo heredado usa el del proyecto que lo declaró, no uno homónimo del hijo). Errores: `project.*`.
 
 ```sh
 curl -s $B/api/projects/mi-proyecto
@@ -422,7 +422,7 @@ curl -s $B/api/projects/mi-proyecto/brand
 
 La hoja de marca resuelta (con la herencia de `extends` aplicada): `name`, `version`, `chain` (proyectos, el propio primero),
 `roles` (`{papel: {"hex", "name"}}` de `paper`, `ink`, `accent`, `halo`, `grid`), `palette` (los tokens), `registers`,
-`closing`, `paletteSentence` y `paletteSentenceText` (con los colores puestos), `vetoes`, `pieceTypes` (lista), `acceptance`,
+`closing`, `paletteSentence` y `paletteSentenceText` (con los colores puestos), `vetoes`, `pieceTypes` (lista, cada tipo con `profileProject` como en `GET /api/projects/{p}`), `acceptance`,
 `promptWords` y `origin`: por cada valor (ruta con puntos, p. ej. `palette.paper.$value`; las excepciones de vetos, por su
 posición en la lista fusionada) `{"origin": "own|inherited", "project", "file"}`. Errores: `brandsheet.none` y
 `brandsheet.missing` (404), `brandsheet.invalid`, `brandsheet.unreadable`, `brandsheet.extends_missing`, `brandsheet.extends_broken`,

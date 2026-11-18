@@ -624,6 +624,25 @@ class SheetMarkdownTests(Env):
         row = self.rows()["sheet.markdown"]
         self.assertEqual((row.status, row.key), (doctor.FAIL, "doctor.sheet.md_nomarkers"))
 
+    def test_the_fix_gives_an_absolute_path(self):
+        self.declare(text="# Hoja sin bloque\n")
+        row = self.rows()["sheet.markdown"]
+        self.assertIn(str((self.root / "hoja.md").resolve()), row.fix("es"))
+
+    def test_broken_markers_do_not_suggest_write(self):
+        self.declare(text=brandsheet.MD_START + "\n" + brandsheet.MD_START + "\n" + brandsheet.MD_END + "\n")
+        row = self.rows()["sheet.markdown"]
+        self.assertEqual((row.status, row.key, row.fix_key), (doctor.FAIL, "doctor.sheet.md_markers", "doctor.sheet.fix_md_edit"))
+        self.assertNotIn("--write", row.fix("es"))
+
+    def test_data_with_a_marker_fails_without_breaking_the_run(self):
+        self.declare(text="# Hoja\n\n" + brandsheet.markdown("portal", "es"))
+        sheet = json.loads((self.root / "marca.json").read_text())
+        sheet["closing"] = "x " + brandsheet.MD_PREFIX
+        (self.root / "marca.json").write_text(json.dumps(sheet))
+        row = self.rows()["sheet.markdown"]
+        self.assertEqual((row.status, row.key), (doctor.FAIL, "doctor.sheet.md_cannot_generate"))
+
     def test_missing_file_fails_as_unreadable(self):
         self.declare("no-existe.md")
         row = self.rows()["sheet.markdown"]

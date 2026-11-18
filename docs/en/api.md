@@ -111,7 +111,7 @@ curl -s $B/api/projects
 
 ### GET /api/projects/{p}
 
-`{"name", "root", "config", "sheet", "pieceTypes"}` (profiles, `compose`, `brand`). `sheet`: `{"present", "valid", "version", "path", "extends": [..], "errors": [..]}` (no sheet: `present: false` and `pieceTypes: []`, no error); `pieceTypes`: `[{"id", "label", "profile", "register", "chroma", "seed", "count", "workshop", ..}]`. Errors: `project.*`.
+`{"name", "root", "config", "sheet", "pieceTypes"}` (profiles, `compose`, `brand`). `sheet`: `{"present", "valid", "version", "path", "extends": [..], "errors": [..]}` (no sheet: `present: false` and `pieceTypes: []`, no error); `pieceTypes`: `[{"id", "label", "profile", "register", "chroma", "seed", "count", "workshop", "profileProject", ..}]` (`profileProject`: the project whose `profiles` holds that profile; an inherited type uses the one of the project that declared it, never a same-named profile of the child). Errors: `project.*`.
 
 ```sh
 curl -s $B/api/projects/mi-proyecto
@@ -431,7 +431,7 @@ curl -s $B/api/projects/mi-proyecto/brand
 
 The resolved brand sheet (`extends` applied): `name`, `version`, `chain` (projects, own first), `roles`
 (`{role: {"hex", "name"}}` for `paper`, `ink`, `accent`, `halo`, `grid`), `palette` (the tokens), `registers`, `closing`,
-`paletteSentence` and `paletteSentenceText` (colours filled in), `vetoes`, `pieceTypes` (a list), `acceptance`,
+`paletteSentence` and `paletteSentenceText` (colours filled in), `vetoes`, `pieceTypes` (a list, each type with `profileProject` as in `GET /api/projects/{p}`), `acceptance`,
 `promptWords` and `origin`: for every value (dotted path, e.g. `palette.paper.$value`; veto exceptions by position in the
 merged list) `{"origin": "own|inherited", "project", "file"}`. Errors: `brandsheet.none` and `brandsheet.missing` (404),
 `brandsheet.invalid`, `brandsheet.unreadable`, `brandsheet.extends_missing`, `brandsheet.extends_broken`, `brandsheet.extends_cycle`,
