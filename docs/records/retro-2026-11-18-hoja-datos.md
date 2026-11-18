@@ -44,3 +44,4 @@ en los que importa». Riesgo: ninguno; la revisión lo sigue mirando.
 - P3, la línea del encargo de `gw-orchestrate-dealer`.
 - El tope de 30 llamadas (de `.claude/gw/gw-orchestrate-dealer.md`) debería venir en la plantilla del encargo del
   flujo, no en las notas del proyecto: un encargo de arreglos sin él hizo 92 llamadas (gw-opt-tokens, 2026-11-18).
+- Revisión de la fase 3: `.claude/settings.json` registra `whole-read.py` dos veces para Read (vendored; leve, no se toca sin permiso).

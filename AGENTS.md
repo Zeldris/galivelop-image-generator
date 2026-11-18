@@ -39,7 +39,7 @@ Cada sesión puede correr en un contenedor temporal: **lo que no está subido no
 - **Tras una llamada interrumpida o rechazada, `git status` y `git diff` antes de repetirla**: el cambio puede
   haberse guardado, o incluso subido, y repetirlo lo duplica.
 - Si la persona dice que se para, se para: se sube lo que haya, se deja la bitácora al día y no se sigue con nada más.
-- **Las preguntas a la persona**: lista numerada, cada una con su recomendación (`questions.py add`; un subagente las
+- **Las preguntas a la persona**: lista numerada, cada una con su recomendación (`python3 .claude/gw/scripts/questions.py add`; un subagente las
   devuelve a la sesión principal); responde por número y `questions.py answer "5. a, 6. ok"` lo apunta.
 - **Al cerrar cada tarea o PR** (y cada fase), con todo subido y la bitácora al día, se pide a la persona un `/clear` en
   una línea, con el porqué: el contexto largo es casi todo el gasto, y la bitácora basta para retomar.
@@ -129,7 +129,7 @@ Nunca sobre trabajo ya fusionado.
    por ella.
 3. **Cierre:** si la fase 2 trajo código, revisión solo de esos commits y sus arreglos; luego
    `bash .claude/gw/scripts/reviewed.sh` (escribe la marca de revisión, `docs/records/reviewed.txt`, y hace su commit) y
-   `git push`; para un pull request, su descripción con la skill `pr`. Solo entonces se sube a `main`
+   `bash .claude/gw/scripts/push.sh <rama>`; para un pull request, su descripción con la skill `pr`. Solo entonces se sube a `main`
    o se crea el pull request. Sin la marca del mismo commit, los ganchos lo rechazan.
 
 ## Subagentes

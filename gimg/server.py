@@ -46,7 +46,8 @@ _EXACT = {
     403: ("api.bad_host", "api.bad_origin"),
     404: ("project.unknown", "order.unknown", "order.profile_unknown", "order.attempt_unknown", "queue.unknown",
           "api.not_found", "compose.template_missing", "compose.logo_missing", "brandsheet.none", "brandsheet.missing"),
-    # the project's sheet exists but its content (or its parents) cannot be used
+    # the project's sheet exists but its content (or its parents) cannot be used; listed for reference:
+    # the `brandsheet.` prefix below already gives 422 to these and to any new content code
     422: ("brandsheet.invalid", "brandsheet.unreadable", "brandsheet.extends_missing", "brandsheet.extends_broken",
           "brandsheet.extends_cycle",
           "brandsheet.incomplete", "brandsheet.unknown_register", "brandsheet.no_tone",
@@ -55,7 +56,8 @@ _EXACT = {
     415: ("api.content_type",),
     409: ("compose.template_exists", "compose.busy", "measure.busy", "api.heavy_busy", "compose.nothing_to_do", "compose.no_attempts", "serve.already_running", "serve.port_busy", "serve.not_running", "order.discard_chosen",
           "order.history_empty", "queue.not_cancellable", "queue.not_movable", "delivery.target_taken", "brand.exists", "brand.missing_piece", "export.exists", "brandsheet.exists"),
-    400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "compose.template_unknown", "compose.element_unknown", "compose.bad_layout", "compose.bad_element", "compose.templates_dir_missing", "api.bad_json", "brandsheet.unknown_piece", "brandsheet.convert_unsupported", "brandsheet.bad_mode",
+    400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "compose.template_unknown", "compose.element_unknown", "compose.bad_layout", "compose.bad_element", "compose.templates_dir_missing", "api.bad_json", "brandsheet.unknown_piece", "brandsheet.convert_unsupported",
+          "brandsheet.bad_mode",  # CLI only (`brand md` mode); listed so `.bad_` stays 400 before the 422 prefix
           "api.bad_param", "brand.no_matte", "brand.dir_missing", "brand.no_palette", "brand.font_unknown", "brand.empty_text", "brand.text_too_long", "brand.empty_wordmark", "brand.wordmark_no_fit", "brand.font_unreadable", "brand.bad_square",
           "export.size_not_for_ico", "export.icon_sizes_only_ico", "export.upscale", "export.too_big",
           "export.bad_crop", "export.crop_outside", "export.bad_anchor", "crop.outside", "crop.ratio_mismatch", "crop.compose_unsupported"),
