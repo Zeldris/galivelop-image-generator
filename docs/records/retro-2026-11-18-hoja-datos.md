@@ -1,6 +1,8 @@
 # Retro 2026-11-18 — 0.7.0 «Hoja como datos» (`hoja-datos`)
 
-**Estado:** pendiente de la persona.
+**Estado:** aprobada por la persona el 2026-11-18; P1 aplicada (`brandsheet.*` da 422 por defecto, con test), P2
+apuntada como tarea de 0.8 en `docs/plan/fm.md`, P3 aplicada en `.claude/gw/gw-orchestrate-dealer.md` y propuesta al
+flujo.
 
 Fuentes: commits `43ef055..df00944`, revisiones de bloque `docs/records/revision-hoja-datos-paso{1..5}.md`, medida de
 `gw-opt-tokens` (sus propuestas P2-P4 aprobadas y aplicadas el 2026-11-18; P1, conectores MCP, no se puede en la nube).
@@ -15,7 +17,7 @@ Fuentes: commits `43ef055..df00944`, revisiones de bloque `docs/records/revision
 ### P1 (proyecto, comprobación) — el estado HTTP de `brandsheet.*` por prefijo
 
 El mismo fallo en tres sitios: `brandsheet.invalid` y `bad_placeholder` mal clasificados (paso 1, #10), `bad_placeholder`
-fuera del grupo 422 (paso 2, #4; sigue abierto: hoy da 500) y los códigos de `brand md` (`3cb3395`). El test exige que
+fuera del grupo 422 (paso 2, #4; seguía abierto: daba 400 por su `.bad_`) y los códigos de `brand md` (`3cb3395`). El test exige que
 cada código esté en la tabla, pero no en qué grupo. Cambio: en `gimg/server.py`, `brandsheet.*` da 422 salvo los que
 estén en otra lista (404/409/400 o los 500 de solo CLI), y un test que lo comprueba con `bad_placeholder`. Riesgo: un
 código de CLI que debería ser 500 sale 422; la lista de 500 de `tests/test_server.py` lo sigue nombrando.

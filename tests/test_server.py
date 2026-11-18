@@ -46,6 +46,14 @@ INTENDED_500 = {
 
 
 class StatusTableTests(unittest.TestCase):
+    def test_brandsheet_codes_default_to_422(self):
+        # a sheet-content code missing from the table is 422, not 400 by its `.bad_` or 500 (retro 2026-11-18, P1)
+        self.assertEqual(server.status_for("brandsheet.bad_placeholder"), 422)
+        self.assertEqual(server.status_for("brandsheet.bad_hex"), 422)
+        self.assertEqual(server.status_for("brandsheet.some_new_code"), 422)
+        self.assertEqual(server.status_for("brandsheet.bad_mode"), 400)
+        self.assertEqual(server.status_for("brandsheet.markdown_stale"), 500)
+
     def test_no_error_key_falls_into_500_by_accident(self):
         es = json.loads((LOCALES / "es.json").read_text(encoding="utf-8"))
         codes = {k[len("error."):] for k in es if k.startswith("error.")}

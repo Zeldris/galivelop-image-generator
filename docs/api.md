@@ -426,7 +426,7 @@ La hoja de marca resuelta (con la herencia de `extends` aplicada): `name`, `vers
 `promptWords` y `origin`: por cada valor (ruta con puntos, p. ej. `palette.paper.$value`; las excepciones de vetos, por su
 posición en la lista fusionada) `{"origin": "own|inherited", "project", "file"}`. Errores: `brandsheet.none` y
 `brandsheet.missing` (404), `brandsheet.invalid`, `brandsheet.unreadable`, `brandsheet.extends_missing`, `brandsheet.extends_broken`,
-`brandsheet.extends_cycle`, `brandsheet.incomplete`, `brandsheet.unknown_register`, `brandsheet.no_tone` (sin tono del acento con contraste 4,5:1 sobre el papel), `brandsheet.markdown_marker_in_data` (422), `project.unknown`.
+`brandsheet.extends_cycle`, `brandsheet.incomplete`, `brandsheet.unknown_register`, `brandsheet.no_tone` (sin tono del acento con contraste 4,5:1 sobre el papel), `brandsheet.markdown_marker_in_data`, `brandsheet.bad_placeholder`, `brandsheet.bad_hex` y cualquier otro `brandsheet.*` sin estado propio (422), `project.unknown`.
 
 ```sh
 curl -s $B/api/projects/mi-proyecto/brand/sheet

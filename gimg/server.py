@@ -55,7 +55,7 @@ _EXACT = {
     415: ("api.content_type",),
     409: ("compose.template_exists", "compose.busy", "measure.busy", "api.heavy_busy", "compose.nothing_to_do", "compose.no_attempts", "serve.already_running", "serve.port_busy", "serve.not_running", "order.discard_chosen",
           "order.history_empty", "queue.not_cancellable", "queue.not_movable", "delivery.target_taken", "brand.exists", "brand.missing_piece", "export.exists", "brandsheet.exists"),
-    400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "compose.template_unknown", "compose.element_unknown", "compose.bad_layout", "compose.bad_element", "compose.templates_dir_missing", "api.bad_json", "brandsheet.unknown_piece", "brandsheet.convert_unsupported",
+    400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "compose.template_unknown", "compose.element_unknown", "compose.bad_layout", "compose.bad_element", "compose.templates_dir_missing", "api.bad_json", "brandsheet.unknown_piece", "brandsheet.convert_unsupported", "brandsheet.bad_mode",
           "api.bad_param", "brand.no_matte", "brand.dir_missing", "brand.no_palette", "brand.font_unknown", "brand.empty_text", "brand.text_too_long", "brand.empty_wordmark", "brand.wordmark_no_fit", "brand.font_unreadable", "brand.bad_square",
           "export.size_not_for_ico", "export.icon_sizes_only_ico", "export.upscale", "export.too_big",
           "export.bad_crop", "export.crop_outside", "export.bad_anchor", "crop.outside", "crop.ratio_mismatch", "crop.compose_unsupported"),
@@ -63,8 +63,12 @@ _EXACT = {
 # Server-side faults whose names match the 400 patterns below: checked first.
 _SERVER_FAULTS = ("compose.svg_too_big", "engine.unknown", "engine.bad_delay", "machine.invalid", "machine.bad_path", "machine.bad_name",
                   "model.catalog_invalid", "png.invalid", "png.bad_key", "order.spec_invalid", "queue.bad_progress",
-                  "compose.bad_fit", "compose.bad_size", "project.config_invalid")
-_PREFIX = (("order.choose_", 409), ("order.undo_", 409), ("path.", 400), ("key.", 400), ("limit.", 400))
+                  "compose.bad_fit", "compose.bad_size", "project.config_invalid",
+                  # CLI only (`brand md --write|--check`): hoja.md, not the sheet's data
+                  "brandsheet.markdown_markers", "brandsheet.markdown_stale")
+_PREFIX = (("order.choose_", 409), ("order.undo_", 409), ("path.", 400), ("key.", 400), ("limit.", 400),
+           # any other brandsheet.* code is about the sheet's content: 422 (retro 2026-11-18, P1)
+           ("brandsheet.", 422))
 _SUFFIX = ((".invalid", 400), ("_invalid", 400), (".unknown", 400))
 _BAD = ".bad_"
 

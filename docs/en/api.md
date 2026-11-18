@@ -435,7 +435,7 @@ The resolved brand sheet (`extends` applied): `name`, `version`, `chain` (projec
 `promptWords` and `origin`: for every value (dotted path, e.g. `palette.paper.$value`; veto exceptions by position in the
 merged list) `{"origin": "own|inherited", "project", "file"}`. Errors: `brandsheet.none` and `brandsheet.missing` (404),
 `brandsheet.invalid`, `brandsheet.unreadable`, `brandsheet.extends_missing`, `brandsheet.extends_broken`, `brandsheet.extends_cycle`,
-`brandsheet.incomplete`, `brandsheet.unknown_register`, `brandsheet.no_tone` (no accent tone reaches 4.5:1 on the paper), `brandsheet.markdown_marker_in_data` (422), `project.unknown`.
+`brandsheet.incomplete`, `brandsheet.unknown_register`, `brandsheet.no_tone` (no accent tone reaches 4.5:1 on the paper), `brandsheet.markdown_marker_in_data`, `brandsheet.bad_placeholder`, `brandsheet.bad_hex` and any other `brandsheet.*` without its own status (422), `project.unknown`.
 
 ```sh
 curl -s $B/api/projects/mi-proyecto/brand/sheet

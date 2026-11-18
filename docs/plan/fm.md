@@ -99,6 +99,17 @@ que 5». La nota se calibra con lo que ya hay (aprobadas y descartes del Portal)
 | **0.10.0 Taller, recursos y entrega** | Tira de pasos al taller por tipo de pieza; recursos del proyecto y «Usar como referencia»; editar la hoja desde la interfaz; entrega por carpetas con LEEME y sustituir sin perder | Una pieza del Portal entregada en su carpeta sin tocar archivos a mano |
 | **0.11.0 Bandeja** | `gimg agent todo/answer`, API y pestaña Bandeja; F6 la atiende con Ollama después | Una tanda con un juicio pedido y contestado desde la bandeja |
 
+### Barrido B de `gimg/brandsheet.py` en 0.8.0 (retro 2026-11-18, P2, aprobada)
+
+Los 16 leves abiertos de `brandsheet.py` (detalle en `docs/records/revision-hoja-datos-paso{1,3,4}.md`), en dos encargos
+`gw-worker` sonnet: **(a) validación y lint** — paso 1 #6 (hex «missing» solo en la última frase), #7 (`_HEX` sin
+`#rgb`/`#rrggbbaa`), #8 (zona limpia de espacios), #9 (registro contenido en otro), #14 (test de `..` por `extends`);
+paso 3 #4 (orden con `cleanZone: afterClosing`), #5 (`own_text` exime todos los registros), #6 (marcador malo sin la
+pieza). **(b) repeticiones y recálculos** — paso 1 #11 (contraste repetido de `measure.py`), #12 (`lint` recalcula
+`palette()`), #13 (documentar que la herencia no borra claves); paso 3 #7 (validación de marcadores duplicada), #8
+(`own_text` y `quiet`, la misma lista); paso 4 #7 (rama `threshold` imposible), #8 (`try` de `accent_tones` repetido),
+#11 (`_block_span` recorre el texto cinco veces).
+
 ### Decisiones de la persona (2026-11-16)
 
 1. Fallo: los dos criterios, «Ninguno vale» o tanda descartada entera (a mano) y nota menor que 5. 2. Bloqueo: al tercer fallo seguido. 3. Descarte por debajo de 7:
