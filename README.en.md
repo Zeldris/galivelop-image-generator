@@ -9,7 +9,7 @@ as the engine and the Steam Deck as the reference machine (D4). No dependencies:
 
 ## Status
 
-Version **0.6.0**, phases **F0-F4 done** and on `main`: projects, orders, attempts, chosen candidate and delivery,
+Version **0.7.0**, phases **F0-F4 done** and on `main`: projects, orders, attempts, chosen candidate and delivery,
 persistent queue, CLI, real engine (`sd-cli`, with `instalar.sh`), composition and brand measurement, local HTTP API
 and browser interface. Still pending: manual checks on the Deck (pilot rounds, a full walk through the interface in
 the browser), the pilot with real projects (F5) and what follows (see "Next steps"). The test engine (`fake`,
@@ -35,12 +35,11 @@ what is published ship first, as a patch:
 
 | Version | What |
 |---|---|
-| 0.5.0 | Delete attempts, compositions, templates and elements; edit the text and typography of a composed result; rename an order; interface improvements |
-| 0.6.0 | **Montage**: a format is built in layers from the project's pieces and the user's own files (blocks and absolutes, as in CSS), and the engine "fits" it with img2img |
-| 0.7.0 | Text boxes placed before generating (a phrase in the prompt and the contrast chip) |
-| 0.8.0 | Delete orders, and everything from the interface |
-| 0.9.0 | F5: WMF pilot, LoRA, transparency and "Remove background", reference images, prompt editing |
-| later | Editable pieces and brand, team panel, F6, F7 and, last, gamepad and touch, up to 1.0.0 |
+| 0.8.0 | **Brand piece**: mode in the order and the retouch, assembly and checks on the server, grouped batches and failure counter |
+| 0.9.0 | **Grade and discard**: worker grade, proposed and recoverable discard |
+| 0.10.0 | **Workshop, resources and delivery**: workshop steps per piece type, project resources, edit the sheet and delivery by folders |
+| 0.11.0 | **Tray**: the agent tray (`todo`/`answer`), API and Tray tab |
+| later | F5 WMF pilot, F6, F7 and, last, gamepad and touch, up to 1.0.0 |
 
 ## How a project connects
 
@@ -119,6 +118,7 @@ python3 -m gimg brand matte logo.png                  # removes the flat backgro
 python3 -m gimg brand trace logo-alpha.png --mode color|mono|silhouette   # PNG to SVG (--palette, --colors, --matte)
 python3 -m gimg brand wordmark TARKOR --font Cinzel.ttf -o wordmark.svg   # the name as paths, no <text> (--weight, --spacing)
 python3 -m gimg brand lockup emblema.svg wordmark.svg --layout h|v   # emblem and wordmark in one SVG (--cap, --gap, --width, --margin, --color, -o)
+python3 -m gimg brand md my-project --write hoja.md   # hoja.md block generated from the brand sheet; --check FILE checks it (see also brand init|prompt|lint)
 python3 -m gimg brand square ig.svg --fill '#7C5CD6' --ink '#fbfcfd' --png 512,128,32   # the symbol: square with a 28/128 chamfer and the drawing in one ink (--chamfer, --pad, -o, --force)
 python3 -m gimg brand system emblema.png --name Tarkor --font Cinzel.ttf --out-dir marca/   # the seven files of the logo system (--weight, --spacing, --palette, --colors, --text, --cap, --gap, --width, --margin, --mono for a one-ink lockup, --force overwrites)
 python3 -m gimg doctor                                # checks the engine, models and tools (--verify)
