@@ -617,7 +617,7 @@ class SheetMarkdownTests(Env):
         self.declare(text=block)
         row = self.rows()["sheet.markdown"]
         self.assertEqual((row.status, row.key, row.fix_key), (doctor.FAIL, "doctor.sheet.md_differs", "doctor.sheet.fix_md"))
-        self.assertIn("gimg brand md portal --write hoja.md", row.fix("es"))
+        self.assertIn("gimg brand md portal --write " + str((self.root / "hoja.md").resolve()), row.fix("es"))
 
     def test_no_markers_fails(self):
         self.declare(text="# Hoja sin bloque\n")
