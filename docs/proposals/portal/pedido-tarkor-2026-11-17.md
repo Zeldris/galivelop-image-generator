@@ -40,5 +40,5 @@ Mover q1425-1428 a `top` al reanudar la cola.
 | Punto | Estado |
 |---|---|
 | 1 SVG del icono | hecho (2026-11-17): curvas, `viewBox` 314 329 1412 1412, trazo ~1,5×, PNG 512² regenerado; a 24 px se lee como silueta del colmillo, el cordón se funde |
-| 2 og 24c | candidata q1438 en `tarkor/pendiente/` (FLUX q1430 + img2img 0,5, 2026-11-18): dos colmillos, una cuenta, izquierda limpia; mar casi liso |
+| 2 og 24c | aprobada q1438 por la persona (2026-11-18) en `tarkor/24-og-tarkor.png`; era candidata (FLUX q1430 + img2img 0,5, 2026-11-18): dos colmillos, una cuenta, izquierda limpia; mar casi liso |
 | 3 31f a top | hecho (17-11, cola reanudada) |
