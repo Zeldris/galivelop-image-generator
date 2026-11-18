@@ -17,7 +17,7 @@ export async function piecesTab(panel, project, cfg, info = {}) {
   panel.append(h('p.hint', {}, t('ui.pieces.hint')));
   if (!names.length) { panel.append(h('div.empty', {}, h('p', {}, t('ui.newOrder.noProfiles')))); return; }
   const types = info.sheet && info.sheet.valid ? (info.pieceTypes || []) : [];
-  const typed = new Set(types.map((p) => p.profile).filter(Boolean));
+  const typed = new Set(types.filter((p) => !p.profileProject || p.profileProject === project).map((p) => p.profile).filter(Boolean));
   const loose = types.length ? names.filter((n) => !typed.has(n)) : names;
   const data = new Map(); // perfil -> {templates, orders}, pedido una sola vez aunque lo usen varios tipos
   const dataOf = (name) => {
@@ -40,13 +40,19 @@ export async function piecesTab(panel, project, cfg, info = {}) {
   const grids = [];
   if (types.length) {
     const grid = h('div.piece-grid', { aria: { busy: 'true' } }, types.map((pt) => {
-      const known = pt.profile && names.includes(pt.profile);
+      const foreign = pt.profile && pt.profileProject && pt.profileProject !== project; // perfil heredado: es del proyecto que declaró el tipo
+      const known = pt.profile && !foreign && names.includes(pt.profile);
       const inner = known ? slot(pt.profile) : null;
       if (inner) jobs.push(fill(inner, pt.profile));
       return h('section.card.piece-type', { data: { piece: pt.id }, aria: { labelledby: `pt-${pt.id}` } },
         h('div.row-between', {}, h('h2', { id: `pt-${pt.id}` }, loc(pt.label) || pt.id),
           h('span.row', {}, h('code.mono.hint', {}, pt.id), pt.register ? h('span.chip', {}, pt.register) : null)),
-        inner || h('p.hint', {}, t('ui.pieces.profileMissing', { profile: pt.profile || '—' })));
+        inner || (foreign
+          ? h('div.stack', { data: { profileProject: pt.profileProject } },
+            h('p.hint', {}, t('ui.pieces.profileParent', { profile: pt.profile, project: pt.profileProject })),
+            h('span.row', {}, newOrderButton(pt.profileProject, { profile: pt.profile, label: t('ui.pieces.order'), aria: t('ui.pieces.orderAriaParent', { profile: pt.profile, project: pt.profileProject }) }),
+              h('a.btn.btn-ghost', { href: to.project(pt.profileProject, 'piezas') }, t('ui.pieces.seeParent', { project: pt.profileProject }))))
+          : h('p.hint', {}, t('ui.pieces.profileMissing', { profile: pt.profile || '—' }))));
     }));
     grids.push(grid);
     panel.append(grid);

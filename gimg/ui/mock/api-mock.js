@@ -43,8 +43,9 @@ const SHEET = {
     exceptions: [{ term: 'lighthouse', pieces: ['og'] }], neverWrite: ['transparent', 'exactly'], colorWords: ['white', 'golden'], fillPhrase: 'filling the whole sheet',
   },
   pieceTypes: [
-    { id: 'og', label: { es: 'Portada social', en: 'Social cover' }, profile: 'og', register: 'engraved', chroma: null, seed: 42, count: 2, workshop: ['crop'] },
-    { id: 'icon', label: { es: 'Icono', en: 'Icon' }, profile: 'icono', register: 'engraved', chroma: '#00ff00', seed: 7, count: 4, workshop: ['matte', 'trace'] },
+    { id: 'og', label: { es: 'Portada social', en: 'Social cover' }, profile: 'og', profileProject: PROJECT, register: 'engraved', chroma: null, seed: 42, count: 2, workshop: ['crop'] },
+    { id: 'icon', label: { es: 'Icono', en: 'Icon' }, profile: 'icono', profileProject: PROJECT, register: 'engraved', chroma: '#00ff00', seed: 7, count: 4, workshop: ['matte', 'trace'] },
+    { id: 'banner', label: { es: 'Banner heredado', en: 'Inherited banner' }, profile: 'og', profileProject: 'portal', register: 'engraved', chroma: null, seed: 9, count: 1, workshop: [] },
   ],
   acceptance: { traits: { palette: 3, frame: 1 }, references: ['refs/q311.png'], autoDiscard: false, unmeasured: [{ id: 'horizon', label: { es: 'Horizonte', en: 'Horizon' } }] },
   promptWords: { min: 120, max: 200 },

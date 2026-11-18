@@ -142,9 +142,21 @@ function pieceTypesCard(project, cfg, types, origin, many) {
         h('td', {}, p.seed ?? '—'),
         h('td', {}, p.count ?? '—'),
         h('td', {}, (p.workshop || []).length ? p.workshop.join(', ') : '—'),
-        h('td', {}, p.profile && profiles[p.profile]
-          ? newOrderButton(project, { profile: p.profile, label: t('ui.pieces.order'), aria: t('ui.pieces.orderAria', { profile: p.profile }), primary: false })
-          : h('span.hint', {}, '—'))))))) : h('p.hint', {}, t('ui.sheet.noPieceTypes')));
+        h('td', {}, orderCell(project, profiles, p))))))) : h('p.hint', {}, t('ui.sheet.noPieceTypes')));
+}
+
+/** «Pedir» de un tipo: con el perfil del propio proyecto, como siempre; si es de otro (heredado), se dice y el pedido se abre en ese proyecto. */
+function orderCell(project, profiles, p) {
+  if (!p.profile) return h('span.hint', {}, '—');
+  const owner = p.profileProject || project;
+  if (owner !== project) {
+    return h('span.stack', { data: { profileProject: owner } },
+      h('span.hint', {}, t('ui.pieces.profileParent', { profile: p.profile, project: owner })),
+      newOrderButton(owner, { profile: p.profile, label: t('ui.pieces.order'), aria: t('ui.pieces.orderAriaParent', { profile: p.profile, project: owner }), primary: false }));
+  }
+  return profiles[p.profile]
+    ? newOrderButton(project, { profile: p.profile, label: t('ui.pieces.order'), aria: t('ui.pieces.orderAria', { profile: p.profile }), primary: false })
+    : h('span.hint', {}, '—');
 }
 
 function acceptanceCard(view, many) {

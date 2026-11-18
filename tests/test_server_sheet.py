@@ -45,6 +45,29 @@ class ProjectShowTests(SheetApi):
         self.assertEqual(ids, list(PORTAL["pieceTypes"]))
         self.assertEqual(data["pieceTypes"][0]["register"], PORTAL["pieceTypes"][ids[0]]["register"])
 
+    def test_inherited_types_name_the_project_of_their_profile(self):
+        self.project("portal", PORTAL)
+        self.project("child", {"schemaVersion": 1, "name": "child", "extends": "portal"})
+        for url in ("/api/projects/child", "/api/projects/child/brand/sheet"):
+            types = self.ok("GET", url)["pieceTypes"]
+            self.assertTrue(types)
+            self.assertEqual({t["profileProject"] for t in types}, {"portal"}, url)
+
+    def test_an_own_profile_override_names_the_child(self):
+        self.project("portal", PORTAL)
+        first = next(iter(PORTAL["pieceTypes"]))
+        self.project("child", {"schemaVersion": 1, "name": "child", "extends": "portal",
+                               "pieceTypes": {first: {**PORTAL["pieceTypes"][first], "profile": "propio"}}})
+        by_id = {t["id"]: t for t in self.ok("GET", "/api/projects/child")["pieceTypes"]}
+        self.assertEqual(by_id[first]["profileProject"], "child")
+        self.assertTrue(all(t["profileProject"] == "portal" for i, t in by_id.items() if i != first))
+
+    def test_a_sheet_that_does_not_resolve_falls_back_to_the_project_itself(self):
+        self.project("orphan", {"schemaVersion": 1, "name": "orphan", "extends": "ghost",
+                                "pieceTypes": {"x": PORTAL["pieceTypes"]["cover"]}})
+        types = self.ok("GET", "/api/projects/orphan")["pieceTypes"]
+        self.assertEqual([(t["id"], t["profileProject"]) for t in types], [("x", "orphan")])
+
     def test_broken_parent_lists_the_errors(self):
         self.project("orphan", {"schemaVersion": 1, "name": "orphan", "extends": "ghost"})
         data = self.ok("GET", "/api/projects/orphan")

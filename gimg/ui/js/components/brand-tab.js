@@ -20,7 +20,10 @@ const STATUS_CHIP = { ok: 'chip-ok', warn: 'chip-warn', fail: 'chip-bad' };
 export const SUBTABS = ['hoja', 'probar', 'check', 'taller'];
 
 /** Cambia `?s=` del hash sin disparar `hashchange` (la pantalla no se repinta). */
-function rememberSub(sub) {
+function shellQuote(s) { return /^[\w@%+=:,./-]+$/.test(s) ? s : "'" + s.split("'").join("'\\''") + "'"; }
+
+function rememberSub(sub, project) {
+  if (project !== undefined && !location.hash.startsWith(`#/p/${encodeURIComponent(project)}/marca`)) return; // ya es otra pantalla
   const [path, query = ''] = location.hash.replace(/^#/, '').split('?');
   const params = new URLSearchParams(query);
   params.set('s', sub);
@@ -58,7 +61,7 @@ export async function brandTab(panel, project, cfg, info = {}, query = {}) {
     h('div.tabs', { role: 'tablist', aria: { label: t('ui.brand.sub.label') } }, tabs),
     SUBTABS.map((s) => bodies[s])));
 
-  let pending = null;
+  const pending = [];
   function select(s, focus = false) {
     SUBTABS.forEach((x, i) => {
       const on = x === s;
@@ -67,18 +70,21 @@ export async function brandTab(panel, project, cfg, info = {}, query = {}) {
       bodies[x].hidden = !on;
     });
     if (focus) tabs[SUBTABS.indexOf(s)].focus();
-    rememberSub(s);
-    if (!built.has(s)) { built.add(s); pending = Promise.all([pending, builders[s](bodies[s])]); }
-    return pending;
+    rememberSub(s, project);
+    if (!built.has(s)) {
+      built.add(s);
+      const fail = (e) => bodies[s].append(h('p.notice.notice-bad', { role: 'alert' }, describeError(e, t)));
+      try { pending.push(Promise.resolve(builders[s](bodies[s])).catch(fail)); } catch (e) { fail(e); }
+    }
+    return Promise.all(pending);
   }
-  rememberSub(first);
   await select(first);
 }
 
 function unavailable(project, sheet) {
   return h('div.stack', {},
     h('p.notice.notice-warn', { role: 'status' }, sheet.present ? t('ui.sheet.invalid') : t('ui.brand.noSheet.title')),
-    sheet.present ? null : h('code.mono', {}, `gimg brand init ${project}`));
+    sheet.present ? null : h('code.mono', {}, `gimg brand init --project ${shellQuote(project)}`));
 }
 
 /** Sin hoja: el aviso, cómo crearla y la marca de la configuración como siempre. */
@@ -86,7 +92,7 @@ async function noSheet(host, project, cfg) {
   const facts = brandFacts(project, cfg);
   host.append(
     h('div.card', { data: { card: 'no-sheet' } }, h('h2', {}, t('ui.brand.noSheet.title')),
-      h('p', {}, t('ui.brand.noSheet.how')), h('code.mono', {}, `gimg brand init ${project}`)),
+      h('p', {}, t('ui.brand.noSheet.how')), h('code.mono', {}, `gimg brand init --project ${shellQuote(project)}`)),
     facts.node);
   await facts.load();
 }

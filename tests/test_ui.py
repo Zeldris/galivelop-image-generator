@@ -634,6 +634,24 @@ class F4dUi(unittest.TestCase):
         for needle in ("r3 === 'sheet'", "r3 === 'prompt'", "r3 === 'lint'", "origin: 'inherited'"):
             self.assertIn(needle, mock)
 
+    def test_brand_tab_review_fixes(self):
+        tab = self.comp("brand-tab.js")
+        self.assertEqual(tab.count("gimg brand init --project ${shellQuote(project)}"), 2)
+        self.assertNotIn("`gimg brand init ${project}`", tab)
+        self.assertNotIn("Promise.all([pending", tab)  # one failing builder does not take the others down
+        self.assertIn("fail(e)", tab)
+        self.assertNotIn("rememberSub(first)", tab)
+        self.assertIn("rememberSub(s, project)", tab)
+
+    def test_inherited_piece_types_use_the_profile_of_their_project(self):
+        for name in ("sheet-view.js", "pieces-tab.js"):
+            self.assertIn("profileProject", self.comp(name), name)
+        self.assertIn("profileProject: 'portal'", read(UI / "mock" / "api-mock.js"))
+        for lang in ("es", "en"):
+            keys = json.loads(read(Path(server.__file__).parent / "locales" / (lang + ".json")))
+            for key in ("ui.pieces.profileParent", "ui.pieces.orderAriaParent", "ui.pieces.seeParent"):
+                self.assertIn(key, keys)
+
 
 class Served(ServerBase):
     TYPES = {".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".svg": "image/svg+xml",
