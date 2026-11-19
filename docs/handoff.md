@@ -1,4 +1,4 @@
-<!-- galivelop-workflow v0.5.0 -->
+<!-- galivelop-workflow v0.8.1 -->
 # Bitácora (traspaso)
 
 > Léela entera al empezar cualquier sesión. Lo que no está subido no existe: commit + push en cada punto estable,
@@ -8,12 +8,13 @@
 
 | Campo | Valor |
 |---|---|
-| **Rama** | `hoja-datos` (desde `origin/main` `43ef055`, 2026-11-17): versión 0.7.0 «Hoja como datos»; `ccr-85e9d14e-zt7p8b` queda con sus leves por fusionar |
+| **Rama** | `gw-0.8.1` (desde `hoja-datos` `9b1154f`, 2026-11-19): flujo Galivelop-workflow 0.8.0 → 0.8.1; `ccr-85e9d14e-zt7p8b` queda con sus leves por fusionar |
 | **Fase / tarea** | FM, 0.7.0 «Hoja como datos» (`docs/plan/fm.md`; interfaz en `docs/interfaz/marca.md` §2.10 y §4) |
-| **Último punto estable** | `main` en `43ef055` (PR #24, barrido de color, 2026-11-17, CI en verde); release v0.6.0 publicada (etiqueta en `98fcc7c`, PR #20, 2026-11-16) |
+| **Último punto estable** | `main` en `61ce509` (PR #25, 0.7.0 «Hoja como datos», 2026-11-18, CI en verde); release v0.6.0 publicada (etiqueta en `98fcc7c`, PR #20, 2026-11-16) |
 | **Siguiente paso** | el de la fila de `hoja-datos` |
 | **Check** | `bash -n` de los ganchos + `python3 -m unittest discover -s tests -t .` |
-| **Tarea en curso · `hoja-datos`** | Empezada el 2026-11-17. Pasos 1-6 hechos (esquema y `brandsheet.py`, CLI y API, Portal y 4 productos en `marca.json`, `gimg brand md`, pestaña Marca, CHANGELOG/api.md/versión 0.7.0); leves en `docs/records/revision-hoja-datos-paso{1..5}.md`. Fuera de 0.7.0: ver `docs/plan/fm.md`. Presupuesto de compactaciones: 0. Fase 1 hecha (0 hallazgos); fase 2 aprobada (`gw-opt-tokens`, retro `retro-2026-11-18-hoja-datos.md`; P1 `brandsheet.*` → 422, P2 para 0.8); flujo en 0.8.0 (`shellcheck` por `pip install shellcheck-py`). Fase 3 hecha (`Findings: 7`; leve abierto: `whole-read.py` dos veces en `.claude/settings.json`, para el flujo). Siguiente: `check.sh`, `reviewed.sh` y PR a `main`. |
+| **Tarea en curso · `gw-0.8.1`** | Flujo a 0.8.1 (2026-11-19): `apply.py --update` aplicado, `AGENTS.md`/`CLAUDE.md` fusionados, `REVIEW.md` con ancla, «Invariantes» y «Navegadores», «Pendiente» movido a `docs/records/pending.md` (`pendingFile`), `legacyNames: false` (las citas viejas son de piezas fechadas o de otros repos), `whole-read.py` ya una sola vez. Fase 1 hecha (0 hallazgos; solo `gw.json`, `settings.json`, `check.yml` eran código); CI en verde en `662d7c0`; `gw-opt-tokens` presentada y aprobada (P1-P3, al flujo); retro `docs/records/retro-2026-11-19-gw-0.8.1.md` aprobada (P1-P5). Siguiente: PR a `main` con la skill `pr`; fusionar solo con el CI en verde y si la persona lo pide. |
+| **Tarea en curso · `hoja-datos`** | **PR #25 fusionado en `main`** (`61ce509`, 2026-11-18, CI en verde): versión 0.7.0 «Hoja como datos». Leves abiertos en `docs/records/revision-hoja-datos-paso{1..5}.md` (barrido B de `brandsheet.py` para 0.8, en `docs/plan/fm.md`). Siguiente: publicar la release v0.7.0 si la persona lo pide; luego 0.8 según `docs/plan/fm.md`. |
 | **Tarea en curso · `fix-0.4.1`** | Terminada (PR #5, v0.4.1). |
 | **Tarea en curso · `ccr-85e9d14e-zt7p8b`** | PR #23 fusionado en `main` (`78975bf`, 2026-11-17, CI en verde). **Barrido de color de `brand.py` hecho (2026-11-17**, detalle en «Pendiente»; check en verde). Presupuesto de compactaciones: 0. Queda: asas táctiles de 44 px en un dispositivo (la persona). Fase 1 del bloque hecha (2026-11-17, `Findings: 3`); retro `retro-2026-11-17-barrido-color.md` aprobada; marca `ab39587`. **PR #24 fusionado** (`43ef055`, 2026-11-17, CI en verde). Siguiente: nada aquí; sus leves, por otra rama. **En la próxima sesión en local, avisar a la persona**: reanudar la cola de `hojas-repos`. |
 | **Tarea en curso · `claude/marca-r9`** | Terminada (PR #6). Queda, en otra tarea: medir una ronda plana y `og`/`social` con el lockup nuevo (y quitar la copia congelada y `REDRAWN_COPY_SHA256`). |
@@ -37,58 +38,7 @@ hace falta `GW_SHARED_LOG`. Aun así, cada rama toca solo su fila salvo al cerra
 
 ## Pendiente
 
-- **Barrido de leves de `gimg/brand.py` (0.7.0; retro del 2026-11-17 «barrido-color», P3, aprobada):** `_paint_value` salta valores mal formados; `hsl(1e400 …)` como rsvg (comprobarlo antes); unir `_paints` y `_ink`; `_ink` una vez por pintura heredada; `fill` explícito en `<line>` (sexta tanda). Detalle en `docs/records/leves-ccr-85e9d14e-zt7p8b.md`. A un `gw-worker` sonnet.
-- **Al flujo (retro del 2026-11-17 «barrido-color», P1, aprobada):** `gw-selector` y el gancho de inicio señalan `gw-worker` para barridos y arreglos de revisión (la regla del 2026-11-16 se rompió otra vez).
-- **`tests-for.py --run` sin `tests/__init__.py` (2026-11-16):** `test-run.py` descubre con `top_level_dir=tests`, así que no se importa `tests/__init__.py` y `GIMG_AUTOSTART=0` no se fija: `ComposeCliTests` y `FullCycleTests` fallan con el aviso `service_failed` y dejan un `gimg serve` vivo. El check completo pasa. Parcheado en `tests/test_cli.py` (fija `GIMG_AUTOSTART=0` al importarse); el arreglo general, en el flujo (`.claude/gw/scripts/`, necesita permiso) o con un `testMap.command` del proyecto que use `-t .`.
-- **Al flujo (retro del 2026-11-16, P1, P2, P4, aprobadas):** comprobar filas de la tabla de estado; registro de tokens
-  en un archivo ignorado volcado en el `pre-commit`; dos líneas en el encargo de `gw-orchestrate-dealer`. Detalle en
-  `docs/records/retro-2026-11-16-barrido-b.md`, «For Galivelop-workflow».
-- **Leves de la fase 1 de la sexta tanda (2026-11-15):** `tile`: la copia que no se pudo borrar, en ejecuciones siguientes, `recover_backups` la da por «puede ser el original», contradiciendo el aviso anterior (el estado no queda en el nombre); `brand`: un `fill` explícito en un `<line>` sigue contando como color (aplanado de más); `trace`: `min_island` sigue en píxeles reducidos, así que con reducción una forma pequeña de un color se pierde aunque el trazo no salga vacío (dividir siempre por factor² deja de quitar motas: descartado).
-- **Leves de las tandas 1-5 de `ccr-85e9d14e-zt7p8b` (2026-11-13/14):** los abiertos, en `docs/records/leves-ccr-85e9d14e-zt7p8b.md` («Tandas 1-5»); la próxima tanda los elige de ahí.
-- **Huecos de `gimg` vistos en `hojas-repos` (2026-11-12):** todos hechos en `ccr-85e9d14e-zt7p8b` (`system --mono` y `--margin`, espaciado 0,01; perfiles nuevos; `gimg export` a WebP, ICO y BMP con `--crop`/`--anchor`; `measure --family`; `brand square`) salvo Big Shoulders Display sin `.ttf` en el equipo (depende del equipo de la persona). Aviso: `red-without-fix.sh` usa el stash compartido y, con varios worktrees a la vez, uno puede recoger el stash de otro (pasó el 2026-11-13, otra vez con dos subagentes: cada uno recogió el stash del otro; recuperado, nada perdido). Proponer al flujo que use `git worktree`/copia temporal en vez de `git stash`, o `--fix-at HEAD` por omisión.
-- **`examples/` de developer y workflow** siguen con la identidad anterior (paleta, perfiles FLUX; `tests/test_examples.py` l.312 fija el lockup `b` de workflow); r10 de image-generator rompería `tests/test_ui.py` l.564-597 y `tests/test_brand_assets.py` l.58 al aplicarse.
-
-- **Hueco de `gimg brand trace` (2026-11-11, `portal-marca`):** hecho en `42e7c02` (tinta = todo menos el papel; líneas de 1 px con `_thin`); quedan los leves de la tercera tanda.
-- **`portal-marca` (2026-11-10):** el generador de Tarkor y gimg comparten Ollama y GPU y cada uno aborta si el otro corre; antes de generar, `curl localhost:11434/api/ps`, `free -m`, `pgrep -x sd-cli`; nunca `LIBERAR_OLLAMA=1` (descarga el narrador del juego). Avisar al Portal: el encabezado de su `docs/marca.md` (l.3-4) aún dice «pendiente de elegir tipografía».
-- **Archivado (2026-11-16):** los detalles de `portal-marca` del 2026-11-10 (ronda FLUX, mapa de Helek, emblema plano, `brand lockup/system`, leves de la hoja de Tarkor y de `gimg/brand.py`) en [handoff-archive.md](records/handoff-archive.md), «portal-marca (2026-11-10)».
-- **`check.py` de `gw-media-content` y los perfiles de Reddit (2026-11-05):** una pieza publicada en `u/<persona>` no pasa («Subreddit:» exige `r/<nombre>` y bloque de reglas); que acepte `u/<nombre>` sin reglas. Es del flujo: proponerlo allí.
-- **Archivado (2026-11-16):** 3 elemento(s) de versiones ya publicadas (≤ 0.5.0) en [handoff-archive.md](records/handoff-archive.md)
-- **Releases en GitHub** (pedido de la persona del 2026-11-05, `docs/plan.md` tras la tabla de fases): v0.1.0, v0.3.0 y v0.4.0 hechas (v0.4.0 a mano: ver `release-install`); las siguientes, con `releases.py bump` y la etiqueta (`release.yml`) (`python3 releases.py check` en cada cierre de fase).
-- **Tras r7 (pedido de la persona del 2026-11-04):** (a) y (b) hechas el 2026-11-05 (hojas r8, D39); (c) hecha el 2026-11-11 en `claude/marca-r9` (D38 en la hoja de estilo, los README, `cli.description` y la interfaz; los textos de `examples/galivelop-image-generator` no nombran el producto).
-- **Tras aplicar las hojas (2026-11-04), lo que queda:** (a) prompts por rehacer en la próxima ronda: Tarkor `estilo.txt`, `r2-hex/palabras/material` y `r5-*` sin `sun` ni «muted» (`r2-luz.txt` candidato a `estilo.txt`), `r5-cuadrado`/`r5-vertical` con la mitad inferior; developer `og.txt`/`r5-cabecera.txt` con la mitad inferior y «departs from»; (b) piloto: alinear `caja_zona` de `componer.py` y `piezas.json` con la zona de cada hoja (Portal 55 % frente a 1/2; toVeriAI `og` arriba 1/3), subtítulo de voice-generator (67 car.) y volver a medir su og; (c) `icon`, y `compose` con logos para voice-generator y developer (los otros 5, hechos el 2026-11-04); con gimg, `GIMG_CONFIG_HOME=~/.config/gimg GIMG_DATA_HOME=~/.local/share/gimg` desde el sandbox de VS Code; (d) el validador (`gimg doctor --project`) con las comprobaciones 5, 8, 9 y 11 nuevas de la plantilla; (e) propuestas a otros repos (`docs/proposals/`): toVeriAI (og:image, PNG «VeriNews», ShareCard), WMF (`Palette:`), Instalador de Tarkor (icono), Portal (`generar-marca.mjs`, `#2F7A55`); (f) revisar la hoja del Portal cuando su ADR 0002 llegue a `main`; (g) Portal: trazo del logo `#EAF4FA` en los SVG; (h) hecho el 2026-11-10 (`docs/marcas/README.md` y `docs/plan.md` remiten a `tarkor/hoja.md`); (i) hecho el 2026-11-10: el flaky de `test_second_worker_refused_other_process` venía de que `_single_worker` se rendía ante un sondeo `LOCK_SH` de `_no_worker`; ahora espera mientras solo haya sondeos (`_only_probes`, test en `tests/test_service.py` `Races`). `service._single_instance` tiene el mismo patrón sin tocar: va con el `fsutil` común.
-- **LoRA de Tarkor (lectura del 2026-11-04, `docs/records/lectura-2026-11-04-tarkor.md`):** propuestas 1-7 **aprobadas por la persona el 2026-11-04** y repartidas en `docs/plan.md` (F2.10: hojas de contactos y aviso de `maxVram` en `doctor`; F2.11: huella de la LUT, sin LoRA; F2.12: `master-1039`; F5: LoRA en el perfil; proceso: revisión por paso y a `main` por bloques). Hojas y aviso se hacen antes de revisar r2.
-- **Hoja de estilo mínima por proyecto (pedido de la persona del 2026-11-04, fila F2.12 de `docs/plan.md`):** borrador hecho (`docs/marcas/plantilla-hoja-de-estilo.md`, Fable, revisado): 18 filas obligatorias, lista de 14 comprobaciones (7 sin validar aún) y 11 huecos del perfil (sección 15). Presentado a la persona el 2026-11-04, pendiente de su visto bueno. Caso real hecho: `docs/marcas/galivelop-image-generator/hoja.md` (15 obligatorios del repo, 3 **[P]**), con 17 cambios propuestos a la plantilla al final, pendientes de la persona; falta decidir dónde vive el validador (`gimg doctor --project` o script del piloto) antes de r5. Hechos `gimg sheet` (hoja de contactos con rótulos vía rsvg-convert; el ffmpeg de la Deck no trae `drawtext`) y el aviso `doctor.vram` (umbral 2 GB, el de `steam-deck.json`), 950 tests; las rondas se revisan con `gimg sheet`.
-- **Carpeta de datos en flatpak (resuelto en F2.5, `49e6176`):** VS Code en flatpak fija `XDG_DATA_HOME=~/.var/app/…`, y `gimg` desde su terminal usaría otra carpeta de datos que desde una terminal normal (`docs/records/contenido/r0-humo.md`). Decidido: no se ignora el XDG; `gimg doctor` lo avisa y dice que se fije `GIMG_DATA_HOME`/`GIMG_CONFIG_HOME` (mandan sobre XDG). Visto en la Deck el 2026-10-27: el aviso sale y, con las dos variables, instalación y datos van a `~/.local/share/gimg` y `~/.config/gimg`.
-- **Referencias de estilo (antes de F5):** ronda del piloto con `sd-cli` y 1-2 imágenes de referencia sobre Tarkor,
-  medida con D31; si mejora el % de paleta sin estropear el contraste, entra en F5 (fila «Referencias» de la pestaña
-  Marca). Confirmado por la persona el 2026-10-27 (`docs/interfaz/propuesta.md`, decisión nueva 1).
-  Expectativa rebajada el 2026-11-02 (Tarkor, IMG-30/31): la referencia conserva un sujeto (útil para mascota o
-  producto), no el acabado ni la paleta; lo desaturado de Tarkor se espera arreglar con la LUT de F2.11.
-- **Marca de Tarkor:** (en r2, probar antes las pautas de luz del 2026-11-02 de `docs/plan.md`, «Estilos por proyecto») el estilo sale desaturado en todos los formatos (SATAVG 5-7 frente al 15-30 del juego;
-  `r5-og-bajo` arregla la luz, YAVG 66, pero no el color): otra vuelta del prompt con la persona
-  (`docs/records/contenido/r5-piezas.md`).
-- **Generador de Tarkor libre (la persona levantó el aviso el 2026-10-27):** ya se pueden generar imágenes desde este repo.
-  Antes de cada tanda, `gimg doctor`: el 2026-10-27 Ollama volvía a cargar `tarkor-narrador-llama31` cada ~20 s (algún
-  proceso de Tarkor lo seguía llamando) y la memoria libre bajaba a ~2,5 GB; con eso `gimg` aborta (`engine.ollama: abort`).
-  Resuelto ese día cuando la persona confirmó que nadie usaba nada: descarga por la API de Ollama (`POST /api/generate` y
-  `/api/embed` con `keep_alive: 0`; el binario `ollama` no se ve desde el flatpak) y la r1 de `gimg` corrió entera sin recargas.
-- **URLs del catálogo a verificar [P]** (`gimg/models.json`): deducidas, no copiadas (WMF-imagenes no las apunta); las seis dan 200
-  y su `x-linked-etag` coincide con el sha256 de la Deck. Confirmar el repositorio del VAE de FLUX.3
-  (`Comfy-Org/flux2-dev`, `split_files/vae/flux2-vae.safetensors`) y el nombre `Qwen3VL-4B-Instruct-Q4_K_M.gguf` (el del
-  repo de Qwen; `Qwen3-VL-…` da 404).
-- **F2.5 manual, en la Deck (persona), solo cuando el generador de Tarkor esté libre:** `./instalar.sh` de verdad (descarga
-  del zip `master-1000-95ff762` de stable-diffusion.cpp y de los modelos de `installDefault` desde Hugging Face: ninguna
-  descarga se ha probado, solo con fakes) y `gimg doctor --verify` en verde. Si `instalar.sh` ya encuentra el motor y los
-  modelos de WMF-imagenes, `--models-from` evita bajarlos otra vez.
-- **Flujo:** `red-without-fix.sh` falla con «cannot stash» si antes se hizo `git add -N` de archivos nuevos (funciona
-  sin añadirlos); proponerlo al flujo con el resto (`gw-harvest`).
-- **Cuando la persona avise:** revisar las actualizaciones de Tarkor (otro repo) sobre su generador de imágenes: lo lee
-  un subagente `Explore` que devuelve un resumen con rutas (`gw-orchestrate-dealer`); desde aquí no se modifica.
-- Proponer al flujo (`gw-harvest`) lo de `docs/records/retro-2026-10-25-diseno.md` (R1-R4, R7) y de
-  `docs/records/retro-2026-10-25-f0.md` (R1, R3, R4); el hallazgo
-  MEDIO de R7 (claves pegadas a una letra en `pre-commit`) conviene arreglarlo antes de publicar la 0.4.0.
-- Proponer al flujo (`gw-harvest`) R3a y R3b de `docs/records/retro-2026-10-25-f1.md`.
-- Proponer al flujo (`gw-harvest`) una operación de imagen en el `log-format.md` de `gw-opt-ai` (D26).
+Lo pendiente está en [`docs/records/pending.md`](records/pending.md); se añade y se quita allí.
 
 ## Comprobar el estado
 

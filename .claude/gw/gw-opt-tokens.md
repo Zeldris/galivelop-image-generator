@@ -1,4 +1,4 @@
-<!-- galivelop-workflow v0.5.0 -->
+<!-- galivelop-workflow v0.8.1 -->
 # gw-opt-tokens — notas del proyecto
 
 Las lee la skill `gw-opt-tokens` antes de proponer nada, y se actualizan cuando la persona aprueba un cambio. El flujo
@@ -188,3 +188,7 @@ las crea una vez; desde entonces son del proyecto.
 - **Contexto fijo de ~80k en la nube** (2026-11-18: suelo de 101k en `hoja-datos`): sistema, herramientas y conectores
   MCP. En local se apagan los conectores que no se usan; en la nube no se ha encontrado cómo (probado en otro repo). Se
   reduce con sesiones más cortas (`/clear` al cerrar cada tarea) y repartiendo a subagentes.
+
+- **Medida de referencia, 2026-11-19 (`/gw-update` a 0.8.1, `gw-0.8.1`):** 46 llamadas, contexto medio 118k, suelo
+  94k (≈80k fijos de sistema y MCP), techo 142k. `measure.py` sin `--session` midió otra sesión: pasarle
+  `--session` con el registro de la sesión actual hasta que el flujo lo arregle (retro 2026-11-19, P3).

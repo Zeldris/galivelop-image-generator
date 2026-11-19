@@ -1,4 +1,4 @@
-<!-- galivelop-workflow v0.7.0 -->
+<!-- galivelop-workflow v0.8.1 -->
 # Guía de revisión
 
 Lo que el revisor (`/code-review`, o cualquier agente que revise un diff) comprueba en cada diff de galivelop-image-generator,
@@ -16,6 +16,11 @@ creada.
   de ese archivo salen los encargos de los arreglos y los leves que se apuntan en la bitácora. (criterio)
 - Si el revisor no puede escribir ese archivo (una skill que solo devuelve el informe), lo escribe la sesión
   principal nada más recibirlo y antes de arreglar nada. (criterio)
+- Cada hallazgo cita su **ancla**: una regla de `REVIEW.md` o de `AGENTS.md`, un criterio de aceptación de la ficha
+  de la tarea (`docs/tasks/<id>.md`), una línea del plan o un fallo demostrado. Formato:
+  `ruta:línea | severidad | ancla | problema. arreglo.` (criterio)
+- Lo que no tiene ancla no es un hallazgo: va aparte, en una sección «Observaciones», sin severidad, y no bloquea el
+  veredicto. (criterio)
 - Un dato que caduca (una versión, un precio, una cuota, un límite de un servicio externo) escrito en el diff lleva su
   fecha y su fuente; si no, es un hallazgo. (criterio)
 - La revisión acaba con un veredicto, uno de tres: `SHIP` (nada que arreglar), `SHIP WITH FIXES` (hay arreglos, ninguno
@@ -83,6 +88,16 @@ creada.
 - Lo que viene de un proyecto que sube de otra forma (directo a la rama protegida, o por pull request) se adapta a
   cómo sube este a `main`. (criterio)
 - Una tabla o un ejemplo de una guía que lee un script lo lee ese script en un test. (criterio)
+
+## Invariantes
+
+- Un cambio que toca una invariante (un dato en un solo sitio, un orden de pasos, un estado que no puede darse) se
+  revisa buscando **los demás sitios que la sostienen**: el cambio no debe romper ninguno. (criterio)
+
+## Navegadores
+
+- Lo que se mira en varios navegadores y en el móvil: APIs que no están en Safari, `100vh` (barra del navegador
+  móvil), foco y teclado. (criterio)
 
 ## Idiomas visibles
 
