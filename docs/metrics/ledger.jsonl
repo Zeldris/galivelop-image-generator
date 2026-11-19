@@ -347,3 +347,5 @@
 {"agent":"main","branch":"gw-0.8.1","cacheRead":258456,"cacheWrite":791,"date":"2026-11-19","input":5,"model":"claude-opus-5-5","output":387,"recorded":"2026-11-19T21:30:02Z","refs":[],"session":"0cacc78c"}
 {"agent":"main","branch":"gw-0.8.1","cacheRead":259927,"cacheWrite":639,"date":"2026-11-19","input":6,"model":"claude-opus-5-5","output":483,"recorded":"2026-11-19T21:30:14Z","refs":[],"session":"0cacc78c"}
 {"agent":"main","branch":"gw-0.8.1","cacheRead":829733,"cacheWrite":13536,"date":"2026-11-19","input":15,"model":"claude-opus-5-5","output":2256,"recorded":"2026-11-19T21:43:32Z","refs":[],"session":"0cacc78c"}
+{"agent":"main","branch":"gw-0.8.1","cacheRead":289603,"cacheWrite":1576,"date":"2026-11-19","input":6,"model":"claude-opus-5-5","output":373,"recorded":"2026-11-19T21:43:47Z","refs":[],"session":"0cacc78c"}
+{"agent":"main","branch":"gw-0.8.1","cacheRead":590258,"cacheWrite":5613,"date":"2026-11-19","input":12,"model":"claude-opus-5-5","output":2790,"recorded":"2026-11-19T21:44:46Z","refs":[],"session":"0cacc78c"}
