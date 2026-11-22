@@ -1,4 +1,4 @@
-<!-- galivelop-workflow v0.8.1 -->
+<!-- galivelop-workflow v0.8.2 -->
 # gw-opt-tokens — notas del proyecto
 
 Las lee la skill `gw-opt-tokens` antes de proponer nada, y se actualizan cuando la persona aprueba un cambio. El flujo
@@ -192,3 +192,6 @@ las crea una vez; desde entonces son del proyecto.
 - **Medida de referencia, 2026-11-19 (`/gw-update` a 0.8.1, `gw-0.8.1`):** 46 llamadas, contexto medio 118k, suelo
   94k (≈80k fijos de sistema y MCP), techo 142k. `measure.py` sin `--session` midió otra sesión: pasarle
   `--session` con el registro de la sesión actual hasta que el flujo lo arregle (retro 2026-11-19, P3).
+- **Medida de referencia, 2026-11-22 (`/gw-update` a 0.8.2, `gw-0.8.2`):** 36 llamadas, 4,0 M, contexto medio 110k,
+  suelo 91k, techo 127k. `measure.py` sin `--session` ya mide la sesión en curso (0.8.2). Fase 1 en la sesión por
+  diff trivial; `review-scope.py` necesita `--workflow ../zeldris/galivelop-workflow` en la nube (retro 2026-11-22, P1).

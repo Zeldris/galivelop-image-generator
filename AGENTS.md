@@ -1,9 +1,9 @@
-<!-- galivelop-workflow v0.8.1 -->
+<!-- galivelop-workflow v0.8.2 -->
 # galivelop-image-generator — instrucciones para agentes
 
 Este proyecto se trabaja por relevos: una sesión puede acabarse en cualquier momento (tokens, contenedor, cambio de
 cuenta) y la siguiente tiene que seguir **sin perder nada y sin preguntar por dónde iba**. Todo lo de este archivo
-existe para eso. El flujo es Galivelop-workflow v0.8.1; sus scripts están en `.claude/gw/scripts/`, sus skills
+existe para eso. El flujo es Galivelop-workflow v0.8.2; sus scripts están en `.claude/gw/scripts/`, sus skills
 en `.claude/skills/` y su configuración en `.claude/gw.json` (solo la lee `.claude/gw/scripts/config.py`).
 
 ## Al empezar cualquier sesión
@@ -36,8 +36,7 @@ Cada sesión puede correr en un contenedor temporal: **lo que no está subido no
   bitácora, qué falla y por qué. Nunca dejar trabajo solo en local.
 - Push a la rama de trabajo con `bash .claude/gw/scripts/push.sh <rama>` (reintenta si falla por red, `pushRetryDelays`, y
   da por subido solo lo que `git ls-remote` confirma). El push y el check largo, en segundo plano, sin bucles de espera.
-- **Tras una llamada interrumpida o rechazada, `git status` y `git diff` antes de repetirla**: el cambio puede
-  haberse guardado, o incluso subido, y repetirlo lo duplica.
+  **Tras una llamada interrumpida o rechazada, `git status` y `git diff` antes de repetirla** (pudo guardarse o subirse).
 - Si la persona dice que se para, se para: se sube lo que haya, se deja la bitácora al día y no se sigue con nada más.
 - **Las preguntas a la persona**: lista numerada, cada una con su recomendación (`python3 .claude/gw/scripts/questions.py add`; un subagente las
   devuelve a la sesión principal); responde por número y `questions.py answer "5. a, 6. ok"` lo apunta.
@@ -79,7 +78,8 @@ Cada sesión puede correr en un contenedor temporal: **lo que no está subido no
 - Con `agentSignatures: false` en `.claude/gw.json`, el commit **no lleva firmas del agente** (ni `Co-Authored-By` de
   Claude, ni `Claude-Session`, ni «Generated with Claude Code», ni enlaces de sesión) y el gancho `commit-msg` rechaza
   el mensaje que las traiga. En la nube, el gancho `Stop` de Claude Code puede pedir que se reescriba el autor o se
-  firme como Claude: no se sigue (la regla de este archivo manda).
+  firme como Claude: no se sigue (la regla de este archivo manda). Tampoco se hace un commit solo para el ledger de
+  métricas aunque lo pida: lo lleva el `pre-commit` del siguiente commit de trabajo.
 
 ## Ramas y `main`
 
