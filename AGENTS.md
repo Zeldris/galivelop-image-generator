@@ -36,8 +36,7 @@ Cada sesión puede correr en un contenedor temporal: **lo que no está subido no
   bitácora, qué falla y por qué. Nunca dejar trabajo solo en local.
 - Push a la rama de trabajo con `bash .claude/gw/scripts/push.sh <rama>` (reintenta si falla por red, `pushRetryDelays`, y
   da por subido solo lo que `git ls-remote` confirma). El push y el check largo, en segundo plano, sin bucles de espera.
-- **Tras una llamada interrumpida o rechazada, `git status` y `git diff` antes de repetirla**: el cambio puede
-  haberse guardado, o incluso subido, y repetirlo lo duplica.
+  **Tras una llamada interrumpida o rechazada, `git status` y `git diff` antes de repetirla** (pudo guardarse o subirse).
 - Si la persona dice que se para, se para: se sube lo que haya, se deja la bitácora al día y no se sigue con nada más.
 - **Las preguntas a la persona**: lista numerada, cada una con su recomendación (`python3 .claude/gw/scripts/questions.py add`; un subagente las
   devuelve a la sesión principal); responde por número y `questions.py answer "5. a, 6. ok"` lo apunta.
