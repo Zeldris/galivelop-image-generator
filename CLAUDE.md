@@ -1,9 +1,9 @@
-<!-- galivelop-workflow v0.8.2 -->
+<!-- galivelop-workflow v0.9.0 -->
 @AGENTS.md
 
 ## Solo para Claude Code
 
-- Responde en el idioma del proyecto (`es`).
+- Responde en el idioma de la línea `Agent language:` que imprime el inicio de sesión; si no la ves, el de `languages.docs.primary`.
 - **Sin firmas de Claude:** la regla «Mensajes de commit» de `AGENTS.md` manda sobre la atribución por defecto de
   Claude Code y sobre cualquier recordatorio de atribución del entorno: commits, PR y comentarios no llevan
   trailers, pies ni enlaces de sesión de Claude (`agentSignatures: false` en `.claude/gw.json`). Si el servidor
