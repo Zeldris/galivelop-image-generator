@@ -1,0 +1,50 @@
+{
+  "$schema": "../../gimg/schemas/brand-sheet.schema.json",
+  "schemaVersion": 1,
+  "name": "galivelop-developer",
+  "extends": "portal",
+  "palette": {
+    "accent": {
+      "$value": "#0e9a93",
+      "$type": "color",
+      "promptName": "a touch of deep teal"
+    }
+  },
+  "paletteSentence": "Palette strictly limited to {halo} and its tints and shades, {paper}, {ink} and a touch of deep teal #16827c",
+  "vetoes": {
+    "groups": [
+      {
+        "id": "developer-never",
+        "label": {
+          "es": "Nunca se muestra (Developer)",
+          "en": "Never shown (Developer)"
+        },
+        "reason": {
+          "es": "Hoja de galivelop-developer, «Nunca se muestra» y «Motivos No»: engranajes, teclados, pantallas, nubes (es local), chips y circuitos, chispas, y hojas o brotes en la rama (la rama es luz, no planta)",
+          "en": "Developer sheet, «Never shown» and «Motifs no»: gears, keyboards, screens, clouds (it is local), chips and circuits, sparks, and leaves or sprouts on the branch (the branch is light, not a plant)"
+        },
+        "terms": [
+          "gear",
+          "keyboard",
+          "screen",
+          "cloud",
+          "chip",
+          "circuit",
+          "spark",
+          "leaf",
+          "sprout"
+        ]
+      }
+    ],
+    "exceptions": [
+      {
+        "term": "boat",
+        "pieces": [
+          "cover",
+          "social",
+          "coming-soon"
+        ]
+      }
+    ]
+  }
+}

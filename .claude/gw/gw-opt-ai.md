@@ -1,4 +1,4 @@
-<!-- galivelop-workflow v0.5.0 -->
+<!-- galivelop-workflow v0.9.0 -->
 # gw-opt-ai — notas del proyecto
 
 Las lee primero la skill `gw-opt-ai`; aquí vive todo lo propio de los modelos de IA local de este proyecto. El flujo
@@ -98,6 +98,11 @@ FLUX borrador ≤ 1,2 min (medido 48 s); FLUX definitivo 1024² ≤ 4,5 min (med
 sube a 5 min; FLUX solo hace bocetos y su borrador sale mejor). FLUX con imagen de referencia 1344×768: 551 s (81 s/paso, n=2, ronda del 11-11).
 Medida del 12-11 (`ronda-2026-11-12`): Z-Image 1024² n=43, p50 551 s, p95 615 s, **sobre el tope de 9,5 min (570 s)**. Las 13
 de más de 570 s tuvieron memoria libre mínima < 4,2 GB; con 4,9-5,6 GB libres, 535-549 s: el exceso es de memoria.
+
+## Script de parada
+
+<!-- La orden que para lo que levantó una ronda (servidores, modelos locales, inhibidores de suspensión); es el paso
+     de cierre de cada ronda. -->
 
 ## Ya en marcha
 

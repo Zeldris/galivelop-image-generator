@@ -11,6 +11,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- Brand workshop: an SVG's colours come out as `rsvg-convert` paints them, also with malformed values (skipped, no
+  extra black) and huge `hsl()` hues (chroma-less grey); the cut-out tolerance rejects negative values, as `matte.py`
+  does.
+
+## [0.7.0] - 2026-11-18
+
+### Added
+
+- Brand sheet as data (0.7.0 step 1): `gimg/schemas/brand-sheet.schema.json`, `brand.sheet` in the project
+  config (kept inside the root) and `gimg/brandsheet.py`, which resolves `extends` by registered project, derives the
+  palette and the accent tones (OKLCH, 4.5:1), assembles the prompt in the sheet order and lints it.
+
+- `gimg brand init --project P [--extends Q] [--force]` creates the sheet; `gimg brand prompt --project P --piece ID
+  --subject TEXT [--clean-zone TEXT]` assembles the prompt of a piece type from its subject; `gimg brand lint --project
+  P (--prompt TEXT | --file PATH) [--piece ID] [--mode brand|free]` checks a prompt against the vetoes, the words range
+  and the closing. Each piece type may carry its own `closing`, `paletteSentence`, `cleanZone` (`beforeRegister` or
+  `afterClosing`) and `promptWords`; a type inherited from a parent takes its profile and model from the project that
+  declared it.
+
+- Brand sheet API: `GET /api/projects/{p}/brand/sheet` (resolved sheet, with the origin of every value),
+  `POST …/brand/prompt` and `POST …/brand/lint`; `GET /api/projects/{p}` adds `sheet` and `pieceTypes`. The doctor adds
+  the `sheet.present`, `sheet.valid`, `sheet.extends` and `sheet.contrast` rows.
+
+- The Portal and its four products are migrated to sheet data (`examples/portal/`, `marca.json`): `brand prompt`
+  reproduces the approved Portal prompts from their subject, and `brand lint` rejects the vetoed discards by their reason.
+
+- `gimg brand md PROJECT [--write FILE | --check FILE]` generates the `hoja.md` block (between markers, the prose is
+  not touched) from the data, in `es` or `en`; optional `brand.sheetMarkdown` in the project config and the doctor row
+  `sheet.markdown` (OK if the block matches the data, FAIL if it differs, has no markers or cannot be read).
+
+- The Brand tab shows the sheet in sub-tabs `?s=hoja|probar|check|taller`: Sheet (cards with own/inherited origin),
+  Try a subject (assembles and checks without queueing), Check and Pieces by type.
+
+### Fixed
+
 - The interface, crop and layout editors: an error on saving shows only inside the dialog (it used to come back as a
   toast on closing); "Repeat the same box on…" is disabled, with its notice, when the order's profile composes; while
   dragging the box, the preview is painted at most once per frame.

@@ -30,3 +30,8 @@ Las lee la skill `orchestrate-dealer` antes de repartir. Son de este proyecto; s
   conflictos de `AGENTS.md`/`CLAUDE.md` con su texto y las novedades del `CHANGELOG` que tocan al proyecto; la
   principal decide cada conflicto sobre ese texto (aprobado el 2026-11-16: en la principal, `CHANGELOG`, diffs y salida
   de `apply.py` arrastraron ~0,95 M).
+- **El tope de 30 llamadas va también en los encargos de arreglos**, copiado en el texto del encargo, no supuesto
+  (2026-11-18: «Arreglos 1-3 revisión paso 3» no lo llevaba e hizo 92 llamadas, 5,5 M, en 3 puntos).
+- **El encargo que escribe código dice «antes de escribir una función auxiliar, busca con `grep` una que ya lo haga
+  en el módulo y en los que importa»** (retro 2026-11-18, P3: código repetido o recalculado fue el leve más repetido de
+  0.7.0, ≥8 en 5 revisiones).

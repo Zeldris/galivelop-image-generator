@@ -402,3 +402,4 @@
 {"agent":"main","branch":"gw-0.9.0","cacheRead":606933,"cacheWrite":3789,"date":"2026-11-24","input":11,"model":"claude-opus-5-5","output":504,"recorded":"2026-11-24T12:15:56Z","refs":[],"session":"0cacc78c"}
 {"agent":"main","branch":"gw-0.9.0","cacheRead":309287,"cacheWrite":240,"date":"2026-11-24","input":6,"model":"claude-opus-5-5","output":181,"recorded":"2026-11-24T12:16:01Z","refs":[],"session":"0cacc78c"}
 {"agent":"main","branch":"gw-0.9.0","cacheRead":622401,"cacheWrite":2124,"date":"2026-11-24","input":11,"model":"claude-opus-5-5","output":1333,"recorded":"2026-11-24T12:21:11Z","refs":[],"session":"0cacc78c"}
+{"agent":"main","branch":"ccr-85e9d14e-zt7p8b","cacheRead":1535744,"cacheWrite":58474,"date":"2026-11-24","input":29,"model":"claude-opus-5-5","output":7988,"recorded":"2026-11-24T23:27:13Z","refs":[],"session":"0cacc78c"}

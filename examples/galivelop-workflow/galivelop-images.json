@@ -3,6 +3,7 @@
   "minVersion": "0.1.0",
   "name": "galivelop-workflow",
   "brand": {
+    "sheet": "marca.json",
     "palette": [
       "#0d1b2a",
       "#38b6e8",

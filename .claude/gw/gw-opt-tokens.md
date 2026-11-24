@@ -1,4 +1,4 @@
-<!-- galivelop-workflow v0.5.0 -->
+<!-- galivelop-workflow v0.9.0 -->
 # gw-opt-tokens — notas del proyecto
 
 Las lee la skill `gw-opt-tokens` antes de proponer nada, y se actualizan cuando la persona aprueba un cambio. El flujo
@@ -38,6 +38,11 @@ las crea una vez; desde entonces son del proyecto.
 
 - Arreglos de una revisión en encargos de 4-5 puntos por archivo (`.claude/gw/gw-orchestrate-dealer.md`; aprobado el
   2026-11-15: 9 puntos fueron 47 llamadas y 4,6 M).
+
+- El detalle de cada fase o versión va en `docs/plan/<fase>.md` (FM: `docs/plan/fm.md`) y `docs/plan.md` guarda un
+  puntero (2026-11-18: «FM en detalle» se leyó 19 veces en `hoja-datos`, 1,05 M arrastrados; aprobado ese día).
+- Los archivos de leves (`docs/records/leves-*.md`) se leen por su tanda: `grep -n -A40 '^## <tanda>'`, nunca enteros;
+  cada tanda abre con su `## ` (2026-11-18: 7 lecturas, 413k arrastrados; aprobado ese día).
 
 ## Costes conocidos
 
@@ -179,3 +184,14 @@ las crea una vez; desde entonces son del proyecto.
 - 2026-11-17, `ccr-85e9d14e-zt7p8b` desde `c5827e2` (tanda L8, barrido P2, fase 1): principal 57 llamadas, 6,56 M
   (115k de media, techo 138k, 0 compactaciones); revisor de fase 1 ~45k. Evitable: 220k arrastrados por leer
   `brand.py` en la principal para revisar.
+
+- **Contexto fijo de ~80k en la nube** (2026-11-18: suelo de 101k en `hoja-datos`): sistema, herramientas y conectores
+  MCP. En local se apagan los conectores que no se usan; en la nube no se ha encontrado cómo (probado en otro repo). Se
+  reduce con sesiones más cortas (`/clear` al cerrar cada tarea) y repartiendo a subagentes.
+
+- **Medida de referencia, 2026-11-19 (`/gw-update` a 0.8.1, `gw-0.8.1`):** 46 llamadas, contexto medio 118k, suelo
+  94k (≈80k fijos de sistema y MCP), techo 142k. `measure.py` sin `--session` midió otra sesión: pasarle
+  `--session` con el registro de la sesión actual hasta que el flujo lo arregle (retro 2026-11-19, P3).
+- **Medida de referencia, 2026-11-22 (`/gw-update` a 0.8.2, `gw-0.8.2`):** 36 llamadas, 4,0 M, contexto medio 110k,
+  suelo 91k, techo 127k. `measure.py` sin `--session` ya mide la sesión en curso (0.8.2). Fase 1 en la sesión por
+  diff trivial; `review-scope.py` necesita `--workflow ../zeldris/galivelop-workflow` en la nube (retro 2026-11-22, P1).

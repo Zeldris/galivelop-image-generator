@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../gimg/schemas/order.schema.json",
+  "key": "marca/26b3-tres-puntos",
+  "profile": "cuadrado",
+  "seed": 265,
+  "count": 3,
+  "prompt": "Only three solid filled round dots in one horizontal row, an ellipsis, alone and centred in the square image: three identical perfect circles, completely filled solid, exactly the same size, evenly spaced with a gap between them as wide as half a dot, aligned on one straight horizontal line across the middle. Exactly three dots, not two, not four. Nothing around them: no circle, no ring, no box, no speech bubble, no badge, no line under them, only the three dots on the empty background, with a generous empty margin around the row. Bold and clear enough to read at 16 pixels. Flat vector pictogram, minimal, geometric, a single ink colour, ink grey #13212b on a plain flat off-white #fbfcfd background that fills the whole image edge to edge. No shading, no hatching, no texture, no shadow, no photographic rendering, no gradients, no glow, no 3D, no text, no letters, no numbers, no watermark, no border, no frame."
+}

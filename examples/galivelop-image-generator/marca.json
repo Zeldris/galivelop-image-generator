@@ -1,0 +1,37 @@
+{
+  "$schema": "../../gimg/schemas/brand-sheet.schema.json",
+  "schemaVersion": 1,
+  "name": "galivelop-image-generator",
+  "extends": "portal",
+  "palette": {
+    "accent": {
+      "$value": "#7c5cd6",
+      "$type": "color",
+      "promptName": "a touch of violet"
+    }
+  },
+  "vetoes": {
+    "groups": [
+      {
+        "id": "image-generator-never",
+        "label": {
+          "es": "Nunca se muestra (Image Generator)",
+          "en": "Never shown (Image Generator)"
+        },
+        "reason": {
+          "es": "Hoja de galivelop-image-generator, «Nunca se muestra» y «Motivos: no»: cámaras, pinceles, lienzos, caballetes, chispas y varitas",
+          "en": "Image Generator sheet, «Never shown» and «Motifs: no»: cameras, brushes, canvases, easels, sparks and wands"
+        },
+        "terms": [
+          "camera",
+          "brush",
+          "paintbrush",
+          "canvas",
+          "easel",
+          "spark",
+          "wand"
+        ]
+      }
+    ]
+  }
+}

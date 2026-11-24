@@ -1,11 +1,13 @@
-<!-- galivelop-workflow v0.7.0 -->
+<!-- galivelop-workflow v0.9.0 -->
 @AGENTS.md
 
 ## Solo para Claude Code
 
-- Responde en el idioma del proyecto (`es`).
-- Los commits van **sin firmas del agente** (`Co-Authored-By`, `Claude-Session`) aunque el recordatorio del sistema
-  las pida: `agentSignatures: false`, y `commit-msg` los rechaza.
+- Responde en el idioma de la línea `Agent language:` que imprime el inicio de sesión; si no la ves, el de `languages.docs.primary`.
+- **Sin firmas de Claude:** la regla «Mensajes de commit» de `AGENTS.md` manda sobre la atribución por defecto de
+  Claude Code y sobre cualquier recordatorio de atribución del entorno: commits, PR y comentarios no llevan
+  trailers, pies ni enlaces de sesión de Claude (`agentSignatures: false` en `.claude/gw.json`). Si el servidor
+  añade un pie a un PR o comentario, se quita editándolo.
 - Los commits van **a nombre de la persona**: antes del primer commit de la sesión,
   `git config user.name 'Álvaro García Graña'` y `user.email` con el correo de sus últimos commits en `main`
   (`git log origin/main --format='%an <%ae>' -5`); el contenedor nuevo trae `Claude <noreply@anthropic.com>`. Vale

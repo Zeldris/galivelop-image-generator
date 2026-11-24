@@ -111,7 +111,7 @@ curl -s $B/api/projects
 
 ### GET /api/projects/{p}
 
-`{"name", "root", "config"}` (profiles, `compose`, `brand`). Errors: `project.*`.
+`{"name", "root", "config", "sheet", "pieceTypes"}` (profiles, `compose`, `brand`). `sheet`: `{"present", "valid", "version", "path", "extends": [..], "errors": [..]}` (no sheet: `present: false` and `pieceTypes: []`, no error); `pieceTypes`: `[{"id", "label", "profile", "register", "chroma", "seed", "count", "workshop", "profileProject", ..}]` (`profileProject`: the project whose `profiles` holds that profile; an inherited type uses the one of the project that declared it, never a same-named profile of the child). Errors: `project.*`.
 
 ```sh
 curl -s $B/api/projects/mi-proyecto
@@ -409,7 +409,7 @@ curl -s $B/api/models
 ### GET /api/projects/{p}/check
 
 The `gimg doctor` checks that concern the project (sources of `compose.fonts`, template and logo files, editable
-elements and `viewBox`): `[{"id", "status": "ok|warn|fail", "message", "fix"?}]`. Error: `project.unknown`.
+elements and `viewBox`): `[{"id", "status": "ok|warn|fail", "message", "fix"?}]`. With a brand sheet (or a warning without one) it adds the rows `sheet.present`, `sheet.valid`, `sheet.extends` and `sheet.contrast` (ink and the accent's deep tone on paper, 4.5:1 minimum; a broken parent sheet or config shows in `sheet.extends`). With a valid sheet and `brand.sheetMarkdown` in the config (path relative to the root: the `hoja.md` holding the `gimg brand md` block) it adds `sheet.markdown`: OK if the block matches the data (in `es` or `en`), FAIL if it differs, has no markers or cannot be read. Error: `project.unknown`.
 
 ```sh
 curl -s $B/api/projects/mi-proyecto/check
@@ -425,6 +425,44 @@ the system files: `emblema-alpha.png`, `emblema.svg`, `emblema-mono.svg`, `wordm
 
 ```sh
 curl -s $B/api/projects/mi-proyecto/brand
+```
+
+### GET /api/projects/{p}/brand/sheet
+
+The resolved brand sheet (`extends` applied): `name`, `version`, `chain` (projects, own first), `roles`
+(`{role: {"hex", "name"}}` for `paper`, `ink`, `accent`, `halo`, `grid`), `palette` (the tokens), `registers`, `closing`,
+`paletteSentence` and `paletteSentenceText` (colours filled in), `vetoes`, `pieceTypes` (a list, each type with `profileProject` as in `GET /api/projects/{p}`), `acceptance`,
+`promptWords` and `origin`: for every value (dotted path, e.g. `palette.paper.$value`; veto exceptions by position in the
+merged list) `{"origin": "own|inherited", "project", "file"}`. Errors: `brandsheet.none` and `brandsheet.missing` (404),
+`brandsheet.invalid`, `brandsheet.unreadable`, `brandsheet.extends_missing`, `brandsheet.extends_broken`, `brandsheet.extends_cycle`,
+`brandsheet.incomplete`, `brandsheet.unknown_register`, `brandsheet.no_tone` (no accent tone reaches 4.5:1 on the paper), `brandsheet.markdown_marker_in_data`, `brandsheet.bad_placeholder`, `brandsheet.bad_hex` and any other `brandsheet.*` without its own status (422), `project.unknown`.
+
+```sh
+curl -s $B/api/projects/mi-proyecto/brand/sheet
+```
+
+### POST /api/projects/{p}/brand/prompt
+
+Assembles the prompt of a brand piece and checks it, with no side effects and off the queue: the same as
+`gimg brand prompt --json`. Fields: `piece`, `subject`, `cleanZone` (optional). Returns `{"prompt", "words", "segments",
+"checks", "blocked", "defaults", "known"}`; each check carries `message: {"key", "params"}` (an i18n key). `from`
+(converting a free prompt) does not exist yet: `brandsheet.convert_unsupported` (400). Errors: `brandsheet.unknown_piece`
+(400), `api.bad_param`, those of `GET .../brand/sheet`, `project.unknown`.
+
+```sh
+curl -s -X POST $B/api/projects/mi-proyecto/brand/prompt -H 'Content-Type: application/json' \
+  -d '{"piece": "cover", "subject": "A fox in the snow", "cleanZone": "top left"}'
+```
+
+### POST /api/projects/{p}/brand/lint
+
+Checks a hand-written prompt against the sheet in free mode (errors drop to warnings; never `blocked`). Fields: `prompt`,
+`piece` (optional). Returns `{"checks"}`. Errors: `brandsheet.unknown_piece` (400), `api.bad_param`, those of the sheet,
+`project.unknown`.
+
+```sh
+curl -s -X POST $B/api/projects/mi-proyecto/brand/lint -H 'Content-Type: application/json' \
+  -d '{"prompt": "a red fox in the snow", "piece": "cover"}'
 ```
 
 ### POST /api/projects/{p}/brand/matte

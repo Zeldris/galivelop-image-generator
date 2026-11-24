@@ -1,0 +1,38 @@
+{
+  "$schema": "../../gimg/schemas/brand-sheet.schema.json",
+  "schemaVersion": 1,
+  "name": "galivelop-workflow",
+  "extends": "portal",
+  "palette": {
+    "accent": {
+      "$value": "#3d6fd9",
+      "$type": "color",
+      "promptName": "a touch of cobalt blue"
+    }
+  },
+  "vetoes": {
+    "groups": [
+      {
+        "id": "workflow-never",
+        "label": {
+          "es": "Nunca se muestra (Workflow)",
+          "en": "Never shown (Workflow)"
+        },
+        "reason": {
+          "es": "Hoja de galivelop-workflow, «Nunca se muestra» y «Motivos No»: circuitos, lluvia de código, humanoides, teclados, pantallas, chispas, y la píldora o cápsula",
+          "en": "Workflow sheet, «Never shown» and «Motifs no»: circuits, code rain, humanoids, keyboards, screens, sparks, and the pill or capsule"
+        },
+        "terms": [
+          "circuit",
+          "code rain",
+          "humanoid",
+          "keyboard",
+          "screen",
+          "spark",
+          "capsule",
+          "pill"
+        ]
+      }
+    ]
+  }
+}

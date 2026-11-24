@@ -1,6 +1,7 @@
 import http.client
 import json
 import os
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -9,7 +10,8 @@ from unittest import mock
 from gimg import __version__, i18n, queue, server
 from gimg.errors import GimgError
 
-LOCALES = Path(__file__).resolve().parent.parent / "gimg" / "locales"
+ROOT = Path(__file__).resolve().parent.parent
+LOCALES = ROOT / "gimg" / "locales"
 
 # Codes that answer 500 on purpose (corrupt files, tools, writes: «el resto de GimgError»).
 INTENDED_500 = {
@@ -38,10 +40,38 @@ INTENDED_500 = {
     "export.out_is_input", "crop.write_failed",
     # tile.*: no endpoint serves `gimg tile` (CLI only), so none of its errors maps to a status; add a 409/400 when one does
     "tile.out_is_input", "tile.same_outputs", "tile.write_failed", "tile.exists", "tile.too_big",
+    # CLI only (0.7.0 step 2A): no endpoint returns them (`brand init` overwrite guard, `brand lint` source)
+    "cli.lint_source", "cli.prompt_unreadable",
+    # CLI only (0.7.0 step 4): `brand md --write|--check`; no endpoint writes or checks hoja.md yet
+    "brandsheet.markdown_markers", "brandsheet.markdown_stale", "cli.md_target",
 }
 
 
 class StatusTableTests(unittest.TestCase):
+    def test_brandsheet_codes_default_to_422(self):
+        # a sheet-content code missing from the table is 422, not 400 by its `.bad_` or 500 (retro 2026-11-18, P1)
+        self.assertEqual(server.status_for("brandsheet.bad_placeholder"), 422)
+        self.assertEqual(server.status_for("brandsheet.bad_hex"), 422)
+        self.assertEqual(server.status_for("brandsheet.some_new_code"), 422)
+        self.assertEqual(server.status_for("brandsheet.bad_mode"), 400)
+        self.assertEqual(server.status_for("brandsheet.markdown_stale"), 500)
+
+    def test_every_raised_brandsheet_code_has_a_chosen_status(self):
+        # the `brandsheet.` 422 prefix must not hide a new code: each one raised in gimg/ is in the table,
+        # in the server faults, or confirmed here as sheet content (phase 3 review 2026-11-18, M1)
+        confirmed_422 = {"brandsheet.bad_placeholder", "brandsheet.bad_hex"}
+        exact = {c for codes in server._EXACT.values() for c in codes}
+        raised = set()
+        for f in (ROOT / "gimg").glob("*.py"):
+            raised |= set(re.findall(r'"(brandsheet\.[a-z_]+)"', f.read_text(encoding="utf-8")))
+        unchosen = sorted(c for c in raised if c not in exact | set(server._SERVER_FAULTS) | confirmed_422)
+        self.assertEqual(unchosen, [], "add each code to server._EXACT/_SERVER_FAULTS or to confirmed_422")
+
+    def test_brandsheet_server_faults_are_intended_500(self):
+        # one list of 500s: the brandsheet faults in server.py are the ones INTENDED_500 accepts (L1)
+        faults = {c for c in server._SERVER_FAULTS if c.startswith("brandsheet.")}
+        self.assertEqual(faults, {c for c in INTENDED_500 if c.startswith("brandsheet.")})
+
     def test_no_error_key_falls_into_500_by_accident(self):
         es = json.loads((LOCALES / "es.json").read_text(encoding="utf-8"))
         codes = {k[len("error."):] for k in es if k.startswith("error.")}

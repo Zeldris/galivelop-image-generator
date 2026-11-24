@@ -572,3 +572,164 @@ propuesta tiene que decir en cada fila qué hay hoy, o quien la lea aplicará lo
   `git show 8bb0ae1:docs/marcas/galivelop-image-generator/hoja.md`.
 - **2026-11-04 a 2026-11-05 (hasta r8):** identidad oscura con violeta, familia del Portal anterior (`aa76b34`), Sora e
   Inter, vidrio en las piezas. Hoja entera: `git show a4e394d:docs/marcas/galivelop-image-generator/hoja.md`.
+
+## Datos de la hoja (generado)
+
+<!-- gimg brand md: start (generated from marca.json; do not edit by hand: gimg brand md --write) -->
+
+### Datos de la hoja
+
+#### Ficha
+
+- Nombre: `galivelop-image-generator`
+- Versión: `b346cb805ff6`
+- Herencia: galivelop-image-generator ← portal
+
+#### Paleta por papeles
+
+| Papel | hex | Nombre en el prompt | Origen |
+| --- | --- | --- | --- |
+| paper | `#fbfcfd` | off-white | heredado de portal |
+| ink | `#13212b` | ink grey | heredado de portal |
+| accent | `#7c5cd6` | a touch of violet | propio |
+| halo | `#0072a8` | medium cerulean ocean blue | heredado de portal |
+| grid | `#e3edf3` | — | heredado de portal |
+
+- Tonos del acento (profundo / oscuro): `#7c5cd6` / `#896ae5`
+
+- Versión oscura: paper `#0d171e`, ink `#e6eef3` (heredado de portal)
+
+- Solo para medir: `#1aa6df` (heredado de portal)
+
+- Frase de paleta montada (heredado de portal):
+
+```
+Palette strictly limited to medium cerulean ocean blue #0072a8 and its tints and shades, off-white #fbfcfd, ink grey #13212b and a touch of violet #7c5cd6.
+```
+
+#### Registros
+
+##### `engraved`: Grabado a dos tintas (heredado de portal)
+
+```
+Richly detailed engraved antique nautical chart style, like a fine sea chart printed in two inks: many layers of fine lines and hatching, line density increasing in the darker areas to give depth and tone, lines of several weights, crisp and sharp, intricate but calm, premium print quality, high detail, elegant.
+```
+
+##### `line`: Línea simple (heredado de portal)
+
+```
+Simple line icon style: one uniform stroke width, rounded caps and joins, no shading, no hatching, no fill, no texture, bold and clear enough to read at 24 pixels, generous empty margin around each icon, a single ink colour.
+```
+
+##### `engraved-stage`: Grabado de la 06 (mar de carta) (heredado de portal)
+
+```
+Richly detailed engraved nautical chart style, like a fine antique sea chart printed in two inks: the sea built from many layers of fine wave lines and hatching, line density increasing towards the deep water to give depth, tonal bands from deep cerulean at the bottom to lighter cerulean at the top, bathymetric contour lines with small depth soundings drawn as tiny dots, a delicate compass rose with fine tick marks in a corner, subtle foam strokes and a few glints of light on the crests. Crisp sharp lines of several weights, intricate but calm, premium print quality, high detail, elegant.
+```
+
+##### `engraved-stage-night`: Grabado de la 06 nocturna (heredado de portal)
+
+```
+Richly detailed engraved nautical chart style, like a fine antique sea chart printed in two inks: the sea built from many layers of fine wave lines and hatching, line density increasing towards the deep water to give depth, tonal bands of deep dark cerulean, bathymetric contour lines with small depth soundings drawn as tiny dots, a delicate compass rose with fine tick marks in a corner, subtle foam strokes and a few glints of light on the crests. Crisp sharp lines of several weights, intricate but calm, premium print quality, high detail, elegant.
+```
+
+- Cierre (heredado de portal):
+
+```
+No photographic rendering, no glow, no text, no letters, no numbers, no watermark, full-bleed edge to edge, no border, no frame.
+```
+
+- Palabras del prompt: 120-200 palabras (—)
+
+#### Vetos
+
+##### `ethics`: Ética de la biblia (heredado de portal)
+
+Motivo: Vetado por ética (biblia): personas, manos, rostros, robots, cerebros, magia de IA, gente en traje, apretones de manos, cohetes y gráficas de crecimiento
+
+Términos: `person`, `people`, `hand`, `face`, `robot`, `brain`, `magic`, `suit`, `handshake`, `rocket`, `growth chart`
+
+##### `nautical`: Motivos náuticos (heredado de portal)
+
+Motivo: El mar pone el dónde, la tecnología pone el qué: un motivo náutico solo vale en las tres excepciones cerradas (barco de la 19, barco de la 15 de Developer, faro, boya, barco y grúa de las 06)
+
+Términos: `anchor`, `boat`, `ship`, `lighthouse`, `oar`, `buoy`, `crane`, `sextant`, `knot`, `sail`, `sailor`
+
+##### `glyph-windows`: Ventana de editor o terminal (heredado de portal)
+
+Motivo: Troubleshooting q574-q607: Z-Image inventa glifos dentro de la ventana (FLUX mete marco y graba pobre); la ventana solo vale como icono en línea simple
+
+Términos: `editor window`, `terminal window`
+
+##### `navigation-compass`: Compás de navegación (heredado de portal)
+
+Motivo: Troubleshooting q610, q616: sale de latón o metálico, fotográfico y con glifos en las patas
+
+Términos: `navigation compass`
+
+##### `camera-prefix`: Prefijo de cámara (heredado de portal)
+
+Motivo: Troubleshooting q614: con «seen from high above looking down» el mar sale fotorrealista y se pierde el grabado; se usa «seen from slightly above»
+
+Términos: `seen from high above looking down`
+
+##### `clock-arrow`: Reloj con flecha (heredado de portal)
+
+Motivo: Troubleshooting q646, q647: sin flecha se lee como «hora» y con ella sale con punta en estrella y bucle; la 08c es una línea de tiempo vertical con tres nodos
+
+Términos: `clock`
+
+##### `image-generator-never`: Nunca se muestra (Image Generator) (propio)
+
+Motivo: Hoja de galivelop-image-generator, «Nunca se muestra» y «Motivos: no»: cámaras, pinceles, lienzos, caballetes, chispas y varitas
+
+Términos: `camera`, `brush`, `paintbrush`, `canvas`, `easel`, `spark`, `wand`
+
+##### Excepciones
+
+| Término | Piezas | Origen |
+| --- | --- | --- |
+| boat | sent, stage-cover, stage-cover-night | heredado de portal |
+| lighthouse | stage-cover, stage-cover-night | heredado de portal |
+| buoy | stage-cover, stage-cover-night | heredado de portal |
+| crane | stage-cover, stage-cover-night | heredado de portal |
+| editor window | icon, logo | heredado de portal |
+| terminal window | icon, logo | heredado de portal |
+
+- `neverWrite` (heredado de portal): `transparent`, `exactly`, `sky blue`
+
+- `colorWords` (heredado de portal): `white`, `black`, `golden`, `gold`, `red`, `yellow`, `orange`, `purple`, `pink`, `brown`, `silver`
+
+- `fillPhrase` (heredado de portal): `filling the whole sheet`
+
+#### Tipos de pieza
+
+| Pieza | Perfil | Registro | Croma | seed | count | Taller | Entrega | Cierre propio | Frase propia | cleanZone | promptWords | Origen |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `logo` (Logo, sello y rosa) | cuadrado | line | #00ff00 | — | 2 | matte, trace | — | — | — | — | — | heredado de portal |
+| `icon` (Icono) | icono | line | #00ff00 | — | 2 | matte, trace | — | — | — | — | — | heredado de portal |
+| `divider` (Separador) | separador | line | — | — | 2 | — | — | — | — | — | — | heredado de portal |
+| `cover` (Portada) | portada | engraved | — | — | 2 | crop | — | — | — | — | — | heredado de portal |
+| `stage-cover` (Portada de estado (06)) | portada | engraved-stage | — | — | 2 | crop | — | No realistic objects, no photographic rendering, no glow, no text, no letters, no numbers, no watermark, no horizon, no sky, no clouds, full-bleed edge to edge, no border, no frame. | — | afterClosing | 200-300 palabras | heredado de portal |
+| `stage-cover-night` (Portada de estado nocturna (06 publicado)) | portada | engraved-stage-night | — | — | 2 | crop | — | No realistic objects, no photographic rendering, no yellow, no orange, no warm colors, no moon, no glow, no text, no letters, no numbers, no watermark, no horizon, no sky, no clouds, full-bleed edge to edge, no border, no frame. | — | afterClosing | 200-300 palabras | heredado de portal |
+| `social` (Social y og) | social | engraved | — | — | 2 | crop | — | — | — | — | — | heredado de portal |
+| `coming-soon` (Próximamente (15)) | tarjeta | engraved | — | — | 2 | crop | — | — | — | — | — | heredado de portal |
+| `sent` (Enviado (19)) | formulario | engraved | — | — | 2 | crop | — | No photographic rendering, no glow, no text, no letters, no numbers, no watermark, no border, no frame. | — | — | 100-140 palabras | heredado de portal |
+| `header` (Cabecera) | cabecera | engraved | — | — | 2 | crop | — | — | — | — | — | heredado de portal |
+| `wall` (Muro y banda) | muro | engraved | — | — | 2 | crop | — | — | — | — | — | heredado de portal |
+| `diagram` (Diagrama (10)) | panoramica | engraved | — | — | 2 | crop | — | — | — | — | — | heredado de portal |
+| `background` (Fondo) | fondo | engraved | — | — | 2 | crop | — | — | — | — | — | heredado de portal |
+| `error-page` (Página de error (18)) | ilustracion | engraved | — | — | 2 | crop | — | — | — | — | — | heredado de portal |
+| `frame` (Marco de retrato (17)) | cuadrado | engraved | #00ff00 | — | 2 | matte | — | — | — | — | — | heredado de portal |
+| `pattern` (Patrón (21)) | patron | engraved | — | — | 2 | — | — | — | — | — | — | heredado de portal |
+
+#### Aceptación
+
+- Referencias (heredado de portal): `referencias/03-portada-social.png`, `referencias/31-portada-workflow-q911.png`, `referencias/31c-portada-workflow-q941.png`, `referencias/32e-portada-gvig-q952.png`
+- Sin medir (lo juzga una persona) (heredado de portal):
+  - `horizon`: Horizonte, cielo o nubes
+  - `repeated-motif`: Motivo repetido (otro barco de papel)
+  - `glyphs`: Glifos o letras inventadas
+- autoDiscard (heredado de portal): false
+
+<!-- gimg brand md: end -->
