@@ -11,8 +11,8 @@ Diff `ea89d45..a627f98`+bitácora, `/code-review --max-findings all`, revisor de
    hoy sin efecto (ningún bloque contiene un término vetado), pero un producto que vete una palabra de un bloque
    heredado lo destaparía.
 6. **Hecho (barrido B a).** Un marcador malo en el `paletteSentence` de un tipo da `brandsheet.bad_placeholder` sin decir de qué pieza.
-7. El bucle de validación de marcadores está copiado dos veces (un `_check_placeholders(..., piece=None)` arregla 6 y 7).
-8. `own_text` (vetos) y `quiet` (negaciones) son la misma lista calculada dos veces.
+7. **Hecho (barrido B b).** El bucle de validación de marcadores está copiado dos veces (un `_check_placeholders(..., piece=None)` arregla 6 y 7).
+8. **No aplica:** tras el barrido B (a) `own_text` usa solo el registro de la pieza y `quiet` los de toda la hoja más la zona: ya no son la misma lista. `own_text` (vetos) y `quiet` (negaciones) son la misma lista calculada dos veces.
 
 ## Queda para después (de los pasos 1-2, sin cambio)
 

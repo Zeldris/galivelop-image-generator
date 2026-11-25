@@ -53,9 +53,9 @@ quedan apuntados aquí y no vuelven a revisarse en este PR.
 9. **Hecho (barrido B a).** `brandsheet.py:400`: un registro contenido en otro da `register_many` (con los textos actuales no pasa).
 10. `brandsheet.py:48`: `brandsheet.invalid` y `bad_placeholder` serían 400, mientras `project.config_invalid` es 500.
     Se decide en el paso 2.
-11. `brandsheet.py:185-212`: repite hex, linealización y contraste de `gimg/measure.py`.
-12. `brandsheet.py:475`: `lint` recalcula `palette()` y `palette_sentence()` cada vez. Se calcularán en `resolve` para
+11. **Hecho (barrido B b, el cociente de contraste viene de `measure.contrast_ratio`; hex y linealización quedan, en otra escala).** `brandsheet.py:185-212`: repite hex, linealización y contraste de `gimg/measure.py`.
+12. **No aplica:** `lint` calcula `palette()` y `palette_sentence()` una vez por llamada; cachearlos en `resolve` cambiaría la forma de la hoja resuelta. `brandsheet.py:475`: `lint` recalcula `palette()` y `palette_sentence()` cada vez. Se calcularán en `resolve` para
     el lint en vivo del paso 5.
-13. `brandsheet.py:91` (`_merge`): la herencia no puede borrar claves heredadas. Hay que documentarlo en el esquema.
+13. **Hecho (barrido B b, docstring de `_merge`).** `brandsheet.py:91` (`_merge`): la herencia no puede borrar claves heredadas. Hay que documentarlo en el esquema.
 14. **Hecho (barrido B a, solo test).** `test_parent_sheet_with_dotdot_rejected` prueba solo el esquema, no `..` por `extends`. Hay que renombrarlo o
     anotarlo.

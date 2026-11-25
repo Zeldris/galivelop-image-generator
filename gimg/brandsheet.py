@@ -12,7 +12,7 @@ import math
 import re
 from pathlib import Path
 
-from . import fsutil, i18n, paths, projects, schema
+from . import fsutil, i18n, measure, paths, projects, schema
 from .errors import GimgError
 
 ROLES = ("paper", "ink", "accent", "halo", "grid")
@@ -102,7 +102,8 @@ def _owned(sheet: dict, offset: int = 0) -> list:
 
 
 def _merge(base, over):
-    """Deep merge: objects merge, lists replace; vetoes.groups merge by id, vetoes.exceptions add up."""
+    """Deep merge: objects merge, lists replace; vetoes.groups merge by id, vetoes.exceptions add up.
+    Inheritance only adds or overrides: a child sheet cannot delete a key it inherits."""
     result = copy.deepcopy(base)
     for key, value in over.items():
         if isinstance(value, dict) and isinstance(result.get(key), dict):
@@ -147,16 +148,16 @@ def _check_resolved(sheet: dict, project: str) -> None:
     for field in REQUIRED:
         if not _get(sheet, field):
             raise GimgError("brandsheet.incomplete", project=project, field=field)
-    for name in _PLACEHOLDER.findall(sheet["paletteSentence"]):
-        if name not in ROLES or name not in sheet["palette"]:
-            raise GimgError("brandsheet.bad_placeholder", project=project, placeholder=name, where="paletteSentence")
+    def check_placeholders(text, where):
+        for name in _PLACEHOLDER.findall(text):
+            if name not in ROLES or name not in sheet["palette"]:
+                raise GimgError("brandsheet.bad_placeholder", project=project, placeholder=name, where=where)
+
+    check_placeholders(sheet["paletteSentence"], "paletteSentence")
     for piece, spec in sheet.get("pieceTypes", {}).items():
         if spec["register"] not in sheet["registers"]:
             raise GimgError("brandsheet.unknown_register", project=project, piece=piece, register=spec["register"])
-        for name in _PLACEHOLDER.findall(spec.get("paletteSentence", "")):
-            if name not in ROLES or name not in sheet["palette"]:
-                raise GimgError("brandsheet.bad_placeholder", project=project, placeholder=name,
-                                where="pieceTypes.%s.paletteSentence" % piece)
+        check_placeholders(spec.get("paletteSentence", ""), "pieceTypes.%s.paletteSentence" % piece)
     words = sheet.get("promptWords")
     if words and words["min"] > words["max"]:
         raise GimgError("brandsheet.incomplete", project=project, field="promptWords")
@@ -231,8 +232,7 @@ def _luminance(value):
 
 def contrast(a: str, b: str) -> float:
     """WCAG 2.x contrast ratio between two #rrggbb colours."""
-    la, lb = _luminance(a), _luminance(b)
-    return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
+    return measure.contrast_ratio(_luminance(a), _luminance(b))
 
 
 def _oklch(value):
@@ -292,19 +292,27 @@ def _value(token):
     return token["$value"].lower() if token else None
 
 
+def _tones(pal: dict) -> dict | None:
+    """Accent tones of a palette on its own papers (the defaults without them); None without accent or tone."""
+    if not pal.get("accent"):
+        return None
+    try:
+        return accent_tones(pal["accent"]["$value"], _value(pal.get("paper")) or PAPER_LIGHT,
+                            _value(pal.get("dark", {}).get("paper")) or PAPER_DARK)
+    except GimgError as exc:
+        if exc.code != "brandsheet.no_tone":
+            raise
+        return None
+
+
 def palette(sheet: dict) -> list:
     """Hex list for `brand.palette` / `measure`: roles, accent tones, dark version and measureOnly, no duplicates."""
     pal = sheet.get("palette", {})
     dark = pal.get("dark", {})
     found = [_value(pal.get(role)) for role in ROLES]
-    if pal.get("accent"):
-        try:
-            tones = accent_tones(pal["accent"]["$value"], _value(pal.get("paper")) or PAPER_LIGHT,
-                                 _value(dark.get("paper")) or PAPER_DARK)
-            found += [tones["deep"], tones["dark"]]
-        except GimgError as exc:
-            if exc.code != "brandsheet.no_tone":
-                raise
+    tones = _tones(pal)
+    if tones:
+        found += [tones["deep"], tones["dark"]]
     found += [_value(dark.get("paper")), _value(dark.get("ink"))]
     found += [h.lower() for h in pal.get("measureOnly", [])]
     out = []
@@ -726,14 +734,9 @@ def markdown(project_name: str, lang: str = "es") -> str:
     rows = [(r, "`%s`" % view["roles"][r]["hex"], view["roles"][r]["name"], own("palette." + r))
             for r in ROLES if r in view["roles"]]
     out += _table([t("role"), "hex", t("prompt_name"), t("origin")], rows)
-    if "accent" in pal:
-        try:
-            tones = accent_tones(pal["accent"]["$value"], _value(pal.get("paper")) or PAPER_LIGHT,
-                                 _value(pal.get("dark", {}).get("paper")) or PAPER_DARK)
-            out += ["", "- %s: `%s` / `%s`" % (t("tones"), tones["deep"], tones["dark"])]
-        except GimgError as exc:
-            if exc.code != "brandsheet.no_tone":
-                raise
+    tones = _tones(pal)
+    if tones:
+        out += ["", "- %s: `%s` / `%s`" % (t("tones"), tones["deep"], tones["dark"])]
     if pal.get("dark"):
         out += ["", "- %s: %s (%s)" % (t("dark"), ", ".join("%s `%s`" % (k, _value(v)) for k, v in pal["dark"].items()),
                                        own("palette.dark"))]
@@ -791,8 +794,6 @@ def markdown(project_name: str, lang: str = "es") -> str:
     if acc.get("traits"):
         lines.append("- %s (%s): %s" % (t("traits"), own("acceptance.traits"),
                                         ", ".join("`%s` %s" % (k, v) for k, v in acc["traits"].items())))
-    if "threshold" in acc:
-        lines.append("- %s: %s" % (t("threshold"), acc["threshold"]))
     if acc.get("references"):
         lines.append("- %s (%s): %s" % (t("references"), own("acceptance.references"),
                                         ", ".join("`%s`" % r for r in acc["references"])))
@@ -808,12 +809,12 @@ def markdown(project_name: str, lang: str = "es") -> str:
 def _block_span(text: str, path) -> tuple | None:
     """(start, end) offsets of the block in `text` (end after the closing marker), None without markers;
     a lone or repeated marker raises."""
-    starts, ends = text.count(MD_START), text.count(MD_END)
-    if starts == 0 and ends == 0:
+    start, end = text.find(MD_START), text.find(MD_END)
+    if start < 0 and end < 0:
         return None
-    if starts != 1 or ends != 1 or text.index(MD_START) > text.index(MD_END):
+    if start < 0 or end < 0 or start != text.rfind(MD_START) or end != text.rfind(MD_END) or start > end:
         raise GimgError("brandsheet.markdown_markers", path=str(path))
-    return text.index(MD_START), text.index(MD_END) + len(MD_END)
+    return start, end + len(MD_END)
 
 
 def _gap(text: str) -> str:
