@@ -1099,7 +1099,7 @@
   "error.brandsheet.extends_broken": "la hoja de {project} hereda de {parent}, cuya hoja o configuración no se puede usar: {reason}",
   "error.brandsheet.extends_cycle": "la herencia de hojas de {project} da la vuelta: {chain}",
   "error.brandsheet.incomplete": "a la hoja resuelta de {project} le falta {field}",
-  "error.brandsheet.bad_placeholder": "la frase de paleta de {project} usa {{{placeholder}}}, que no es un papel de su paleta",
+  "error.brandsheet.bad_placeholder": "la frase de paleta ({where}) de {project} usa {{{placeholder}}}, que no es un papel de su paleta",
   "error.brandsheet.unknown_register": "el tipo de pieza {piece} de {project} usa el registro {register}, que la hoja no tiene",
   "error.brandsheet.bad_hex": "color no válido: {value} (se espera #rrggbb)",
   "error.brandsheet.no_tone": "no hay tono de {value} con contraste 4,5:1 sobre {paper}",

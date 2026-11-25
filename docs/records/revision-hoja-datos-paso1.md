@@ -45,17 +45,17 @@ quedan apuntados aquí y no vuelven a revisarse en este PR.
 
 ## Leves (apuntados, no se arreglan en este PR salvo que caigan de paso)
 
-6. `brandsheet.py:395`: el hex «missing» mira solo la última frase del prompt, así que falla con un `paletteSentence`
+6. **Hecho (barrido B a).** `brandsheet.py:395`: el hex «missing» mira solo la última frase del prompt, así que falla con un `paletteSentence`
    de varias frases.
-7. `brandsheet.py:30`: `_HEX` solo ve `#rrggbb`, así que `#f00` y `#ff0000cc` pasan.
-8. `brandsheet.py:420`: con una zona limpia de solo espacios, `assemble` la descarta pero `lint` da
+7. **Hecho (barrido B a).** `brandsheet.py:30`: `_HEX` solo ve `#rrggbb`, así que `#f00` y `#ff0000cc` pasan.
+8. **Hecho (barrido B a).** `brandsheet.py:420`: con una zona limpia de solo espacios, `assemble` la descarta pero `lint` da
    `clean_zone_missing`.
-9. `brandsheet.py:400`: un registro contenido en otro da `register_many` (con los textos actuales no pasa).
+9. **Hecho (barrido B a).** `brandsheet.py:400`: un registro contenido en otro da `register_many` (con los textos actuales no pasa).
 10. `brandsheet.py:48`: `brandsheet.invalid` y `bad_placeholder` serían 400, mientras `project.config_invalid` es 500.
     Se decide en el paso 2.
 11. `brandsheet.py:185-212`: repite hex, linealización y contraste de `gimg/measure.py`.
 12. `brandsheet.py:475`: `lint` recalcula `palette()` y `palette_sentence()` cada vez. Se calcularán en `resolve` para
     el lint en vivo del paso 5.
 13. `brandsheet.py:91` (`_merge`): la herencia no puede borrar claves heredadas. Hay que documentarlo en el esquema.
-14. `test_parent_sheet_with_dotdot_rejected` prueba solo el esquema, no `..` por `extends`. Hay que renombrarlo o
+14. **Hecho (barrido B a, solo test).** `test_parent_sheet_with_dotdot_rejected` prueba solo el esquema, no `..` por `extends`. Hay que renombrarlo o
     anotarlo.

@@ -27,7 +27,7 @@ PAPER_DARK = "#0d171e"
 TONE_STEP = 0.005
 TONE_THRESHOLD = 4.5
 _EPS = 1e-6
-_HEX = re.compile(r"#[0-9A-Fa-f]{6}(?![0-9A-Za-z])")
+_HEX = re.compile(r"#(?:[0-9A-Fa-f]{8}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{3})(?![0-9A-Za-z])")
 _HEX_FULL = re.compile(r"#?[0-9A-Fa-f]{6}")
 _PLACEHOLDER = re.compile(r"\{([A-Za-z]+)\}")
 
@@ -149,13 +149,14 @@ def _check_resolved(sheet: dict, project: str) -> None:
             raise GimgError("brandsheet.incomplete", project=project, field=field)
     for name in _PLACEHOLDER.findall(sheet["paletteSentence"]):
         if name not in ROLES or name not in sheet["palette"]:
-            raise GimgError("brandsheet.bad_placeholder", project=project, placeholder=name)
+            raise GimgError("brandsheet.bad_placeholder", project=project, placeholder=name, where="paletteSentence")
     for piece, spec in sheet.get("pieceTypes", {}).items():
         if spec["register"] not in sheet["registers"]:
             raise GimgError("brandsheet.unknown_register", project=project, piece=piece, register=spec["register"])
         for name in _PLACEHOLDER.findall(spec.get("paletteSentence", "")):
             if name not in ROLES or name not in sheet["palette"]:
-                raise GimgError("brandsheet.bad_placeholder", project=project, placeholder=name)
+                raise GimgError("brandsheet.bad_placeholder", project=project, placeholder=name,
+                                where="pieceTypes.%s.paletteSentence" % piece)
     words = sheet.get("promptWords")
     if words and words["min"] > words["max"]:
         raise GimgError("brandsheet.incomplete", project=project, field="promptWords")
@@ -356,6 +357,7 @@ def assemble(sheet: dict, piece: str, subject: str, clean_zone: str | None = Non
     Returns {"prompt", "words", "segments": [{"role", "text", "source"}]}; each segment ends in a full stop (the
     closing before an after-closing zone, in a comma) and segments are joined with one space."""
     spec = _piece(sheet, piece)
+    clean_zone = (clean_zone or "").strip() or None  # a zone of only spaces is no zone
     segments = [{"role": "subject", "text": _sentence(subject), "source": "input"}]
     after = bool(clean_zone) and _zone_after(spec)
     if clean_zone and not after:
@@ -414,6 +416,7 @@ def lint(sheet: dict, prompt: str, piece: str | None = None, mode: str = "brand"
     if mode not in ("brand", "free"):
         raise GimgError("brandsheet.bad_mode", mode=str(mode))
     spec = _piece(sheet, piece) if piece is not None else None
+    clean_zone = (clean_zone or "").strip() or None  # a zone of only spaces is no zone (as in `assemble`)
     checks = []
 
     def add(cid, problem=None, span=None, **params):
@@ -444,13 +447,19 @@ def lint(sheet: dict, prompt: str, piece: str | None = None, mode: str = "brand"
         add("palette")
     else:
         hexes = [h.lower() for h in _HEX.findall(expected)]
-        last = re.split(r"(?<=[.!?])\s+", tail)[-1].lower() if tail else ""
+        # the palette sentence may have several sentences: look at as many sentences of the tail as it has
+        n = len(re.split(r"(?<=[.!?])\s+", expected.strip()))
+        last = " ".join(re.split(r"(?<=[.!?])\s+", tail)[-n:]).lower() if tail else ""
         missing = [h for h in hexes if h not in last]
         add("palette", "palette", missing=", ".join(missing) or "-")
 
     # register block: one and only one, the piece's own if known
     reg_spans = {rid: _find(prompt, reg["block"]) for rid, reg in sheet["registers"].items()}
     present = [rid for rid, span in reg_spans.items() if span]
+    # a block written inside another one's text (one register contained in another) is not a second register
+    present = [rid for rid in present if not any(
+        o != rid and reg_spans[o][0] <= reg_spans[rid][0] and reg_spans[rid][1] <= reg_spans[o][1]
+        and reg_spans[o] != reg_spans[rid] for o in present)]
     if not present:
         add("register", "register_none")
     elif len(present) > 1:
@@ -475,7 +484,7 @@ def lint(sheet: dict, prompt: str, piece: str | None = None, mode: str = "brand"
         if zone is None:
             add("cleanZone", "clean_zone_missing")
         elif _zone_after(spec):
-            if closing_span is not None and zone[0] < closing_span[0]:
+            if closing_span is None or zone[0] < closing_span[1]:
                 add("cleanZone", "clean_zone_order", span=zone)
             else:
                 add("cleanZone")
@@ -490,7 +499,8 @@ def lint(sheet: dict, prompt: str, piece: str | None = None, mode: str = "brand"
 
     # vetoed terms (whole word, any case), minus the exceptions of this piece; the closing and the register block
     # are the sheet's own approved text (the 06 closing says «no clouds»), so a term inside them is not a veto
-    own_text = [s for s in [closing_span] + list(reg_spans.values()) if s]
+    own_regs = [reg_spans[spec["register"]]] if spec is not None else list(reg_spans.values())
+    own_text = [s for s in [closing_span] + own_regs if s]
     vetoes = sheet.get("vetoes", {})
     allowed = {e["term"].lower() for e in vetoes.get("exceptions", []) if piece is not None and piece in e["pieces"]}
     before = len(checks)

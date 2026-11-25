@@ -1099,7 +1099,7 @@
   "error.brandsheet.extends_broken": "the sheet of {project} extends {parent}, whose sheet or config cannot be used: {reason}",
   "error.brandsheet.extends_cycle": "the sheet inheritance of {project} loops: {chain}",
   "error.brandsheet.incomplete": "the resolved sheet of {project} lacks {field}",
-  "error.brandsheet.bad_placeholder": "the palette sentence of {project} uses {{{placeholder}}}, which is not a role of its palette",
+  "error.brandsheet.bad_placeholder": "the palette sentence ({where}) of {project} uses {{{placeholder}}}, which is not a role of its palette",
   "error.brandsheet.unknown_register": "piece type {piece} of {project} uses register {register}, which the sheet does not have",
   "error.brandsheet.bad_hex": "invalid colour: {value} (expected #rrggbb)",
   "error.brandsheet.no_tone": "no tone of {value} reaches 4.5:1 contrast on {paper}",
