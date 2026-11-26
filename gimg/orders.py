@@ -809,6 +809,7 @@ def reset_failures(order: dict) -> None:
         order["failures"]["reasons"] = []
     if isinstance(order.get("troubleshooting"), dict):
         order["troubleshooting"]["extendPending"] = False  # a restart leaves no extension waiting
+        order["troubleshooting"]["extendUsed"] = False  # and a new cycle may use one again
 
 
 def add_failure(order: dict, project: str, *, batch=None, attempt=None, reason=None) -> dict:

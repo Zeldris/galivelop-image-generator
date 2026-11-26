@@ -41,7 +41,7 @@ export function troubleshootForm(ctx, { onSave, onExtend }) {
     replace(errorHost);
     try { await fn(); } catch (e) {
       replace(errorHost, h('p.notice.notice-bad', { role: 'alert' }, describeError(e, t)));
-    } finally { busy = false; buttons.forEach((b) => { b.disabled = false; }); }
+    } finally { busy = false; buttons.forEach((b) => { b.disabled = false; }); if (used) more.disabled = true; }
   };
   const save = h('button.btn.btn-primary', { type: 'button', data: { slot: 'ts-save' }, onclick: () => run(async () => {
     if (!problem.value.trim()) { problem.focus(); throw new Error(t('ui.ts.problemRequired')); }
@@ -51,11 +51,13 @@ export function troubleshootForm(ctx, { onSave, onExtend }) {
     if (list.length) body.terms = list;
     await onSave(body);
   }) }, t('ui.ts.save'));
-  const more = h('button.btn', { type: 'button', data: { slot: 'ts-extend' }, onclick: (ev) => run(async () => {
+  const used = !!(order.troubleshooting && order.troubleshooting.extensionUsed);
+  const more = h('button.btn', { type: 'button', data: { slot: 'ts-extend' }, disabled: used, title: used ? t('ui.ts.extendUsed') : undefined, onclick: (ev) => run(async () => {
     const ok = await confirmAction({ title: t('ui.ts.extendTitle'), message: t('ui.ts.extendMessage'), confirmLabel: t('ui.ts.extend'), opener: ev.currentTarget });
     if (ok) await onExtend();
   }) }, t('ui.ts.extend'));
   buttons.push(save, more);
+  if (used) more.disabled = true;
   const node = h('section.card.troubleshoot', { aria: { labelledby: 'ts-title' }, data: { slot: 'ts-form' } },
     title,
     h('p.notice.notice-bad', { role: 'alert' }, t('ui.fail.blocked', { count: f.count, limit: f.limit })),
@@ -64,7 +66,8 @@ export function troubleshootForm(ctx, { onSave, onExtend }) {
     h('div.field', {}, h('label', { for: 'ts-redesign' }, t('ui.ts.redesign')), redesign),
     h('div.field', {}, h('label', { for: 'ts-terms' }, t('ui.ts.terms')), terms, h('div.hint', { id: 'ts-terms-hint' }, t('ui.ts.termsHint'))),
     errorHost,
-    h('div.row', {}, save, more));
+    h('div.row', {}, save, more),
+    used ? h('p.hint', { data: { slot: 'ts-extend-used' } }, t('ui.ts.extendUsed')) : null);
   return { node, focus: () => title.focus() };
 }
 

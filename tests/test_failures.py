@@ -296,6 +296,21 @@ class Extend(FailBase):
         self.made()
         self.assertEqual(self.err(failures.extend, P, K, PR).code, "order.not_blocked")
 
+    def test_only_one_extension_per_failure_cycle(self):
+        self.block()
+        failures.extend(P, K, PR)
+        self.more()  # uses it and fails again
+        order = orders.get(P, K, PR)
+        self.assertFalse(order["troubleshooting"]["extendPending"])
+        self.assertTrue(failures.view(order)["troubleshooting"]["extensionUsed"])
+        self.assertEqual(self.err(failures.extend, P, K, PR).code, "order.extend_used")
+
+    def test_a_reset_of_the_counter_allows_an_extension_again(self):
+        self.block()
+        failures.extend(P, K, PR)
+        orders._modify(P, K, PR, orders.reset_failures)
+        self.assertNotIn("extensionUsed", failures.view(orders.get(P, K, PR))["troubleshooting"])
+
     def test_one_more_batch_runs_and_is_noted(self):
         self.block()
         got = failures.extend(P, K, PR)

@@ -54,7 +54,7 @@ _EXACT = {
           "brandsheet.markdown_marker_in_data"),
     405: ("api.method_not_allowed",), 411: ("api.length_required",), 413: ("api.body_too_large",),
     415: ("api.content_type",),
-    409: ("compose.template_exists", "compose.busy", "measure.busy", "api.heavy_busy", "compose.nothing_to_do", "compose.no_attempts", "serve.already_running", "serve.port_busy", "serve.not_running", "order.discard_chosen", "order.troubleshooting", "order.batch_failed", "order.not_blocked", "order.extend_pending",
+    409: ("compose.template_exists", "compose.busy", "measure.busy", "api.heavy_busy", "compose.nothing_to_do", "compose.no_attempts", "serve.already_running", "serve.port_busy", "serve.not_running", "order.discard_chosen", "order.troubleshooting", "order.batch_failed", "order.not_blocked", "order.extend_pending", "order.extend_used",
           "order.history_empty", "queue.not_cancellable", "queue.not_movable", "delivery.target_taken", "brand.exists", "brand.missing_piece", "export.exists", "brandsheet.exists"),
     400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "order.piece_required", "order.subject_required", "order.brand_prompt", "order.profile_mismatch", "order.not_brand", "order.mode_conflict", "order.reason_invalid", "compose.field_unknown", "compose.template_unknown", "compose.element_unknown", "compose.bad_layout", "compose.bad_element", "compose.templates_dir_missing", "api.bad_json", "brandsheet.unknown_piece", "brandsheet.convert_unsupported",
           "brandsheet.bad_mode",  # CLI only (`brand md` mode); listed so `.bad_` stays 400 before the 422 prefix

@@ -808,7 +808,9 @@ class Step5bUi(unittest.TestCase):
             self.assertIn(needle, form)
         view = self.comp("order-view.js")
         self.assertIn("troubleshootForm(ctx, { onSave: ctx.actions.saveRow, onExtend: ctx.actions.extend })", view)
-        self.assertIn("'order.not_blocked' || e.code === 'order.extend_pending'", view)
+        self.assertIn("'order.not_blocked' || e.code === 'order.extend_pending' || e.code === 'order.extend_used'", view)
+        for needle in ("disabled: used", "extensionUsed", "ui.ts.extendUsed"):  # one extension per cycle: the button is disabled with its reason
+            self.assertIn(needle, form)
         self.assertIn("order.troubleshooting && order.troubleshooting.state]", view)  # the panel is rebuilt when the state changes
         tab = self.comp("brand-tab.js")
         self.assertIn("['hoja', 'probar', 'check', 'troubleshooting', 'taller']", tab)

@@ -7,14 +7,15 @@ or a cancellation. ``order.json`` carries, written by the generator (a client ca
   person discards every attempt of a batch; `orders.add_failure` is the hook for the failure by score of 0.9.0).
   An attempt scoring `orders.RESET_SCORE` or more (`reset_on_score`), a new subject (`orders.apply_changes`) or a
   troubleshooting row (`add_row`) put it back to zero. An old order without the key has no failures.
-- ``troubleshooting``: ``{rows, extendPending, extensions}``. The rows are data (``{piece, key, problem, attempts, redesign,
+- ``troubleshooting``: ``{rows, extendPending, extendUsed, extensions}``. The rows are data (``{piece, key, problem, attempts, redesign,
   terms, at, by}`` plus ``profile``); `list_rows` gathers those of a project and writes the Markdown (`markdown_path`).
 
 An order is **blocked** when ``count >= limit`` (3 unless ``brand.failureLimit`` says otherwise) and it is still brand:
 `check_open` and `admit` refuse a new batch (``order.troubleshooting``) and its queued entries are *held*
 (`held_entry`; the worker never starts them, see `queue._first_queued`). A row, a subject change, a good score or switching
 the order to free end the block. `extend` allows one batch more while blocked; its entries carry ``extended`` and are not held, and the
-extension is noted (``extensions``).
+extension is noted (``extensions``). Only one extension per failure cycle (``extendUsed``; a cycle ends when the counter
+goes to zero).
 
 `view` is the order as the API and the CLI show it: ``failures`` with its defaults and ``troubleshooting`` as
 ``{state: open|blocked|extended, row?}`` (the stored rows stay in the file).
@@ -66,6 +67,8 @@ def view(order: dict) -> dict:
 def _state_view(order: dict) -> dict:
     rows = _stored(order).get("rows") or []
     got = {"state": state_of(order)}
+    if _stored(order).get("extendUsed"):
+        got["extensionUsed"] = True
     if rows:
         got["row"] = copy.deepcopy(rows[-1])
     return got
@@ -174,14 +177,19 @@ def reset_on_score(project: str, key: str, profile: str, score) -> bool:
 
 def extend(project: str, key: str, profile: str) -> dict:
     """"Una tanda más" for a blocked order, noted in ``troubleshooting.extensions``. Returns ``{failures, troubleshooting}``.
-    Errors: ``order.not_blocked`` (the order is not blocked), ``order.extend_pending`` (one is already waiting to be used)."""
+    Only one per failure cycle (``extendUsed``, cleared when the counter goes to zero: row, good score, new subject).
+    Errors: ``order.not_blocked`` (the order is not blocked), ``order.extend_pending`` (one is already waiting to be used),
+    ``order.extend_used`` (the cycle already used its extension)."""
     def change(order):
         if not is_blocked(order):
             raise GimgError("order.not_blocked", order=key, profile=profile)
         stored = order.setdefault("troubleshooting", {})
         if stored.get("extendPending"):
             raise GimgError("order.extend_pending", order=key, profile=profile)
+        if stored.get("extendUsed"):
+            raise GimgError("order.extend_used", order=key, profile=profile)
         stored["extendPending"] = True
+        stored["extendUsed"] = True
         stored.setdefault("extensions", []).append({"at": orders._now()})
         return {"failures": _failures(order), "troubleshooting": _state_view(order)}
 

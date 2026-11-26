@@ -193,18 +193,18 @@ nota, `U` recuperar un descarte, `[` y `]` tanda anterior/siguiente, `B` bandeja
     pedidos, columna «fallos».
   - **Al 2.º:** aviso suave sobre el panel lateral: «Un fallo más y toca rediseñar. Motivos hasta ahora: horizonte ×2».
   - **Al 3.º: pedido «En troubleshooting».** Los botones que encolan (panel lateral, «Variar», «Recrear», `G`) quedan
-    deshabilitados con el motivo, y el panel lateral se sustituye por el **formulario de troubleshooting** (componente
-    nuevo `components/troubleshoot.js`), con las tres columnas del registro: *Problema* (propuesto con los motivos
+    deshabilitados con el motivo, y el **formulario de troubleshooting** (componente nuevo `components/troubleshoot.js`)
+    sale **encima** del panel de retoque (no lo sustituye), con las tres columnas del registro: *Problema* (propuesto con los motivos
     apuntados), *Intentos* (los `q` de las tandas fallidas, ya rellenos), *Rediseño* (texto). Tres salidas:
     1. «Apuntar y rediseñar yo»: guarda la fila, pone el contador a cero y abre el panel de pieza con el sujeto vacío.
     2. «Pedir rediseño a la bandeja»: crea la tarea con las tandas y motivos; el pedido queda «esperando rediseño».
-    3. «Una tanda más sin rediseñar»: pide confirmación, se apunta en la fila y permite una sola tanda (pregunta 4, §6).
+    3. «Una tanda más sin rediseñar»: pide confirmación, se apunta en la fila y permite una sola tanda **por ciclo de fallos** (pregunta 4, §6): el ciclo acaba al poner el contador a cero (fila apuntada, elección o nota de 7 o más); usada la tanda, el botón queda deshabilitado con el motivo y el servidor responde `order.extend_used` (409).
   - **Registro** en Marca › Troubleshooting: la tabla de `troubleshooting-portal-marca.md` como datos, con enlaces a
     los intentos y filtro por pieza.
 - **Estados:** *sin fallos* (el marcador no se pinta); *bloqueado* (lo descrito); *esperando rediseño* (enlace a la
   tarea de la bandeja y «Responder yo»); *error al guardar la fila* (el formulario conserva lo escrito).
 - **Mando:** al bloquearse, el foco va al título del formulario (`tabindex="-1"`) y se anuncia con `role="alert"`.
-- **Reutiliza / cambia:** `order-view.js` (cabecera y guardas de los atajos), `retouch-panel.js` (estado bloqueado),
+- **Reutiliza / cambia:** `order-view.js` (cabecera y guardas de los atajos; monta el formulario encima del panel de retoque), `retouch-panel.js` (estado bloqueado),
   `brand-tab.js` (subpestaña), `confirm.js`.
 
 ### 2.6 Recortar (punto 9 del plan)
@@ -465,7 +465,7 @@ gana campos.
 | Descartar con motivo | `POST …/attempts/{id}/mark` (amplía) | `{state: "discarded", reason?: {trait?, text?}}`; mueve el archivo |
 | Tanda sin válidos | `POST …/batches/{id}/fail` | `{reason}` → `failures` actualizado |
 | Descartes | `GET …/orders/{profile}/{key}/discards` · `POST …/discards/{id}/restore` · `GET …/discards/{id}/image` | `[{id, score, reason:{auto, trait, text}, at}]` |
-| Troubleshooting | `GET /api/projects/{p}/troubleshooting` · `POST` · `POST …/orders/{profile}/{key}/troubleshooting/extend` | Fila `{piece, key, problem, attempts:[..], redesign, terms:[..], at, by}`; el `POST` pone el contador a cero; `extend` da una tanda más |
+| Troubleshooting | `GET /api/projects/{p}/troubleshooting` · `POST` · `POST …/orders/{profile}/{key}/troubleshooting/extend` | Fila `{piece, key, problem, attempts:[..], redesign, terms:[..], at, by}`; el `POST` pone el contador a cero; `extend` da una tanda más, una sola por ciclo de fallos (la segunda: 409 `order.extend_used`; con una sin usar: 409 `order.extend_pending`) |
 | Recortar | `POST …/attempts/{id}/crop` | `{box:[x0,y0,x1,y1], lockRatio, to?:{profile, key}}` → intento derivado. Vista previa: en el cliente con `<canvas>` (sin servidor) |
 | Taller enlazado | `GET /api/projects/{p}/brand` (amplía) · rutas `brand/*` de hoy | Borrador enlazado a `{profile, key, attempt, piece}`; `matte` toma el croma de la hoja por defecto |
 | Entrega | `POST …/choose` (amplía) · `POST …/attempts/{id}/approve` · `GET …/delivery/readme` | `choose` devuelve `replaced:{attempt, movedTo}`; 409 `delivery.foreign_file` si la raíz tiene algo ajeno, con `force` |
@@ -544,7 +544,7 @@ Lo que cambiaría de la propuesta, visto desde la interfaz:
 2. ¿El contador es por pedido o por sujeto? (Lo propuesto: por pedido, y un rediseño apuntado lo pone a cero.)
 3. Umbral 7: ¿descarte **propuesto** hasta calibrar y automático después (lo propuesto), o automático desde el
    primer día?
-4. Al tercer fallo, ¿bloqueo duro o se permite «una tanda más» apuntándolo? ¿Cuántas veces?
+4. Al tercer fallo, ¿bloqueo duro o se permite «una tanda más» apuntándolo? ¿Cuántas veces? **Decidido 2026-11-26:** una vez por ciclo de fallos.
 5. ¿Las respuestas de la bandeja se aplican solas alguna vez (p. ej. un sujeto que pasa la comprobación) o siempre
    las confirma la persona? Lo propuesto: siempre confirma, al menos hasta F6.
 6. ¿La bandeja es por proyecto (pestaña, lo propuesto) con contador global, o una pantalla global?

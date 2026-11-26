@@ -102,7 +102,7 @@ export async function orderView(host, route) {
     },
     extend: async () => {
       try { await api.extend(project, profile, key); } catch (e) {
-        if (e instanceof ApiError && (e.code === 'order.not_blocked' || e.code === 'order.extend_pending')) { await reload(); toastError(describeError(e, t)); return; }
+        if (e instanceof ApiError && (e.code === 'order.not_blocked' || e.code === 'order.extend_pending' || e.code === 'order.extend_used')) { await reload(); toastError(describeError(e, t)); return; }
         throw e;
       }
       toastOk(t('ui.ts.extended'));

@@ -178,6 +178,7 @@
           }
         }},
         "extendPending": {"type": "boolean", "description": "One more batch was allowed and is not used yet."},
+        "extendUsed": {"type": "boolean", "description": "The current failure cycle already used its one extension."},
         "extensions": {"type": "array", "items": {"type": "object", "description": "{at, batch?}"}}
       }
     },
