@@ -57,7 +57,7 @@ export function attemptCard(ctx, attempt) {
     attempt.raw || attempt.image ? measureChip({ project: ctx.project, profile: ctx.profile, key: ctx.key, ...measureFor(ctx, attempt) }, attempt) : null);
 
   const yes = h('button.btn.btn-yes', { type: 'button', aria: { pressed: st === 'candidate' || st === 'chosen' }, onclick: () => ctx.actions.mark(attempt, st === 'candidate' ? 'new' : 'candidate') }, t('ui.attempt.yes'), h('kbd.kbd', { aria: { hidden: true } }, 'S'));
-  const no = h('button.btn.btn-no', { type: 'button', disabled: st === 'chosen', aria: { pressed: st === 'discarded' }, onclick: () => ctx.actions.mark(attempt, st === 'discarded' ? 'new' : 'discarded') }, t('ui.attempt.no'), h('kbd.kbd', { aria: { hidden: true } }, 'N'));
+  const no = h('button.btn.btn-no', { type: 'button', disabled: st === 'chosen', aria: { pressed: st === 'discarded' }, onclick: (ev) => ctx.actions.mark(attempt, st === 'discarded' ? 'new' : 'discarded', ev.currentTarget) }, t('ui.attempt.no'), h('kbd.kbd', { aria: { hidden: true } }, 'N'));
   const choose = st === 'chosen'
     ? h('button.btn', { type: 'button', onclick: () => ctx.actions.undo() }, '↶ ', t('ui.order.undo'))
     : h('button.btn.btn-primary', { type: 'button', disabled: st === 'discarded' || Boolean(attempt.draft) || Boolean(attempt.composeError && ctx.profileCfg.compose), title: attempt.draft ? t('ui.attempt.draftNoChoose') : null, onclick: () => ctx.actions.choose(attempt) }, '★ ', t('ui.attempt.choose'), h('kbd.kbd', { aria: { hidden: true } }, 'E'));

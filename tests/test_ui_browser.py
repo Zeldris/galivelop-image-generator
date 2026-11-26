@@ -1189,5 +1189,73 @@ class BrandGallery(OrderPages):
         self.no_problems()
 
 
+class BrandMarks(OrderPages):
+    """0.8.0 paso 5b: «No» con motivo (o sin él) y «Ninguno vale» en un pedido de marca."""
+
+    KEYS = ("portada/n1", "portada/n2", "portada/n3")
+
+    @classmethod
+    def customize_project(cls):
+        super().customize_project()
+        add_brand_sheet(cls.root)
+
+    @classmethod
+    def prepare(cls):
+        for key in cls.KEYS:
+            cls.submit(key, count=2, seed=700, mode="brand", piece="cover", subject=SUBJECT, prompt=None)
+
+    def order_json(self, key):
+        return self.api("GET", "/api/projects/%s/orders/%s/%s" % (PROJECT, PROFILE, quote(key, safe="")))
+
+    def attempt_no(self):
+        return "document.querySelector('.gallery .attempt .btn-no')"
+
+    def test_no_with_a_reason_sends_it_and_the_discard_without_one_still_works(self):
+        self.open(order_route("portada/n1"), "document.querySelector('.gallery .attempt .btn-no')")
+        self.js(self.attempt_no() + ".click()")
+        self.page.wait("document.querySelector('dialog.reason[open] [data-trait=horizon]')")
+        self.assertTrue(self.js("!!document.querySelector('dialog.reason [data-trait=other]')"))
+        self.js("document.querySelector('dialog.reason [data-trait=horizon]').click()")
+        self.page.wait("document.querySelector('.gallery .attempt .btn-no[aria-pressed=true]')")
+        order = self.order_json("portada/n1")
+        self.assertEqual([a.get("reason") for a in order["attempts"] if a["state"] == "discarded"], [{"trait": "horizon"}])
+        self.assertEqual(order["failures"]["count"], 0)
+        self.assertEqual(self.js("document.querySelector('dialog.reason')"), None)
+        # «otro» pide una nota
+        self.js("[...document.querySelectorAll('.gallery .attempt .btn-no')].find(b => b.getAttribute('aria-pressed') !== 'true').click()")
+        self.page.wait("document.querySelector('dialog.reason[open]')")
+        self.js("document.querySelector('dialog.reason [data-trait=other]').click()")
+        self.js("document.querySelector('dialog.reason [data-slot=reason-text]').value = 'demasiado oscuro'")
+        self.js("document.querySelector('dialog.reason [data-slot=reason-other-ok]').click()")
+        self.page.wait("document.querySelector('.fail-marker')")
+        reasons = self.order_json("portada/n1")["failures"]["reasons"]
+        self.assertEqual([r.get("text") for r in reasons if r["trait"] == "other"], ["demasiado oscuro"])
+        self.no_problems()
+
+    def test_a_second_n_without_a_reason_discards_anyway(self):
+        self.open(order_route("portada/n2"), "document.querySelector('.gallery .attempt')")
+        self.js("document.querySelector('.gallery .attempt').focus()")
+        self.page.key("n")
+        self.page.wait("document.querySelector('dialog.reason[open]')")
+        self.page.key("n")
+        self.page.wait("!document.querySelector('dialog.reason') && document.querySelector('.gallery .attempt .btn-no[aria-pressed=true]')")
+        order = self.order_json("portada/n2")
+        self.assertEqual([a.get("reason") for a in order["attempts"] if a["state"] == "discarded"], [None])
+        self.no_problems()
+
+    def test_none_are_good_confirms_a_reason_and_updates_the_marker(self):
+        self.open(order_route("portada/n3"), "document.querySelector('.gallery .batch-head [data-slot=batch-fail]')")
+        self.assertFalse(self.js("!!document.querySelector('.fail-marker')"))
+        self.js("document.querySelector('[data-slot=batch-fail]').click()")
+        self.page.wait("document.querySelector('dialog.reason[open] [data-trait=palette]')")
+        self.assertEqual(self.js("document.querySelector('dialog.reason [data-slot=reason-none]')"), None)
+        self.js("document.querySelector('dialog.reason [data-trait=palette]').click()")
+        self.page.wait("document.querySelector('.fail-marker')")
+        self.assertIn("Fallos 1 de 3", self.js("document.querySelector('.fail-marker').textContent"))
+        self.assertIn("FALLO", self.js("document.querySelector('[data-slot=batch-failed]').textContent"))
+        self.assertIsNone(self.js("document.querySelector('[data-slot=batch-fail]')"))
+        self.no_problems()
+
+
 if __name__ == "__main__":
     unittest.main()

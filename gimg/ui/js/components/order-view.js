@@ -18,6 +18,7 @@ import { invalidateMeasure } from './measure-chip.js';
 import { isTyping, oneKeyEnabled } from './shortcuts.js';
 import { toast, toastError, toastOk } from './toast.js';
 import { batchHead } from './batch-head.js';
+import { askReason } from './reason-picker.js';
 import { modeBadge, isBrand, isBlocked, blockedReason, failureMarker, failureNotice, modeChangeNotice } from './brand-order.js';
 
 const PENDING = ['queued', 'running'];
@@ -71,7 +72,24 @@ export async function orderView(host, route) {
   const guard = (fn) => async (...args) => { try { await fn(...args); } catch (e) { toastError(describeError(e, t)); } };
 
   Object.assign(ctx.actions, {
-    mark: guard(async (a, st) => { await api.mark(project, profile, key, a.id, st); await reload(); }),
+    mark: guard(async (a, st, opener = null) => {
+      let reason;
+      if (st === 'discarded' && isBrand(ctx.order)) { // «No» en un pedido de marca: motivo rápido; «sin motivo» o una segunda N descartan igual
+        const got = await askReason({ sheet: ctx.sheet, title: t('ui.reason.title', { id: `q${a.id}` }), allowNone: true, opener });
+        if (!got) return;
+        if (!got.none) reason = got;
+      }
+      await api.mark(project, profile, key, a.id, st, reason);
+      await reload();
+    }),
+    failBatch: guard(async (id, opener = null) => {
+      const got = await askReason({ sheet: ctx.sheet, title: t('ui.batch.noneOkTitle'), message: t('ui.batch.noneOkMessage'), confirmLabel: t('ui.batch.noneOkConfirm'), opener });
+      if (!got || got.none) return;
+      const res = await api.failBatch(project, profile, key, id, got);
+      if (res && res.failures) ctx.order.failures = res.failures;
+      if (res && res.troubleshooting) ctx.order.troubleshooting = { ...(ctx.order.troubleshooting || {}), ...res.troubleshooting };
+      await reload();
+    }),
     note: guard(async (a, text) => { await api.note(project, profile, key, a.id, text); a.note = text; }),
     choose: guard(async (a) => {
       try {
@@ -257,7 +275,10 @@ export async function orderView(host, route) {
     for (const sec of sectionsOf(order, attempts.filter((a) => a !== chosen), loose)) {
       if (sec.id !== null) {
         const head = { id: sec.id, rec: sec.rec, n: sec.n, attempts: sec.attempts, pending: sec.loose.filter((e) => PENDING.includes(e.state)).length };
-        wanted.push({ k: `batch:${sec.id}`, sig: JSON.stringify([sec.rec, sec.n, sec.attempts.map((a) => [a.id, a.state]), head.pending, Boolean(ctx.sheet)]), make: () => batchHead(ctx, head) });
+        // «Ninguno vale»: solo en una tanda de un pedido de marca ya terminada (con intentos, sin entradas en la cola) y aún no fallada
+        const canFail = isBrand(order) && !isBlocked(order) && sec.rec && !sec.rec.failed && !head.pending && sec.attempts.length > 0;
+        head.actions = canFail ? [h('button.btn.btn-danger', { type: 'button', data: { slot: 'batch-fail' }, onclick: (ev) => ctx.actions.failBatch(sec.id, ev.currentTarget) }, t('ui.batch.noneOk'))] : [];
+        wanted.push({ k: `batch:${sec.id}`, sig: JSON.stringify([sec.rec, sec.n, sec.attempts.map((a) => [a.id, a.state]), head.pending, Boolean(ctx.sheet), Boolean(head.actions.length)]), make: () => batchHead(ctx, head) });
       }
       wanted.push(...sec.loose.map(entryOf), ...sec.attempts.map(cardOf));
     }

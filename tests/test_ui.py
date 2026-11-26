@@ -734,6 +734,17 @@ class Step5bUi(unittest.TestCase):
     def comp(self, name):
         return read(UI / "js" / "components" / name)
 
+    def test_no_with_a_reason_and_none_are_good_go_through_the_reason_picker(self):
+        ov = self.comp("order-view.js")
+        rp = self.comp("reason-picker.js")
+        self.assertIn("askReason", ov)
+        self.assertIn("api.failBatch(project, profile, key, id, got)", ov)
+        self.assertIn("api.mark(project, profile, key, a.id, st, reason)", ov)
+        self.assertIn("reasonChoices(sheet)", rp)
+        self.assertIn("{ none: true }", rp)
+        self.assertIn("ev.currentTarget", self.comp("attempt-card.js"))
+
+
     def test_the_queue_groups_by_batch_and_calls_the_batch_routes(self):
         bar = self.comp("queue-bar.js")
         for needle in ("function group(", "batchId(e)", "api.moveBatch(id, to2)", "api.cancelBatch(id)", "confirmAction(", "held === 'troubleshooting'",

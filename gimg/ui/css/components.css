@@ -251,3 +251,7 @@ dialog.confirm { width: min(92vw, 420px); }
 .order-status .notice { flex: 1 1 100%; }
 .gallery .batch-head { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 6px 0; border-top: 1px solid var(--rule); }
 .gallery .batch-head h3 { margin: 0; font-size: 15px; overflow-wrap: anywhere; }
+
+/* Motivo de un «No» o de un «Ninguno vale» (0.8.0) */
+dialog.reason { width: min(92vw, 520px); }
+.reason-choices { flex-wrap: wrap; }

@@ -1323,5 +1323,13 @@
   "ui.batch.attempts": "{n} attempts",
   "ui.batch.pending": "{n} to come",
   "ui.batch.failed": "FAILED: {reason}",
-  "ui.reason.other": "other"
+  "ui.reason.other": "other",
+  "ui.reason.title": "Why is {id} not good?",
+  "ui.reason.otherText": "Say it in a few words",
+  "ui.reason.none": "No reason",
+  "ui.reason.accept": "Accept",
+  "ui.batch.noneOk": "None are good",
+  "ui.batch.noneOkTitle": "None of the batch is good",
+  "ui.batch.noneOkMessage": "It counts as a failure of the order. Choose the reason and confirm.",
+  "ui.batch.noneOkConfirm": "Confirm failure"
 }

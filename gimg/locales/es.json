@@ -1323,5 +1323,13 @@
   "ui.batch.attempts": "{n} intentos",
   "ui.batch.pending": "{n} por llegar",
   "ui.batch.failed": "FALLO: {reason}",
-  "ui.reason.other": "otro"
+  "ui.reason.other": "otro",
+  "ui.reason.title": "¿Por qué no vale {id}?",
+  "ui.reason.otherText": "Cuéntalo en pocas palabras",
+  "ui.reason.none": "Sin motivo",
+  "ui.reason.accept": "Aceptar",
+  "ui.batch.noneOk": "Ninguno vale",
+  "ui.batch.noneOkTitle": "Ninguno de la tanda vale",
+  "ui.batch.noneOkMessage": "Cuenta como un fallo del pedido. Elige el motivo y confirma.",
+  "ui.batch.noneOkConfirm": "Confirmar fallo"
 }
