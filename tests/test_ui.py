@@ -746,6 +746,22 @@ class Step5bUi(unittest.TestCase):
             self.assertIn(needle, api)
         self.assertNotIn("batchCancel(id)).then", api)
 
+    def test_the_gallery_and_the_header_follow_the_brand_order_api(self):
+        view = self.comp("order-view.js")
+        for needle in ("sectionsOf(order,", "batchHead(ctx, head)", "blockedReason(order)", "data: { slot: 'troubleshoot' }", "api.brandSheet(project)"):
+            self.assertIn(needle, view)
+        # a retried entry of a brand order sends the subject and the clean zone, never the prompt (order.brand_prompt)
+        retry = view[view.index("retry: guard"):view.index("cancel: guard")]
+        self.assertIn("...(brandOrder ? {} : text !== null", retry)
+        self.assertIn("{ subject: e.subject }", retry)
+        self.assertIn("{ cleanZone: e.cleanZone }", retry)
+        # Recreate falls back to the subject of the order when the attempt carries none
+        retouch = self.comp("retouch-panel.js")
+        self.assertIn("order.subject || ''", retouch[retouch.index("load(attempt)"):retouch.index("vary(attempt)")])
+        self.assertIn("b.disabled = wait || Boolean(ctx.blocked)", retouch)
+        self.assertIn("disabled: Boolean(ctx.blocked)", self.comp("attempt-card.js"))
+        self.assertIn("modeBadge(o.mode)", self.comp("project-view.js"))
+
     def test_locales_have_the_same_step_5b_keys_in_both_languages(self):
         loc = {lang: json.loads(read(LOCALES / (lang + ".json"))) for lang in ("es", "en")}
         for key in ("ui.queue.batches", "ui.queue.batchesOne", "ui.queue.batchCancel", "ui.queue.held"):

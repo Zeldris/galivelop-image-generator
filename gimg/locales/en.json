@@ -1306,5 +1306,22 @@
   "ui.queue.batchMoved": "Batch {id} moved",
   "ui.queue.batchEntries": "Entries ({n})",
   "ui.queue.held": "held: order in troubleshooting",
-  "ui.queue.batchesOne": "1 batch queued ({m} images)"
+  "ui.queue.batchesOne": "1 batch queued ({m} images)",
+  "ui.mode.brand": "Brand",
+  "ui.mode.free": "Free",
+  "ui.mode.toFreeNotice": "This order went free-form: it no longer follows the brand sheet nor counts failures.",
+  "ui.project.col.mode": "Mode",
+  "ui.project.col.failures": "Failures",
+  "ui.project.noFailures": "no failures",
+  "ui.fail.marker": "Failures {count} of {limit}",
+  "ui.fail.warn": "One more failure and it is time to redesign.",
+  "ui.fail.reasons": "Reasons so far: {reasons}",
+  "ui.fail.blocked": "Order in troubleshooting: {count} failures of {limit}. Nothing is queued until it is redesigned.",
+  "ui.fail.blockedChip": "In troubleshooting",
+  "ui.batch.title": "Batch {n}",
+  "ui.batch.subject": "subject: \"{subject}\"",
+  "ui.batch.attempts": "{n} attempts",
+  "ui.batch.pending": "{n} to come",
+  "ui.batch.failed": "FAILED: {reason}",
+  "ui.reason.other": "other"
 }

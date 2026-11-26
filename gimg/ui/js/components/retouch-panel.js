@@ -34,7 +34,8 @@ export function retouchPanel(ctx, { onSubmit }) {
     const s = builder ? builder.state() : null;
     const wait = brandMode && (!s || s.status !== 'ready');
     for (const b of sendable) {
-      b.disabled = wait;
+      b.disabled = wait || Boolean(ctx.blocked); // un pedido en troubleshooting no encola (ctx.blocked trae el motivo)
+      b.title = ctx.blocked || '';
       if (wait && builder) b.setAttribute('aria-describedby', builder.reasonId); else b.removeAttribute('aria-describedby');
     }
     dirty.hidden = !brandChanged() && prompt.value === (order.prompt || '') && negative.value.trim() === (order.negative || '');
@@ -158,7 +159,8 @@ export function retouchPanel(ctx, { onSubmit }) {
     load(attempt) {
       const p = attempt.params || {};
       if (builder) {
-        if (attempt.subject !== undefined) builder.setValues({ subject: attempt.subject || '', cleanZone: attempt.cleanZone || '' });
+        // un intento que no trae el sujeto (anterior a 0.8, o de la cola) carga el del pedido
+        builder.setValues({ subject: attempt.subject !== undefined ? attempt.subject || '' : order.subject || '', cleanZone: attempt.cleanZone !== undefined ? attempt.cleanZone || '' : order.cleanZone || '' });
       } else prompt.value = attempt.prompt ? stripStyle(attempt.prompt, cfg.style) : order.prompt || '';
       negative.value = attempt.negative || '';
       if (p.steps !== undefined) steps.value = p.steps;

@@ -17,6 +17,8 @@ import { textPanel } from './text-panel.js';
 import { invalidateMeasure } from './measure-chip.js';
 import { isTyping, oneKeyEnabled } from './shortcuts.js';
 import { toast, toastError, toastOk } from './toast.js';
+import { batchHead } from './batch-head.js';
+import { modeBadge, isBrand, isBlocked, blockedReason, failureMarker, failureNotice, modeChangeNotice } from './brand-order.js';
 
 const PENDING = ['queued', 'running'];
 
@@ -36,6 +38,9 @@ export async function orderView(host, route) {
     return;
   }
   if (!host.isConnected) return; // se navegó a otra pantalla durante la carga: nada que registrar
+  let sheet = null; // la hoja de marca, solo para rotular los motivos de un pedido de marca
+  if (isBrand(order)) { try { sheet = await api.brandSheet(project); } catch { sheet = null; } }
+  if (!host.isConnected) return;
   const cfg = info.config || {};
   const profileCfg = (cfg.profiles || {})[profile] || {};
   const brand = cfg.brand || {};
@@ -43,7 +48,7 @@ export async function orderView(host, route) {
   const ctx = {
     project, profile, key, order, profileCfg, profiles: cfg.profiles || {}, brand, templates: Array.isArray(templates) ? templates : [], models: Array.isArray(models) ? models : [],
     measure: { zone: compose.zone, textColor: compose.textColor || brand.textColor, paletteMin: brand.paletteMin },
-    showRaw: store.get('showRaw'), compare: [], queuedIds: [], estimateMs: estimateFor(profile),
+    showRaw: store.get('showRaw'), compare: [], queuedIds: [], estimateMs: estimateFor(profile), sheet, blocked: blockedReason(order),
     actions: {},
   };
 
@@ -54,7 +59,8 @@ export async function orderView(host, route) {
   const panel = h('aside.order-panel', { aria: { label: t('ui.order.panel') } });
   const title = h('div.page-head', {}, h('h1', {}, key), h('span.chip', {}, profile, profileCfg.width ? ` · ${profileCfg.width}×${profileCfg.height}` : ''),
     h('a.btn.btn-ghost', { href: to.project(project) }, '← ', t('ui.order.backToProject')));
-  host.replaceChildren(title, h('div.order-layout', {}, h('div', {}, deliveredHost, compareHost, galleryBar, gallery), panel));
+  const statusHost = h('div.order-status');
+  host.replaceChildren(title, statusHost, h('div.order-layout', {}, h('div', {}, deliveredHost, compareHost, galleryBar, gallery), panel));
 
   let retouch;
   let texts;
@@ -90,7 +96,11 @@ export async function orderView(host, route) {
     copyError: (e) => copy(e.errorText || JSON.stringify(e.error), t('ui.attempt.copied')),
     retry: guard(async (e) => {
       const text = e.prompt === null || e.prompt === undefined ? null : stripStyle(e.prompt, profileCfg.style);
-      await submit({ count: 1, seed: e.seed, draft: Boolean(e.draft), ...(text !== null && text !== (ctx.order.prompt || '') ? { prompt: text } : {}), ...((e.negative || '') !== (ctx.order.negative || '') ? { negative: e.negative || '' } : {}), ...(e.template ? { template: e.template } : {}), ...pick(e.params, ['steps', 'cfg', 'sampler']),
+      const brandOrder = isBrand(ctx.order); // en un pedido de marca la API no admite `prompt` (order.brand_prompt): viajan sujeto y zona
+      await submit({ count: 1, seed: e.seed, draft: Boolean(e.draft),
+        ...(brandOrder ? {} : text !== null && text !== (ctx.order.prompt || '') ? { prompt: text } : {}),
+        ...(brandOrder && e.subject !== undefined && e.subject !== (ctx.order.subject || '') ? { subject: e.subject } : {}),
+        ...(brandOrder && e.cleanZone !== undefined && e.cleanZone !== (ctx.order.cleanZone || '') ? { cleanZone: e.cleanZone } : {}), ...((e.negative || '') !== (ctx.order.negative || '') ? { negative: e.negative || '' } : {}), ...(e.template ? { template: e.template } : {}), ...pick(e.params, ['steps', 'cfg', 'sampler']),
         ...(e.params && e.params.model && e.params.model !== (ctx.order.params || {}).model && e.params.model !== profileCfg.model ? { model: e.params.model } : {}) }); // F4d: el modelo del intento, si no es el del pedido ni el del perfil
     }),
     cancel: guard(async (e) => { await api.cancel(e.id); toast(t('ui.queue.cancelled', { id: e.id })); await poll.refreshNow(); }),
@@ -177,6 +187,10 @@ export async function orderView(host, route) {
     const loose = entries.filter((e) => e.state !== 'done' && (e.attemptId === null || e.attemptId === undefined || !knownAttempts.has(e.attemptId)))
       .sort((a, b) => b.id - a.id);
     const attempts = [...(order.attempts || [])].sort((a, b) => (order.chosen === a.id ? -1 : order.chosen === b.id ? 1 : b.id - a.id));
+    ctx.blocked = blockedReason(order);
+    section(statusHost, JSON.stringify([order.mode, order.failures, order.troubleshooting, order.modeChanges, Boolean(ctx.sheet)]), () => [
+      modeBadge(order.mode), failureMarker(order), ctx.blocked ? h('span.chip.chip-bad', { data: { slot: 'blocked' } }, t('ui.fail.blockedChip')) : null,
+      modeChangeNotice(order), failureNotice(order, ctx.sheet)]);
     ctx.compare = ctx.compare.filter((id) => knownAttempts.has(id));
     ctx.attemptsSorted = attempts;
     ctx.loose = loose;
@@ -206,7 +220,7 @@ export async function orderView(host, route) {
 
     // panel lateral: se reconstruye solo si cambió el prompt o los parámetros del pedido (no `chosen` ni `text`:
     // elegir, deshacer o guardar los textos no debe borrar lo que se está editando ni el foco)
-    const sig = JSON.stringify([order.prompt, order.params, order.seed, order.draft]);
+    const sig = JSON.stringify([order.prompt, order.params, order.seed, order.draft, order.mode, ctx.blocked]);
     if (panel.dataset.sig !== sig) {
       panel.dataset.sig = sig;
       retouch = retouchPanel(ctx, { onSubmit: guard(submit) });
@@ -214,7 +228,8 @@ export async function orderView(host, route) {
         onSave: async (text) => { try { await api.setText(project, profile, key, text); ctx.order.text = text; toastOk(t('ui.text.saved')); return true; } catch (e) { toastError(describeError(e, t)); return false; } },
         onRecompose: (id) => ctx.actions.recompose({ id }),
       });
-      panel.replaceChildren(retouch.node, texts.node);
+      // hueco del formulario de troubleshooting (paso 5c): mientras el pedido está bloqueado, dice por qué no se encola
+      panel.replaceChildren(h('div', { data: { slot: 'troubleshoot' } }, ctx.blocked ? h('p.notice.notice-bad', { role: 'alert' }, ctx.blocked) : null), retouch.node, texts.node);
     } else {
       if (texts && texts.setChosen) texts.setChosen(order.chosen);
       if (retouch && retouch.setChosen) retouch.setChosen();
@@ -228,15 +243,24 @@ export async function orderView(host, route) {
     const order = ctx.order;
     const attempts = ctx.attemptsSorted || [];
     const loose = ctx.loose || [];
-    const wanted = [
-      ...loose.map((e) => ({ k: `entry:${e.id}`, sig: JSON.stringify([e, ctx.queuedIds.indexOf(e.id)]), make: () => queueCard(ctx, e) })),
-      ...attempts.map((a) => {
-        const { note, ...rest } = a; // la nota la escribe la propia tarjeta: no cuenta como cambio
-        const st = stateOf(order, a);
-        const compared = ctx.compare.includes(a.id);
-        return { k: `attempt:${a.id}`, sig: JSON.stringify([rest, st, compared, ctx.showRaw, ctx.templates.map((x) => x.id)]), make: () => attemptCard(ctx, a) };
-      }),
-    ];
+    const wanted = [];
+    const cardOf = (a) => {
+      const { note, ...rest } = a; // la nota la escribe la propia tarjeta: no cuenta como cambio
+      const st = stateOf(order, a);
+      const compared = ctx.compare.includes(a.id);
+      return { k: `attempt:${a.id}`, sig: JSON.stringify([rest, st, compared, ctx.showRaw, ctx.templates.map((x) => x.id), ctx.blocked]), make: () => attemptCard(ctx, a) };
+    };
+    const entryOf = (e) => ({ k: `entry:${e.id}`, sig: JSON.stringify([e, ctx.queuedIds.indexOf(e.id)]), make: () => queueCard(ctx, e) });
+    // la elegida, fijada arriba del todo; luego una sección por tanda (la más nueva primero) y, al final, lo que no tiene tanda
+    const chosen = attempts.find((a) => a.id === order.chosen);
+    if (chosen) wanted.push(cardOf(chosen));
+    for (const sec of sectionsOf(order, attempts.filter((a) => a !== chosen), loose)) {
+      if (sec.id !== null) {
+        const head = { id: sec.id, rec: sec.rec, n: sec.n, attempts: sec.attempts, pending: sec.loose.filter((e) => PENDING.includes(e.state)).length };
+        wanted.push({ k: `batch:${sec.id}`, sig: JSON.stringify([sec.rec, sec.n, sec.attempts.map((a) => [a.id, a.state]), head.pending, Boolean(ctx.sheet)]), make: () => batchHead(ctx, head) });
+      }
+      wanted.push(...sec.loose.map(entryOf), ...sec.attempts.map(cardOf));
+    }
     if (!wanted.length) {
       if (cardsByKey.size || !gallery.firstChild) {
         cardsByKey.clear();
@@ -319,6 +343,22 @@ export async function orderView(host, route) {
   const want = route.query && route.query.a;
   const first = want ? gallery.querySelector(`[data-attempt="${want}"]`) : null;
   (first || gallery.querySelector('[data-kind]') || el('main')).focus();
+}
+
+/** Las secciones de la galería: una por tanda, la más nueva arriba, y al final la de lo que no tiene tanda (`id: null`).
+    `n` es el número de la tanda por orden de creación; sin registro en `order.batches` (un pedido viejo) se numera por su id. */
+export function sectionsOf(order, attempts, loose) {
+  const recs = [...(order.batches || [])].sort((a, b) => a.id - b.id);
+  const ids = new Set(recs.map((r) => r.id));
+  const idOf = (x) => (x.batch !== null && x.batch !== undefined && typeof x.batch === 'object' ? x.batch.id : x.batch);
+  const has = (x) => { const b = idOf(x); return b !== null && b !== undefined; };
+  for (const x of [...attempts, ...loose]) if (has(x)) ids.add(idOf(x));
+  const sorted = [...ids].sort((a, b) => a - b);
+  const out = sorted.map((id, i) => ({ id, rec: recs.find((r) => r.id === id) || null, n: i + 1,
+    attempts: attempts.filter((a) => idOf(a) === id), loose: loose.filter((e) => idOf(e) === id) })).reverse();
+  const rest = { id: null, rec: null, n: 0, attempts: attempts.filter((a) => !has(a)), loose: loose.filter((e) => !has(e)) };
+  if (rest.attempts.length || rest.loose.length) out.push(rest);
+  return out;
 }
 
 function byId(list, id) { return list.find((a) => a.id === id); }

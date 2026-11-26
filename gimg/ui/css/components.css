@@ -246,3 +246,8 @@ dialog.confirm { width: min(92vw, 420px); }
 .queue-batch-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 6px; }
 .queue-batch-head .who { font-weight: 600; overflow-wrap: anywhere; }
 .queue-batch > details > summary { cursor: pointer; min-height: var(--tap); display: inline-flex; align-items: center; color: var(--text-2); font: 500 12px/1.4 var(--font-mono); }
+/* Pedido de marca: estado en la cabecera y secciones por tanda (0.8.0) */
+.order-status { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-bottom: 12px; }
+.order-status .notice { flex: 1 1 100%; }
+.gallery .batch-head { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 6px 0; border-top: 1px solid var(--rule); }
+.gallery .batch-head h3 { margin: 0; font-size: 15px; overflow-wrap: anywhere; }

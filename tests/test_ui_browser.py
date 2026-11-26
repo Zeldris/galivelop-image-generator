@@ -14,7 +14,7 @@ from pathlib import Path
 from unittest import mock
 from urllib.parse import quote
 
-from gimg import cli, paths, png, server
+from gimg import cli, orders, paths, png, server
 from tests import browser
 from tests.test_brandsheet import PORTAL, SUBJECT
 
@@ -1114,6 +1114,78 @@ class BrandBatches(UiBase):
         self.js("document.querySelector('dialog.confirm .btn-danger').click(); true")
         self.page.wait("!document.querySelector('[data-fid=\"cancel-b%d\"]')" % b)
         self.assertEqual({e["state"] for e in self.queued("portada/c")}, {"cancelled"})
+        self.no_problems()
+
+
+@unittest.skipUnless(TOOLS, "ffmpeg and rsvg-convert are needed to compose")
+class BrandGallery(OrderPages):
+    """0.8.0 paso 5b: la galería por tandas, el distintivo Marca/Libre, el marcador de fallos y el pedido bloqueado."""
+
+    KEYS = {"portada/g1": 1, "portada/g2": 2, "portada/g3": 3}  # clave -> tandas falladas a mano
+
+    @classmethod
+    def customize_project(cls):
+        super().customize_project()
+        add_brand_sheet(cls.root)
+
+    @classmethod
+    def prepare(cls):
+        for key, failed in cls.KEYS.items():
+            cls.submit(key, count=2, seed=500, mode="brand", piece="cover", subject=SUBJECT, prompt=None)
+            for n in range(max(2, failed) - 1):  # the order's own batch plus these, newest last
+                run_cli("attempt", "new", PROJECT, key, PROFILE, "--count", "2", "--seed", str(600 + 10 * n))
+                run_cli("work")
+            for rec in orders.get(PROJECT, key, PROFILE)["batches"][:failed]:
+                run_cli("order", "fail", PROJECT, key, PROFILE, str(rec["id"]), "--reason", "horizon")
+
+    def test_the_gallery_has_one_section_per_batch_newest_first_and_the_header_says_mode_and_failures(self):
+        self.open(order_route("portada/g1"), "document.querySelectorAll('.gallery .batch-head').length >= 2")
+        heads = self.js("[...document.querySelectorAll('.gallery .batch-head h3')].map(h => h.textContent)")
+        self.assertEqual(len(heads), 2)
+        self.assertTrue(heads[0].startswith("Tanda 2 · "), heads)
+        self.assertTrue(heads[1].startswith("Tanda 1 · "), heads)
+        self.assertIn("sujeto: «A wide sea chart", heads[1])
+        self.assertIn("2 intentos", heads[1])
+        self.assertEqual(self.js("document.querySelector('.order-status [data-mode]').dataset.mode"), "brand")
+        self.assertEqual(self.js("document.querySelector('.order-status [data-mode]').textContent"), "Marca")
+        self.assertIn("Fallos 1 de 3", self.js("document.querySelector('.fail-marker').textContent"))
+        self.assertIn("■□□", self.js("document.querySelector('.fail-marker').textContent"))
+        self.assertIsNone(self.js("document.querySelector('[data-slot=fail-notice]')"))
+        # the first batch is the failed one: its header says so, with the sheet's label
+        self.assertIn("FALLO: Horizonte", self.js("document.querySelector('.gallery .batch-head[data-batch] [data-slot=batch-failed]').textContent"))
+        # the cards come after their header, newest section first
+        order = self.js("[...document.querySelectorAll('.gallery > *')].map(n => n.classList.contains('batch-head') ? 'H' : 'A').join('')")
+        self.assertEqual(order, "HAAHAA")
+        self.assertEqual(self.js("document.querySelector('.gallery .attempt [data-mode]').textContent"), "Marca")
+        self.no_problems()
+
+    def test_the_second_failure_warns_with_the_reasons(self):
+        self.open(order_route("portada/g2"), "document.querySelector('[data-slot=fail-notice]')")
+        text = self.js("document.querySelector('[data-slot=fail-notice]').textContent")
+        self.assertIn("Un fallo más y toca rediseñar.", text)
+        self.assertIn("Motivos hasta ahora: Horizonte ×2", text)
+        self.assertIn("Fallos 2 de 3", self.js("document.querySelector('.fail-marker').textContent"))
+        self.no_problems()
+
+    def test_a_blocked_order_cannot_queue_and_says_why(self):
+        self.open(order_route("portada/g3"), "document.querySelector('.order-status [data-slot=blocked]')")
+        reason = self.js("document.querySelector('[data-slot=troubleshoot]').textContent")
+        self.assertIn("3 fallos de 3", reason)
+        self.assertTrue(self.js("document.querySelector('.order-panel .panel-actions .btn-primary').disabled"))
+        self.assertIn("3 fallos de 3", self.js("document.querySelector('.order-panel .panel-actions .btn-primary').title"))
+        self.assertTrue(self.js("[...document.querySelectorAll('.gallery .attempt details .btn')].filter(b => /Recrear|Variar/.test(b.textContent)).every(b => b.disabled)"))
+        self.page.key("g")
+        self.page.pump(0.5)
+        self.assertEqual([e for e in self.api("GET", "/api/queue") if e["key"] == "portada/g3" and e["state"] == "queued"], [])
+        self.no_problems()
+
+    def test_the_order_list_has_the_mode_and_failures_columns(self):
+        self.open("/p/tarkor/pedidos", "document.querySelector('.order-row [data-col=mode]')")
+        self.page.wait("document.querySelector('.order-row [data-col=failures]')")
+        rows = self.js("[...document.querySelectorAll('.order-row')].filter(r => r.textContent.includes('portada/g2')).map(r => r.querySelector('[data-col=failures]').textContent)")
+        self.assertEqual(len(rows), 1)
+        self.assertIn("Fallos 2 de 3", rows[0])
+        self.assertEqual(self.js("document.querySelector('.order-row [data-col=mode]').textContent"), "Marca")
         self.no_problems()
 
 

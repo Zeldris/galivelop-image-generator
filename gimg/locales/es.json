@@ -1306,5 +1306,22 @@
   "ui.queue.batchMoved": "Tanda {id} movida",
   "ui.queue.batchEntries": "Entradas ({n})",
   "ui.queue.held": "retenida: pedido en troubleshooting",
-  "ui.queue.batchesOne": "1 tanda en cola ({m} imágenes)"
+  "ui.queue.batchesOne": "1 tanda en cola ({m} imágenes)",
+  "ui.mode.brand": "Marca",
+  "ui.mode.free": "Libre",
+  "ui.mode.toFreeNotice": "Este pedido pasó a imagen libre: ya no lleva la hoja de marca ni cuenta fallos.",
+  "ui.project.col.mode": "Modo",
+  "ui.project.col.failures": "Fallos",
+  "ui.project.noFailures": "sin fallos",
+  "ui.fail.marker": "Fallos {count} de {limit}",
+  "ui.fail.warn": "Un fallo más y toca rediseñar.",
+  "ui.fail.reasons": "Motivos hasta ahora: {reasons}",
+  "ui.fail.blocked": "Pedido en troubleshooting: {count} fallos de {limit}. No se encola nada hasta rediseñar.",
+  "ui.fail.blockedChip": "En troubleshooting",
+  "ui.batch.title": "Tanda {n}",
+  "ui.batch.subject": "sujeto: «{subject}»",
+  "ui.batch.attempts": "{n} intentos",
+  "ui.batch.pending": "{n} por llegar",
+  "ui.batch.failed": "FALLO: {reason}",
+  "ui.reason.other": "otro"
 }
