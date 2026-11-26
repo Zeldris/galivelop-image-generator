@@ -71,7 +71,7 @@ Every error response is:
 the schema lines when the order does not validate. Language: `?lang=es|en`, else the first supported one in
 `Accept-Language`, else the system's. Statuses: 400 malformed request or invalid value (`api.bad_json`,
 `api.bad_param`, `*.invalid`, `limit.*`, `path.*`, `key.*`); 403 Host or Origin; 404 `project.unknown`,
-`order.unknown`, `order.profile_unknown`, `order.attempt_unknown`, `queue.unknown`, `api.not_found`; 405, 411, 413, 415
+`order.unknown`, `order.profile_unknown`, `order.attempt_unknown`, `queue.unknown`, `queue.batch_not_found`, `api.not_found`; 405, 411, 413, 415
 as above; 409 state that does not allow it (`compose.template_exists`, `order.choose_*`, `order.undo_*`,
 `order.history_empty`, `queue.not_cancellable`, `queue.not_movable`, `compose.busy`, `measure.busy`,
 `api.heavy_busy`, `delivery.target_taken`); 500 server-side failures (`api.unexpected` carries `"message":
@@ -385,6 +385,33 @@ place; `top` the first). Response: the entry. Errors: `queue.unknown`, `queue.no
 
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/5/move -d '{"to":"top"}'
+```
+
+### POST /api/queue/batches/{id}/move
+
+Moves a whole batch. A batch is the entries of one order submit or one `attempts` call; brand-mode ones always make a
+batch (even of one entry), free ones only when there is more than one. Each batch entry carries
+`batch: {"id", "index", "size"}` (`id` is its first entry's; also in `GET /api/queue`), the attempt it generates carries
+`batch: <id>` and `order.json` stores `batches: [{id, size, mode, subject?, cleanZone?, warnings, createdAt}]`. The
+batch's `queued` entries move together as one block: `up`/`down` pass one neighbouring entry or batch; `top` makes
+them first. Body: `{"to": "up|down|top"}`. Response: `{"entries": [...]}` (the ones moved). Errors:
+`queue.batch_not_found` (404), `queue.not_movable` (409, none is `queued`), `queue.bad_move` (400). CLI:
+`gimg queue move --batch <id> up|down|top`.
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/batches/4/move -d '{"to":"top"}'
+```
+
+### POST /api/queue/batches/{id}/cancel
+
+Cancels the batch's `queued` entries and requests the cancellation of the running one (like `cancel`). Body: `{}`.
+Response: `{"entries": [...]}` (all of the batch's). Errors: `queue.batch_not_found` (404), `queue.not_cancellable`
+(409, none is `queued` or `running` any more). CLI: `gimg queue cancel --batch <id>`. Stop on score: when an attempt
+of the batch finishes with `score.value` >= 9 (`queue.STOP_SCORE`; the score arrives in 0.9.0), the worker cancels the
+batch's remaining `queued` entries and sets `stoppedBy: <attempt id>` on them.
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/batches/4/cancel -d '{}'
 ```
 
 ### POST /api/queue/clear

@@ -1228,5 +1228,11 @@
   "brandsheet.md.inherited": "heredado de {project}",
   "brandsheet.md.words_range": "{min}-{max} palabras",
   "error.cli.md_target": "da como mucho una de --write o --check",
-  "error.brandsheet.markdown_marker_in_data": "el valor de {field} contiene un marcador de gimg brand md; no se puede generar el bloque"
+  "error.brandsheet.markdown_marker_in_data": "el valor de {field} contiene un marcador de gimg brand md; no se puede generar el bloque",
+  "error.queue.batch_not_found": "no hay ninguna tanda {id} en la cola",
+  "error.queue.bad_target": "indica un número de entrada o --batch <id>, no los dos ni ninguno (move: [entrada] up|down|top)",
+  "cli.arg.queue_batch": "actuar sobre una tanda entera (su id es el de su primera entrada)",
+  "cli.arg.queue_move_words": "el número de entrada y adónde moverla (up, down o top); con --batch, solo adónde",
+  "cli.out.batch_moved": "Tanda {id}: movida ({to}); entradas {ids}.",
+  "cli.out.batch_cancelled": "Tanda {id}: cancelada o cancelación pedida; entradas {ids}."
 }

@@ -126,6 +126,23 @@
       "type": "string",
       "description": "Stored by the generator in brand mode: the version of the sheet that built the prompt. Not for clients to set."
     },
+    "batches": {
+      "type": "array",
+      "description": "Stored by the generator: one record per enqueue of attempts (a brand one, or more than one attempt). Not for clients to set.",
+      "items": {
+        "type": "object",
+        "required": ["id", "size", "mode", "warnings", "createdAt"],
+        "properties": {
+          "id": {"type": "integer", "description": "Id of the batch's first queue entry."},
+          "size": {"type": "integer"},
+          "mode": {"enum": ["brand", "free"]},
+          "subject": {"type": "string"},
+          "cleanZone": {"type": "string"},
+          "warnings": {"type": "array", "description": "The lint checks with status warn.", "items": {"type": "object"}},
+          "createdAt": {"type": "string"}
+        }
+      }
+    },
     "modeChanges": {
       "type": "array",
       "description": "Stored by the generator: each switch of the order's mode (brand to free).",

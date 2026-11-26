@@ -67,7 +67,7 @@ Toda respuesta de error es:
 líneas del esquema cuando el pedido no valida. Idioma: `?lang=es|en`, si no el primero soportado de `Accept-Language`,
 si no el del sistema. Estados: 400 petición mal formada o valor no válido (`api.bad_json`, `api.bad_param`, `*.invalid`,
 `limit.*`, `path.*`, `key.*`); 403 Host u Origin; 404 `project.unknown`, `order.unknown`, `order.profile_unknown`,
-`order.attempt_unknown`, `queue.unknown`, `api.not_found`; 405, 411, 413, 415 de arriba; 409 estado que no lo permite
+`order.attempt_unknown`, `queue.unknown`, `queue.batch_not_found`, `api.not_found`; 405, 411, 413, 415 de arriba; 409 estado que no lo permite
 (`compose.template_exists`, `order.choose_*`, `order.undo_*`, `order.history_empty`, `queue.not_cancellable`, `queue.not_movable`, `compose.busy`, `measure.busy`,
 `api.heavy_busy`, `delivery.target_taken`); 500 fallos del lado del servidor (`api.unexpected` lleva `"message":
 "Tipo: texto"`). Los textos de todos los códigos: `GET /api/locales/{lang}`.
@@ -375,6 +375,33 @@ no está `queued`), `queue.bad_move` (400). CLI: `gimg queue move <id> up|down|t
 
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/5/move -d '{"to":"top"}'
+```
+
+### POST /api/queue/batches/{id}/move
+
+Mueve una tanda entera. Una tanda son las entradas de un mismo envío de pedido o de una misma llamada a `attempts`;
+las de modo marca siempre forman una (también de una), las libres solo si son más de una. Cada entrada de tanda lleva
+`batch: {"id", "index", "size"}` (`id` es el de su primera entrada; también sale en `GET /api/queue`), el intento que
+genera lleva `batch: <id>` y `order.json` guarda `batches: [{id, size, mode, subject?, cleanZone?, warnings, createdAt}]`.
+Las entradas `queued` de la tanda se mueven juntas, como un bloque: `up`/`down` pasan por encima de una entrada u otra
+tanda vecina; `top` las pone primeras. Cuerpo: `{"to": "up|down|top"}`. Respuesta: `{"entries": [...]}` (las movidas).
+Errores: `queue.batch_not_found` (404), `queue.not_movable` (409, ninguna `queued`), `queue.bad_move` (400). CLI:
+`gimg queue move --batch <id> up|down|top`.
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/batches/4/move -d '{"to":"top"}'
+```
+
+### POST /api/queue/batches/{id}/cancel
+
+Cancela las entradas `queued` de la tanda y pide la cancelación de la que corre (como `cancel`). Cuerpo: `{}`.
+Respuesta: `{"entries": [...]}` (todas las de la tanda). Errores: `queue.batch_not_found` (404), `queue.not_cancellable`
+(409, ya no queda ninguna `queued` ni `running`). CLI: `gimg queue cancel --batch <id>`. Parada por nota: cuando un
+intento de la tanda termina con `score.value` >= 9 (`queue.STOP_SCORE`; la nota llega en 0.9.0), el trabajador cancela
+las entradas `queued` que quedan de su tanda y les pone `stoppedBy: <id del intento>`.
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/batches/4/cancel -d '{}'
 ```
 
 ### POST /api/queue/clear

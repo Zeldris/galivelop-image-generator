@@ -1228,5 +1228,11 @@
   "brandsheet.md.inherited": "inherited from {project}",
   "brandsheet.md.words_range": "{min}-{max} words",
   "error.cli.md_target": "give at most one of --write or --check",
-  "error.brandsheet.markdown_marker_in_data": "the value of {field} contains a gimg brand md marker; the block cannot be generated"
+  "error.brandsheet.markdown_marker_in_data": "the value of {field} contains a gimg brand md marker; the block cannot be generated",
+  "error.queue.batch_not_found": "there is no batch {id} in the queue",
+  "error.queue.bad_target": "give an entry number or --batch <id>, not both or neither (move: [entry] up|down|top)",
+  "cli.arg.queue_batch": "act on a whole batch (the id is its first entry's)",
+  "cli.arg.queue_move_words": "the entry number and where to move it (up, down or top); with --batch, only where",
+  "cli.out.batch_moved": "Batch {id}: moved ({to}); entries {ids}.",
+  "cli.out.batch_cancelled": "Batch {id}: cancelled or cancellation requested; entries {ids}."
 }

@@ -455,12 +455,13 @@ def prepare(project: str, order: dict) -> tuple:
     no ``prompt``: the sheet assembles it (``brand.no_sheet``, ``order.piece_required``, ``order.subject_required``,
     ``order.brand_prompt``, ``brand.blocked``). ``profile`` comes from the piece type (another one is
     ``order.profile_mismatch``); ``seed`` and ``count`` default to the piece's; ``info["model"]`` is the piece's model when
-    the project's profile has another; ``sheetVersion`` is stored. ``sheetVersion`` and ``modeChanges`` sent by a client are dropped."""
+    the project's profile has another; ``sheetVersion`` is stored. ``sheetVersion``, ``modeChanges`` and ``batches`` sent by a client are dropped."""
     if not isinstance(order, dict):
         return order, {}
     order = dict(order)
     order.pop("sheetVersion", None)
     order.pop("modeChanges", None)
+    order.pop("batches", None)
     probe = {"key": "x", "profile": "x", "prompt": "x", **{k: order[k] for k in _BRAND_KEYS if k in order}}
     _check_fields_of(probe)
     if order.get("mode", "free") != "brand":
@@ -548,6 +549,11 @@ def apply_changes(project: str, key: str, profile: str, changes: dict) -> None:
     _modify(project, key, profile, change)
 
 
+def add_batch(project: str, key: str, profile: str, record: dict) -> None:
+    """Append the record of a batch (``{id, size, mode, warnings, createdAt, ...}``, see `queue.enqueue`) to the order's ``batches``."""
+    _modify(project, key, profile, lambda order: order.setdefault("batches", []).append(copy.deepcopy(record)))
+
+
 def attempt_for_entry(project: str, key: str, profile: str, entry_id: int):
     """The attempt made by queue entry `entry_id` (a copy), or ``None``."""
     for item in get(project, key, profile)["attempts"]:
@@ -590,6 +596,8 @@ def _new_record(order: dict, spec: dict, new_id: int, image: str, init_image=Non
     record["mode"] = "brand" if spec.get("mode") == "brand" else "free"
     if record["mode"] == "brand" and isinstance(spec.get("sheetVersion"), str):
         record["sheetVersion"] = spec["sheetVersion"]
+    if type(spec.get("batch")) is int:  # the batch (its first entry's id) of the queue entry that made it
+        record["batch"] = spec["batch"]
     if spec.get("draft") is True:  # only drafts carry the key, so stored orders keep their shape
         record["draft"] = True
     if isinstance(spec.get("negative"), str) and spec["negative"]:  # same for the negative prompt

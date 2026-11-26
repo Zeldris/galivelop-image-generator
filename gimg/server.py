@@ -44,7 +44,7 @@ BASE_HEADERS = {
 # --- error code -> HTTP status (docs/plan.md, «Errores e idioma»); first match wins, no match = 500 ---
 _EXACT = {
     403: ("api.bad_host", "api.bad_origin"),
-    404: ("project.unknown", "order.unknown", "order.profile_unknown", "order.attempt_unknown", "queue.unknown",
+    404: ("project.unknown", "order.unknown", "order.profile_unknown", "order.attempt_unknown", "queue.unknown", "queue.batch_not_found",
           "api.not_found", "compose.template_missing", "compose.logo_missing", "brandsheet.none", "brandsheet.missing"),
     # the project's sheet exists but its content (or its parents) cannot be used; listed for reference:
     # the `brandsheet.` prefix below already gives 422 to these and to any new content code
@@ -837,6 +837,20 @@ def queue_move(req):
     if not isinstance(to, str):
         raise GimgError("api.bad_param", name="to")
     return queue.entry_view(queue.move(_int_param("id", req.params["id"]), to), req.lang)
+
+
+@route("POST", "/api/queue/batches/{id}/cancel")
+def queue_batch_cancel(req):
+    _fields(req.body, ())
+    return {"entries": [queue.entry_view(e, req.lang) for e in queue.cancel_batch(_int_param("id", req.params["id"]))]}
+
+
+@route("POST", "/api/queue/batches/{id}/move")
+def queue_batch_move(req):
+    to = _fields(req.body, ("to",)).get("to")
+    if not isinstance(to, str):
+        raise GimgError("api.bad_param", name="to")
+    return {"entries": [queue.entry_view(e, req.lang) for e in queue.move_batch(_int_param("id", req.params["id"]), to)]}
 
 
 @route("POST", "/api/queue/pause")

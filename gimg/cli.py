@@ -208,9 +208,10 @@ def _build(lang: str) -> argparse.ArgumentParser:
 
     g = group(top, "queue", "cli.cmd.queue")
     leaf(g, "list", "cli.cmd.queue_list", opt("--state", "cli.arg.queue_state", choices=queue.STATES))
-    leaf(g, "cancel", "cli.cmd.queue_cancel", arg("entry", "cli.arg.entry", type=int))
-    leaf(g, "move", "cli.cmd.queue_move", arg("entry", "cli.arg.entry", type=int),
-         arg("to", "cli.arg.queue_to", choices=queue.MOVES))
+    leaf(g, "cancel", "cli.cmd.queue_cancel", arg("entry", "cli.arg.entry", type=int, nargs="?", default=None),
+         opt("--batch", "cli.arg.queue_batch", type=int, metavar="ID"))
+    leaf(g, "move", "cli.cmd.queue_move", arg("words", "cli.arg.queue_move_words", nargs="+", metavar="[ENTRY] TO"),
+         opt("--batch", "cli.arg.queue_batch", type=int, metavar="ID"))
     leaf(g, "pause", "cli.cmd.queue_pause")
     leaf(g, "resume", "cli.cmd.queue_resume")
     leaf(g, "clear", "cli.cmd.queue_clear", opt("--project", "cli.arg.queue_project", metavar="P"))
@@ -888,7 +889,16 @@ def _queue(args, sub, out: _Out) -> None:
             if text:
                 out.line("cli.out.queue_error", error=text)
     elif sub == "move":
-        entry = queue.move(args.entry, args.to)
+        words = list(args.words)
+        if len(words) != (1 if args.batch is not None else 2) or (len(words) == 2 and not words[0].isdigit()):
+            raise GimgError("queue.bad_target")
+        if args.batch is not None:
+            found = queue.move_batch(args.batch, words[0])
+            out.data([_entry_json(out, e) for e in found]) if out.as_json else out.line(
+                "cli.out.batch_moved", id=args.batch, to=words[0], ids=", ".join(str(e["id"]) for e in found))
+            return
+        entry = queue.move(int(words[0]), words[1])
+        args.to = words[1]
         out.data(_entry_json(out, entry)) if out.as_json else out.line("cli.out.moved", id=entry["id"], to=args.to)
     elif sub == "clear":
         found = queue.clear(args.project)
@@ -897,6 +907,13 @@ def _queue(args, sub, out: _Out) -> None:
         else:
             out.line("cli.out.cleared", count=len(found), ids=", ".join(str(e["id"]) for e in found) or "-")
     else:
+        if (args.entry is None) == (args.batch is None):
+            raise GimgError("queue.bad_target")
+        if args.batch is not None:
+            found = queue.cancel_batch(args.batch)
+            out.data([_entry_json(out, e) for e in found]) if out.as_json else out.line(
+                "cli.out.batch_cancelled", id=args.batch, ids=", ".join(str(e["id"]) for e in found))
+            return
         entry = queue.cancel(args.entry)
         if out.as_json:
             out.data(_entry_json(out, entry))

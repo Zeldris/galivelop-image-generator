@@ -6,6 +6,9 @@
 profile's ``compose.fields``; an older entry without it has none: read it with ``.get``) and ``template`` (F4b: the id of the composition
 template, ``None`` for ``default``; an older entry without it has none) and ``position`` (F4d: where a ``queued`` entry
 stands; the worker takes the lowest one, ties and entries without it by id; `move` and `clear` edit it). Entries stay in arrival order in the file.
+An entry enqueued by one submit or one `attempts` call may carry ``batch`` (``{"id": id of the batch's first entry, "index", "size"}``;
+brand-mode enqueues always, free ones only when they are more than one entry; an older entry has none) and, if
+`stop_batch` cancelled it, ``stoppedBy`` (the attempt whose score stopped the batch).
 A running entry may also have ``progress`` (``{"step", "steps", "etaS"}``, `set_progress`) and ``preview`` (the path of
 the engine's preview image, `set_preview`); both are removed when the entry finishes or goes back to ``queued``.
 
@@ -38,6 +41,7 @@ from . import models as models_mod
 from .errors import GimgError
 
 KEEP_TERMINAL = 200
+STOP_SCORE = 9  # a finished attempt scoring at least this stops the rest of its batch (the score arrives in 0.9.0)
 TERMINAL = ("done", "failed", "cancelled")
 STATES = ("queued", "running") + TERMINAL
 
@@ -231,12 +235,13 @@ def check_specs(project: str, profile: str, specs: list) -> None:
         compose_mod.effective((compose_mod.merged_profile(projects.get(project), profile) or {}).get("compose"), tid)
 
 
-def enqueue(project: str, key: str, profile: str, specs: list) -> list:
+def enqueue(project: str, key: str, profile: str, specs: list, checks=None) -> list:
     """Queue one entry per spec (from ``orders.attempt_specs``); returns the new entries.
 
     The order must exist and every spec must pass the limits of the current machine profile;
-    nothing is queued if any fails."""
-    orders.get(project, key, profile)
+    nothing is queued if any fails. The entries of a brand order, or more than one entry, form a batch (``batch`` in each
+    entry) which is also recorded in the order (``batches``); `checks` (the lint) gives the warnings stored with it."""
+    order = orders.get(project, key, profile)
     check_specs(project, profile, specs)
     now = _now()
 
@@ -261,9 +266,21 @@ def enqueue(project: str, key: str, profile: str, specs: list) -> list:
             data["nextId"] += 1
             data["entries"].append(entry)
             added.append(entry)
+        if added and (any(e["mode"] == "brand" for e in added) or len(added) > 1):
+            for index, entry in enumerate(added):
+                entry["batch"] = {"id": added[0]["id"], "index": index, "size": len(added)}
         return added
 
-    return _txn(change, recover=True)
+    added = _txn(change, recover=True)
+    if added and "batch" in added[0]:
+        record = {"id": added[0]["id"], "size": len(added), "mode": added[0]["mode"],
+                  "warnings": [c for c in checks or () if c.get("status") == "warn"], "createdAt": now}
+        if record["mode"] == "brand":
+            record["subject"] = order.get("subject")
+            record["cleanZone"] = order.get("cleanZone")
+            record = {k: v for k, v in record.items() if v is not None}
+        orders.add_batch(project, key, profile, record)
+    return added
 
 
 def list_entries(states=None) -> list:
@@ -319,6 +336,79 @@ def move(entry_id, to: str) -> dict:
         for item, slot in zip(line, slots):
             item["position"] = slot
         return entry
+
+    return _txn(change)
+
+
+def _batch(data: dict, batch_id) -> list:
+    found = [e for e in data["entries"] if isinstance(e.get("batch"), dict) and type(batch_id) is int
+             and e["batch"].get("id") == batch_id]
+    if not found:
+        raise GimgError("queue.batch_not_found", id=str(batch_id))
+    return found
+
+
+def move_batch(batch_id, to: str) -> list:
+    """`move` for a whole batch: its ``queued`` entries move as one contiguous block, ``up``/``down`` past the
+    neighbouring entry or batch block, ``top`` to the head of the line. Returns the batch's entries that moved.
+    Unknown batch: ``queue.batch_not_found``; nothing queued in it: ``queue.not_movable``; another `to`: ``queue.bad_move``."""
+    if to not in MOVES:
+        raise GimgError("queue.bad_move", to=str(to), allowed=", ".join(MOVES))
+
+    def change(data):
+        mine = [e for e in _batch(data, batch_id) if e["state"] == "queued"]
+        if not mine:
+            raise GimgError("queue.not_movable", id=batch_id, state="finished")
+        line = sorted((e for e in data["entries"] if e["state"] == "queued"), key=_pos)
+        slots = [_pos(e)[0] for e in line]
+        ids = {e["id"] for e in mine}
+        rest = [e for e in line if e["id"] not in ids]
+        at = next(i for i, e in enumerate(line) if e["id"] in ids)  # where its first entry stood among the others
+        starts = [i for i in range(len(rest) + 1)
+                  if i in (0, len(rest)) or (rest[i].get("batch") or {}).get("id", ("e", rest[i]["id"]))
+                  != (rest[i - 1].get("batch") or {}).get("id", ("e", rest[i - 1]["id"]))]
+        if to == "top":
+            ins = 0
+        elif to == "up":
+            ins = max((i for i in starts if i < at), default=at)
+        else:
+            ins = min((i for i in starts if i > at), default=at)
+        for item, slot in zip(rest[:ins] + sorted(mine, key=_pos) + rest[ins:], slots):
+            item["position"] = slot
+        return sorted(mine, key=_pos)
+
+    return _txn(change)
+
+
+def cancel_batch(batch_id) -> list:
+    """`cancel` for a whole batch: its queued entries become ``cancelled`` and the running one gets ``cancelRequested``.
+    Returns all of the batch's entries. Unknown: ``queue.batch_not_found``; nothing queued or running: ``queue.not_cancellable``."""
+    def change(data):
+        mine = _batch(data, batch_id)
+        if not any(e["state"] in ("queued", "running") for e in mine):
+            raise GimgError("queue.not_cancellable", id=batch_id, state="finished")
+        now = _now()
+        for entry in mine:
+            if entry["state"] == "queued":
+                entry["state"] = "cancelled"
+                entry["finishedAt"] = now
+            elif entry["state"] == "running":
+                entry["cancelRequested"] = True
+        return mine
+
+    return _txn(change)
+
+
+def stop_batch(batch_id, attempt_id) -> list:
+    """The batch is good enough (`STOP_SCORE`): cancel its ``queued`` entries, leaving the running and finished ones, and
+    record in each ``stoppedBy`` = `attempt_id`. Returns the entries cancelled (none if the batch is unknown)."""
+    def change(data):
+        now = _now()
+        found = [e for e in data["entries"] if e["state"] == "queued" and isinstance(e.get("batch"), dict)
+                 and e["batch"].get("id") == batch_id]
+        for entry in found:
+            entry.update(state="cancelled", finishedAt=now, stoppedBy=attempt_id)
+        return found
 
     return _txn(change)
 
@@ -511,7 +601,7 @@ def submit_order_checked(project: str, order: dict, draft=None, template=None, m
     record = orders.submit(project, order)
     specs = orders.attempt_specs(project, record["key"], record["profile"], order.get("count", 1), template=template,
                                  model=model)
-    return enqueue(project, record["key"], record["profile"], specs), provider, info.get("checks")
+    return enqueue(project, record["key"], record["profile"], specs, info.get("checks")), provider, info.get("checks")
 
 
 def new_attempts(project: str, key: str, profile: str, count: int = 1, *, seed=None, prompt=None, params=None,
@@ -540,7 +630,7 @@ def new_attempts_checked(project: str, key: str, profile: str, count: int = 1, *
     if changes is not None:
         check_specs(project, profile, specs)
         orders.apply_changes(project, key, profile, changes)
-    return enqueue(project, key, profile, specs), provider, checks
+    return enqueue(project, key, profile, specs, checks), provider, checks
 
 
 def queued_view(entries: list, provider: str, lang: str | None = None) -> dict:
