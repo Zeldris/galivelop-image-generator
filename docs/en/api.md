@@ -652,6 +652,27 @@ an ETag. A malformed slug gives `brand.bad_name`.
 curl -s $B/api/projects/mi-proyecto/brand/files/mi-marca/emblema.svg
 ```
 
+## Tray task (contract, 0.11.0)
+
+`gimg/schemas/agent-task.schema.json` fixes since 0.8.0 the shape of an agent tray task; the tray
+(`gimg agent todo/answer`, API, tab) arrives in 0.11.0. A task has `schemaVersion`, `id`, `type`, `state`
+(`pending`, `answered`, `applied`, `rejected`, `expired`), `question`, `order` (`{key, profile}`; absent for `sheet`),
+`context`, `answer`, `answeredBy` (`claude`, `ollama`, `person`), `rejection`, `createdAt` and `answeredAt`.
+
+Each `answer` is **the body of a route that exists today**, so a form and `gimg agent answer` share one shape (the
+gimg validator has no conditional keywords: `answer` is checked against the definition `type` names):
+
+| `type` | Definition | Body |
+|---|---|---|
+| `subject` | `answerSubject` | `subject` and `cleanZone` of `POST …/attempts` and `POST …/brand/prompt` |
+| `judgment` | `answerJudgment` | `{attempt, human: {<trait>: ok\|bad}}`; each `bad` is a `reason.trait` of `POST …/attempts/{id}/mark` |
+| `redesign` | `answerRedesign` | the body of `POST /api/projects/{p}/troubleshooting` |
+| `choice` | `answerChoice` | `{attempt, reason}`: `attempt` is the body of `POST …/choose`; `reason` stays in the task |
+| `sheet` | `answerSheet` | `{sheet}`: a whole sheet per `brand-sheet.schema.json` (references between files are not followed) |
+
+`tests/test_agent_task.py` checks that what the schema accepts is accepted by the API function and what that rejects,
+the schema rejects too.
+
 ## Interface
 
 `GET /` serves `gimg/ui/index.html` and `GET /ui/<path>` the files of `gimg/ui/` (extensions `.html .css .js .svg

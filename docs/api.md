@@ -639,6 +639,27 @@ es `no-cache` con ETag. Un slug mal formado da `brand.bad_name`.
 curl -s $B/api/projects/mi-proyecto/brand/files/mi-marca/emblema.svg
 ```
 
+## Tarea de bandeja (contrato, 0.11.0)
+
+`gimg/schemas/agent-task.schema.json` fija desde 0.8.0 la forma de una tarea de la bandeja del agente; la bandeja
+(`gimg agent todo/answer`, API, pestaña) llega en 0.11.0. Una tarea lleva `schemaVersion`, `id`, `type`, `state`
+(`pending`, `answered`, `applied`, `rejected`, `expired`), `question`, `order` (`{key, profile}`; ausente en `sheet`),
+`context`, `answer`, `answeredBy` (`claude`, `ollama`, `person`), `rejection`, `createdAt` y `answeredAt`.
+
+Cada `answer` es **el cuerpo de una ruta que ya existe**, para que formulario y `gimg agent answer` compartan forma
+(el validador de gimg no tiene palabras condicionales: `answer` se valida contra la definición que nombra `type`):
+
+| `type` | Definición | Cuerpo |
+|---|---|---|
+| `subject` | `answerSubject` | `subject` y `cleanZone` de `POST …/attempts` y `POST …/brand/prompt` |
+| `judgment` | `answerJudgment` | `{attempt, human: {<rasgo>: ok\|bad}}`; cada `bad` es un `reason.trait` de `POST …/attempts/{id}/mark` |
+| `redesign` | `answerRedesign` | el cuerpo de `POST /api/projects/{p}/troubleshooting` |
+| `choice` | `answerChoice` | `{attempt, reason}`: `attempt` es el cuerpo de `POST …/choose`; `reason` se queda en la tarea |
+| `sheet` | `answerSheet` | `{sheet}`: una hoja entera según `brand-sheet.schema.json` (no se siguen referencias entre archivos) |
+
+`tests/test_agent_task.py` comprueba que lo que el esquema da por válido lo acepta la función de la API y que lo que
+esta rechaza, el esquema también.
+
 ## Interfaz
 
 `GET /` sirve `gimg/ui/index.html` y `GET /ui/<ruta>` los archivos de `gimg/ui/` (extensiones `.html .css .js .svg

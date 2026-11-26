@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Agent tray task",
+  "description": "A task of the agent tray (contract fixed in 0.8.0, tray in 0.11.0): something that needs judgement, who has it and what was answered. The validator of gimg has no conditional keywords: `answer` is checked against the definition that `type` names (`$defs/answerSubject`, `answerJudgment`, `answerRedesign`, `answerChoice`, `answerSheet`; see `tests/test_agent_task.py`). Each answer is exactly the body of an API route that exists today, so a form and `gimg agent answer` share one shape.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "type", "state", "question"],
+  "properties": {
+    "$schema": {"type": "string", "description": "Schema reference so editors can validate and complete the file."},
+    "schemaVersion": {"const": 1, "description": "Version of this file format."},
+    "id": {"type": "integer", "minimum": 1, "description": "Task number, unique in the tray."},
+    "type": {
+      "enum": ["subject", "judgment", "redesign", "choice", "sheet"],
+      "description": "subject: write the subject of a brand order (answerSubject). judgment: judge by trait what cannot be measured (answerJudgment). redesign: after 3 failed batches, a troubleshooting row (answerRedesign). choice: choose between candidates (answerChoice). sheet: the first brand sheet (answerSheet)."
+    },
+    "state": {"enum": ["pending", "answered", "applied", "rejected", "expired"], "description": "pending: waits for an answer. answered: answered, not applied yet. applied: the person applied it. rejected: the person refused it (the reason goes in `rejection`; the task goes back to pending). expired: the order changed since it was asked; the answer cannot be applied."},
+    "order": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "profile"],
+      "description": "The linked order (absent for `sheet`, which belongs to the project).",
+      "properties": {
+        "key": {"type": "string", "minLength": 1, "maxLength": 200},
+        "profile": {"type": "string", "minLength": 1, "maxLength": 80}
+      }
+    },
+    "question": {"type": "string", "minLength": 1, "maxLength": 1000, "description": "The question in one sentence."},
+    "context": {"type": "object", "description": "What the answerer needs to see: thumbnails (attempt ids), notes, reasons. Free shape, read only."},
+    "answer": {"type": "object", "description": "Present from `answered` on. Shape by `type`."},
+    "answeredBy": {"enum": ["claude", "ollama", "person"], "description": "Who answered."},
+    "rejection": {"type": "string", "minLength": 1, "maxLength": 500, "description": "Why the person rejected the answer."},
+    "createdAt": {"type": "string", "description": "ISO 8601 UTC."},
+    "answeredAt": {"type": "string", "description": "ISO 8601 UTC."}
+  },
+  "$defs": {
+    "answerSubject": {
+      "description": "`subject` and `cleanZone` of `POST .../orders/{profile}/{key}/attempts` and `POST .../brand/prompt` (`orders.plan_attempt`).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subject"],
+      "properties": {
+        "subject": {"type": "string", "pattern": "\\S", "maxLength": 4000},
+        "cleanZone": {"type": "string", "maxLength": 4000}
+      }
+    },
+    "answerJudgment": {
+      "description": "A verdict per trait of the sheet on one attempt: the attempt's `human` (`{<trait>: ok|bad}`). Each `bad` one is a `reason.trait` of `POST .../attempts/{id}/mark`.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attempt", "human"],
+      "properties": {
+        "attempt": {"type": "integer", "minimum": 1},
+        "human": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {"pattern": "^[^\\s]{1,80}$"},
+          "additionalProperties": {"enum": ["ok", "bad"]}
+        }
+      }
+    },
+    "answerRedesign": {
+      "description": "The body of `POST /api/projects/{p}/troubleshooting` (`failures.add_row`).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "profile", "problem"],
+      "properties": {
+        "key": {"type": "string", "minLength": 1},
+        "profile": {"type": "string", "minLength": 1},
+        "problem": {"type": "string", "pattern": "\\S", "maxLength": 4000},
+        "attempts": {"type": "array", "items": {"type": "integer"}},
+        "redesign": {"type": "string", "maxLength": 4000},
+        "terms": {"type": "array", "maxItems": 30, "items": {"type": "string", "pattern": "\\S", "maxLength": 80}},
+        "by": {"type": "string", "pattern": "\\S", "maxLength": 80}
+      }
+    },
+    "answerChoice": {
+      "description": "`attempt` is the body of `POST .../orders/{profile}/{key}/choose`; `reason` is kept in the task.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attempt", "reason"],
+      "properties": {
+        "attempt": {"type": "integer", "minimum": 1},
+        "reason": {"type": "string", "pattern": "\\S", "maxLength": 500}
+      }
+    },
+    "answerSheet": {
+      "description": "The first brand sheet: `sheet` is a whole `brand-sheet.schema.json` document (the validator does not follow references between files; the tests validate it against that schema).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sheet"],
+      "properties": {"sheet": {"type": "object"}}
+    }
+  }
+}
