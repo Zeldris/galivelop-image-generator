@@ -279,8 +279,8 @@ def _submit(project: str, order: dict, only_new: bool) -> tuple:
                 return copy.deepcopy(record), False
             created = False
         record.update(fields)
-        if not brand:
-            for name in ("piece", "subject", "cleanZone", "sheetVersion"):
+        for name in ("piece", "subject", "cleanZone", "sheetVersion"):
+            if not brand or name not in fields:  # a resubmission drops what the new order does not carry
                 record.pop(name, None)
         if not _neg(order.get("negative")):  # only orders with a negative carry the key, so stored orders keep their shape
             record.pop("negative", None)
@@ -491,10 +491,23 @@ def prepare(project: str, order: dict) -> tuple:
     if "count" not in order and defaults["count"] is not None:
         order["count"] = defaults["count"]
     info = {"checks": checks}
+    model = _piece_model(project, defaults)
+    if model is not None:
+        info["model"] = model
+    return order, info
+
+
+def _piece_model(project: str, defaults: dict):
+    """The piece's model (from `brandsheet.piece_defaults`) when the project's profile has another, else ``None``."""
     own = (projects.get(project)["config"].get("profiles") or {}).get(defaults["profile"], {}).get("model")
     if defaults["model"] is not None and defaults["model"] != own:
-        info["model"] = defaults["model"]
-    return order, info
+        return defaults["model"]
+    return None
+
+
+def piece_model(project: str, piece: str):
+    """`_piece_model` of a piece of the project's sheet (what `prepare` puts in ``info["model"]``)."""
+    return _piece_model(project, brandsheet.piece_defaults(_sheet(project), piece))
 
 
 def plan_attempt(project: str, key: str, profile: str, *, subject=None, clean_zone=None, mode=None, prompt=None) -> tuple:
@@ -511,6 +524,8 @@ def plan_attempt(project: str, key: str, profile: str, *, subject=None, clean_zo
         if value is not None:
             probe[name] = value
     _check_fields_of(probe)
+    if prompt is not None:
+        _check_fields(prompt=prompt)
     order = get(project, key, profile)
     current = order.get("mode", "free")
     if current != "brand":

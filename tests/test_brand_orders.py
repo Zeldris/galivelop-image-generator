@@ -176,6 +176,43 @@ class Attempts(CoreBase):
         self.assertIsNotNone(checks)
 
 
+class Review(CoreBase):
+    def test_resubmitted_brand_order_without_clean_zone_drops_it(self):
+        self.submit(brand_order(count=1))
+        self.assertEqual(orders.get("proj", "portada/uno", "banner")["cleanZone"], ZONE)
+        order = brand_order(count=1)
+        del order["cleanZone"]
+        self.submit(order)
+        self.assertNotIn("cleanZone", orders.get("proj", "portada/uno", "banner"))
+
+    def test_mode_free_with_blank_prompt_is_invalid_and_stores_nothing(self):
+        self.submit(brand_order(count=1))
+        exc = self.err(queue.new_attempts_checked, "proj", "portada/uno", "banner", 1, prompt="", mode="free")
+        self.assertEqual(exc.code, "order.invalid")
+        order = orders.get("proj", "portada/uno", "banner")
+        self.assertEqual(order["mode"], "brand")
+        self.assertNotEqual(order["prompt"], "")
+
+    def test_non_string_prompt_on_a_free_order_is_order_invalid(self):
+        self.submit({"key": "libre", "profile": "banner", "prompt": "a cat"})
+        exc = self.err(queue.new_attempts_checked, "proj", "libre", "banner", 1, prompt=123)
+        self.assertEqual(exc.code, "order.invalid")
+
+    def test_retouch_uses_the_piece_model_like_submit(self):
+        root = self.project("parent", SHEET)
+        cfg_path = root / "galivelop-images.json"
+        cfg = json.loads(cfg_path.read_text())
+        cfg["profiles"]["banner"]["model"] = "zimage-turbo-q6"
+        cfg_path.write_text(json.dumps(cfg))
+        orders_cfg = self.project("kid", {"schemaVersion": 1, "name": "kid", "extends": "parent"})
+        self.assertNotEqual(json.loads((orders_cfg / "galivelop-images.json").read_text())["profiles"]["banner"]["model"],
+                            "zimage-turbo-q6")
+        first, _, _ = queue.submit_order_checked("kid", brand_order(count=1))
+        self.assertEqual(first[0]["params"]["model"], "zimage-turbo-q6")
+        again, _, _ = queue.new_attempts_checked("kid", "portada/uno", "banner", 1)
+        self.assertEqual(again[0]["params"]["model"], "zimage-turbo-q6")
+
+
 class Api(WriteBase):
     def setUp(self):
         super().setUp()

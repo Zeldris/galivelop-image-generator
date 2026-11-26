@@ -624,6 +624,8 @@ def new_attempts_checked(project: str, key: str, profile: str, count: int = 1, *
     provider = engine_mod.get_engine().provider
     record, changes, checks = orders.plan_attempt(project, key, profile, subject=subject, clean_zone=clean_zone,
                                                   mode=mode, prompt=prompt)
+    if model is None and record.get("mode") == "brand":  # the same model as `submit_order_checked` uses
+        model = orders.piece_model(project, record["piece"])
     specs = orders.attempt_specs(project, key, profile, count, seed=seed, prompt=prompt if changes is None else None,
                                  params=params, draft=draft, template=template, model=model, negative=negative,
                                  record=record)
