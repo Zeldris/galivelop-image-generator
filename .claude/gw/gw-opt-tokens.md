@@ -36,6 +36,10 @@ las crea una vez; desde entonces son del proyecto.
 - Aquí `logRows` está apagado: las filas de la bitácora se editan a mano, sin `handoff.py set-row` ni
   `GW_SHARED_LOG` (descubrirlo costó 4 llamadas el 2026-11-05; aprobado ese día).
 
+- Subir de versión: `python3 releases.py bump X.Y.Z` cambia `gimg/__init__.py`, los dos CHANGELOG (pasa
+  `[Unreleased]`/`[Sin publicar]` a la sección fechada) y la línea «Versión» de `README.md` y `README.en.md`; no se
+  buscan esos archivos a mano (el cierre de 0.8.0 los redescubrió: ~30-40k; aprobado el 2026-11-26).
+
 - Arreglos de una revisión en encargos de 4-5 puntos por archivo (`.claude/gw/gw-orchestrate-dealer.md`; aprobado el
   2026-11-15: 9 puntos fueron 47 llamadas y 4,6 M).
 
