@@ -9,6 +9,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-26
+
+### Added
+
+- Brand piece (0.8.0): orders with `mode: brand|free`, `piece`, `subject` and `cleanZone`. In brand mode the server
+  assembles and checks the prompt from the sheet (422 `brand.blocked` with the errors); profile, seed, count and model
+  come from the piece type. "Switch to free image" changes the mode and notes it.
+- Batches: queue entries carry `batch:{id,index,size}`; move and cancel by batch (API and CLI); the gallery groups
+  attempts by batch and the queue shows the groups.
+- Failures and troubleshooting: "No" with a reason and "None is good" per batch, `failures` counter in `order.json`,
+  block at the third failure in a row (409 `order.troubleshooting`, batches held in the queue), troubleshooting rows as
+  data (`gimg brand` registry, API) that reset the counter, and "one more batch" once per failure cycle (409
+  `order.extend_used`).
+- Interface: Brand/Free switch in the new order and retouch panels, the checks list, the Brand/Free badge, the "Failures
+  n of m" marker, the troubleshooting form and its tab under Brand, and the "failed before" notice.
+- Agent task schema (`agent-task.schema.json`) fixed for the answer bodies of the forms.
+
 ### Fixed
 
 - Brand workshop: an SVG's colours come out as `rsvg-convert` paints them, also with malformed values (skipped, no

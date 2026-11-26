@@ -118,7 +118,9 @@ detrás). Cada paso, con sus tests, su commit y la API en `docs/api.md`; revisi�
 5. **Interfaz:** conmutador de modo en `new-order.js` y `retouch-panel.js` con `brand-prompt.js`; `check-list.js`
    extraído; tandas en la cola y en la galería; distintivo Marca/Libre; «No» con motivo, «Ninguno vale», marcador de
    fallos, `troubleshoot.js` y subpestaña Troubleshooting; aviso «ya falló antes».
-6. **Cierre:** CHANGELOG es/en, README «Versión», `releases.py bump`; recorrido con mando en la Deck (pendiente de la
+   **Hecho (2026-11-26, 5a-5c).** Fuera por diseño: nota/desglose y descartes (0.9.0) y «Pedir rediseño a la bandeja»
+   (0.9.0/F6, con la bandeja). «Una tanda más»: una sola vez por ciclo de fallos (`order.extend_used`).
+6. **Cierre (hecho, versión 0.8.0):** CHANGELOG es/en, README «Versión», `releases.py bump`; recorrido con mando en la Deck (pendiente de la
    persona, riesgo de abajo) antes de `main`.
 
 ### Barrido B de `gimg/brandsheet.py` en 0.8.0 (retro 2026-11-18, P2, aprobada)
