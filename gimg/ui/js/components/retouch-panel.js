@@ -1,11 +1,16 @@
 /* Panel de retoque del pedido: prompt (D19) + estilo del perfil en solo lectura, parámetros (pasos, cfg, sampler,
    semilla con dado, borrador) y las acciones que encolan: «Otra semilla» (semilla + 1, vecindario) y «N seguidas».
    Envía POST …/o/attempts con solo lo que difiere del pedido. «Recrear» y «Variar» de las tarjetas entran por `load()`.
+   En un pedido de marca (`order.mode === 'brand'`, 0.8.0) el prompt pasa a sujeto + zona limpia (brand-prompt.js, con el
+   prompt montado y su comprobación en vivo en lugar del «estilo del perfil»), las llamadas envían `subject`/`cleanZone` y
+   nunca `prompt`, y «Pasar a imagen libre» pide `mode: 'free'` con el prompt montado (POST …/attempts).
    El modelo se elige entre los de GET /api/models (F4d): los que la máquina no permite salen deshabilitados, con su motivo. */
 
 import { h, mmss, replace } from '../dom.js';
 import { t } from '../i18n.js';
 import { bannedWord, stripStyle } from './attempt-util.js';
+import { promptBuilder } from './brand-prompt.js';
+import { confirmAction } from './confirm.js';
 
 const MAX_PROMPT = 2000; // tope orientativo; la API responde order.prompt_too_long con el real
 
@@ -22,6 +27,27 @@ export function retouchPanel(ctx, { onSubmit }) {
       models.map((m) => h('option', { value: m.id, disabled: m.allowed === false }, blocked(m))))
     : null;
   const banned = (ctx.brand && ctx.brand.bannedWords) || [];
+
+  const brandMode = order.mode === 'brand' && Boolean(order.piece) && Boolean(ctx.project);
+  const sendable = []; // los botones que encolan: en marca, apagados mientras la comprobación no diga que se puede
+  const syncButtons = () => {
+    const s = builder ? builder.state() : null;
+    const wait = brandMode && (!s || s.status !== 'ready');
+    for (const b of sendable) {
+      b.disabled = wait;
+      if (wait && builder) b.setAttribute('aria-describedby', builder.reasonId); else b.removeAttribute('aria-describedby');
+    }
+    dirty.hidden = !brandChanged() && prompt.value === (order.prompt || '') && negative.value.trim() === (order.negative || '');
+  };
+  const builder = brandMode
+    ? promptBuilder({ project: ctx.project, pieceTypes: [{ id: order.piece }], piece: order.piece, subject: order.subject || '', cleanZone: order.cleanZone || '',
+      lockPiece: true, prefix: 'retouch', onState: () => syncButtons() })
+    : null;
+  const brandChanged = () => {
+    if (!builder) return false;
+    const s = builder.state();
+    return s.subject !== (order.subject || '') || s.cleanZone !== (order.cleanZone || '');
+  };
 
   const prompt = h('textarea', { id: 'retouch-prompt', value: order.prompt || '', spellcheck: 'false', aria: { describedby: 'retouch-prompt-hint' } });
   const promptHint = h('div.hint', { id: 'retouch-prompt-hint' });
@@ -49,7 +75,7 @@ export function retouchPanel(ctx, { onSubmit }) {
     const text = prompt.value;
     const hit = bannedWord(text, banned);
     replace(promptHint, hit ? h('span.field-error', {}, t('ui.retouch.bannedWord', { w: hit })) : t('ui.retouch.chars', { n: text.length, max: MAX_PROMPT }));
-    dirty.hidden = text === (order.prompt || '') && negative.value.trim() === (order.negative || '');
+    dirty.hidden = !brandChanged() && text === (order.prompt || '') && negative.value.trim() === (order.negative || '');
   };
   prompt.addEventListener('input', checkPrompt);
   negative.addEventListener('input', checkPrompt);
@@ -57,8 +83,14 @@ export function retouchPanel(ctx, { onSubmit }) {
 
   const spec = (extra = {}) => {
     const s = { count: 1, ...extra };
-    const text = stripStyle(prompt.value, cfg.style);
-    if (text !== (order.prompt || '')) s.prompt = text;
+    if (builder) {
+      const b = builder.state();
+      if (b.subject !== (order.subject || '')) s.subject = b.subject;
+      if (b.cleanZone !== (order.cleanZone || '')) s.cleanZone = b.cleanZone;
+    } else {
+      const text = stripStyle(prompt.value, cfg.style);
+      if (text !== (order.prompt || '')) s.prompt = text;
+    }
     if (negative.value.trim() !== (order.negative || '')) s.negative = negative.value.trim();
     const num = (el) => (el.value === '' ? undefined : Number(el.value));
     if (num(steps) !== undefined && num(steps) !== params.steps) s.steps = num(steps);
@@ -81,14 +113,29 @@ export function retouchPanel(ctx, { onSubmit }) {
     seed.value = base + n - 1;
     onSubmit(spec({ count: n, seed: base }));
   } }, h('span', {}, '▶▶ ', t('ui.retouch.batch', { n: count.value })), etaSpan(ctx, Number(count.value) || 3));
+  sendable.push(another, batch);
+  syncButtons();
+  const toFree = brandMode
+    ? h('button.btn', { type: 'button', data: { slot: 'to-free' }, onclick: async () => {
+      const built = builder.state().prompt;
+      if (!built) { builder.focusField('subject'); return; }
+      if (!await confirmAction({ title: t('ui.retouch.toFree'), message: t('ui.retouch.toFreeConfirm'), confirmLabel: t('ui.retouch.toFreeDo'), opener: toFree })) return;
+      onSubmit({ count: 1, mode: 'free', prompt: built, ...(seed.value === '' ? {} : { seed: Number(seed.value) }) });
+    } }, t('ui.retouch.toFree'))
+    : null;
   count.addEventListener('input', () => { replace(batch, h('span', {}, '▶▶ ', t('ui.retouch.batch', { n: count.value })), etaSpan(ctx, Number(count.value) || 3)); });
 
   const node = h('section.card', { aria: { labelledby: 'retouch-h' } },
     h('h2', { id: 'retouch-h' }, t('ui.retouch.title'), ' ', dirty),
-    h('div.field', {}, h('label', { for: 'retouch-prompt' }, t('ui.retouch.prompt')), prompt, promptHint),
+    builder ? builder.node : h('div.field', {}, h('label', { for: 'retouch-prompt' }, t('ui.retouch.prompt')), prompt, promptHint),
     h('div.field', {}, h('label', { for: 'retouch-negative' }, t('ui.retouch.negative')), negative),
-    cfg.style ? h('div.field', {}, h('span.label', {}, t('ui.retouch.style')), h('div.readonly', {}, cfg.style)) : null,
-    h('div.row', {}, h('button.btn', { type: 'button', onclick: () => { prompt.value = order.prompt || ''; negative.value = order.negative || ''; checkPrompt(); } }, t('ui.retouch.restore'))),
+    cfg.style && !builder ? h('div.field', {}, h('span.label', {}, t('ui.retouch.style')), h('div.readonly', {}, cfg.style)) : null,
+    h('div.row', {}, h('button.btn', { type: 'button', onclick: () => {
+      prompt.value = order.prompt || '';
+      negative.value = order.negative || '';
+      if (builder) builder.setValues({ subject: order.subject || '', cleanZone: order.cleanZone || '' });
+      checkPrompt();
+    } }, t('ui.retouch.restore')), toFree),
     h('h3', {}, t('ui.retouch.params')),
     modelSel
       ? h('div.field', {}, h('label', { for: 'retouch-model' }, t('ui.retouch.model')), modelSel)
@@ -110,7 +157,9 @@ export function retouchPanel(ctx, { onSubmit }) {
     /** Carga los parámetros de un intento (Recrear). */
     load(attempt) {
       const p = attempt.params || {};
-      prompt.value = attempt.prompt ? stripStyle(attempt.prompt, cfg.style) : order.prompt || '';
+      if (builder) {
+        if (attempt.subject !== undefined) builder.setValues({ subject: attempt.subject || '', cleanZone: attempt.cleanZone || '' });
+      } else prompt.value = attempt.prompt ? stripStyle(attempt.prompt, cfg.style) : order.prompt || '';
       negative.value = attempt.negative || '';
       if (p.steps !== undefined) steps.value = p.steps;
       if (p.cfg !== undefined) cfgScale.value = p.cfg;
@@ -124,7 +173,7 @@ export function retouchPanel(ctx, { onSubmit }) {
       const tid = (attempt.compose && attempt.compose.templateId) || (attempt.composeError && attempt.composeError.templateId);
       if (template && templates.some((x) => x.id === tid)) template.value = tid;
       checkPrompt();
-      prompt.focus();
+      if (builder) builder.focusField('subject'); else prompt.focus();
     },
     /** Encola otra semilla con los parámetros de un intento (Variar). */
     vary(attempt) {
@@ -135,7 +184,7 @@ export function retouchPanel(ctx, { onSubmit }) {
     },
     /** Cambió la elegida: el selector de plantilla pasa a la de la elegida, salvo que la persona lo haya tocado. */
     setChosen() { if (template && !templateTouched) template.value = templateOfChosen(); },
-    focusPrompt() { prompt.focus(); },
+    focusPrompt() { if (builder) builder.focusField('subject'); else prompt.focus(); },
     another() { another.click(); },
   };
 }

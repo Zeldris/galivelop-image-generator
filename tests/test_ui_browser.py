@@ -733,6 +733,8 @@ class NewOrderScreen(UiBase):
         self.open("/p/tarkor/pedidos", "document.querySelector('.order-row')")
         self.click("button[data-slot=new-order]")
         self.page.wait("document.querySelector('dialog.new-order[open]') && document.getElementById('no-copy')")
+        self.assertTrue(self.js("document.getElementById('no-mode-brand').disabled"))  # no sheet: brand is off and free is the default
+        self.assertTrue(self.js("document.getElementById('no-mode-free').checked"))
         # an invalid key and an empty prompt are refused without leaving
         self.js("document.querySelector('dialog.new-order form').requestSubmit()")
         self.page.wait("!document.getElementById('no-error').hidden")
@@ -1022,6 +1024,19 @@ class BrandSheetScreen(UiBase):
         self.page.wait("document.querySelector('[data-out=lint] [data-check=words]')")
         self.assertEqual(self.js("document.querySelector('[data-out=lint] [data-check=words]').dataset.status"), "warn")
         self.assertIn("palabras", self.js("document.querySelector('[data-out=lint] [data-check=words]').textContent"))
+        self.no_problems()
+
+    def test_a_brand_order_sends_the_subject_and_never_the_prompt(self):
+        self.open("/p/tarkor/pedidos", "document.querySelector('button[data-slot=new-order]')")
+        self.click("button[data-slot=new-order]")
+        self.page.wait("document.querySelector('dialog.new-order[open]') && document.getElementById('no-subject')")
+        self.assertFalse(self.js("document.getElementById('no-subject').closest('[data-box=brand]').hidden"))
+        self.assertTrue(self.js("document.getElementById('no-prompt').closest('[data-box=free]').hidden"))
+        self.assertTrue(self.js("document.querySelector('dialog.new-order button[type=submit]').disabled"))  # no subject yet
+        self.js("(() => { const s = document.getElementById('no-subject'); s.value = %s; s.dispatchEvent(new Event('input')); })()" % json.dumps(SUBJECT))
+        self.page.wait("document.querySelector('dialog.new-order [data-out=prompt] [data-slot=prompt]')")
+        self.page.wait("!document.querySelector('dialog.new-order button[type=submit]').disabled || document.querySelector('dialog.new-order [data-slot=why] .notice-bad')")
+        self.assertNotEqual(self.js("document.getElementById('no-key').value"), "")  # a key is proposed: <piece>/<slug>
         self.no_problems()
 
 

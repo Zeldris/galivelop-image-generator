@@ -339,6 +339,81 @@ class Texts(unittest.TestCase):
                              set(re.findall(r"\{(\w+)\}", self.locales["en"][key])), key)
 
 
+class BrandModeSwitch(unittest.TestCase):
+    """0.8.0 paso 5a: conmutador Marca/Libre, constructor del prompt montado y comprobación en vivo, comprobados en estático."""
+
+    def comp(self, name):
+        return read(UI / "js" / "components" / name)
+
+    def test_the_check_list_is_shared_and_failures_link_to_their_field(self):
+        shared = self.comp("check-list.js")
+        self.assertIn("export function checkList(checks, { onField = null } = {})", shared)
+        self.assertIn("onField(field)", shared)
+        self.assertIn("FIELD_OF", shared)
+        prompt = self.comp("brand-prompt.js")
+        self.assertIn("import { checkList } from './check-list.js'", prompt)
+        self.assertNotIn("function checkList", prompt)
+        self.assertIn("import { checkList } from './check-list.js'", self.comp("new-order.js"))
+
+    def test_the_new_order_imports_the_builder_and_defaults_by_sheet(self):
+        panel = self.comp("new-order.js")
+        self.assertIn("import { promptBuilder } from './brand-prompt.js'", panel)
+        self.assertIn("let mode = brandReason ? 'free' : 'brand'", panel)
+        for needle in ("!sheet.present", "!sheet.valid", "!pieceTypes.length", "disabled: value === 'brand' && Boolean(brandReason)", "no-mode-why", "e.code === 'brand.blocked'"):
+            self.assertIn(needle, panel)
+
+    def test_a_brand_body_sends_mode_piece_and_subject_but_never_the_prompt(self):
+        body = self.comp("new-order.js")
+        body = body[body.index("function buildBody"):body.index("function setMode")]
+        brand = body[body.index("if (mode === 'brand')"):body.index("} else {")]
+        for needle in ("mode: 'brand'", "piece: s.piece", "subject: s.subject", "body.cleanZone = s.cleanZone"):
+            self.assertIn(needle, brand)
+        self.assertNotIn("prompt:", brand)
+        self.assertNotIn("profile:", brand)  # the piece decides the profile
+        self.assertIn("prompt: prompt.value.trim()", body[body.index("} else {"):])  # free mode as before
+        self.assertIn("if (s.status !== 'ready')", body)  # in brand nothing is queued without a check
+
+    def test_the_live_check_debounces_and_drops_old_answers(self):
+        prompt = self.comp("brand-prompt.js")
+        self.assertIn("DEBOUNCE_MS = 300", prompt)
+        self.assertIn("setTimeout(run, DEBOUNCE_MS)", prompt)
+        run = prompt[prompt.index("async function run()"):prompt.index("function schedule()")]
+        self.assertIn("const mine = ++seq", run)
+        self.assertEqual(run.count("if (mine !== seq) return"), 2)  # after the answer and after the failure
+        self.assertLess(run.index("await api.brandPrompt"), run.index("if (mine !== seq) return"))
+        self.assertIn("seq += 1", prompt[prompt.index("function schedule()"):])  # a key press invalidates what is in flight
+        for state in ("'empty'", "'loading'", "'blocked'", "'error'", "'ready'"):
+            self.assertIn(state, prompt)
+        for needle in ("aria: { live: 'polite'", "role: 'status'", "ui.prompt.retry", "ui.prompt.known", "ui.prompt.copy", "h('details'"):
+            self.assertIn(needle, prompt)
+
+    def test_the_subject_tab_keeps_its_two_cards(self):
+        prompt = self.comp("brand-prompt.js")
+        for needle in ("export async function brandPrompt(host, project, pieceTypes)", "mountButton: true", "api.brandLint(project, body)", "data: { card: 'lint' }"):
+            self.assertIn(needle, prompt)
+
+    def test_the_retouch_panel_sends_subject_and_zone_in_a_brand_order(self):
+        panel = self.comp("retouch-panel.js")
+        self.assertIn("order.mode === 'brand'", panel)
+        spec = panel[panel.index("const spec = "):panel.index("const another")]
+        brand = spec[spec.index("if (builder) {"):spec.index("} else {")]
+        self.assertIn("s.subject = b.subject", brand)
+        self.assertIn("s.cleanZone = b.cleanZone", brand)
+        self.assertNotIn("s.prompt", brand)
+        self.assertIn("s.prompt = text", spec[spec.index("} else {"):])
+        self.assertIn("mode: 'free', prompt: built", panel)  # «Pasar a imagen libre»: the documented way (api.md)
+        self.assertIn("sendable.push(another, batch)", panel)
+
+    def test_the_new_texts_exist_in_both_languages_with_the_same_placeholders(self):
+        keys = ("ui.check.goTo", "ui.prompt.cantQueue", "ui.prompt.known", "ui.prompt.retry", "ui.newOrder.modeBrand", "ui.newOrder.modeFree",
+                "ui.newOrder.noSheet", "ui.newOrder.sheetInvalid", "ui.newOrder.toFree", "ui.retouch.toFree", "ui.retouch.toFreeConfirm")
+        es, en = (json.loads(read(LOCALES / (lang + ".json"))) for lang in ("es", "en"))
+        for key in keys:
+            self.assertIn(key, es)
+            self.assertIn(key, en)
+            self.assertEqual(set(re.findall(r"\{(\w+)\}", es[key])), set(re.findall(r"\{(\w+)\}", en[key])), key)
+
+
 class ApiRoutes(unittest.TestCase):
     def setUp(self):
         self.text = read(UI / "js" / "api.js")
