@@ -97,9 +97,15 @@ class ResampleStreamTests(unittest.TestCase):
                          "7ba486a0148e7a40aa960f6754f40e5527f59931962ce6258e2691befc5606ef")
 
     def test_la_memoria_retenida_esta_acotada_al_ampliar(self):
-        export._STATS["peak_rows"] = 0
-        export.resize(40, 40, ruido(40, 40), 160, 160)
-        self.assertLessEqual(export._STATS["peak_rows"], 3)
+        import tracemalloc
+        data = ruido(40, 40)
+        tracemalloc.start()
+        try:
+            export.resize(40, 40, data, 160, 160)
+            peak = tracemalloc.get_traced_memory()[1]
+        finally:
+            tracemalloc.stop()
+        self.assertLess(peak, 600_000)  # con `del wide[j]` ~250 kB; reteniendo las 40 filas ~1,05 MB
 
 
 class BmpTests(Base):

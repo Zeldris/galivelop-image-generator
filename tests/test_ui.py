@@ -339,6 +339,81 @@ class Texts(unittest.TestCase):
                              set(re.findall(r"\{(\w+)\}", self.locales["en"][key])), key)
 
 
+class BrandModeSwitch(unittest.TestCase):
+    """0.8.0 paso 5a: conmutador Marca/Libre, constructor del prompt montado y comprobación en vivo, comprobados en estático."""
+
+    def comp(self, name):
+        return read(UI / "js" / "components" / name)
+
+    def test_the_check_list_is_shared_and_failures_link_to_their_field(self):
+        shared = self.comp("check-list.js")
+        self.assertIn("export function checkList(checks, { onField = null } = {})", shared)
+        self.assertIn("onField(field)", shared)
+        self.assertIn("FIELD_OF", shared)
+        prompt = self.comp("brand-prompt.js")
+        self.assertIn("import { checkList } from './check-list.js'", prompt)
+        self.assertNotIn("function checkList", prompt)
+        self.assertIn("import { checkList } from './check-list.js'", self.comp("new-order.js"))
+
+    def test_the_new_order_imports_the_builder_and_defaults_by_sheet(self):
+        panel = self.comp("new-order.js")
+        self.assertIn("import { promptBuilder } from './brand-prompt.js'", panel)
+        self.assertIn("let mode = brandReason ? 'free' : 'brand'", panel)
+        for needle in ("!sheet.present", "!sheet.valid", "!pieceTypes.length", "disabled: value === 'brand' && Boolean(brandReason)", "no-mode-why", "e.code === 'brand.blocked'"):
+            self.assertIn(needle, panel)
+
+    def test_a_brand_body_sends_mode_piece_and_subject_but_never_the_prompt(self):
+        body = self.comp("new-order.js")
+        body = body[body.index("function buildBody"):body.index("function setMode")]
+        brand = body[body.index("if (mode === 'brand')"):body.index("} else {")]
+        for needle in ("mode: 'brand'", "piece: s.piece", "subject: s.subject", "body.cleanZone = s.cleanZone"):
+            self.assertIn(needle, brand)
+        self.assertNotIn("prompt:", brand)
+        self.assertNotIn("profile:", brand)  # the piece decides the profile
+        self.assertIn("prompt: prompt.value.trim()", body[body.index("} else {"):])  # free mode as before
+        self.assertIn("if (s.status !== 'ready')", body)  # in brand nothing is queued without a check
+
+    def test_the_live_check_debounces_and_drops_old_answers(self):
+        prompt = self.comp("brand-prompt.js")
+        self.assertIn("DEBOUNCE_MS = 300", prompt)
+        self.assertIn("setTimeout(run, DEBOUNCE_MS)", prompt)
+        run = prompt[prompt.index("async function run()"):prompt.index("function schedule()")]
+        self.assertIn("const mine = ++seq", run)
+        self.assertEqual(run.count("if (mine !== seq) return"), 2)  # after the answer and after the failure
+        self.assertLess(run.index("await api.brandPrompt"), run.index("if (mine !== seq) return"))
+        self.assertIn("seq += 1", prompt[prompt.index("function schedule()"):])  # a key press invalidates what is in flight
+        for state in ("'empty'", "'loading'", "'blocked'", "'error'", "'ready'"):
+            self.assertIn(state, prompt)
+        for needle in ("aria: { live: 'polite'", "role: 'status'", "ui.prompt.retry", "ui.prompt.known", "ui.prompt.copy", "h('details'"):
+            self.assertIn(needle, prompt)
+
+    def test_the_subject_tab_keeps_its_two_cards(self):
+        prompt = self.comp("brand-prompt.js")
+        for needle in ("export async function brandPrompt(host, project, pieceTypes)", "mountButton: true", "api.brandLint(project, body)", "data: { card: 'lint' }"):
+            self.assertIn(needle, prompt)
+
+    def test_the_retouch_panel_sends_subject_and_zone_in_a_brand_order(self):
+        panel = self.comp("retouch-panel.js")
+        self.assertIn("order.mode === 'brand'", panel)
+        spec = panel[panel.index("const spec = "):panel.index("const another")]
+        brand = spec[spec.index("if (builder) {"):spec.index("} else {")]
+        self.assertIn("s.subject = b.subject", brand)
+        self.assertIn("s.cleanZone = b.cleanZone", brand)
+        self.assertNotIn("s.prompt", brand)
+        self.assertIn("s.prompt = text", spec[spec.index("} else {"):])
+        self.assertIn("mode: 'free', prompt: built", panel)  # «Pasar a imagen libre»: the documented way (api.md)
+        self.assertIn("sendable.push(another, batch)", panel)
+
+    def test_the_new_texts_exist_in_both_languages_with_the_same_placeholders(self):
+        keys = ("ui.check.goTo", "ui.prompt.cantQueue", "ui.prompt.known", "ui.prompt.retry", "ui.newOrder.modeBrand", "ui.newOrder.modeFree",
+                "ui.newOrder.noSheet", "ui.newOrder.sheetInvalid", "ui.newOrder.toFree", "ui.retouch.toFree", "ui.retouch.toFreeConfirm")
+        es, en = (json.loads(read(LOCALES / (lang + ".json"))) for lang in ("es", "en"))
+        for key in keys:
+            self.assertIn(key, es)
+            self.assertIn(key, en)
+            self.assertEqual(set(re.findall(r"\{(\w+)\}", es[key])), set(re.findall(r"\{(\w+)\}", en[key])), key)
+
+
 class ApiRoutes(unittest.TestCase):
     def setUp(self):
         self.text = read(UI / "js" / "api.js")
@@ -621,7 +696,7 @@ class F4dUi(unittest.TestCase):
 
     def test_the_brand_tab_has_subtabs_and_the_sheet_calls(self):
         tab = self.comp("brand-tab.js")
-        for needle in ("role: 'tablist'", "role: 'tab'", "'ArrowRight'", "'ArrowLeft'", "SUBTABS = ['hoja', 'probar', 'check', 'taller']",
+        for needle in ("role: 'tablist'", "role: 'tab'", "'ArrowRight'", "'ArrowLeft'", "SUBTABS = ['hoja', 'probar', 'check', 'troubleshooting', 'taller']",
                        "sheetView(host, project, cfg, info)", "brandPrompt(host, project, info.pieceTypes"):
             self.assertIn(needle, tab)
         api = read(UI / "js" / "api.js")
@@ -651,6 +726,106 @@ class F4dUi(unittest.TestCase):
             keys = json.loads(read(Path(server.__file__).parent / "locales" / (lang + ".json")))
             for key in ("ui.pieces.profileParent", "ui.pieces.orderAriaParent", "ui.pieces.seeParent"):
                 self.assertIn(key, keys)
+
+
+class Step5bUi(unittest.TestCase):
+    """0.8.0 paso 5b: tandas en la cola y la galería, «No» con motivo, «Ninguno vale» y el marcador de fallos."""
+
+    def comp(self, name):
+        return read(UI / "js" / "components" / name)
+
+    def test_no_with_a_reason_and_none_are_good_go_through_the_reason_picker(self):
+        ov = self.comp("order-view.js")
+        rp = self.comp("reason-picker.js")
+        self.assertIn("askReason", ov)
+        self.assertIn("api.failBatch(project, profile, key, id, got)", ov)
+        self.assertIn("api.mark(project, profile, key, a.id, st, reason)", ov)
+        self.assertIn("reasonChoices(sheet)", rp)
+        self.assertIn("{ none: true }", rp)
+        self.assertIn("ev.currentTarget", self.comp("attempt-card.js"))
+
+
+    def test_the_queue_groups_by_batch_and_calls_the_batch_routes(self):
+        bar = self.comp("queue-bar.js")
+        for needle in ("function group(", "batchId(e)", "api.moveBatch(id, to2)", "api.cancelBatch(id)", "confirmAction(", "held === 'troubleshooting'",
+                       "ev.key === 'Enter'", "'ArrowRight'", "ev.key !== '[' && ev.key !== ']'"):
+            self.assertIn(needle, bar)
+        api = read(UI / "js" / "api.js")
+        for needle in ("`/api/queue/batches/${enc(id)}/move`", "`/api/queue/batches/${enc(id)}/cancel`", "post(paths.batchMove(id), { to })",
+                       "post(paths.batchCancel(id), {})", "`${paths.order(p, profile, key)}/batches/${enc(id)}/fail`",
+                       "post(paths.failBatch(p, profile, key, batch), { reason })", "{ state: st, reason } : { state: st }"):
+            self.assertIn(needle, api)
+        self.assertNotIn("batchCancel(id)).then", api)
+
+    def test_the_gallery_and_the_header_follow_the_brand_order_api(self):
+        view = self.comp("order-view.js")
+        for needle in ("sectionsOf(order,", "batchHead(ctx, head)", "blockedReason(order)", "data: { slot: 'troubleshoot' }", "api.brandSheet(project)"):
+            self.assertIn(needle, view)
+        # a retried entry of a brand order sends the subject and the clean zone, never the prompt (order.brand_prompt)
+        retry = view[view.index("retry: guard"):view.index("cancel: guard")]
+        self.assertIn("...(brandOrder ? {} : text !== null", retry)
+        # ...those of the batch of the entry (order.batches[]), not the current ones of the order
+        self.assertIn("batchSpecOf(ctx.order, e)", retry)
+        self.assertIn("{ subject: spec.subject }", retry)
+        self.assertIn("{ cleanZone: spec.cleanZone }", retry)
+        self.assertNotIn("e.subject", retry)
+        # Recreate loads the subject of the batch of the attempt, falling back to that of the order
+        retouch = self.comp("retouch-panel.js")
+        self.assertIn("batchSpecOf(ctx.order, attempt)", retouch[retouch.index("load(attempt)"):retouch.index("vary(attempt)")])
+        brand = self.comp("brand-order.js")
+        spec = brand[brand.index("export function batchSpecOf"):brand.index("export function failuresOf")]
+        self.assertIn("(order.batches || []).find((r) => r.id === b)", spec)
+        self.assertIn("order.subject || ''", spec)
+        # «Ninguno vale» is not offered on the batch with the chosen attempt, which the section counts (order.discard_chosen)
+        self.assertIn("sectionsOf(order, attempts, loose)", view)
+        self.assertIn("!sec.attempts.some((a) => a.id === order.chosen)", view)
+        self.assertIn("sec.attempts.filter((a) => a !== chosen).map(cardOf)", view)
+        # the queue drawer follows `position` alone: no batch pulled together at the place of its first entry
+        bar = self.comp("queue-bar.js")
+        order_fn = bar[bar.index("export function queuedOrder"):bar.index("export function batchId")]
+        self.assertNotIn("head.set", order_fn)
+        self.assertIn("pos(a) - pos(b) || a.id - b.id", order_fn)
+        self.assertIn("b.disabled = wait || Boolean(ctx.blocked)", retouch)
+        self.assertIn("disabled: Boolean(ctx.blocked)", self.comp("attempt-card.js"))
+        self.assertIn("modeBadge(o.mode)", self.comp("project-view.js"))
+
+    def test_locales_have_the_same_step_5b_keys_in_both_languages(self):
+        loc = {lang: json.loads(read(LOCALES / (lang + ".json"))) for lang in ("es", "en")}
+        for key in ("ui.queue.batches", "ui.queue.batchesOne", "ui.queue.batchCancel", "ui.queue.held"):
+            for lang in loc:
+                self.assertIn(key, loc[lang])
+        self.assertEqual(set(loc["es"]), set(loc["en"]))
+
+
+    def test_the_troubleshooting_form_and_the_marca_subtab_follow_the_api(self):
+        api = read(UI / "js" / "api.js")
+        for needle in ("`/api/projects/${enc(p)}/troubleshooting`", "`${paths.order(p, profile, key)}/troubleshooting/extend`",
+                       "post(paths.troubleshooting(p), body)", "post(paths.extend(p, profile, key), {})"):
+            self.assertIn(needle, api)
+        form = self.comp("troubleshoot.js")
+        for needle in ("tabindex: '-1'", "role: 'alert'", "confirmAction(", "failedAttemptIds(order)", "reasonsText(f.reasons, ctx.sheet)",
+                       "body.redesign", "api.troubleshootingRows(project)", "data: { slot: 'ts-retry' }"):
+            self.assertIn(needle, form)
+        view = self.comp("order-view.js")
+        self.assertIn("troubleshootForm(ctx, { onSave: ctx.actions.saveRow, onExtend: ctx.actions.extend })", view)
+        self.assertIn("'order.not_blocked' || e.code === 'order.extend_pending' || e.code === 'order.extend_used'", view)
+        for needle in ("disabled: used", "extensionUsed", "ui.ts.extendUsed"):  # one extension per cycle: the button is disabled with its reason
+            self.assertIn(needle, form)
+        self.assertIn("order.troubleshooting && order.troubleshooting.state]", view)  # the panel is rebuilt when the state changes
+        tab = self.comp("brand-tab.js")
+        self.assertIn("['hoja', 'probar', 'check', 'troubleshooting', 'taller']", tab)
+        self.assertIn("troubleshootTable(project)", tab)
+        prompt = self.comp("brand-prompt.js")
+        self.assertIn("k.row.redesign ? 'ui.prompt.knownRedesign' : 'ui.prompt.known'", prompt)
+        self.assertIn("row.key ??", prompt)  # the row is an object {key, ...}: never printed as JSON
+
+    def test_locales_have_the_same_step_5c_keys_in_both_languages(self):
+        loc = {lang: json.loads(read(LOCALES / (lang + ".json"))) for lang in ("es", "en")}
+        for key in ("ui.brand.sub.troubleshooting", "ui.prompt.knownRedesign", "ui.ts.title", "ui.ts.save", "ui.ts.extend", "ui.ts.extendedNotice",
+                    "ui.ts.col.attempts", "ui.ts.retry"):
+            for lang in loc:
+                self.assertIn(key, loc[lang])
+        self.assertEqual(re.findall(r"\{(\w+)\}", loc["es"]["ui.prompt.knownRedesign"]), re.findall(r"\{(\w+)\}", loc["en"]["ui.prompt.knownRedesign"]))
 
 
 class Served(ServerBase):

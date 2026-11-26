@@ -2,10 +2,15 @@
 
 ``{"nextId": n, "entries": [...]}``; entry: ``id``, ``project``, ``key``, ``profile``, ``seed``, ``prompt``,
 ``params``, ``references``, ``state`` (queued|running|done|failed|cancelled), ``pid``, ``enqueuedAt``,
-``startedAt``, ``finishedAt``, ``error``, ``attemptId``, ``cancelRequested``, ``draft`` (bool; an older entry without it is not a draft), ``initImage`` (relative path or ``None``) and ``strength`` (number or ``None``; an older entry without the keys has neither) and ``text`` (object, the values of the
+``startedAt``, ``finishedAt``, ``error``, ``attemptId``, ``cancelRequested``, ``draft`` (bool; an older entry without it is not a draft), ``initImage`` (relative path or ``None``) and ``strength`` (number or ``None``; an older entry without the keys has neither) and ``mode`` (``brand`` or ``free``; an older entry without it is free) and ``sheetVersion`` (brand entries: the version of the sheet that built the prompt) and ``text`` (object, the values of the
 profile's ``compose.fields``; an older entry without it has none: read it with ``.get``) and ``template`` (F4b: the id of the composition
 template, ``None`` for ``default``; an older entry without it has none) and ``position`` (F4d: where a ``queued`` entry
 stands; the worker takes the lowest one, ties and entries without it by id; `move` and `clear` edit it). Entries stay in arrival order in the file.
+An entry enqueued by one submit or one `attempts` call may carry ``batch`` (``{"id": id of the batch's first entry, "index", "size"}``;
+brand-mode enqueues always, free ones only when they are more than one entry; an older entry has none) and, if
+`stop_batch` cancelled it, ``stoppedBy`` (the attempt whose score stopped the batch). An entry of a brand order in troubleshooting
+(`failures.is_blocked`) is *held*: the worker never claims it (`_first_queued`) and `entry_view` says ``held: "troubleshooting"``;
+``extended: true`` marks the entries of the batch an `failures.extend` allowed, which are not held.
 A running entry may also have ``progress`` (``{"step", "steps", "etaS"}``, `set_progress`) and ``preview`` (the path of
 the engine's preview image, `set_preview`); both are removed when the entry finishes or goes back to ``queued``.
 
@@ -33,11 +38,12 @@ from pathlib import Path
 
 from . import compose as compose_mod
 from . import engine as engine_mod
-from . import fsutil, i18n, limits, log, orders, paths, projects, schema
+from . import failures, fsutil, i18n, limits, log, orders, paths, projects, schema
 from . import models as models_mod
 from .errors import GimgError
 
 KEEP_TERMINAL = 200
+STOP_SCORE = 9  # a finished attempt scoring at least this stops the rest of its batch (the score arrives in 0.9.0)
 TERMINAL = ("done", "failed", "cancelled")
 STATES = ("queued", "running") + TERMINAL
 
@@ -205,7 +211,11 @@ def _pos(entry: dict):
 
 
 def _first_queued(data: dict):
-    return min((e for e in data["entries"] if e["state"] == "queued"), key=_pos, default=None)
+    """The first queued entry the worker may start: held ones (an order in troubleshooting) are skipped."""
+    for entry in sorted((e for e in data["entries"] if e["state"] == "queued"), key=_pos):
+        if failures.held_entry(entry) is None:
+            return entry
+    return None
 
 
 def _find(data: dict, entry_id) -> dict:
@@ -231,12 +241,13 @@ def check_specs(project: str, profile: str, specs: list) -> None:
         compose_mod.effective((compose_mod.merged_profile(projects.get(project), profile) or {}).get("compose"), tid)
 
 
-def enqueue(project: str, key: str, profile: str, specs: list) -> list:
+def enqueue(project: str, key: str, profile: str, specs: list, checks=None) -> list:
     """Queue one entry per spec (from ``orders.attempt_specs``); returns the new entries.
 
     The order must exist and every spec must pass the limits of the current machine profile;
-    nothing is queued if any fails."""
-    orders.get(project, key, profile)
+    nothing is queued if any fails. The entries of a brand order, or more than one entry, form a batch (``batch`` in each
+    entry) which is also recorded in the order (``batches``); `checks` (the lint) gives the warnings stored with it."""
+    order = orders.get(project, key, profile)
     check_specs(project, profile, specs)
     now = _now()
 
@@ -250,17 +261,46 @@ def enqueue(project: str, key: str, profile: str, specs: list) -> list:
                      "draft": spec.get("draft") is True,
                      "initImage": spec.get("initImage"), "strength": spec.get("strength"),
                      "text": copy.deepcopy(spec.get("text") or {}),
+                     "mode": "brand" if spec.get("mode") == "brand" else "free",
                      "template": spec.get("template"), "position": data["nextId"],
                      "state": "queued", "pid": None, "enqueuedAt": now, "startedAt": None,
                      "finishedAt": None, "error": None, "attemptId": None, "cancelRequested": False}
             if spec.get("negative"):  # only entries with a negative carry the key
                 entry["negative"] = spec["negative"]
+            if entry["mode"] == "brand" and spec.get("sheetVersion"):  # the sheet that built the prompt
+                entry["sheetVersion"] = spec["sheetVersion"]
+            if spec.get("extended") is True:  # the batch `failures.extend` allowed: never held
+                entry["extended"] = True
             data["nextId"] += 1
             data["entries"].append(entry)
             added.append(entry)
+        if added and (any(e["mode"] == "brand" for e in added) or len(added) > 1):
+            for index, entry in enumerate(added):
+                entry["batch"] = {"id": added[0]["id"], "index": index, "size": len(added)}
         return added
 
-    return _txn(change, recover=True)
+    added = _txn(change, recover=True)
+    if added and "batch" in added[0]:
+        record = {"id": added[0]["id"], "size": len(added), "mode": added[0]["mode"],
+                  "warnings": [c for c in checks or () if c.get("status") == "warn"], "createdAt": now}
+        if record["mode"] == "brand":
+            record["subject"] = order.get("subject")
+            record["cleanZone"] = order.get("cleanZone")
+            record = {k: v for k, v in record.items() if v is not None}
+        extended = added[0].get("extended") is True
+        if extended:
+            record["extended"] = True
+        orders.add_batch(project, key, profile, record)
+        if extended:
+            failures.note_extension(project, key, profile, record["id"])
+    elif added and added[0].get("extended") is True:  # a single entry has no batch: the extension notes its id
+        failures.note_extension(project, key, profile, added[0]["id"])
+    return added
+
+
+def list_runnable() -> list:
+    """The queued entries the worker could start: those not held by a troubleshooting block."""
+    return [e for e in list_entries(["queued"]) if failures.held_entry(e) is None]
 
 
 def list_entries(states=None) -> list:
@@ -316,6 +356,79 @@ def move(entry_id, to: str) -> dict:
         for item, slot in zip(line, slots):
             item["position"] = slot
         return entry
+
+    return _txn(change)
+
+
+def _batch(data: dict, batch_id) -> list:
+    found = [e for e in data["entries"] if isinstance(e.get("batch"), dict) and type(batch_id) is int
+             and e["batch"].get("id") == batch_id]
+    if not found:
+        raise GimgError("queue.batch_not_found", id=str(batch_id))
+    return found
+
+
+def move_batch(batch_id, to: str) -> list:
+    """`move` for a whole batch: its ``queued`` entries move as one contiguous block, ``up``/``down`` past the
+    neighbouring entry or batch block, ``top`` to the head of the line. Returns the batch's entries that moved.
+    Unknown batch: ``queue.batch_not_found``; nothing queued in it: ``queue.not_movable``; another `to`: ``queue.bad_move``."""
+    if to not in MOVES:
+        raise GimgError("queue.bad_move", to=str(to), allowed=", ".join(MOVES))
+
+    def change(data):
+        mine = [e for e in _batch(data, batch_id) if e["state"] == "queued"]
+        if not mine:
+            raise GimgError("queue.not_movable", id=batch_id, state="finished")
+        line = sorted((e for e in data["entries"] if e["state"] == "queued"), key=_pos)
+        slots = [_pos(e)[0] for e in line]
+        ids = {e["id"] for e in mine}
+        rest = [e for e in line if e["id"] not in ids]
+        at = next(i for i, e in enumerate(line) if e["id"] in ids)  # where its first entry stood among the others
+        starts = [i for i in range(len(rest) + 1)
+                  if i in (0, len(rest)) or (rest[i].get("batch") or {}).get("id", ("e", rest[i]["id"]))
+                  != (rest[i - 1].get("batch") or {}).get("id", ("e", rest[i - 1]["id"]))]
+        if to == "top":
+            ins = 0
+        elif to == "up":
+            ins = max((i for i in starts if i < at), default=at)
+        else:
+            ins = min((i for i in starts if i > at), default=at)
+        for item, slot in zip(rest[:ins] + sorted(mine, key=_pos) + rest[ins:], slots):
+            item["position"] = slot
+        return sorted(mine, key=_pos)
+
+    return _txn(change)
+
+
+def cancel_batch(batch_id) -> list:
+    """`cancel` for a whole batch: its queued entries become ``cancelled`` and the running one gets ``cancelRequested``.
+    Returns all of the batch's entries. Unknown: ``queue.batch_not_found``; nothing queued or running: ``queue.not_cancellable``."""
+    def change(data):
+        mine = _batch(data, batch_id)
+        if not any(e["state"] in ("queued", "running") for e in mine):
+            raise GimgError("queue.not_cancellable", id=batch_id, state="finished")
+        now = _now()
+        for entry in mine:
+            if entry["state"] == "queued":
+                entry["state"] = "cancelled"
+                entry["finishedAt"] = now
+            elif entry["state"] == "running":
+                entry["cancelRequested"] = True
+        return mine
+
+    return _txn(change)
+
+
+def stop_batch(batch_id, attempt_id) -> list:
+    """The batch is good enough (`STOP_SCORE`): cancel its ``queued`` entries, leaving the running and finished ones, and
+    record in each ``stoppedBy`` = `attempt_id`. Returns the entries cancelled (none if the batch is unknown)."""
+    def change(data):
+        now = _now()
+        found = [e for e in data["entries"] if e["state"] == "queued" and isinstance(e.get("batch"), dict)
+                 and e["batch"].get("id") == batch_id]
+        for entry in found:
+            entry.update(state="cancelled", finishedAt=now, stoppedBy=attempt_id)
+        return found
 
     return _txn(change)
 
@@ -458,6 +571,9 @@ def is_cancel_requested(entry_id) -> bool:
 def entry_view(entry: dict, lang: str | None = None) -> dict:
     """The JSON form of an entry for `gimg queue list --json` and ``GET /api/queue``: the entry plus ``errorText``."""
     item = dict(entry)
+    held = failures.held_entry(entry)
+    if held is not None:
+        item["held"] = held
     text = error_text(entry, lang)
     if text:
         item["errorText"] = text
@@ -482,7 +598,18 @@ def estimate_for(entry: dict, provider: str | None = None, memo: dict | None = N
 def submit_order(project: str, order: dict, draft=None, template=None, model=None) -> tuple:
     """`gimg order submit` and ``POST /api/projects/{p}/orders``: store the order and enqueue its attempts.
     Returns ``(entries, provider)``; a bad engine setting fails before anything is stored or queued."""
+    entries, provider, _ = submit_order_checked(project, order, draft, template, model)
+    return entries, provider
+
+
+def submit_order_checked(project: str, order: dict, draft=None, template=None, model=None) -> tuple:
+    """`submit_order` that also returns the lint of the prompt: ``(entries, provider, checks)``. `checks` is ``None``
+    without a valid brand sheet. A brand order (``mode: brand``) gets its prompt, profile, seed, count and model from the
+    sheet (`orders.prepare`)."""
     provider = engine_mod.get_engine().provider
+    order, info = orders.prepare(project, order)
+    if model is None:
+        model = info.get("model")
     if draft is not None:  # the option is the order's own field, so it is stored with the order
         order["draft"] = draft
     candidates = orders.check_order(project, order)  # limits, prompt length and seed range, before anything is stored
@@ -494,19 +621,57 @@ def submit_order(project: str, order: dict, draft=None, template=None, model=Non
         if model is not None:
             spec["params"]["model"] = model
     check_specs(project, order["profile"], candidates)
+    # an order in troubleshooting is refused here (a free one is the way out of the block)
+    extended = failures.admit(project, order["key"], order["profile"]) if order.get("mode") == "brand" else False
     record = orders.submit(project, order)
     specs = orders.attempt_specs(project, record["key"], record["profile"], order.get("count", 1), template=template,
                                  model=model)
-    return enqueue(project, record["key"], record["profile"], specs), provider
+    for spec in specs if extended else ():
+        spec["extended"] = True
+    return enqueue(project, record["key"], record["profile"], specs, info.get("checks")), provider, info.get("checks")
 
 
 def new_attempts(project: str, key: str, profile: str, count: int = 1, *, seed=None, prompt=None, params=None,
-                 draft=None, template=None, model=None, negative=None) -> tuple:
+                 draft=None, template=None, model=None, negative=None, subject=None, clean_zone=None,
+                 mode=None) -> tuple:
     """`gimg attempt new` and ``POST …/attempts``: enqueue `count` more attempts. Returns ``(entries, provider)``."""
+    entries, provider, _ = new_attempts_checked(project, key, profile, count, seed=seed, prompt=prompt, params=params,
+                                                draft=draft, template=template, model=model, negative=negative,
+                                                subject=subject, clean_zone=clean_zone, mode=mode)
+    return entries, provider
+
+
+def new_attempts_checked(project: str, key: str, profile: str, count: int = 1, *, seed=None, prompt=None, params=None,
+                         draft=None, template=None, model=None, negative=None, subject=None, clean_zone=None,
+                         mode=None) -> tuple:
+    """`new_attempts` that also returns the lint of the prompt: ``(entries, provider, checks)``.
+
+    On a brand order the prompt is assembled again from `subject` / `clean_zone` (else the stored ones) and the order is
+    updated once the specs pass the machine checks; ``mode="free"`` with `prompt` switches it to free (`orders.plan_attempt`)."""
     provider = engine_mod.get_engine().provider
-    specs = orders.attempt_specs(project, key, profile, count, seed=seed, prompt=prompt, params=params, draft=draft,
-                                 template=template, model=model, negative=negative)
-    return enqueue(project, key, profile, specs), provider
+    if mode != "free":  # switching to free is the way out of a block
+        failures.check_open(project, key, profile)  # ``order.troubleshooting`` before anything else is looked at
+    record, changes, checks = orders.plan_attempt(project, key, profile, subject=subject, clean_zone=clean_zone,
+                                                  mode=mode, prompt=prompt)
+    if model is None and record.get("mode") == "brand":  # the same model as `submit_order_checked` uses
+        model = orders.piece_model(project, record["piece"])
+    specs = orders.attempt_specs(project, key, profile, count, seed=seed, prompt=prompt if changes is None else None,
+                                 params=params, draft=draft, template=template, model=model, negative=negative,
+                                 record=record)
+    if changes is not None or failures.is_blocked(record):
+        check_specs(project, profile, specs)  # before an extension is used up
+    extended = failures.admit(project, key, profile) if record.get("mode") == "brand" else False
+    if extended:
+        for spec in specs:
+            spec["extended"] = True
+    try:
+        if changes is not None:
+            orders.apply_changes(project, key, profile, changes)
+        return enqueue(project, key, profile, specs, checks), provider, checks
+    except BaseException:
+        if extended:
+            failures.restore_extension(project, key, profile)  # the extension was not used: it is not lost
+        raise
 
 
 def queued_view(entries: list, provider: str, lang: str | None = None) -> dict:

@@ -6,8 +6,8 @@ Layout: ``<data>/projects/<project>/orders/<key>/@<profile>/order.json`` and
 This module neither enqueues (queue, F1.4) nor delivers (F1.5): `choose` and `undo` return the old and
 new chosen ids so delivery can hook in. Every read-modify-write holds `fsutil.lock` of ``order.json``.
 
-Public API: `submit`, `set_text`, `attempt_specs`, `add_attempt`, `add_derived`, `set_composed`, `attempt_for_entry`, `attempt_image`,
-`raw_image`, `compose_names`, `compose_paths`, `compose_lock_path`, `pending_image_path`, `mark`, `note`, `choose`, `undo`, `get`, `list_orders`. All raise `GimgError` with codes ``order.*`` on bad input.
+Public API: `submit`, `set_text`, `attempt_specs`, `add_attempt`, `add_derived`, `set_composed`, `attempt_for_entry`, `attempt_image`, `peek`, `check_reason`, `add_failure`, `reset_failures`,
+`raw_image`, `prepare`, `plan_attempt`, `apply_changes`, `compose_names`, `compose_paths`, `compose_lock_path`, `pending_image_path`, `mark`, `note`, `choose`, `undo`, `get`, `list_orders`. All raise `GimgError` with codes ``order.*`` on bad input.
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ import random
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import fsutil, paths, projects, schema
+from . import brandsheet, fsutil, paths, projects, schema
 from .errors import GimgError
 
 STATES = ("new", "candidate", "discarded")
@@ -32,6 +32,8 @@ _FULL_PARAMS = {"type": "object", "properties": {
 DRAFT_STEPS = 8
 DRAFT_SCALE = 0.5
 SIDE_STEP = 64
+FAILURE_LIMIT = 3  # failed batches in a row that block a brand order (``brand.failureLimit`` of the project config changes it)
+RESET_SCORE = 5  # an attempt scoring at least this puts the counter back to zero
 _rng = random.SystemRandom()
 
 
@@ -255,7 +257,12 @@ def _submit(project: str, order: dict, only_new: bool) -> tuple:
         "initImage": order.get("initImage"),
         "strength": order.get("strength"),
         "text": dict(order.get("text", {})),
+        "mode": order.get("mode", "free"),
     }
+    brand = fields["mode"] == "brand"
+    for name in ("piece", "subject", "cleanZone", "sheetVersion"):  # only brand orders carry them
+        if brand and name in order:
+            fields[name] = order[name]
     if _neg(order.get("negative")):
         fields["negative"] = _neg(order["negative"])
     path = _order_file(project, key, profile)
@@ -273,7 +280,12 @@ def _submit(project: str, order: dict, only_new: bool) -> tuple:
             if only_new:
                 return copy.deepcopy(record), False
             created = False
+        if "subject" in record and record["subject"] != fields.get("subject"):
+            reset_failures(record)
         record.update(fields)
+        for name in ("piece", "subject", "cleanZone", "sheetVersion"):
+            if not brand or name not in fields:  # a resubmission drops what the new order does not carry
+                record.pop(name, None)
         if not _neg(order.get("negative")):  # only orders with a negative carry the key, so stored orders keep their shape
             record.pop("negative", None)
         record["updatedAt"] = now
@@ -295,7 +307,8 @@ def check_order(project: str, order: dict) -> list:
                  "params": copy.deepcopy(order.get("params", {})), "seed": order.get("seed"),
                  "draft": bool(order.get("draft", False)), "initImage": order.get("initImage"),
                  "strength": order.get("strength"), "text": dict(order.get("text", {})),
-                 "negative": _neg(order.get("negative"))}
+                 "negative": _neg(order.get("negative")), "mode": order.get("mode", "free"),
+                 "sheetVersion": order.get("sheetVersion")}
     specs = build_specs(candidate, profile_cfg, order.get("count", 1))
     from . import limits
     machine = limits.load_machine()
@@ -331,8 +344,9 @@ def set_text(project: str, key: str, profile: str, text: dict, replace: bool = F
 
 
 def attempt_specs(project: str, key: str, profile: str, count: int = 1, *,
-                  seed=None, prompt=None, params=None, draft=None, template=None, model=None, negative=None) -> list:
-    """Specs of `count` attempts to enqueue; never changes the stored order (D19-D20).
+                  seed=None, prompt=None, params=None, draft=None, template=None, model=None, negative=None, record=None) -> list:
+    """Specs of `count` attempts to enqueue; never changes the stored order (D19-D20). `record` is a candidate order
+    (`plan_attempt`) used instead of the stored one.
 
     Each spec is ``{"seed", "prompt", "params", "references", "draft", "initImage", "strength", "text"}`` (the last three are the order's, ``None`` or ``{}`` if absent):
     - seed: `seed` if given, else the order's seed, then ``seed + i`` for attempt i (0-based);
@@ -350,7 +364,7 @@ def attempt_specs(project: str, key: str, profile: str, count: int = 1, *,
     - model: a catalog id (F4d) that replaces the profile's (and the draft's) model in each spec; unknown is ``model.unknown``;
       `queue.enqueue` checks it against the machine profile."""
     _check_fields(prompt, params, seed, negative)
-    order = get(project, key, profile)
+    order = get(project, key, profile) if record is None else record
     profile_cfg = _profile(projects.get(project)["config"], profile)
     specs = build_specs(order, profile_cfg, count, seed=seed, prompt=prompt, params=params, draft=draft,
                         negative=negative)
@@ -382,7 +396,8 @@ def build_specs(order: dict, profile_cfg: dict, count: int = 1, *, seed=None, pr
         if "steps" in (params or {}):
             full["steps"] = params["steps"]
     text = order["prompt"] if prompt is None else prompt
-    style = profile_cfg.get("style", "")
+    brand = order.get("mode") == "brand"
+    style = "" if brand else profile_cfg.get("style", "")  # the sheet's prompt is final: no style after it
     if style:
         text = "%s, %s" % (text, style)
     max_prompt = schema.load_schema("order")["properties"]["prompt"]["maxLength"]
@@ -399,8 +414,167 @@ def build_specs(order: dict, profile_cfg: dict, count: int = 1, *, seed=None, pr
         "initImage": order.get("initImage"),
         "strength": order.get("strength"),
         "text": dict(order.get("text") or {}),
+        "mode": "brand" if brand else "free",
+        **({"sheetVersion": order["sheetVersion"]} if brand and order.get("sheetVersion") else {}),
         **({"negative": neg} if neg else {}),  # only attempts with a negative carry the key
     } for i in range(count)]
+
+
+_BRAND_KEYS = ("mode", "piece", "subject", "cleanZone")
+
+
+def _sheet(project: str) -> dict:
+    """The resolved brand sheet of the project; no sheet declared is ``brand.no_sheet`` (any other problem keeps its code)."""
+    try:
+        return brandsheet.resolve(project)
+    except GimgError as exc:
+        if exc.code == "brandsheet.none":
+            raise GimgError("brand.no_sheet", project=project)
+        raise
+
+
+def _free_checks(project: str, prompt: str):
+    """Lint of a free prompt against the project's sheet (``mode: free``, never blocks), or ``None`` without a valid sheet."""
+    try:
+        sheet = brandsheet.resolve(project)
+    except GimgError:
+        return None
+    return brandsheet.lint(sheet, prompt, None, "free")["checks"]
+
+
+def _brand_build(project: str, sheet: dict, piece: str, subject: str, zone) -> tuple:
+    """Assemble and lint (mode brand): ``(prompt, checks)``, or ``brand.blocked`` with the failing checks."""
+    built = brandsheet.assemble(sheet, piece, subject, zone)
+    res = brandsheet.lint(sheet, built["prompt"], piece, "brand", zone)
+    if res["blocked"]:
+        raise GimgError("brand.blocked", errors=brandsheet.blocking_errors(res["checks"]), project=project, piece=piece)
+    return built["prompt"], res["checks"]
+
+
+def prepare(project: str, order: dict) -> tuple:
+    """What `queue.submit_order` does to an order before it is checked: ``(order, info)`` (the order is a copy).
+
+    A free order (``mode`` absent or ``free``) is kept as it is; ``info["checks"]`` is its lint against the project's
+    sheet (warnings only) when the project has a valid one. A brand order needs ``piece`` and a non-blank ``subject``, and
+    no ``prompt``: the sheet assembles it (``brand.no_sheet``, ``order.piece_required``, ``order.subject_required``,
+    ``order.brand_prompt``, ``brand.blocked``). ``profile`` comes from the piece type (another one is
+    ``order.profile_mismatch``); ``seed`` and ``count`` default to the piece's; ``info["model"]`` is the piece's model when
+    the project's profile has another; ``sheetVersion`` is stored. ``sheetVersion``, ``modeChanges`` and ``batches`` sent by a client are dropped."""
+    if not isinstance(order, dict):
+        return order, {}
+    order = dict(order)
+    order.pop("sheetVersion", None)
+    order.pop("modeChanges", None)
+    order.pop("batches", None)
+    order.pop("failures", None)
+    order.pop("troubleshooting", None)
+    probe = {"key": "x", "profile": "x", "prompt": "x", **{k: order[k] for k in _BRAND_KEYS if k in order}}
+    _check_fields_of(probe)
+    if order.get("mode", "free") != "brand":
+        for name in ("piece", "subject", "cleanZone"):
+            order.pop(name, None)
+        checks = _free_checks(project, order["prompt"]) if isinstance(order.get("prompt"), str) else None
+        return order, ({"checks": checks} if checks is not None else {})
+    if "prompt" in order:
+        raise GimgError("order.brand_prompt")
+    piece, subject = order.get("piece"), order.get("subject")
+    if not piece:
+        raise GimgError("order.piece_required")
+    if not isinstance(subject, str) or not subject.strip():
+        raise GimgError("order.subject_required")
+    sheet = _sheet(project)
+    if piece not in sheet["pieceTypes"]:
+        raise GimgError("brandsheet.unknown_piece", piece=str(piece))
+    defaults = brandsheet.piece_defaults(sheet, piece)
+    if order.get("profile") not in (None, defaults["profile"]):
+        raise GimgError("order.profile_mismatch", piece=piece, profile=order["profile"], expected=defaults["profile"])
+    order["profile"] = defaults["profile"]
+    prompt, checks = _brand_build(project, sheet, piece, subject, order.get("cleanZone"))
+    order["prompt"] = prompt
+    order["sheetVersion"] = sheet["version"]
+    if order.get("seed") is None and defaults["seed"] is not None:
+        order["seed"] = defaults["seed"]
+    if "count" not in order and defaults["count"] is not None:
+        order["count"] = defaults["count"]
+    info = {"checks": checks}
+    model = _piece_model(project, defaults)
+    if model is not None:
+        info["model"] = model
+    return order, info
+
+
+def _piece_model(project: str, defaults: dict):
+    """The piece's model (from `brandsheet.piece_defaults`) when the project's profile has another, else ``None``."""
+    own = (projects.get(project)["config"].get("profiles") or {}).get(defaults["profile"], {}).get("model")
+    if defaults["model"] is not None and defaults["model"] != own:
+        return defaults["model"]
+    return None
+
+
+def piece_model(project: str, piece: str):
+    """`_piece_model` of a piece of the project's sheet (what `prepare` puts in ``info["model"]``)."""
+    return _piece_model(project, brandsheet.piece_defaults(_sheet(project), piece))
+
+
+def plan_attempt(project: str, key: str, profile: str, *, subject=None, clean_zone=None, mode=None, prompt=None) -> tuple:
+    """What `queue.new_attempts` does before it builds specs: ``(candidate, changes, checks)`` without storing anything.
+
+    `candidate` is the order as it would be after the attempt; `changes` (``None`` when there are none) is what
+    `apply_changes` stores in it; `checks` is the lint to report (or ``None``).
+    - free order: `subject`, `clean_zone` or ``mode="brand"`` are ``order.not_brand``; nothing changes.
+    - brand order: the prompt is assembled again from the stored (or the given) subject and clean zone with the sheet as it
+      is now, and linted (``brand.blocked``). A `prompt` is ``order.brand_prompt`` unless ``mode="free"``: then the order
+      becomes free with that prompt and the change goes to ``modeChanges`` (with a subject or clean zone: ``order.mode_conflict``)."""
+    probe = {"key": "x", "profile": "x", "prompt": "x"}
+    for name, value in (("mode", mode), ("subject", subject), ("cleanZone", clean_zone)):
+        if value is not None:
+            probe[name] = value
+    _check_fields_of(probe)
+    if prompt is not None:
+        _check_fields(prompt=prompt)
+    order = get(project, key, profile)
+    current = order.get("mode", "free")
+    if current != "brand":
+        if subject is not None or clean_zone is not None or mode == "brand":
+            raise GimgError("order.not_brand", order=key, profile=profile)
+        return order, None, _free_checks(project, order["prompt"] if prompt is None else prompt)
+    if mode == "free":
+        if prompt is None or subject is not None or clean_zone is not None:
+            raise GimgError("order.mode_conflict", reason="mode free needs a prompt and takes no subject or cleanZone")
+        changes = {"mode": "free", "prompt": prompt,
+                   "modeChanges": list(order.get("modeChanges", [])) + [{"from": "brand", "to": "free", "at": _now()}]}
+        return {**order, **changes}, changes, _free_checks(project, prompt)
+    if prompt is not None:
+        raise GimgError("order.brand_prompt")
+    new_subject = order["subject"] if subject is None else subject
+    if not new_subject.strip():
+        raise GimgError("order.subject_required")
+    zone = order.get("cleanZone") if clean_zone is None else clean_zone
+    sheet = _sheet(project)
+    built, checks = _brand_build(project, sheet, order["piece"], new_subject, zone)
+    changes = {"subject": new_subject, "cleanZone": zone if (zone or "").strip() else None, "prompt": built,
+               "sheetVersion": sheet["version"]}
+    candidate = {k: v for k, v in {**order, **changes}.items() if v is not None}
+    return candidate, changes, checks
+
+
+def apply_changes(project: str, key: str, profile: str, changes: dict) -> None:
+    """Store the `changes` of `plan_attempt` in the order (a ``None`` value removes the key)."""
+    def change(order):
+        if "subject" in changes and changes["subject"] != order.get("subject"):
+            reset_failures(order)  # a new subject starts the count again
+        for name, value in changes.items():
+            if value is None:
+                order.pop(name, None)
+            else:
+                order[name] = copy.deepcopy(value)
+
+    _modify(project, key, profile, change)
+
+
+def add_batch(project: str, key: str, profile: str, record: dict) -> None:
+    """Append the record of a batch (``{id, size, mode, warnings, createdAt, ...}``, see `queue.enqueue`) to the order's ``batches``."""
+    _modify(project, key, profile, lambda order: order.setdefault("batches", []).append(copy.deepcopy(record)))
 
 
 def attempt_for_entry(project: str, key: str, profile: str, entry_id: int):
@@ -442,6 +616,11 @@ def _new_record(order: dict, spec: dict, new_id: int, image: str, init_image=Non
         "note": "",
         "createdAt": _now(),
     }
+    record["mode"] = "brand" if spec.get("mode") == "brand" else "free"
+    if record["mode"] == "brand" and isinstance(spec.get("sheetVersion"), str):
+        record["sheetVersion"] = spec["sheetVersion"]
+    if type(spec.get("batch")) is int:  # the batch (its first entry's id) of the queue entry that made it
+        record["batch"] = spec["batch"]
     if spec.get("draft") is True:  # only drafts carry the key, so stored orders keep their shape
         record["draft"] = True
     if isinstance(spec.get("negative"), str) and spec["negative"]:  # same for the negative prompt
@@ -501,8 +680,8 @@ def add_attempt(project: str, key: str, profile: str, spec: dict, entry_id=None)
     return _modify(project, key, profile, change)
 
 
-_CROP_TMP_RE = re.compile(r"^\.\d+\.crop\..*\.tmp$")
 _CROP_TMP = ".crop."  # temp-file marker of `add_derived` in attempts/
+_CROP_TMP_RE = re.compile(r"^\.\d+" + re.escape(_CROP_TMP) + r".*\.tmp$")
 
 
 def add_derived(project: str, key: str, profile: str, spec: dict, derived_from: dict, png_data: bytes) -> dict:
@@ -532,7 +711,7 @@ def add_derived(project: str, key: str, profile: str, spec: dict, derived_from: 
         record["derivedFrom"] = copy.deepcopy(derived_from)
         order["attempts"].append(record)
         order["updatedAt"] = _now()
-        for stale in final.parent.glob(".*" + _CROP_TMP + "*.tmp"):
+        for stale in (final.parent.iterdir() if final.parent.is_dir() else ()):  # attempts/ may not exist yet
             if not _CROP_TMP_RE.match(stale.name):  # remains of a crop killed mid-write (only add_derived
                 continue                              # makes them, under this lock); any other hidden file stays
             with contextlib.suppress(OSError):
@@ -617,19 +796,110 @@ def clear_compose_error(project: str, key: str, profile: str, attempt_id: int) -
     return _modify(project, key, profile, change)
 
 
-def mark(project: str, key: str, profile: str, attempt_id: int, state: str) -> dict:
-    """Set an attempt's state (new|candidate|discarded); the chosen one cannot be discarded."""
+def failure_limit(project: str) -> int:
+    """How many failed batches in a row block a brand order of the project (``brand.failureLimit``, else `FAILURE_LIMIT`)."""
+    limit = (projects.get(project)["config"].get("brand") or {}).get("failureLimit")
+    return limit if type(limit) is int and limit >= 1 else FAILURE_LIMIT
+
+
+def reset_failures(order: dict) -> None:
+    """Put the order's failure counter back to zero (an order that never failed keeps no ``failures``)."""
+    if isinstance(order.get("failures"), dict):
+        order["failures"]["count"] = 0
+        order["failures"]["reasons"] = []
+    if isinstance(order.get("troubleshooting"), dict):
+        order["troubleshooting"]["extendPending"] = False  # a restart leaves no extension waiting
+        order["troubleshooting"]["extendUsed"] = False  # and a new cycle may use one again
+
+
+def add_failure(order: dict, project: str, *, batch=None, attempt=None, reason=None) -> dict:
+    """Count one failure in `order` (edits it in place): ``failures.count`` +1, ``limit`` as the project has it now, and
+    the reason ``{batch?, attempt?, trait?, text?, at}`` appended. Returns ``order["failures"]``."""
+    record = order.setdefault("failures", {"count": 0, "limit": FAILURE_LIMIT, "reasons": []})
+    record["limit"] = failure_limit(project)
+    record["count"] += 1
+    item = {k: v for k, v in (("batch", batch), ("attempt", attempt)) if v is not None}
+    item.update(reason or {})
+    item["at"] = _now()
+    record["reasons"].append(item)
+    return record
+
+
+def _reason_traits(project: str):
+    """The traits a reason may name (the sheet's ``acceptance`` traits and unmeasured ones), or ``None`` without a usable sheet."""
+    try:
+        acceptance = brandsheet.resolve(project).get("acceptance") or {}
+    except GimgError:
+        return None
+    return set(acceptance.get("traits") or ()) | {u["id"] for u in acceptance.get("unmeasured") or ()}
+
+
+def check_reason(project: str, reason, required: bool = False):
+    """A "No" reason, ``{"trait": <trait of the sheet or "other">, "text"?: note}`` (``other`` needs the note); returns it
+    normalised, ``None`` if absent and not `required`. Anything else is ``order.reason_invalid``."""
+    if reason is None and not required:
+        return None
+
+    def bad(why):
+        return GimgError("order.reason_invalid", reason=why)
+
+    if not isinstance(reason, dict) or not reason or not set(reason) <= {"trait", "text"}:
+        raise bad("an object with trait and, optionally, text")
+    trait, text = reason.get("trait"), reason.get("text")
+    if not isinstance(trait, str) or not trait or len(trait) > 80:
+        raise bad("trait is required")
+    if text is not None and not (isinstance(text, str) and text.strip() and len(text) <= 500):
+        raise bad("text must be a non-empty string of at most 500 characters")
+    if trait == "other":
+        if text is None:
+            raise bad("other needs a text")
+    else:
+        known = _reason_traits(project)
+        if known is not None and trait not in known:
+            raise bad("unknown trait %s" % trait)
+    return {k: v for k, v in (("trait", trait), ("text", text)) if v is not None}
+
+
+def mark(project: str, key: str, profile: str, attempt_id: int, state: str, reason=None) -> dict:
+    """Set an attempt's state (new|candidate|discarded); the chosen one cannot be discarded.
+
+    `reason` (``{"trait", "text"?}``, see `check_reason`) is the "No" of the person and goes with ``discarded`` only; it is stored in
+    the attempt (and removed when the attempt leaves ``discarded``). In a brand order, when every attempt of a batch is
+    discarded (the batch has all its ``size`` attempts, so a cancelled or failed entry never makes one) the batch fails: once, with
+    this reason, in ``failures`` and in its ``batches`` record (``failed``, ``reason``)."""
     if state not in STATES:
         raise GimgError("order.state_invalid", state=str(state), states=", ".join(STATES))
+    if reason is not None and state != "discarded":
+        raise GimgError("order.reason_invalid", reason="only with discarded")
+    reason = check_reason(project, reason)
 
     def change(order):
         item = _attempt(order, attempt_id)
         if state == "discarded" and order["chosen"] == attempt_id:
             raise GimgError("order.discard_chosen", attempt=attempt_id)
         item["state"] = state
+        item.pop("reason", None)
+        if state == "discarded":
+            if reason:
+                item["reason"] = reason
+            _fail_whole_batch(order, project, item, reason)
         return copy.deepcopy(item)
 
     return _modify(project, key, profile, change)
+
+
+def _fail_whole_batch(order: dict, project: str, item: dict, reason) -> None:
+    """`mark` discarded `item`: if that leaves its batch with every attempt discarded, the batch is a failure (once)."""
+    if order.get("mode") != "brand" or type(item.get("batch")) is not int:
+        return
+    for record in order.get("batches", ()):
+        if record["id"] == item["batch"] and not record.get("failed"):
+            mine = [a for a in order["attempts"] if a.get("batch") == record["id"]]
+            if len(mine) >= record["size"] and all(a["state"] == "discarded" for a in mine):
+                record["failed"] = True
+                if reason:
+                    record["reason"] = dict(reason)
+                add_failure(order, project, batch=record["id"], attempt=item["id"], reason=reason)
 
 
 def note(project: str, key: str, profile: str, attempt_id: int, text: str) -> dict:
@@ -702,7 +972,15 @@ def get(project: str, key: str, profile: str) -> dict:
     return _read(project, key, profile)
 
 
-def list_orders(project: str, profile: str | None = None, chosen: bool | None = None) -> list:
+def peek(project: str, key: str, profile: str):
+    """The order record, read without lock or checks, or ``None`` if it cannot be read (for the queue, which only looks)."""
+    try:
+        return _shape(fsutil.read_json(_order_file(project, key, profile)), "")
+    except (GimgError, OSError, ValueError):
+        return None
+
+
+def list_orders(project: str, profile: str | None = None, chosen: bool | None = None, skip_corrupt: bool = False) -> list:
     """Orders of a project sorted by (key, profile). `chosen` True/False keeps only orders with/without
     a chosen attempt; `profile` keeps one profile."""
     projects.get(project)
@@ -714,7 +992,9 @@ def list_orders(project: str, profile: str | None = None, chosen: bool | None = 
         file = Path(folder) / _ORDER_FILE
         try:
             record = _shape(fsutil.read_json(file), file)
-        except (OSError, ValueError):
+        except (OSError, ValueError, GimgError):
+            if skip_corrupt:  # `failures.list_rows`: an unreadable order is not the rows' business
+                continue
             raise GimgError("order.corrupt", path=str(file))
         if profile is not None and record["profile"] != profile:
             continue

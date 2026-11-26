@@ -67,7 +67,7 @@ from pathlib import Path
 
 from . import engine as engine_mod
 from . import compose as compose_mod
-from . import fsutil, i18n, limits, log, orders, paths, png, projects, queue
+from . import failures, fsutil, i18n, limits, log, orders, paths, png, projects, queue
 from .errors import GimgError
 
 
@@ -364,7 +364,9 @@ def _generate(entry: dict, eng, machine: dict, state: dict, lang=None):
         "engineVersion": result.engine_version, "command": getattr(result, "command", None),
         "modelFiles": getattr(result, "model_files", None), "log": kept_log,
         "draft": entry.get("draft") is True, "negative": entry.get("negative"),
-        "initImage": entry.get("initImage"), "strength": entry.get("strength"), **extra}, entry_id=entry_id)
+        "initImage": entry.get("initImage"), "strength": entry.get("strength"),
+        "mode": entry.get("mode"), "sheetVersion": entry.get("sheetVersion"),
+        "batch": (entry.get("batch") or {}).get("id"), **extra}, entry_id=entry_id)
     state["final"] = None
     if raw is not None:
         _compose_attempt(entry, project, attempt_id, raw, final, state, lang)
@@ -402,6 +404,29 @@ def _process(entry: dict, eng, lang=None) -> None:
         except Exception as exc:
             print(i18n.t("worker.log_failed", lang, id=entry_id, reason=exc), file=sys.stderr)
     _finish(entry_id, "done", lang, attempt_id=attempt_id)
+    _stop_on_score(entry, attempt_id)
+    _reset_on_score(entry)
+
+
+def _stop_on_score(entry: dict, attempt_id) -> None:
+    """An attempt of a batch whose ``score.value`` reaches `queue.STOP_SCORE` stops the batch's queued entries (best effort)."""
+    batch = (entry.get("batch") or {}).get("id")
+    if batch is None:
+        return
+    with contextlib.suppress(Exception):
+        attempt = orders.attempt_for_entry(entry["project"], entry["key"], entry["profile"], entry["id"])
+        value = ((attempt or {}).get("score") or {}).get("value")
+        if isinstance(value, (int, float)) and not isinstance(value, bool) and value >= queue.STOP_SCORE:
+            queue.stop_batch(batch, attempt["id"])
+
+
+def _reset_on_score(entry: dict) -> None:
+    """An attempt of a brand order scoring `orders.RESET_SCORE` or more puts the order's failure counter to zero (best effort)."""
+    if entry.get("mode") != "brand":
+        return
+    with contextlib.suppress(Exception):
+        attempt = orders.attempt_for_entry(entry["project"], entry["key"], entry["profile"], entry["id"])
+        failures.reset_on_score(entry["project"], entry["key"], entry["profile"], (attempt or {}).get("score"))
 
 
 def _terminate(signum, frame):

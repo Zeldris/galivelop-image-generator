@@ -99,7 +99,36 @@ que 5». La nota se calibra con lo que ya hay (aprobadas y descartes del Portal)
 | **0.10.0 Taller, recursos y entrega** | Tira de pasos al taller por tipo de pieza; recursos del proyecto y «Usar como referencia»; editar la hoja desde la interfaz; entrega por carpetas con LEEME y sustituir sin perder | Una pieza del Portal entregada en su carpeta sin tocar archivos a mano |
 | **0.11.0 Bandeja** | `gimg agent todo/answer`, API y pestaña Bandeja; F6 la atiende con Ollama después | Una tanda con un juicio pedido y contestado desde la bandeja |
 
+### 0.8.0 en pasos (2026-11-26)
+
+La interfaz de 0.8.0 es la fila «0.7.0 Pieza de marca» de `docs/interfaz/marca.md` §5 (su numeración va una por
+detrás). Cada paso, con sus tests, su commit y la API en `docs/api.md`; revisión de bloque tras los pasos 2 y 4.
+
+1. **Pedido de marca (backend):** `mode` (`brand`|`free`, sin él `free`), `piece`, `subject`, `cleanZone` en el
+   pedido; en marca el servidor monta y comprueba (`brand.blocked` con los errores), el perfil, la semilla, el count
+   y el modelo salen del tipo de pieza, no se añade el `style`; el intento guarda `mode` y `sheetVersion`; «Pasar a
+   imagen libre» cambia el modo del pedido y lo apunta; en libre con hoja, la respuesta trae los avisos. CLI y API.
+2. **Tandas:** la entrada de la cola lleva `batch:{id, index, size}` y el intento su `batch`; mover y cancelar por
+   tanda (API y CLI); parada de la tanda con una nota de 9 o más (el mecanismo; la nota llega en 0.9.0).
+3. **Fallos y troubleshooting:** «No» con motivo y «Ninguno vale» de una tanda; `failures` en `order.json`; al tercero
+   seguido, bloqueo (`order.troubleshooting`, tandas retenidas en la cola); filas de troubleshooting como datos, que
+   ponen el contador a cero; `extend`; `known` de `brand prompt` con los términos de las filas.
+4. **Esquema de la tarea de bandeja** (`agent-task.schema.json`): los cuerpos de respuesta (sujeto, fila de
+   troubleshooting, juicio por rasgo) son los de los formularios de los pasos 3 y 5.
+5. **Interfaz:** conmutador de modo en `new-order.js` y `retouch-panel.js` con `brand-prompt.js`; `check-list.js`
+   extraído; tandas en la cola y en la galería; distintivo Marca/Libre; «No» con motivo, «Ninguno vale», marcador de
+   fallos, `troubleshoot.js` y subpestaña Troubleshooting; aviso «ya falló antes».
+   **Hecho (2026-11-26, 5a-5c).** Fuera por diseño: nota/desglose y descartes (0.9.0) y «Pedir rediseño a la bandeja»
+   **Barrido previsto para 0.9.0 (aprobado el 2026-11-26, retro P1):** `troubleshoot.js` y `brand-prompt.js`: foco que cae en
+   `body` al cancelar `confirmAction` (l. 55); aviso de Problema vacío envuelto en «Algo falló:» (l. 47); `ui.ts.count` sin
+   singular (l. 84); `aria-live` sobre todo el contenedor (l. 72); `rowLabel` devuelve `row.key` (`brand-prompt.js:26`).
+   (0.9.0/F6, con la bandeja). «Una tanda más»: una sola vez por ciclo de fallos (`order.extend_used`).
+6. **Cierre (hecho, versión 0.8.0):** CHANGELOG es/en, README «Versión», `python3 releases.py bump X.Y.Z` (sube `__version__`, los dos CHANGELOG y la «Versión» de los README: no se editan a mano); recorrido con mando en la Deck (pendiente de la
+   persona, riesgo de abajo) antes de `main`.
+
 ### Barrido B de `gimg/brandsheet.py` en 0.8.0 (retro 2026-11-18, P2, aprobada)
+
+**Hecho (2026-11-25/26):** (a) en `bdc482a`, (b) en `5fdaefd` y `594c9fe` (paso 1 #12 y paso 3 #8: no aplican), arreglos de la revisión del bloque en `730f488`.
 
 Los 16 leves abiertos de `brandsheet.py` (detalle en `docs/records/revision-hoja-datos-paso{1,3,4}.md`), en dos encargos
 `gw-worker` sonnet: **(a) validación y lint** — paso 1 #6 (hex «missing» solo en la última frase), #7 (`_HEX` sin

@@ -9,6 +9,30 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Sin publicar]
 
+## [0.8.0] - 2026-11-26
+
+### Añadido
+
+- Pieza de marca (0.8.0): pedidos con `mode: brand|free`, `piece`, `subject` y `cleanZone`. En marca el servidor monta y
+  comprueba el prompt desde la hoja (422 `brand.blocked` con los errores); perfil, semilla, count y modelo salen del
+  tipo de pieza. «Pasar a imagen libre» cambia el modo y lo apunta.
+- Tandas: las entradas de la cola llevan `batch:{id,index,size}`; mover y cancelar por tanda (API y CLI); la galería
+  agrupa los intentos por tanda y la cola muestra los grupos.
+- Fallos y troubleshooting: «No» con motivo y «Ninguno vale» por tanda, contador `failures` en `order.json`, bloqueo al
+  tercer fallo seguido (409 `order.troubleshooting`, tandas retenidas en la cola), filas de troubleshooting como datos
+  (registro de `gimg brand`, API) que ponen el contador a cero, y «una tanda más» una sola vez por ciclo de fallos (409
+  `order.extend_used`).
+- Interfaz: conmutador Marca/Libre en el pedido nuevo y en el retoque, la lista de comprobaciones, el distintivo
+  Marca/Libre, el marcador «Fallos n de m», el formulario de troubleshooting y su subpestaña en Marca, y el aviso «ya
+  falló antes».
+- Esquema de la tarea de bandeja (`agent-task.schema.json`) fijado para los cuerpos de respuesta de los formularios.
+
+### Corregido
+
+- Taller de marca: el color de un SVG sale como lo pinta `rsvg-convert` también con valores mal formados (se saltan,
+  sin añadir un negro de más) y con tonos `hsl()` enormes (gris sin croma); la tolerancia del recorte no admite
+  valores negativos, como `matte.py`.
+
 ## [0.7.0] - 2026-11-18
 
 ### Añadido

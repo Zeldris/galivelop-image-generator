@@ -9,7 +9,7 @@ import sys
 import traceback
 from pathlib import Path
 
-from . import __version__, brand, brandsheet, compose, crop, delivery, doctor, export, i18n, measure, orders, projects, queue, service, sheet, tile, worker
+from . import __version__, brand, brandsheet, compose, crop, delivery, doctor, export, failures, i18n, measure, orders, projects, queue, service, sheet, tile, worker
 from .errors import GimgError
 from . import fsutil, paths, schema
 
@@ -76,19 +76,38 @@ def _build(lang: str) -> argparse.ArgumentParser:
     mutex.add_argument("--chosen", action="store_true", help=h("cli.arg.chosen"))
     mutex.add_argument("--unchosen", action="store_true", help=h("cli.arg.unchosen"))
     leaf(g, "show", "cli.cmd.order_show", project, okey, oprofile)
+    leaf(g, "fail", "cli.cmd.order_fail", project, okey, oprofile,
+         arg("batch", "cli.arg.batch_id", type=int),
+         opt("--reason", "cli.arg.fail_reason", required=True, metavar="TRAIT"),
+         opt("--note", "cli.arg.fail_note", metavar="TEXT"))
 
     g = group(top, "attempt", "cli.cmd.attempt")
     leaf(g, "new", "cli.cmd.attempt_new", project, okey, oprofile,
          opt("--seed", "cli.arg.seed", type=int), opt("--count", "cli.arg.count", type=int, default=1),
-         opt("--prompt", "cli.arg.prompt"), opt("--negative", "cli.arg.negative"), opt("--steps", "cli.arg.steps", type=int),
+         opt("--prompt", "cli.arg.prompt"), opt("--negative", "cli.arg.negative"),
+         opt("--subject", "cli.arg.attempt_subject", metavar="TEXT"),
+         opt("--clean-zone", "cli.arg.attempt_clean_zone", metavar="TEXT"),
+         opt("--mode", "cli.arg.attempt_mode", choices=("free",)), opt("--steps", "cli.arg.steps", type=int),
          opt("--cfg", "cli.arg.cfg", type=float), opt("--sampler", "cli.arg.sampler"),
          opt("--draft", "cli.arg.draft", action=argparse.BooleanOptionalAction, default=None),
          opt("--template", "cli.arg.template", metavar="ID"),
          opt("--model", "cli.arg.model", metavar="ID"))
     leaf(g, "mark", "cli.cmd.attempt_mark", project, okey, oprofile, attempt,
-         arg("state", "cli.arg.state", choices=orders.STATES))
+         arg("state", "cli.arg.state", choices=orders.STATES),
+         opt("--reason", "cli.arg.fail_reason", metavar="TRAIT"),
+         opt("--note", "cli.arg.fail_note", metavar="TEXT"))
     leaf(g, "note", "cli.cmd.attempt_note", project, okey, oprofile, attempt,
          arg("text", "cli.arg.text"))
+
+    g = group(top, "troubleshoot", "cli.cmd.troubleshoot")
+    leaf(g, "list", "cli.cmd.troubleshoot_list", project)
+    leaf(g, "add", "cli.cmd.troubleshoot_add", project, okey, oprofile,
+         opt("--problem", "cli.arg.ts_problem", required=True, metavar="TEXT"),
+         opt("--attempt", "cli.arg.ts_attempt", type=int, action="append", default=[], metavar="N"),
+         opt("--redesign", "cli.arg.ts_redesign", default="", metavar="TEXT"),
+         opt("--term", "cli.arg.ts_term", action="append", default=[], metavar="TERM"),
+         opt("--by", "cli.arg.ts_by", metavar="NAME"))
+    leaf(g, "extend", "cli.cmd.troubleshoot_extend", project, okey, oprofile)
 
     leaf(top, "choose", "cli.cmd.choose", project, okey, oprofile, attempt)
     leaf(top, "undo", "cli.cmd.undo", project, okey, oprofile)
@@ -205,9 +224,10 @@ def _build(lang: str) -> argparse.ArgumentParser:
 
     g = group(top, "queue", "cli.cmd.queue")
     leaf(g, "list", "cli.cmd.queue_list", opt("--state", "cli.arg.queue_state", choices=queue.STATES))
-    leaf(g, "cancel", "cli.cmd.queue_cancel", arg("entry", "cli.arg.entry", type=int))
-    leaf(g, "move", "cli.cmd.queue_move", arg("entry", "cli.arg.entry", type=int),
-         arg("to", "cli.arg.queue_to", choices=queue.MOVES))
+    leaf(g, "cancel", "cli.cmd.queue_cancel", arg("entry", "cli.arg.entry", type=int, nargs="?", default=None),
+         opt("--batch", "cli.arg.queue_batch", type=int, metavar="ID"))
+    leaf(g, "move", "cli.cmd.queue_move", arg("words", "cli.arg.queue_move_words", nargs="+", metavar="[ENTRY] TO"),
+         opt("--batch", "cli.arg.queue_batch", type=int, metavar="ID"))
     leaf(g, "pause", "cli.cmd.queue_pause")
     leaf(g, "resume", "cli.cmd.queue_resume")
     leaf(g, "clear", "cli.cmd.queue_clear", opt("--project", "cli.arg.queue_project", metavar="P"))
@@ -267,11 +287,13 @@ def _autostart(out: _Out) -> dict:
     return {"running": True, "autostart": True, "url": state["url"], "pid": state["pid"]}
 
 
-def _queued(out: _Out, entries: list, provider: str) -> None:
+def _queued(out: _Out, entries: list, provider: str, checks=None) -> None:
     if out.as_json:
         view = queue.queued_view(entries, provider, out.lang)
-        out.data(dict(view, service=_autostart(out)))
+        extra = {} if checks is None else {"checks": checks}
+        out.data(dict(view, service=_autostart(out), **extra))
         return
+    _check_lines(out, [c for c in checks or () if c["status"] != "ok"])
     estimate = queue.estimate_for(entries[0], provider) if entries else None
     out.line("cli.out.queued", count=len(entries), ids=", ".join(str(e["id"]) for e in entries))
     if estimate is None:
@@ -368,6 +390,8 @@ def _brand_prompt(args, out: _Out) -> int:
         print(res["prompt"])
         out.line("cli.out.prompt_words", words=res["words"])
         _check_lines(out, [c for c in res["checks"] if c["status"] != "ok"])
+        for item in res["known"]:
+            out.line("cli.out.prompt_known", term=item["term"], order=item["row"]["key"], problem=item["row"]["problem"])
         if res["blocked"]:
             out.line("cli.out.prompt_blocked")
     return 1 if res["blocked"] else 0
@@ -519,6 +543,8 @@ def _run(args, out: _Out) -> int:
         _order(args, sub, out)
     elif cmd == "attempt":
         _attempt(args, sub, out)
+    elif cmd == "troubleshoot":
+        _troubleshoot(args, sub, out)
     elif cmd in ("choose", "undo"):
         if cmd == "choose":
             result = delivery.choose(args.project, args.key, args.profile, args.attempt)
@@ -765,8 +791,9 @@ def _measure(args, out: _Out) -> None:
 def _order(args, sub, out: _Out) -> None:
     if sub == "submit":
         order = _read_order(args.file)
-        entries, provider = queue.submit_order(args.project, order, args.draft, template=args.template, model=args.model)
-        _queued(out, entries, provider)
+        entries, provider, checks = queue.submit_order_checked(args.project, order, args.draft, template=args.template,
+                                                               model=args.model)
+        _queued(out, entries, provider, checks)
     elif sub == "list":
         chosen = True if args.chosen else False if args.unchosen else None
         found = orders.list_orders(args.project, args.profile, chosen)
@@ -778,8 +805,17 @@ def _order(args, sub, out: _Out) -> None:
             for o in found:
                 out.line("cli.out.order_line", order=o["key"], profile=o["profile"],
                          chosen=out.none(o["chosen"]), attempts=len(o["attempts"]))
+    elif sub == "fail":
+        res = failures.fail_batch(args.project, args.key, args.profile, args.batch, _reason(args))
+        if out.as_json:
+            out.data(res)
+        else:
+            f = res["failures"]
+            out.line("cli.out.batch_failed", id=args.batch, count=f["count"], limit=f["limit"])
+            if res["troubleshooting"]["state"] != "open":
+                out.line("cli.out.order_blocked", order=args.key, profile=args.profile)
     else:
-        o = orders.get(args.project, args.key, args.profile)
+        o = failures.view(orders.get(args.project, args.key, args.profile))
         if out.as_json:
             out.data(o)
             return
@@ -793,6 +829,9 @@ def _order(args, sub, out: _Out) -> None:
             out.line("cli.out.order_init" if o.get("strength") is not None else "cli.out.order_init_nostrength",
                      path=o["initImage"], strength=o.get("strength"))
         out.line("cli.out.order_chosen", chosen=out.none(o["chosen"]))
+        if o["failures"]["count"] or o["troubleshooting"]["state"] != "open":
+            out.line("cli.out.order_failures", count=o["failures"]["count"], limit=o["failures"]["limit"],
+                     state=o["troubleshooting"]["state"])
         if o.get("text"):
             for field, value in o["text"].items():
                 out.line("cli.out.order_text", field=field, value=value)
@@ -807,17 +846,61 @@ def _order(args, sub, out: _Out) -> None:
                 out.line("cli.out.attempt_note", note=a["note"])
 
 
+def _reason(args):
+    """``--reason TRAIT [--note TEXT]`` as the reason object (``None`` without ``--reason``)."""
+    if args.reason is None:
+        if args.note is not None:
+            raise GimgError("order.reason_invalid", reason="--note needs --reason")
+        return None
+    return {"trait": args.reason, **({"text": args.note} if args.note is not None else {})}
+
+
+def _troubleshoot(args, sub, out: _Out) -> None:
+    if sub == "list":
+        rows = failures.list_rows(args.project)
+        if out.as_json:
+            out.data(rows)
+            return
+        if not rows:
+            out.line("cli.out.troubleshoot_none")
+        for row in rows:
+            out.line("cli.out.troubleshoot_row", order=row["key"], profile=row["profile"], at=row["at"],
+                     problem=row["problem"], terms=", ".join(row["terms"]) or out.t("cli.out.none"))
+    elif sub == "add":
+        body = {"key": args.key, "profile": args.profile, "problem": args.problem, "attempts": args.attempt,
+                "redesign": args.redesign, "terms": args.term}
+        if args.by is not None:
+            body["by"] = args.by
+        row = failures.add_row(args.project, body)
+        out.data(row) if out.as_json else out.line("cli.out.troubleshoot_added", order=args.key, profile=args.profile)
+    else:
+        row = failures.extend(args.project, args.key, args.profile)
+        out.data(row) if out.as_json else out.line("cli.out.troubleshoot_extended", order=args.key, profile=args.profile)
+    if sub != "list":  # held entries were released: the worker has to start for them
+        _start_released(out)
+
+
+def _start_released(out: _Out) -> None:
+    try:
+        waiting = bool(queue.list_runnable())
+    except (GimgError, OSError):
+        waiting = False
+    if waiting:
+        sys.stdout.flush()
+        _autostart(out)
+
+
 def _attempt(args, sub, out: _Out) -> None:
     if sub == "new":
         overrides = {k: v for k, v in (("steps", args.steps), ("cfg", args.cfg),
                                        ("sampler", args.sampler)) if v is not None}
-        entries, provider = queue.new_attempts(args.project, args.key, args.profile, args.count,
-                                               seed=args.seed, prompt=args.prompt, params=overrides,
-                                               draft=args.draft, template=args.template, model=args.model,
-                                               negative=args.negative)
-        _queued(out, entries, provider)
+        entries, provider, checks = queue.new_attempts_checked(
+            args.project, args.key, args.profile, args.count, seed=args.seed, prompt=args.prompt, params=overrides,
+            draft=args.draft, template=args.template, model=args.model, negative=args.negative,
+            subject=args.subject, clean_zone=args.clean_zone, mode=args.mode)
+        _queued(out, entries, provider, checks)
     elif sub == "mark":
-        item = orders.mark(args.project, args.key, args.profile, args.attempt, args.state)
+        item = orders.mark(args.project, args.key, args.profile, args.attempt, args.state, reason=_reason(args))
         out.data(item) if out.as_json else out.line("cli.out.marked", id=item["id"], state=item["state"])
     else:
         item = orders.note(args.project, args.key, args.profile, args.attempt, args.text)
@@ -854,7 +937,7 @@ def _queue(args, sub, out: _Out) -> None:
         changed = queue.resume()
         # a paused queue lets the service stop when idle (`service._busy`): bring it back for what is waiting
         try:  # the queue is already resumed: nothing after the change may turn it into a failure
-            waiting = changed and bool(queue.list_entries(["queued"]))
+            waiting = changed and bool(queue.list_runnable())
         except (GimgError, OSError):
             waiting = False
         if out.as_json:
@@ -882,7 +965,16 @@ def _queue(args, sub, out: _Out) -> None:
             if text:
                 out.line("cli.out.queue_error", error=text)
     elif sub == "move":
-        entry = queue.move(args.entry, args.to)
+        words = list(args.words)
+        if len(words) != (1 if args.batch is not None else 2) or (len(words) == 2 and not words[0].isdigit()):
+            raise GimgError("queue.bad_target")
+        if args.batch is not None:
+            found = queue.move_batch(args.batch, words[0])
+            out.data([_entry_json(out, e) for e in found]) if out.as_json else out.line(
+                "cli.out.batch_moved", id=args.batch, to=words[0], ids=", ".join(str(e["id"]) for e in found))
+            return
+        entry = queue.move(int(words[0]), words[1])
+        args.to = words[1]
         out.data(_entry_json(out, entry)) if out.as_json else out.line("cli.out.moved", id=entry["id"], to=args.to)
     elif sub == "clear":
         found = queue.clear(args.project)
@@ -891,6 +983,13 @@ def _queue(args, sub, out: _Out) -> None:
         else:
             out.line("cli.out.cleared", count=len(found), ids=", ".join(str(e["id"]) for e in found) or "-")
     else:
+        if (args.entry is None) == (args.batch is None):
+            raise GimgError("queue.bad_target")
+        if args.batch is not None:
+            found = queue.cancel_batch(args.batch)
+            out.data([_entry_json(out, e) for e in found]) if out.as_json else out.line(
+                "cli.out.batch_cancelled", id=args.batch, ids=", ".join(str(e["id"]) for e in found))
+            return
         entry = queue.cancel(args.entry)
         if out.as_json:
             out.data(_entry_json(out, entry))

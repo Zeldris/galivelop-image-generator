@@ -12,7 +12,7 @@ import math
 import re
 from pathlib import Path
 
-from . import fsutil, i18n, paths, projects, schema
+from . import fsutil, i18n, measure, paths, projects, schema
 from .errors import GimgError
 
 ROLES = ("paper", "ink", "accent", "halo", "grid")
@@ -27,7 +27,7 @@ PAPER_DARK = "#0d171e"
 TONE_STEP = 0.005
 TONE_THRESHOLD = 4.5
 _EPS = 1e-6
-_HEX = re.compile(r"#[0-9A-Fa-f]{6}(?![0-9A-Za-z])")
+_HEX = re.compile(r"#(?:[0-9A-Fa-f]{8}|[0-9A-Fa-f]{6}|(?=[0-9]*[A-Fa-f])[0-9A-Fa-f]{4}|(?=[0-9]*[A-Fa-f])[0-9A-Fa-f]{3})(?![0-9A-Za-z])")
 _HEX_FULL = re.compile(r"#?[0-9A-Fa-f]{6}")
 _PLACEHOLDER = re.compile(r"\{([A-Za-z]+)\}")
 
@@ -102,7 +102,8 @@ def _owned(sheet: dict, offset: int = 0) -> list:
 
 
 def _merge(base, over):
-    """Deep merge: objects merge, lists replace; vetoes.groups merge by id, vetoes.exceptions add up."""
+    """Deep merge: objects merge, lists replace; vetoes.groups merge by id, vetoes.exceptions add up.
+    Inheritance only adds or overrides: a child sheet cannot delete a key it inherits."""
     result = copy.deepcopy(base)
     for key, value in over.items():
         if isinstance(value, dict) and isinstance(result.get(key), dict):
@@ -147,15 +148,16 @@ def _check_resolved(sheet: dict, project: str) -> None:
     for field in REQUIRED:
         if not _get(sheet, field):
             raise GimgError("brandsheet.incomplete", project=project, field=field)
-    for name in _PLACEHOLDER.findall(sheet["paletteSentence"]):
-        if name not in ROLES or name not in sheet["palette"]:
-            raise GimgError("brandsheet.bad_placeholder", project=project, placeholder=name)
+    def check_placeholders(text, where):
+        for name in _PLACEHOLDER.findall(text):
+            if name not in ROLES or name not in sheet["palette"]:
+                raise GimgError("brandsheet.bad_placeholder", project=project, placeholder=name, where=where)
+
+    check_placeholders(sheet["paletteSentence"], "paletteSentence")
     for piece, spec in sheet.get("pieceTypes", {}).items():
         if spec["register"] not in sheet["registers"]:
             raise GimgError("brandsheet.unknown_register", project=project, piece=piece, register=spec["register"])
-        for name in _PLACEHOLDER.findall(spec.get("paletteSentence", "")):
-            if name not in ROLES or name not in sheet["palette"]:
-                raise GimgError("brandsheet.bad_placeholder", project=project, placeholder=name)
+        check_placeholders(spec.get("paletteSentence", ""), "pieceTypes.%s.paletteSentence" % piece)
     words = sheet.get("promptWords")
     if words and words["min"] > words["max"]:
         raise GimgError("brandsheet.incomplete", project=project, field="promptWords")
@@ -230,8 +232,7 @@ def _luminance(value):
 
 def contrast(a: str, b: str) -> float:
     """WCAG 2.x contrast ratio between two #rrggbb colours."""
-    la, lb = _luminance(a), _luminance(b)
-    return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
+    return measure.contrast_ratio(_luminance(a), _luminance(b))
 
 
 def _oklch(value):
@@ -291,19 +292,27 @@ def _value(token):
     return token["$value"].lower() if token else None
 
 
+def _tones(pal: dict) -> dict | None:
+    """Accent tones of a palette on its own papers (the defaults without them); None without accent or tone."""
+    if not pal.get("accent"):
+        return None
+    try:
+        return accent_tones(pal["accent"]["$value"], _value(pal.get("paper")) or PAPER_LIGHT,
+                            _value(pal.get("dark", {}).get("paper")) or PAPER_DARK)
+    except GimgError as exc:
+        if exc.code != "brandsheet.no_tone":
+            raise
+        return None
+
+
 def palette(sheet: dict) -> list:
     """Hex list for `brand.palette` / `measure`: roles, accent tones, dark version and measureOnly, no duplicates."""
     pal = sheet.get("palette", {})
     dark = pal.get("dark", {})
     found = [_value(pal.get(role)) for role in ROLES]
-    if pal.get("accent"):
-        try:
-            tones = accent_tones(pal["accent"]["$value"], _value(pal.get("paper")) or PAPER_LIGHT,
-                                 _value(dark.get("paper")) or PAPER_DARK)
-            found += [tones["deep"], tones["dark"]]
-        except GimgError as exc:
-            if exc.code != "brandsheet.no_tone":
-                raise
+    tones = _tones(pal)
+    if tones:
+        found += [tones["deep"], tones["dark"]]
     found += [_value(dark.get("paper")), _value(dark.get("ink"))]
     found += [h.lower() for h in pal.get("measureOnly", [])]
     out = []
@@ -356,6 +365,7 @@ def assemble(sheet: dict, piece: str, subject: str, clean_zone: str | None = Non
     Returns {"prompt", "words", "segments": [{"role", "text", "source"}]}; each segment ends in a full stop (the
     closing before an after-closing zone, in a comma) and segments are joined with one space."""
     spec = _piece(sheet, piece)
+    clean_zone = (clean_zone or "").strip() or None  # a zone of only spaces is no zone
     segments = [{"role": "subject", "text": _sentence(subject), "source": "input"}]
     after = bool(clean_zone) and _zone_after(spec)
     if clean_zone and not after:
@@ -386,11 +396,16 @@ def _norm(text):
 
 def _find(prompt, needle):
     """Span of `needle` in `prompt` ignoring case and runs of whitespace (trailing full stop optional), or None."""
+    spans = _find_all(prompt, needle)
+    return spans[0] if spans else None
+
+
+def _find_all(prompt, needle):
+    """Every span of `needle` in `prompt` (same matching as `_find`)."""
     words = needle.strip().rstrip(".").split()
     if not words:
-        return None
-    found = re.search(r"\s+".join(re.escape(w) for w in words), prompt, re.IGNORECASE)
-    return [found.start(), found.end()] if found else None
+        return []
+    return [[m.start(), m.end()] for m in re.finditer(r"\s+".join(re.escape(w) for w in words), prompt, re.IGNORECASE)]
 
 
 def _word_spans(prompt, term):
@@ -414,6 +429,7 @@ def lint(sheet: dict, prompt: str, piece: str | None = None, mode: str = "brand"
     if mode not in ("brand", "free"):
         raise GimgError("brandsheet.bad_mode", mode=str(mode))
     spec = _piece(sheet, piece) if piece is not None else None
+    clean_zone = (clean_zone or "").strip() or None  # a zone of only spaces is no zone (as in `assemble`)
     checks = []
 
     def add(cid, problem=None, span=None, **params):
@@ -444,13 +460,21 @@ def lint(sheet: dict, prompt: str, piece: str | None = None, mode: str = "brand"
         add("palette")
     else:
         hexes = [h.lower() for h in _HEX.findall(expected)]
-        last = re.split(r"(?<=[.!?])\s+", tail)[-1].lower() if tail else ""
+        # the palette sentence may have several sentences: look at as many sentences of the tail as it has
+        n = len(re.split(r"(?<=[.!?])\s+", expected.strip()))
+        last = " ".join(re.split(r"(?<=[.!?])\s+", tail)[-n:]).lower() if tail else ""
         missing = [h for h in hexes if h not in last]
         add("palette", "palette", missing=", ".join(missing) or "-")
 
     # register block: one and only one, the piece's own if known
     reg_spans = {rid: _find(prompt, reg["block"]) for rid, reg in sheet["registers"].items()}
     present = [rid for rid, span in reg_spans.items() if span]
+    # a block written inside another one's text (one register contained in another) is not a second register
+    # (only when every appearance of it is inside the other: one written apart is a second register)
+    all_spans = {rid: _find_all(prompt, sheet["registers"][rid]["block"]) for rid in present}
+    present = [rid for rid in present if not all(
+        any(o != rid and a[0] <= span[0] and span[1] <= a[1] and a != span for o in present for a in all_spans[o])
+        for span in all_spans[rid])]
     if not present:
         add("register", "register_none")
     elif len(present) > 1:
@@ -475,7 +499,7 @@ def lint(sheet: dict, prompt: str, piece: str | None = None, mode: str = "brand"
         if zone is None:
             add("cleanZone", "clean_zone_missing")
         elif _zone_after(spec):
-            if closing_span is not None and zone[0] < closing_span[0]:
+            if closing_span is not None and zone[0] < closing_span[1]:  # no closing: `closing` already says it
                 add("cleanZone", "clean_zone_order", span=zone)
             else:
                 add("cleanZone")
@@ -490,7 +514,8 @@ def lint(sheet: dict, prompt: str, piece: str | None = None, mode: str = "brand"
 
     # vetoed terms (whole word, any case), minus the exceptions of this piece; the closing and the register block
     # are the sheet's own approved text (the 06 closing says «no clouds»), so a term inside them is not a veto
-    own_text = [s for s in [closing_span] + list(reg_spans.values()) if s]
+    own_regs = [reg_spans[spec["register"]]] if spec is not None else list(reg_spans.values())
+    own_text = [s for s in [closing_span] + own_regs if s]
     vetoes = sheet.get("vetoes", {})
     allowed = {e["term"].lower() for e in vetoes.get("exceptions", []) if piece is not None and piece in e["pieces"]}
     before = len(checks)
@@ -513,7 +538,7 @@ def lint(sheet: dict, prompt: str, piece: str | None = None, mode: str = "brand"
     ok_unless("neverWrite", before)
 
     # colour names outside the palette sentence and the colours' own prompt names
-    shield = [s for s in [pal_span, closing_span] + list(reg_spans.values()) if s]
+    shield = [s for s in [pal_span, closing_span] + own_regs if s]
     dark = sheet["palette"].get("dark", {})
     for token in [sheet["palette"].get(r) for r in ROLES] + [dark.get("paper"), dark.get("ink")]:
         if token and token.get("promptName"):
@@ -526,7 +551,7 @@ def lint(sheet: dict, prompt: str, piece: str | None = None, mode: str = "brand"
     ok_unless("colorWord", before)
 
     # negations only in the closing (register blocks are approved text and may carry them)
-    quiet = [s for s in [closing_span] + list(reg_spans.values()) if s]
+    quiet = [s for s in [closing_span] + own_regs if s]
     if clean_zone and _zone_after(spec):  # the person's zone put after the closing may say «no buildings»
         zone_span = _find(prompt, clean_zone)
         if zone_span:
@@ -570,17 +595,37 @@ def profile_owner(sheet: dict, piece: str) -> str:
     return found["project"] if found else sheet["chain"][0]
 
 
+def piece_defaults(sheet: dict, piece: str) -> dict:
+    """What a piece type gives an order that does not say otherwise: {profile, seed, count, model, chroma}. The model
+    is the one of the profile in the config of the project that declared it (`profile_owner`)."""
+    spec = sheet["pieceTypes"][piece]
+    profile = spec.get("profile")
+    model = projects.get(profile_owner(sheet, piece))["config"].get("profiles", {}).get(profile, {}).get("model")
+    return {"profile": profile, "seed": spec.get("seed"), "count": spec.get("count"), "model": model,
+            "chroma": spec.get("chroma")}
+
+
+def blocking_errors(checks: list) -> list:
+    """The failing checks of a lint as validation errors (`GimgError.errors`): path ``/prompt``, code ``lint.<problem>``
+    (its text is the lint message), params of the message plus ``id`` and ``span``."""
+    out = []
+    for check in checks:
+        if check["status"] == "error":
+            params = {**check["message"]["params"], "id": check["id"]}
+            if "span" in check:
+                params["span"] = check["span"]
+            out.append(schema.ValidationError("/prompt", check["message"]["key"], params))
+    return out
+
+
 def prompt_response(project_name: str, piece: str, subject: str, clean_zone: str | None = None) -> dict:
     """`gimg brand prompt --json` / `POST .../brand/prompt`: the assembled prompt, its checks and the piece defaults."""
     sheet = resolve(project_name)
     built = assemble(sheet, piece, subject, clean_zone)
     res = lint(sheet, built["prompt"], piece, "brand", clean_zone)
-    spec = sheet["pieceTypes"][piece]
-    profile = spec.get("profile")
-    model = projects.get(profile_owner(sheet, piece))["config"].get("profiles", {}).get(profile, {}).get("model")
-    defaults = {"profile": profile, "seed": spec.get("seed"), "count": spec.get("count"), "model": model,
-                "chroma": spec.get("chroma")}
-    return {**built, "checks": res["checks"], "blocked": res["blocked"], "defaults": defaults, "known": []}
+    from . import failures  # troubleshooting rows of the project: the terms that already failed (lazy: failures imports orders)
+    return {**built, "checks": res["checks"], "blocked": res["blocked"], "defaults": piece_defaults(sheet, piece),
+            "known": failures.known_terms(project_name, subject)}
 
 
 def piece_list(piece_types: dict, sheet: dict | None = None, project: str | None = None) -> list:
@@ -716,14 +761,9 @@ def markdown(project_name: str, lang: str = "es") -> str:
     rows = [(r, "`%s`" % view["roles"][r]["hex"], view["roles"][r]["name"], own("palette." + r))
             for r in ROLES if r in view["roles"]]
     out += _table([t("role"), "hex", t("prompt_name"), t("origin")], rows)
-    if "accent" in pal:
-        try:
-            tones = accent_tones(pal["accent"]["$value"], _value(pal.get("paper")) or PAPER_LIGHT,
-                                 _value(pal.get("dark", {}).get("paper")) or PAPER_DARK)
-            out += ["", "- %s: `%s` / `%s`" % (t("tones"), tones["deep"], tones["dark"])]
-        except GimgError as exc:
-            if exc.code != "brandsheet.no_tone":
-                raise
+    tones = _tones(pal)
+    if tones:
+        out += ["", "- %s: `%s` / `%s`" % (t("tones"), tones["deep"], tones["dark"])]
     if pal.get("dark"):
         out += ["", "- %s: %s (%s)" % (t("dark"), ", ".join("%s `%s`" % (k, _value(v)) for k, v in pal["dark"].items()),
                                        own("palette.dark"))]
@@ -781,8 +821,6 @@ def markdown(project_name: str, lang: str = "es") -> str:
     if acc.get("traits"):
         lines.append("- %s (%s): %s" % (t("traits"), own("acceptance.traits"),
                                         ", ".join("`%s` %s" % (k, v) for k, v in acc["traits"].items())))
-    if "threshold" in acc:
-        lines.append("- %s: %s" % (t("threshold"), acc["threshold"]))
     if acc.get("references"):
         lines.append("- %s (%s): %s" % (t("references"), own("acceptance.references"),
                                         ", ".join("`%s`" % r for r in acc["references"])))
@@ -798,12 +836,12 @@ def markdown(project_name: str, lang: str = "es") -> str:
 def _block_span(text: str, path) -> tuple | None:
     """(start, end) offsets of the block in `text` (end after the closing marker), None without markers;
     a lone or repeated marker raises."""
-    starts, ends = text.count(MD_START), text.count(MD_END)
-    if starts == 0 and ends == 0:
+    start, end = text.find(MD_START), text.find(MD_END)
+    if start < 0 and end < 0:
         return None
-    if starts != 1 or ends != 1 or text.index(MD_START) > text.index(MD_END):
+    if start < 0 or end < 0 or start != text.rfind(MD_START) or end != text.rfind(MD_END) or start > end:
         raise GimgError("brandsheet.markdown_markers", path=str(path))
-    return text.index(MD_START), text.index(MD_END) + len(MD_END)
+    return start, end + len(MD_END)
 
 
 def _gap(text: str) -> str:

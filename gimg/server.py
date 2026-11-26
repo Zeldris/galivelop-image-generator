@@ -18,7 +18,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote
 
-from . import __version__, brand, brandsheet, brandshop, build_id, compose, crop, delivery, doctor, i18n, measure, models, orders, paths, projects, queue
+from . import __version__, brand, brandsheet, brandshop, build_id, compose, crop, delivery, doctor, failures, i18n, measure, models, orders, paths, projects, queue
 from .errors import GimgError
 
 API_VERSION = 1
@@ -44,19 +44,19 @@ BASE_HEADERS = {
 # --- error code -> HTTP status (docs/plan.md, «Errores e idioma»); first match wins, no match = 500 ---
 _EXACT = {
     403: ("api.bad_host", "api.bad_origin"),
-    404: ("project.unknown", "order.unknown", "order.profile_unknown", "order.attempt_unknown", "queue.unknown",
+    404: ("project.unknown", "order.unknown", "order.profile_unknown", "order.attempt_unknown", "queue.unknown", "queue.batch_not_found", "order.batch_unknown",
           "api.not_found", "compose.template_missing", "compose.logo_missing", "brandsheet.none", "brandsheet.missing"),
     # the project's sheet exists but its content (or its parents) cannot be used; listed for reference:
     # the `brandsheet.` prefix below already gives 422 to these and to any new content code
-    422: ("brandsheet.invalid", "brandsheet.unreadable", "brandsheet.extends_missing", "brandsheet.extends_broken",
+    422: ("brand.blocked", "brand.no_sheet", "brandsheet.invalid", "brandsheet.unreadable", "brandsheet.extends_missing", "brandsheet.extends_broken",
           "brandsheet.extends_cycle",
           "brandsheet.incomplete", "brandsheet.unknown_register", "brandsheet.no_tone",
           "brandsheet.markdown_marker_in_data"),
     405: ("api.method_not_allowed",), 411: ("api.length_required",), 413: ("api.body_too_large",),
     415: ("api.content_type",),
-    409: ("compose.template_exists", "compose.busy", "measure.busy", "api.heavy_busy", "compose.nothing_to_do", "compose.no_attempts", "serve.already_running", "serve.port_busy", "serve.not_running", "order.discard_chosen",
+    409: ("compose.template_exists", "compose.busy", "measure.busy", "api.heavy_busy", "compose.nothing_to_do", "compose.no_attempts", "serve.already_running", "serve.port_busy", "serve.not_running", "order.discard_chosen", "order.troubleshooting", "order.batch_failed", "order.not_blocked", "order.extend_pending", "order.extend_used",
           "order.history_empty", "queue.not_cancellable", "queue.not_movable", "delivery.target_taken", "brand.exists", "brand.missing_piece", "export.exists", "brandsheet.exists"),
-    400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "compose.field_unknown", "compose.template_unknown", "compose.element_unknown", "compose.bad_layout", "compose.bad_element", "compose.templates_dir_missing", "api.bad_json", "brandsheet.unknown_piece", "brandsheet.convert_unsupported",
+    400: ("measure.zone_outside", "order.seed_range", "api.bad_request", "order.prompt_too_long", "order.text_unknown_field", "order.piece_required", "order.subject_required", "order.brand_prompt", "order.profile_mismatch", "order.not_brand", "order.mode_conflict", "order.reason_invalid", "compose.field_unknown", "compose.template_unknown", "compose.element_unknown", "compose.bad_layout", "compose.bad_element", "compose.templates_dir_missing", "api.bad_json", "brandsheet.unknown_piece", "brandsheet.convert_unsupported",
           "brandsheet.bad_mode",  # CLI only (`brand md` mode); listed so `.bad_` stays 400 before the 422 prefix
           "api.bad_param", "brand.no_matte", "brand.dir_missing", "brand.no_palette", "brand.font_unknown", "brand.empty_text", "brand.text_too_long", "brand.empty_wordmark", "brand.wordmark_no_fit", "brand.font_unreadable", "brand.bad_square",
           "export.size_not_for_ico", "export.icon_sizes_only_ico", "export.upscale", "export.too_big",
@@ -467,7 +467,7 @@ def _delivered_to(project: str, key: str, profile: str, chosen) -> str | None:
 @route("GET", "/api/projects/{p}/orders/{profile}/{key}")
 def order_show(req):
     q = req.params
-    order = orders.get(q["p"], q["key"], q["profile"])
+    order = failures.view(orders.get(q["p"], q["key"], q["profile"]))
     order["deliveredTo"] = _delivered_to(q["p"], q["key"], q["profile"], order["chosen"])
     return order
 
@@ -688,12 +688,12 @@ def order_submit(req):
     model = order.pop("model", None)  # idem: the model of the attempts (F4d)
     if model is not None and not isinstance(model, str):
         raise GimgError("api.bad_param", name="model")
-    entries, provider = queue.submit_order(req.params["p"], order, template=template, model=model)
+    entries, provider, checks = queue.submit_order_checked(req.params["p"], order, template=template, model=model)
     _after_enqueue()
     # the order itself is read back by its own key: `submit` normalises it (profile, params)
-    record = orders.get(req.params["p"], entries[0]["key"], entries[0]["profile"]) if entries else None
+    record = failures.view(orders.get(req.params["p"], entries[0]["key"], entries[0]["profile"])) if entries else None
     view = queue.queued_view(entries, provider, req.lang)
-    return Reply(201, {"order": record, **view}, json=True)
+    return Reply(201, {"order": record, **view, **({"checks": checks} if checks is not None else {})}, json=True)
 
 
 _ORD = "/api/projects/{p}/orders/{profile}/{key}"
@@ -711,7 +711,7 @@ def order_text(req):
 
 @route("POST", _ORD + "/attempts")
 def attempt_new(req):
-    q, body = req.params, _fields(req.body, ("count", "seed", "prompt", "negative", "steps", "cfg", "sampler", "draft", "template", "model"))
+    q, body = req.params, _fields(req.body, ("count", "seed", "prompt", "negative", "steps", "cfg", "sampler", "draft", "template", "model", "subject", "cleanZone", "mode"))
     model = body.get("model")
     if model is not None and not isinstance(model, str):
         raise GimgError("api.bad_param", name="model")
@@ -719,19 +719,55 @@ def attempt_new(req):
     if draft is not None and not isinstance(draft, bool):
         raise GimgError("api.bad_param", name="draft")
     overrides = {k: body[k] for k in ("steps", "cfg", "sampler") if body.get(k) is not None}
-    entries, provider = queue.new_attempts(q["p"], q["key"], q["profile"], body.get("count", 1),
+    for name in ("subject", "cleanZone", "mode"):
+        if body.get(name) is not None and not isinstance(body[name], str):
+            raise GimgError("api.bad_param", name=name)
+    entries, provider, checks = queue.new_attempts_checked(q["p"], q["key"], q["profile"], body.get("count", 1),
                                            seed=body.get("seed"), prompt=body.get("prompt"), params=overrides,
                                            draft=draft, template=_template_param(body.get("template")), model=model,
-                                           negative=body.get("negative"))
+                                           negative=body.get("negative"), subject=body.get("subject"),
+                                           clean_zone=body.get("cleanZone"), mode=body.get("mode"))
     _after_enqueue()
-    return Reply(202, queue.queued_view(entries, provider, req.lang), json=True)
+    view = queue.queued_view(entries, provider, req.lang)
+    return Reply(202, {**view, **({"checks": checks} if checks is not None else {})}, json=True)
 
 
 @route("POST", _ATT + "/mark")
 def attempt_mark(req):
     q = req.params
-    state = _str_field(_fields(req.body, ("state",)), "state")
-    return orders.mark(q["p"], q["key"], q["profile"], _int_param("id", q["id"]), state)
+    body = _fields(req.body, ("state", "reason"))
+    state = _str_field(body, "state")
+    return orders.mark(q["p"], q["key"], q["profile"], _int_param("id", q["id"]), state, reason=body.get("reason"))
+
+
+@route("POST", _ORD + "/batches/{id}/fail")
+def batch_fail(req):
+    q = req.params
+    body = _fields(req.body, ("reason",))
+    if "reason" not in body:
+        raise GimgError("api.bad_param", name="reason")
+    return failures.fail_batch(q["p"], q["key"], q["profile"], _int_param("id", q["id"]), body["reason"])
+
+
+@route("POST", _ORD + "/troubleshooting/extend")
+def troubleshooting_extend(req):
+    q = req.params
+    _fields(req.body, ())
+    got = failures.extend(q["p"], q["key"], q["profile"])
+    _after_enqueue()  # the extension releases what the order held
+    return got
+
+
+@route("GET", "/api/projects/{p}/troubleshooting")
+def troubleshooting_list(req):
+    return failures.list_rows(req.params["p"])
+
+
+@route("POST", "/api/projects/{p}/troubleshooting")
+def troubleshooting_add(req):
+    row = failures.add_row(req.params["p"], req.body)
+    _after_enqueue()  # the row releases what the order held
+    return Reply(201, row, json=True)
 
 
 @route("POST", _ATT + "/note")
@@ -832,6 +868,20 @@ def queue_move(req):
     if not isinstance(to, str):
         raise GimgError("api.bad_param", name="to")
     return queue.entry_view(queue.move(_int_param("id", req.params["id"]), to), req.lang)
+
+
+@route("POST", "/api/queue/batches/{id}/cancel")
+def queue_batch_cancel(req):
+    _fields(req.body, ())
+    return {"entries": [queue.entry_view(e, req.lang) for e in queue.cancel_batch(_int_param("id", req.params["id"]))]}
+
+
+@route("POST", "/api/queue/batches/{id}/move")
+def queue_batch_move(req):
+    to = _fields(req.body, ("to",)).get("to")
+    if not isinstance(to, str):
+        raise GimgError("api.bad_param", name="to")
+    return {"entries": [queue.entry_view(e, req.lang) for e in queue.move_batch(_int_param("id", req.params["id"]), to)]}
 
 
 @route("POST", "/api/queue/pause")

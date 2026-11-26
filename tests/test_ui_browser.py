@@ -14,7 +14,7 @@ from pathlib import Path
 from unittest import mock
 from urllib.parse import quote
 
-from gimg import cli, paths, png, server
+from gimg import cli, orders, paths, png, server
 from tests import browser
 from tests.test_brandsheet import PORTAL, SUBJECT
 
@@ -115,6 +115,7 @@ class UiBase(unittest.TestCase):
         order = {"key": key, "profile": profile, "prompt": "A test scene. The image is completely textless.",
                  "seed": 3, "count": count}
         order.update(extra)
+        order = {k: v for k, v in order.items() if v is not None}  # `prompt=None`: a brand order sends none
         f = cls.tmp / ("order-%s.json" % key.replace("/", "-"))
         f.write_text(json.dumps(order))
         run_cli("order", "submit", PROJECT, str(f))
@@ -733,6 +734,8 @@ class NewOrderScreen(UiBase):
         self.open("/p/tarkor/pedidos", "document.querySelector('.order-row')")
         self.click("button[data-slot=new-order]")
         self.page.wait("document.querySelector('dialog.new-order[open]') && document.getElementById('no-copy')")
+        self.assertTrue(self.js("document.getElementById('no-mode-brand').disabled"))  # no sheet: brand is off and free is the default
+        self.assertTrue(self.js("document.getElementById('no-mode-free').checked"))
         # an invalid key and an empty prompt are refused without leaving
         self.js("document.querySelector('dialog.new-order form').requestSubmit()")
         self.page.wait("!document.getElementById('no-error').hidden")
@@ -955,20 +958,25 @@ class BrandShop(UiBase):
         self.assertTrue(href.startswith("#/p/tarkor/marca?src="), href)
 
 
+def add_brand_sheet(root):
+    """The portal sheet (cover → og, icon → social) as the project's brand sheet."""
+    sheet = copy.deepcopy(PORTAL)
+    sheet["pieceTypes"]["cover"]["profile"] = PROFILE
+    sheet["pieceTypes"]["icon"]["profile"] = "social"
+    (root / "marca.json").write_text(json.dumps(sheet), encoding="utf-8")
+    path = root / "galivelop-images.json"
+    cfg = json.loads(path.read_text())
+    cfg.setdefault("brand", {})["sheet"] = "marca.json"
+    path.write_text(json.dumps(cfg))
+
+
 class BrandSheetScreen(UiBase):
     """0.7.0 §2.10: the Marca tab with a brand sheet: subtabs with ←/→, the palette by roles, «Probar un sujeto»."""
 
     @classmethod
     def customize_project(cls):
         super().customize_project()
-        sheet = copy.deepcopy(PORTAL)
-        sheet["pieceTypes"]["cover"]["profile"] = PROFILE
-        sheet["pieceTypes"]["icon"]["profile"] = "social"
-        (cls.root / "marca.json").write_text(json.dumps(sheet), encoding="utf-8")
-        path = cls.root / "galivelop-images.json"
-        cfg = json.loads(path.read_text())
-        cfg.setdefault("brand", {})["sheet"] = "marca.json"
-        path.write_text(json.dumps(cfg))
+        add_brand_sheet(cls.root)
 
     def selected(self):
         return self.js("document.querySelector('[role=tab][aria-selected=true]').dataset.sub")
@@ -982,7 +990,7 @@ class BrandSheetScreen(UiBase):
         self.assertEqual(self.js("document.querySelectorAll('[data-card=pieces] tbody tr').length"), 2)
         self.assertEqual(self.js("document.querySelectorAll('[data-card=pieces] [data-slot=new-order]').length"), 2)
         self.js("document.getElementById('sub-hoja').focus(); true")
-        for expected in ("probar", "check", "taller", "hoja"):
+        for expected in ("probar", "check", "troubleshooting", "taller", "hoja"):
             self.page.key("ArrowRight")
             self.page.wait("document.querySelector('[role=tab][aria-selected=true]').dataset.sub === %s" % json.dumps(expected))
             self.assertIn("s=" + expected, self.js("location.hash"))
@@ -1022,6 +1030,478 @@ class BrandSheetScreen(UiBase):
         self.page.wait("document.querySelector('[data-out=lint] [data-check=words]')")
         self.assertEqual(self.js("document.querySelector('[data-out=lint] [data-check=words]').dataset.status"), "warn")
         self.assertIn("palabras", self.js("document.querySelector('[data-out=lint] [data-check=words]').textContent"))
+        self.no_problems()
+
+    def test_a_brand_order_sends_the_subject_and_never_the_prompt(self):
+        self.open("/p/tarkor/pedidos", "document.querySelector('button[data-slot=new-order]')")
+        self.click("button[data-slot=new-order]")
+        self.page.wait("document.querySelector('dialog.new-order[open]') && document.getElementById('no-subject')")
+        self.assertFalse(self.js("document.getElementById('no-subject').closest('[data-box=brand]').hidden"))
+        self.assertTrue(self.js("document.getElementById('no-prompt').closest('[data-box=free]').hidden"))
+        self.assertTrue(self.js("document.querySelector('dialog.new-order button[type=submit]').disabled"))  # no subject yet
+        self.js("(() => { const s = document.getElementById('no-subject'); s.value = %s; s.dispatchEvent(new Event('input')); })()" % json.dumps(SUBJECT))
+        self.page.wait("document.querySelector('dialog.new-order [data-out=prompt] [data-slot=prompt]')")
+        self.page.wait("!document.querySelector('dialog.new-order button[type=submit]').disabled || document.querySelector('dialog.new-order [data-slot=why] .notice-bad')")
+        self.assertNotEqual(self.js("document.getElementById('no-key').value"), "")  # a key is proposed: <piece>/<slug>
+        self.no_problems()
+
+
+class BrandBatches(UiBase):
+    """0.8.0 paso 5b: tandas de marca en la cola del cajón (agrupadas por `batch.id`), cancelar una tanda entera."""
+
+    @classmethod
+    def customize_project(cls):
+        super().customize_project()
+        add_brand_sheet(cls.root)
+
+    @classmethod
+    def brand(cls, key, count=3, seed=311):
+        cls.submit(key, work=False, count=count, seed=seed, mode="brand", piece="cover", subject=SUBJECT, prompt=None)
+
+    @classmethod
+    def prepare(cls):
+        for key in ("portada/a", "portada/b", "portada/c"):
+            cls.brand(key)
+        cls.submit("fondos/suelta", count=1, work=False)
+
+    def queued(self, key):
+        return [e for e in self.api("GET", "/api/queue") if e["key"] == key]
+
+    def test_entries_of_a_batch_are_one_group_with_its_header_and_the_pill_counts_batches(self):
+        self.open("/", "document.querySelector('.queue-pill')")
+        self.page.wait("document.querySelector('.queue-pill').textContent.includes('tandas en cola (9 imágenes)')")
+        self.assertIn("1 en cola", self.js("document.querySelector('.queue-pill').textContent"))  # the loose entry
+        self.click(".queue-pill")
+        self.page.wait("document.querySelectorAll('#queue-drawer .queue-batch').length >= 3")
+        batch = self.queued("portada/a")[0]["batch"]
+        head = "#queue-drawer .queue-batch[data-batch='%d'] .queue-batch-head" % batch["id"]
+        text = self.js("document.querySelector(%s).textContent" % json.dumps(head))
+        for part in ("portada/a @ og", "0 de 3", "semillas 311-313"):
+            self.assertIn(part, text)
+        opened = "document.querySelector('#queue-drawer .queue-batch[data-batch=\"%d\"] details').open" % batch["id"]
+        self.assertFalse(self.js(opened))
+        self.js("document.querySelector(%s).focus(); true" % json.dumps(head))
+        self.page.key("Enter")
+        self.page.wait(opened)
+        self.assertEqual(self.js("document.querySelectorAll('#queue-drawer .queue-batch[data-batch=\"%d\"] details .queue-entry').length" % batch["id"]), 3)
+        self.page.key("ArrowRight")  # head -> first button
+        self.assertEqual(self.js("document.activeElement.tagName"), "BUTTON")
+        self.js("document.querySelector(%s).focus(); true" % json.dumps(head))
+        self.page.key("]")
+        self.assertTrue(self.js("document.activeElement.classList.contains('queue-batch-head')"))
+        self.assertNotEqual(self.js("document.activeElement.parentElement.dataset.batch"), str(batch["id"]))
+        self.no_problems()
+
+    def test_moving_a_batch_moves_all_its_entries_together_and_cancelling_asks_first(self):
+        self.open("/", "document.querySelector('.queue-pill')")
+        self.click(".queue-pill")
+        b = self.queued("portada/c")[0]["batch"]["id"]
+        self.page.wait("document.querySelector('[data-fid=\"top-b%d\"]')" % b)
+        self.click("[data-fid='top-b%d']" % b)
+        self.page.wait("document.querySelector('[data-fid=\"top-b%d\"]').disabled" % b)
+        line = [e for e in self.api("GET", "/api/queue") if e["state"] == "queued"]
+        line.sort(key=lambda e: (e.get("position", e["id"]), e["id"]))
+        self.assertEqual([e["key"] for e in line[:3]], ["portada/c"] * 3)
+        # cancel: the dialog first; refusing leaves everything queued
+        self.click("[data-fid='cancel-b%d']" % b)
+        self.page.wait("document.querySelector('dialog.confirm[open]')")
+        self.assertIn("tanda %d" % b, self.js("document.querySelector('dialog.confirm').textContent"))
+        self.js("[...document.querySelectorAll('dialog.confirm button')].find(x => x.textContent === 'Cancelar').click(); true")
+        self.page.wait("!document.querySelector('dialog.confirm')")
+        self.assertEqual({e["state"] for e in self.queued("portada/c")}, {"queued"})
+        self.click("[data-fid='cancel-b%d']" % b)
+        self.page.wait("document.querySelector('dialog.confirm[open]')")
+        self.js("document.querySelector('dialog.confirm .btn-danger').click(); true")
+        self.page.wait("!document.querySelector('[data-fid=\"cancel-b%d\"]')" % b)
+        self.assertEqual({e["state"] for e in self.queued("portada/c")}, {"cancelled"})
+        self.no_problems()
+
+
+@unittest.skipUnless(TOOLS, "ffmpeg and rsvg-convert are needed to compose")
+class BrandGallery(OrderPages):
+    """0.8.0 paso 5b: la galería por tandas, el distintivo Marca/Libre, el marcador de fallos y el pedido bloqueado."""
+
+    KEYS = {"portada/g1": 1, "portada/g2": 2, "portada/g3": 3}  # clave -> tandas falladas a mano
+
+    @classmethod
+    def customize_project(cls):
+        super().customize_project()
+        add_brand_sheet(cls.root)
+
+    @classmethod
+    def prepare(cls):
+        for key, failed in cls.KEYS.items():
+            cls.submit(key, count=2, seed=500, mode="brand", piece="cover", subject=SUBJECT, prompt=None)
+            for n in range(max(2, failed) - 1):  # the order's own batch plus these, newest last
+                run_cli("attempt", "new", PROJECT, key, PROFILE, "--count", "2", "--seed", str(600 + 10 * n))
+                run_cli("work")
+            for rec in orders.get(PROJECT, key, PROFILE)["batches"][:failed]:
+                run_cli("order", "fail", PROJECT, key, PROFILE, str(rec["id"]), "--reason", "horizon")
+
+    def test_the_gallery_has_one_section_per_batch_newest_first_and_the_header_says_mode_and_failures(self):
+        self.open(order_route("portada/g1"), "document.querySelectorAll('.gallery .batch-head').length >= 2")
+        heads = self.js("[...document.querySelectorAll('.gallery .batch-head h3')].map(h => h.textContent)")
+        self.assertEqual(len(heads), 2)
+        self.assertTrue(heads[0].startswith("Tanda 2 · "), heads)
+        self.assertTrue(heads[1].startswith("Tanda 1 · "), heads)
+        self.assertIn("sujeto: «A wide sea chart", heads[1])
+        self.assertIn("2 intentos", heads[1])
+        self.assertEqual(self.js("document.querySelector('.order-status [data-mode]').dataset.mode"), "brand")
+        self.assertEqual(self.js("document.querySelector('.order-status [data-mode]').textContent"), "Marca")
+        self.assertIn("Fallos 1 de 3", self.js("document.querySelector('.fail-marker').textContent"))
+        self.assertIn("■□□", self.js("document.querySelector('.fail-marker').textContent"))
+        self.assertIsNone(self.js("document.querySelector('[data-slot=fail-notice]')"))
+        # the first batch is the failed one: its header says so, with the sheet's label
+        self.assertIn("FALLO: Horizonte", self.js("document.querySelector('.gallery .batch-head[data-batch] [data-slot=batch-failed]').textContent"))
+        # the cards come after their header, newest section first
+        order = self.js("[...document.querySelectorAll('.gallery > *')].map(n => n.classList.contains('batch-head') ? 'H' : 'A').join('')")
+        self.assertEqual(order, "HAAHAA")
+        self.assertEqual(self.js("document.querySelector('.gallery .attempt [data-mode]').textContent"), "Marca")
+        self.no_problems()
+
+    def test_the_second_failure_warns_with_the_reasons(self):
+        self.open(order_route("portada/g2"), "document.querySelector('[data-slot=fail-notice]')")
+        text = self.js("document.querySelector('[data-slot=fail-notice]').textContent")
+        self.assertIn("Un fallo más y toca rediseñar.", text)
+        self.assertIn("Motivos hasta ahora: Horizonte ×2", text)
+        self.assertIn("Fallos 2 de 3", self.js("document.querySelector('.fail-marker').textContent"))
+        self.no_problems()
+
+    def test_a_blocked_order_cannot_queue_and_says_why(self):
+        self.open(order_route("portada/g3"), "document.querySelector('.order-status [data-slot=blocked]')")
+        reason = self.js("document.querySelector('[data-slot=troubleshoot]').textContent")
+        self.assertIn("3 fallos de 3", reason)
+        self.assertTrue(self.js("document.querySelector('.order-panel .panel-actions .btn-primary').disabled"))
+        self.assertIn("3 fallos de 3", self.js("document.querySelector('.order-panel .panel-actions .btn-primary').title"))
+        self.assertTrue(self.js("[...document.querySelectorAll('.gallery .attempt details .btn')].filter(b => /Recrear|Variar/.test(b.textContent)).every(b => b.disabled)"))
+        self.page.key("g")
+        self.page.pump(0.5)
+        self.assertEqual([e for e in self.api("GET", "/api/queue") if e["key"] == "portada/g3" and e["state"] == "queued"], [])
+        self.no_problems()
+
+    def test_the_order_list_has_the_mode_and_failures_columns(self):
+        self.open("/p/tarkor/pedidos", "document.querySelector('.order-row [data-col=mode]')")
+        self.page.wait("document.querySelector('.order-row [data-col=failures]')")
+        rows = self.js("[...document.querySelectorAll('.order-row')].filter(r => r.textContent.includes('portada/g2')).map(r => r.querySelector('[data-col=failures]').textContent)")
+        self.assertEqual(len(rows), 1)
+        self.assertIn("Fallos 2 de 3", rows[0])
+        self.assertEqual(self.js("document.querySelector('.order-row [data-col=mode]').textContent"), "Marca")
+        self.no_problems()
+
+
+class BrandMarks(OrderPages):
+    """0.8.0 paso 5b: «No» con motivo (o sin él) y «Ninguno vale» en un pedido de marca."""
+
+    KEYS = ("portada/n1", "portada/n2", "portada/n3")
+
+    @classmethod
+    def customize_project(cls):
+        super().customize_project()
+        add_brand_sheet(cls.root)
+
+    @classmethod
+    def prepare(cls):
+        for key in cls.KEYS:
+            cls.submit(key, count=2, seed=700, mode="brand", piece="cover", subject=SUBJECT, prompt=None)
+
+    def order_json(self, key):
+        return self.api("GET", "/api/projects/%s/orders/%s/%s" % (PROJECT, PROFILE, quote(key, safe="")))
+
+    def attempt_no(self):
+        return "document.querySelector('.gallery .attempt .btn-no')"
+
+    def test_no_with_a_reason_sends_it_and_the_discard_without_one_still_works(self):
+        self.open(order_route("portada/n1"), "document.querySelector('.gallery .attempt .btn-no')")
+        self.js(self.attempt_no() + ".click()")
+        self.page.wait("document.querySelector('dialog.reason[open] [data-trait=horizon]')")
+        self.assertTrue(self.js("!!document.querySelector('dialog.reason [data-trait=other]')"))
+        self.js("document.querySelector('dialog.reason [data-trait=horizon]').click()")
+        self.page.wait("document.querySelector('.gallery .attempt .btn-no[aria-pressed=true]')")
+        order = self.order_json("portada/n1")
+        self.assertEqual([a.get("reason") for a in order["attempts"] if a["state"] == "discarded"], [{"trait": "horizon"}])
+        self.assertEqual(order["failures"]["count"], 0)
+        self.assertEqual(self.js("document.querySelector('dialog.reason')"), None)
+        # «otro» pide una nota
+        self.js("[...document.querySelectorAll('.gallery .attempt .btn-no')].find(b => b.getAttribute('aria-pressed') !== 'true').click()")
+        self.page.wait("document.querySelector('dialog.reason[open]')")
+        self.js("document.querySelector('dialog.reason [data-trait=other]').click()")
+        self.js("document.querySelector('dialog.reason [data-slot=reason-text]').value = 'demasiado oscuro'")
+        self.js("document.querySelector('dialog.reason [data-slot=reason-other-ok]').click()")
+        self.page.wait("document.querySelector('.fail-marker')")
+        reasons = self.order_json("portada/n1")["failures"]["reasons"]
+        self.assertEqual([r.get("text") for r in reasons if r["trait"] == "other"], ["demasiado oscuro"])
+        self.no_problems()
+
+    def test_a_second_n_without_a_reason_discards_anyway(self):
+        self.open(order_route("portada/n2"), "document.querySelector('.gallery .attempt')")
+        self.js("document.querySelector('.gallery .attempt').focus()")
+        self.page.key("n")
+        self.page.wait("document.querySelector('dialog.reason[open]')")
+        self.page.key("n")
+        self.page.wait("!document.querySelector('dialog.reason') && document.querySelector('.gallery .attempt .btn-no[aria-pressed=true]')")
+        order = self.order_json("portada/n2")
+        self.assertEqual([a.get("reason") for a in order["attempts"] if a["state"] == "discarded"], [None])
+        self.no_problems()
+
+    def test_none_are_good_confirms_a_reason_and_updates_the_marker(self):
+        self.open(order_route("portada/n3"), "document.querySelector('.gallery .batch-head [data-slot=batch-fail]')")
+        self.assertFalse(self.js("!!document.querySelector('.fail-marker')"))
+        self.js("document.querySelector('[data-slot=batch-fail]').click()")
+        self.page.wait("document.querySelector('dialog.reason[open] [data-trait=palette]')")
+        self.assertEqual(self.js("document.querySelector('dialog.reason [data-slot=reason-none]')"), None)
+        self.js("document.querySelector('dialog.reason [data-trait=palette]').click()")
+        self.page.wait("document.querySelector('.fail-marker')")
+        self.assertIn("Fallos 1 de 3", self.js("document.querySelector('.fail-marker').textContent"))
+        self.assertIn("FALLO", self.js("document.querySelector('[data-slot=batch-failed]').textContent"))
+        self.assertIsNone(self.js("document.querySelector('[data-slot=batch-fail]')"))
+        self.no_problems()
+
+
+class BrandQueueOrder(UiBase):
+    """Revisión de 0.8.0 5a-5b: el cajón pinta la cola en el orden del trabajador, también si una entrada suelta se coló en una tanda."""
+
+    @classmethod
+    def customize_project(cls):
+        super().customize_project()
+        add_brand_sheet(cls.root)
+
+    @classmethod
+    def prepare(cls):
+        cls.submit("portada/q", work=False, count=3, seed=411, mode="brand", piece="cover", subject=SUBJECT, prompt=None)
+        cls.submit("fondos/suelta", count=1, work=False)
+
+    def test_a_loose_entry_moved_up_shows_between_the_two_runs_of_the_batch(self):
+        self.open("/", "document.querySelector('.queue-pill')")
+        self.click(".queue-pill")
+        loose = [e for e in self.api("GET", "/api/queue") if e["key"] == "fondos/suelta"][0]["id"]
+        kinds = "[...document.querySelectorAll('#queue-drawer > .stack > *')].map(n => n.classList.contains('queue-batch') ? 'B' : 'E').join('')"
+        self.page.wait("document.querySelector('[data-fid=\"up-%d\"]')" % loose)
+        self.assertEqual(self.js(kinds), "BE")
+        self.click("[data-fid='up-%d']" % loose)
+        self.page.wait(kinds + " === 'BEB'")  # the loose entry now stands between the batch's entries, as the worker will take them
+        self.assertIn("puesto 3", self.js("document.querySelector('#queue-drawer > .stack > .queue-entry').textContent"))
+        self.assertEqual(self.js("document.querySelectorAll('#queue-drawer [data-fid^=\"head-b\"]').length"), 2)
+        self.assertEqual(self.js("new Set([...document.querySelectorAll('#queue-drawer [data-fid]')].map(n => n.dataset.fid)).size"),
+                         self.js("document.querySelectorAll('#queue-drawer [data-fid]').length"))  # no repeated keys
+        self.no_problems()
+
+
+@unittest.skipUnless(TOOLS, "ffmpeg and rsvg-convert are needed to compose")
+class BrandReview(OrderPages):
+    """Revisión de 0.8.0 5a-5b: la elegida cuenta en su tanda, «Recrear» usa el sujeto de la tanda y lo más nuevo de un pedido libre va arriba."""
+
+    @classmethod
+    def customize_project(cls):
+        super().customize_project()
+        add_brand_sheet(cls.root)
+
+    @classmethod
+    def prepare(cls):
+        cls.submit("portada/r1", count=2, seed=800, mode="brand", piece="cover", subject=SUBJECT, prompt=None)
+        run_cli("attempt", "new", PROJECT, "portada/r1", PROFILE, "--count", "1", "--seed", "900", "--subject", SUBJECT.replace("Galician", "Atlantic"))
+        run_cli("work")
+        run_cli("choose", PROJECT, "portada/r1", PROFILE, "1")
+        cls.submit("fondos/r2", count=3, seed=10)
+        run_cli("attempt", "new", PROJECT, "fondos/r2", PROFILE, "--count", "1", "--seed", "99")
+        run_cli("work")
+
+    def test_the_batch_with_the_chosen_attempt_counts_it_and_offers_no_none_are_good(self):
+        self.open(order_route("portada/r1"), "document.querySelectorAll('.gallery .batch-head').length === 2")
+        heads = self.js("[...document.querySelectorAll('.gallery .batch-head')].map(h => [h.querySelector('h3').textContent, !!h.querySelector('[data-slot=batch-fail]')])")
+        first, second = [h for h in heads if h[0].startswith("Tanda 1")][0], [h for h in heads if h[0].startswith("Tanda 2")][0]
+        self.assertIn("2 intentos", first[0])  # the chosen one counts
+        self.assertFalse(first[1], "«Ninguno vale» on the batch holding the chosen attempt (order.discard_chosen)")
+        self.assertTrue(second[1])
+        self.assertEqual(self.js("document.querySelectorAll('.gallery .attempt[data-attempt=\"1\"]').length"), 1)  # not painted twice
+        self.no_problems()
+
+    def test_recreate_loads_the_subject_of_the_batch_of_the_attempt(self):
+        self.open(order_route("portada/r1"), "document.querySelector('.gallery .attempt[data-attempt=\"2\"]')")
+        self.assertIn("Atlantic", self.data("portada/r1")["subject"])  # the order moved on to the newer subject
+        self.js("[...document.querySelectorAll('.gallery .attempt[data-attempt=\"2\"] details .btn')].find(b => /Recrear/.test(b.textContent)).click(); true")
+        self.page.wait("document.getElementById('retouch-subject') && document.getElementById('retouch-subject').value !== ''")
+        self.assertTrue(self.js("document.getElementById('retouch-subject').value.startsWith(%s)" % json.dumps(SUBJECT[:30])))
+        self.no_problems()
+
+    def test_in_a_free_order_the_newest_single_attempt_is_above_the_batch(self):
+        self.open(order_route("fondos/r2"), "document.querySelectorAll('.gallery .attempt[data-kind=attempt]').length === 4")
+        self.assertEqual(self.js("document.querySelector('.gallery > [data-kind]').dataset.attempt"), "4")
+        self.no_problems()
+
+
+class BrandTroubleshoot(OrderPages):
+    """0.8.0 paso 5c: el formulario de troubleshooting del pedido bloqueado, el registro en Marca y el «ya falló antes»."""
+
+    BLOCKED = ("portada/t-focus", "portada/t-save", "portada/t-error", "portada/t-extend", "portada/t-extend-error")
+
+    @classmethod
+    def customize_project(cls):
+        super().customize_project()
+        add_brand_sheet(cls.root)
+
+    @classmethod
+    def fail_three(cls, key, profile=PROFILE, piece="cover"):
+        cls.submit(key, profile=profile, count=2, seed=500, mode="brand", piece=piece, subject=SUBJECT, prompt=None)
+        for n in range(2):
+            run_cli("attempt", "new", PROJECT, key, profile, "--count", "2", "--seed", str(600 + 10 * n))
+            run_cli("work")
+        for rec in orders.get(PROJECT, key, profile)["batches"][:3]:
+            run_cli("order", "fail", PROJECT, key, profile, str(rec["id"]), "--reason", "horizon")
+
+    @classmethod
+    def prepare(cls):
+        for key in cls.BLOCKED:
+            cls.fail_three(key)
+        # t-sig: a fourth finished batch, not failed yet (failing it raises the counter of an already blocked order)
+        cls.submit("portada/t-sig", count=2, seed=500, mode="brand", piece="cover", subject=SUBJECT, prompt=None)
+        for n in range(3):
+            run_cli("attempt", "new", PROJECT, "portada/t-sig", PROFILE, "--count", "2", "--seed", str(600 + 10 * n))
+            run_cli("work")
+        for rec in orders.get(PROJECT, "portada/t-sig", PROFILE)["batches"][:3]:
+            run_cli("order", "fail", PROJECT, "portada/t-sig", PROFILE, str(rec["id"]), "--reason", "horizon")
+        # t-cycle: a row closes the first cycle (its batches stay marked as failed) and a second one blocks again
+        cls.fail_three("portada/t-cycle")
+        run_cli("troubleshoot", "add", PROJECT, "portada/t-cycle", PROFILE, "--problem", "primer ciclo", "--attempt", "1")
+        for n in range(3):
+            run_cli("attempt", "new", PROJECT, "portada/t-cycle", PROFILE, "--count", "2", "--seed", str(700 + 10 * n), "--subject", SUBJECT)
+            run_cli("work")
+        for rec in orders.get(PROJECT, "portada/t-cycle", PROFILE)["batches"][3:6]:
+            run_cli("order", "fail", PROJECT, "portada/t-cycle", PROFILE, str(rec["id"]), "--reason", "horizon")
+        cls.fail_three("portada/rows-cover")
+        cls.submit("iconos/rows-icon", profile="social", count=1, seed=5, mode="brand", piece="icon", subject=SUBJECT, prompt=None)
+        run_cli("troubleshoot", "add", PROJECT, "portada/rows-cover", PROFILE, "--problem", "el horizonte sale plano", "--attempt", "1",
+                "--redesign", "bajar la linea del horizonte", "--term", "Galician")
+        run_cli("troubleshoot", "add", PROJECT, "iconos/rows-icon", "social", "--problem", "el icono sale sucio")
+
+    def blocked(self, key):
+        self.open(order_route(key), "document.querySelector('[data-slot=ts-form]')")
+
+    def fill(self, selector, value):
+        self.js("(() => { const e = document.querySelector(%s); e.value = %s; e.dispatchEvent(new Event('input')); })()" % (json.dumps(selector), json.dumps(value)))
+
+    def test_a_blocked_order_focuses_the_form_title_and_announces_it(self):
+        self.blocked("portada/t-focus")
+        self.assertEqual(self.js("document.activeElement.id"), "ts-title")
+        self.assertEqual(self.js("document.activeElement.getAttribute('tabindex')"), "-1")
+        self.assertIn("3 fallos de 3", self.js("document.querySelector('[data-slot=ts-form] [role=alert]').textContent"))
+        self.assertIn("Horizonte", self.js("document.getElementById('ts-problem').value"))
+        self.assertRegex(self.js("document.getElementById('ts-attempts').value"), r"^q\d+(, q\d+)+$")
+        self.no_problems()
+
+    def test_noting_the_row_sends_what_was_written_reloads_and_opens_the_panel_with_an_empty_subject(self):
+        self.blocked("portada/t-save")
+        self.fill("#ts-problem", "el islote sale plano")
+        self.fill("#ts-attempts", "q1, q2")
+        self.fill("#ts-redesign", "subir el islote")
+        self.fill("#ts-terms", "islet, plano")
+        self.click("[data-slot=ts-save]")
+        self.page.wait("!document.querySelector('[data-slot=ts-form]')")
+        rows = [r for r in self.api("GET", "/api/projects/%s/troubleshooting" % PROJECT) if r["key"] == "portada/t-save"]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual((rows[0]["problem"], rows[0]["attempts"], rows[0]["redesign"], rows[0]["terms"]),
+                         ("el islote sale plano", [1, 2], "subir el islote", ["islet", "plano"]))
+        self.assertEqual(self.data("portada/t-save")["failures"]["count"], 0)
+        self.page.wait("document.activeElement && document.activeElement.id === 'retouch-subject'")
+        self.assertEqual(self.js("document.getElementById('retouch-subject').value"), "")
+        self.assertEqual(self.js("document.querySelector('.fail-marker')"), None)
+        self.no_problems()
+
+    def test_a_failed_save_says_why_and_keeps_what_was_written(self):
+        self.blocked("portada/t-error")
+        self.fill("#ts-redesign", "no se pierde")
+        self.fill("#ts-attempts", "q999")
+        self.click("[data-slot=ts-save]")
+        self.page.wait("document.querySelector('[data-slot=ts-error] [role=alert]')")
+        self.assertIn("no tiene el intento 999", self.js("document.querySelector('[data-slot=ts-error]').textContent"))
+        self.assertEqual(self.js("document.getElementById('ts-redesign').value"), "no se pierde")
+        self.assertEqual(self.js("document.getElementById('ts-attempts').value"), "q999")
+        self.assertEqual([r for r in self.api("GET", "/api/projects/%s/troubleshooting" % PROJECT) if r["key"] == "portada/t-error"], [])
+        self.page.pump(0.3)
+        self.browser.take_problems()  # the failed request is the point of the test (a console line for the 404)
+
+    def test_one_more_batch_asks_first_and_enables_the_buttons_with_a_notice(self):
+        self.blocked("portada/t-extend")
+        self.click("[data-slot=ts-extend]")
+        self.page.wait("document.querySelector('dialog.confirm[open]')")
+        self.js("[...document.querySelectorAll('dialog.confirm button')].find(x => x.textContent === 'Cancelar').click(); true")
+        self.page.wait("!document.querySelector('dialog.confirm')")
+        self.assertEqual(self.data("portada/t-extend")["troubleshooting"]["state"], "blocked")
+        self.click("[data-slot=ts-extend]")
+        self.page.wait("document.querySelector('dialog.confirm[open]')")
+        self.js("document.querySelector('dialog.confirm .btn-danger').click(); true")
+        self.page.wait("document.querySelector('[data-slot=ts-extended]')")
+        self.assertEqual(self.data("portada/t-extend")["troubleshooting"]["state"], "extended")
+        self.assertIn("una tanda más", self.js("document.querySelector('[data-slot=ts-extended]').textContent"))
+        self.assertFalse(self.js("document.querySelector('.order-panel .panel-actions .btn-primary').disabled"))
+        self.assertEqual(self.js("document.querySelector('[data-slot=ts-form]')"), None)
+        self.no_problems()
+
+    def test_one_more_batch_on_an_order_that_is_no_longer_blocked_says_so(self):
+        self.blocked("portada/t-extend-error")
+        run_cli("troubleshoot", "add", PROJECT, "portada/t-extend-error", PROFILE, "--problem", "otra sesion")
+        self.click("[data-slot=ts-extend]")
+        self.page.wait("document.querySelector('dialog.confirm[open]')")
+        self.js("document.querySelector('dialog.confirm .btn-danger').click(); true")
+        self.page.wait("[...document.querySelectorAll('#toasts .toast')].some(x => x.textContent.includes('no está en troubleshooting'))")
+        self.page.wait("!document.querySelector('[data-slot=ts-form]')")
+        self.page.pump(0.3)
+        self.browser.take_problems()  # the 409 is the point of the test
+
+    def test_a_counter_that_rises_on_a_blocked_order_keeps_the_form_and_what_was_written(self):
+        self.blocked("portada/t-sig")
+        self.fill("#ts-redesign", "no se pierde")
+        self.js("document.getElementById('ts-redesign').focus(); true")
+        last = orders.get(PROJECT, "portada/t-sig", PROFILE)["batches"][3]["id"]
+        run_cli("order", "fail", PROJECT, "portada/t-sig", PROFILE, str(last), "--reason", "horizon")
+        self.js("[...document.querySelectorAll('button')].find(x => x.textContent.includes('⟳')).click(); true")
+        self.assertEqual(self.data("portada/t-sig")["failures"]["count"], 4)
+        self.page.pump(1.0)  # the refresh repaints with the new counter
+        self.assertEqual(self.js("document.getElementById('ts-redesign').value"), "no se pierde")
+        self.assertEqual(self.js("document.activeElement.id"), "ts-redesign")
+        self.no_problems()
+
+    def test_the_attempts_proposed_are_only_those_of_the_batches_of_the_current_cycle(self):
+        self.blocked("portada/t-cycle")
+        ids = self.js("document.getElementById('ts-attempts').value")
+        old = [r["id"] for r in orders.get(PROJECT, "portada/t-cycle", PROFILE)["batches"][:3]]
+        self.assertTrue(ids, "the form proposes attempts")
+        first = [a["id"] for a in orders.get(PROJECT, "portada/t-cycle", PROFILE)["attempts"] if a.get("batch") in old]
+        for n in first:
+            self.assertNotIn("q%d" % n, ids.split(", "), "q%d belongs to the cycle already closed" % n)
+        self.no_problems()
+
+    def test_the_marca_subtab_lists_the_rows_links_the_attempts_and_filters_by_piece(self):
+        self.open("/p/%s/marca?s=troubleshooting" % PROJECT, "document.querySelector('[data-slot=ts-table]')")
+        self.assertEqual(self.js("document.querySelector('#sub-troubleshooting').getAttribute('aria-selected')"), "true")
+        self.assertIn("el horizonte sale plano", self.js("document.querySelector('[data-slot=ts-table]').textContent"))
+        self.assertIn("bajar la linea del horizonte", self.js("document.querySelector('[data-slot=ts-table]').textContent"))
+        link = self.js("document.querySelector('[data-slot=ts-table] a[data-attempt=\"1\"][href*=\"rows-cover\"]').getAttribute('href')")
+        self.assertIn("/o/og/portada%2Frows-cover?a=1", link)
+        self.js("(() => { const f = document.getElementById('ts-filter'); f.value = 'icon'; f.dispatchEvent(new Event('change')); })()")
+        self.page.wait("document.querySelectorAll('[data-slot=ts-table] tbody tr').length === 1")
+        self.assertIn("el icono sale sucio", self.js("document.querySelector('[data-slot=ts-table] tbody').textContent"))
+        self.assertEqual(self.js("document.activeElement.id"), "ts-filter")
+        self.no_problems()
+
+    def test_the_marca_subtab_says_why_loading_failed_and_retries(self):
+        self.open("/p/%s/marca?s=hoja" % PROJECT, "document.querySelector('#sub-troubleshooting')")
+        self.js("window.__fetch = window.fetch; window.fetch = (u, o) => String(u).includes('/troubleshooting') ? Promise.resolve(new Response(JSON.stringify({error: {code: 'project.unknown', params: {}, message: 'proyecto roto'}}), {status: 404})) : window.__fetch(u, o); true")
+        self.click("#sub-troubleshooting")
+        self.page.wait("document.querySelector('#subpanel-troubleshooting [role=alert]')")
+        self.assertIn("proyecto roto", self.js("document.querySelector('#subpanel-troubleshooting').textContent"))
+        self.js("window.fetch = window.__fetch; true")
+        self.click("[data-slot=ts-retry]")
+        self.page.wait("document.querySelector('[data-slot=ts-table]')")
+        self.page.pump(0.3)
+        self.browser.take_problems()  # the 404 of the first load is the point of the test
+
+    def test_the_known_term_notice_shows_the_redesign_of_the_row_and_does_not_block(self):
+        self.open("/p/%s/marca?s=probar" % PROJECT, "document.getElementById('bp-subject')")
+        self.fill("#bp-subject", SUBJECT)
+        self.page.wait("document.querySelector('[data-slot=known]')")
+        text = self.js("document.querySelector('[data-slot=known]').textContent")
+        self.assertIn("Ya falló antes: «Galician»", text)
+        self.assertIn("Rediseño apuntado: bajar la linea del horizonte", text)
         self.no_problems()
 
 

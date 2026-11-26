@@ -84,6 +84,17 @@
           },
           "description": "Words that must not appear in prompts (the interface warns before sending; at most 100)."
         },
+        "failureLimit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "default": 3,
+          "description": "Failed batches in a row that put a brand order in troubleshooting (3 by default)."
+        },
+        "troubleshootingMarkdown": {
+          "$ref": "#/$defs/relativePath",
+          "description": "Where gimg writes the generated troubleshooting.md, relative to the project root (default: the project's data folder)."
+        },
         "sheet": {
           "$ref": "#/$defs/relativePath",
           "description": "Brand sheet (marca.json, schema brand-sheet), relative to the project root; it must stay inside the root."

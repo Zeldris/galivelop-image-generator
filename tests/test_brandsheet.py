@@ -234,7 +234,8 @@ class LoadResolveTests(Env):
             err = self.code(B.resolve, "dev")
         self.assertEqual((err.code, err.params["path"]), ("path.outside", "marca.json"))
 
-    def test_parent_sheet_with_dotdot_rejected(self):
+    def test_parent_sheet_dotdot_in_config_rejected_by_the_schema(self):
+        # the schema alone: `load_config` refuses `..` in `brand.sheet` (the `extends` path is the next test)
         root = self.tmp / "portal"
         root.mkdir()
         cfg = dict(copy.deepcopy(EXAMPLE), name="portal", brand={"sheet": "../marca.json"})
@@ -243,6 +244,19 @@ class LoadResolveTests(Env):
         err = self.code(projects.load_config, root)
         self.assertEqual((err.code, [(e.path, e.code) for e in err.errors]),
                          ("project.config_invalid", [("/brand/sheet", "pattern")]))
+
+    def test_extends_a_parent_whose_sheet_path_has_dotdot_is_refused(self):
+        # registered with a good sheet path, then the parent's config is edited to `../marca.json`: resolving the child
+        # (the `extends` route) must refuse it with the parent's name and the schema reason, not read outside the root
+        self.project("dev", {"schemaVersion": 1, "name": "dev", "extends": "portal"})
+        root = self.project("portal", PORTAL)
+        (self.tmp / "marca.json").write_text(json.dumps(PORTAL))
+        cfg = json.loads((root / "galivelop-images.json").read_text())
+        cfg["brand"] = {"sheet": "../marca.json"}
+        (root / "galivelop-images.json").write_text(json.dumps(cfg))
+        err = self.code(B.resolve, "dev")
+        self.assertEqual((err.code, err.params["parent"]), ("brandsheet.extends_broken", "portal"))
+        self.assertIn("/brand/sheet", err.params["reason"])
 
     def test_incomplete_and_bad_references(self):
         self.project("half", {"schemaVersion": 1, "name": "half", "closing": "x"})
@@ -265,6 +279,7 @@ class LoadResolveTests(Env):
         self.project("worse", worse)
         err = self.code(B.resolve, "worse")
         self.assertEqual((err.code, err.params["placeholder"]), ("brandsheet.bad_placeholder", "grid"))
+        self.assertEqual(err.params["where"], "paletteSentence")
 
 
 TONOS = {
@@ -426,7 +441,10 @@ class PieceTypeOverridesTests(Env):
         self.assertTrue(S.validate(with_piece(cleanZone="middle"), schema))
         self.assertTrue(S.validate(with_piece(closing=""), schema))
         self.project("portal", with_piece(paletteSentence="Palette {nope}"))
-        self.assertEqual(self.code(B.resolve, "portal").code, "brandsheet.bad_placeholder")
+        err = self.code(B.resolve, "portal")
+        self.assertEqual((err.code, err.params["placeholder"], err.params["where"]),
+                         ("brandsheet.bad_placeholder", "nope", "pieceTypes.stage.paletteSentence"))
+        self.assertIn("pieceTypes.stage.paletteSentence", err.message())
 
     def test_a_product_overrides_the_closing_of_an_inherited_type_by_key(self):
         self.project("portal", with_piece(closing=PIECE_CLOSING, paletteSentence=PIECE_PALETTE, cleanZone="afterClosing"))
@@ -477,6 +495,78 @@ class LintTests(unittest.TestCase):
         check = [c for c in result["checks"] if c["id"] == "palette"][0]
         self.assertEqual((check["status"], check["message"]["params"]["missing"]), ("error", "#5d7a6a"))
 
+    def test_palette_missing_hex_with_a_multi_sentence_palette_sentence(self):
+        sheet = copy.deepcopy(PORTAL)
+        sheet["paletteSentence"] = "Palette: {halo}. Also {paper}, {ink} and {accent}"
+        prompt = B.assemble(sheet, "cover", SUBJECT, ZONE)["prompt"]
+        check = [c for c in B.lint(sheet, prompt, "cover", "brand", ZONE)["checks"] if c["id"] == "palette"][0]
+        self.assertEqual(check["status"], "ok")
+        bad = prompt.replace(" and a touch of seaweed green #5d7a6a", "")
+        check = [c for c in B.lint(sheet, bad, "cover")["checks"] if c["id"] == "palette"][0]
+        self.assertEqual((check["status"], check["message"]["params"]["missing"]), ("error", "#5d7a6a"))
+
+    def test_short_and_alpha_hex_are_seen(self):
+        for bad in ("#f00", "#ff0000cc", "#f00c"):
+            prompt = self.good(subject=SUBJECT + ", a stripe " + bad)
+            hexes = [(c["message"]["params"]["value"]) for c in self.run_lint(prompt, piece="cover")["checks"]
+                     if c["id"] == "hex" and c["status"] != "ok"]
+            self.assertEqual(hexes, [bad])
+
+    def test_clean_zone_of_only_spaces_is_no_zone(self):
+        prompt = B.assemble(PORTAL, "cover", SUBJECT, "   ")["prompt"]
+        self.assertEqual(prompt, B.assemble(PORTAL, "cover", SUBJECT)["prompt"])
+        self.assertNotIn(("cleanZone", "lint.clean_zone_missing"),
+                         self.problems(self.run_lint(prompt, piece="cover", clean_zone="   ")))
+
+    def test_a_register_contained_in_another_is_not_register_many(self):
+        sheet = copy.deepcopy(PORTAL)
+        sheet["registers"]["short"] = {"label": label("Corto"), "block": LINE.rstrip(".").split(",")[0]}
+        prompt = B.assemble(sheet, "icon", SUBJECT)["prompt"]
+        self.assertIn(sheet["registers"]["short"]["block"], prompt)
+        result = B.lint(sheet, prompt, piece="icon")
+        self.assertNotIn(("register", "lint.register_many"), self.problems(result))
+
+    def test_a_short_register_also_written_apart_is_register_many(self):
+        sheet = copy.deepcopy(PORTAL)
+        sheet["registers"]["short"] = {"label": label("Corto"), "block": "fine sea chart"}
+        prompt = B.assemble(sheet, "cover", SUBJECT)["prompt"]
+        self.assertEqual(self.problems(B.lint(sheet, prompt, piece="cover")), [])
+        apart = prompt + " Like a fine sea chart."
+        found = [c for c in B.lint(sheet, apart, piece="cover")["checks"] if c["id"] == "register"][0]
+        self.assertEqual((found["message"]["key"], found["message"]["params"]["registers"]),
+                         ("lint.register_many", "engraved, short"))
+
+    def test_other_registers_text_is_not_exempt_with_a_piece(self):
+        sheet = copy.deepcopy(PORTAL)
+        sheet["registers"]["line"]["block"] = LINE.rstrip(".") + ", golden"
+        prompt = B.assemble(sheet, "cover", SUBJECT)["prompt"] + " " + sheet["registers"]["line"]["block"]
+        with_piece_ = self.problems(B.lint(sheet, prompt, piece="cover"))
+        self.assertIn(("negation", "lint.negation"), with_piece_)
+        self.assertIn(("colorWord", "lint.color_word"), with_piece_)
+        # without a piece every register's text is approved
+        without = self.problems(B.lint(sheet, prompt))
+        self.assertNotIn(("negation", "lint.negation"), without)
+        self.assertNotIn(("colorWord", "lint.color_word"), without)
+
+    def test_short_hex_needs_a_letter(self):
+        for text in ("#2026", "#123", "#1234"):
+            self.assertIsNone(B._HEX.search(text), text)
+        self.assertEqual([m.group(0) for m in B._HEX.finditer("a #fa0 and #12ab and #123456")],
+                         ["#fa0", "#12ab", "#123456"])
+        result = self.run_lint(self.good(subject=SUBJECT + " for event #2026"), piece="cover")
+        self.assertNotIn("hex", [p[0] for p in self.problems(result)])
+        result = self.run_lint(self.good(subject=SUBJECT + " on #fa0"), piece="cover")
+        self.assertIn(("hex", "lint.hex"), self.problems(result))
+
+    def test_register_own_text_exempts_only_the_pieces_register(self):
+        sheet = copy.deepcopy(PORTAL)
+        sheet["registers"]["line"]["block"] = LINE.rstrip(".") + ", never a robot"
+        sheet["vetoes"]["groups"][0]["terms"] = ["robot"]
+        # as an icon (line register) the word is the register's own text; as a cover (engraved) it is not
+        prompt = B.assemble(sheet, "icon", SUBJECT)["prompt"]
+        self.assertNotIn(("veto", "lint.veto"), self.problems(B.lint(sheet, prompt, piece="icon")))
+        self.assertIn(("veto", "lint.veto"), self.problems(B.lint(sheet, prompt, piece="cover")))
+
     def test_register_none(self):
         prompt = self.good().replace(ENGRAVED, "")
         self.assertIn(("register", "lint.register_none"), self.problems(self.run_lint(prompt)))
@@ -498,6 +588,23 @@ class LintTests(unittest.TestCase):
     def test_clean_zone_after_register(self):
         prompt = self.good(zone=None).replace(ENGRAVED, ENGRAVED + " " + ZONE + ".")
         self.assertIn(("cleanZone", "lint.clean_zone_order"), self.problems(self.run_lint(prompt, clean_zone=ZONE)))
+
+    def test_clean_zone_after_closing_needs_the_closing_and_its_order(self):
+        zone = "the islet small on the left"
+        sheet = with_piece(closing=PIECE_CLOSING, cleanZone="afterClosing")
+        ok = B.assemble(sheet, "stage", "A chart.", zone)["prompt"]
+        self.assertNotIn("cleanZone", [p[0] for p in self.problems_of(sheet, ok, zone)])
+        # without the closing the zone has nothing to follow: only `closing` says so, not a second order error
+        no_closing = ok.replace(PIECE_CLOSING.rstrip("."), "")
+        found = self.problems_of(sheet, no_closing, zone)
+        self.assertIn(("closing", "lint.closing"), found)
+        self.assertNotIn("cleanZone", [p[0] for p in found])
+        # the zone before the closing is not after it
+        inside = ok.replace(zone, "").replace(PIECE_CLOSING.rstrip("."), zone + ". " + PIECE_CLOSING.rstrip("."))
+        self.assertIn(("cleanZone", "lint.clean_zone_order"), self.problems_of(sheet, inside, zone))
+
+    def problems_of(self, sheet, prompt, zone):
+        return self.problems(B.lint(sheet, prompt, "stage", "brand", zone))
 
     def test_clean_zone_missing(self):
         self.assertIn(("cleanZone", "lint.clean_zone_missing"),

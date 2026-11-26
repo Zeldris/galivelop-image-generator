@@ -2,12 +2,12 @@
 
 De la revisión del diff contra `origin/main` (fase 1). No se arreglan en este pull request ni vuelven a revisarse en él.
 
-- `brandshop.resolve_font` llama a `fc-match` sin el peso y rechaza las `.ttc`.
-- Los límites de los campos del taller no casan con los del servidor: borde mínimo 0 (el servidor pide 1 o más), texto
-  del nombre con `maxlength` 100 (`MAX_TEXT` es 60), tolerancias hasta 255 (la distancia llega a ~441).
-- Validaciones y datos repetidos: peso y espaciado en `brand.wordmark` y `brand.system`; la exclusión
+- ~~`brandshop.resolve_font` llama a `fc-match` sin el peso y rechaza las `.ttc`.~~ ya estaba hecho (visto el 2026-11-17: `family:weight=N` y `.ttc`/`.otc`).
+- ~~Los límites de los campos del taller no casan con los del servidor: borde mínimo 0 (el servidor pide 1 o más), texto
+  del nombre con `maxlength` 100 (`MAX_TEXT` es 60), tolerancias hasta 255 (la distancia llega a ~441).~~ ya estaba hecho (visto el 2026-11-17).
+- ~~Validaciones y datos repetidos: peso y espaciado en `brand.wordmark` y `brand.system`; la exclusión
   `--palette`/`--colors`; la expresión de color frente a `trace._COLOR`; `PIECES` en JS frente a `brand.SYSTEM_FILES`;
-  `brandshop.save` llama al privado `brand._write`.
+  `brandshop.save` llama al privado `brand._write`.~~ ya estaba hecho (visto el 2026-11-17: `_check_weight_spacing`, la guarda de paleta, `_trace._COLOR`, test de `PIECES`, `brand.write_file`).
 - ~~`brand.matte` calcula `border_color` dos veces~~ ya estaba hecho (`remove_bg(bg=…)`; visto en el barrido del 2026-11-16).
 - Sin verificar (confianza baja): la fuente de reserva en `wordmark`; `_place` redondea la escala a 3 decimales;
   `png.read_rgba` ignora `tRNS`; `--circular` junto a `--vae-tiling` no está probado.
@@ -16,8 +16,8 @@ De la revisión del diff contra `origin/main` (fase 1). No se arreglan en este p
 
 Fase 1 de 2026-11-13 (diff contra `origin/main` sobre `9844344`):
 
-- `brand lockup --force` reutiliza la clave de ayuda `cli.arg.brand_force_square` (`gimg/cli.py:136`); mejor una
-  genérica `cli.arg.brand_force`.
+- ~~`brand lockup --force` reutiliza la clave de ayuda `cli.arg.brand_force_square` (`gimg/cli.py:136`); mejor una
+  genérica `cli.arg.brand_force`.~~ ya estaba hecho (visto el 2026-11-17).
 
 ## Tandas 1-5 (2026-11-13/14), sacados de la bitácora el 2026-11-15 (retro de la sexta tanda, P1)
 
@@ -68,14 +68,21 @@ Hechos los cinco en `4c297c1` (barrido B, 2026-11-16).
 ## Fase 1 antes de `main` (2026-11-17): leves
 
 - ~~`brand.py:743` `_mute`: llama a `_mute_attrs(attrs, fill0, op0 or w0)`, así que un `stroke-opacity` propio pisa un `stroke-width` 0 (propio o heredado) y el trazo vuelve a contar; `square()` informa `flattened` de más (la salida no cambia). Ya pasaba en `main`; pasar `w0` aparte.~~ hecho (2026-11-17, barrido de color)
-- `orders.py:504-505, 535-536`: `_CROP_TMP_RE` repite a mano el `.crop.` de `_CROP_TMP`; construirla con `re.escape(_CROP_TMP)` y quitar el glob.
-- `export.py:157, 173` `_STATS`: contador global de módulo que solo sirve a un test y se actualiza por fila en producción (compartido entre hilos); que el test parchee el paso de filas y quitarlo.
-- `brand-workshop.js:197`: la guarda tolerancia ≥ suavizado no mira `tol >= 0` (`numOf` no recorta al `min`); con -5/110 el botón sigue activo y el servidor devuelve el error crudo de `remove_bg`.
+- ~~`orders.py:504-505, 535-536`: `_CROP_TMP_RE` repite a mano el `.crop.` de `_CROP_TMP`; construirla con `re.escape(_CROP_TMP)` y quitar el glob.~~ hecho (2026-11-17, tanda 1 de leves)
+- ~~`export.py:157, 173` `_STATS`: contador global de módulo que solo sirve a un test y se actualiza por fila en producción (compartido entre hilos); que el test parchee el paso de filas y quitarlo.~~ hecho (2026-11-17, tanda 1 de leves)
+- ~~`brand-workshop.js:197`: la guarda tolerancia ≥ suavizado no mira `tol >= 0` (`numOf` no recorta al `min`); con -5/110 el botón sigue activo y el servidor devuelve el error crudo de `remove_bg`.~~ hecho (2026-11-17, tanda 1 de leves)
 
 ## Fase 1 del bloque desde `78975bf` (2026-11-17, barrido de color): leves
 
-- `brand.py` `_paint_value`: se queda con el último valor aunque esté mal formado; `<path fill="#f00" style="fill:rgb(1,2)">` lo pinta rojo en rsvg, pero `_paint_colors` da también `#000000` (`flattened` de más). Saltar los valores con `_norm_color == ""` antes de tomar el último.
-- `brand.py` `_norm_color`: con exponentes, `hsl(1e400 100% 50%)` da tono infinito y devuelve el texto crudo (cuenta como color propio). Comprobar en rsvg qué hace antes de cambiarlo (`test_a_huge_hue_does_not_crash_and_stays_raw` fija lo de hoy).
-- `brand.py` `_paints` y `_ink`: casi el mismo predicado; unirlos.
-- `brand.py` `_paint_colors`: `_ink(near)` y `_ink(v)` se calculan dos veces por pintura heredada.
+- ~~`brand.py` `_paint_value`: se queda con el último valor aunque esté mal formado; `<path fill="#f00" style="fill:rgb(1,2)">` lo pinta rojo en rsvg, pero `_paint_colors` da también `#000000` (`flattened` de más). Saltar los valores con `_norm_color == ""` antes de tomar el último.~~ hecho (2026-11-17, barrido de leves) (rsvg pinta un tono infinito como gris, sin croma: igualado)
+- ~~`brand.py` `_norm_color`: con exponentes, `hsl(1e400 100% 50%)` da tono infinito y devuelve el texto crudo (cuenta como color propio). Comprobar en rsvg qué hace antes de cambiarlo (`test_a_huge_hue_does_not_crash_and_stays_raw` fija lo de hoy).~~ hecho (2026-11-17, barrido de leves) (rsvg pinta un tono infinito como gris, sin croma: igualado)
+- ~~`brand.py` `_paints` y `_ink`: casi el mismo predicado; unirlos.~~ hecho (2026-11-17, barrido de leves)
+- ~~`brand.py` `_paint_colors`: `_ink(near)` y `_ink(v)` se calculan dos veces por pintura heredada.~~ hecho (2026-11-17, barrido de leves)
+- ~~`fill` explícito en un `<line>` cuenta como color (sexta tanda)~~ hecho (2026-11-17, barrido de leves; ya estaba arreglado, con test).
 - Hechos en el commit de arreglos: `fill` duplicado en `_square_ink` con raíz `inherit`/`unset`/mal formada (medio); `unset` en `_NO_PAINT`; `stroke="none"` duplicado en `_mute` (`_paint_none`).
+
+## Hechos que estaban en la bitácora (movidos al fusionar `main`, 2026-11-24)
+
+- **Barrido de color/pintura de `gimg/brand.py` (0.7.0; retro del 2026-11-17, P3, aprobada): hecho (2026-11-17)**, comprobado contra `rsvg-convert` 2.58: `_mute` pasa `w0` aparte (un `stroke-opacity` propio ya no deshace un ancho 0); números con exponente; `none` (= 0) en la forma con espacios; la forma con comas pide todo número o todo `%`; un `rgb()`/`hsl()` mal formado o un paint vacío no cuenta como puesto (hereda, como en rsvg; `_square_ink` no lo recolorea). `fill` en `<line>`, `fill-opacity`/`opacity` y `turn`/`rad` ya estaban hechos. Quitado `_sets`. Fase 1 del bloque hecha (2026-11-17): un medio arreglado (`fill` duplicado en `_square_ink`) y dos leves; los otros cuatro leves, en el archivo de leves.
+- **Barrido de `gimg/brand.py` (0.7.0; retro del 2026-11-16 «barrido-brand», P2): hecho (2026-11-16)**, revisado en la sesión y en la fase 1 del 2026-11-17 (un leve nuevo, en el archivo de leves): quitado `_mute_attrs` del `flat`, unidos los dos bucles de `_paint_colors`, `_mute_attrs` llama a `_no_paint` y `_mute` lleva `stroke-opacity` 0 y `stroke-width` 0 por separado. El punto 4 cambia comportamiento: una opacidad de trazo 0 heredada ya no la deshace un ancho propio. El barrido anterior (P5) y `orders.add_derived` (2), hechos.
+- **Barrido B de `crop-editor.js` (retro del 2026-11-16, P3):** hecho en `4c297c1` (2026-11-16): vista previa por `requestAnimationFrame`, error solo en el diálogo, «Repetir» desactivado si el perfil compone, `trapDialog` en `dialog-trap.js` para los dos editores, `boxFor` desde `toBox`. Fase 1 hecha (`6398948`, `Findings: 5`).

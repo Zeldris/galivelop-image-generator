@@ -71,9 +71,9 @@ Every error response is:
 the schema lines when the order does not validate. Language: `?lang=es|en`, else the first supported one in
 `Accept-Language`, else the system's. Statuses: 400 malformed request or invalid value (`api.bad_json`,
 `api.bad_param`, `*.invalid`, `limit.*`, `path.*`, `key.*`); 403 Host or Origin; 404 `project.unknown`,
-`order.unknown`, `order.profile_unknown`, `order.attempt_unknown`, `queue.unknown`, `api.not_found`; 405, 411, 413, 415
+`order.unknown`, `order.profile_unknown`, `order.attempt_unknown`, `order.batch_unknown`, `queue.unknown`, `queue.batch_not_found`, `api.not_found`; 405, 411, 413, 415
 as above; 409 state that does not allow it (`compose.template_exists`, `order.choose_*`, `order.undo_*`,
-`order.history_empty`, `queue.not_cancellable`, `queue.not_movable`, `compose.busy`, `measure.busy`,
+`order.history_empty`, `order.troubleshooting`, `order.batch_failed`, `order.not_blocked`, `order.extend_pending`, `queue.not_cancellable`, `queue.not_movable`, `compose.busy`, `measure.busy`,
 `api.heavy_busy`, `delivery.target_taken`); 500 server-side failures (`api.unexpected` carries `"message":
 "Type: text"`). The texts of all codes: `GET /api/locales/{lang}`.
 
@@ -137,6 +137,18 @@ also not saved in the order): model for the attempts (`gimg order submit --model
 "entries", "estimateMs"}`. Errors: `order.invalid` (with `errors`), `limit.*`, `key.*`, `order.profile_unknown`,
 `compose.template_unknown` (400).
 
+Brand mode (0.8.0): `"mode": "brand"` (absent or `"free"` is the usual order) with `"piece"` (a piece type of the sheet),
+`"subject"` (not blank, up to 4000 characters) and `"cleanZone"` (optional). The sheet builds the prompt (`brand/prompt`)
+and it is stored in `order.prompt`; the profile comes from the piece (a different one is `order.profile_mismatch`; if
+missing it is filled in) and `seed`, `count` and the model come from the piece when the body does not give them. The
+profile `style` is not appended. The order stores `mode`, `piece`, `subject`, `cleanZone` and `sheetVersion`; each
+attempt and queue entry stores `mode` and (in brand mode) `sheetVersion` (older ones read as `free`). `sheetVersion` and
+`modeChanges` in the body are ignored. 400 errors: `order.piece_required`, `order.subject_required`, `order.brand_prompt`
+(no `prompt` in brand mode), `order.profile_mismatch`, `brandsheet.unknown_piece`; 422: `brand.no_sheet` (the project has
+no sheet), `brand.blocked` (the sheet lint fails: `errors` carries the failing checks) and the `brandsheet.*` codes of a
+broken sheet. With a valid sheet the response also carries `checks` (the lint: warnings in brand mode; in a free order
+every problem is a warning and it never blocks); without a sheet there is no `checks`.
+
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/orders \
   -d '{"key":"fauna/lobo","profile":"banner","prompt":"un lobo en la nieve","count":2}'
@@ -145,7 +157,9 @@ curl -s -X POST -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/
 ### GET /api/projects/{p}/orders/{profile}/{key}
 
 The order with its attempts, like `order show --json`, plus `deliveredTo`: path of the delivered file relative to the
-project root, or `null` if there is no chosen attempt. Error: `order.unknown`.
+project root, or `null` if there is no chosen attempt. On a brand order (`order.json` stores `failures: {count, limit, reasons}` and
+`troubleshooting: {rows, extendPending, extensions}`; an old one without them is fine) the response carries `failures` (always, with `count: 0` and
+`limit: 3` by default) and `troubleshooting: {"state": "open|blocked|extended", "row"?}` (`row`: the latest row). Error: `order.unknown`.
 
 ```sh
 curl -s $B/api/projects/mi-proyecto/orders/banner/fauna%2Flobo
@@ -164,12 +178,26 @@ curl -s -X PUT -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/o
 ### POST /api/projects/{p}/orders/{profile}/{key}/attempts
 
 More attempts (another seed, a prompt tweak, several in a row, draft). Body, all optional: `{"count", "seed",
-"prompt", "negative", "steps", "cfg", "sampler", "draft", "template", "model"}` (`negative`: a retouched negative prompt; `""` removes it; `template`: id of a template from
+"prompt", "negative", "steps", "cfg", "sampler", "draft", "template", "model", "subject", "cleanZone", "mode"}` (`negative`: a retouched negative prompt; `""` removes it; `template`: id of a template from
 `GET …/profiles/{profile}/templates`, the one for the new attempts; without it, `default`; `model`: id from
 `GET /api/models` that replaces the profile's in these attempts, like `gimg attempt new --model`). Response 202:
 `{"entries", "estimateMs"}`; each entry carries its `template`. Errors: `order.count_invalid`,
 `order.prompt_too_long`, `limit.*`, `order.unknown`, `compose.template_unknown` (400, before enqueuing anything),
 `model.unknown` (400), `limit.steps` if the model does not fit the machine profile.
+
+On a brand-mode order, `subject` and `cleanZone` (`""` removes it) rebuild the prompt with the current sheet and lint it
+(`brand.blocked`, 422, the order stays untouched); without them it is rebuilt from the stored ones. The order's
+`subject`, `cleanZone`, `prompt` and `sheetVersion` are updated. A `prompt` on a brand order is `order.brand_prompt`,
+unless sent with `"mode": "free"` («switch to free image»): the order becomes free with that prompt (the profile `style`
+is appended as usual) and the change is recorded in `modeChanges: [{"from", "to", "at"}]`; `mode: "free"` without
+`prompt`, or with `subject` or `cleanZone`, is `order.mode_conflict`. On a free order, `subject`, `cleanZone` or
+`mode: "brand"` are `order.not_brand` (free to brand does not exist here). The response carries `checks` like order
+creation.
+
+A brand order with as many failures in a row as its limit is in troubleshooting: `order.troubleshooting` (409, with `count` and `limit`; also when
+the order is submitted again, even with another subject) until a troubleshooting row, a switch to free or `…/troubleshooting/extend`.
+Its entries already queued are held (`held`, in `GET /api/queue`) and the worker does not start them; changing the subject of an order
+that is not blocked puts the counter to zero.
 
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' \
@@ -178,12 +206,69 @@ curl -s -X POST -H 'Content-Type: application/json' \
 
 ### POST /api/projects/{p}/orders/{profile}/{key}/attempts/{id}/mark
 
-Marks an attempt. Body: `{"state": "new|candidate|discarded"}`. Response: the attempt. Errors:
+Marks an attempt. Body: `{"state": "new|candidate|discarded", "reason"?: {"trait", "text"?}}`. `reason` is the "No" with a reason
+(only with `discarded`; a trait of the sheet, or `other` with `text`) and is stored in the attempt. When every attempt of a brand batch is
+discarded (the batch has its `size` attempts: a cancelled entry or one the engine failed does not make one) the batch fails: one failure in
+`failures`, with the last one's reason. Response: the attempt. Errors: `order.reason_invalid` (400),
 `order.state_invalid`, `order.discard_chosen` (409), `order.attempt_unknown`.
 
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' \
   $B/api/projects/mi-proyecto/orders/banner/fauna%2Flobo/attempts/1/mark -d '{"state":"candidate"}'
+```
+
+### POST /api/projects/{p}/orders/{profile}/{key}/batches/{id}/fail
+
+"None is good": batch `id` (its first queue entry's, the one in `order.json` `batches`) of a brand order failed. It discards its
+attempts (not the chosen one: `order.discard_chosen`), marks the batch `failed` with its `reason` and adds one failure to the order. Body:
+`{"reason": {"trait": "<trait of the sheet or other>", "text": "note"}}` (`other` needs `text`; the traits are those of the
+sheet's `acceptance.traits` and `acceptance.unmeasured`). Response: `{"failures": {"count", "limit", "reasons"},
+"troubleshooting": {"state", "row?"}}`. Only brand orders count, and only the failure by hand: a technical failure of the engine or a
+cancellation does not add. The counter is per order and reaches its limit (3; `brand.failureLimit` in the project config changes it) and the
+order is then in troubleshooting; an attempt scoring 5 or more (once there is a score), a new subject or a troubleshooting row put it back to
+zero. Errors: `order.reason_invalid` (400), `order.not_brand` (400), `order.batch_unknown` (404), `order.batch_failed` (409, the
+batch already counts), `order.discard_chosen` (409). CLI: `gimg order fail <project> <key> <profile> <batch> --reason TRAIT [--note TEXT]`.
+Entries of that batch still in the queue are not cancelled by it (`POST /api/queue/batches/{id}/cancel`).
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' \
+  $B/api/projects/mi-proyecto/orders/banner/fauna%2Flobo/batches/3/fail -d '{"reason":{"trait":"horizon"}}'
+```
+
+### POST /api/projects/{p}/orders/{profile}/{key}/troubleshooting/extend
+
+"One more batch" for an order in troubleshooting: the next call to `attempts` (or order submit) is accepted although the order is
+blocked. The entries of that batch carry `extended: true` (they are not held) and the extension is noted in `order.json`
+`troubleshooting.extensions` (`{at, batch}`); when the batch ends, the order is still blocked if the counter did not go down.
+Body: `{}`. Response: `{"failures", "troubleshooting"}` (`state: "extended"`). Errors: `order.not_blocked` (409),
+`order.extend_pending` (409, one is already waiting). CLI: `gimg troubleshoot extend <project> <key> <profile>`.
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' \
+  $B/api/projects/mi-proyecto/orders/banner/fauna%2Flobo/troubleshooting/extend -d '{}'
+```
+
+### GET /api/projects/{p}/troubleshooting
+
+The troubleshooting rows of every order of the project, oldest first: `[{"piece", "key", "profile", "problem", "attempts": [..],
+"redesign", "terms": [..], "at", "by"}]`. Errors: `project.unknown`. CLI: `gimg troubleshoot list <project>`.
+
+```sh
+curl -s $B/api/projects/mi-proyecto/troubleshooting
+```
+
+### POST /api/projects/{p}/troubleshooting
+
+Writes a row in the order named by `key` + `profile`. Body: `{"key", "profile", "problem", "attempts"?: [ids], "redesign"?,
+"terms"?: [..], "by"?}` (`by` defaults to `person`). Response 201: the row. It puts the order's failure counter to zero, which
+releases what the queue held, and gimg generates the Markdown (`brand.troubleshootingMarkdown` of the project, relative to its root;
+without it, `troubleshooting.md` in the project's data folder). Errors: `api.bad_param` (400), `order.unknown` (404), `order.not_brand`
+(400), `order.attempt_unknown` (404). CLI: `gimg troubleshoot add <project> <key> <profile> --problem TEXT [--attempt N]
+[--redesign TEXT] [--term T] [--by NAME]`.
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/troubleshooting \
+  -d '{"key":"fauna/lobo","profile":"banner","problem":"the islet comes out flat","attempts":[1,2],"terms":["islet"]}'
 ```
 
 ### POST /api/projects/{p}/orders/{profile}/{key}/attempts/{id}/note
@@ -332,7 +417,8 @@ curl -s "$B/api/projects/mi-proyecto/profiles/og/assets/template?id=claro"
 
 ### GET /api/queue
 
-The queue: each entry with `progress`, `errorText` and `estimateMs` where applicable (without the preview path). Query:
+The queue: each entry with `progress`, `errorText`, `held: "troubleshooting"` (a `queued` entry of a brand order in troubleshooting: the
+worker does not start it until it is resolved or cancelled; an entry of an `extended` batch is not held) and `estimateMs` where applicable (without the preview path). Query:
 `state=queued|running|done|failed|cancelled`. Error: `queue.bad_state`. The response carries the header
 `X-Queue-Paused: 1|0` (whether the queue is paused, as `paused` of `/api/health`); the body is still the list.
 
@@ -364,6 +450,33 @@ place; `top` the first). Response: the entry. Errors: `queue.unknown`, `queue.no
 
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/5/move -d '{"to":"top"}'
+```
+
+### POST /api/queue/batches/{id}/move
+
+Moves a whole batch. A batch is the entries of one order submit or one `attempts` call; brand-mode ones always make a
+batch (even of one entry), free ones only when there is more than one. Each batch entry carries
+`batch: {"id", "index", "size"}` (`id` is its first entry's; also in `GET /api/queue`), the attempt it generates carries
+`batch: <id>` and `order.json` stores `batches: [{id, size, mode, subject?, cleanZone?, warnings, createdAt}]`. The
+batch's `queued` entries move together as one block: `up`/`down` pass one neighbouring entry or batch; `top` makes
+them first. Body: `{"to": "up|down|top"}`. Response: `{"entries": [...]}` (the ones moved). Errors:
+`queue.batch_not_found` (404), `queue.not_movable` (409, none is `queued`), `queue.bad_move` (400). CLI:
+`gimg queue move --batch <id> up|down|top`.
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/batches/4/move -d '{"to":"top"}'
+```
+
+### POST /api/queue/batches/{id}/cancel
+
+Cancels the batch's `queued` entries and requests the cancellation of the running one (like `cancel`). Body: `{}`.
+Response: `{"entries": [...]}` (all of the batch's). Errors: `queue.batch_not_found` (404), `queue.not_cancellable`
+(409, none is `queued` or `running` any more). CLI: `gimg queue cancel --batch <id>`. Stop on score: when an attempt
+of the batch finishes with `score.value` >= 9 (`queue.STOP_SCORE`; the score arrives in 0.9.0), the worker cancels the
+batch's remaining `queued` entries and sets `stoppedBy: <attempt id>` on them.
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' $B/api/queue/batches/4/cancel -d '{}'
 ```
 
 ### POST /api/queue/clear
@@ -445,7 +558,8 @@ curl -s $B/api/projects/mi-proyecto/brand/sheet
 
 Assembles the prompt of a brand piece and checks it, with no side effects and off the queue: the same as
 `gimg brand prompt --json`. Fields: `piece`, `subject`, `cleanZone` (optional). Returns `{"prompt", "words", "segments",
-"checks", "blocked", "defaults", "known"}`; each check carries `message: {"key", "params"}` (an i18n key). `from`
+"checks", "blocked", "defaults", "known"}` (`known`: `[{"term", "row"}]`, the terms of the project's troubleshooting rows that appear in the
+subject, whole word and case-insensitive, each with its row); each check carries `message: {"key", "params"}` (an i18n key). `from`
 (converting a free prompt) does not exist yet: `brandsheet.convert_unsupported` (400). Errors: `brandsheet.unknown_piece`
 (400), `api.bad_param`, those of `GET .../brand/sheet`, `project.unknown`.
 
@@ -537,6 +651,27 @@ an ETag. A malformed slug gives `brand.bad_name`.
 ```sh
 curl -s $B/api/projects/mi-proyecto/brand/files/mi-marca/emblema.svg
 ```
+
+## Tray task (contract, 0.11.0)
+
+`gimg/schemas/agent-task.schema.json` fixes since 0.8.0 the shape of an agent tray task; the tray
+(`gimg agent todo/answer`, API, tab) arrives in 0.11.0. A task has `schemaVersion`, `id`, `type`, `state`
+(`pending`, `answered`, `applied`, `rejected`, `expired`), `question`, `order` (`{key, profile}`; absent for `sheet`),
+`context`, `answer`, `answeredBy` (`claude`, `ollama`, `person`), `rejection`, `createdAt` and `answeredAt`.
+
+Each `answer` is **the body of a route that exists today**, so a form and `gimg agent answer` share one shape (the
+gimg validator has no conditional keywords: `answer` is checked against the definition `type` names):
+
+| `type` | Definition | Body |
+|---|---|---|
+| `subject` | `answerSubject` | `subject` and `cleanZone` of `POST …/attempts` and `POST …/brand/prompt` |
+| `judgment` | `answerJudgment` | `{attempt, human: {<trait>: ok\|bad}}`; each `bad` is a `reason.trait` of `POST …/attempts/{id}/mark` |
+| `redesign` | `answerRedesign` | the body of `POST /api/projects/{p}/troubleshooting` |
+| `choice` | `answerChoice` | `{attempt, reason}`: `attempt` is the body of `POST …/choose`; `reason` stays in the task |
+| `sheet` | `answerSheet` | `{sheet}`: a whole sheet per `brand-sheet.schema.json` (references between files are not followed) |
+
+`tests/test_agent_task.py` checks that what the schema accepts is accepted by the API function and what that rejects,
+the schema rejects too.
 
 ## Interface
 

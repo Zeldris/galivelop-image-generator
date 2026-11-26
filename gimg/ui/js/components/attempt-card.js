@@ -44,7 +44,7 @@ export function attemptCard(ctx, attempt) {
   const figure = h('figure.figure', {}, h('img', { src, alt: '', loading: 'lazy' }));
   setVars(figure, { ar: aspect(ctx, attempt) });
   figure.append(h('button.open', { type: 'button', aria: { label: t('ui.attempt.open', { id }) }, onclick: () => openLightbox(src, `${t('ui.attempt.id', { id })} · ${t('ui.attempt.seed')} ${attempt.seed}`, alt) }));
-  figure.append(badges(st, attempt));
+  figure.append(badges(st, attempt, ctx.order.mode));
 
   const meta = h('div.meta', {},
     h('span.id', {}, `q${id}`),
@@ -57,7 +57,7 @@ export function attemptCard(ctx, attempt) {
     attempt.raw || attempt.image ? measureChip({ project: ctx.project, profile: ctx.profile, key: ctx.key, ...measureFor(ctx, attempt) }, attempt) : null);
 
   const yes = h('button.btn.btn-yes', { type: 'button', aria: { pressed: st === 'candidate' || st === 'chosen' }, onclick: () => ctx.actions.mark(attempt, st === 'candidate' ? 'new' : 'candidate') }, t('ui.attempt.yes'), h('kbd.kbd', { aria: { hidden: true } }, 'S'));
-  const no = h('button.btn.btn-no', { type: 'button', disabled: st === 'chosen', aria: { pressed: st === 'discarded' }, onclick: () => ctx.actions.mark(attempt, st === 'discarded' ? 'new' : 'discarded') }, t('ui.attempt.no'), h('kbd.kbd', { aria: { hidden: true } }, 'N'));
+  const no = h('button.btn.btn-no', { type: 'button', disabled: st === 'chosen', aria: { pressed: st === 'discarded' }, onclick: (ev) => ctx.actions.mark(attempt, st === 'discarded' ? 'new' : 'discarded', ev.currentTarget) }, t('ui.attempt.no'), h('kbd.kbd', { aria: { hidden: true } }, 'N'));
   const choose = st === 'chosen'
     ? h('button.btn', { type: 'button', onclick: () => ctx.actions.undo() }, '↶ ', t('ui.order.undo'))
     : h('button.btn.btn-primary', { type: 'button', disabled: st === 'discarded' || Boolean(attempt.draft) || Boolean(attempt.composeError && ctx.profileCfg.compose), title: attempt.draft ? t('ui.attempt.draftNoChoose') : null, onclick: () => ctx.actions.choose(attempt) }, '★ ', t('ui.attempt.choose'), h('kbd.kbd', { aria: { hidden: true } }, 'E'));
@@ -74,8 +74,8 @@ export function attemptCard(ctx, attempt) {
     ? h('button.btn', { type: 'button', title: t('ui.attempt.cropHint'), data: { action: 'crop' }, onclick: () => openCropEditor(ctx, attempt, cropBtn) }, '⛶ ', t('ui.attempt.crop'))
     : null;
   const more = h('details', {}, h('summary', {}, t('ui.attempt.more')), h('div.actions', {},
-    h('button.btn', { type: 'button', title: t('ui.attempt.recreateHint'), onclick: () => ctx.actions.recreate(attempt) }, '↩ ', t('ui.attempt.recreate')),
-    h('button.btn', { type: 'button', title: t('ui.attempt.varyHint'), onclick: () => ctx.actions.vary(attempt) }, '▶ ', t('ui.attempt.vary')),
+    h('button.btn', { type: 'button', disabled: Boolean(ctx.blocked), title: ctx.blocked || t('ui.attempt.recreateHint'), onclick: () => ctx.actions.recreate(attempt) }, '↩ ', t('ui.attempt.recreate')),
+    h('button.btn', { type: 'button', disabled: Boolean(ctx.blocked), title: ctx.blocked || t('ui.attempt.varyHint'), onclick: () => ctx.actions.vary(attempt) }, '▶ ', t('ui.attempt.vary')),
     h('button.btn', { type: 'button', onclick: () => ctx.actions.copyParams(attempt) }, '⎘ ', t('ui.attempt.copyParams')),
     cropBtn,
     attempt.image ? h('a.btn', { href: `${to.project(ctx.project, 'marca')}?src=${encodeURIComponent(`${ctx.profile}|${ctx.key}|${id}`)}`, title: t('ui.attempt.forBrandHint') }, '◈ ', t('ui.attempt.forBrand')) : null,
@@ -116,16 +116,17 @@ export function queueCard(ctx, entry) {
         h('button.btn', { type: 'button', onclick: () => ctx.actions.retry(entry) }, t('ui.attempt.retry')),
         entry.errorText ? h('button.btn', { type: 'button', onclick: () => ctx.actions.copyError(entry) }, '⎘ ', t('ui.attempt.copyError')) : null));
   }
-  figure.append(block, badges(entry.state, entry));
+  figure.append(block, badges(entry.state, entry, ctx.order.mode));
   const meta = h('div.meta', {}, h('span.id', {}, id), h('span', {}, `${t('ui.attempt.seed')} `, h('b', {}, entry.seed)),
     entry.params && entry.params.steps ? h('span', {}, `${entry.params.steps} ${t('ui.attempt.steps')}`) : null,
     entry.params && entry.params.model ? h('span', {}, shortModel(entry.params.model)) : null);
   return h('article.card.attempt', { class: `is-${entry.state}`, tabindex: 0, data: { entry: entry.id, kind: 'entry' }, aria: { label: `${id}, ${t('ui.state.' + entry.state)}` } }, figure, meta);
 }
 
-function badges(st, a) {
+function badges(st, a, orderMode) {
+  const mode = a.mode || (orderMode === 'brand' ? 'brand' : 'free');
   const cls = { chosen: 'chip-fill-ok', candidate: 'chip-fill-accent', failed: 'chip-fill-bad', running: 'chip-fill-ok' }[st] || '';
-  return h('div.badges', {}, h('span.chip', { class: cls }, t(`ui.state.${st}`)), a.draft ? h('span.chip', {}, t('ui.state.draft')) : null, a.compose ? h('span.chip', {}, t('ui.attempt.composed')) : null,
+  return h('div.badges', {}, h('span.chip', { class: cls }, t(`ui.state.${st}`)), a.mode === 'brand' || orderMode === 'brand' ? h('span.chip', { data: { mode } }, t(`ui.mode.${mode}`)) : null, a.draft ? h('span.chip', {}, t('ui.state.draft')) : null, a.compose ? h('span.chip', {}, t('ui.attempt.composed')) : null,
     a.derivedFrom ? h('span.chip', { title: `${a.derivedFrom.profile}/${a.derivedFrom.key}` }, t('ui.attempt.cropOf', { id: a.derivedFrom.attempt })) : null);
 }
 

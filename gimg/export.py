@@ -154,9 +154,6 @@ def fit(width: int, height: int, rgba, dst_w: int, dst_h: int, anchor=(0.5, 0.5)
     return _resample(width, rgba, dst_w, dst_h, cols, rows)
 
 
-_STATS = {"peak_rows": 0}  # most source rows held at once by `_resample` (tests read it)
-
-
 def _resample(width: int, rgba, dst_w: int, dst_h: int, cols: list, rows: list) -> bytearray:
     """Separable resampling with the taps of each output column and row (premultiplied alpha)."""
     x0 = min(j for taps in cols for j, _ in taps)
@@ -170,7 +167,6 @@ def _resample(width: int, rgba, dst_w: int, dst_h: int, cols: list, rows: list) 
                 alpha = seg[3::4]
                 planes = [[c * a for c, a in zip(seg[k::4], alpha)] for k in range(3)] + [list(alpha)]
                 wide[j] = [[sum(plane[i - x0] * w for i, w in ctaps) for ctaps in cols] for plane in planes]
-        _STATS["peak_rows"] = max(_STATS["peak_rows"], len(wide))
         mixed = []
         for k in range(4):
             acc = [0.0] * dst_w

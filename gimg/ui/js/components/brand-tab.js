@@ -1,8 +1,9 @@
-/* Pestaña Marca (F4d, D22; 0.7.0 §2.10), de solo lectura, en subpestañas `?s=hoja|probar|check|taller`:
+/* Pestaña Marca (F4d, D22; 0.7.0 §2.10), de solo lectura, en subpestañas `?s=hoja|probar|check|troubleshooting|taller`:
    - Hoja: la hoja de marca resuelta (sheet-view.js); sin hoja, el aviso con cómo crearla y la marca de la configuración.
    - Probar un sujeto: monta el prompt de un tipo de pieza y comprueba un prompt libre (brand-prompt.js), sin encolar.
    - Comprobación: GET /api/projects/{p}/check -> [{id, status: ok|warn|fail, message, fix?}], las de `gimg doctor` que le
      tocan (con hoja, también las filas `sheet.*`). El estado va siempre en texto además del color.
+   - Troubleshooting: el registro de fallos del proyecto (troubleshoot.js), con enlaces a los intentos y filtro por pieza.
    - Taller: el sistema de logo de siempre (brand-workshop.js).
    Las subpestañas son un `role="tablist"` con ←/→; cada panel se construye al abrirlo y se conserva. La subpestaña
    activa vive en la consulta del hash (se cambia sin repintar la pantalla). Por defecto, Taller con `?src=` (el enlace
@@ -15,9 +16,10 @@ import { brandWorkshop } from './brand-workshop.js';
 import { brandFacts } from './brand-facts.js';
 import { sheetView } from './sheet-view.js';
 import { brandPrompt } from './brand-prompt.js';
+import { troubleshootTable } from './troubleshoot.js';
 
 const STATUS_CHIP = { ok: 'chip-ok', warn: 'chip-warn', fail: 'chip-bad' };
-export const SUBTABS = ['hoja', 'probar', 'check', 'taller'];
+export const SUBTABS = ['hoja', 'probar', 'check', 'troubleshooting', 'taller'];
 
 /** Cambia `?s=` del hash sin disparar `hashchange` (la pantalla no se repinta). */
 function shellQuote(s) { return /^[\w@%+=:,./-]+$/.test(s) ? s : "'" + s.split("'").join("'\\''") + "'"; }
@@ -38,6 +40,7 @@ export async function brandTab(panel, project, cfg, info = {}, query = {}) {
     hoja: (host) => (sheet.present ? sheetView(host, project, cfg, info) : noSheet(host, project, cfg)),
     probar: (host) => (sheet.present && sheet.valid ? brandPrompt(host, project, info.pieceTypes || []) : host.append(unavailable(project, sheet))),
     check: (host) => checkPanel(host, project),
+    troubleshooting: async (host) => { const tbl = troubleshootTable(project); host.append(tbl.node); await tbl.load(); },
     taller: (host) => host.append(brandWorkshop(project, cfg)),
   };
   const built = new Set();

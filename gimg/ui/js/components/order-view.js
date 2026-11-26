@@ -17,6 +17,10 @@ import { textPanel } from './text-panel.js';
 import { invalidateMeasure } from './measure-chip.js';
 import { isTyping, oneKeyEnabled } from './shortcuts.js';
 import { toast, toastError, toastOk } from './toast.js';
+import { batchHead } from './batch-head.js';
+import { askReason } from './reason-picker.js';
+import { troubleshootForm } from './troubleshoot.js';
+import { batchSpecOf, modeBadge, isBrand, isBlocked, blockedReason, failureMarker, failureNotice, modeChangeNotice } from './brand-order.js';
 
 const PENDING = ['queued', 'running'];
 
@@ -36,6 +40,9 @@ export async function orderView(host, route) {
     return;
   }
   if (!host.isConnected) return; // se navegó a otra pantalla durante la carga: nada que registrar
+  let sheet = null; // la hoja de marca, solo para rotular los motivos de un pedido de marca
+  if (isBrand(order)) { try { sheet = await api.brandSheet(project); } catch { sheet = null; } }
+  if (!host.isConnected) return;
   const cfg = info.config || {};
   const profileCfg = (cfg.profiles || {})[profile] || {};
   const brand = cfg.brand || {};
@@ -43,7 +50,7 @@ export async function orderView(host, route) {
   const ctx = {
     project, profile, key, order, profileCfg, profiles: cfg.profiles || {}, brand, templates: Array.isArray(templates) ? templates : [], models: Array.isArray(models) ? models : [],
     measure: { zone: compose.zone, textColor: compose.textColor || brand.textColor, paletteMin: brand.paletteMin },
-    showRaw: store.get('showRaw'), compare: [], queuedIds: [], estimateMs: estimateFor(profile),
+    showRaw: store.get('showRaw'), compare: [], queuedIds: [], estimateMs: estimateFor(profile), sheet, blocked: blockedReason(order),
     actions: {},
   };
 
@@ -54,7 +61,8 @@ export async function orderView(host, route) {
   const panel = h('aside.order-panel', { aria: { label: t('ui.order.panel') } });
   const title = h('div.page-head', {}, h('h1', {}, key), h('span.chip', {}, profile, profileCfg.width ? ` · ${profileCfg.width}×${profileCfg.height}` : ''),
     h('a.btn.btn-ghost', { href: to.project(project) }, '← ', t('ui.order.backToProject')));
-  host.replaceChildren(title, h('div.order-layout', {}, h('div', {}, deliveredHost, compareHost, galleryBar, gallery), panel));
+  const statusHost = h('div.order-status');
+  host.replaceChildren(title, statusHost, h('div.order-layout', {}, h('div', {}, deliveredHost, compareHost, galleryBar, gallery), panel));
 
   let retouch;
   let texts;
@@ -65,7 +73,41 @@ export async function orderView(host, route) {
   const guard = (fn) => async (...args) => { try { await fn(...args); } catch (e) { toastError(describeError(e, t)); } };
 
   Object.assign(ctx.actions, {
-    mark: guard(async (a, st) => { await api.mark(project, profile, key, a.id, st); await reload(); }),
+    mark: guard(async (a, st, opener = null) => {
+      let reason;
+      if (st === 'discarded' && isBrand(ctx.order)) { // «No» en un pedido de marca: motivo rápido; «sin motivo» o una segunda N descartan igual
+        const got = await askReason({ sheet: ctx.sheet, title: t('ui.reason.title', { id: `q${a.id}` }), allowNone: true, opener });
+        if (!got) return;
+        if (!got.none) reason = got;
+      }
+      await api.mark(project, profile, key, a.id, st, reason);
+      await reload();
+    }),
+    failBatch: guard(async (id, opener = null) => {
+      const got = await askReason({ sheet: ctx.sheet, title: t('ui.batch.noneOkTitle'), message: t('ui.batch.noneOkMessage'), confirmLabel: t('ui.batch.noneOkConfirm'), opener });
+      if (!got || got.none) return;
+      const res = await api.failBatch(project, profile, key, id, got);
+      if (res && res.failures) ctx.order.failures = res.failures;
+      if (res && res.troubleshooting) ctx.order.troubleshooting = { ...(ctx.order.troubleshooting || {}), ...res.troubleshooting };
+      await reload();
+    }),
+    /* Troubleshooting (5c): `saveRow` y `extend` dejan pasar el error: el formulario lo pinta y conserva lo escrito. */
+    saveRow: async (body) => {
+      await api.addTroubleshooting(project, body);
+      ctx.order.failures = { ...(ctx.order.failures || {}), count: 0, reasons: [] }; // la fila pone el contador a cero
+      toastOk(t('ui.ts.saved'));
+      await reload();
+      const subject = document.getElementById('retouch-subject'); // el panel de pieza, con el sujeto vacío
+      if (subject) { subject.value = ''; subject.dispatchEvent(new Event('input')); subject.focus(); }
+    },
+    extend: async () => {
+      try { await api.extend(project, profile, key); } catch (e) {
+        if (e instanceof ApiError && (e.code === 'order.not_blocked' || e.code === 'order.extend_pending' || e.code === 'order.extend_used')) { await reload(); toastError(describeError(e, t)); return; }
+        throw e;
+      }
+      toastOk(t('ui.ts.extended'));
+      await reload();
+    },
     note: guard(async (a, text) => { await api.note(project, profile, key, a.id, text); a.note = text; }),
     choose: guard(async (a) => {
       try {
@@ -90,7 +132,12 @@ export async function orderView(host, route) {
     copyError: (e) => copy(e.errorText || JSON.stringify(e.error), t('ui.attempt.copied')),
     retry: guard(async (e) => {
       const text = e.prompt === null || e.prompt === undefined ? null : stripStyle(e.prompt, profileCfg.style);
-      await submit({ count: 1, seed: e.seed, draft: Boolean(e.draft), ...(text !== null && text !== (ctx.order.prompt || '') ? { prompt: text } : {}), ...((e.negative || '') !== (ctx.order.negative || '') ? { negative: e.negative || '' } : {}), ...(e.template ? { template: e.template } : {}), ...pick(e.params, ['steps', 'cfg', 'sampler']),
+      const brandOrder = isBrand(ctx.order); // en un pedido de marca la API no admite `prompt` (order.brand_prompt): viajan sujeto y zona
+      const spec = brandOrder ? batchSpecOf(ctx.order, e) : null; // sujeto y zona de la tanda de la entrada, no los actuales del pedido
+      await submit({ count: 1, seed: e.seed, draft: Boolean(e.draft),
+        ...(brandOrder ? {} : text !== null && text !== (ctx.order.prompt || '') ? { prompt: text } : {}),
+        ...(spec && spec.subject !== (ctx.order.subject || '') ? { subject: spec.subject } : {}),
+        ...(spec && spec.cleanZone !== (ctx.order.cleanZone || '') ? { cleanZone: spec.cleanZone } : {}), ...((e.negative || '') !== (ctx.order.negative || '') ? { negative: e.negative || '' } : {}), ...(e.template ? { template: e.template } : {}), ...pick(e.params, ['steps', 'cfg', 'sampler']),
         ...(e.params && e.params.model && e.params.model !== (ctx.order.params || {}).model && e.params.model !== profileCfg.model ? { model: e.params.model } : {}) }); // F4d: el modelo del intento, si no es el del pedido ni el del perfil
     }),
     cancel: guard(async (e) => { await api.cancel(e.id); toast(t('ui.queue.cancelled', { id: e.id })); await poll.refreshNow(); }),
@@ -177,6 +224,10 @@ export async function orderView(host, route) {
     const loose = entries.filter((e) => e.state !== 'done' && (e.attemptId === null || e.attemptId === undefined || !knownAttempts.has(e.attemptId)))
       .sort((a, b) => b.id - a.id);
     const attempts = [...(order.attempts || [])].sort((a, b) => (order.chosen === a.id ? -1 : order.chosen === b.id ? 1 : b.id - a.id));
+    ctx.blocked = blockedReason(order);
+    section(statusHost, JSON.stringify([order.mode, order.failures, order.troubleshooting, order.modeChanges, Boolean(ctx.sheet)]), () => [
+      modeBadge(order.mode), failureMarker(order), ctx.blocked ? h('span.chip.chip-bad', { data: { slot: 'blocked' } }, t('ui.fail.blockedChip')) : null,
+      modeChangeNotice(order), failureNotice(order, ctx.sheet)]);
     ctx.compare = ctx.compare.filter((id) => knownAttempts.has(id));
     ctx.attemptsSorted = attempts;
     ctx.loose = loose;
@@ -206,7 +257,7 @@ export async function orderView(host, route) {
 
     // panel lateral: se reconstruye solo si cambió el prompt o los parámetros del pedido (no `chosen` ni `text`:
     // elegir, deshacer o guardar los textos no debe borrar lo que se está editando ni el foco)
-    const sig = JSON.stringify([order.prompt, order.params, order.seed, order.draft]);
+    const sig = JSON.stringify([order.prompt, order.params, order.seed, order.draft, order.mode, Boolean(ctx.blocked), order.troubleshooting && order.troubleshooting.state]);
     if (panel.dataset.sig !== sig) {
       panel.dataset.sig = sig;
       retouch = retouchPanel(ctx, { onSubmit: guard(submit) });
@@ -214,7 +265,12 @@ export async function orderView(host, route) {
         onSave: async (text) => { try { await api.setText(project, profile, key, text); ctx.order.text = text; toastOk(t('ui.text.saved')); return true; } catch (e) { toastError(describeError(e, t)); return false; } },
         onRecompose: (id) => ctx.actions.recompose({ id }),
       });
-      panel.replaceChildren(retouch.node, texts.node);
+      // hueco del formulario de troubleshooting (paso 5c): mientras el pedido está bloqueado, dice por qué no se encola
+      const form = ctx.blocked ? troubleshootForm(ctx, { onSave: ctx.actions.saveRow, onExtend: ctx.actions.extend }) : null;
+      const extended = order.troubleshooting && order.troubleshooting.state === 'extended';
+      panel.replaceChildren(h('div', { data: { slot: 'troubleshoot' } }, form ? form.node : null,
+        extended ? h('p.notice.notice-warn', { role: 'status', data: { slot: 'ts-extended' } }, t('ui.ts.extendedNotice')) : null), retouch.node, texts.node);
+      if (form) setTimeout(() => form.focus(), 0); // bloqueado: el foco al título (la pantalla puede no estar aún en el documento)
     } else {
       if (texts && texts.setChosen) texts.setChosen(order.chosen);
       if (retouch && retouch.setChosen) retouch.setChosen();
@@ -228,15 +284,29 @@ export async function orderView(host, route) {
     const order = ctx.order;
     const attempts = ctx.attemptsSorted || [];
     const loose = ctx.loose || [];
-    const wanted = [
-      ...loose.map((e) => ({ k: `entry:${e.id}`, sig: JSON.stringify([e, ctx.queuedIds.indexOf(e.id)]), make: () => queueCard(ctx, e) })),
-      ...attempts.map((a) => {
-        const { note, ...rest } = a; // la nota la escribe la propia tarjeta: no cuenta como cambio
-        const st = stateOf(order, a);
-        const compared = ctx.compare.includes(a.id);
-        return { k: `attempt:${a.id}`, sig: JSON.stringify([rest, st, compared, ctx.showRaw, ctx.templates.map((x) => x.id)]), make: () => attemptCard(ctx, a) };
-      }),
-    ];
+    const wanted = [];
+    const cardOf = (a) => {
+      const { note, ...rest } = a; // la nota la escribe la propia tarjeta: no cuenta como cambio
+      const st = stateOf(order, a);
+      const compared = ctx.compare.includes(a.id);
+      return { k: `attempt:${a.id}`, sig: JSON.stringify([rest, st, compared, ctx.showRaw, ctx.templates.map((x) => x.id), ctx.blocked]), make: () => attemptCard(ctx, a) };
+    };
+    const entryOf = (e) => ({ k: `entry:${e.id}`, sig: JSON.stringify([e, ctx.queuedIds.indexOf(e.id)]), make: () => queueCard(ctx, e) });
+    // la elegida, fijada arriba del todo; luego una sección por tanda (la más nueva primero) y, al final, lo que no tiene tanda
+    const chosen = attempts.find((a) => a.id === order.chosen);
+    if (chosen) wanted.push(cardOf(chosen));
+    for (const sec of sectionsOf(order, attempts, loose)) {
+      if (sec.id !== null) {
+        const head = { id: sec.id, rec: sec.rec, n: sec.n, attempts: sec.attempts, pending: sec.loose.filter((e) => PENDING.includes(e.state)).length };
+        // «Ninguno vale»: solo en una tanda de un pedido de marca ya terminada (con intentos, sin entradas en la cola), aún no fallada
+        // y sin la elegida (el servidor da `order.discard_chosen`)
+        const canFail = isBrand(order) && !isBlocked(order) && sec.rec && !sec.rec.failed && !head.pending && sec.attempts.length > 0
+          && !sec.attempts.some((a) => a.id === order.chosen);
+        head.actions = canFail ? [h('button.btn.btn-danger', { type: 'button', data: { slot: 'batch-fail' }, onclick: (ev) => ctx.actions.failBatch(sec.id, ev.currentTarget) }, t('ui.batch.noneOk'))] : [];
+        wanted.push({ k: `batch:${sec.id}`, sig: JSON.stringify([sec.rec, sec.n, sec.attempts.map((a) => [a.id, a.state]), head.pending, Boolean(ctx.sheet), Boolean(head.actions.length)]), make: () => batchHead(ctx, head) });
+      }
+      wanted.push(...sec.loose.map(entryOf), ...sec.attempts.filter((a) => a !== chosen).map(cardOf)); // la elegida ya está fijada arriba
+    }
     if (!wanted.length) {
       if (cardsByKey.size || !gallery.firstChild) {
         cardsByKey.clear();
@@ -319,6 +389,26 @@ export async function orderView(host, route) {
   const want = route.query && route.query.a;
   const first = want ? gallery.querySelector(`[data-attempt="${want}"]`) : null;
   (first || gallery.querySelector('[data-kind]') || el('main')).focus();
+}
+
+/** Las secciones de la galería, la más nueva arriba: una por tanda y una por cada intento o entrada sin tanda (`id: null`;
+    `attempts` lleva también la elegida, que se pinta fija arriba y no en su sección). Antes va lo que tiene algo en la cola.
+    `n` es el número de la tanda por orden de creación; sin registro en `order.batches` (un pedido viejo) se numera por su id. */
+export function sectionsOf(order, attempts, loose) {
+  const recs = [...(order.batches || [])].sort((a, b) => a.id - b.id);
+  const ids = new Set(recs.map((r) => r.id));
+  const idOf = (x) => (x.batch !== null && x.batch !== undefined && typeof x.batch === 'object' ? x.batch.id : x.batch);
+  const has = (x) => { const b = idOf(x); return b !== null && b !== undefined; };
+  for (const x of [...attempts, ...loose]) if (has(x)) ids.add(idOf(x));
+  const sorted = [...ids].sort((a, b) => a - b);
+  const out = sorted.map((id, i) => ({ id, rec: recs.find((r) => r.id === id) || null, n: i + 1,
+    attempts: attempts.filter((a) => idOf(a) === id), loose: loose.filter((e) => idOf(e) === id) }));
+  // lo que no tiene tanda (un intento de una sola imagen y su tarjeta de cola) va suelto, cada uno en su puesto
+  for (const a of attempts.filter((x) => !has(x))) out.push({ id: null, rec: null, n: 0, attempts: [a], loose: [] });
+  for (const e of loose.filter((x) => !has(x))) out.push({ id: null, rec: null, n: 0, attempts: [], loose: [e] });
+  // el más nuevo arriba: primero lo que tiene algo en la cola (por id de entrada), luego por id de intento más alto
+  const newest = (s) => (s.loose.length ? [1, Math.max(...s.loose.map((e) => e.id))] : [0, Math.max(-1, ...s.attempts.map((a) => a.id))]);
+  return out.sort((a, b) => { const x = newest(a); const y = newest(b); return y[0] - x[0] || y[1] - x[1]; });
 }
 
 function byId(list, id) { return list.find((a) => a.id === id); }

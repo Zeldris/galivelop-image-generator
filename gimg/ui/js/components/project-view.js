@@ -10,6 +10,7 @@ import * as store from '../store.js';
 import { newOrderButton } from './slots.js';
 import { piecesTab } from './pieces-tab.js';
 import { brandTab } from './brand-tab.js';
+import { modeBadge, failureMarker } from './brand-order.js';
 
 const TABS = ['pedidos', 'piezas', 'marca'];
 
@@ -86,6 +87,8 @@ function row(project, o, cfg) {
     thumb,
     h('div', {}, h('div.key', {}, o.key), h('div.meta', {},
       h('span', {}, o.profile, prof.width ? ` · ${prof.width}×${prof.height}` : ''),
+      h('span', { data: { col: 'mode' }, title: t('ui.project.col.mode') }, modeBadge(o.mode)),
+      o.mode === 'brand' ? h('span', { data: { col: 'failures' }, title: t('ui.project.col.failures') }, failureMarker(o) || t('ui.project.noFailures')) : null,
       h('span', {}, t('ui.project.attempts', { n })),
       pending ? h('span.chip.chip-accent', {}, t('ui.project.pending', { n: pending })) : null,
       o.updatedAt ? h('span', {}, when(o.updatedAt)) : null)),
