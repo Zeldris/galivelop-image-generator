@@ -4,7 +4,7 @@ Lo que queda abierto; la bitácora solo apunta aquí. Se añade y se quita en es
 
 ## Pendiente
 
-- **Barrido de leves de `gimg/brand.py` (0.7.0; retro del 2026-11-17 «barrido-color», P3, aprobada):** `_paint_value` salta valores mal formados; `hsl(1e400 …)` como rsvg (comprobarlo antes); unir `_paints` y `_ink`; `_ink` una vez por pintura heredada; `fill` explícito en `<line>` (sexta tanda). Detalle en `docs/records/leves-ccr-85e9d14e-zt7p8b.md`. A un `gw-worker` sonnet.
+- **Leve de la revisión del barrido B (2026-11-26):** `lint` de `gimg/brandsheet.py` cuenta las frases de la frase de paleta con `(?<=[.!?])\s+`, así que una abreviatura («e.g.») sube `n` y el hex que falta se busca también en frases anteriores (registro, cierre): puede dar `missing="-"`.
 - **Al flujo (retro del 2026-11-17 «barrido-color», P1, aprobada):** `gw-selector` y el gancho de inicio señalan `gw-worker` para barridos y arreglos de revisión (la regla del 2026-11-16 se rompió otra vez).
 - **`tests-for.py --run` sin `tests/__init__.py` (2026-11-16):** `test-run.py` descubre con `top_level_dir=tests`, así que no se importa `tests/__init__.py` y `GIMG_AUTOSTART=0` no se fija: `ComposeCliTests` y `FullCycleTests` fallan con el aviso `service_failed` y dejan un `gimg serve` vivo. El check completo pasa. Parcheado en `tests/test_cli.py` (fija `GIMG_AUTOSTART=0` al importarse); el arreglo general, en el flujo (`.claude/gw/scripts/`, necesita permiso) o con un `testMap.command` del proyecto que use `-t .`.
 - **Al flujo (retro del 2026-11-16, P1, P2, P4, aprobadas):** comprobar filas de la tabla de estado; registro de tokens

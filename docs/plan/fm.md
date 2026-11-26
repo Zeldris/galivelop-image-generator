@@ -101,6 +101,8 @@ que 5». La nota se calibra con lo que ya hay (aprobadas y descartes del Portal)
 
 ### Barrido B de `gimg/brandsheet.py` en 0.8.0 (retro 2026-11-18, P2, aprobada)
 
+**Hecho (2026-11-25/26):** (a) en `bdc482a`, (b) en `5fdaefd` y `594c9fe` (paso 1 #12 y paso 3 #8: no aplican), arreglos de la revisión del bloque en `730f488`.
+
 Los 16 leves abiertos de `brandsheet.py` (detalle en `docs/records/revision-hoja-datos-paso{1,3,4}.md`), en dos encargos
 `gw-worker` sonnet: **(a) validación y lint** — paso 1 #6 (hex «missing» solo en la última frase), #7 (`_HEX` sin
 `#rgb`/`#rrggbbaa`), #8 (zona limpia de espacios), #9 (registro contenido en otro), #14 (test de `..` por `extends`);
