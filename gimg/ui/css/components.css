@@ -255,3 +255,6 @@ dialog.confirm { width: min(92vw, 420px); }
 /* Motivo de un «No» o de un «Ninguno vale» (0.8.0) */
 dialog.reason { width: min(92vw, 520px); }
 .reason-choices { flex-wrap: wrap; }
+/* Troubleshooting (0.8.0 5c) */
+.troubleshoot h2:focus-visible { outline: var(--focus-w, 2px) solid var(--accent); outline-offset: 2px; }
+.troubleshoot textarea, .troubleshoot input[type=text] { width: 100%; }

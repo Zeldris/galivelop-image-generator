@@ -23,7 +23,10 @@ export const DEBOUNCE_MS = 300;
 function busy(node) { replace(node, h('p.empty', {}, h('span.spin', { aria: { hidden: true } }), ' ', t('ui.loading'))); }
 function failed(node, e) { replace(node, h('p.notice.notice-bad', { role: 'alert' }, describeError(e, t))); }
 const wordCount = (s) => (s.trim() ? s.trim().split(/\s+/).length : 0);
-const rowLabel = (row) => (row && typeof row === 'object' ? (row.id ?? row.n ?? row.row ?? JSON.stringify(row)) : row);
+const rowLabel = (row) => (row && typeof row === 'object' ? (row.key ?? row.id ?? row.n ?? row.row ?? JSON.stringify(row)) : row);
+/** «Ya falló antes»: el término, la fila de troubleshooting y, si la fila lo trae, el rediseño apuntado. No bloquea. */
+export const knownText = (k) => t(k.row && typeof k.row === 'object' && k.row.redesign ? 'ui.prompt.knownRedesign' : 'ui.prompt.known',
+  { term: k.term, row: rowLabel(k.row), redesign: k.row && typeof k.row === 'object' ? k.row.redesign || '' : '' });
 
 /** Los tramos con las palabras que rompen una regla (`span` de los fallos, en el prompt entero) dentro de `<mark>`. */
 function segmentText(segments, prompt, checks, index) {
@@ -96,7 +99,7 @@ export function promptBuilder({ project, pieceTypes = [], piece = '', subject = 
       h('div.row-between', {}, h('h3', {}, t('ui.prompt.result')),
         h('span.hint', { data: { slot: 'words' } }, t('ui.prompt.words', { n: st.words })), copyButton(st.prompt, { label: t('ui.prompt.copy') })),
       mountButton && st.blocked ? h('p.notice.notice-bad', { role: 'status', data: { slot: 'blocked' } }, t('ui.prompt.blocked')) : null,
-      ...st.known.map((k) => h('p.notice.notice-warn', { role: 'status', data: { slot: 'known' } }, t('ui.prompt.known', { term: k.term, row: rowLabel(k.row) }))),
+      ...st.known.map((k) => h('p.notice.notice-warn', { role: 'status', data: { slot: 'known' } }, knownText(k))),
       h('pre.sheet-code', { data: { slot: 'prompt' } }, h('code', {}, st.prompt)),
       h('h3', {}, t('ui.prompt.segments')),
       h('ol.stack', { data: { list: 'segments' } }, st.segments.map((s, i) => h('li.seg', { class: s.source === 'input' ? 'seg-input' : '', data: { role: s.role, source: s.source === 'input' ? 'input' : 'sheet' } },

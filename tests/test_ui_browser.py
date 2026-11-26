@@ -990,7 +990,7 @@ class BrandSheetScreen(UiBase):
         self.assertEqual(self.js("document.querySelectorAll('[data-card=pieces] tbody tr').length"), 2)
         self.assertEqual(self.js("document.querySelectorAll('[data-card=pieces] [data-slot=new-order]').length"), 2)
         self.js("document.getElementById('sub-hoja').focus(); true")
-        for expected in ("probar", "check", "taller", "hoja"):
+        for expected in ("probar", "check", "troubleshooting", "taller", "hoja"):
             self.page.key("ArrowRight")
             self.page.wait("document.querySelector('[role=tab][aria-selected=true]').dataset.sub === %s" % json.dumps(expected))
             self.assertIn("s=" + expected, self.js("location.hash"))
@@ -1326,6 +1326,144 @@ class BrandReview(OrderPages):
     def test_in_a_free_order_the_newest_single_attempt_is_above_the_batch(self):
         self.open(order_route("fondos/r2"), "document.querySelectorAll('.gallery .attempt[data-kind=attempt]').length === 4")
         self.assertEqual(self.js("document.querySelector('.gallery > [data-kind]').dataset.attempt"), "4")
+        self.no_problems()
+
+
+class BrandTroubleshoot(OrderPages):
+    """0.8.0 paso 5c: el formulario de troubleshooting del pedido bloqueado, el registro en Marca y el «ya falló antes»."""
+
+    BLOCKED = ("portada/t-focus", "portada/t-save", "portada/t-error", "portada/t-extend", "portada/t-extend-error")
+
+    @classmethod
+    def customize_project(cls):
+        super().customize_project()
+        add_brand_sheet(cls.root)
+
+    @classmethod
+    def fail_three(cls, key, profile=PROFILE, piece="cover"):
+        cls.submit(key, profile=profile, count=2, seed=500, mode="brand", piece=piece, subject=SUBJECT, prompt=None)
+        for n in range(2):
+            run_cli("attempt", "new", PROJECT, key, profile, "--count", "2", "--seed", str(600 + 10 * n))
+            run_cli("work")
+        for rec in orders.get(PROJECT, key, profile)["batches"][:3]:
+            run_cli("order", "fail", PROJECT, key, profile, str(rec["id"]), "--reason", "horizon")
+
+    @classmethod
+    def prepare(cls):
+        for key in cls.BLOCKED:
+            cls.fail_three(key)
+        cls.fail_three("portada/rows-cover")
+        cls.submit("iconos/rows-icon", profile="social", count=1, seed=5, mode="brand", piece="icon", subject=SUBJECT, prompt=None)
+        run_cli("troubleshoot", "add", PROJECT, "portada/rows-cover", PROFILE, "--problem", "el horizonte sale plano", "--attempt", "1",
+                "--redesign", "bajar la linea del horizonte", "--term", "Galician")
+        run_cli("troubleshoot", "add", PROJECT, "iconos/rows-icon", "social", "--problem", "el icono sale sucio")
+
+    def blocked(self, key):
+        self.open(order_route(key), "document.querySelector('[data-slot=ts-form]')")
+
+    def fill(self, selector, value):
+        self.js("(() => { const e = document.querySelector(%s); e.value = %s; e.dispatchEvent(new Event('input')); })()" % (json.dumps(selector), json.dumps(value)))
+
+    def test_a_blocked_order_focuses_the_form_title_and_announces_it(self):
+        self.blocked("portada/t-focus")
+        self.assertEqual(self.js("document.activeElement.id"), "ts-title")
+        self.assertEqual(self.js("document.activeElement.getAttribute('tabindex')"), "-1")
+        self.assertIn("3 fallos de 3", self.js("document.querySelector('[data-slot=ts-form] [role=alert]').textContent"))
+        self.assertIn("Horizonte", self.js("document.getElementById('ts-problem').value"))
+        self.assertRegex(self.js("document.getElementById('ts-attempts').value"), r"^q\d+(, q\d+)+$")
+        self.no_problems()
+
+    def test_noting_the_row_sends_what_was_written_reloads_and_opens_the_panel_with_an_empty_subject(self):
+        self.blocked("portada/t-save")
+        self.fill("#ts-problem", "el islote sale plano")
+        self.fill("#ts-attempts", "q1, q2")
+        self.fill("#ts-redesign", "subir el islote")
+        self.fill("#ts-terms", "islet, plano")
+        self.click("[data-slot=ts-save]")
+        self.page.wait("!document.querySelector('[data-slot=ts-form]')")
+        rows = [r for r in self.api("GET", "/api/projects/%s/troubleshooting" % PROJECT) if r["key"] == "portada/t-save"]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual((rows[0]["problem"], rows[0]["attempts"], rows[0]["redesign"], rows[0]["terms"]),
+                         ("el islote sale plano", [1, 2], "subir el islote", ["islet", "plano"]))
+        self.assertEqual(self.data("portada/t-save")["failures"]["count"], 0)
+        self.page.wait("document.activeElement && document.activeElement.id === 'retouch-subject'")
+        self.assertEqual(self.js("document.getElementById('retouch-subject').value"), "")
+        self.assertEqual(self.js("document.querySelector('.fail-marker')"), None)
+        self.no_problems()
+
+    def test_a_failed_save_says_why_and_keeps_what_was_written(self):
+        self.blocked("portada/t-error")
+        self.fill("#ts-redesign", "no se pierde")
+        self.fill("#ts-attempts", "q999")
+        self.click("[data-slot=ts-save]")
+        self.page.wait("document.querySelector('[data-slot=ts-error] [role=alert]')")
+        self.assertIn("no tiene el intento 999", self.js("document.querySelector('[data-slot=ts-error]').textContent"))
+        self.assertEqual(self.js("document.getElementById('ts-redesign').value"), "no se pierde")
+        self.assertEqual(self.js("document.getElementById('ts-attempts').value"), "q999")
+        self.assertEqual([r for r in self.api("GET", "/api/projects/%s/troubleshooting" % PROJECT) if r["key"] == "portada/t-error"], [])
+        self.page.pump(0.3)
+        self.browser.take_problems()  # the failed request is the point of the test (a console line for the 404)
+
+    def test_one_more_batch_asks_first_and_enables_the_buttons_with_a_notice(self):
+        self.blocked("portada/t-extend")
+        self.click("[data-slot=ts-extend]")
+        self.page.wait("document.querySelector('dialog.confirm[open]')")
+        self.js("[...document.querySelectorAll('dialog.confirm button')].find(x => x.textContent === 'Cancelar').click(); true")
+        self.page.wait("!document.querySelector('dialog.confirm')")
+        self.assertEqual(self.data("portada/t-extend")["troubleshooting"]["state"], "blocked")
+        self.click("[data-slot=ts-extend]")
+        self.page.wait("document.querySelector('dialog.confirm[open]')")
+        self.js("document.querySelector('dialog.confirm .btn-danger').click(); true")
+        self.page.wait("document.querySelector('[data-slot=ts-extended]')")
+        self.assertEqual(self.data("portada/t-extend")["troubleshooting"]["state"], "extended")
+        self.assertIn("una tanda más", self.js("document.querySelector('[data-slot=ts-extended]').textContent"))
+        self.assertFalse(self.js("document.querySelector('.order-panel .panel-actions .btn-primary').disabled"))
+        self.assertEqual(self.js("document.querySelector('[data-slot=ts-form]')"), None)
+        self.no_problems()
+
+    def test_one_more_batch_on_an_order_that_is_no_longer_blocked_says_so(self):
+        self.blocked("portada/t-extend-error")
+        run_cli("troubleshoot", "add", PROJECT, "portada/t-extend-error", PROFILE, "--problem", "otra sesion")
+        self.click("[data-slot=ts-extend]")
+        self.page.wait("document.querySelector('dialog.confirm[open]')")
+        self.js("document.querySelector('dialog.confirm .btn-danger').click(); true")
+        self.page.wait("[...document.querySelectorAll('#toasts .toast')].some(x => x.textContent.includes('no está en troubleshooting'))")
+        self.page.wait("!document.querySelector('[data-slot=ts-form]')")
+        self.page.pump(0.3)
+        self.browser.take_problems()  # the 409 is the point of the test
+
+    def test_the_marca_subtab_lists_the_rows_links_the_attempts_and_filters_by_piece(self):
+        self.open("/p/%s/marca?s=troubleshooting" % PROJECT, "document.querySelector('[data-slot=ts-table]')")
+        self.assertEqual(self.js("document.querySelector('#sub-troubleshooting').getAttribute('aria-selected')"), "true")
+        self.assertIn("el horizonte sale plano", self.js("document.querySelector('[data-slot=ts-table]').textContent"))
+        self.assertIn("bajar la linea del horizonte", self.js("document.querySelector('[data-slot=ts-table]').textContent"))
+        link = self.js("document.querySelector('[data-slot=ts-table] a[data-attempt=\"1\"]').getAttribute('href')")
+        self.assertIn("/o/og/portada%2Frows-cover?a=1", link)
+        self.js("(() => { const f = document.getElementById('ts-filter'); f.value = 'icon'; f.dispatchEvent(new Event('change')); })()")
+        self.page.wait("document.querySelectorAll('[data-slot=ts-table] tbody tr').length === 1")
+        self.assertIn("el icono sale sucio", self.js("document.querySelector('[data-slot=ts-table] tbody').textContent"))
+        self.assertEqual(self.js("document.activeElement.id"), "ts-filter")
+        self.no_problems()
+
+    def test_the_marca_subtab_says_why_loading_failed_and_retries(self):
+        self.open("/p/%s/marca?s=hoja" % PROJECT, "document.querySelector('#sub-troubleshooting')")
+        self.js("window.__fetch = window.fetch; window.fetch = (u, o) => String(u).includes('/troubleshooting') ? Promise.resolve(new Response(JSON.stringify({error: {code: 'project.unknown', params: {}, message: 'proyecto roto'}}), {status: 404})) : window.__fetch(u, o); true")
+        self.click("#sub-troubleshooting")
+        self.page.wait("document.querySelector('#subpanel-troubleshooting [role=alert]')")
+        self.assertIn("proyecto roto", self.js("document.querySelector('#subpanel-troubleshooting').textContent"))
+        self.js("window.fetch = window.__fetch; true")
+        self.click("[data-slot=ts-retry]")
+        self.page.wait("document.querySelector('[data-slot=ts-table]')")
+        self.page.pump(0.3)
+        self.browser.take_problems()  # the 404 of the first load is the point of the test
+
+    def test_the_known_term_notice_shows_the_redesign_of_the_row_and_does_not_block(self):
+        self.open("/p/%s/marca?s=probar" % PROJECT, "document.getElementById('bp-subject')")
+        self.fill("#bp-subject", SUBJECT)
+        self.page.wait("document.querySelector('[data-slot=known]')")
+        text = self.js("document.querySelector('[data-slot=known]').textContent")
+        self.assertIn("Ya falló antes: «Galician»", text)
+        self.assertIn("Rediseño apuntado: bajar la linea del horizonte", text)
         self.no_problems()
 
 

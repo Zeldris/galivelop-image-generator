@@ -19,6 +19,7 @@ import { isTyping, oneKeyEnabled } from './shortcuts.js';
 import { toast, toastError, toastOk } from './toast.js';
 import { batchHead } from './batch-head.js';
 import { askReason } from './reason-picker.js';
+import { troubleshootForm } from './troubleshoot.js';
 import { batchSpecOf, modeBadge, isBrand, isBlocked, blockedReason, failureMarker, failureNotice, modeChangeNotice } from './brand-order.js';
 
 const PENDING = ['queued', 'running'];
@@ -90,6 +91,23 @@ export async function orderView(host, route) {
       if (res && res.troubleshooting) ctx.order.troubleshooting = { ...(ctx.order.troubleshooting || {}), ...res.troubleshooting };
       await reload();
     }),
+    /* Troubleshooting (5c): `saveRow` y `extend` dejan pasar el error: el formulario lo pinta y conserva lo escrito. */
+    saveRow: async (body) => {
+      await api.addTroubleshooting(project, body);
+      ctx.order.failures = { ...(ctx.order.failures || {}), count: 0, reasons: [] }; // la fila pone el contador a cero
+      toastOk(t('ui.ts.saved'));
+      await reload();
+      const subject = document.getElementById('retouch-subject'); // el panel de pieza, con el sujeto vacío
+      if (subject) { subject.value = ''; subject.dispatchEvent(new Event('input')); subject.focus(); }
+    },
+    extend: async () => {
+      try { await api.extend(project, profile, key); } catch (e) {
+        if (e instanceof ApiError && (e.code === 'order.not_blocked' || e.code === 'order.extend_pending')) { await reload(); toastError(describeError(e, t)); return; }
+        throw e;
+      }
+      toastOk(t('ui.ts.extended'));
+      await reload();
+    },
     note: guard(async (a, text) => { await api.note(project, profile, key, a.id, text); a.note = text; }),
     choose: guard(async (a) => {
       try {
@@ -239,7 +257,7 @@ export async function orderView(host, route) {
 
     // panel lateral: se reconstruye solo si cambió el prompt o los parámetros del pedido (no `chosen` ni `text`:
     // elegir, deshacer o guardar los textos no debe borrar lo que se está editando ni el foco)
-    const sig = JSON.stringify([order.prompt, order.params, order.seed, order.draft, order.mode, ctx.blocked]);
+    const sig = JSON.stringify([order.prompt, order.params, order.seed, order.draft, order.mode, ctx.blocked, order.troubleshooting && order.troubleshooting.state]);
     if (panel.dataset.sig !== sig) {
       panel.dataset.sig = sig;
       retouch = retouchPanel(ctx, { onSubmit: guard(submit) });
@@ -248,7 +266,11 @@ export async function orderView(host, route) {
         onRecompose: (id) => ctx.actions.recompose({ id }),
       });
       // hueco del formulario de troubleshooting (paso 5c): mientras el pedido está bloqueado, dice por qué no se encola
-      panel.replaceChildren(h('div', { data: { slot: 'troubleshoot' } }, ctx.blocked ? h('p.notice.notice-bad', { role: 'alert' }, ctx.blocked) : null), retouch.node, texts.node);
+      const form = ctx.blocked ? troubleshootForm(ctx, { onSave: ctx.actions.saveRow, onExtend: ctx.actions.extend }) : null;
+      const extended = order.troubleshooting && order.troubleshooting.state === 'extended';
+      panel.replaceChildren(h('div', { data: { slot: 'troubleshoot' } }, form ? form.node : null,
+        extended ? h('p.notice.notice-warn', { role: 'status', data: { slot: 'ts-extended' } }, t('ui.ts.extendedNotice')) : null), retouch.node, texts.node);
+      if (form) setTimeout(() => form.focus(), 0); // bloqueado: el foco al título (la pantalla puede no estar aún en el documento)
     } else {
       if (texts && texts.setChosen) texts.setChosen(order.chosen);
       if (retouch && retouch.setChosen) retouch.setChosen();

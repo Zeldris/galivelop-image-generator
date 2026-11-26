@@ -696,7 +696,7 @@ class F4dUi(unittest.TestCase):
 
     def test_the_brand_tab_has_subtabs_and_the_sheet_calls(self):
         tab = self.comp("brand-tab.js")
-        for needle in ("role: 'tablist'", "role: 'tab'", "'ArrowRight'", "'ArrowLeft'", "SUBTABS = ['hoja', 'probar', 'check', 'taller']",
+        for needle in ("role: 'tablist'", "role: 'tab'", "'ArrowRight'", "'ArrowLeft'", "SUBTABS = ['hoja', 'probar', 'check', 'troubleshooting', 'taller']",
                        "sheetView(host, project, cfg, info)", "brandPrompt(host, project, info.pieceTypes"):
             self.assertIn(needle, tab)
         api = read(UI / "js" / "api.js")
@@ -795,6 +795,35 @@ class Step5bUi(unittest.TestCase):
             for lang in loc:
                 self.assertIn(key, loc[lang])
         self.assertEqual(set(loc["es"]), set(loc["en"]))
+
+
+    def test_the_troubleshooting_form_and_the_marca_subtab_follow_the_api(self):
+        api = read(UI / "js" / "api.js")
+        for needle in ("`/api/projects/${enc(p)}/troubleshooting`", "`${paths.order(p, profile, key)}/troubleshooting/extend`",
+                       "post(paths.troubleshooting(p), body)", "post(paths.extend(p, profile, key), {})"):
+            self.assertIn(needle, api)
+        form = self.comp("troubleshoot.js")
+        for needle in ("tabindex: '-1'", "role: 'alert'", "confirmAction(", "failedAttemptIds(order)", "reasonsText(f.reasons, ctx.sheet)",
+                       "body.redesign", "api.troubleshootingRows(project)", "data: { slot: 'ts-retry' }"):
+            self.assertIn(needle, form)
+        view = self.comp("order-view.js")
+        self.assertIn("troubleshootForm(ctx, { onSave: ctx.actions.saveRow, onExtend: ctx.actions.extend })", view)
+        self.assertIn("'order.not_blocked' || e.code === 'order.extend_pending'", view)
+        self.assertIn("order.troubleshooting && order.troubleshooting.state]", view)  # the panel is rebuilt when the state changes
+        tab = self.comp("brand-tab.js")
+        self.assertIn("['hoja', 'probar', 'check', 'troubleshooting', 'taller']", tab)
+        self.assertIn("troubleshootTable(project)", tab)
+        prompt = self.comp("brand-prompt.js")
+        self.assertIn("k.row.redesign ? 'ui.prompt.knownRedesign' : 'ui.prompt.known'", prompt)
+        self.assertIn("row.key ??", prompt)  # the row is an object {key, ...}: never printed as JSON
+
+    def test_locales_have_the_same_step_5c_keys_in_both_languages(self):
+        loc = {lang: json.loads(read(LOCALES / (lang + ".json"))) for lang in ("es", "en")}
+        for key in ("ui.brand.sub.troubleshooting", "ui.prompt.knownRedesign", "ui.ts.title", "ui.ts.save", "ui.ts.extend", "ui.ts.extendedNotice",
+                    "ui.ts.col.attempts", "ui.ts.retry"):
+            for lang in loc:
+                self.assertIn(key, loc[lang])
+        self.assertEqual(re.findall(r"\{(\w+)\}", loc["es"]["ui.prompt.knownRedesign"]), re.findall(r"\{(\w+)\}", loc["en"]["ui.prompt.knownRedesign"]))
 
 
 class Served(ServerBase):
