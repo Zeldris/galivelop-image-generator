@@ -47,12 +47,8 @@ export function isQueueOpen() { return open; }
 /** Las entradas `queued` en el orden de la fila (`position`, si no el id), de donde toma el trabajador. */
 export function queuedOrder(entries) {
   const pos = (e) => (Number.isFinite(e.position) ? e.position : e.id);
-  const queued = entries.filter((e) => e.state === 'queued');
-  // las de una misma tanda van juntas, en el puesto de su primera entrada
-  const head = new Map();
-  for (const e of queued) { const b = batchId(e); if (b !== null) head.set(b, Math.min(head.has(b) ? head.get(b) : Infinity, pos(e))); }
-  const at = (e) => { const b = batchId(e); return b === null ? pos(e) : head.get(b); };
-  return queued.sort((a, b) => at(a) - at(b) || pos(a) - pos(b) || a.id - b.id);
+  // solo `position`: `queue.move` de una entrada suelta puede meterla entre las de una tanda, y el trabajador sigue ese orden
+  return entries.filter((e) => e.state === 'queued').sort((a, b) => pos(a) - pos(b) || a.id - b.id);
 }
 
 /** `batch.id` de una entrada de tanda, o null. */
@@ -146,6 +142,18 @@ function paint(entries) {
 function items(all, shown, queuedIds, line) {
   const out = [];
   const seen = new Set();
+  if (filter === 'pending') {
+    // el orden de la fila manda: si una entrada suelta quedó entre las de una tanda, la tanda sale en dos tramos
+    const runs = [];
+    for (const e of shown) {
+      const b = batchId(e);
+      const last = runs[runs.length - 1];
+      if (b !== null && last && last.b === b) last.visible.push(e);
+      else runs.push({ b, e, visible: [e], n: b === null ? 0 : runs.filter((r) => r.b === b).length });
+    }
+    for (const r of runs) out.push(r.b === null ? entry(r.e, queuedIds.indexOf(r.e.id), line.length) : group(r.b, all.filter((x) => batchId(x) === r.b), r.visible, queuedIds, line, r.n));
+    return out;
+  }
   for (const e of shown) {
     const b = batchId(e);
     if (b === null) { out.push(entry(e, queuedIds.indexOf(e.id), line.length)); continue; }
@@ -159,7 +167,7 @@ function items(all, shown, queuedIds, line) {
 const batchOpen = new Map(); // tanda -> abierta a mano (si no se tocó, abierta solo la que tiene algo en marcha)
 
 /** Cabecera de una tanda y sus entradas. `members`: todas las de la tanda; `visible`: las que el filtro deja ver. */
-function group(id, members, visible, queuedIds, line) {
+function group(id, members, visible, queuedIds, line, run = 0) {
   const first = members[0];
   const who = `${first.project} · ${first.key} @ ${first.profile}`;
   const size = (first.batch && first.batch.size) || members.length;
@@ -177,7 +185,7 @@ function group(id, members, visible, queuedIds, line) {
   const what = [t('ui.queue.batchOf', { done, size }), seedText ? t('ui.queue.batchSeeds', { s: seedText }) : null,
     eta === null ? null : t('ui.queue.batchEta', { t: mmss(eta) }), held ? t('ui.queue.held') : null].filter(Boolean);
 
-  const fid = (k) => `${k}-b${id}`;
+  const fid = (k) => `${k}-b${id}${run ? `r${run}` : ''}`; // un segundo tramo de la misma tanda no repite las claves
   const mover = (to2, label, glyph, disabled) => h('button.btn.btn-icon', { type: 'button', disabled, title: label, data: { fid: fid(to2) }, aria: { label: `${label}: ${who}` }, onclick: () => moveBatch(id, to2) }, glyph);
   const buttons = [];
   if (queued.length) buttons.push(h('div.row.queue-move', { role: 'group', aria: { label: t('ui.queue.batch') } },

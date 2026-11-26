@@ -19,7 +19,7 @@ import { isTyping, oneKeyEnabled } from './shortcuts.js';
 import { toast, toastError, toastOk } from './toast.js';
 import { batchHead } from './batch-head.js';
 import { askReason } from './reason-picker.js';
-import { modeBadge, isBrand, isBlocked, blockedReason, failureMarker, failureNotice, modeChangeNotice } from './brand-order.js';
+import { batchSpecOf, modeBadge, isBrand, isBlocked, blockedReason, failureMarker, failureNotice, modeChangeNotice } from './brand-order.js';
 
 const PENDING = ['queued', 'running'];
 
@@ -115,10 +115,11 @@ export async function orderView(host, route) {
     retry: guard(async (e) => {
       const text = e.prompt === null || e.prompt === undefined ? null : stripStyle(e.prompt, profileCfg.style);
       const brandOrder = isBrand(ctx.order); // en un pedido de marca la API no admite `prompt` (order.brand_prompt): viajan sujeto y zona
+      const spec = brandOrder ? batchSpecOf(ctx.order, e) : null; // sujeto y zona de la tanda de la entrada, no los actuales del pedido
       await submit({ count: 1, seed: e.seed, draft: Boolean(e.draft),
         ...(brandOrder ? {} : text !== null && text !== (ctx.order.prompt || '') ? { prompt: text } : {}),
-        ...(brandOrder && e.subject !== undefined && e.subject !== (ctx.order.subject || '') ? { subject: e.subject } : {}),
-        ...(brandOrder && e.cleanZone !== undefined && e.cleanZone !== (ctx.order.cleanZone || '') ? { cleanZone: e.cleanZone } : {}), ...((e.negative || '') !== (ctx.order.negative || '') ? { negative: e.negative || '' } : {}), ...(e.template ? { template: e.template } : {}), ...pick(e.params, ['steps', 'cfg', 'sampler']),
+        ...(spec && spec.subject !== (ctx.order.subject || '') ? { subject: spec.subject } : {}),
+        ...(spec && spec.cleanZone !== (ctx.order.cleanZone || '') ? { cleanZone: spec.cleanZone } : {}), ...((e.negative || '') !== (ctx.order.negative || '') ? { negative: e.negative || '' } : {}), ...(e.template ? { template: e.template } : {}), ...pick(e.params, ['steps', 'cfg', 'sampler']),
         ...(e.params && e.params.model && e.params.model !== (ctx.order.params || {}).model && e.params.model !== profileCfg.model ? { model: e.params.model } : {}) }); // F4d: el modelo del intento, si no es el del pedido ni el del perfil
     }),
     cancel: guard(async (e) => { await api.cancel(e.id); toast(t('ui.queue.cancelled', { id: e.id })); await poll.refreshNow(); }),
@@ -272,15 +273,17 @@ export async function orderView(host, route) {
     // la elegida, fijada arriba del todo; luego una sección por tanda (la más nueva primero) y, al final, lo que no tiene tanda
     const chosen = attempts.find((a) => a.id === order.chosen);
     if (chosen) wanted.push(cardOf(chosen));
-    for (const sec of sectionsOf(order, attempts.filter((a) => a !== chosen), loose)) {
+    for (const sec of sectionsOf(order, attempts, loose)) {
       if (sec.id !== null) {
         const head = { id: sec.id, rec: sec.rec, n: sec.n, attempts: sec.attempts, pending: sec.loose.filter((e) => PENDING.includes(e.state)).length };
-        // «Ninguno vale»: solo en una tanda de un pedido de marca ya terminada (con intentos, sin entradas en la cola) y aún no fallada
-        const canFail = isBrand(order) && !isBlocked(order) && sec.rec && !sec.rec.failed && !head.pending && sec.attempts.length > 0;
+        // «Ninguno vale»: solo en una tanda de un pedido de marca ya terminada (con intentos, sin entradas en la cola), aún no fallada
+        // y sin la elegida (el servidor da `order.discard_chosen`)
+        const canFail = isBrand(order) && !isBlocked(order) && sec.rec && !sec.rec.failed && !head.pending && sec.attempts.length > 0
+          && !sec.attempts.some((a) => a.id === order.chosen);
         head.actions = canFail ? [h('button.btn.btn-danger', { type: 'button', data: { slot: 'batch-fail' }, onclick: (ev) => ctx.actions.failBatch(sec.id, ev.currentTarget) }, t('ui.batch.noneOk'))] : [];
         wanted.push({ k: `batch:${sec.id}`, sig: JSON.stringify([sec.rec, sec.n, sec.attempts.map((a) => [a.id, a.state]), head.pending, Boolean(ctx.sheet), Boolean(head.actions.length)]), make: () => batchHead(ctx, head) });
       }
-      wanted.push(...sec.loose.map(entryOf), ...sec.attempts.map(cardOf));
+      wanted.push(...sec.loose.map(entryOf), ...sec.attempts.filter((a) => a !== chosen).map(cardOf)); // la elegida ya está fijada arriba
     }
     if (!wanted.length) {
       if (cardsByKey.size || !gallery.firstChild) {
@@ -366,7 +369,8 @@ export async function orderView(host, route) {
   (first || gallery.querySelector('[data-kind]') || el('main')).focus();
 }
 
-/** Las secciones de la galería: una por tanda, la más nueva arriba, y al final la de lo que no tiene tanda (`id: null`).
+/** Las secciones de la galería, la más nueva arriba: una por tanda y una por cada intento o entrada sin tanda (`id: null`;
+    `attempts` lleva también la elegida, que se pinta fija arriba y no en su sección). Antes va lo que tiene algo en la cola.
     `n` es el número de la tanda por orden de creación; sin registro en `order.batches` (un pedido viejo) se numera por su id. */
 export function sectionsOf(order, attempts, loose) {
   const recs = [...(order.batches || [])].sort((a, b) => a.id - b.id);
@@ -376,10 +380,13 @@ export function sectionsOf(order, attempts, loose) {
   for (const x of [...attempts, ...loose]) if (has(x)) ids.add(idOf(x));
   const sorted = [...ids].sort((a, b) => a - b);
   const out = sorted.map((id, i) => ({ id, rec: recs.find((r) => r.id === id) || null, n: i + 1,
-    attempts: attempts.filter((a) => idOf(a) === id), loose: loose.filter((e) => idOf(e) === id) })).reverse();
-  const rest = { id: null, rec: null, n: 0, attempts: attempts.filter((a) => !has(a)), loose: loose.filter((e) => !has(e)) };
-  if (rest.attempts.length || rest.loose.length) out.push(rest);
-  return out;
+    attempts: attempts.filter((a) => idOf(a) === id), loose: loose.filter((e) => idOf(e) === id) }));
+  // lo que no tiene tanda (un intento de una sola imagen y su tarjeta de cola) va suelto, cada uno en su puesto
+  for (const a of attempts.filter((x) => !has(x))) out.push({ id: null, rec: null, n: 0, attempts: [a], loose: [] });
+  for (const e of loose.filter((x) => !has(x))) out.push({ id: null, rec: null, n: 0, attempts: [], loose: [e] });
+  // el más nuevo arriba: primero lo que tiene algo en la cola (por id de entrada), luego por id de intento más alto
+  const newest = (s) => (s.loose.length ? [1, Math.max(...s.loose.map((e) => e.id))] : [0, Math.max(-1, ...s.attempts.map((a) => a.id))]);
+  return out.sort((a, b) => { const x = newest(a); const y = newest(b); return y[0] - x[0] || y[1] - x[1]; });
 }
 
 function byId(list, id) { return list.find((a) => a.id === id); }

@@ -764,11 +764,27 @@ class Step5bUi(unittest.TestCase):
         # a retried entry of a brand order sends the subject and the clean zone, never the prompt (order.brand_prompt)
         retry = view[view.index("retry: guard"):view.index("cancel: guard")]
         self.assertIn("...(brandOrder ? {} : text !== null", retry)
-        self.assertIn("{ subject: e.subject }", retry)
-        self.assertIn("{ cleanZone: e.cleanZone }", retry)
-        # Recreate falls back to the subject of the order when the attempt carries none
+        # ...those of the batch of the entry (order.batches[]), not the current ones of the order
+        self.assertIn("batchSpecOf(ctx.order, e)", retry)
+        self.assertIn("{ subject: spec.subject }", retry)
+        self.assertIn("{ cleanZone: spec.cleanZone }", retry)
+        self.assertNotIn("e.subject", retry)
+        # Recreate loads the subject of the batch of the attempt, falling back to that of the order
         retouch = self.comp("retouch-panel.js")
-        self.assertIn("order.subject || ''", retouch[retouch.index("load(attempt)"):retouch.index("vary(attempt)")])
+        self.assertIn("batchSpecOf(ctx.order, attempt)", retouch[retouch.index("load(attempt)"):retouch.index("vary(attempt)")])
+        brand = self.comp("brand-order.js")
+        spec = brand[brand.index("export function batchSpecOf"):brand.index("export function failuresOf")]
+        self.assertIn("(order.batches || []).find((r) => r.id === b)", spec)
+        self.assertIn("order.subject || ''", spec)
+        # «Ninguno vale» is not offered on the batch with the chosen attempt, which the section counts (order.discard_chosen)
+        self.assertIn("sectionsOf(order, attempts, loose)", view)
+        self.assertIn("!sec.attempts.some((a) => a.id === order.chosen)", view)
+        self.assertIn("sec.attempts.filter((a) => a !== chosen).map(cardOf)", view)
+        # the queue drawer follows `position` alone: no batch pulled together at the place of its first entry
+        bar = self.comp("queue-bar.js")
+        order_fn = bar[bar.index("export function queuedOrder"):bar.index("export function batchId")]
+        self.assertNotIn("head.set", order_fn)
+        self.assertIn("pos(a) - pos(b) || a.id - b.id", order_fn)
         self.assertIn("b.disabled = wait || Boolean(ctx.blocked)", retouch)
         self.assertIn("disabled: Boolean(ctx.blocked)", self.comp("attempt-card.js"))
         self.assertIn("modeBadge(o.mode)", self.comp("project-view.js"))

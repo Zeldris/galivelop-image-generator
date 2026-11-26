@@ -11,6 +11,7 @@ import { t } from '../i18n.js';
 import { bannedWord, stripStyle } from './attempt-util.js';
 import { promptBuilder } from './brand-prompt.js';
 import { confirmAction } from './confirm.js';
+import { batchSpecOf } from './brand-order.js';
 
 const MAX_PROMPT = 2000; // tope orientativo; la API responde order.prompt_too_long con el real
 
@@ -159,8 +160,8 @@ export function retouchPanel(ctx, { onSubmit }) {
     load(attempt) {
       const p = attempt.params || {};
       if (builder) {
-        // un intento que no trae el sujeto (anterior a 0.8, o de la cola) carga el del pedido
-        builder.setValues({ subject: attempt.subject !== undefined ? attempt.subject || '' : order.subject || '', cleanZone: attempt.cleanZone !== undefined ? attempt.cleanZone || '' : order.cleanZone || '' });
+        // el sujeto y la zona de la tanda del intento (`order.batches[]`); sin tanda o sin sujeto en ella, los del pedido
+        builder.setValues(batchSpecOf(ctx.order, attempt));
       } else prompt.value = attempt.prompt ? stripStyle(attempt.prompt, cfg.style) : order.prompt || '';
       negative.value = attempt.negative || '';
       if (p.steps !== undefined) steps.value = p.steps;

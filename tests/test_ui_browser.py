@@ -1257,5 +1257,77 @@ class BrandMarks(OrderPages):
         self.no_problems()
 
 
+class BrandQueueOrder(UiBase):
+    """Revisión de 0.8.0 5a-5b: el cajón pinta la cola en el orden del trabajador, también si una entrada suelta se coló en una tanda."""
+
+    @classmethod
+    def customize_project(cls):
+        super().customize_project()
+        add_brand_sheet(cls.root)
+
+    @classmethod
+    def prepare(cls):
+        cls.submit("portada/q", work=False, count=3, seed=411, mode="brand", piece="cover", subject=SUBJECT, prompt=None)
+        cls.submit("fondos/suelta", count=1, work=False)
+
+    def test_a_loose_entry_moved_up_shows_between_the_two_runs_of_the_batch(self):
+        self.open("/", "document.querySelector('.queue-pill')")
+        self.click(".queue-pill")
+        loose = [e for e in self.api("GET", "/api/queue") if e["key"] == "fondos/suelta"][0]["id"]
+        kinds = "[...document.querySelectorAll('#queue-drawer > .stack > *')].map(n => n.classList.contains('queue-batch') ? 'B' : 'E').join('')"
+        self.page.wait("document.querySelector('[data-fid=\"up-%d\"]')" % loose)
+        self.assertEqual(self.js(kinds), "BE")
+        self.click("[data-fid='up-%d']" % loose)
+        self.page.wait(kinds + " === 'BEB'")  # the loose entry now stands between the batch's entries, as the worker will take them
+        self.assertIn("puesto 3", self.js("document.querySelector('#queue-drawer > .stack > .queue-entry').textContent"))
+        self.assertEqual(self.js("document.querySelectorAll('#queue-drawer [data-fid^=\"head-b\"]').length"), 2)
+        self.assertEqual(self.js("new Set([...document.querySelectorAll('#queue-drawer [data-fid]')].map(n => n.dataset.fid)).size"),
+                         self.js("document.querySelectorAll('#queue-drawer [data-fid]').length"))  # no repeated keys
+        self.no_problems()
+
+
+@unittest.skipUnless(TOOLS, "ffmpeg and rsvg-convert are needed to compose")
+class BrandReview(OrderPages):
+    """Revisión de 0.8.0 5a-5b: la elegida cuenta en su tanda, «Recrear» usa el sujeto de la tanda y lo más nuevo de un pedido libre va arriba."""
+
+    @classmethod
+    def customize_project(cls):
+        super().customize_project()
+        add_brand_sheet(cls.root)
+
+    @classmethod
+    def prepare(cls):
+        cls.submit("portada/r1", count=2, seed=800, mode="brand", piece="cover", subject=SUBJECT, prompt=None)
+        run_cli("attempt", "new", PROJECT, "portada/r1", PROFILE, "--count", "1", "--seed", "900", "--subject", SUBJECT.replace("Galician", "Atlantic"))
+        run_cli("work")
+        run_cli("choose", PROJECT, "portada/r1", PROFILE, "1")
+        cls.submit("fondos/r2", count=3, seed=10)
+        run_cli("attempt", "new", PROJECT, "fondos/r2", PROFILE, "--count", "1", "--seed", "99")
+        run_cli("work")
+
+    def test_the_batch_with_the_chosen_attempt_counts_it_and_offers_no_none_are_good(self):
+        self.open(order_route("portada/r1"), "document.querySelectorAll('.gallery .batch-head').length === 2")
+        heads = self.js("[...document.querySelectorAll('.gallery .batch-head')].map(h => [h.querySelector('h3').textContent, !!h.querySelector('[data-slot=batch-fail]')])")
+        first, second = [h for h in heads if h[0].startswith("Tanda 1")][0], [h for h in heads if h[0].startswith("Tanda 2")][0]
+        self.assertIn("2 intentos", first[0])  # the chosen one counts
+        self.assertFalse(first[1], "«Ninguno vale» on the batch holding the chosen attempt (order.discard_chosen)")
+        self.assertTrue(second[1])
+        self.assertEqual(self.js("document.querySelectorAll('.gallery .attempt[data-attempt=\"1\"]').length"), 1)  # not painted twice
+        self.no_problems()
+
+    def test_recreate_loads_the_subject_of_the_batch_of_the_attempt(self):
+        self.open(order_route("portada/r1"), "document.querySelector('.gallery .attempt[data-attempt=\"2\"]')")
+        self.assertIn("Atlantic", self.data("portada/r1")["subject"])  # the order moved on to the newer subject
+        self.js("[...document.querySelectorAll('.gallery .attempt[data-attempt=\"2\"] details .btn')].find(b => /Recrear/.test(b.textContent)).click(); true")
+        self.page.wait("document.getElementById('retouch-subject') && document.getElementById('retouch-subject').value !== ''")
+        self.assertTrue(self.js("document.getElementById('retouch-subject').value.startsWith(%s)" % json.dumps(SUBJECT[:30])))
+        self.no_problems()
+
+    def test_in_a_free_order_the_newest_single_attempt_is_above_the_batch(self):
+        self.open(order_route("fondos/r2"), "document.querySelectorAll('.gallery .attempt[data-kind=attempt]').length === 4")
+        self.assertEqual(self.js("document.querySelector('.gallery > [data-kind]').dataset.attempt"), "4")
+        self.no_problems()
+
+
 if __name__ == "__main__":
     unittest.main()

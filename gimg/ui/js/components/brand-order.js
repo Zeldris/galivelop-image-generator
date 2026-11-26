@@ -16,6 +16,15 @@ export function modeBadge(mode) {
   return h('span.chip', { class: brand ? 'chip-accent' : '', data: { mode: brand ? 'brand' : 'free' } }, t(brand ? 'ui.mode.brand' : 'ui.mode.free'));
 }
 
+/** Sujeto y zona limpia de LA TANDA de un intento o entrada (`x.batch`: id u objeto con `id`), según `order.batches[]`;
+    sin tanda, o sin sujeto en su registro, los del pedido. */
+export function batchSpecOf(order, x) {
+  const b = x && x.batch !== null && x.batch !== undefined && typeof x.batch === 'object' ? x.batch.id : x && x.batch;
+  const rec = b === null || b === undefined ? null : (order.batches || []).find((r) => r.id === b);
+  if (rec && typeof rec.subject === 'string') return { subject: rec.subject, cleanZone: rec.cleanZone || '' };
+  return { subject: order.subject || '', cleanZone: order.cleanZone || '' };
+}
+
 /** {count, limit, reasons} de un pedido, con los valores por omisión de la API. */
 export function failuresOf(order) {
   const f = (order && order.failures) || {};
