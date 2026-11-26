@@ -526,6 +526,38 @@ class LintTests(unittest.TestCase):
         result = B.lint(sheet, prompt, piece="icon")
         self.assertNotIn(("register", "lint.register_many"), self.problems(result))
 
+    def test_a_short_register_also_written_apart_is_register_many(self):
+        sheet = copy.deepcopy(PORTAL)
+        sheet["registers"]["short"] = {"label": label("Corto"), "block": "fine sea chart"}
+        prompt = B.assemble(sheet, "cover", SUBJECT)["prompt"]
+        self.assertEqual(self.problems(B.lint(sheet, prompt, piece="cover")), [])
+        apart = prompt + " Like a fine sea chart."
+        found = [c for c in B.lint(sheet, apart, piece="cover")["checks"] if c["id"] == "register"][0]
+        self.assertEqual((found["message"]["key"], found["message"]["params"]["registers"]),
+                         ("lint.register_many", "engraved, short"))
+
+    def test_other_registers_text_is_not_exempt_with_a_piece(self):
+        sheet = copy.deepcopy(PORTAL)
+        sheet["registers"]["line"]["block"] = LINE.rstrip(".") + ", golden"
+        prompt = B.assemble(sheet, "cover", SUBJECT)["prompt"] + " " + sheet["registers"]["line"]["block"]
+        with_piece_ = self.problems(B.lint(sheet, prompt, piece="cover"))
+        self.assertIn(("negation", "lint.negation"), with_piece_)
+        self.assertIn(("colorWord", "lint.color_word"), with_piece_)
+        # without a piece every register's text is approved
+        without = self.problems(B.lint(sheet, prompt))
+        self.assertNotIn(("negation", "lint.negation"), without)
+        self.assertNotIn(("colorWord", "lint.color_word"), without)
+
+    def test_short_hex_needs_a_letter(self):
+        for text in ("#2026", "#123", "#1234"):
+            self.assertIsNone(B._HEX.search(text), text)
+        self.assertEqual([m.group(0) for m in B._HEX.finditer("a #fa0 and #12ab and #123456")],
+                         ["#fa0", "#12ab", "#123456"])
+        result = self.run_lint(self.good(subject=SUBJECT + " for event #2026"), piece="cover")
+        self.assertNotIn("hex", [p[0] for p in self.problems(result)])
+        result = self.run_lint(self.good(subject=SUBJECT + " on #fa0"), piece="cover")
+        self.assertIn(("hex", "lint.hex"), self.problems(result))
+
     def test_register_own_text_exempts_only_the_pieces_register(self):
         sheet = copy.deepcopy(PORTAL)
         sheet["registers"]["line"]["block"] = LINE.rstrip(".") + ", never a robot"
@@ -562,11 +594,13 @@ class LintTests(unittest.TestCase):
         sheet = with_piece(closing=PIECE_CLOSING, cleanZone="afterClosing")
         ok = B.assemble(sheet, "stage", "A chart.", zone)["prompt"]
         self.assertNotIn("cleanZone", [p[0] for p in self.problems_of(sheet, ok, zone)])
-        # without the closing the zone has nothing to follow
+        # without the closing the zone has nothing to follow: only `closing` says so, not a second order error
         no_closing = ok.replace(PIECE_CLOSING.rstrip("."), "")
-        self.assertIn(("cleanZone", "lint.clean_zone_order"), self.problems_of(sheet, no_closing, zone))
-        # the zone inside the closing's own words is not after it
-        inside = ok.replace(zone, "").replace("no glow", "no glow " + zone)
+        found = self.problems_of(sheet, no_closing, zone)
+        self.assertIn(("closing", "lint.closing"), found)
+        self.assertNotIn("cleanZone", [p[0] for p in found])
+        # the zone before the closing is not after it
+        inside = ok.replace(zone, "").replace(PIECE_CLOSING.rstrip("."), zone + ". " + PIECE_CLOSING.rstrip("."))
         self.assertIn(("cleanZone", "lint.clean_zone_order"), self.problems_of(sheet, inside, zone))
 
     def problems_of(self, sheet, prompt, zone):

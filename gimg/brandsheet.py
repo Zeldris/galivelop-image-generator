@@ -27,7 +27,7 @@ PAPER_DARK = "#0d171e"
 TONE_STEP = 0.005
 TONE_THRESHOLD = 4.5
 _EPS = 1e-6
-_HEX = re.compile(r"#(?:[0-9A-Fa-f]{8}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{3})(?![0-9A-Za-z])")
+_HEX = re.compile(r"#(?:[0-9A-Fa-f]{8}|[0-9A-Fa-f]{6}|(?=[0-9]*[A-Fa-f])[0-9A-Fa-f]{4}|(?=[0-9]*[A-Fa-f])[0-9A-Fa-f]{3})(?![0-9A-Za-z])")
 _HEX_FULL = re.compile(r"#?[0-9A-Fa-f]{6}")
 _PLACEHOLDER = re.compile(r"\{([A-Za-z]+)\}")
 
@@ -396,11 +396,16 @@ def _norm(text):
 
 def _find(prompt, needle):
     """Span of `needle` in `prompt` ignoring case and runs of whitespace (trailing full stop optional), or None."""
+    spans = _find_all(prompt, needle)
+    return spans[0] if spans else None
+
+
+def _find_all(prompt, needle):
+    """Every span of `needle` in `prompt` (same matching as `_find`)."""
     words = needle.strip().rstrip(".").split()
     if not words:
-        return None
-    found = re.search(r"\s+".join(re.escape(w) for w in words), prompt, re.IGNORECASE)
-    return [found.start(), found.end()] if found else None
+        return []
+    return [[m.start(), m.end()] for m in re.finditer(r"\s+".join(re.escape(w) for w in words), prompt, re.IGNORECASE)]
 
 
 def _word_spans(prompt, term):
@@ -465,9 +470,11 @@ def lint(sheet: dict, prompt: str, piece: str | None = None, mode: str = "brand"
     reg_spans = {rid: _find(prompt, reg["block"]) for rid, reg in sheet["registers"].items()}
     present = [rid for rid, span in reg_spans.items() if span]
     # a block written inside another one's text (one register contained in another) is not a second register
-    present = [rid for rid in present if not any(
-        o != rid and reg_spans[o][0] <= reg_spans[rid][0] and reg_spans[rid][1] <= reg_spans[o][1]
-        and reg_spans[o] != reg_spans[rid] for o in present)]
+    # (only when every appearance of it is inside the other: one written apart is a second register)
+    all_spans = {rid: _find_all(prompt, sheet["registers"][rid]["block"]) for rid in present}
+    present = [rid for rid in present if not all(
+        any(o != rid and a[0] <= span[0] and span[1] <= a[1] and a != span for o in present for a in all_spans[o])
+        for span in all_spans[rid])]
     if not present:
         add("register", "register_none")
     elif len(present) > 1:
@@ -492,7 +499,7 @@ def lint(sheet: dict, prompt: str, piece: str | None = None, mode: str = "brand"
         if zone is None:
             add("cleanZone", "clean_zone_missing")
         elif _zone_after(spec):
-            if closing_span is None or zone[0] < closing_span[1]:
+            if closing_span is not None and zone[0] < closing_span[1]:  # no closing: `closing` already says it
                 add("cleanZone", "clean_zone_order", span=zone)
             else:
                 add("cleanZone")
@@ -531,7 +538,7 @@ def lint(sheet: dict, prompt: str, piece: str | None = None, mode: str = "brand"
     ok_unless("neverWrite", before)
 
     # colour names outside the palette sentence and the colours' own prompt names
-    shield = [s for s in [pal_span, closing_span] + list(reg_spans.values()) if s]
+    shield = [s for s in [pal_span, closing_span] + own_regs if s]
     dark = sheet["palette"].get("dark", {})
     for token in [sheet["palette"].get(r) for r in ROLES] + [dark.get("paper"), dark.get("ink")]:
         if token and token.get("promptName"):
@@ -544,7 +551,7 @@ def lint(sheet: dict, prompt: str, piece: str | None = None, mode: str = "brand"
     ok_unless("colorWord", before)
 
     # negations only in the closing (register blocks are approved text and may carry them)
-    quiet = [s for s in [closing_span] + list(reg_spans.values()) if s]
+    quiet = [s for s in [closing_span] + own_regs if s]
     if clean_zone and _zone_after(spec):  # the person's zone put after the closing may say «no buildings»
         zone_span = _find(prompt, clean_zone)
         if zone_span:
