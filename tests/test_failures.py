@@ -5,6 +5,7 @@ import json
 import unittest
 from unittest import mock
 
+from gimg.errors import GimgError
 from gimg import brandsheet, cli, failures, orders, queue, worker
 from tests.test_batches import free
 from tests.test_brand_orders import CoreBase, SHEET, brand_order
@@ -399,6 +400,16 @@ class FailuresApi(WriteBase):
         self.bad("POST", url, {"key": "x/y", "profile": "banner", "problem": "p", "redesign": ""}, 404, "order.unknown")
         self.assertTrue(failures.markdown_path(NAME).is_file())
 
+    def test_routes_start_the_worker(self):
+        for _ in range(3):
+            orders._modify(NAME, "portada/uno", "banner", lambda o: orders.add_failure(o, NAME, batch=0, reason=REASON))
+        with mock.patch("gimg.server._after_enqueue") as after:
+            self.ok("POST", self.order_url("portada/uno", "banner", "/troubleshooting/extend"), {})
+            self.assertEqual(after.call_count, 1)
+            self.ok("POST", "/api/projects/%s/troubleshooting" % NAME,
+                    {"key": "portada/uno", "profile": "banner", "problem": "p"}, 201)
+            self.assertEqual(after.call_count, 2)
+
     def test_queue_view_has_held_and_brand_prompt_known(self):
         for _ in range(3):
             orders._modify(NAME, "portada/uno", "banner", lambda o: orders.add_failure(o, NAME, batch=0, reason=REASON))
@@ -447,6 +458,99 @@ class FailuresCli(FailBase):
         code, out, _ = self.run_cli("order", "show", P, K, PR, "--json")
         self.assertEqual(json.loads(out)["failures"]["count"], 0)
         self.assertEqual(json.loads(out)["troubleshooting"], {"state": "open"})
+
+
+class ReviewFixes(FailBase):
+    """Findings of the block review of 0.8.0 steps 3-4."""
+    ROW = {"key": K, "profile": PR, "problem": "flat", "attempts": [1], "redesign": "", "terms": ["islet"]}
+
+    def held_one(self):
+        self.made()
+        self.fail_it(1)
+        queue.new_attempts_checked(P, K, PR, 1)
+        for _ in range(2):
+            orders._modify(P, K, PR, lambda o: orders.add_failure(o, P, batch=0, reason=REASON))
+
+    def test_free_is_the_way_out_of_a_block(self):
+        self.block()
+        entries, _, _ = queue.new_attempts_checked(P, K, PR, 1, mode="free", prompt="x")
+        self.assertEqual(entries[0]["mode"], "free")
+        self.assertEqual(self.order()["troubleshooting"], {"state": "open"})
+
+    def test_resubmitting_a_blocked_order_as_free_is_not_refused(self):
+        self.block()
+        queue.submit_order_checked(P, free(key=K))
+        self.assertEqual(self.order()["mode"], "free")
+
+    def test_a_restart_clears_the_pending_extension(self):
+        self.block()
+        failures.extend(P, K, PR)
+        self.assertTrue(failures.reset_on_score(P, K, PR, {"value": orders.RESET_SCORE}))
+        for _ in range(3):
+            orders._modify(P, K, PR, lambda o: orders.add_failure(o, P, batch=0, reason=REASON))
+        self.assertEqual(self.order()["troubleshooting"]["state"], "blocked")
+
+    def test_markdown_failures_do_not_fail_the_row(self):
+        from gimg.errors import PathError
+        self.made()
+        for exc in (GimgError("order.corrupt", path="x"), PathError("path.outside", path="x")):
+            with self.subTest(exc=type(exc).__name__), mock.patch.object(failures, "markdown", side_effect=exc):
+                self.assertEqual(failures.add_row(P, dict(self.ROW))["problem"], "flat")
+        self.assertEqual(len(failures.list_rows(P)), 2)
+
+    def test_unreadable_order_does_not_break_the_prompt_response(self):
+        self.made()
+        self.made("otra/pieza")
+        failures.add_row(P, dict(self.ROW))
+        path = orders._order_file(P, "otra/pieza", PR)
+        path.write_text("{ not json", encoding="utf-8")
+        res = brandsheet.prompt_response(P, "cover", "An islet")
+        self.assertEqual([k["term"] for k in res["known"]], ["islet"])
+
+    def test_known_terms_once_per_term(self):
+        self.made()
+        failures.add_row(P, dict(self.ROW))
+        failures.add_row(P, dict(self.ROW, terms=["Islet"]))
+        self.assertEqual(len(failures.known_terms(P, "an islet")), 1)
+
+    def test_cli_row_starts_the_worker(self):
+        self.held_one()
+        with mock.patch.object(cli, "_autostart") as start:
+            code, _, err = self.run_cli("troubleshoot", "add", P, K, PR, "--problem", "flat")
+        self.assertEqual((code, err), (0, ""))
+        start.assert_called_once()
+
+    def test_cli_extend_starts_the_worker_for_what_is_runnable(self):
+        self.block()
+        self.submit(free(key="libre", count=1))  # a runnable entry is waiting
+        with mock.patch.object(cli, "_autostart") as start:
+            code, _, err = self.run_cli("troubleshoot", "extend", P, K, PR)
+        self.assertEqual((code, err), (0, ""))
+        start.assert_called_once()
+
+    def test_resume_ignores_held_entries(self):
+        self.held_one()
+        queue.pause()
+        with mock.patch.object(cli, "_autostart") as start:
+            code, _, _ = self.run_cli("queue", "resume")
+        self.assertEqual(code, 0)
+        start.assert_not_called()
+
+    def test_extension_is_not_lost_when_the_enqueue_fails(self):
+        self.block()
+        failures.extend(P, K, PR)
+        with mock.patch.object(queue, "enqueue", side_effect=GimgError("queue.corrupt", path="x")):
+            self.assertEqual(self.err(queue.new_attempts_checked, P, K, PR, 1).code, "queue.corrupt")
+        self.assertEqual(self.order()["troubleshooting"]["state"], "extended")
+
+    def test_a_single_entry_extension_notes_its_id(self):
+        self.block()
+        failures.extend(P, K, PR)
+        [spec] = orders.attempt_specs(P, K, PR, 1)
+        spec.update(mode="free", extended=True)
+        [entry] = queue.enqueue(P, K, PR, [spec])
+        self.assertNotIn("batch", entry)
+        self.assertEqual(orders.get(P, K, PR)["troubleshooting"]["extensions"][-1]["batch"], entry["id"])
 
 
 if __name__ == "__main__":

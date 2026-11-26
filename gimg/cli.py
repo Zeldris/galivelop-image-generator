@@ -874,8 +874,20 @@ def _troubleshoot(args, sub, out: _Out) -> None:
         row = failures.add_row(args.project, body)
         out.data(row) if out.as_json else out.line("cli.out.troubleshoot_added", order=args.key, profile=args.profile)
     else:
-        res = failures.extend(args.project, args.key, args.profile)
-        out.data(res) if out.as_json else out.line("cli.out.troubleshoot_extended", order=args.key, profile=args.profile)
+        row = failures.extend(args.project, args.key, args.profile)
+        out.data(row) if out.as_json else out.line("cli.out.troubleshoot_extended", order=args.key, profile=args.profile)
+    if sub != "list":  # held entries were released: the worker has to start for them
+        _start_released(out)
+
+
+def _start_released(out: _Out) -> None:
+    try:
+        waiting = bool(queue.list_runnable())
+    except (GimgError, OSError):
+        waiting = False
+    if waiting:
+        sys.stdout.flush()
+        _autostart(out)
 
 
 def _attempt(args, sub, out: _Out) -> None:
@@ -925,7 +937,7 @@ def _queue(args, sub, out: _Out) -> None:
         changed = queue.resume()
         # a paused queue lets the service stop when idle (`service._busy`): bring it back for what is waiting
         try:  # the queue is already resumed: nothing after the change may turn it into a failure
-            waiting = changed and bool(queue.list_entries(["queued"]))
+            waiting = changed and bool(queue.list_runnable())
         except (GimgError, OSError):
             waiting = False
         if out.as_json:

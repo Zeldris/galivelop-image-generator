@@ -753,7 +753,9 @@ def batch_fail(req):
 def troubleshooting_extend(req):
     q = req.params
     _fields(req.body, ())
-    return failures.extend(q["p"], q["key"], q["profile"])
+    got = failures.extend(q["p"], q["key"], q["profile"])
+    _after_enqueue()  # the extension releases what the order held
+    return got
 
 
 @route("GET", "/api/projects/{p}/troubleshooting")
@@ -763,7 +765,9 @@ def troubleshooting_list(req):
 
 @route("POST", "/api/projects/{p}/troubleshooting")
 def troubleshooting_add(req):
-    return Reply(201, failures.add_row(req.params["p"], req.body), json=True)
+    row = failures.add_row(req.params["p"], req.body)
+    _after_enqueue()  # the row releases what the order held
+    return Reply(201, row, json=True)
 
 
 @route("POST", _ATT + "/note")

@@ -293,6 +293,8 @@ def enqueue(project: str, key: str, profile: str, specs: list, checks=None) -> l
         orders.add_batch(project, key, profile, record)
         if extended:
             failures.note_extension(project, key, profile, record["id"])
+    elif added and added[0].get("extended") is True:  # a single entry has no batch: the extension notes its id
+        failures.note_extension(project, key, profile, added[0]["id"])
     return added
 
 
@@ -619,7 +621,8 @@ def submit_order_checked(project: str, order: dict, draft=None, template=None, m
         if model is not None:
             spec["params"]["model"] = model
     check_specs(project, order["profile"], candidates)
-    extended = failures.admit(project, order["key"], order["profile"])  # an order in troubleshooting is refused here
+    # an order in troubleshooting is refused here (a free one is the way out of the block)
+    extended = failures.admit(project, order["key"], order["profile"]) if order.get("mode") == "brand" else False
     record = orders.submit(project, order)
     specs = orders.attempt_specs(project, record["key"], record["profile"], order.get("count", 1), template=template,
                                  model=model)
@@ -646,7 +649,8 @@ def new_attempts_checked(project: str, key: str, profile: str, count: int = 1, *
     On a brand order the prompt is assembled again from `subject` / `clean_zone` (else the stored ones) and the order is
     updated once the specs pass the machine checks; ``mode="free"`` with `prompt` switches it to free (`orders.plan_attempt`)."""
     provider = engine_mod.get_engine().provider
-    failures.check_open(project, key, profile)  # ``order.troubleshooting`` before anything else is looked at
+    if mode != "free":  # switching to free is the way out of a block
+        failures.check_open(project, key, profile)  # ``order.troubleshooting`` before anything else is looked at
     record, changes, checks = orders.plan_attempt(project, key, profile, subject=subject, clean_zone=clean_zone,
                                                   mode=mode, prompt=prompt)
     if model is None and record.get("mode") == "brand":  # the same model as `submit_order_checked` uses
@@ -656,12 +660,18 @@ def new_attempts_checked(project: str, key: str, profile: str, count: int = 1, *
                                  record=record)
     if changes is not None or failures.is_blocked(record):
         check_specs(project, profile, specs)  # before an extension is used up
-    if failures.admit(project, key, profile):
+    extended = failures.admit(project, key, profile) if record.get("mode") == "brand" else False
+    if extended:
         for spec in specs:
             spec["extended"] = True
-    if changes is not None:
-        orders.apply_changes(project, key, profile, changes)
-    return enqueue(project, key, profile, specs, checks), provider, checks
+    try:
+        if changes is not None:
+            orders.apply_changes(project, key, profile, changes)
+        return enqueue(project, key, profile, specs, checks), provider, checks
+    except BaseException:
+        if extended:
+            failures.restore_extension(project, key, profile)  # the extension was not used: it is not lost
+        raise
 
 
 def queued_view(entries: list, provider: str, lang: str | None = None) -> dict:

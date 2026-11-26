@@ -807,6 +807,8 @@ def reset_failures(order: dict) -> None:
     if isinstance(order.get("failures"), dict):
         order["failures"]["count"] = 0
         order["failures"]["reasons"] = []
+    if isinstance(order.get("troubleshooting"), dict):
+        order["troubleshooting"]["extendPending"] = False  # a restart leaves no extension waiting
 
 
 def add_failure(order: dict, project: str, *, batch=None, attempt=None, reason=None) -> dict:
@@ -977,7 +979,7 @@ def peek(project: str, key: str, profile: str):
         return None
 
 
-def list_orders(project: str, profile: str | None = None, chosen: bool | None = None) -> list:
+def list_orders(project: str, profile: str | None = None, chosen: bool | None = None, skip_corrupt: bool = False) -> list:
     """Orders of a project sorted by (key, profile). `chosen` True/False keeps only orders with/without
     a chosen attempt; `profile` keeps one profile."""
     projects.get(project)
@@ -989,7 +991,9 @@ def list_orders(project: str, profile: str | None = None, chosen: bool | None = 
         file = Path(folder) / _ORDER_FILE
         try:
             record = _shape(fsutil.read_json(file), file)
-        except (OSError, ValueError):
+        except (OSError, ValueError, GimgError):
+            if skip_corrupt:  # `failures.list_rows`: an unreadable order is not the rows' business
+                continue
             raise GimgError("order.corrupt", path=str(file))
         if profile is not None and record["profile"] != profile:
             continue

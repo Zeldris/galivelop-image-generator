@@ -25,7 +25,7 @@ import copy
 import re
 
 from . import i18n, orders, paths, projects
-from .errors import GimgError
+from .errors import GimgError, PathError
 
 _ROW_FIELDS = ("key", "profile", "problem", "attempts", "redesign", "terms", "by")
 _MAX_TERMS = 30
@@ -101,6 +101,18 @@ def admit(project: str, key: str, profile: str) -> bool:
         return True
 
     return orders._modify(project, key, profile, change)
+
+
+def restore_extension(project: str, key: str, profile: str) -> None:
+    """`admit` consumed the extension but what came after failed (best effort): it is pending again."""
+    def change(order):
+        if is_blocked(order):
+            _stored(order)["extendPending"] = True
+
+    try:
+        orders._modify(project, key, profile, change)
+    except (GimgError, OSError):
+        pass
 
 
 def note_extension(project: str, key: str, profile: str, batch_id: int) -> None:
@@ -242,7 +254,7 @@ def add_row(project: str, body) -> dict:
 def list_rows(project: str) -> list:
     """The rows of every order of the project, oldest first."""
     rows = []
-    for order in orders.list_orders(project):
+    for order in orders.list_orders(project, skip_corrupt=True):
         rows += copy.deepcopy(_stored(order).get("rows") or [])
     return sorted(rows, key=lambda r: (r.get("at", ""), r.get("key", ""), r.get("profile", "")))
 
@@ -253,10 +265,11 @@ def _word(term: str, text: str) -> bool:
 
 def known_terms(project: str, subject: str) -> list:
     """``[{term, row}]``: the terms of the project's rows that appear (whole word, any case) in `subject`."""
-    found = []
+    found, seen = [], set()
     for row in list_rows(project):
         for term in row.get("terms", ()):
-            if _word(term, subject):
+            if term.lower() not in seen and _word(term, subject):
+                seen.add(term.lower())
                 found.append({"term": term, "row": row})
     return found
 
@@ -294,6 +307,6 @@ def write_markdown(project: str, lang: str | None = None):
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         fsutil.write_bytes_atomic(path, markdown(project, lang).encode("utf-8"))
-    except OSError:
+    except (OSError, GimgError, PathError):  # best effort: another order's corrupt file or a bad path is not the row's failure
         return None
     return path
