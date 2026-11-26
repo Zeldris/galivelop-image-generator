@@ -119,6 +119,9 @@ detrás). Cada paso, con sus tests, su commit y la API en `docs/api.md`; revisi�
    extraído; tandas en la cola y en la galería; distintivo Marca/Libre; «No» con motivo, «Ninguno vale», marcador de
    fallos, `troubleshoot.js` y subpestaña Troubleshooting; aviso «ya falló antes».
    **Hecho (2026-11-26, 5a-5c).** Fuera por diseño: nota/desglose y descartes (0.9.0) y «Pedir rediseño a la bandeja»
+   **Barrido previsto para 0.9.0 (aprobado el 2026-11-26, retro P1):** `troubleshoot.js` y `brand-prompt.js`: foco que cae en
+   `body` al cancelar `confirmAction` (l. 55); aviso de Problema vacío envuelto en «Algo falló:» (l. 47); `ui.ts.count` sin
+   singular (l. 84); `aria-live` sobre todo el contenedor (l. 72); `rowLabel` devuelve `row.key` (`brand-prompt.js:26`).
    (0.9.0/F6, con la bandeja). «Una tanda más»: una sola vez por ciclo de fallos (`order.extend_used`).
 6. **Cierre (hecho, versión 0.8.0):** CHANGELOG es/en, README «Versión», `python3 releases.py bump X.Y.Z` (sube `__version__`, los dos CHANGELOG y la «Versión» de los README: no se editan a mano); recorrido con mando en la Deck (pendiente de la
    persona, riesgo de abajo) antes de `main`.
