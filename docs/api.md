@@ -131,6 +131,18 @@ es texto, `api.bad_param`. Cada entrada de la cola lleva `position` (la cola la 
 "estimateMs"}`. Errores: `order.invalid` (con `errors`), `limit.*`, `key.*`, `order.profile_unknown`,
 `compose.template_unknown` (400).
 
+Modo marca (0.8.0): `"mode": "brand"` (ausente o `"free"` es el pedido de siempre) con `"piece"` (tipo de pieza de la
+hoja), `"subject"` (no vacío, hasta 4000 caracteres) y `"cleanZone"` (opcional). La hoja arma el prompt (`brand/prompt`)
+y se guarda en `order.prompt`; el perfil sale de la pieza (otro distinto, `order.profile_mismatch`; si falta se rellena)
+y `seed`, `count` y el modelo salen de la pieza si el cuerpo no los da. No lleva el `style` del perfil. El pedido guarda
+`mode`, `piece`, `subject`, `cleanZone` y `sheetVersion`; cada intento y cada entrada de la cola, `mode` y (en modo marca)
+`sheetVersion` (los anteriores se leen como `free`). `sheetVersion` y `modeChanges` del cuerpo se ignoran. Errores
+400: `order.piece_required`, `order.subject_required`, `order.brand_prompt` (en modo marca no se envía `prompt`),
+`order.profile_mismatch`, `brandsheet.unknown_piece`; 422: `brand.no_sheet` (el proyecto no tiene hoja),
+`brand.blocked` (el lint de la hoja falla: `errors` lleva las comprobaciones que fallan) y los `brandsheet.*` de una hoja
+rota. Con hoja válida la respuesta lleva además `checks` (el lint: en modo marca los avisos; en un pedido libre, todos
+avisos, nunca bloquea); sin hoja, no hay `checks`.
+
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/orders \
   -d '{"key":"fauna/lobo","profile":"banner","prompt":"un lobo en la nieve","count":2}'
@@ -158,12 +170,20 @@ curl -s -X PUT -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/o
 ### POST /api/projects/{p}/orders/{profile}/{key}/attempts
 
 Más intentos (otra semilla, retoque del prompt, varios seguidos, borrador). Cuerpo, todo opcional: `{"count", "seed",
-"prompt", "negative", "steps", "cfg", "sampler", "draft", "template", "model"}` (`negative`: prompt negativo retocado; `""` lo quita; `template`: id de una plantilla de
+"prompt", "negative", "steps", "cfg", "sampler", "draft", "template", "model", "subject", "cleanZone", "mode"}` (`negative`: prompt negativo retocado; `""` lo quita; `template`: id de una plantilla de
 `GET …/profiles/{profile}/templates`, la de los intentos nuevos; sin él, `default`; `model`: id de `GET /api/models`
 que sustituye al del perfil en estos intentos, como `gimg attempt new --model`). Respuesta 202: `{"entries",
 "estimateMs"}`; cada entrada lleva su `template`. Errores: `order.count_invalid`, `order.prompt_too_long`, `limit.*`,
 `order.unknown`, `compose.template_unknown` (400, antes de encolar nada), `model.unknown` (400), `limit.steps` si
 el modelo no cabe en el perfil de máquina.
+
+En un pedido de modo marca, `subject` y `cleanZone` (`""` la quita) rearman el prompt con la hoja actual y lo lintan
+(`brand.blocked`, 422, sin tocar el pedido); sin ellos se rearma con los guardados. Se actualizan `subject`,
+`cleanZone`, `prompt` y `sheetVersion` del pedido. `prompt` en un pedido de marca es `order.brand_prompt`, salvo con
+`"mode": "free"` («Pasar a imagen libre»): el pedido pasa a libre con ese prompt (se le añade el `style` del perfil
+como siempre) y se anota en `modeChanges: [{"from", "to", "at"}]`; `mode: "free"` sin `prompt` o con `subject` o
+`cleanZone` es `order.mode_conflict`. En un pedido libre, `subject`, `cleanZone` o `mode: "brand"` son
+`order.not_brand` (pasar de libre a marca no existe aquí). La respuesta lleva `checks` como la de crear el pedido.
 
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' \

@@ -100,6 +100,45 @@
       "maximum": 50,
       "default": 1,
       "description": "Number of consecutive attempts."
+    },
+    "mode": {
+      "enum": ["brand", "free"],
+      "default": "free",
+      "description": "brand: the prompt is built from the project's brand sheet (needs piece and subject; the prompt is not sent). free (or absent): the prompt is the order's own."
+    },
+    "piece": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "description": "Brand mode: the piece type of the sheet; it sets the profile and the default seed, count and model."
+    },
+    "subject": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Brand mode: what the image shows (the first sentence of the assembled prompt)."
+    },
+    "cleanZone": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Brand mode: the clean zone sentence, if any."
+    },
+    "sheetVersion": {
+      "type": "string",
+      "description": "Stored by the generator in brand mode: the version of the sheet that built the prompt. Not for clients to set."
+    },
+    "modeChanges": {
+      "type": "array",
+      "description": "Stored by the generator: each switch of the order's mode (brand to free).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from", "to", "at"],
+        "properties": {
+          "from": {"enum": ["brand", "free"]},
+          "to": {"enum": ["brand", "free"]},
+          "at": {"type": "string"}
+        }
+      }
     }
   },
   "$defs": {

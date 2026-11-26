@@ -137,6 +137,18 @@ also not saved in the order): model for the attempts (`gimg order submit --model
 "entries", "estimateMs"}`. Errors: `order.invalid` (with `errors`), `limit.*`, `key.*`, `order.profile_unknown`,
 `compose.template_unknown` (400).
 
+Brand mode (0.8.0): `"mode": "brand"` (absent or `"free"` is the usual order) with `"piece"` (a piece type of the sheet),
+`"subject"` (not blank, up to 4000 characters) and `"cleanZone"` (optional). The sheet builds the prompt (`brand/prompt`)
+and it is stored in `order.prompt`; the profile comes from the piece (a different one is `order.profile_mismatch`; if
+missing it is filled in) and `seed`, `count` and the model come from the piece when the body does not give them. The
+profile `style` is not appended. The order stores `mode`, `piece`, `subject`, `cleanZone` and `sheetVersion`; each
+attempt and queue entry stores `mode` and (in brand mode) `sheetVersion` (older ones read as `free`). `sheetVersion` and
+`modeChanges` in the body are ignored. 400 errors: `order.piece_required`, `order.subject_required`, `order.brand_prompt`
+(no `prompt` in brand mode), `order.profile_mismatch`, `brandsheet.unknown_piece`; 422: `brand.no_sheet` (the project has
+no sheet), `brand.blocked` (the sheet lint fails: `errors` carries the failing checks) and the `brandsheet.*` codes of a
+broken sheet. With a valid sheet the response also carries `checks` (the lint: warnings in brand mode; in a free order
+every problem is a warning and it never blocks); without a sheet there is no `checks`.
+
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/orders \
   -d '{"key":"fauna/lobo","profile":"banner","prompt":"un lobo en la nieve","count":2}'
@@ -164,12 +176,21 @@ curl -s -X PUT -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/o
 ### POST /api/projects/{p}/orders/{profile}/{key}/attempts
 
 More attempts (another seed, a prompt tweak, several in a row, draft). Body, all optional: `{"count", "seed",
-"prompt", "negative", "steps", "cfg", "sampler", "draft", "template", "model"}` (`negative`: a retouched negative prompt; `""` removes it; `template`: id of a template from
+"prompt", "negative", "steps", "cfg", "sampler", "draft", "template", "model", "subject", "cleanZone", "mode"}` (`negative`: a retouched negative prompt; `""` removes it; `template`: id of a template from
 `GET …/profiles/{profile}/templates`, the one for the new attempts; without it, `default`; `model`: id from
 `GET /api/models` that replaces the profile's in these attempts, like `gimg attempt new --model`). Response 202:
 `{"entries", "estimateMs"}`; each entry carries its `template`. Errors: `order.count_invalid`,
 `order.prompt_too_long`, `limit.*`, `order.unknown`, `compose.template_unknown` (400, before enqueuing anything),
 `model.unknown` (400), `limit.steps` if the model does not fit the machine profile.
+
+On a brand-mode order, `subject` and `cleanZone` (`""` removes it) rebuild the prompt with the current sheet and lint it
+(`brand.blocked`, 422, the order stays untouched); without them it is rebuilt from the stored ones. The order's
+`subject`, `cleanZone`, `prompt` and `sheetVersion` are updated. A `prompt` on a brand order is `order.brand_prompt`,
+unless sent with `"mode": "free"` («switch to free image»): the order becomes free with that prompt (the profile `style`
+is appended as usual) and the change is recorded in `modeChanges: [{"from", "to", "at"}]`; `mode: "free"` without
+`prompt`, or with `subject` or `cleanZone`, is `order.mode_conflict`. On a free order, `subject`, `cleanZone` or
+`mode: "brand"` are `order.not_brand` (free to brand does not exist here). The response carries `checks` like order
+creation.
 
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' \

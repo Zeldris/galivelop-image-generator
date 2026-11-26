@@ -7,7 +7,7 @@ This module neither enqueues (queue, F1.4) nor delivers (F1.5): `choose` and `un
 new chosen ids so delivery can hook in. Every read-modify-write holds `fsutil.lock` of ``order.json``.
 
 Public API: `submit`, `set_text`, `attempt_specs`, `add_attempt`, `add_derived`, `set_composed`, `attempt_for_entry`, `attempt_image`,
-`raw_image`, `compose_names`, `compose_paths`, `compose_lock_path`, `pending_image_path`, `mark`, `note`, `choose`, `undo`, `get`, `list_orders`. All raise `GimgError` with codes ``order.*`` on bad input.
+`raw_image`, `prepare`, `plan_attempt`, `apply_changes`, `compose_names`, `compose_paths`, `compose_lock_path`, `pending_image_path`, `mark`, `note`, `choose`, `undo`, `get`, `list_orders`. All raise `GimgError` with codes ``order.*`` on bad input.
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ import random
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import fsutil, paths, projects, schema
+from . import brandsheet, fsutil, paths, projects, schema
 from .errors import GimgError
 
 STATES = ("new", "candidate", "discarded")
@@ -255,7 +255,12 @@ def _submit(project: str, order: dict, only_new: bool) -> tuple:
         "initImage": order.get("initImage"),
         "strength": order.get("strength"),
         "text": dict(order.get("text", {})),
+        "mode": order.get("mode", "free"),
     }
+    brand = fields["mode"] == "brand"
+    for name in ("piece", "subject", "cleanZone", "sheetVersion"):  # only brand orders carry them
+        if brand and name in order:
+            fields[name] = order[name]
     if _neg(order.get("negative")):
         fields["negative"] = _neg(order["negative"])
     path = _order_file(project, key, profile)
@@ -274,6 +279,9 @@ def _submit(project: str, order: dict, only_new: bool) -> tuple:
                 return copy.deepcopy(record), False
             created = False
         record.update(fields)
+        if not brand:
+            for name in ("piece", "subject", "cleanZone", "sheetVersion"):
+                record.pop(name, None)
         if not _neg(order.get("negative")):  # only orders with a negative carry the key, so stored orders keep their shape
             record.pop("negative", None)
         record["updatedAt"] = now
@@ -295,7 +303,8 @@ def check_order(project: str, order: dict) -> list:
                  "params": copy.deepcopy(order.get("params", {})), "seed": order.get("seed"),
                  "draft": bool(order.get("draft", False)), "initImage": order.get("initImage"),
                  "strength": order.get("strength"), "text": dict(order.get("text", {})),
-                 "negative": _neg(order.get("negative"))}
+                 "negative": _neg(order.get("negative")), "mode": order.get("mode", "free"),
+                 "sheetVersion": order.get("sheetVersion")}
     specs = build_specs(candidate, profile_cfg, order.get("count", 1))
     from . import limits
     machine = limits.load_machine()
@@ -331,8 +340,9 @@ def set_text(project: str, key: str, profile: str, text: dict, replace: bool = F
 
 
 def attempt_specs(project: str, key: str, profile: str, count: int = 1, *,
-                  seed=None, prompt=None, params=None, draft=None, template=None, model=None, negative=None) -> list:
-    """Specs of `count` attempts to enqueue; never changes the stored order (D19-D20).
+                  seed=None, prompt=None, params=None, draft=None, template=None, model=None, negative=None, record=None) -> list:
+    """Specs of `count` attempts to enqueue; never changes the stored order (D19-D20). `record` is a candidate order
+    (`plan_attempt`) used instead of the stored one.
 
     Each spec is ``{"seed", "prompt", "params", "references", "draft", "initImage", "strength", "text"}`` (the last three are the order's, ``None`` or ``{}`` if absent):
     - seed: `seed` if given, else the order's seed, then ``seed + i`` for attempt i (0-based);
@@ -350,7 +360,7 @@ def attempt_specs(project: str, key: str, profile: str, count: int = 1, *,
     - model: a catalog id (F4d) that replaces the profile's (and the draft's) model in each spec; unknown is ``model.unknown``;
       `queue.enqueue` checks it against the machine profile."""
     _check_fields(prompt, params, seed, negative)
-    order = get(project, key, profile)
+    order = get(project, key, profile) if record is None else record
     profile_cfg = _profile(projects.get(project)["config"], profile)
     specs = build_specs(order, profile_cfg, count, seed=seed, prompt=prompt, params=params, draft=draft,
                         negative=negative)
@@ -382,7 +392,8 @@ def build_specs(order: dict, profile_cfg: dict, count: int = 1, *, seed=None, pr
         if "steps" in (params or {}):
             full["steps"] = params["steps"]
     text = order["prompt"] if prompt is None else prompt
-    style = profile_cfg.get("style", "")
+    brand = order.get("mode") == "brand"
+    style = "" if brand else profile_cfg.get("style", "")  # the sheet's prompt is final: no style after it
     if style:
         text = "%s, %s" % (text, style)
     max_prompt = schema.load_schema("order")["properties"]["prompt"]["maxLength"]
@@ -399,8 +410,142 @@ def build_specs(order: dict, profile_cfg: dict, count: int = 1, *, seed=None, pr
         "initImage": order.get("initImage"),
         "strength": order.get("strength"),
         "text": dict(order.get("text") or {}),
+        "mode": "brand" if brand else "free",
+        **({"sheetVersion": order["sheetVersion"]} if brand and order.get("sheetVersion") else {}),
         **({"negative": neg} if neg else {}),  # only attempts with a negative carry the key
     } for i in range(count)]
+
+
+_BRAND_KEYS = ("mode", "piece", "subject", "cleanZone")
+
+
+def _sheet(project: str) -> dict:
+    """The resolved brand sheet of the project; no sheet declared is ``brand.no_sheet`` (any other problem keeps its code)."""
+    try:
+        return brandsheet.resolve(project)
+    except GimgError as exc:
+        if exc.code == "brandsheet.none":
+            raise GimgError("brand.no_sheet", project=project)
+        raise
+
+
+def _free_checks(project: str, prompt: str):
+    """Lint of a free prompt against the project's sheet (``mode: free``, never blocks), or ``None`` without a valid sheet."""
+    try:
+        sheet = brandsheet.resolve(project)
+    except GimgError:
+        return None
+    return brandsheet.lint(sheet, prompt, None, "free")["checks"]
+
+
+def _brand_build(project: str, sheet: dict, piece: str, subject: str, zone) -> tuple:
+    """Assemble and lint (mode brand): ``(prompt, checks)``, or ``brand.blocked`` with the failing checks."""
+    built = brandsheet.assemble(sheet, piece, subject, zone)
+    res = brandsheet.lint(sheet, built["prompt"], piece, "brand", zone)
+    if res["blocked"]:
+        raise GimgError("brand.blocked", errors=brandsheet.blocking_errors(res["checks"]), project=project, piece=piece)
+    return built["prompt"], res["checks"]
+
+
+def prepare(project: str, order: dict) -> tuple:
+    """What `queue.submit_order` does to an order before it is checked: ``(order, info)`` (the order is a copy).
+
+    A free order (``mode`` absent or ``free``) is kept as it is; ``info["checks"]`` is its lint against the project's
+    sheet (warnings only) when the project has a valid one. A brand order needs ``piece`` and a non-blank ``subject``, and
+    no ``prompt``: the sheet assembles it (``brand.no_sheet``, ``order.piece_required``, ``order.subject_required``,
+    ``order.brand_prompt``, ``brand.blocked``). ``profile`` comes from the piece type (another one is
+    ``order.profile_mismatch``); ``seed`` and ``count`` default to the piece's; ``info["model"]`` is the piece's model when
+    the project's profile has another; ``sheetVersion`` is stored. ``sheetVersion`` and ``modeChanges`` sent by a client are dropped."""
+    if not isinstance(order, dict):
+        return order, {}
+    order = dict(order)
+    order.pop("sheetVersion", None)
+    order.pop("modeChanges", None)
+    probe = {"key": "x", "profile": "x", "prompt": "x", **{k: order[k] for k in _BRAND_KEYS if k in order}}
+    _check_fields_of(probe)
+    if order.get("mode", "free") != "brand":
+        for name in ("piece", "subject", "cleanZone"):
+            order.pop(name, None)
+        checks = _free_checks(project, order["prompt"]) if isinstance(order.get("prompt"), str) else None
+        return order, ({"checks": checks} if checks is not None else {})
+    if "prompt" in order:
+        raise GimgError("order.brand_prompt")
+    piece, subject = order.get("piece"), order.get("subject")
+    if not piece:
+        raise GimgError("order.piece_required")
+    if not isinstance(subject, str) or not subject.strip():
+        raise GimgError("order.subject_required")
+    sheet = _sheet(project)
+    if piece not in sheet["pieceTypes"]:
+        raise GimgError("brandsheet.unknown_piece", piece=str(piece))
+    defaults = brandsheet.piece_defaults(sheet, piece)
+    if order.get("profile") not in (None, defaults["profile"]):
+        raise GimgError("order.profile_mismatch", piece=piece, profile=order["profile"], expected=defaults["profile"])
+    order["profile"] = defaults["profile"]
+    prompt, checks = _brand_build(project, sheet, piece, subject, order.get("cleanZone"))
+    order["prompt"] = prompt
+    order["sheetVersion"] = sheet["version"]
+    if order.get("seed") is None and defaults["seed"] is not None:
+        order["seed"] = defaults["seed"]
+    if "count" not in order and defaults["count"] is not None:
+        order["count"] = defaults["count"]
+    info = {"checks": checks}
+    own = (projects.get(project)["config"].get("profiles") or {}).get(defaults["profile"], {}).get("model")
+    if defaults["model"] is not None and defaults["model"] != own:
+        info["model"] = defaults["model"]
+    return order, info
+
+
+def plan_attempt(project: str, key: str, profile: str, *, subject=None, clean_zone=None, mode=None, prompt=None) -> tuple:
+    """What `queue.new_attempts` does before it builds specs: ``(candidate, changes, checks)`` without storing anything.
+
+    `candidate` is the order as it would be after the attempt; `changes` (``None`` when there are none) is what
+    `apply_changes` stores in it; `checks` is the lint to report (or ``None``).
+    - free order: `subject`, `clean_zone` or ``mode="brand"`` are ``order.not_brand``; nothing changes.
+    - brand order: the prompt is assembled again from the stored (or the given) subject and clean zone with the sheet as it
+      is now, and linted (``brand.blocked``). A `prompt` is ``order.brand_prompt`` unless ``mode="free"``: then the order
+      becomes free with that prompt and the change goes to ``modeChanges`` (with a subject or clean zone: ``order.mode_conflict``)."""
+    probe = {"key": "x", "profile": "x", "prompt": "x"}
+    for name, value in (("mode", mode), ("subject", subject), ("cleanZone", clean_zone)):
+        if value is not None:
+            probe[name] = value
+    _check_fields_of(probe)
+    order = get(project, key, profile)
+    current = order.get("mode", "free")
+    if current != "brand":
+        if subject is not None or clean_zone is not None or mode == "brand":
+            raise GimgError("order.not_brand", order=key, profile=profile)
+        return order, None, _free_checks(project, order["prompt"] if prompt is None else prompt)
+    if mode == "free":
+        if prompt is None or subject is not None or clean_zone is not None:
+            raise GimgError("order.mode_conflict", reason="mode free needs a prompt and takes no subject or cleanZone")
+        changes = {"mode": "free", "prompt": prompt,
+                   "modeChanges": list(order.get("modeChanges", [])) + [{"from": "brand", "to": "free", "at": _now()}]}
+        return {**order, **changes}, changes, _free_checks(project, prompt)
+    if prompt is not None:
+        raise GimgError("order.brand_prompt")
+    new_subject = order["subject"] if subject is None else subject
+    if not new_subject.strip():
+        raise GimgError("order.subject_required")
+    zone = order.get("cleanZone") if clean_zone is None else clean_zone
+    sheet = _sheet(project)
+    built, checks = _brand_build(project, sheet, order["piece"], new_subject, zone)
+    changes = {"subject": new_subject, "cleanZone": zone if (zone or "").strip() else None, "prompt": built,
+               "sheetVersion": sheet["version"]}
+    candidate = {k: v for k, v in {**order, **changes}.items() if v is not None}
+    return candidate, changes, checks
+
+
+def apply_changes(project: str, key: str, profile: str, changes: dict) -> None:
+    """Store the `changes` of `plan_attempt` in the order (a ``None`` value removes the key)."""
+    def change(order):
+        for name, value in changes.items():
+            if value is None:
+                order.pop(name, None)
+            else:
+                order[name] = copy.deepcopy(value)
+
+    _modify(project, key, profile, change)
 
 
 def attempt_for_entry(project: str, key: str, profile: str, entry_id: int):
@@ -442,6 +587,9 @@ def _new_record(order: dict, spec: dict, new_id: int, image: str, init_image=Non
         "note": "",
         "createdAt": _now(),
     }
+    record["mode"] = "brand" if spec.get("mode") == "brand" else "free"
+    if record["mode"] == "brand" and isinstance(spec.get("sheetVersion"), str):
+        record["sheetVersion"] = spec["sheetVersion"]
     if spec.get("draft") is True:  # only drafts carry the key, so stored orders keep their shape
         record["draft"] = True
     if isinstance(spec.get("negative"), str) and spec["negative"]:  # same for the negative prompt

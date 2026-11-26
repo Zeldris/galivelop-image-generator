@@ -2,7 +2,7 @@
 
 ``{"nextId": n, "entries": [...]}``; entry: ``id``, ``project``, ``key``, ``profile``, ``seed``, ``prompt``,
 ``params``, ``references``, ``state`` (queued|running|done|failed|cancelled), ``pid``, ``enqueuedAt``,
-``startedAt``, ``finishedAt``, ``error``, ``attemptId``, ``cancelRequested``, ``draft`` (bool; an older entry without it is not a draft), ``initImage`` (relative path or ``None``) and ``strength`` (number or ``None``; an older entry without the keys has neither) and ``text`` (object, the values of the
+``startedAt``, ``finishedAt``, ``error``, ``attemptId``, ``cancelRequested``, ``draft`` (bool; an older entry without it is not a draft), ``initImage`` (relative path or ``None``) and ``strength`` (number or ``None``; an older entry without the keys has neither) and ``mode`` (``brand`` or ``free``; an older entry without it is free) and ``sheetVersion`` (brand entries: the version of the sheet that built the prompt) and ``text`` (object, the values of the
 profile's ``compose.fields``; an older entry without it has none: read it with ``.get``) and ``template`` (F4b: the id of the composition
 template, ``None`` for ``default``; an older entry without it has none) and ``position`` (F4d: where a ``queued`` entry
 stands; the worker takes the lowest one, ties and entries without it by id; `move` and `clear` edit it). Entries stay in arrival order in the file.
@@ -250,11 +250,14 @@ def enqueue(project: str, key: str, profile: str, specs: list) -> list:
                      "draft": spec.get("draft") is True,
                      "initImage": spec.get("initImage"), "strength": spec.get("strength"),
                      "text": copy.deepcopy(spec.get("text") or {}),
+                     "mode": "brand" if spec.get("mode") == "brand" else "free",
                      "template": spec.get("template"), "position": data["nextId"],
                      "state": "queued", "pid": None, "enqueuedAt": now, "startedAt": None,
                      "finishedAt": None, "error": None, "attemptId": None, "cancelRequested": False}
             if spec.get("negative"):  # only entries with a negative carry the key
                 entry["negative"] = spec["negative"]
+            if entry["mode"] == "brand" and spec.get("sheetVersion"):  # the sheet that built the prompt
+                entry["sheetVersion"] = spec["sheetVersion"]
             data["nextId"] += 1
             data["entries"].append(entry)
             added.append(entry)
@@ -482,7 +485,18 @@ def estimate_for(entry: dict, provider: str | None = None, memo: dict | None = N
 def submit_order(project: str, order: dict, draft=None, template=None, model=None) -> tuple:
     """`gimg order submit` and ``POST /api/projects/{p}/orders``: store the order and enqueue its attempts.
     Returns ``(entries, provider)``; a bad engine setting fails before anything is stored or queued."""
+    entries, provider, _ = submit_order_checked(project, order, draft, template, model)
+    return entries, provider
+
+
+def submit_order_checked(project: str, order: dict, draft=None, template=None, model=None) -> tuple:
+    """`submit_order` that also returns the lint of the prompt: ``(entries, provider, checks)``. `checks` is ``None``
+    without a valid brand sheet. A brand order (``mode: brand``) gets its prompt, profile, seed, count and model from the
+    sheet (`orders.prepare`)."""
     provider = engine_mod.get_engine().provider
+    order, info = orders.prepare(project, order)
+    if model is None:
+        model = info.get("model")
     if draft is not None:  # the option is the order's own field, so it is stored with the order
         order["draft"] = draft
     candidates = orders.check_order(project, order)  # limits, prompt length and seed range, before anything is stored
@@ -497,16 +511,36 @@ def submit_order(project: str, order: dict, draft=None, template=None, model=Non
     record = orders.submit(project, order)
     specs = orders.attempt_specs(project, record["key"], record["profile"], order.get("count", 1), template=template,
                                  model=model)
-    return enqueue(project, record["key"], record["profile"], specs), provider
+    return enqueue(project, record["key"], record["profile"], specs), provider, info.get("checks")
 
 
 def new_attempts(project: str, key: str, profile: str, count: int = 1, *, seed=None, prompt=None, params=None,
-                 draft=None, template=None, model=None, negative=None) -> tuple:
+                 draft=None, template=None, model=None, negative=None, subject=None, clean_zone=None,
+                 mode=None) -> tuple:
     """`gimg attempt new` and ``POST …/attempts``: enqueue `count` more attempts. Returns ``(entries, provider)``."""
+    entries, provider, _ = new_attempts_checked(project, key, profile, count, seed=seed, prompt=prompt, params=params,
+                                                draft=draft, template=template, model=model, negative=negative,
+                                                subject=subject, clean_zone=clean_zone, mode=mode)
+    return entries, provider
+
+
+def new_attempts_checked(project: str, key: str, profile: str, count: int = 1, *, seed=None, prompt=None, params=None,
+                         draft=None, template=None, model=None, negative=None, subject=None, clean_zone=None,
+                         mode=None) -> tuple:
+    """`new_attempts` that also returns the lint of the prompt: ``(entries, provider, checks)``.
+
+    On a brand order the prompt is assembled again from `subject` / `clean_zone` (else the stored ones) and the order is
+    updated once the specs pass the machine checks; ``mode="free"`` with `prompt` switches it to free (`orders.plan_attempt`)."""
     provider = engine_mod.get_engine().provider
-    specs = orders.attempt_specs(project, key, profile, count, seed=seed, prompt=prompt, params=params, draft=draft,
-                                 template=template, model=model, negative=negative)
-    return enqueue(project, key, profile, specs), provider
+    record, changes, checks = orders.plan_attempt(project, key, profile, subject=subject, clean_zone=clean_zone,
+                                                  mode=mode, prompt=prompt)
+    specs = orders.attempt_specs(project, key, profile, count, seed=seed, prompt=prompt if changes is None else None,
+                                 params=params, draft=draft, template=template, model=model, negative=negative,
+                                 record=record)
+    if changes is not None:
+        check_specs(project, profile, specs)
+        orders.apply_changes(project, key, profile, changes)
+    return enqueue(project, key, profile, specs), provider, checks
 
 
 def queued_view(entries: list, provider: str, lang: str | None = None) -> dict:

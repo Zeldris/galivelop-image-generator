@@ -595,17 +595,36 @@ def profile_owner(sheet: dict, piece: str) -> str:
     return found["project"] if found else sheet["chain"][0]
 
 
+def piece_defaults(sheet: dict, piece: str) -> dict:
+    """What a piece type gives an order that does not say otherwise: {profile, seed, count, model, chroma}. The model
+    is the one of the profile in the config of the project that declared it (`profile_owner`)."""
+    spec = sheet["pieceTypes"][piece]
+    profile = spec.get("profile")
+    model = projects.get(profile_owner(sheet, piece))["config"].get("profiles", {}).get(profile, {}).get("model")
+    return {"profile": profile, "seed": spec.get("seed"), "count": spec.get("count"), "model": model,
+            "chroma": spec.get("chroma")}
+
+
+def blocking_errors(checks: list) -> list:
+    """The failing checks of a lint as validation errors (`GimgError.errors`): path ``/prompt``, code ``lint.<problem>``
+    (its text is the lint message), params of the message plus ``id`` and ``span``."""
+    out = []
+    for check in checks:
+        if check["status"] == "error":
+            params = {**check["message"]["params"], "id": check["id"]}
+            if "span" in check:
+                params["span"] = check["span"]
+            out.append(schema.ValidationError("/prompt", check["message"]["key"], params))
+    return out
+
+
 def prompt_response(project_name: str, piece: str, subject: str, clean_zone: str | None = None) -> dict:
     """`gimg brand prompt --json` / `POST .../brand/prompt`: the assembled prompt, its checks and the piece defaults."""
     sheet = resolve(project_name)
     built = assemble(sheet, piece, subject, clean_zone)
     res = lint(sheet, built["prompt"], piece, "brand", clean_zone)
-    spec = sheet["pieceTypes"][piece]
-    profile = spec.get("profile")
-    model = projects.get(profile_owner(sheet, piece))["config"].get("profiles", {}).get(profile, {}).get("model")
-    defaults = {"profile": profile, "seed": spec.get("seed"), "count": spec.get("count"), "model": model,
-                "chroma": spec.get("chroma")}
-    return {**built, "checks": res["checks"], "blocked": res["blocked"], "defaults": defaults, "known": []}
+    return {**built, "checks": res["checks"], "blocked": res["blocked"], "defaults": piece_defaults(sheet, piece),
+            "known": []}
 
 
 def piece_list(piece_types: dict, sheet: dict | None = None, project: str | None = None) -> list:

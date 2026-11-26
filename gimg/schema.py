@@ -261,4 +261,5 @@ def validate(instance, schema: dict) -> list:
 
 def format_error(err: ValidationError, lang: str | None = None) -> str:
     path = err.path or "/"
-    return i18n.t("schema." + err.code, lang, path=path, **err.params)
+    key = err.code if err.code.startswith("lint.") else "schema." + err.code  # a blocked brand prompt: the lint text
+    return i18n.t(key, lang, path=path, **err.params)

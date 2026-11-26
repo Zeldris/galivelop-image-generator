@@ -364,7 +364,8 @@ def _generate(entry: dict, eng, machine: dict, state: dict, lang=None):
         "engineVersion": result.engine_version, "command": getattr(result, "command", None),
         "modelFiles": getattr(result, "model_files", None), "log": kept_log,
         "draft": entry.get("draft") is True, "negative": entry.get("negative"),
-        "initImage": entry.get("initImage"), "strength": entry.get("strength"), **extra}, entry_id=entry_id)
+        "initImage": entry.get("initImage"), "strength": entry.get("strength"),
+        "mode": entry.get("mode"), "sheetVersion": entry.get("sheetVersion"), **extra}, entry_id=entry_id)
     state["final"] = None
     if raw is not None:
         _compose_attempt(entry, project, attempt_id, raw, final, state, lang)
