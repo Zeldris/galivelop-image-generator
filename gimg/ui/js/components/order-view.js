@@ -257,7 +257,7 @@ export async function orderView(host, route) {
 
     // panel lateral: se reconstruye solo si cambió el prompt o los parámetros del pedido (no `chosen` ni `text`:
     // elegir, deshacer o guardar los textos no debe borrar lo que se está editando ni el foco)
-    const sig = JSON.stringify([order.prompt, order.params, order.seed, order.draft, order.mode, ctx.blocked, order.troubleshooting && order.troubleshooting.state]);
+    const sig = JSON.stringify([order.prompt, order.params, order.seed, order.draft, order.mode, Boolean(ctx.blocked), order.troubleshooting && order.troubleshooting.state]);
     if (panel.dataset.sig !== sig) {
       panel.dataset.sig = sig;
       retouch = retouchPanel(ctx, { onSubmit: guard(submit) });

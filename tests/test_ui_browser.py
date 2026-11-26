@@ -1352,6 +1352,21 @@ class BrandTroubleshoot(OrderPages):
     def prepare(cls):
         for key in cls.BLOCKED:
             cls.fail_three(key)
+        # t-sig: a fourth finished batch, not failed yet (failing it raises the counter of an already blocked order)
+        cls.submit("portada/t-sig", count=2, seed=500, mode="brand", piece="cover", subject=SUBJECT, prompt=None)
+        for n in range(3):
+            run_cli("attempt", "new", PROJECT, "portada/t-sig", PROFILE, "--count", "2", "--seed", str(600 + 10 * n))
+            run_cli("work")
+        for rec in orders.get(PROJECT, "portada/t-sig", PROFILE)["batches"][:3]:
+            run_cli("order", "fail", PROJECT, "portada/t-sig", PROFILE, str(rec["id"]), "--reason", "horizon")
+        # t-cycle: a row closes the first cycle (its batches stay marked as failed) and a second one blocks again
+        cls.fail_three("portada/t-cycle")
+        run_cli("troubleshoot", "add", PROJECT, "portada/t-cycle", PROFILE, "--problem", "primer ciclo", "--attempt", "1")
+        for n in range(3):
+            run_cli("attempt", "new", PROJECT, "portada/t-cycle", PROFILE, "--count", "2", "--seed", str(700 + 10 * n), "--subject", SUBJECT)
+            run_cli("work")
+        for rec in orders.get(PROJECT, "portada/t-cycle", PROFILE)["batches"][3:6]:
+            run_cli("order", "fail", PROJECT, "portada/t-cycle", PROFILE, str(rec["id"]), "--reason", "horizon")
         cls.fail_three("portada/rows-cover")
         cls.submit("iconos/rows-icon", profile="social", count=1, seed=5, mode="brand", piece="icon", subject=SUBJECT, prompt=None)
         run_cli("troubleshoot", "add", PROJECT, "portada/rows-cover", PROFILE, "--problem", "el horizonte sale plano", "--attempt", "1",
@@ -1432,12 +1447,35 @@ class BrandTroubleshoot(OrderPages):
         self.page.pump(0.3)
         self.browser.take_problems()  # the 409 is the point of the test
 
+    def test_a_counter_that_rises_on_a_blocked_order_keeps_the_form_and_what_was_written(self):
+        self.blocked("portada/t-sig")
+        self.fill("#ts-redesign", "no se pierde")
+        self.js("document.getElementById('ts-redesign').focus(); true")
+        last = orders.get(PROJECT, "portada/t-sig", PROFILE)["batches"][3]["id"]
+        run_cli("order", "fail", PROJECT, "portada/t-sig", PROFILE, str(last), "--reason", "horizon")
+        self.js("[...document.querySelectorAll('button')].find(x => x.textContent.includes('⟳')).click(); true")
+        self.assertEqual(self.data("portada/t-sig")["failures"]["count"], 4)
+        self.page.pump(1.0)  # the refresh repaints with the new counter
+        self.assertEqual(self.js("document.getElementById('ts-redesign').value"), "no se pierde")
+        self.assertEqual(self.js("document.activeElement.id"), "ts-redesign")
+        self.no_problems()
+
+    def test_the_attempts_proposed_are_only_those_of_the_batches_of_the_current_cycle(self):
+        self.blocked("portada/t-cycle")
+        ids = self.js("document.getElementById('ts-attempts').value")
+        old = [r["id"] for r in orders.get(PROJECT, "portada/t-cycle", PROFILE)["batches"][:3]]
+        self.assertTrue(ids, "the form proposes attempts")
+        first = [a["id"] for a in orders.get(PROJECT, "portada/t-cycle", PROFILE)["attempts"] if a.get("batch") in old]
+        for n in first:
+            self.assertNotIn("q%d" % n, ids.split(", "), "q%d belongs to the cycle already closed" % n)
+        self.no_problems()
+
     def test_the_marca_subtab_lists_the_rows_links_the_attempts_and_filters_by_piece(self):
         self.open("/p/%s/marca?s=troubleshooting" % PROJECT, "document.querySelector('[data-slot=ts-table]')")
         self.assertEqual(self.js("document.querySelector('#sub-troubleshooting').getAttribute('aria-selected')"), "true")
         self.assertIn("el horizonte sale plano", self.js("document.querySelector('[data-slot=ts-table]').textContent"))
         self.assertIn("bajar la linea del horizonte", self.js("document.querySelector('[data-slot=ts-table]').textContent"))
-        link = self.js("document.querySelector('[data-slot=ts-table] a[data-attempt=\"1\"]').getAttribute('href')")
+        link = self.js("document.querySelector('[data-slot=ts-table] a[data-attempt=\"1\"][href*=\"rows-cover\"]').getAttribute('href')")
         self.assertIn("/o/og/portada%2Frows-cover?a=1", link)
         self.js("(() => { const f = document.getElementById('ts-filter'); f.value = 'icon'; f.dispatchEvent(new Event('change')); })()")
         self.page.wait("document.querySelectorAll('[data-slot=ts-table] tbody tr').length === 1")

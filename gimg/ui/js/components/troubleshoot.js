@@ -14,9 +14,9 @@ import { to } from '../router.js';
 import { confirmAction } from './confirm.js';
 import { failuresOf, reasonsText } from './brand-order.js';
 
-/** Los ids de los intentos de las tandas falladas del pedido. */
+/** Los ids de los intentos de las tandas que cuentan en el ciclo actual (`failures.reasons`; las de ciclos ya apuntados siguen marcadas `failed`). */
 export function failedAttemptIds(order) {
-  const failed = new Set((order.batches || []).filter((b) => b.failed).map((b) => b.id));
+  const failed = new Set(failuresOf(order).reasons.map((r) => r.batch).filter((b) => b !== null && b !== undefined));
   return (order.attempts || []).filter((a) => a.batch !== null && a.batch !== undefined && failed.has(typeof a.batch === 'object' ? a.batch.id : a.batch)).map((a) => a.id);
 }
 
