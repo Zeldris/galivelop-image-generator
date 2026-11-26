@@ -240,3 +240,9 @@ dialog.confirm { width: min(92vw, 420px); }
 .shop-tile > .shop-bg > img:not([width]) { max-height: 220px; }
 .shop-wide { max-width: min(100%, 520px); height: auto; }
 @media (max-width: 600px) { .cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* Tandas de marca en la cola (0.8.0) */
+.queue-batch { display: grid; gap: 6px; border: 1px solid var(--rule); background: var(--surface-2); padding: 6px; }
+.queue-batch.is-held { border-style: dashed; }
+.queue-batch-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 6px; }
+.queue-batch-head .who { font-weight: 600; overflow-wrap: anywhere; }
+.queue-batch > details > summary { cursor: pointer; min-height: var(--tap); display: inline-flex; align-items: center; color: var(--text-2); font: 500 12px/1.4 var(--font-mono); }

@@ -115,6 +115,7 @@ class UiBase(unittest.TestCase):
         order = {"key": key, "profile": profile, "prompt": "A test scene. The image is completely textless.",
                  "seed": 3, "count": count}
         order.update(extra)
+        order = {k: v for k, v in order.items() if v is not None}  # `prompt=None`: a brand order sends none
         f = cls.tmp / ("order-%s.json" % key.replace("/", "-"))
         f.write_text(json.dumps(order))
         run_cli("order", "submit", PROJECT, str(f))
@@ -957,20 +958,25 @@ class BrandShop(UiBase):
         self.assertTrue(href.startswith("#/p/tarkor/marca?src="), href)
 
 
+def add_brand_sheet(root):
+    """The portal sheet (cover → og, icon → social) as the project's brand sheet."""
+    sheet = copy.deepcopy(PORTAL)
+    sheet["pieceTypes"]["cover"]["profile"] = PROFILE
+    sheet["pieceTypes"]["icon"]["profile"] = "social"
+    (root / "marca.json").write_text(json.dumps(sheet), encoding="utf-8")
+    path = root / "galivelop-images.json"
+    cfg = json.loads(path.read_text())
+    cfg.setdefault("brand", {})["sheet"] = "marca.json"
+    path.write_text(json.dumps(cfg))
+
+
 class BrandSheetScreen(UiBase):
     """0.7.0 §2.10: the Marca tab with a brand sheet: subtabs with ←/→, the palette by roles, «Probar un sujeto»."""
 
     @classmethod
     def customize_project(cls):
         super().customize_project()
-        sheet = copy.deepcopy(PORTAL)
-        sheet["pieceTypes"]["cover"]["profile"] = PROFILE
-        sheet["pieceTypes"]["icon"]["profile"] = "social"
-        (cls.root / "marca.json").write_text(json.dumps(sheet), encoding="utf-8")
-        path = cls.root / "galivelop-images.json"
-        cfg = json.loads(path.read_text())
-        cfg.setdefault("brand", {})["sheet"] = "marca.json"
-        path.write_text(json.dumps(cfg))
+        add_brand_sheet(cls.root)
 
     def selected(self):
         return self.js("document.querySelector('[role=tab][aria-selected=true]').dataset.sub")
@@ -1037,6 +1043,77 @@ class BrandSheetScreen(UiBase):
         self.page.wait("document.querySelector('dialog.new-order [data-out=prompt] [data-slot=prompt]')")
         self.page.wait("!document.querySelector('dialog.new-order button[type=submit]').disabled || document.querySelector('dialog.new-order [data-slot=why] .notice-bad')")
         self.assertNotEqual(self.js("document.getElementById('no-key').value"), "")  # a key is proposed: <piece>/<slug>
+        self.no_problems()
+
+
+class BrandBatches(UiBase):
+    """0.8.0 paso 5b: tandas de marca en la cola del cajón (agrupadas por `batch.id`), cancelar una tanda entera."""
+
+    @classmethod
+    def customize_project(cls):
+        super().customize_project()
+        add_brand_sheet(cls.root)
+
+    @classmethod
+    def brand(cls, key, count=3, seed=311):
+        cls.submit(key, work=False, count=count, seed=seed, mode="brand", piece="cover", subject=SUBJECT, prompt=None)
+
+    @classmethod
+    def prepare(cls):
+        for key in ("portada/a", "portada/b", "portada/c"):
+            cls.brand(key)
+        cls.submit("fondos/suelta", count=1, work=False)
+
+    def queued(self, key):
+        return [e for e in self.api("GET", "/api/queue") if e["key"] == key]
+
+    def test_entries_of_a_batch_are_one_group_with_its_header_and_the_pill_counts_batches(self):
+        self.open("/", "document.querySelector('.queue-pill')")
+        self.page.wait("document.querySelector('.queue-pill').textContent.includes('tandas en cola (9 imágenes)')")
+        self.assertIn("1 en cola", self.js("document.querySelector('.queue-pill').textContent"))  # the loose entry
+        self.click(".queue-pill")
+        self.page.wait("document.querySelectorAll('#queue-drawer .queue-batch').length >= 3")
+        batch = self.queued("portada/a")[0]["batch"]
+        head = "#queue-drawer .queue-batch[data-batch='%d'] .queue-batch-head" % batch["id"]
+        text = self.js("document.querySelector(%s).textContent" % json.dumps(head))
+        for part in ("portada/a @ og", "0 de 3", "semillas 311-313"):
+            self.assertIn(part, text)
+        opened = "document.querySelector('#queue-drawer .queue-batch[data-batch=\"%d\"] details').open" % batch["id"]
+        self.assertFalse(self.js(opened))
+        self.js("document.querySelector(%s).focus(); true" % json.dumps(head))
+        self.page.key("Enter")
+        self.page.wait(opened)
+        self.assertEqual(self.js("document.querySelectorAll('#queue-drawer .queue-batch[data-batch=\"%d\"] details .queue-entry').length" % batch["id"]), 3)
+        self.page.key("ArrowRight")  # head -> first button
+        self.assertEqual(self.js("document.activeElement.tagName"), "BUTTON")
+        self.js("document.querySelector(%s).focus(); true" % json.dumps(head))
+        self.page.key("]")
+        self.assertTrue(self.js("document.activeElement.classList.contains('queue-batch-head')"))
+        self.assertNotEqual(self.js("document.activeElement.parentElement.dataset.batch"), str(batch["id"]))
+        self.no_problems()
+
+    def test_moving_a_batch_moves_all_its_entries_together_and_cancelling_asks_first(self):
+        self.open("/", "document.querySelector('.queue-pill')")
+        self.click(".queue-pill")
+        b = self.queued("portada/c")[0]["batch"]["id"]
+        self.page.wait("document.querySelector('[data-fid=\"top-b%d\"]')" % b)
+        self.click("[data-fid='top-b%d']" % b)
+        self.page.wait("document.querySelector('[data-fid=\"top-b%d\"]').disabled" % b)
+        line = [e for e in self.api("GET", "/api/queue") if e["state"] == "queued"]
+        line.sort(key=lambda e: (e.get("position", e["id"]), e["id"]))
+        self.assertEqual([e["key"] for e in line[:3]], ["portada/c"] * 3)
+        # cancel: the dialog first; refusing leaves everything queued
+        self.click("[data-fid='cancel-b%d']" % b)
+        self.page.wait("document.querySelector('dialog.confirm[open]')")
+        self.assertIn("tanda %d" % b, self.js("document.querySelector('dialog.confirm').textContent"))
+        self.js("[...document.querySelectorAll('dialog.confirm button')].find(x => x.textContent === 'Cancelar').click(); true")
+        self.page.wait("!document.querySelector('dialog.confirm')")
+        self.assertEqual({e["state"] for e in self.queued("portada/c")}, {"queued"})
+        self.click("[data-fid='cancel-b%d']" % b)
+        self.page.wait("document.querySelector('dialog.confirm[open]')")
+        self.js("document.querySelector('dialog.confirm .btn-danger').click(); true")
+        self.page.wait("!document.querySelector('[data-fid=\"cancel-b%d\"]')" % b)
+        self.assertEqual({e["state"] for e in self.queued("portada/c")}, {"cancelled"})
         self.no_problems()
 
 

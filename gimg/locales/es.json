@@ -1290,5 +1290,21 @@
   "troubleshooting.md.attempts": "Intentos",
   "troubleshooting.md.redesign": "Rediseño",
   "troubleshooting.md.terms": "Términos",
-  "troubleshooting.md.by": "Por"
+  "troubleshooting.md.by": "Por",
+  "ui.queue.batches": "{n} tandas en cola ({m} imágenes)",
+  "ui.queue.batch": "Tanda",
+  "ui.queue.batchOf": "{done} de {size}",
+  "ui.queue.batchSeeds": "semillas {s}",
+  "ui.queue.batchEta": "faltan ~{t}",
+  "ui.queue.batchUp": "Subir la tanda",
+  "ui.queue.batchDown": "Bajar la tanda",
+  "ui.queue.batchTop": "Tanda primera",
+  "ui.queue.batchCancel": "Cancelar tanda",
+  "ui.queue.batchCancelTitle": "¿Cancelar la tanda?",
+  "ui.queue.batchCancelMessage": "Se cancelan las imágenes de la tanda {id} ({who}) que aún no han terminado ({n}).",
+  "ui.queue.batchCancelled": "Tanda {id} cancelada",
+  "ui.queue.batchMoved": "Tanda {id} movida",
+  "ui.queue.batchEntries": "Entradas ({n})",
+  "ui.queue.held": "retenida: pedido en troubleshooting",
+  "ui.queue.batchesOne": "1 tanda en cola ({m} imágenes)"
 }

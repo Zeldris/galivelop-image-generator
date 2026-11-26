@@ -728,6 +728,32 @@ class F4dUi(unittest.TestCase):
                 self.assertIn(key, keys)
 
 
+class Step5bUi(unittest.TestCase):
+    """0.8.0 paso 5b: tandas en la cola y la galería, «No» con motivo, «Ninguno vale» y el marcador de fallos."""
+
+    def comp(self, name):
+        return read(UI / "js" / "components" / name)
+
+    def test_the_queue_groups_by_batch_and_calls_the_batch_routes(self):
+        bar = self.comp("queue-bar.js")
+        for needle in ("function group(", "batchId(e)", "api.moveBatch(id, to2)", "api.cancelBatch(id)", "confirmAction(", "held === 'troubleshooting'",
+                       "ev.key === 'Enter'", "'ArrowRight'", "ev.key !== '[' && ev.key !== ']'"):
+            self.assertIn(needle, bar)
+        api = read(UI / "js" / "api.js")
+        for needle in ("`/api/queue/batches/${enc(id)}/move`", "`/api/queue/batches/${enc(id)}/cancel`", "post(paths.batchMove(id), { to })",
+                       "post(paths.batchCancel(id), {})", "`${paths.order(p, profile, key)}/batches/${enc(id)}/fail`",
+                       "post(paths.failBatch(p, profile, key, batch), { reason })", "{ state: st, reason } : { state: st }"):
+            self.assertIn(needle, api)
+        self.assertNotIn("batchCancel(id)).then", api)
+
+    def test_locales_have_the_same_step_5b_keys_in_both_languages(self):
+        loc = {lang: json.loads(read(LOCALES / (lang + ".json"))) for lang in ("es", "en")}
+        for key in ("ui.queue.batches", "ui.queue.batchesOne", "ui.queue.batchCancel", "ui.queue.held"):
+            for lang in loc:
+                self.assertIn(key, loc[lang])
+        self.assertEqual(set(loc["es"]), set(loc["en"]))
+
+
 class Served(ServerBase):
     TYPES = {".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".svg": "image/svg+xml",
              ".png": "image/png", ".ttf": "font/ttf", ".woff2": "font/woff2", ".json": "application/json"}
