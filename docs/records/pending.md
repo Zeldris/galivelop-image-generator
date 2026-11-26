@@ -56,3 +56,5 @@ Lo que queda abierto; la bitácora solo apunta aquí. Se añade y se quita en es
   MEDIO de R7 (claves pegadas a una letra en `pre-commit`) conviene arreglarlo antes de publicar la 0.4.0.
 - Proponer al flujo (`gw-harvest`) R3a y R3b de `docs/records/retro-2026-10-25-f1.md`.
 - Proponer al flujo (`gw-harvest`) una operación de imagen en el `log-format.md` de `gw-opt-ai` (D26).
+- 0.8.0 paso 1 (`860a79f`), leve: el intento recortado (`orders.add_derived`) se guarda como `free` y no hereda el `mode` ni el `sheetVersion` del intento de origen; decidir en el paso 3 (el contador solo cuenta tandas de marca).
+- 0.8.0 paso 1 (`860a79f`), leve: «Pasar a imagen libre» (`orders.plan_attempt`) deja `piece`, `subject`, `cleanZone` y `sheetVersion` en un pedido ya libre; sirven para «Convertir en pieza de marca», pero la interfaz no debe leerlos como vigentes.
