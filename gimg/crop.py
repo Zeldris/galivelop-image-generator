@@ -13,7 +13,7 @@ a new attempt, the **derived** one; the original attempt, its file and its recor
   pedido"). A destination order that does not exist is created (atomically, `orders.create_missing`, never overwriting one) and the ``prompt`` of the source order; its
   profile must exist in the project (``order.profile_unknown``).
 - **Record:** `orders.add_derived`: ``state`` ``new``, ``image`` ``attempts/<id>.png``, ``seed``, ``prompt``, ``params`` (with the
-  new ``width`` and ``height``), ``references``, ``negative`` and ``draft`` of the source, and ``derivedFrom``
+  new ``width`` and ``height``), ``references``, ``negative``, ``draft``, ``mode`` and ``sheetVersion`` of the source, and ``derivedFrom``
   ``{"profile", "key", "attempt", "box", "lockRatio"}``. It is chosen like any other attempt (a draft cannot be).
 
 Errors (`GimgError`): ``crop.bad_box`` (not four integers, or no area), ``crop.outside`` (the box leaves the image),
@@ -96,7 +96,8 @@ def crop(project: str, key: str, profile: str, attempt_id: int, box, lock_ratio:
         params.pop("tileable", None)
     spec = {"seed": attempt["seed"], "prompt": attempt["prompt"], "params": params,
             "references": list(attempt.get("references", source["references"])),
-            "draft": attempt.get("draft") is True, "negative": attempt.get("negative")}
+            "draft": attempt.get("draft") is True, "negative": attempt.get("negative"),
+            "mode": attempt.get("mode", "free"), "sheetVersion": attempt.get("sheetVersion")}  # a crop keeps its parent's mode
     derived_from = {"profile": profile, "key": key, "attempt": attempt["id"], "box": box, "lockRatio": lock_ratio}
     created = False
     try:

@@ -139,8 +139,46 @@
           "subject": {"type": "string"},
           "cleanZone": {"type": "string"},
           "warnings": {"type": "array", "description": "The lint checks with status warn.", "items": {"type": "object"}},
-          "createdAt": {"type": "string"}
+          "createdAt": {"type": "string"},
+          "failed": {"type": "boolean", "description": "The batch was counted as a failure (\"Ninguno vale\", or every attempt discarded)."},
+          "reason": {"$ref": "#/$defs/failReason"},
+          "extended": {"type": "boolean", "description": "It is the batch an extension of the troubleshooting block allowed."}
         }
+      }
+    },
+    "failures": {
+      "type": "object",
+      "description": "Stored by the generator in brand orders: the failure counter. Not for clients to set; an order without it has no failures.",
+      "additionalProperties": false,
+      "required": ["count", "limit", "reasons"],
+      "properties": {
+        "count": {"type": "integer", "minimum": 0, "description": "Failed batches in a row; an attempt of 5 or more, a new subject or a troubleshooting row put it back to zero."},
+        "limit": {"type": "integer", "minimum": 1, "description": "At this count the order is in troubleshooting (3 unless brand.failureLimit says otherwise)."},
+        "reasons": {"type": "array", "items": {"type": "object", "description": "{batch?, attempt?, trait?, text?, at}"}}
+      }
+    },
+    "troubleshooting": {
+      "type": "object",
+      "description": "Stored by the generator in brand orders: the troubleshooting rows of the order and the one-more-batch extensions. Not for clients to set.",
+      "additionalProperties": false,
+      "properties": {
+        "rows": {"type": "array", "items": {
+          "type": "object",
+          "required": ["piece", "key", "problem", "attempts", "redesign", "terms", "at", "by"],
+          "properties": {
+            "piece": {"type": "string"},
+            "key": {"type": "string"},
+            "profile": {"type": "string"},
+            "problem": {"type": "string"},
+            "attempts": {"type": "array", "items": {"type": "integer"}},
+            "redesign": {"type": "string"},
+            "terms": {"type": "array", "items": {"type": "string"}},
+            "at": {"type": "string"},
+            "by": {"type": "string"}
+          }
+        }},
+        "extendPending": {"type": "boolean", "description": "One more batch was allowed and is not used yet."},
+        "extensions": {"type": "array", "items": {"type": "object", "description": "{at, batch?}"}}
       }
     },
     "modeChanges": {
@@ -159,6 +197,12 @@
     }
   },
   "$defs": {
+    "failReason": {
+      "type": "object",
+      "description": "Why a batch or an attempt failed: a trait of the sheet (or other, which needs text).",
+      "required": ["trait"],
+      "properties": {"trait": {"type": "string"}, "text": {"type": "string"}}
+    },
     "profileName": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9]*$",

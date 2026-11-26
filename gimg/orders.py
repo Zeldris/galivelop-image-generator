@@ -6,7 +6,7 @@ Layout: ``<data>/projects/<project>/orders/<key>/@<profile>/order.json`` and
 This module neither enqueues (queue, F1.4) nor delivers (F1.5): `choose` and `undo` return the old and
 new chosen ids so delivery can hook in. Every read-modify-write holds `fsutil.lock` of ``order.json``.
 
-Public API: `submit`, `set_text`, `attempt_specs`, `add_attempt`, `add_derived`, `set_composed`, `attempt_for_entry`, `attempt_image`,
+Public API: `submit`, `set_text`, `attempt_specs`, `add_attempt`, `add_derived`, `set_composed`, `attempt_for_entry`, `attempt_image`, `peek`, `check_reason`, `add_failure`, `reset_failures`,
 `raw_image`, `prepare`, `plan_attempt`, `apply_changes`, `compose_names`, `compose_paths`, `compose_lock_path`, `pending_image_path`, `mark`, `note`, `choose`, `undo`, `get`, `list_orders`. All raise `GimgError` with codes ``order.*`` on bad input.
 """
 from __future__ import annotations
@@ -32,6 +32,8 @@ _FULL_PARAMS = {"type": "object", "properties": {
 DRAFT_STEPS = 8
 DRAFT_SCALE = 0.5
 SIDE_STEP = 64
+FAILURE_LIMIT = 3  # failed batches in a row that block a brand order (``brand.failureLimit`` of the project config changes it)
+RESET_SCORE = 5  # an attempt scoring at least this puts the counter back to zero
 _rng = random.SystemRandom()
 
 
@@ -278,6 +280,8 @@ def _submit(project: str, order: dict, only_new: bool) -> tuple:
             if only_new:
                 return copy.deepcopy(record), False
             created = False
+        if "subject" in record and record["subject"] != fields.get("subject"):
+            reset_failures(record)
         record.update(fields)
         for name in ("piece", "subject", "cleanZone", "sheetVersion"):
             if not brand or name not in fields:  # a resubmission drops what the new order does not carry
@@ -462,6 +466,8 @@ def prepare(project: str, order: dict) -> tuple:
     order.pop("sheetVersion", None)
     order.pop("modeChanges", None)
     order.pop("batches", None)
+    order.pop("failures", None)
+    order.pop("troubleshooting", None)
     probe = {"key": "x", "profile": "x", "prompt": "x", **{k: order[k] for k in _BRAND_KEYS if k in order}}
     _check_fields_of(probe)
     if order.get("mode", "free") != "brand":
@@ -555,6 +561,8 @@ def plan_attempt(project: str, key: str, profile: str, *, subject=None, clean_zo
 def apply_changes(project: str, key: str, profile: str, changes: dict) -> None:
     """Store the `changes` of `plan_attempt` in the order (a ``None`` value removes the key)."""
     def change(order):
+        if "subject" in changes and changes["subject"] != order.get("subject"):
+            reset_failures(order)  # a new subject starts the count again
         for name, value in changes.items():
             if value is None:
                 order.pop(name, None)
@@ -788,19 +796,107 @@ def clear_compose_error(project: str, key: str, profile: str, attempt_id: int) -
     return _modify(project, key, profile, change)
 
 
-def mark(project: str, key: str, profile: str, attempt_id: int, state: str) -> dict:
-    """Set an attempt's state (new|candidate|discarded); the chosen one cannot be discarded."""
+def failure_limit(project: str) -> int:
+    """How many failed batches in a row block a brand order of the project (``brand.failureLimit``, else `FAILURE_LIMIT`)."""
+    limit = (projects.get(project)["config"].get("brand") or {}).get("failureLimit")
+    return limit if type(limit) is int and limit >= 1 else FAILURE_LIMIT
+
+
+def reset_failures(order: dict) -> None:
+    """Put the order's failure counter back to zero (an order that never failed keeps no ``failures``)."""
+    if isinstance(order.get("failures"), dict):
+        order["failures"]["count"] = 0
+        order["failures"]["reasons"] = []
+
+
+def add_failure(order: dict, project: str, *, batch=None, attempt=None, reason=None) -> dict:
+    """Count one failure in `order` (edits it in place): ``failures.count`` +1, ``limit`` as the project has it now, and
+    the reason ``{batch?, attempt?, trait?, text?, at}`` appended. Returns ``order["failures"]``."""
+    record = order.setdefault("failures", {"count": 0, "limit": FAILURE_LIMIT, "reasons": []})
+    record["limit"] = failure_limit(project)
+    record["count"] += 1
+    item = {k: v for k, v in (("batch", batch), ("attempt", attempt)) if v is not None}
+    item.update(reason or {})
+    item["at"] = _now()
+    record["reasons"].append(item)
+    return record
+
+
+def _reason_traits(project: str):
+    """The traits a reason may name (the sheet's ``acceptance`` traits and unmeasured ones), or ``None`` without a usable sheet."""
+    try:
+        acceptance = brandsheet.resolve(project).get("acceptance") or {}
+    except GimgError:
+        return None
+    return set(acceptance.get("traits") or ()) | {u["id"] for u in acceptance.get("unmeasured") or ()}
+
+
+def check_reason(project: str, reason, required: bool = False):
+    """A "No" reason, ``{"trait": <trait of the sheet or "other">, "text"?: note}`` (``other`` needs the note); returns it
+    normalised, ``None`` if absent and not `required`. Anything else is ``order.reason_invalid``."""
+    if reason is None and not required:
+        return None
+
+    def bad(why):
+        return GimgError("order.reason_invalid", reason=why)
+
+    if not isinstance(reason, dict) or not reason or not set(reason) <= {"trait", "text"}:
+        raise bad("an object with trait and, optionally, text")
+    trait, text = reason.get("trait"), reason.get("text")
+    if not isinstance(trait, str) or not trait or len(trait) > 80:
+        raise bad("trait is required")
+    if text is not None and not (isinstance(text, str) and text.strip() and len(text) <= 500):
+        raise bad("text must be a non-empty string of at most 500 characters")
+    if trait == "other":
+        if text is None:
+            raise bad("other needs a text")
+    else:
+        known = _reason_traits(project)
+        if known is not None and trait not in known:
+            raise bad("unknown trait %s" % trait)
+    return {k: v for k, v in (("trait", trait), ("text", text)) if v is not None}
+
+
+def mark(project: str, key: str, profile: str, attempt_id: int, state: str, reason=None) -> dict:
+    """Set an attempt's state (new|candidate|discarded); the chosen one cannot be discarded.
+
+    `reason` (``{"trait", "text"?}``, see `check_reason`) is the "No" of the person and goes with ``discarded`` only; it is stored in
+    the attempt (and removed when the attempt leaves ``discarded``). In a brand order, when every attempt of a batch is
+    discarded (the batch has all its ``size`` attempts, so a cancelled or failed entry never makes one) the batch fails: once, with
+    this reason, in ``failures`` and in its ``batches`` record (``failed``, ``reason``)."""
     if state not in STATES:
         raise GimgError("order.state_invalid", state=str(state), states=", ".join(STATES))
+    if reason is not None and state != "discarded":
+        raise GimgError("order.reason_invalid", reason="only with discarded")
+    reason = check_reason(project, reason)
 
     def change(order):
         item = _attempt(order, attempt_id)
         if state == "discarded" and order["chosen"] == attempt_id:
             raise GimgError("order.discard_chosen", attempt=attempt_id)
         item["state"] = state
+        item.pop("reason", None)
+        if state == "discarded":
+            if reason:
+                item["reason"] = reason
+            _fail_whole_batch(order, project, item, reason)
         return copy.deepcopy(item)
 
     return _modify(project, key, profile, change)
+
+
+def _fail_whole_batch(order: dict, project: str, item: dict, reason) -> None:
+    """`mark` discarded `item`: if that leaves its batch with every attempt discarded, the batch is a failure (once)."""
+    if order.get("mode") != "brand" or type(item.get("batch")) is not int:
+        return
+    for record in order.get("batches", ()):
+        if record["id"] == item["batch"] and not record.get("failed"):
+            mine = [a for a in order["attempts"] if a.get("batch") == record["id"]]
+            if len(mine) >= record["size"] and all(a["state"] == "discarded" for a in mine):
+                record["failed"] = True
+                if reason:
+                    record["reason"] = dict(reason)
+                add_failure(order, project, batch=record["id"], attempt=item["id"], reason=reason)
 
 
 def note(project: str, key: str, profile: str, attempt_id: int, text: str) -> dict:
@@ -871,6 +967,14 @@ def get(project: str, key: str, profile: str) -> dict:
     """The order record (a fresh copy); ``order.unknown`` if it does not exist."""
     projects.get(project)
     return _read(project, key, profile)
+
+
+def peek(project: str, key: str, profile: str):
+    """The order record, read without lock or checks, or ``None`` if it cannot be read (for the queue, which only looks)."""
+    try:
+        return _shape(fsutil.read_json(_order_file(project, key, profile)), "")
+    except (GimgError, OSError, ValueError):
+        return None
 
 
 def list_orders(project: str, profile: str | None = None, chosen: bool | None = None) -> list:

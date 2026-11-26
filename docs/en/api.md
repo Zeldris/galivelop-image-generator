@@ -71,9 +71,9 @@ Every error response is:
 the schema lines when the order does not validate. Language: `?lang=es|en`, else the first supported one in
 `Accept-Language`, else the system's. Statuses: 400 malformed request or invalid value (`api.bad_json`,
 `api.bad_param`, `*.invalid`, `limit.*`, `path.*`, `key.*`); 403 Host or Origin; 404 `project.unknown`,
-`order.unknown`, `order.profile_unknown`, `order.attempt_unknown`, `queue.unknown`, `queue.batch_not_found`, `api.not_found`; 405, 411, 413, 415
+`order.unknown`, `order.profile_unknown`, `order.attempt_unknown`, `order.batch_unknown`, `queue.unknown`, `queue.batch_not_found`, `api.not_found`; 405, 411, 413, 415
 as above; 409 state that does not allow it (`compose.template_exists`, `order.choose_*`, `order.undo_*`,
-`order.history_empty`, `queue.not_cancellable`, `queue.not_movable`, `compose.busy`, `measure.busy`,
+`order.history_empty`, `order.troubleshooting`, `order.batch_failed`, `order.not_blocked`, `order.extend_pending`, `queue.not_cancellable`, `queue.not_movable`, `compose.busy`, `measure.busy`,
 `api.heavy_busy`, `delivery.target_taken`); 500 server-side failures (`api.unexpected` carries `"message":
 "Type: text"`). The texts of all codes: `GET /api/locales/{lang}`.
 
@@ -157,7 +157,9 @@ curl -s -X POST -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/
 ### GET /api/projects/{p}/orders/{profile}/{key}
 
 The order with its attempts, like `order show --json`, plus `deliveredTo`: path of the delivered file relative to the
-project root, or `null` if there is no chosen attempt. Error: `order.unknown`.
+project root, or `null` if there is no chosen attempt. On a brand order (`order.json` stores `failures: {count, limit, reasons}` and
+`troubleshooting: {rows, extendPending, extensions}`; an old one without them is fine) the response carries `failures` (always, with `count: 0` and
+`limit: 3` by default) and `troubleshooting: {"state": "open|blocked|extended", "row"?}` (`row`: the latest row). Error: `order.unknown`.
 
 ```sh
 curl -s $B/api/projects/mi-proyecto/orders/banner/fauna%2Flobo
@@ -192,6 +194,11 @@ is appended as usual) and the change is recorded in `modeChanges: [{"from", "to"
 `mode: "brand"` are `order.not_brand` (free to brand does not exist here). The response carries `checks` like order
 creation.
 
+A brand order with as many failures in a row as its limit is in troubleshooting: `order.troubleshooting` (409, with `count` and `limit`; also when
+the order is submitted again, even with another subject) until a troubleshooting row, a switch to free or `…/troubleshooting/extend`.
+Its entries already queued are held (`held`, in `GET /api/queue`) and the worker does not start them; changing the subject of an order
+that is not blocked puts the counter to zero.
+
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' \
   $B/api/projects/mi-proyecto/orders/banner/fauna%2Flobo/attempts -d '{"count":2,"seed":7}'
@@ -199,12 +206,69 @@ curl -s -X POST -H 'Content-Type: application/json' \
 
 ### POST /api/projects/{p}/orders/{profile}/{key}/attempts/{id}/mark
 
-Marks an attempt. Body: `{"state": "new|candidate|discarded"}`. Response: the attempt. Errors:
+Marks an attempt. Body: `{"state": "new|candidate|discarded", "reason"?: {"trait", "text"?}}`. `reason` is the "No" with a reason
+(only with `discarded`; a trait of the sheet, or `other` with `text`) and is stored in the attempt. When every attempt of a brand batch is
+discarded (the batch has its `size` attempts: a cancelled entry or one the engine failed does not make one) the batch fails: one failure in
+`failures`, with the last one's reason. Response: the attempt. Errors: `order.reason_invalid` (400),
 `order.state_invalid`, `order.discard_chosen` (409), `order.attempt_unknown`.
 
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' \
   $B/api/projects/mi-proyecto/orders/banner/fauna%2Flobo/attempts/1/mark -d '{"state":"candidate"}'
+```
+
+### POST /api/projects/{p}/orders/{profile}/{key}/batches/{id}/fail
+
+"None is good": batch `id` (its first queue entry's, the one in `order.json` `batches`) of a brand order failed. It discards its
+attempts (not the chosen one: `order.discard_chosen`), marks the batch `failed` with its `reason` and adds one failure to the order. Body:
+`{"reason": {"trait": "<trait of the sheet or other>", "text": "note"}}` (`other` needs `text`; the traits are those of the
+sheet's `acceptance.traits` and `acceptance.unmeasured`). Response: `{"failures": {"count", "limit", "reasons"},
+"troubleshooting": {"state", "row?"}}`. Only brand orders count, and only the failure by hand: a technical failure of the engine or a
+cancellation does not add. The counter is per order and reaches its limit (3; `brand.failureLimit` in the project config changes it) and the
+order is then in troubleshooting; an attempt scoring 5 or more (once there is a score), a new subject or a troubleshooting row put it back to
+zero. Errors: `order.reason_invalid` (400), `order.not_brand` (400), `order.batch_unknown` (404), `order.batch_failed` (409, the
+batch already counts), `order.discard_chosen` (409). CLI: `gimg order fail <project> <key> <profile> <batch> --reason TRAIT [--note TEXT]`.
+Entries of that batch still in the queue are not cancelled by it (`POST /api/queue/batches/{id}/cancel`).
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' \
+  $B/api/projects/mi-proyecto/orders/banner/fauna%2Flobo/batches/3/fail -d '{"reason":{"trait":"horizon"}}'
+```
+
+### POST /api/projects/{p}/orders/{profile}/{key}/troubleshooting/extend
+
+"One more batch" for an order in troubleshooting: the next call to `attempts` (or order submit) is accepted although the order is
+blocked. The entries of that batch carry `extended: true` (they are not held) and the extension is noted in `order.json`
+`troubleshooting.extensions` (`{at, batch}`); when the batch ends, the order is still blocked if the counter did not go down.
+Body: `{}`. Response: `{"failures", "troubleshooting"}` (`state: "extended"`). Errors: `order.not_blocked` (409),
+`order.extend_pending` (409, one is already waiting). CLI: `gimg troubleshoot extend <project> <key> <profile>`.
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' \
+  $B/api/projects/mi-proyecto/orders/banner/fauna%2Flobo/troubleshooting/extend -d '{}'
+```
+
+### GET /api/projects/{p}/troubleshooting
+
+The troubleshooting rows of every order of the project, oldest first: `[{"piece", "key", "profile", "problem", "attempts": [..],
+"redesign", "terms": [..], "at", "by"}]`. Errors: `project.unknown`. CLI: `gimg troubleshoot list <project>`.
+
+```sh
+curl -s $B/api/projects/mi-proyecto/troubleshooting
+```
+
+### POST /api/projects/{p}/troubleshooting
+
+Writes a row in the order named by `key` + `profile`. Body: `{"key", "profile", "problem", "attempts"?: [ids], "redesign"?,
+"terms"?: [..], "by"?}` (`by` defaults to `person`). Response 201: the row. It puts the order's failure counter to zero, which
+releases what the queue held, and gimg generates the Markdown (`brand.troubleshootingMarkdown` of the project, relative to its root;
+without it, `troubleshooting.md` in the project's data folder). Errors: `api.bad_param` (400), `order.unknown` (404), `order.not_brand`
+(400), `order.attempt_unknown` (404). CLI: `gimg troubleshoot add <project> <key> <profile> --problem TEXT [--attempt N]
+[--redesign TEXT] [--term T] [--by NAME]`.
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/troubleshooting \
+  -d '{"key":"fauna/lobo","profile":"banner","problem":"the islet comes out flat","attempts":[1,2],"terms":["islet"]}'
 ```
 
 ### POST /api/projects/{p}/orders/{profile}/{key}/attempts/{id}/note
@@ -353,7 +417,8 @@ curl -s "$B/api/projects/mi-proyecto/profiles/og/assets/template?id=claro"
 
 ### GET /api/queue
 
-The queue: each entry with `progress`, `errorText` and `estimateMs` where applicable (without the preview path). Query:
+The queue: each entry with `progress`, `errorText`, `held: "troubleshooting"` (a `queued` entry of a brand order in troubleshooting: the
+worker does not start it until it is resolved or cancelled; an entry of an `extended` batch is not held) and `estimateMs` where applicable (without the preview path). Query:
 `state=queued|running|done|failed|cancelled`. Error: `queue.bad_state`. The response carries the header
 `X-Queue-Paused: 1|0` (whether the queue is paused, as `paused` of `/api/health`); the body is still the list.
 
@@ -493,7 +558,8 @@ curl -s $B/api/projects/mi-proyecto/brand/sheet
 
 Assembles the prompt of a brand piece and checks it, with no side effects and off the queue: the same as
 `gimg brand prompt --json`. Fields: `piece`, `subject`, `cleanZone` (optional). Returns `{"prompt", "words", "segments",
-"checks", "blocked", "defaults", "known"}`; each check carries `message: {"key", "params"}` (an i18n key). `from`
+"checks", "blocked", "defaults", "known"}` (`known`: `[{"term", "row"}]`, the terms of the project's troubleshooting rows that appear in the
+subject, whole word and case-insensitive, each with its row); each check carries `message: {"key", "params"}` (an i18n key). `from`
 (converting a free prompt) does not exist yet: `brandsheet.convert_unsupported` (400). Errors: `brandsheet.unknown_piece`
 (400), `api.bad_param`, those of `GET .../brand/sheet`, `project.unknown`.
 

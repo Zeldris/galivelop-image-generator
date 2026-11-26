@@ -623,8 +623,9 @@ def prompt_response(project_name: str, piece: str, subject: str, clean_zone: str
     sheet = resolve(project_name)
     built = assemble(sheet, piece, subject, clean_zone)
     res = lint(sheet, built["prompt"], piece, "brand", clean_zone)
+    from . import failures  # troubleshooting rows of the project: the terms that already failed (lazy: failures imports orders)
     return {**built, "checks": res["checks"], "blocked": res["blocked"], "defaults": piece_defaults(sheet, piece),
-            "known": []}
+            "known": failures.known_terms(project_name, subject)}
 
 
 def piece_list(piece_types: dict, sheet: dict | None = None, project: str | None = None) -> list:

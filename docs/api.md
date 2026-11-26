@@ -67,8 +67,8 @@ Toda respuesta de error es:
 líneas del esquema cuando el pedido no valida. Idioma: `?lang=es|en`, si no el primero soportado de `Accept-Language`,
 si no el del sistema. Estados: 400 petición mal formada o valor no válido (`api.bad_json`, `api.bad_param`, `*.invalid`,
 `limit.*`, `path.*`, `key.*`); 403 Host u Origin; 404 `project.unknown`, `order.unknown`, `order.profile_unknown`,
-`order.attempt_unknown`, `queue.unknown`, `queue.batch_not_found`, `api.not_found`; 405, 411, 413, 415 de arriba; 409 estado que no lo permite
-(`compose.template_exists`, `order.choose_*`, `order.undo_*`, `order.history_empty`, `queue.not_cancellable`, `queue.not_movable`, `compose.busy`, `measure.busy`,
+`order.attempt_unknown`, `order.batch_unknown`, `queue.unknown`, `queue.batch_not_found`, `api.not_found`; 405, 411, 413, 415 de arriba; 409 estado que no lo permite
+(`compose.template_exists`, `order.choose_*`, `order.undo_*`, `order.history_empty`, `order.troubleshooting`, `order.batch_failed`, `order.not_blocked`, `order.extend_pending`, `queue.not_cancellable`, `queue.not_movable`, `compose.busy`, `measure.busy`,
 `api.heavy_busy`, `delivery.target_taken`); 500 fallos del lado del servidor (`api.unexpected` lleva `"message":
 "Tipo: texto"`). Los textos de todos los códigos: `GET /api/locales/{lang}`.
 
@@ -151,7 +151,9 @@ curl -s -X POST -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/
 ### GET /api/projects/{p}/orders/{profile}/{key}
 
 El pedido con sus intentos, como `order show --json`, más `deliveredTo`: ruta del archivo entregado relativa a la raíz
-del proyecto, o `null` si no hay elegida. Error: `order.unknown`.
+del proyecto, o `null` si no hay elegida. En un pedido de marca (`order.json`, que guarda `failures: {count, limit, reasons}` y
+`troubleshooting: {rows, extendPending, extensions}`; uno viejo sin ellos vale) la respuesta lleva `failures` (siempre, con `count: 0` y `limit: 3`
+por omisión) y `troubleshooting: {"state": "open|blocked|extended", "row"?}` (`row`: la última fila). Error: `order.unknown`.
 
 ```sh
 curl -s $B/api/projects/mi-proyecto/orders/banner/fauna%2Flobo
@@ -185,6 +187,11 @@ como siempre) y se anota en `modeChanges: [{"from", "to", "at"}]`; `mode: "free"
 `cleanZone` es `order.mode_conflict`. En un pedido libre, `subject`, `cleanZone` o `mode: "brand"` son
 `order.not_brand` (pasar de libre a marca no existe aquí). La respuesta lleva `checks` como la de crear el pedido.
 
+Un pedido de marca con tantos fallos seguidos como su límite está en troubleshooting: `order.troubleshooting` (409, con `count` y
+`limit`; también al enviar otra vez el pedido, aunque cambie el sujeto) hasta una fila de troubleshooting, un cambio a libre o `…/troubleshooting/extend`.
+Sus entradas ya encoladas quedan retenidas (`held`, en `GET /api/queue`) y el trabajador no las arranca; cambiar el sujeto en un pedido que no
+está bloqueado pone el contador a cero.
+
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' \
   $B/api/projects/mi-proyecto/orders/banner/fauna%2Flobo/attempts -d '{"count":2,"seed":7}'
@@ -192,12 +199,70 @@ curl -s -X POST -H 'Content-Type: application/json' \
 
 ### POST /api/projects/{p}/orders/{profile}/{key}/attempts/{id}/mark
 
-Marca un intento. Cuerpo: `{"state": "new|candidate|discarded"}`. Respuesta: el intento. Errores:
+Marca un intento. Cuerpo: `{"state": "new|candidate|discarded", "reason"?: {"trait", "text"?}}`. `reason` es el «No» con motivo
+(solo con `discarded`; los rasgos de la hoja u `other` con `text`) y se guarda en el intento. Cuando todos los intentos de una tanda de
+marca están descartados (la tanda tiene los `size` intentos: una entrada cancelada o fallida por el motor no cuenta) la tanda falla: un fallo
+en `failures`, con el motivo del último. Respuesta: el intento. Errores: `order.reason_invalid` (400),
 `order.state_invalid`, `order.discard_chosen` (409), `order.attempt_unknown`.
 
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' \
   $B/api/projects/mi-proyecto/orders/banner/fauna%2Flobo/attempts/1/mark -d '{"state":"candidate"}'
+```
+
+### POST /api/projects/{p}/orders/{profile}/{key}/batches/{id}/fail
+
+«Ninguno vale»: la tanda `id` (la de su primera entrada de la cola, la de `order.json` `batches`) de un pedido de marca falló. Descarta sus
+intentos (el elegido no: `order.discard_chosen`), marca la tanda `failed` con su `reason` y suma un fallo al pedido. Cuerpo:
+`{"reason": {"trait": "<rasgo de la hoja u other>", "text": "nota"}}` (`other` necesita `text`; los rasgos son los de
+`acceptance.traits` y `acceptance.unmeasured` de la hoja). Respuesta: `{"failures": {"count", "limit", "reasons"},
+"troubleshooting": {"state", "row?"}}`. Solo cuentan los pedidos de marca, y solo el fallo a mano: un fallo técnico del motor o una
+cancelación no suman. El contador por pedido llega al límite (3, `brand.failureLimit` de la configuración del proyecto lo cambia)
+y el pedido queda en troubleshooting; lo pone a cero un intento con nota de 5 o más (cuando haya nota), cambiar el sujeto o una fila de
+troubleshooting. Errores: `order.reason_invalid` (400), `order.not_brand` (400), `order.batch_unknown` (404),
+`order.batch_failed` (409, la tanda ya cuenta), `order.discard_chosen` (409). CLI: `gimg order fail <proyecto> <clave> <perfil> <tanda> --reason RASGO [--note TEXTO]`.
+Las entradas que queden en la cola de esa tanda no se cancelan solas (`POST /api/queue/batches/{id}/cancel`).
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' \
+  $B/api/projects/mi-proyecto/orders/banner/fauna%2Flobo/batches/3/fail -d '{"reason":{"trait":"horizon"}}'
+```
+
+### POST /api/projects/{p}/orders/{profile}/{key}/troubleshooting/extend
+
+«Una tanda más» para un pedido en troubleshooting: la siguiente llamada a `attempts` (o el envío del pedido) se acepta aunque el pedido
+esté bloqueado. Las entradas de esa tanda llevan `extended: true` (no se retienen) y la ampliación queda apuntada en
+`order.json` `troubleshooting.extensions` (`{at, batch}`); acabada la tanda, el pedido sigue bloqueado si el contador no bajó.
+Cuerpo: `{}`. Respuesta: `{"failures", "troubleshooting"}` (`state: "extended"`). Errores: `order.not_blocked` (409),
+`order.extend_pending` (409, ya hay una sin usar). CLI: `gimg troubleshoot extend <proyecto> <clave> <perfil>`.
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' \
+  $B/api/projects/mi-proyecto/orders/banner/fauna%2Flobo/troubleshooting/extend -d '{}'
+```
+
+### GET /api/projects/{p}/troubleshooting
+
+Las filas de troubleshooting de todos los pedidos del proyecto, de la más antigua a la más reciente: `[{"piece", "key", "profile",
+"problem", "attempts": [..], "redesign", "terms": [..], "at", "by"}]`. Errores: `project.unknown`. CLI:
+`gimg troubleshoot list <proyecto>`.
+
+```sh
+curl -s $B/api/projects/mi-proyecto/troubleshooting
+```
+
+### POST /api/projects/{p}/troubleshooting
+
+Escribe una fila en el pedido que dice `key` + `profile`. Cuerpo: `{"key", "profile", "problem", "attempts"?: [ids], "redesign"?,
+"terms"?: [..], "by"?}` (`by` por omisión `person`). Respuesta 201: la fila. Pone el contador de fallos del pedido a cero, con lo que lo
+retenido en la cola se libera, y gimg genera el Markdown (`brand.troubleshootingMarkdown` del proyecto, relativo a su raíz; sin él,
+`troubleshooting.md` en la carpeta de datos del proyecto). Errores: `api.bad_param` (400), `order.unknown` (404), `order.not_brand`
+(400), `order.attempt_unknown` (404). CLI: `gimg troubleshoot add <proyecto> <clave> <perfil> --problem TEXTO [--attempt N]
+[--redesign TEXTO] [--term T] [--by NOMBRE]`.
+
+```sh
+curl -s -X POST -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/troubleshooting \
+  -d '{"key":"fauna/lobo","profile":"banner","problem":"el islote sale plano","attempts":[1,2],"terms":["islet"]}'
 ```
 
 ### POST /api/projects/{p}/orders/{profile}/{key}/attempts/{id}/note
@@ -343,7 +408,8 @@ curl -s "$B/api/projects/mi-proyecto/profiles/og/assets/template?id=claro"
 
 ### GET /api/queue
 
-La cola: cada entrada con `progress`, `errorText` y `estimateMs` si procede (sin la ruta de la vista previa). Query:
+La cola: cada entrada con `progress`, `errorText`, `held: "troubleshooting"` (una entrada `queued` de un pedido de marca en troubleshooting: el
+trabajador no la arranca hasta resolverlo o cancelarla; la de una tanda `extended` no) y `estimateMs` si procede (sin la ruta de la vista previa). Query:
 `state=queued|running|done|failed|cancelled`. Error: `queue.bad_state`. La respuesta lleva la cabecera
 `X-Queue-Paused: 1|0` (la cola está en pausa o no, como `paused` de `/api/health`); el cuerpo sigue siendo la lista.
 
@@ -483,7 +549,8 @@ curl -s $B/api/projects/mi-proyecto/brand/sheet
 
 Monta el prompt de una pieza de marca y lo comprueba, sin efectos y sin pasar por la cola: lo mismo que
 `gimg brand prompt --json`. Campos: `piece`, `subject`, `cleanZone` (opcional). Devuelve `{"prompt", "words", "segments",
-"checks", "blocked", "defaults", "known"}`; cada comprobación lleva `message: {"key", "params"}` (clave de i18n). `from`
+"checks", "blocked", "defaults", "known"}` (`known`: `[{"term", "row"}]`, los términos de las filas de troubleshooting del proyecto que aparecen
+en el sujeto, palabra entera y sin distinguir mayúsculas, cada uno con su fila); cada comprobación lleva `message: {"key", "params"}` (clave de i18n). `from`
 (convertir un prompt libre) aún no existe: `brandsheet.convert_unsupported` (400). Errores: `brandsheet.unknown_piece`
 (400), `api.bad_param`, los de la hoja de `GET .../brand/sheet`, `project.unknown`.
 

@@ -8,7 +8,9 @@ template, ``None`` for ``default``; an older entry without it has none) and ``po
 stands; the worker takes the lowest one, ties and entries without it by id; `move` and `clear` edit it). Entries stay in arrival order in the file.
 An entry enqueued by one submit or one `attempts` call may carry ``batch`` (``{"id": id of the batch's first entry, "index", "size"}``;
 brand-mode enqueues always, free ones only when they are more than one entry; an older entry has none) and, if
-`stop_batch` cancelled it, ``stoppedBy`` (the attempt whose score stopped the batch).
+`stop_batch` cancelled it, ``stoppedBy`` (the attempt whose score stopped the batch). An entry of a brand order in troubleshooting
+(`failures.is_blocked`) is *held*: the worker never claims it (`_first_queued`) and `entry_view` says ``held: "troubleshooting"``;
+``extended: true`` marks the entries of the batch an `failures.extend` allowed, which are not held.
 A running entry may also have ``progress`` (``{"step", "steps", "etaS"}``, `set_progress`) and ``preview`` (the path of
 the engine's preview image, `set_preview`); both are removed when the entry finishes or goes back to ``queued``.
 
@@ -36,7 +38,7 @@ from pathlib import Path
 
 from . import compose as compose_mod
 from . import engine as engine_mod
-from . import fsutil, i18n, limits, log, orders, paths, projects, schema
+from . import failures, fsutil, i18n, limits, log, orders, paths, projects, schema
 from . import models as models_mod
 from .errors import GimgError
 
@@ -209,7 +211,11 @@ def _pos(entry: dict):
 
 
 def _first_queued(data: dict):
-    return min((e for e in data["entries"] if e["state"] == "queued"), key=_pos, default=None)
+    """The first queued entry the worker may start: held ones (an order in troubleshooting) are skipped."""
+    for entry in sorted((e for e in data["entries"] if e["state"] == "queued"), key=_pos):
+        if failures.held_entry(entry) is None:
+            return entry
+    return None
 
 
 def _find(data: dict, entry_id) -> dict:
@@ -263,6 +269,8 @@ def enqueue(project: str, key: str, profile: str, specs: list, checks=None) -> l
                 entry["negative"] = spec["negative"]
             if entry["mode"] == "brand" and spec.get("sheetVersion"):  # the sheet that built the prompt
                 entry["sheetVersion"] = spec["sheetVersion"]
+            if spec.get("extended") is True:  # the batch `failures.extend` allowed: never held
+                entry["extended"] = True
             data["nextId"] += 1
             data["entries"].append(entry)
             added.append(entry)
@@ -279,8 +287,18 @@ def enqueue(project: str, key: str, profile: str, specs: list, checks=None) -> l
             record["subject"] = order.get("subject")
             record["cleanZone"] = order.get("cleanZone")
             record = {k: v for k, v in record.items() if v is not None}
+        extended = added[0].get("extended") is True
+        if extended:
+            record["extended"] = True
         orders.add_batch(project, key, profile, record)
+        if extended:
+            failures.note_extension(project, key, profile, record["id"])
     return added
+
+
+def list_runnable() -> list:
+    """The queued entries the worker could start: those not held by a troubleshooting block."""
+    return [e for e in list_entries(["queued"]) if failures.held_entry(e) is None]
 
 
 def list_entries(states=None) -> list:
@@ -551,6 +569,9 @@ def is_cancel_requested(entry_id) -> bool:
 def entry_view(entry: dict, lang: str | None = None) -> dict:
     """The JSON form of an entry for `gimg queue list --json` and ``GET /api/queue``: the entry plus ``errorText``."""
     item = dict(entry)
+    held = failures.held_entry(entry)
+    if held is not None:
+        item["held"] = held
     text = error_text(entry, lang)
     if text:
         item["errorText"] = text
@@ -598,9 +619,12 @@ def submit_order_checked(project: str, order: dict, draft=None, template=None, m
         if model is not None:
             spec["params"]["model"] = model
     check_specs(project, order["profile"], candidates)
+    extended = failures.admit(project, order["key"], order["profile"])  # an order in troubleshooting is refused here
     record = orders.submit(project, order)
     specs = orders.attempt_specs(project, record["key"], record["profile"], order.get("count", 1), template=template,
                                  model=model)
+    for spec in specs if extended else ():
+        spec["extended"] = True
     return enqueue(project, record["key"], record["profile"], specs, info.get("checks")), provider, info.get("checks")
 
 
@@ -622,6 +646,7 @@ def new_attempts_checked(project: str, key: str, profile: str, count: int = 1, *
     On a brand order the prompt is assembled again from `subject` / `clean_zone` (else the stored ones) and the order is
     updated once the specs pass the machine checks; ``mode="free"`` with `prompt` switches it to free (`orders.plan_attempt`)."""
     provider = engine_mod.get_engine().provider
+    failures.check_open(project, key, profile)  # ``order.troubleshooting`` before anything else is looked at
     record, changes, checks = orders.plan_attempt(project, key, profile, subject=subject, clean_zone=clean_zone,
                                                   mode=mode, prompt=prompt)
     if model is None and record.get("mode") == "brand":  # the same model as `submit_order_checked` uses
@@ -629,8 +654,12 @@ def new_attempts_checked(project: str, key: str, profile: str, count: int = 1, *
     specs = orders.attempt_specs(project, key, profile, count, seed=seed, prompt=prompt if changes is None else None,
                                  params=params, draft=draft, template=template, model=model, negative=negative,
                                  record=record)
+    if changes is not None or failures.is_blocked(record):
+        check_specs(project, profile, specs)  # before an extension is used up
+    if failures.admit(project, key, profile):
+        for spec in specs:
+            spec["extended"] = True
     if changes is not None:
-        check_specs(project, profile, specs)
         orders.apply_changes(project, key, profile, changes)
     return enqueue(project, key, profile, specs, checks), provider, checks
 

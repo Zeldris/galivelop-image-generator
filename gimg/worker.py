@@ -67,7 +67,7 @@ from pathlib import Path
 
 from . import engine as engine_mod
 from . import compose as compose_mod
-from . import fsutil, i18n, limits, log, orders, paths, png, projects, queue
+from . import failures, fsutil, i18n, limits, log, orders, paths, png, projects, queue
 from .errors import GimgError
 
 
@@ -405,6 +405,7 @@ def _process(entry: dict, eng, lang=None) -> None:
             print(i18n.t("worker.log_failed", lang, id=entry_id, reason=exc), file=sys.stderr)
     _finish(entry_id, "done", lang, attempt_id=attempt_id)
     _stop_on_score(entry, attempt_id)
+    _reset_on_score(entry)
 
 
 def _stop_on_score(entry: dict, attempt_id) -> None:
@@ -417,6 +418,15 @@ def _stop_on_score(entry: dict, attempt_id) -> None:
         value = ((attempt or {}).get("score") or {}).get("value")
         if isinstance(value, (int, float)) and not isinstance(value, bool) and value >= queue.STOP_SCORE:
             queue.stop_batch(batch, attempt["id"])
+
+
+def _reset_on_score(entry: dict) -> None:
+    """An attempt of a brand order scoring `orders.RESET_SCORE` or more puts the order's failure counter to zero (best effort)."""
+    if entry.get("mode") != "brand":
+        return
+    with contextlib.suppress(Exception):
+        attempt = orders.attempt_for_entry(entry["project"], entry["key"], entry["profile"], entry["id"])
+        failures.reset_on_score(entry["project"], entry["key"], entry["profile"], (attempt or {}).get("score"))
 
 
 def _terminate(signum, frame):
