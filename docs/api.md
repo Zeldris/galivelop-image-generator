@@ -68,8 +68,8 @@ líneas del esquema cuando el pedido no valida. Idioma: `?lang=es|en`, si no el 
 si no el del sistema. Estados: 400 petición mal formada o valor no válido (`api.bad_json`, `api.bad_param`, `*.invalid`,
 `limit.*`, `path.*`, `key.*`); 403 Host u Origin; 404 `project.unknown`, `order.unknown`, `order.profile_unknown`,
 `order.attempt_unknown`, `order.batch_unknown`, `queue.unknown`, `queue.batch_not_found`, `api.not_found`; 405, 411, 413, 415 de arriba; 409 estado que no lo permite
-(`compose.template_exists`, `order.choose_*`, `order.undo_*`, `order.history_empty`, `order.troubleshooting`, `order.batch_failed`, `order.not_blocked`, `order.extend_pending`, `queue.not_cancellable`, `queue.not_movable`, `compose.busy`, `measure.busy`,
-`api.heavy_busy`, `delivery.target_taken`); 500 fallos del lado del servidor (`api.unexpected` lleva `"message":
+(`compose.template_exists`, `order.choose_*`, `order.undo_*`, `order.history_empty`, `order.troubleshooting`, `order.batch_failed`, `order.not_blocked`, `order.extend_pending`, `order.extend_used`, `brand.missing_piece`, `brand.exists`, `queue.not_cancellable`, `queue.not_movable`, `compose.busy`, `measure.busy`,
+`api.heavy_busy`, `delivery.target_taken`); 422 la hoja de marca no permite montarlo (`brand.blocked`, `brand.no_sheet` y los `brandsheet.*` sobre el contenido de la hoja); 500 fallos del lado del servidor (`api.unexpected` lleva `"message":
 "Tipo: texto"`). Los textos de todos los códigos: `GET /api/locales/{lang}`.
 
 ## Rutas
@@ -153,7 +153,7 @@ curl -s -X POST -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/
 El pedido con sus intentos, como `order show --json`, más `deliveredTo`: ruta del archivo entregado relativa a la raíz
 del proyecto, o `null` si no hay elegida. En un pedido de marca (`order.json`, que guarda `failures: {count, limit, reasons}` y
 `troubleshooting: {rows, extendPending, extensions}`; uno viejo sin ellos vale) la respuesta lleva `failures` (siempre, con `count: 0` y `limit: 3`
-por omisión) y `troubleshooting: {"state": "open|blocked|extended", "row"?}` (`row`: la última fila). Error: `order.unknown`.
+por omisión) y `troubleshooting: {"state": "open|blocked|extended", "extensionUsed"?, "row"?}` (`row`: la última fila). Error: `order.unknown`.
 
 ```sh
 curl -s $B/api/projects/mi-proyecto/orders/banner/fauna%2Flobo
@@ -233,8 +233,10 @@ curl -s -X POST -H 'Content-Type: application/json' \
 «Una tanda más» para un pedido en troubleshooting: la siguiente llamada a `attempts` (o el envío del pedido) se acepta aunque el pedido
 esté bloqueado. Las entradas de esa tanda llevan `extended: true` (no se retienen) y la ampliación queda apuntada en
 `order.json` `troubleshooting.extensions` (`{at, batch}`); acabada la tanda, el pedido sigue bloqueado si el contador no bajó.
-Cuerpo: `{}`. Respuesta: `{"failures", "troubleshooting"}` (`state: "extended"`). Errores: `order.not_blocked` (409),
-`order.extend_pending` (409, ya hay una sin usar). CLI: `gimg troubleshoot extend <proyecto> <clave> <perfil>`.
+Solo una por ciclo de fallos (el ciclo acaba cuando el contador vuelve a cero); mientras tanto `troubleshooting` lleva
+`extensionUsed: true`. Cuerpo: `{}`. Respuesta: `{"failures", "troubleshooting"}` (`state: "extended"`). Errores:
+`order.not_blocked` (409), `order.extend_pending` (409, ya hay una sin usar), `order.extend_used` (409, ya se usó en este
+ciclo). CLI: `gimg troubleshoot extend <proyecto> <clave> <perfil>`.
 
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' \
