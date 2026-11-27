@@ -11,7 +11,8 @@ as the engine and the Steam Deck as the reference machine (D4). No dependencies:
 
 Version **0.8.0**, phases **F0-F4 done** and on `main`: projects, orders, attempts, chosen candidate and delivery,
 persistent queue, CLI, real engine (`sd-cli`, with `instalar.sh`), composition and brand measurement, local HTTP API
-and browser interface. Still pending: manual checks on the Deck (pilot rounds, a full walk through the interface in
+and browser interface; from the brand process (FM), cropping (0.6.0), the brand sheet as data (0.7.0) and the brand
+piece (0.8.0). Still pending: manual checks on the Deck (pilot rounds, a full walk through the interface in
 the browser), the pilot with real projects (F5) and what follows (see "Next steps"). The test engine (`fake`,
 flat-colour images) stays the default until `instalar.sh` selects the real one.
 
@@ -22,20 +23,20 @@ flat-colour images) stays the default until `instalar.sh` selects the real one.
 | F2 Real engine | `sd-cli` wrapper driven by the machine profile, `instalar.sh`, model catalog, composition, brand measurement and `gimg doctor` (0.3.0) |
 | F3 API and startup | Local HTTP API (`gimg serve`), on-demand startup and `gimg ui` (0.3.0) |
 | F4 UI | Three browser screens, es/en, with selectable templates and an element editor (0.4.0) |
+| FM Brand process | Cropping (0.6.0), brand sheet as data (0.7.0) and brand piece (0.8.0) done; grade and discard, workshop and delivery and the agent tray, in 0.9.0-0.11.0 |
 | F5 WMF pilot | Example config, integration guide and measurements |
 | F6 Local director | Optional: a local LLM (Ollama) drafts prompts and helps choose |
 | F7 Compatibility | Last phase: any machine, not only Vulkan (CPU, CUDA, ROCm, Metal), other Linux distros, Windows and maybe macOS |
 
-Details, decisions D1-D65 and exit criteria in [`docs/plan.md`](docs/plan.md) (in Spanish).
+Details, decisions D1-D41 and exit criteria in [`docs/plan.md`](docs/plan.md) (in Spanish).
 
 ### Next steps
 
-Roadmap by version (details in [`docs/plan.md`](docs/plan.md), "Hoja de ruta por versiones hasta la 1.0.0"); fixes to
+Roadmap by version (details in [`docs/plan/fm.md`](docs/plan/fm.md), "Versiones"); fixes to
 what is published ship first, as a patch:
 
 | Version | What |
 |---|---|
-| 0.8.0 | **Brand piece**: mode in the order and the retouch, assembly and checks on the server, grouped batches and failure counter |
 | 0.9.0 | **Grade and discard**: worker grade, proposed and recoverable discard |
 | 0.10.0 | **Workshop, resources and delivery**: workshop steps per piece type, project resources, edit the sheet and delivery by folders |
 | 0.11.0 | **Tray**: the agent tray (`todo`/`answer`), API and Tray tab |
@@ -81,9 +82,38 @@ The chosen candidate is delivered to `uploads/images/fauna/red-howler-banner.png
 
 Schemas:
 [project config](gimg/schemas/project-config.schema.json),
-[order](gimg/schemas/order.schema.json) and
-[machine profile](gimg/schemas/machine-profile.schema.json).
+[order](gimg/schemas/order.schema.json),
+[brand sheet](gimg/schemas/brand-sheet.schema.json),
+[machine profile](gimg/schemas/machine-profile.schema.json) and
+[tray task](gimg/schemas/agent-task.schema.json) (the contract only; the tray arrives in 0.11.0).
 The Steam Deck preset is [`gimg/machine_profiles/steam-deck.json`](gimg/machine_profiles/steam-deck.json) (D15).
+
+## Brand piece
+
+A project can declare its **brand sheet** as data: `brand.sheet` in `galivelop-images.json` points to a `marca.json`
+inside its root (palette by role, registers, vetoes, piece types and acceptance), which can inherit from another
+registered project with `extends`. Example: [`examples/portal/marca.json`](examples/portal/marca.json).
+`gimg brand init` creates it, `brand prompt` assembles the prompt of a piece type from its subject, `brand lint` checks a
+prompt against it and `brand md` generates the `hoja.md` block (`brand.sheetMarkdown`; `gimg doctor` checks it).
+
+A **brand mode** order carries the subject instead of the prompt:
+
+```
+{"key": "covers/lighthouse", "profile": "portada", "mode": "brand", "piece": "cover", "subject": "...", "cleanZone": "..."}
+```
+
+The server assembles and checks the prompt (`brand.blocked` if it fails); the profile is the piece type's (a different
+one is rejected) and the seed, `count` and model come from it when the order does not give them (`cover` and `portada` are
+examples: the sheet and the project define them). Without `mode`, or with `"free"`, it is a free order
+like the one above. With `attempt new --mode free --prompt …` ("Switch to free image") a brand order becomes free, and
+that is recorded. Attempts come in **batches**, grouped by the queue and the gallery, which move or cancel as a whole.
+Failures by hand ("No" with a reason on a whole batch, or "None are good") are counted: on the third in a row
+(`brand.failureLimit`) the order is blocked until a troubleshooting row is written (`brand.troubleshootingMarkdown`),
+with "one more batch" only once per failure cycle.
+
+In the interface: a Brand/Free switch in the new order and the retouch, the check list, the failure marker, the "failed before"
+warning and the Brand tab (Sheet, Try a subject, Check,
+Troubleshooting and Workshop).
 
 ## Usage (CLI)
 
@@ -103,7 +133,9 @@ python3 -m gimg undo my-project fauna/red-howler banner       # back to the prev
 python3 -m gimg attempt new my-project fauna/red-howler banner --count 2 --steps 8   # more attempts
 python3 -m gimg order list my-project --unchosen
 python3 -m gimg queue list                            # queue state, with errors
-python3 -m gimg queue cancel 3
+python3 -m gimg queue cancel 3                        # --batch ID cancels the whole batch
+python3 -m gimg queue move 5 top                      # up | down | top (--batch ID top: the whole batch)
+python3 -m gimg queue pause                           # and queue resume; queue clear [--project P] empties what waits
 python3 -m gimg compose my-project fauna/red-howler banner 1 --template poster   # recompose without generating
 python3 -m gimg templates my-project banner           # the profile's composition templates
 python3 -m gimg measure image.png --project my-project   # palette, contrast and distance to the brand
@@ -114,11 +146,18 @@ python3 -m gimg export a.png a.webp --size 960x540   # copy to WebP, ICO or BMP 
 python3 -m gimg export a.png b.png --crop 64,0,768,1152 --size 600x900   # declared crop (X,Y,W,H of the original), then scale down
 python3 -m gimg export a.png b.png --size 1536x384 --anchor top   # where the proportion crop sits: top|bottom|left|right (or top-left…), centre by default
 python3 -m gimg tile texture.png --preview view.png   # seamless texture (up to 4.2 Mpx in total, e.g. 2048x2048): texture-tile.png and the 4x4 view (--blend, --preview-side, -o, --force)
+python3 -m gimg brand init --project my-project       # creates the brand sheet (--extends OTHER, --force)
+python3 -m gimg brand prompt --project my-project --piece cover --subject "..."   # assembles the prompt (--clean-zone)
+python3 -m gimg brand lint --project my-project --prompt "..."   # or --file PATH (--piece, --mode brand|free)
+python3 -m gimg attempt mark my-project covers/lighthouse portada 1 discarded --reason horizon   # "No" with a reason
+python3 -m gimg order fail my-project covers/lighthouse portada 3 --reason horizon   # "None are good" for batch 3 (--note)
+python3 -m gimg troubleshoot add my-project covers/lighthouse portada --problem "..."   # resets the counter; list | extend
+python3 -m gimg attempt new my-project covers/lighthouse portada --subject "..."   # rebuilds the prompt (--clean-zone)
 python3 -m gimg brand matte logo.png                  # removes the flat background: logo-alpha.png (the original is untouched)
 python3 -m gimg brand trace logo-alpha.png --mode color|mono|silhouette   # PNG to SVG (--palette, --colors, --matte)
 python3 -m gimg brand wordmark TARKOR --font Cinzel.ttf -o wordmark.svg   # the name as paths, no <text> (--weight, --spacing)
 python3 -m gimg brand lockup emblema.svg wordmark.svg --layout h|v   # emblem and wordmark in one SVG (--cap, --gap, --width, --margin, --color, -o)
-python3 -m gimg brand md my-project --write hoja.md   # hoja.md block generated from the brand sheet; --check FILE checks it (see also brand init|prompt|lint)
+python3 -m gimg brand md my-project --write hoja.md   # hoja.md block generated from the brand sheet; --check FILE checks it
 python3 -m gimg brand square ig.svg --fill '#7C5CD6' --ink '#fbfcfd' --png 512,128,32   # the symbol: square with a 28/128 chamfer and the drawing in one ink (--chamfer, --pad, -o, --force)
 python3 -m gimg brand system emblema.png --name Tarkor --font Cinzel.ttf --out-dir marca/   # the seven files of the logo system (--weight, --spacing, --palette, --colors, --text, --cap, --gap, --width, --margin, --mono for a one-ink lockup, --force overwrites)
 python3 -m gimg doctor                                # checks the engine, models and tools (--verify)

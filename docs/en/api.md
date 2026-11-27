@@ -73,8 +73,8 @@ the schema lines when the order does not validate. Language: `?lang=es|en`, else
 `api.bad_param`, `*.invalid`, `limit.*`, `path.*`, `key.*`); 403 Host or Origin; 404 `project.unknown`,
 `order.unknown`, `order.profile_unknown`, `order.attempt_unknown`, `order.batch_unknown`, `queue.unknown`, `queue.batch_not_found`, `api.not_found`; 405, 411, 413, 415
 as above; 409 state that does not allow it (`compose.template_exists`, `order.choose_*`, `order.undo_*`,
-`order.history_empty`, `order.troubleshooting`, `order.batch_failed`, `order.not_blocked`, `order.extend_pending`, `queue.not_cancellable`, `queue.not_movable`, `compose.busy`, `measure.busy`,
-`api.heavy_busy`, `delivery.target_taken`); 500 server-side failures (`api.unexpected` carries `"message":
+`order.history_empty`, `order.troubleshooting`, `order.batch_failed`, `order.not_blocked`, `order.extend_pending`, `order.extend_used`, `brand.missing_piece`, `brand.exists`, `queue.not_cancellable`, `queue.not_movable`, `compose.busy`, `measure.busy`,
+`api.heavy_busy`, `delivery.target_taken`); 422 the brand sheet does not allow building it (`brand.blocked`, `brand.no_sheet` and the `brandsheet.*` codes about the sheet's content); 500 server-side failures (`api.unexpected` carries `"message":
 "Type: text"`). The texts of all codes: `GET /api/locales/{lang}`.
 
 ## Routes
@@ -159,7 +159,7 @@ curl -s -X POST -H 'Content-Type: application/json' $B/api/projects/mi-proyecto/
 The order with its attempts, like `order show --json`, plus `deliveredTo`: path of the delivered file relative to the
 project root, or `null` if there is no chosen attempt. On a brand order (`order.json` stores `failures: {count, limit, reasons}` and
 `troubleshooting: {rows, extendPending, extensions}`; an old one without them is fine) the response carries `failures` (always, with `count: 0` and
-`limit: 3` by default) and `troubleshooting: {"state": "open|blocked|extended", "row"?}` (`row`: the latest row). Error: `order.unknown`.
+`limit: 3` by default) and `troubleshooting: {"state": "open|blocked|extended", "extensionUsed"?, "row"?}` (`row`: the latest row). Error: `order.unknown`.
 
 ```sh
 curl -s $B/api/projects/mi-proyecto/orders/banner/fauna%2Flobo
@@ -240,8 +240,10 @@ curl -s -X POST -H 'Content-Type: application/json' \
 "One more batch" for an order in troubleshooting: the next call to `attempts` (or order submit) is accepted although the order is
 blocked. The entries of that batch carry `extended: true` (they are not held) and the extension is noted in `order.json`
 `troubleshooting.extensions` (`{at, batch}`); when the batch ends, the order is still blocked if the counter did not go down.
-Body: `{}`. Response: `{"failures", "troubleshooting"}` (`state: "extended"`). Errors: `order.not_blocked` (409),
-`order.extend_pending` (409, one is already waiting). CLI: `gimg troubleshoot extend <project> <key> <profile>`.
+Only one per failure cycle (the cycle ends when the counter goes back to zero); meanwhile `troubleshooting` carries
+`extensionUsed: true`. Body: `{}`. Response: `{"failures", "troubleshooting"}` (`state: "extended"`). Errors:
+`order.not_blocked` (409), `order.extend_pending` (409, one is already waiting), `order.extend_used` (409, already used
+in this cycle). CLI: `gimg troubleshoot extend <project> <key> <profile>`.
 
 ```sh
 curl -s -X POST -H 'Content-Type: application/json' \
